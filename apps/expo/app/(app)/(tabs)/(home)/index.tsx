@@ -9,8 +9,9 @@ import {
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
-import { featureFlags } from 'expo-app/config';
+import { appConfig, featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
 import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
@@ -154,6 +155,7 @@ const tileInfo = {
 };
 
 type TileName = keyof typeof tileInfo;
+const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
@@ -185,32 +187,29 @@ export default function DashboardScreen() {
   );
 
   const dashboardLayout = useRef([
-    'current-pack',
-    'recent-packs',
-    'season-suggestions',
-    'gap 1',
-    'ask-packrat-ai',
-    'reported-ai-content',
-    'ai-packs',
-    'gap 1.5',
-    'pack-stats',
-    'weight-analysis',
-    'pack-categories',
-    ...(featureFlags.enableTrips || featureFlags.enableTrailConditions ? ['gap 2'] : []),
-    ...(featureFlags.enableTrips ? ['upcoming-trips'] : []),
-    ...(featureFlags.enableTrailConditions ? ['trail-conditions'] : []),
-    'gap 2.5',
-    'weather',
-    ...(featureFlags.enableTrips ? ['weather-alerts'] : []),
-    'gap 3',
-    'gear-inventory',
-    ...(featureFlags.enableShoppingList ? ['shopping-list'] : []),
-    ...(featureFlags.enableSharedPacks ? ['shared-packs'] : []),
-    ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
-    ...(featureFlags.enableFeed ? ['feed'] : []),
-    'gap 4',
-    'guides',
-    ...(featureFlags.enableWildlifeIdentification ? ['wildlife'] : []),
+    ...appConfig.dashboard.layout.base,
+    ...(featureFlags.enableTrips || featureFlags.enableTrailConditions
+      ? [appConfig.dashboard.layout.conditional.tripsOrTrailSpacer]
+      : []),
+    ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.trips] : []),
+    ...(featureFlags.enableTrailConditions
+      ? [appConfig.dashboard.layout.conditional.trailConditions]
+      : []),
+    ...appConfig.dashboard.layout.weatherSection,
+    ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.weatherAlerts] : []),
+    ...appConfig.dashboard.layout.gearSection,
+    ...(featureFlags.enableShoppingList
+      ? [appConfig.dashboard.layout.conditional.shoppingList]
+      : []),
+    ...(featureFlags.enableSharedPacks ? [appConfig.dashboard.layout.conditional.sharedPacks] : []),
+    ...(featureFlags.enablePackTemplates
+      ? [appConfig.dashboard.layout.conditional.packTemplates]
+      : []),
+    ...(featureFlags.enableFeed ? [appConfig.dashboard.layout.conditional.feed] : []),
+    ...appConfig.dashboard.layout.footerSection,
+    ...(featureFlags.enableWildlifeIdentification
+      ? [appConfig.dashboard.layout.conditional.wildlife]
+      : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {
@@ -218,7 +217,7 @@ export default function DashboardScreen() {
 
     const searchLower = searchValue.toLowerCase();
     return dashboardLayout.filter((item) => {
-      if (!item.startsWith('gap')) {
+      if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
         const info = localizedTileInfo[item as TileName];
         return (
           info.title.toLowerCase().includes(searchLower) ||
@@ -235,57 +234,63 @@ export default function DashboardScreen() {
         title={t('dashboard.title')}
         searchBar={{
           ref: asNonNullableRef(searchBarRef),
-          iosHideWhenScrolling: true,
           onChangeText: setSearchValue,
-          placeholder: 'Search...',
-          content: searchValue ? (
-            <FlatList
-              data={filteredTiles}
-              keyExtractor={keyExtractor}
-              className="space-y-4 px-4"
-              renderItem={({ item }) => {
-                assertIsString(item);
-                if (!item.startsWith('gap')) {
-                  const Component = tileInfo[item as TileName].component;
-                  return (
-                    <Pressable
-                      key={item}
-                      className="rounded-2xl overflow-hidden "
-                      onPress={() => {
-                        setSearchValue('');
-                        searchBarRef.current?.clearText();
-                      }}
-                    >
-                      <Component />
-                    </Pressable>
-                  );
-                }
-                return null;
-              }}
-              ListHeaderComponent={() =>
-                filteredTiles.length > 0 ? (
-                  <Text className="px-4 py-2 text-sm text-muted-foreground">
-                    {filteredTiles.length} {filteredTiles.length === 1 ? 'result' : 'results'}
-                  </Text>
-                ) : null
-              }
-              ListEmptyComponent={() => (
-                <View className="items-center justify-center p-6">
-                  <Icon name="file-search-outline" size={48} color="#9ca3af" />
-                  <View className="h-4" />
-                  <Text className="text-lg font-medium text-muted-foreground">
-                    {t('dashboard.noResults')}
-                  </Text>
-                  <Text className="mt-1 text-center text-sm text-muted-foreground">
-                    {t('dashboard.tryDifferent')}
-                  </Text>
+          placeholder: appConfig.dashboard.strings.searchPlaceholder,
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {searchValue ? (
+                <FlatList
+                  data={filteredTiles}
+                  keyExtractor={keyExtractor}
+                  contentContainerClassName="gap-4 px-4 pb-4"
+                  renderItem={({ item }) => {
+                    assertIsString(item);
+                    if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
+                      const Component = tileInfo[item as TileName].component;
+                      return (
+                        <Pressable
+                          key={item}
+                          className="rounded-2xl overflow-hidden "
+                          onPress={() => {
+                            setSearchValue('');
+                            searchBarRef.current?.clearText();
+                          }}
+                        >
+                          <Component />
+                        </Pressable>
+                      );
+                    }
+                    return null;
+                  }}
+                  ListHeaderComponent={() =>
+                    filteredTiles.length > 0 ? (
+                      <Text className="px-4 py-2 text-sm text-muted-foreground">
+                        {filteredTiles.length}{' '}
+                        {filteredTiles.length === 1
+                          ? appConfig.dashboard.strings.resultSingular
+                          : appConfig.dashboard.strings.resultPlural}
+                      </Text>
+                    ) : null
+                  }
+                  ListEmptyComponent={() => (
+                    <View className="items-center justify-center p-6">
+                      <Icon name="file-search-outline" size={48} color="#9ca3af" />
+                      <View className="h-4" />
+                      <Text className="text-lg font-medium text-muted-foreground">
+                        {t('dashboard.noResults')}
+                      </Text>
+                      <Text className="mt-1 text-center text-sm text-muted-foreground">
+                        {t('dashboard.tryDifferent')}
+                      </Text>
+                    </View>
+                  )}
+                />
+              ) : (
+                <View className="flex-1 items-center justify-center p-4">
+                  <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
                 </View>
               )}
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
-            </View>
+            </LargeTitleHeaderSearchContentContainer>
           ),
         }}
         backVisible={false}
@@ -308,7 +313,7 @@ export default function DashboardScreen() {
 function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>) {
   const item = info.item as string;
 
-  if (item.startsWith('gap')) {
+  if (item.startsWith(DASHBOARD_GAP_PREFIX)) {
     return <ListSectionHeader {...info} />;
   }
 

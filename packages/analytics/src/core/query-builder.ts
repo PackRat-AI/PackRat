@@ -15,19 +15,17 @@ import {
 
 // ── SQL Fragments ─────────────────────────────────────────────────────
 
-// Bundle of SQL fragment helpers. Exported as a const object so members can
-// reference each other without `this`, and so consumers keep the existing
-// `SQLFragments.foo()` call shape.
-export const SQLFragments = {
+// biome-ignore lint/complexity/noStaticOnlyClass: Static SQL helpers are intentionally namespaced.
+export class SQLFragments {
   /** Escape single quotes for safe SQL string interpolation. */
-  escapeSql(value: string): string {
+  static escapeSql(value: string): string {
     return value.replaceAll("'", "''");
-  },
+  }
 
   /** SQL expression to extract site name from filename. */
-  siteExtract(alias = 'site'): string {
+  static siteExtract(alias = 'site'): string {
     return `regexp_extract(filename, '${SITE_EXTRACT_REGEX}', 1) as ${alias}`;
-  },
+  }
 
   /**
    * Build COALESCE for a logical field across all column name variations.
@@ -37,7 +35,7 @@ export const SQLFragments = {
    *            NULLIF(TRIM(TRY_CAST(heading AS VARCHAR)), ''),
    *            'Unknown') as name
    */
-  safeCoalesce(field: string, defaultValue?: string): string {
+  static safeCoalesce(field: string, defaultValue?: string): string {
     const variations = FIELD_MAPPINGS[field] ?? [field];
     let dflt: string;
     if (defaultValue !== undefined) {
@@ -49,10 +47,10 @@ export const SQLFragments = {
 
     const parts = variations.map((v) => `NULLIF(TRIM(TRY_CAST(${v} AS VARCHAR)), '')`);
     return `COALESCE(${parts.join(', ')}, ${dflt}) as ${field}`;
-  },
+  }
 
   /** Bulletproof price extraction with fallbacks from FIELD_MAPPINGS. */
-  safePrice(alias = 'price'): string {
+  static safePrice(alias = 'price'): string {
     const maxP = DBConfig.MAX_VALID_PRICE;
     const digits = DBConfig.PRICE_ROUND_DIGITS;
     const priceCols = FIELD_MAPPINGS.price ?? ['price'];
@@ -77,10 +75,10 @@ export const SQLFragments = {
     return `CASE${whenClauses.join('')}
             ELSE NULL
         END as ${alias}`;
-  },
+  }
 
   /** Safe float extraction from FIELD_MAPPINGS with optional range check. */
-  safeFloat(
+  static safeFloat(
     field: string,
     opts: { alias?: string; minVal?: number; maxVal?: number } = {},
   ): string {
@@ -110,10 +108,10 @@ export const SQLFragments = {
             ${whenClauses.join('\n            ')}
             ELSE NULL
         END as ${a}`;
-  },
+  }
 
   /** Safe integer extraction from FIELD_MAPPINGS. */
-  safeInt(field: string, alias?: string): string {
+  static safeInt(field: string, alias?: string): string {
     const a = alias ?? field;
     const variations = FIELD_MAPPINGS[field] ?? [field];
 
@@ -126,10 +124,10 @@ export const SQLFragments = {
             ${whenClauses.join('\n            ')}
             ELSE NULL
         END as ${a}`;
-  },
+  }
 
   /** Normalize availability across all known formats. */
-  safeAvailability(alias = 'availability'): string {
+  static safeAvailability(alias = 'availability'): string {
     return `CASE
             WHEN TRY_CAST(availability AS VARCHAR) IS NULL
                 OR TRIM(TRY_CAST(availability AS VARCHAR)) = '' THEN 'unknown'
@@ -148,10 +146,10 @@ export const SQLFragments = {
                 AND TRY_CAST(TRY_CAST(availability AS VARCHAR) AS INTEGER) = 0 THEN 'out_of_stock'
             ELSE 'unknown'
         END as ${alias}`;
-  },
+  }
 
   /** Standard read_csv_auto clause reading from multiple version prefixes. */
-  readCsvSource(bucketPath: string, globPatterns?: string[]): string {
+  static readCsvSource(bucketPath: string, globPatterns?: string[]): string {
     const globs = globPatterns ?? R2_CSV_GLOBS;
     const paths = globs.map((g) => `'${bucketPath}/${g}'`);
     const pathList = `[${paths.join(', ')}]`;
@@ -161,10 +159,10 @@ export const SQLFragments = {
             union_by_name=true,
             filename=true,
             sample_size=20480)`;
-  },
+  }
 
   /** Standard SELECT fields for normalized gear data. */
-  selectFields(): string[] {
+  static selectFields(): string[] {
     return [
       SQLFragments.siteExtract(),
       SQLFragments.safeCoalesce('name'),
@@ -188,10 +186,10 @@ export const SQLFragments = {
       SQLFragments.safeCoalesce('published_at'),
       SQLFragments.safeCoalesce('updated_at'),
     ];
-  },
+  }
 
   /** Standard WHERE conditions for valid product data. */
-  baseWhere(): string[] {
+  static baseWhere(): string[] {
     const maxP = DBConfig.MAX_VALID_PRICE;
     return [
       'name IS NOT NULL',
@@ -204,10 +202,10 @@ export const SQLFragments = {
                 AND TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) < ${maxP})
             )`,
     ];
-  },
+  }
 
   /** WHERE clause for keyword search across text fields using FIELD_MAPPINGS. */
-  keywordFilter(keyword: string): string {
+  static keywordFilter(keyword: string): string {
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
     const searchFields = ['name', 'brand', 'category', 'description'];
     const clauses: string[] = [];
@@ -218,17 +216,17 @@ export const SQLFragments = {
       clauses.push(`LOWER(${coalesce}) LIKE '%${kw}%'`);
     }
     return `(${clauses.join(' OR ')})`;
-  },
+  }
 
   /** WHERE clause filtering to specific sites. */
-  siteFilter(sites: string[]): string | null {
+  static siteFilter(sites: string[]): string | null {
     if (sites.length === 0) return null;
     const siteList = sites.map((s) => `'${SQLFragments.escapeSql(s)}'`).join(', ');
     return `regexp_extract(filename, '${SITE_EXTRACT_REGEX}', 1) IN (${siteList})`;
-  },
+  }
 
   /** WHERE clauses for price range filtering. */
-  priceRangeFilter(minPrice?: number, maxPrice?: number): string[] {
+  static priceRangeFilter(minPrice?: number, maxPrice?: number): string[] {
     const conditions: string[] = [];
     if (minPrice !== undefined) {
       conditions.push(`(
@@ -247,8 +245,8 @@ export const SQLFragments = {
             )`);
     }
     return conditions;
-  },
-};
+  }
+}
 
 // ── Query Builder ─────────────────────────────────────────────────────
 

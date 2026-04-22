@@ -50,7 +50,8 @@ PackRat is a modern full-stack application for outdoor enthusiasts to plan and o
 
 #### **Format and Lint** (Fast Operations)
 - **Format Code**: `bun format` -- takes <1 second, formats 600+ files
-- **Lint Code**: `bun lint` -- takes ~1 second, may show warnings
+- **Lint Code**: `bun lint` -- takes ~1 second, may show warnings (auto-fix mode)
+- **Lint CI Mode**: `bun check` -- Biome check with no auto-fix (use in CI)
 - **Type Check**: `bun check-types` -- FAILS without dependencies installed (expected)
 
 #### **Development Servers**
@@ -88,8 +89,9 @@ cd apps/guides && bun dev
 - Runs on `http://localhost:3001` (if 3000 is taken)
 
 #### **Testing**
-- **API Tests**: `cd packages/api && bun run test` -- NEVER CANCEL: Takes ~5 seconds
-- Tests run sequentially (`fileParallelism: false` in `packages/api/vitest.config.ts`) to avoid database deadlocks
+- **API Unit Tests**: `bun test:api:unit` -- NEVER CANCEL: Takes ~5 seconds
+- **Expo Tests**: `bun test:expo` -- runs Expo/React Native unit tests
+- Tests run sequentially (`fileParallelism: false` in `packages/api/vitest.unit.config.ts`) to avoid database deadlocks
 - Tests expect environment variables to be configured (see `.env.example`)
 
 #### **Build Commands**
@@ -102,6 +104,13 @@ cd apps/guides && bun dev
 cd packages/api && bun run db:generate   # Generate new migration
 cd packages/api && bun run db:migrate    # Apply migrations
 cd packages/api && bun run db:studio     # Open Drizzle Studio
+```
+
+#### **Dependency Management and Versioning**
+```bash
+bun check:deps   # Check workspace version consistency (manypkg)
+bun fix:deps     # Auto-fix dependency version inconsistencies
+bun bump         # Bump monorepo version
 ```
 
 ## Coding Conventions
@@ -219,9 +228,8 @@ packages/
   api/            Cloudflare Workers API (Hono, Drizzle, OpenAPI)
   ui/             Shared UI components (requires GitHub auth)
 .github/
-  workflows/      CI/CD pipelines
+  workflows/      CI/CD pipelines (incl. copilot-setup-steps.yml)
   scripts/        Build and configuration scripts
-  copilot-setup-steps.yml   Copilot coding agent environment setup
 ```
 
 ### Key Files
@@ -235,13 +243,13 @@ packages/
 | `apps/expo/app.config.js` | Expo configuration |
 | `biome.json` | Formatting and linting rules |
 | `lefthook.yml` | Git hooks (auto-runs `bun format` on pre-push) |
+| `.github/workflows/copilot-setup-steps.yml` | Copilot cloud agent environment bootstrap |
 
 ## CI/CD Workflows
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `biome.yml` | Pull Requests | Code formatting and linting |
-| `check-types.yml` | Pull Requests | TypeScript type checking |
+| `checks.yml` | Pull Requests + Manual | Lint/format checks, type checking, and optional manual Biome autofix |
 | `api-tests.yml` | Push to main/dev + PRs | Vitest API tests |
 | `migrations.yml` | Push to main/dev | Database schema migrations |
 | `sync-guides-r2.yml` | Push to dev + Manual | Sync guides content to Cloudflare R2 |
@@ -250,6 +258,16 @@ packages/
 - `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` - GitHub PAT with `read:packages` scope
 - Cloudflare API tokens for deployment
 - Database URL and API keys (see `.env.example`)
+
+**Copilot Cloud Agent Environment:**
+
+The Copilot coding agent uses `.github/workflows/copilot-setup-steps.yml` to bootstrap its environment. The setup:
+1. Validates `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` is present (fail-fast, actionable error)
+2. Pins Node.js 24 and Bun 1.3.10 to match `package.json` engine constraints
+3. Installs all workspace dependencies via `bun install --frozen-lockfile`
+4. Smoke-checks Biome, TypeScript, and Wrangler CLIs
+
+To enable Copilot, add `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` (PAT with `read:packages`) as a secret in **Settings → Environments → copilot → Secrets**.
 
 ## Validation
 
@@ -297,6 +315,7 @@ cd apps/landing && bun dev  # curl http://localhost:3000
 | API server startup | ~10 seconds | 60 seconds |
 | Expo startup | ~10 seconds | 180+ seconds |
 | Next.js dev server | ~5 seconds | 30 seconds |
-| API tests | ~5 seconds | 60 seconds |
+| `bun test:api:unit` | ~5 seconds | 60 seconds |
+| `bun test:expo` | ~5 seconds | 60 seconds |
 | Mobile app build (local) | 10-15 minutes | 30+ minutes |
 | Mobile app build (EAS) | 15-30 minutes | 60+ minutes |

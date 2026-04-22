@@ -1,7 +1,9 @@
 import { createDb } from '@packrat/api/db';
+import { hashPassword } from '@packrat/api/utils/auth';
 import { assertDefined } from '@packrat/guards';
 import type { InferInsertModel } from 'drizzle-orm';
 
+import * as schema from '../../src/db/schema';
 import {
   catalogItems,
   packItems,
@@ -36,31 +38,47 @@ function generateUniqueSku(): string {
 }
 
 /**
- * Seeds a test user via UserService (same path production register uses) and
- * registers them as the current JWT subject for apiWithAuth / apiWithAdmin.
- * Callers must use the returned `user.id` — it is DB-assigned (#2180).
+ * Seeds a test user via UserService (same path production register uses).
+ * Returns the user with DB-assigned id. Does NOT register as the current JWT
+ * subject — tests that want `apiWithAuth` to authenticate as this user must
+ * also call `loginAs(user)` or use `seedAndLoginTestUser()`.
  */
 export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof users>>) {
   const db = createDb();
+  const password = (overrides as { password?: string } | undefined)?.password ?? 'TestPassword1!';
+  const passwordHash = await hashPassword(password);
+  const email =
+    overrides?.email ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
-  const user = await userService.create({
-    email:
-      overrides?.email ??
-      `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-    password: overrides?.password,
-    firstName: overrides?.firstName ?? 'Test',
-    lastName: overrides?.lastName ?? 'User',
-    role,
-    emailVerified: overrides?.emailVerified ?? true,
-  });
+  const [user] = await db
+    .insert(schema.users)
+    .values({
+      email,
+      passwordHash,
+      firstName: overrides?.firstName ?? 'Test',
+      lastName: overrides?.lastName ?? 'User',
+      role: overrides?.role ?? 'USER',
+      emailVerified: overrides?.emailVerified ?? true,
+    })
+    .returning();
 
+  assertDefined(user);
+  return user;
+}
+
+/**
+ * Seeds a user AND registers them as the current JWT subject so apiWithAuth
+ * (or apiWithAdmin, for role: "ADMIN") authenticates as them. Use in
+ * beforeEach for the "primary" test user.
+ */
+export async function seedAndLoginTestUser(
+  overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
+) {
+  const user = await seedTestUser(overrides);
+  const role = (user.role ?? 'USER') as 'USER' | 'ADMIN';
   const subject = { id: user.id, role };
-  if (role === 'ADMIN') {
-    setCurrentTestAdmin(subject);
-  } else {
-    setCurrentTestUser(subject);
-  }
-
+  if (role === 'ADMIN') setCurrentTestAdmin(subject);
+  else setCurrentTestUser(subject);
   return user;
 }
 

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  seedAndLoginTestUser,
   seedPackTemplate,
   seedPackTemplateItem,
   seedPackTemplateItems,
-  seedTestUser,
 } from './utils/db-helpers';
 import {
   api,
@@ -15,11 +15,11 @@ import {
 } from './utils/test-helpers';
 
 describe('Pack Templates Routes', () => {
-  let testUser: Awaited<ReturnType<typeof seedTestUser>>;
+  let testUser: Awaited<ReturnType<typeof seedAndLoginTestUser>>;
 
   // Re-seed user before each test (global beforeEach truncates all tables)
   beforeEach(async () => {
-    testUser = await seedTestUser();
+    testUser = await seedAndLoginTestUser();
   });
   describe('Authentication', () => {
     it('GET /pack-templates requires auth', async () => {

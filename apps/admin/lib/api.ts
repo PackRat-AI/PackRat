@@ -4,7 +4,10 @@
 
 import { clearToken, getAuthHeader } from './auth';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+if (!API_BASE) {
+  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
+}
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
@@ -150,4 +153,92 @@ export function updateCatalogItem(
     method: 'PATCH',
     body: JSON.stringify(data),
   });
+}
+
+// ─── Analytics — Platform ─────────────────────────────────────────────────────
+
+export type GrowthPoint = { period: string; users: number; packs: number; catalogItems: number };
+export type ActivityPoint = { period: string; trips: number; trailReports: number; posts: number };
+export type BreakdownItem = { category: string; count: number };
+
+export function getPlatformGrowth(period: string): Promise<GrowthPoint[]> {
+  return adminFetch(`/analytics/platform/growth?period=${period}`);
+}
+
+export function getPlatformActivity(period: string): Promise<ActivityPoint[]> {
+  return adminFetch(`/analytics/platform/activity?period=${period}`);
+}
+
+export function getPlatformBreakdown(): Promise<BreakdownItem[]> {
+  return adminFetch('/analytics/platform/breakdown');
+}
+
+// ─── Analytics — Catalog ─────────────────────────────────────────────────────
+
+export type CatalogOverview = {
+  totalItems: number;
+  totalBrands: number;
+  avgPrice: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  embeddingCoverage: { total: number; withEmbedding: number; pct: number };
+  availability: { status: string | null; count: number }[];
+  addedLast30Days: number;
+};
+
+export type BrandRow = {
+  brand: string;
+  itemCount: number;
+  avgPrice: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  avgRating: number | null;
+};
+
+export type PriceBucket = { bucket: string; count: number };
+
+export type EtlJob = {
+  id: string;
+  status: 'running' | 'completed' | 'failed';
+  source: string;
+  filename: string;
+  scraperRevision: string;
+  startedAt: string;
+  completedAt: string | null;
+  totalProcessed: number | null;
+  totalValid: number | null;
+  totalInvalid: number | null;
+  successRate: number | null;
+};
+
+export type EtlResponse = {
+  jobs: EtlJob[];
+  summary: { totalRuns: number; completed: number; failed: number; totalItemsIngested: number };
+};
+
+export type EmbeddingStats = {
+  total: number;
+  withEmbedding: number;
+  pending: number;
+  coveragePct: number;
+};
+
+export function getCatalogOverview(): Promise<CatalogOverview> {
+  return adminFetch('/analytics/catalog/overview');
+}
+
+export function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
+  return adminFetch(`/analytics/catalog/brands?limit=${limit}`);
+}
+
+export function getCatalogPrices(): Promise<PriceBucket[]> {
+  return adminFetch('/analytics/catalog/prices');
+}
+
+export function getCatalogEtl(limit = 20): Promise<EtlResponse> {
+  return adminFetch(`/analytics/catalog/etl?limit=${limit}`);
+}
+
+export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
+  return adminFetch('/analytics/catalog/embeddings');
 }

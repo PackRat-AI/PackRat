@@ -21,6 +21,9 @@ const CONFIDENCE_HIGH = 0.9;
 const CONFIDENCE_MEDIUM = 0.8;
 const CONFIDENCE_LOW = 0.65;
 const MAX_BLOCK_SIZE = 5000;
+const URL_QUERY_OR_HASH_PATTERN = /[?#].*$/;
+const FILE_EXTENSION_PATTERN = /\.\w+$/;
+const WHITESPACE_SPLIT_PATTERN = /\s+/;
 
 // ── Normalization ─────────────────────────────────────────────────────
 
@@ -46,14 +49,10 @@ function canonicalId(brand: string, name: string): string {
   return createHash('sha256').update(key).digest('hex').slice(0, 16);
 }
 
-const URL_QUERY_FRAGMENT_PATTERN = /[?#].*$/;
-const FILE_EXT_PATTERN = /\.\w+$/;
-const WHITESPACE_PATTERN = /\s+/;
-
 function extractSlug(url: string): string {
   if (!url) return '';
-  const parts = url.replace(URL_QUERY_FRAGMENT_PATTERN, '').split('/').filter(Boolean);
-  return parts.at(-1)?.replace(FILE_EXT_PATTERN, '') ?? '';
+  const parts = url.replace(URL_QUERY_OR_HASH_PATTERN, '').split('/').filter(Boolean);
+  return parts.at(-1)?.replace(FILE_EXTENSION_PATTERN, '') ?? '';
 }
 
 // ── Token Sort Ratio ──────────────────────────────────────────────────
@@ -64,7 +63,8 @@ function extractSlug(url: string): string {
  * Good enough for product name matching without a heavy dep.
  */
 function tokenSortRatio(a: string, b: string): number {
-  const sortTokens = (s: string) => s.toLowerCase().split(WHITESPACE_PATTERN).sort().join(' ');
+  const sortTokens = (s: string) =>
+    s.toLowerCase().split(WHITESPACE_SPLIT_PATTERN).sort().join(' ');
   const sa = sortTokens(a);
   const sb = sortTokens(b);
 

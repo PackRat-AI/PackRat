@@ -1,3 +1,6 @@
+import { createDb } from '@packrat/api/db';
+import { oneTimePasswords } from '@packrat/api/db/schema';
+import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../src/index';
 import {
@@ -192,6 +195,68 @@ describe('Auth Routes', () => {
       const res = await authApi('/verify-email', httpMethods.post({ email: 'test@example.com' }));
       expectBadRequest(res);
     });
+
+    it('verifies email with valid code', async () => {
+      const user = await createTestUser({
+        email: 'verify-happy@example.com',
+        emailVerified: false,
+      });
+      const db = createDb({} as unknown as Context);
+      await db.insert(oneTimePasswords).values({
+        userId: user.id,
+        code: '12345',
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      const res = await authApi(
+        '/verify-email',
+        httpMethods.post({ email: user.email, code: '12345' }),
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+    });
+
+    it('rejects an expired code', async () => {
+      const user = await createTestUser({
+        email: 'verify-expired@example.com',
+        emailVerified: false,
+      });
+      const db = createDb({} as unknown as Context);
+      await db.insert(oneTimePasswords).values({
+        userId: user.id,
+        code: '67890',
+        expiresAt: new Date(Date.now() - 60_000),
+      });
+
+      const res = await authApi(
+        '/verify-email',
+        httpMethods.post({ email: user.email, code: '67890' }),
+      );
+
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a wrong code', async () => {
+      const user = await createTestUser({
+        email: 'verify-wrong@example.com',
+        emailVerified: false,
+      });
+      const db = createDb({} as unknown as Context);
+      await db.insert(oneTimePasswords).values({
+        userId: user.id,
+        code: '11111',
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      const res = await authApi(
+        '/verify-email',
+        httpMethods.post({ email: user.email, code: '99999' }),
+      );
+
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('POST /auth/resend-verification', () => {
@@ -248,6 +313,62 @@ describe('Auth Routes', () => {
       );
       expect(res.status).toBe(400);
     });
+
+    it('resets password with valid code and the new password then works for login', async () => {
+      const user = await createTestUser({ email: 'reset-happy@example.com' });
+      const db = createDb({} as unknown as Context);
+      await db.insert(oneTimePasswords).values({
+        userId: user.id,
+        code: '54321',
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+
+      const res = await authApi(
+        '/reset-password',
+        httpMethods.post({
+          email: user.email,
+          code: '54321',
+          newPassword: 'NewPassword123!',
+        }),
+      );
+
+      expect(res.status).toBe(200);
+
+      // Old password must no longer work
+      const oldLogin = await authApi(
+        '/login',
+        httpMethods.post({ email: user.email, password: user.password }),
+      );
+      expect(oldLogin.status).toBe(401);
+
+      // New password works
+      const newLogin = await authApi(
+        '/login',
+        httpMethods.post({ email: user.email, password: 'NewPassword123!' }),
+      );
+      expect(newLogin.status).toBe(200);
+    });
+
+    it('rejects an expired code', async () => {
+      const user = await createTestUser({ email: 'reset-expired@example.com' });
+      const db = createDb({} as unknown as Context);
+      await db.insert(oneTimePasswords).values({
+        userId: user.id,
+        code: '54322',
+        expiresAt: new Date(Date.now() - 60_000),
+      });
+
+      const res = await authApi(
+        '/reset-password',
+        httpMethods.post({
+          email: user.email,
+          code: '54322',
+          newPassword: 'NewPassword123!',
+        }),
+      );
+
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('GET /auth/me', () => {
@@ -273,6 +394,31 @@ describe('Auth Routes', () => {
     it('requires refresh token', async () => {
       const res = await authApi('/refresh', httpMethods.post({}));
       expectBadRequest(res);
+    });
+
+    it('returns a new access token for a valid refresh token', async () => {
+      const user = await createTestUser({ email: 'refresh-happy@example.com' });
+      const loginRes = await authApi(
+        '/login',
+        httpMethods.post({ email: user.email, password: user.password }),
+      );
+      expect(loginRes.status).toBe(200);
+      const { refreshToken } = await loginRes.json();
+      expect(refreshToken).toBeDefined();
+
+      const res = await authApi('/refresh', httpMethods.post({ refreshToken }));
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.accessToken).toBeDefined();
+      expect(typeof data.accessToken).toBe('string');
+    });
+
+    it('rejects a bogus refresh token with 401 Invalid refresh token', async () => {
+      const res = await authApi('/refresh', httpMethods.post({ refreshToken: 'not-a-real-token' }));
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error).toBe('Invalid refresh token');
     });
   });
 

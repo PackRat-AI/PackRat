@@ -1,10 +1,13 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
+import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
 import type { Guide } from '../types';
@@ -15,6 +18,7 @@ export const GuidesListScreen = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const {
     data: categories,
@@ -111,30 +115,89 @@ export const GuidesListScreen = () => {
     );
   };
 
+  const renderSearchContent = () => {
+    if (!isSearchMode) {
+      return (
+        <View className="flex-1 items-center justify-center p-4">
+          <Text className="text-muted-foreground">{t('guides.searchGuides')}</Text>
+        </View>
+      );
+    }
+
+    if (isLoading) {
+      return (
+        <View className="flex-1 items-center justify-center p-6">
+          <ActivityIndicator className="text-primary" size="large" />
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="px-4 pt-2">
+          {guides.length > 0 && (
+            <Text className="text-xs text-muted-foreground">
+              {guides.length} {guides.length === 1 ? t('guides.result') : t('guides.results')}
+            </Text>
+          )}
+        </View>
+
+        {guides.map((guide: Guide) => (
+          <View className="px-4 pt-4" key={guide.id}>
+            <GuideCard guide={guide} onPress={() => handleGuidePress(guide)} />
+          </View>
+        ))}
+
+        {guides.length === 0 && (
+          <View className="flex-1 items-center justify-center p-8">
+            <Text className="text-center text-gray-500 dark:text-gray-400">
+              {t('guides.noGuidesFound', { query: searchQuery })}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  };
+
+  const listHeader = () => {
+    if (isSearchMode) return null;
+
+    return (
+      <TabScreen useLegacySafeAreaView>
+        <CategoriesFilter
+          data={categories}
+          onFilter={handleCategoryChange}
+          activeFilter={selectedCategory}
+          error={categoriesError}
+          retry={refetchCategories}
+          className="px-4 pb-2"
+        />
+      </TabScreen>
+    );
+  };
+
   return (
-    <SafeAreaView>
+    <>
       <LargeTitleHeader
         title={t('guides.guides')}
         searchBar={{
-          iosHideWhenScrolling: true,
+          iosHideWhenScrolling: false,
+          ref: asNonNullableRef(searchBarRef),
           onChangeText: handleSearch,
           placeholder: t('guides.searchPlaceholder'),
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {renderSearchContent()}
+            </LargeTitleHeaderSearchContentContainer>
+          ),
         }}
-      />
-
-      <CategoriesFilter
-        data={categories}
-        onFilter={handleCategoryChange}
-        activeFilter={selectedCategory}
-        error={categoriesError}
-        retry={refetchCategories}
-        className="px-4 pb-2"
       />
 
       <FlatList
         data={guides}
         keyExtractor={(item) => item.id}
         renderItem={renderGuide}
+        ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingHorizontal: 16, flexGrow: 1 }}
         refreshControl={
           <RefreshControl
@@ -152,6 +215,6 @@ export const GuidesListScreen = () => {
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
       />
-    </SafeAreaView>
+    </>
   );
 };

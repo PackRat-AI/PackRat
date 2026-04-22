@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parseCsvArg, parseNonNegativeNumberArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -13,9 +14,9 @@ export default defineCommand({
     const cache = await ensureCache();
     const rows = await cache.getTopRated({
       category: args.category,
-      minReviews: Number(args['min-reviews']),
-      sites: args.sites?.split(','),
-      limit: Number(args.limit),
+      minReviews: parseNonNegativeNumberArg(args['min-reviews'], '--min-reviews'),
+      sites: parseCsvArg(args.sites),
+      limit: parsePositiveIntArg(args.limit, '--limit'),
     });
     printTable(
       rows.map(({ site, name, brand, rating_value, review_count, price, score }) => ({

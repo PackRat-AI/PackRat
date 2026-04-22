@@ -399,14 +399,14 @@ if (isMainModule()) {
 
 // Export functions for programmatic use
 export {
+  findPostsByTitle,
   getAllPosts,
+  getUniqueAuthors,
+  type PostMetadata,
+  rebalanceAuthors,
   showAuthorDistribution,
   updatePostAuthor,
   updatePostBySlug,
-  updatePostsByTitle,
   updatePostsByAuthor,
-  rebalanceAuthors,
-  findPostsByTitle,
-  getUniqueAuthors,
-  type PostMetadata,
+  updatePostsByTitle,
 };

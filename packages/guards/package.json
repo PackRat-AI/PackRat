@@ -1,6 +1,6 @@
 {
   "name": "@packrat/guards",
-  "version": "2.0.19",
+  "version": "2.0.21",
   "private": true,
   "type": "module",
   "exports": {

@@ -1,10 +1,10 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { userStore } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';

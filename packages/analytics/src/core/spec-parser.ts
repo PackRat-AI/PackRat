@@ -10,12 +10,6 @@ import type { DuckDBConnection } from '@duckdb/node-api';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 
-const COMMAS_PATTERN = /,/g;
-const K_MULTIPLIER_PATTERN = /(\d[\d,]*)\s*k\s*mm\b/i;
-const MEN_PATTERN = /men/;
-const WOMEN_PATTERN = /women/;
-const YOUTH_PATTERN = /kid|youth|boy|girl|junior/;
-
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface ProductSpecs {
@@ -63,8 +57,13 @@ const TEMP_RANGE = /(-?\d+)\s*\/\s*(-?\d+)\s*°?\s*([FC])\b/i;
 const TEMP_SINGLE = /(-?\d+)\s*°?\s*([FC])\b/i;
 const FILL_POWER = /(\d{3,4})\s*[-‑]?\s*(?:fill|fp)\b/i;
 const WATERPROOF = /(\d[\d,]*)\s*(?:k\s*)?mm\b/i;
+const WATERPROOF_K_MULTIPLIER_PATTERN = /(\d[\d,]*)\s*k\s*mm\b/i;
 const SEASON = /([1-4])\s*[-‑]?\s*seasons?\b/i;
 const GENDER = /\b(men'?s?|women'?s?|womens|mens|unisex|kids?|youth|boys?|girls?|junior)\b/i;
+const COMMA_PATTERN = /,/g;
+const MEN_PATTERN = /men/;
+const WOMEN_PATTERN = /women/;
+const YOUTH_PATTERN = /kid|youth|boy|girl|junior/;
 
 const FABRIC_PATTERNS = [
   /\b(gore[-‑]?tex)\b/i,
@@ -140,9 +139,9 @@ export function parseFillPower(text: string): number | null {
 export function parseWaterproofRating(text: string): number | null {
   const match = WATERPROOF.exec(text);
   if (match?.[1] !== undefined) {
-    const raw = Number.parseInt(match[1].replace(COMMAS_PATTERN, ''), 10);
+    const raw = Number.parseInt(match[1].replace(COMMA_PATTERN, ''), 10);
     // If "k" or "K" prefix was captured in the regex (e.g., "20k mm"), multiply by 1000
-    const hasKMultiplier = K_MULTIPLIER_PATTERN.exec(text);
+    const hasKMultiplier = WATERPROOF_K_MULTIPLIER_PATTERN.exec(text);
     return hasKMultiplier ? raw * 1000 : raw;
   }
   return null;

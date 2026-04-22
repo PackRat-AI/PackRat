@@ -17,6 +17,7 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { nodeEnv } from '@packrat/env/node';
 import { and, eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -1827,10 +1828,8 @@ const FEATURED_TEMPLATES: SeedTemplate[] = [
 // ─── Seed Function ──────────────────────────────────────────────────────────
 
 async function seed() {
-  const dbUrl = process.env.NEON_DATABASE_URL;
-  if (!dbUrl) {
-    throw new Error('NEON_DATABASE_URL environment variable is not set');
-  }
+  const dbUrl = nodeEnv.NEON_DATABASE_URL;
+  if (!dbUrl) throw new Error('NEON_DATABASE_URL is required');
 
   // Get optional admin user ID from CLI args
   const argUserIdRaw = process.argv[2] ? Number.parseInt(process.argv[2], 10) : undefined;

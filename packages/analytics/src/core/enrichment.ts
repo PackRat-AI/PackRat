@@ -32,6 +32,11 @@ import { SQLFragments } from './query-builder';
 
 const digits = oneOrMore(digit);
 const wordChars = oneOrMore(wordChar);
+const PRODUCT_PATH_PATTERN = /\/(product|pdp|main|hero|primary)\//;
+const LIFESTYLE_PATH_PATTERN = /\/(lifestyle|action|model)\//;
+const DETAIL_PATH_PATTERN = /\/(detail|zoom|swatch)\//;
+const TRAILING_QUESTION_MARK_PATTERN = /\?$/;
+const QUESTION_MARK_AMP_PATTERN = /\?&/;
 
 /** CDN sizing/quality query params — e.g. `?w=500`, `&quality=auto`.
  *  Longest names listed first so alternation matches greedily. */
@@ -85,18 +90,14 @@ const CDN_PATH_TRANSFORMS = createRegExp(
 // ── Image dedup helpers ──────────────────────────────────────────────────
 
 /** Normalize image URL for dedup — strip CDN size/quality params. */
-const TRAILING_QMARK_PATTERN = /\?$/;
-const QMARK_AMP_PATTERN = /\?&/;
-const PRODUCT_PATH_PATTERN = /\/(product|pdp|main|hero|primary)\//;
-const LIFESTYLE_PATH_PATTERN = /\/(lifestyle|action|model)\//;
-const DETAIL_PATH_PATTERN = /\/(detail|zoom|swatch)\//;
-
 export function normalizeImageUrl(url: string): string {
   if (!url) return '';
   // Fresh regex reference per call to avoid lastIndex issues is unnecessary
   // because `.replace` on a non-sticky global regex does not depend on lastIndex.
   let normalized = url.replace(CDN_QUERY_PARAMS, '');
-  normalized = normalized.replace(TRAILING_QMARK_PATTERN, '').replace(QMARK_AMP_PATTERN, '?');
+  normalized = normalized
+    .replace(TRAILING_QUESTION_MARK_PATTERN, '')
+    .replace(QUESTION_MARK_AMP_PATTERN, '?');
   normalized = normalized.replace(CDN_PATH_TRANSFORMS, '');
   return normalized.trim();
 }

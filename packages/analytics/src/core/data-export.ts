@@ -8,10 +8,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DBConfig, QUALITY_WEIGHTS } from './constants';
-
-const FILE_EXT_PATTERN = /\.\w+$/;
-
 import { SQLFragments } from './query-builder';
+
+const FILE_EXTENSION_PATTERN = /\.\w+$/;
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -208,7 +207,7 @@ export class DataExporter {
     };
 
     writeFileSync(
-      filepath.replace(FILE_EXT_PATTERN, '.summary.json'),
+      filepath.replace(FILE_EXTENSION_PATTERN, '.summary.json'),
       JSON.stringify(summary, null, 2),
     );
 
