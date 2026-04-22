@@ -35,17 +35,12 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
   // List trips
   .get(
     '/',
-    async ({ query, user }) => {
+    async ({ user }) => {
       const db = createDb();
-      const includePublic = Number(query.includePublic ?? 0);
 
       try {
-        const where = includePublic
-          ? and(eq(trips.deleted, false))
-          : and(eq(trips.userId, user.userId), eq(trips.deleted, false));
-
         const allTrips = await db.query.trips.findMany({
-          where,
+          where: and(eq(trips.userId, user.userId), eq(trips.deleted, false)),
           with: { pack: true },
           orderBy: (t) => t.createdAt,
         });
@@ -57,9 +52,6 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       }
     },
     {
-      query: z.object({
-        includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
-      }),
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -209,14 +201,13 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
 
       try {
         const trip = await db.query.trips.findFirst({
-          where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
+          where: eq(trips.id, tripId),
         });
 
-        if (!trip) {
-          return status(404, { error: 'Trip not found' });
-        }
+        if (!trip) return status(404, { error: 'Trip not found' });
+        if (trip.userId !== user.userId) return status(403, { error: 'Forbidden' });
 
-        await db.delete(trips).where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)));
+        await db.delete(trips).where(eq(trips.id, tripId));
 
         return { success: true };
       } catch (error) {
