@@ -32,8 +32,6 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
-      - name: Add workspace bins to PATH
-        run: echo "$(pwd)/node_modules/.bin" >> $GITHUB_PATH
       - name: Run Biome (check mode)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.fix == true) }}
         run: bun biome check
