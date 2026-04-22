@@ -10,7 +10,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "check-types": "node ../../node_modules/typescript/lib/tsc.js --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "catalog:"

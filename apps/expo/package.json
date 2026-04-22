@@ -23,7 +23,7 @@
     "build:production:eas": "eas build --profile production",
     "build:production:ios": "eas build --profile production --platform ios --local",
     "build:production:ios:eas": "eas build --profile production --platform ios",
-    "check-types": "node ../../node_modules/typescript/lib/tsc.js --noEmit",
+    "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bunx rimraf .expo node_modules ios android",
     "doctor:react": "bunx expo-doctor",

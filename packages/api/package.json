@@ -2,7 +2,7 @@
   "name": "@packrat/api",
   "version": "2.0.21",
   "scripts": {
-    "check-types": "node ../../node_modules/typescript/lib/tsc.js --noEmit",
+    "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
     "db:migrate": "bun run ./migrate.ts",

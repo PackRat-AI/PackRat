@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check-types": "node ../../node_modules/typescript/lib/tsc.js --noEmit",
+    "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
