@@ -1,5 +1,6 @@
 'use client';
 
+import { adminEnv } from '@packrat/env/admin';
 import { Button } from '@packrat/web-ui/components/button';
 import {
   Card,
@@ -27,7 +28,7 @@ export default function LoginPage() {
     setError(null);
     setPending(true);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+    const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
     if (!API_BASE) {
       setError('API URL is not configured. Set NEXT_PUBLIC_API_URL.');
       setPending(false);

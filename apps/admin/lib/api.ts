@@ -2,10 +2,11 @@
 // In production, CF Access protects the domain; a short-lived JWT is sent
 // as a Bearer token. In local dev, authenticate once at /login to obtain a token.
 
+import { adminEnv } from '@packrat/env/admin';
 import { clearToken, getAuthHeader } from './auth';
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
   if (!API_BASE) {
     throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
   }
