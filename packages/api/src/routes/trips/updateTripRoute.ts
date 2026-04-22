@@ -61,10 +61,10 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     await db
       .update(trips)
       .set(updateData)
-      .where(and(eq(trips.id, tripId), eq(trips.userId, auth.userId)));
+      .where(and(eq(trips.id, tripId), eq(trips.userId, auth.userId), eq(trips.deleted, false)));
 
     const updatedTrip: Trip | undefined = await db.query.trips.findFirst({
-      where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId)),
+      where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId), eq(trips.deleted, false)),
     });
 
     if (!updatedTrip) return c.json({ error: 'Trip not found' }, 404);

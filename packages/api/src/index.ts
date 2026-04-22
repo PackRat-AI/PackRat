@@ -111,7 +111,7 @@ export type AppType = typeof rpcRoutes;
 export type AdminAppType = typeof adminRpcRoutes;
 
 // Export the AppContainer class for Cloudflare Container binding
-export { AppContainer, app, rpcRoutes };
+export { AppContainer, app };
 
 export default {
   fetch: app.fetch,

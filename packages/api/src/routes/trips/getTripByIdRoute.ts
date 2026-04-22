@@ -33,7 +33,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const { tripId } = c.req.valid('param');
 
   const trip = await db.query.trips.findFirst({
-    where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId)),
+    where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId), eq(trips.deleted, false)),
     with: { pack: true },
   });
 
