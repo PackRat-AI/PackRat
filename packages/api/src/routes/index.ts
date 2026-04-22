@@ -41,6 +41,3 @@ const protectedRoutes = $(
 const routes = $(new OpenAPIHono().route('/', publicRoutes).route('/', protectedRoutes));
 
 export { routes };
-
-/** Full type of the PackRat Hono app — used by `hc<AppRoutes>()` in api-client. */
-export type AppRoutes = typeof routes;
