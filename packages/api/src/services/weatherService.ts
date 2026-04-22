@@ -40,7 +40,7 @@ export class WeatherService {
     return {
       location,
       temperature: Math.round(data.main.temp),
-      conditions: data.weather[0]?.main ?? '',
+      conditions: data.weather[0]?.main ?? 'Unknown',
       humidity: data.main.humidity,
       windSpeed: Math.round(data.wind.speed),
     };

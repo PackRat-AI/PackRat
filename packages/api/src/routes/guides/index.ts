@@ -1,4 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import * as getCategoriesRoute from './getCategoriesRoute';
@@ -6,11 +6,27 @@ import * as getGuideRoute from './getGuideRoute';
 import * as getGuidesRoute from './getGuidesRoute';
 import * as searchGuidesRoute from './searchGuidesRoute';
 
-const guidesRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
+const guidesOpenApiRoutes = [
+  defineOpenAPIRoute({
+    route: getGuidesRoute.routeDefinition,
+    handler: getGuidesRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: getCategoriesRoute.routeDefinition,
+    handler: getCategoriesRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: searchGuidesRoute.routeDefinition,
+    handler: searchGuidesRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: getGuideRoute.routeDefinition,
+    handler: getGuideRoute.handler,
+  }),
+] as const;
 
-guidesRoutes.openapi(getGuidesRoute.routeDefinition, getGuidesRoute.handler);
-guidesRoutes.openapi(getCategoriesRoute.routeDefinition, getCategoriesRoute.handler);
-guidesRoutes.openapi(searchGuidesRoute.routeDefinition, searchGuidesRoute.handler);
-guidesRoutes.openapi(getGuideRoute.routeDefinition, getGuideRoute.handler);
+const guidesRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  guidesOpenApiRoutes,
+);
 
 export { guidesRoutes };

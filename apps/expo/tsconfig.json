@@ -1,11 +1,16 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
+    "customConditions": ["react-native"],
     "baseUrl": ".",
     "paths": {
-      "expo-app/*": ["./*"]
+      "expo-app/*": ["./*"],
+      "@packrat/api": ["../../packages/api/src/index.ts"],
+      "@packrat/api/*": ["../../packages/api/src/*"],
+      "@packrat/api-client": ["../../packages/api-client/src/index.ts"],
+      "@packrat/api-client/*": ["../../packages/api-client/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],

@@ -1,16 +1,8 @@
-/**
- * PackRat typed API client
- *
- * Authenticated HTTP client for the PackRat API with structured error handling
- * and MCP tool result helpers. Designed to be imported by packages/mcp and any
- * future consumers that need to call the PackRat REST API.
- *
- * Future work: integrate hc<AppRoutes>() from hono/client once the workspace is
- * configured with TypeScript project references so API declaration files can be
- * consumed without dragging in the full API dependency graph.
- */
+export { type ApiClientOptions, createApiClient } from './client';
+export type { ApiErrorResponse } from './responses';
+export type { ApiClient, ApiRequestOf, ApiResponseOf, RpcAppType } from './types';
 
-// ── Error class ───────────────────────────────────────────────────────────────
+// ── Generic HTTP client (for MCP and non-RPC consumers) ───────────────────────
 
 export interface ApiErrorOptions {
   status: number;
@@ -28,8 +20,6 @@ export class ApiError extends Error {
     this.body = options.body;
   }
 }
-
-// ── HTTP client ───────────────────────────────────────────────────────────────
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
 
@@ -120,26 +110,16 @@ export class PackRatApiClient {
   }
 }
 
-// ── Client factory ────────────────────────────────────────────────────────────
-
-/**
- * Create an authenticated PackRat API client.
- *
- * @param baseUrl      - API base URL (e.g. "https://packrat.world")
- * @param getAuthToken - Callback that returns the current JWT (may be empty)
- */
 export function createPackRatClient(baseUrl: string, getAuthToken: () => string): PackRatApiClient {
   return new PackRatApiClient(baseUrl, getAuthToken);
 }
 
 // ── MCP tool result helpers ───────────────────────────────────────────────────
 
-/** Format a successful MCP tool result */
 export function ok(data: unknown): { content: [{ type: 'text'; text: string }] } {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
 }
 
-/** Format an error MCP tool result */
 export function err(error: unknown): { content: [{ type: 'text'; text: string }]; isError: true } {
   const message =
     error instanceof ApiError

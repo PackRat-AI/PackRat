@@ -1,8 +1,10 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
@@ -13,7 +15,7 @@ import { analyticsRoutes } from './analytics';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
-const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
+const adminRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 // Token exchange endpoint — must be registered BEFORE the auth middleware so it
 // remains publicly accessible. Accepts HTTP Basic credentials and returns a
@@ -787,7 +789,7 @@ adminRoutes.get('/catalog-search', async (c) => {
 });
 
 // Admin API endpoints for getting data
-const getStatsRoute = createRoute({
+export const getStatsRoute = createRoute({
   method: 'get',
   path: '/stats',
   tags: ['Admin'],
@@ -818,7 +820,7 @@ const getStatsRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(getStatsRoute, async (c) => {
+export const getStatsHandler: RouteHandler<typeof getStatsRoute> = async (c) => {
   const db = createDb(c);
 
   try {
@@ -843,10 +845,12 @@ adminRoutes.openapi(getStatsRoute, async (c) => {
     console.error('Error fetching stats:', error);
     return c.json({ error: 'Failed to fetch stats', code: 'STATS_ERROR' }, 500);
   }
-});
+};
+
+adminRoutes.openapi(getStatsRoute, getStatsHandler);
 
 // Keep the existing API endpoints for backward compatibility
-const getUsersListRoute = createRoute({
+export const getUsersListRoute = createRoute({
   method: 'get',
   path: '/users-list',
   tags: ['Admin'],
@@ -890,7 +894,7 @@ const getUsersListRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(getUsersListRoute, async (c) => {
+export const getUsersListHandler: RouteHandler<typeof getUsersListRoute> = async (c) => {
   const db = createDb(c);
 
   try {
@@ -929,9 +933,11 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
     console.error('Error fetching users:', error);
     return c.json({ error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' }, 500);
   }
-});
+};
 
-const getPacksListRoute = createRoute({
+adminRoutes.openapi(getUsersListRoute, getUsersListHandler);
+
+export const getPacksListRoute = createRoute({
   method: 'get',
   path: '/packs-list',
   tags: ['Admin'],
@@ -974,7 +980,7 @@ const getPacksListRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(getPacksListRoute, async (c) => {
+export const getPacksListHandler: RouteHandler<typeof getPacksListRoute> = async (c) => {
   const db = createDb(c);
 
   try {
@@ -1018,9 +1024,11 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
     console.error('Error fetching packs:', error);
     return c.json({ error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' }, 500);
   }
-});
+};
 
-const getCatalogListRoute = createRoute({
+adminRoutes.openapi(getPacksListRoute, getPacksListHandler);
+
+export const getCatalogListRoute = createRoute({
   method: 'get',
   path: '/catalog-list',
   tags: ['Admin'],
@@ -1064,7 +1072,7 @@ const getCatalogListRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(getCatalogListRoute, async (c) => {
+export const getCatalogListHandler: RouteHandler<typeof getCatalogListRoute> = async (c) => {
   const db = createDb(c);
 
   try {
@@ -1107,13 +1115,15 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
     console.error('Error fetching catalog items:', error);
     return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
   }
-});
+};
+
+adminRoutes.openapi(getCatalogListRoute, getCatalogListHandler);
 
 adminRoutes.route('/analytics', analyticsRoutes);
 
 // ─── Action routes ────────────────────────────────────────────────────────────
 
-const deleteUserRoute = createRoute({
+export const deleteUserRoute = createRoute({
   method: 'delete',
   path: '/users/:id',
   tags: ['Admin'],
@@ -1141,7 +1151,7 @@ const deleteUserRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(deleteUserRoute, async (c) => {
+export const deleteUserHandler: RouteHandler<typeof deleteUserRoute> = async (c) => {
   const db = createDb(c);
   const { id } = c.req.valid('param');
 
@@ -1160,9 +1170,11 @@ adminRoutes.openapi(deleteUserRoute, async (c) => {
     console.error('Error deleting user:', error);
     return c.json({ error: 'Failed to delete user', code: 'DELETE_ERROR' }, 500);
   }
-});
+};
 
-const deletePackRoute = createRoute({
+adminRoutes.openapi(deleteUserRoute, deleteUserHandler);
+
+export const deletePackRoute = createRoute({
   method: 'delete',
   path: '/packs/:id',
   tags: ['Admin'],
@@ -1186,7 +1198,7 @@ const deletePackRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(deletePackRoute, async (c) => {
+export const deletePackHandler: RouteHandler<typeof deletePackRoute> = async (c) => {
   const db = createDb(c);
   const { id } = c.req.valid('param');
 
@@ -1202,9 +1214,11 @@ adminRoutes.openapi(deletePackRoute, async (c) => {
     console.error('Error deleting pack:', error);
     return c.json({ error: 'Failed to delete pack', code: 'DELETE_ERROR' }, 500);
   }
-});
+};
 
-const deleteCatalogItemRoute = createRoute({
+adminRoutes.openapi(deletePackRoute, deletePackHandler);
+
+export const deleteCatalogItemRoute = createRoute({
   method: 'delete',
   path: '/catalog/:id',
   tags: ['Admin'],
@@ -1232,7 +1246,7 @@ const deleteCatalogItemRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
+export const deleteCatalogItemHandler: RouteHandler<typeof deleteCatalogItemRoute> = async (c) => {
   const db = createDb(c);
   const { id } = c.req.valid('param');
 
@@ -1247,7 +1261,9 @@ adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
     console.error('Error deleting catalog item:', error);
     return c.json({ error: 'Failed to delete catalog item', code: 'DELETE_ERROR' }, 500);
   }
-});
+};
+
+adminRoutes.openapi(deleteCatalogItemRoute, deleteCatalogItemHandler);
 
 const UpdateCatalogItemSchema = z.object({
   name: z.string().min(1).optional(),
@@ -1259,7 +1275,7 @@ const UpdateCatalogItemSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-const updateCatalogItemRoute = createRoute({
+export const updateCatalogItemRoute = createRoute({
   method: 'patch',
   path: '/catalog/:id',
   tags: ['Admin'],
@@ -1288,7 +1304,7 @@ const updateCatalogItemRoute = createRoute({
   },
 });
 
-adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
+export const updateCatalogItemHandler: RouteHandler<typeof updateCatalogItemRoute> = async (c) => {
   const db = createDb(c);
   const { id } = c.req.valid('param');
   const body = c.req.valid('json');
@@ -1306,5 +1322,24 @@ adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
     console.error('Error updating catalog item:', error);
     return c.json({ error: 'Failed to update catalog item', code: 'UPDATE_ERROR' }, 500);
   }
-});
-export { adminRoutes };
+};
+
+adminRoutes.openapi(updateCatalogItemRoute, updateCatalogItemHandler);
+
+const adminApiOpenApiRoutes = [
+  defineOpenAPIRoute({ route: getStatsRoute, handler: getStatsHandler }),
+  defineOpenAPIRoute({ route: getUsersListRoute, handler: getUsersListHandler }),
+  defineOpenAPIRoute({ route: getPacksListRoute, handler: getPacksListHandler }),
+  defineOpenAPIRoute({ route: getCatalogListRoute, handler: getCatalogListHandler }),
+  defineOpenAPIRoute({ route: deleteUserRoute, handler: deleteUserHandler }),
+  defineOpenAPIRoute({ route: deletePackRoute, handler: deletePackHandler }),
+  defineOpenAPIRoute({ route: deleteCatalogItemRoute, handler: deleteCatalogItemHandler }),
+  defineOpenAPIRoute({ route: updateCatalogItemRoute, handler: updateCatalogItemHandler }),
+] as const;
+
+const adminRpcRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  adminApiOpenApiRoutes,
+);
+
+export type AdminAppType = typeof adminRpcRoutes;
+export { adminRoutes, adminRpcRoutes };

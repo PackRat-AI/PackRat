@@ -1,16 +1,12 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import type { NewTrailConditionReport } from '@packrat/api/db/schema';
 import { trailConditionReports } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
-
-const trailConditionRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
 
 // ------------------------------
 // Zod schemas
@@ -74,7 +70,7 @@ const CreateReportRequestSchema = z.object({
 // ------------------------------
 // List Reports Route
 // ------------------------------
-const listReportsRoute = createRoute({
+export const listReportsRoute = createRoute({
   method: 'get',
   path: '/',
   tags: ['Trail Conditions'],
@@ -99,7 +95,7 @@ const listReportsRoute = createRoute({
   },
 });
 
-trailConditionRoutes.openapi(listReportsRoute, async (c) => {
+export const listReportsHandler: RouteHandler<typeof listReportsRoute> = async (c) => {
   const db = createDb(c);
   const { trailName, limit } = c.req.valid('query');
 
@@ -129,12 +125,12 @@ trailConditionRoutes.openapi(listReportsRoute, async (c) => {
     console.error('Error listing trail condition reports:', error);
     return c.json({ error: 'Failed to list trail condition reports' }, 500);
   }
-});
+};
 
 // ------------------------------
 // Create Report Route
 // ------------------------------
-const createReportRoute = createRoute({
+export const createReportRoute = createRoute({
   method: 'post',
   path: '/',
   tags: ['Trail Conditions'],
@@ -167,7 +163,7 @@ const createReportRoute = createRoute({
   },
 });
 
-trailConditionRoutes.openapi(createReportRoute, async (c) => {
+export const createReportHandler: RouteHandler<typeof createReportRoute> = async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
   const data = c.req.valid('json');
@@ -215,12 +211,12 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
     console.error('Error creating trail condition report:', error);
     return c.json({ error: 'Failed to submit trail condition report' }, 500);
   }
-});
+};
 
 // ------------------------------
 // List My Reports Route  (static path — registered before /{reportId})
 // ------------------------------
-const listMyReportsRoute = createRoute({
+export const listMyReportsRoute = createRoute({
   method: 'get',
   path: '/mine',
   tags: ['Trail Conditions'],
@@ -248,7 +244,7 @@ const listMyReportsRoute = createRoute({
   },
 });
 
-trailConditionRoutes.openapi(listMyReportsRoute, async (c) => {
+export const listMyReportsHandler: RouteHandler<typeof listMyReportsRoute> = async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
   const { updatedAt } = c.req.valid('query');
@@ -273,12 +269,12 @@ trailConditionRoutes.openapi(listMyReportsRoute, async (c) => {
     console.error('Error listing user trail condition reports:', error);
     return c.json({ error: 'Failed to list trail condition reports' }, 500);
   }
-});
+};
 
 // ------------------------------
 // Update Report Route
 // ------------------------------
-const updateReportRoute = createRoute({
+export const updateReportRoute = createRoute({
   method: 'put',
   path: '/{reportId}',
   tags: ['Trail Conditions'],
@@ -311,7 +307,7 @@ const updateReportRoute = createRoute({
   },
 });
 
-trailConditionRoutes.openapi(updateReportRoute, async (c) => {
+export const updateReportHandler: RouteHandler<typeof updateReportRoute> = async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
   const reportId = c.req.param('reportId');
@@ -349,12 +345,12 @@ trailConditionRoutes.openapi(updateReportRoute, async (c) => {
     console.error('Error updating trail condition report:', error);
     return c.json({ error: 'Failed to update trail condition report' }, 500);
   }
-});
+};
 
 // ------------------------------
 // Delete Report Route
 // ------------------------------
-const deleteReportRoute = createRoute({
+export const deleteReportRoute = createRoute({
   method: 'delete',
   path: '/{reportId}',
   tags: ['Trail Conditions'],
@@ -379,7 +375,7 @@ const deleteReportRoute = createRoute({
   },
 });
 
-trailConditionRoutes.openapi(deleteReportRoute, async (c) => {
+export const deleteReportHandler: RouteHandler<typeof deleteReportRoute> = async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
   const reportId = c.req.param('reportId');
@@ -400,6 +396,19 @@ trailConditionRoutes.openapi(deleteReportRoute, async (c) => {
     console.error('Error deleting trail condition report:', error);
     return c.json({ error: 'Failed to delete trail condition report' }, 500);
   }
-});
+};
 
-export { trailConditionRoutes };
+const trailConditionOpenApiRoutes = [
+  defineOpenAPIRoute({ route: listReportsRoute, handler: listReportsHandler }),
+  defineOpenAPIRoute({ route: createReportRoute, handler: createReportHandler }),
+  defineOpenAPIRoute({ route: listMyReportsRoute, handler: listMyReportsHandler }),
+  defineOpenAPIRoute({ route: updateReportRoute, handler: updateReportHandler }),
+  defineOpenAPIRoute({ route: deleteReportRoute, handler: deleteReportHandler }),
+] as const;
+
+const trailConditionRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>().openapiRoutes(trailConditionOpenApiRoutes);
+
+export { trailConditionOpenApiRoutes, trailConditionRoutes };

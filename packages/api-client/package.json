@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api-client",
-  "version": "2.0.21",
+  "version": "2.0.22",
   "private": true,
   "description": "PackRat typed API client — authenticated HTTP client with error handling and MCP result helpers",
   "type": "module",
@@ -11,6 +11,10 @@
   "types": "./src/index.ts",
   "scripts": {
     "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@packrat/api": "workspace:*",
+    "hono": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:"
