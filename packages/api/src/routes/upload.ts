@@ -56,7 +56,20 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' }).use(authPlugin).ge
       signOptions: { expiresIn: 3600 },
     });
 
-    return { url: presignedUrl };
+    const publicUrl = (() => {
+      try {
+        const { origin, pathname } = new URL(presignedUrl);
+        return `${origin}${pathname}`;
+      } catch {
+        return presignedUrl;
+      }
+    })();
+
+    return {
+      url: presignedUrl,
+      objectKey: fileName,
+      publicUrl,
+    };
   },
   {
     query: PresignedUploadQuerySchema,

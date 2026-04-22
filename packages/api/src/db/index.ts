@@ -7,22 +7,29 @@ import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
-// Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 const isStandardPostgresUrl = (url: string) => {
   try {
     const u = new URL(url);
     const host = u.hostname.toLowerCase();
     const isNeonTech = host === 'neon.tech' || host.endsWith('.neon.tech');
     const isNeonCom = host === 'neon.com' || host.endsWith('.neon.com');
-    return u.protocol === 'postgres:' && !isNeonTech && !isNeonCom;
+    return (
+      (u.protocol === 'postgres:' || u.protocol === 'postgresql:') && !isNeonTech && !isNeonCom
+    );
   } catch {
     return false;
   }
 };
 
+const pgPools = new Map<string, Pool>();
+
 const createConnection = (url: string, useNeonHttp?: boolean) => {
   if (isStandardPostgresUrl(url)) {
-    const pool = new Pool({ connectionString: url });
+    let pool = pgPools.get(url);
+    if (!pool) {
+      pool = new Pool({ connectionString: url });
+      pgPools.set(url, pool);
+    }
     return drizzlePg(pool, { schema });
   }
   if (useNeonHttp) {

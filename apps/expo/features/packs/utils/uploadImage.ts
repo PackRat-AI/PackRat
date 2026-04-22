@@ -32,13 +32,10 @@ export const uploadImage = async (fileName: string, uri: string): Promise<string
   }
 };
 
-const getPresignedUrl = async (
-  fileName: string,
-  contentType: string,
-): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
+const getPresignedUrl = async (fileName: string, contentType: string) => {
   const { data, error } = await apiClient.upload.presigned.get({
     query: { fileName, contentType },
   });
   if (error) throw new Error(`Failed to get upload URL: ${error.value}`);
-  return data as unknown as { url: string; publicUrl: string; objectKey: string };
+  return data as { url: string; publicUrl: string; objectKey: string };
 };

@@ -92,24 +92,26 @@ export function createApiClient(config: ApiClientConfig) {
     }
     const isRefreshPath = pathname === '/api/auth/refresh';
 
-    const attach = async (token: string | null): Promise<RequestInit | undefined> => {
-      if (!token) return init;
+    const buildRequest = (token: string | null): [RequestInfo | URL, RequestInit | undefined] => {
+      if (!token) return [input, init];
       const headers = new Headers(init?.headers ?? {});
       headers.set('Authorization', `Bearer ${token}`);
-      return { ...init, headers };
+      return [input, { ...init, headers }];
     };
 
     const firstToken = isRefreshPath ? null : await config.auth.getAccessToken();
-    const firstInit = await attach(firstToken);
-    const response = await baseFetcher(input, firstInit);
+    const [firstInput, firstInit] = buildRequest(firstToken);
+    const response = await baseFetcher(firstInput, firstInit);
 
     if (response.status !== 401 || isRefreshPath) return response;
 
     const newToken = await refreshAccessToken();
     if (!newToken) return response;
 
-    const retryInit = await attach(newToken);
-    return baseFetcher(input, retryInit);
+    // Clone the input if it's a Request to avoid "body already used" on retry.
+    const retryInput = input instanceof Request ? input.clone() : input;
+    const [safeInput, retryInit] = buildRequest(newToken);
+    return baseFetcher(retryInput instanceof Request ? retryInput : safeInput, retryInit);
   };
 
   // Pre-drill into the `/api` prefix so consumers write `client.catalog.get()`
