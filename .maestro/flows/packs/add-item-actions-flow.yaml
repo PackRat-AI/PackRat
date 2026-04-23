@@ -10,7 +10,7 @@ appId: ${APP_ID}
 
 # Tap the test pack
 - tapOn:
-    text: ${PACK_NAME}
+    id: "pack-row-${PACK_NAME}"
 - waitForAnimationToEnd
 
 # Tap Add Item button
@@ -26,10 +26,30 @@ appId: ${APP_ID}
 - assertVisible:
     id: "add-from-catalog-option"
 
-# Dismiss the bottom sheet
-- back
+# Dismiss the bottom sheet - platform specific
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: DOWN
+          duration: 300
 - waitForAnimationToEnd
-
-# Go back to packs list
-- back
+# Go back to packs list - platform specific
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: ".*Back.*"
 - waitForAnimationToEnd

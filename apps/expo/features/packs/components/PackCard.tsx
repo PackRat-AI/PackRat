@@ -92,6 +92,7 @@ export function PackCard({
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
+      testID={`pack-row-${pack.name}`}
       onPress={() => onPress?.(pack)}
     >
       {pack.image && (
