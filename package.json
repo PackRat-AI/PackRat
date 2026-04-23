@@ -45,7 +45,8 @@
     "test:mcp": "bun run --cwd packages/mcp test"
   },
   "overrides": {
-    "expo-sqlite": "~16.0.10"
+    "expo-sqlite": "~16.0.10",
+    "@sinclair/typebox": "^0.34.15"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",

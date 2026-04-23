@@ -172,7 +172,9 @@ describe('auth utilities', () => {
 
     it('rejects when PACKRAT_API_KEY is not configured', async () => {
       const { getEnv } = await import('../env-validation');
-      vi.mocked(getEnv).mockReturnValueOnce({ PACKRAT_API_KEY: undefined } as never);
+      (getEnv as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        PACKRAT_API_KEY: undefined,
+      } as never);
       expect(isValidApiKey(new Headers({ 'x-api-key': 'anything' }))).toBe(false);
     });
   });
