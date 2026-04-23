@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { rpcClient } from 'expo-app/lib/api/rpcClient';
 import type { PaginatedCatalogItemsResponse } from '../types';
 
 interface GetCatalogItemsParams {
@@ -18,21 +18,20 @@ export const getCatalogItems = async ({
   limit,
   sort,
 }: GetCatalogItemsParams): Promise<PaginatedCatalogItemsResponse> => {
-  try {
-    const response = await axiosInstance.get('/api/catalog', {
-      params: {
-        page: pageParam,
-        limit,
-        q: query,
-        category,
-        sort,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to fetch catalog items: ${message}`);
+  // sort is serialized by the Hono client as sort[field]/sort[order] query params
+  const res = await rpcClient.api.catalog.$get({
+    query: {
+      page: String(pageParam),
+      limit: String(limit),
+      q: query,
+      category,
+      sort: sort as never,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch catalog items: ${res.status}`);
   }
+  return res.json() as Promise<PaginatedCatalogItemsResponse>;
 };
 
 // Hook

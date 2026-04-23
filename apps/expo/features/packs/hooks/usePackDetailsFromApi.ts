@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
+import { rpcClient } from 'expo-app/lib/api/rpcClient';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { Pack } from '../types';
 
 const fetchPackById = async (id: string): Promise<Pack> => {
-  const res = await axiosInstance.get(`/api/packs/${id}`);
-  return res.data;
+  const res = await rpcClient.api.packs[':packId'].$get({
+    param: { packId: id },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch pack: ${res.status}`);
+  }
+  return res.json() as Promise<Pack>;
 };
 
 /**
