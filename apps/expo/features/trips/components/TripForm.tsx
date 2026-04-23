@@ -115,7 +115,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       const submitData = {
         ...value,
         location: location ?? value.location,
-        packId: value.packId ?? undefined,
+        packId: value.packId === '' ? undefined : (value.packId ?? undefined),
       };
       try {
         if (isEditingExistingTrip) {

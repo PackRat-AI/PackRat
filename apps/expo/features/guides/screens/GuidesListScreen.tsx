@@ -133,29 +133,45 @@ export const GuidesListScreen = () => {
     }
 
     return (
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="px-4 pt-2">
-          {guides.length > 0 && (
-            <Text className="text-xs text-muted-foreground">
-              {guides.length} {guides.length === 1 ? t('guides.result') : t('guides.results')}
-            </Text>
-          )}
-        </View>
-
-        {guides.map((guide: Guide) => (
-          <View className="px-4 pt-4" key={guide.id}>
-            <GuideCard guide={guide} onPress={() => handleGuidePress(guide)} />
+      <FlatList
+        data={guides}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View className="px-4 pt-4">
+            <GuideCard guide={item} onPress={() => handleGuidePress(item)} />
           </View>
-        ))}
-
-        {guides.length === 0 && (
+        )}
+        ListHeaderComponent={
+          guides.length > 0 ? (
+            <View className="px-4 pt-2">
+              <Text className="text-xs text-muted-foreground">
+                {guides.length} {guides.length === 1 ? t('guides.result') : t('guides.results')}
+              </Text>
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
             <Text className="text-center text-gray-500 dark:text-gray-400">
               {t('guides.noGuidesFound', { query: searchQuery })}
             </Text>
           </View>
-        )}
-      </ScrollView>
+        }
+        ListFooterComponent={
+          isFetchingNextPageSearch ? (
+            <View className="py-4">
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null
+        }
+        onEndReached={() => {
+          if (hasNextPageSearch && !isFetchingNextPageSearch) {
+            fetchNextPageSearch();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+      />
     );
   };
 

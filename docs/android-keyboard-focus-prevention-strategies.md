@@ -28,13 +28,14 @@ import { TextInput } from 'react-native'; // FORBIDDEN
 ```typescript
 // For any new input-related components, always include the hook
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
+import { TextInput } from 'react-native';
 
 export const CustomInput = forwardRef<InputRef, InputProps>((props, ref) => {
-  const inputRef = useRef<any>(null);
-  
+  const inputRef = useRef<TextInput | null>(null);
+
   // REQUIRED: Apply keyboard hide blur fix
   useKeyboardHideBlur(inputRef);
-  
+
   useImperativeHandle(ref, () => inputRef.current);
   return <SomeInputComponent ref={inputRef} {...props} />;
 });
@@ -133,12 +134,10 @@ interface EnhancedTextInputProps extends TextInputProps {
 export const EnhancedTextInput = forwardRef<TextInput, EnhancedTextInputProps>(
   ({ autoKeyboardDismiss = true, ...props }, ref) => {
     const inputRef = useRef<TextInput>(null);
-    
-    // Conditional application for rare edge cases
-    if (autoKeyboardDismiss) {
-      useKeyboardHideBlur(inputRef);
-    }
-    
+
+    // Always call hook unconditionally, use enabled flag to control behavior
+    useKeyboardHideBlur(inputRef, { enabled: autoKeyboardDismiss });
+
     useImperativeHandle(ref, () => inputRef.current!);
     return <RNTextInput ref={inputRef} {...props} />;
   }

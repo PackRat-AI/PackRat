@@ -70,11 +70,24 @@ import { Keyboard } from 'react-native';
  * Useful for fixing keyboard behavior issues on Android.
  *
  * @param textInputRef - Ref to the TextInput or SearchInput component
+ * @param options - Optional configuration
+ * @param options.enabled - Whether the hook should be active (default: true)
  */
-export function useKeyboardHideBlur(textInputRef: React.RefObject<any>) {
+export function useKeyboardHideBlur(
+  textInputRef: React.RefObject<{ blur?: () => void } | null>,
+  options?: { enabled?: boolean },
+) {
+  const { enabled = true } = options ?? {};
+
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const keyboardDidHideCallback = () => {
-      textInputRef.current?.blur();
+      if (textInputRef.current?.blur) {
+        textInputRef.current.blur();
+      }
     };
 
     const keyboardDidHideSubscription = Keyboard.addListener(
@@ -85,7 +98,7 @@ export function useKeyboardHideBlur(textInputRef: React.RefObject<any>) {
     return () => {
       keyboardDidHideSubscription?.remove();
     };
-  }, [textInputRef]);
+  }, [textInputRef, enabled]);
 }
 ```
 
@@ -95,9 +108,11 @@ export function useKeyboardHideBlur(textInputRef: React.RefObject<any>) {
 
 ```tsx
 // apps/expo/components/TextInput.tsx
+import { assertPresent } from '@packrat/guards';
+import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { TextInput as RNTextInput, type TextInputProps } from 'react-native';
-import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 
 /**
  * Enhanced TextInput component that automatically handles keyboard hide blur fix.
@@ -105,13 +120,16 @@ import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
  */
 export const TextInput = forwardRef<RNTextInput, TextInputProps>((props, ref) => {
   const textInputRef = useRef<RNTextInput>(null);
-  
+
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(textInputRef);
-  
+  useKeyboardHideBlur(asNonNullableRef(textInputRef));
+
   // Forward ref methods to the internal ref
-  useImperativeHandle(ref, () => textInputRef.current!);
-  
+  useImperativeHandle(ref, () => {
+    assertPresent(textInputRef.current);
+    return textInputRef.current;
+  }, []);
+
   return <RNTextInput ref={textInputRef} {...props} />;
 });
 
@@ -122,23 +140,31 @@ TextInput.displayName = 'TextInput';
 
 ```tsx
 // apps/expo/components/SearchInput.tsx
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { assertPresent } from '@packrat/guards';
 import { SearchInput as NativeWindUISearchInput } from '@packrat/ui/nativewindui';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 /**
  * Enhanced SearchInput component that automatically handles keyboard hide blur fix.
  * Drop-in replacement for NativeWindUI's SearchInput with built-in Android keyboard behavior fix.
  */
-export const SearchInput = forwardRef<any, React.ComponentProps<typeof NativeWindUISearchInput>>((props, ref) => {
-  const searchInputRef = useRef<any>(null);
-  
+export const SearchInput = forwardRef<
+  React.ComponentRef<typeof NativeWindUISearchInput>,
+  React.ComponentProps<typeof NativeWindUISearchInput>
+>((props, ref) => {
+  const searchInputRef = useRef<React.ComponentRef<typeof NativeWindUISearchInput>>(null);
+
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(searchInputRef);
-  
+  useKeyboardHideBlur(asNonNullableRef(searchInputRef));
+
   // Forward ref methods to the internal ref
-  useImperativeHandle(ref, () => searchInputRef.current);
-  
+  useImperativeHandle(ref, () => {
+    assertPresent(searchInputRef.current);
+    return searchInputRef.current;
+  }, []);
+
   return <NativeWindUISearchInput ref={searchInputRef} {...props} />;
 });
 
