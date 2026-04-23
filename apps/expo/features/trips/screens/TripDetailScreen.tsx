@@ -67,9 +67,12 @@ export function TripDetailScreen() {
   const handleWeatherPress = () => {
     if (!trip.location) return;
 
-    const { latitude, longitude } = trip.location;
+    const { latitude, longitude, name } = trip.location;
+    const locationName = name || trip.name;
 
-    router.push(`/weather/geo?lat=${latitude}&lon=${longitude}`);
+    router.push(
+      `/weather/geo?lat=${latitude}&lon=${longitude}&locationName=${encodeURIComponent(locationName)}`,
+    );
   };
 
   return (
