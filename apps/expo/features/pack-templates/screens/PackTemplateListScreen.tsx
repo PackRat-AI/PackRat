@@ -2,6 +2,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
@@ -117,16 +118,88 @@ export function PackTemplateListScreen() {
     </TouchableOpacity>
   );
 
+  const renderSearchContent = () => {
+    const isSearching = searchValue.trim().length > 0;
+
+    if (!isSearching) {
+      return (
+        <View className="flex-1 items-center justify-center p-4">
+          <Text className="text-muted-foreground">{t('packTemplates.searchTemplates')}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="px-4 pt-2">
+          {filteredTemplates.length > 0 && (
+            <Text className="text-xs text-muted-foreground">
+              {filteredTemplates.length}{' '}
+              {filteredTemplates.length === 1
+                ? t('packTemplates.result')
+                : t('packTemplates.results')}
+            </Text>
+          )}
+        </View>
+
+        {filteredTemplates.map((template: PackTemplate) => (
+          <View className="px-4 pt-4" key={template.id}>
+            <PackTemplateCard templateId={template.id} onPress={handleTemplatePress} />
+          </View>
+        ))}
+
+        {filteredTemplates.length === 0 && (
+          <View className="flex-1 items-center justify-center p-8">
+            <View className="mb-4 rounded-full bg-muted p-4">
+              <Icon name="magnify" size={32} color="text-muted-foreground" />
+            </View>
+            <Text className="mb-1 text-lg font-medium text-foreground">
+              {t('packTemplates.noTemplatesFound')}
+            </Text>
+            <Text className="text-center text-muted-foreground">
+              {t('packTemplates.tryDifferentSearch')}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    );
+  };
+
+  const listHeader = () => {
+    const isSearching = searchValue.trim().length > 0;
+    if (isSearching) return null;
+
+    return selectedTemplateTypeIndex === 0 ? (
+      <View className="bg-background">
+        <FeaturedPacksSection onTemplatePress={handleTemplatePress} />
+        <View className="px-4 pb-2">
+          <Text className="text-muted-foreground">
+            {filteredTemplates.length}{' '}
+            {filteredTemplates.length === 1
+              ? t('packTemplates.template')
+              : t('packTemplates.templates')}
+          </Text>
+        </View>
+      </View>
+    ) : undefined;
+  };
+
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
-          iosHideWhenScrolling: true,
+          iosHideWhenScrolling: false,
           ref: asNonNullableRef(searchBarRef),
           onChangeText(text) {
             setSearchValue(text);
           },
+          placeholder: t('packTemplates.searchPlaceholder'),
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {renderSearchContent()}
+            </LargeTitleHeaderSearchContentContainer>
+          ),
         }}
         rightView={() => (
           <View className="flex-row items-center">
@@ -158,21 +231,7 @@ export function PackTemplateListScreen() {
         )}
         stickyHeaderIndices={[0]}
         stickyHeaderHiddenOnScroll
-        ListHeaderComponent={
-          selectedTemplateTypeIndex === 0 ? (
-            <View className="bg-background">
-              <FeaturedPacksSection onTemplatePress={handleTemplatePress} />
-              <View className="px-4 pb-2">
-                <Text className="text-muted-foreground">
-                  {filteredTemplates.length}{' '}
-                  {filteredTemplates.length === 1
-                    ? t('packTemplates.template')
-                    : t('packTemplates.templates')}
-                </Text>
-              </View>
-            </View>
-          ) : undefined
-        }
+        ListHeaderComponent={listHeader()}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
             <View className="mb-4 rounded-full bg-muted p-4">

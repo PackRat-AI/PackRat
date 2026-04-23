@@ -25,6 +25,10 @@ export function parseLocalDate(dateString?: string): Date | null {
  * invalid values. Uses the user's locale via `toLocaleDateString()`.
  */
 export function formatLocalDate(dateString?: string): string {
-  const date = parseLocalDate(dateString);
-  return date ? date.toLocaleDateString() : '\u2014';
+  if (!dateString) return '\u2014';
+
+  const parsed = parseLocalDate(dateString);
+  const date = parsed ?? new Date(dateString); // 👈 fallback
+
+  return isNaN(date.getTime()) ? '\u2014' : date.toLocaleDateString();
 }

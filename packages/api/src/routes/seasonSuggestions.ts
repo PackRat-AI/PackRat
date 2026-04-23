@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { type PackItem, packItems } from '@packrat/api/db/schema';
 import {
@@ -8,17 +8,13 @@ import {
   SeasonSuggestionsResponseSchema,
 } from '@packrat/api/schemas/seasonSuggestions';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { DEFAULT_MODELS } from '../utils/ai/models';
-
-const seasonSuggestionsRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
 
 /**
  * Formats user inventory items for AI processing
@@ -32,7 +28,7 @@ function formatInventoryForAI(items: Omit<PackItem, 'embedding'>[]): string {
     .join('\n');
 }
 
-const seasonSuggestionsRoute = createRoute({
+export const seasonSuggestionsRoute = createRoute({
   method: 'post',
   path: '/',
   tags: ['Season Suggestions'],
@@ -78,7 +74,7 @@ const seasonSuggestionsRoute = createRoute({
   },
 });
 
-seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
+export const seasonSuggestionsHandler: RouteHandler<typeof seasonSuggestionsRoute> = async (c) => {
   const auth = c.get('user');
   const { location, date } = await c.req.json();
   const db = createDb(c);
@@ -181,6 +177,15 @@ ${inventoryFormatted}`;
     },
     200,
   );
-});
+};
+
+const seasonSuggestionsOpenApiRoutes = [
+  defineOpenAPIRoute({ route: seasonSuggestionsRoute, handler: seasonSuggestionsHandler }),
+] as const;
+
+const seasonSuggestionsRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>().openapiRoutes(seasonSuggestionsOpenApiRoutes);
 
 export { seasonSuggestionsRoutes };

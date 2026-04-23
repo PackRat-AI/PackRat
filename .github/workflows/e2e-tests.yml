@@ -85,7 +85,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -337,7 +337,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8

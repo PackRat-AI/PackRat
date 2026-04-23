@@ -1,6 +1,7 @@
 import { EntityResolver } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { parseConfidenceArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printSummary, printTable } from '../shared';
 
 export default defineCommand({
@@ -26,12 +27,14 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const conn = cache.getConnection();
+    const limit = parsePositiveIntArg(args.limit, '--limit');
 
     const resolver = new EntityResolver(conn);
 
     if (args.build) {
+      const minConfidence = parseConfidenceArg(args['min-confidence'], '--min-confidence');
       consola.start('Running entity resolution (this may take a while)...');
-      const stats = await resolver.build(Number(args['min-confidence']));
+      const stats = await resolver.build(minConfidence);
       printSummary(
         {
           'Total listings': stats.total,
@@ -48,7 +51,7 @@ export default defineCommand({
       return;
     }
 
-    const matches = await resolver.identifyProduct(args.product, Number(args.limit));
+    const matches = await resolver.identifyProduct(args.product, limit);
     if (matches.length === 0) {
       consola.warn('No matches. Run `packrat resolve --build` first.');
       return;

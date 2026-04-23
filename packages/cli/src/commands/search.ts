@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parseCsvArg, parseOptionalNumberArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -12,11 +13,12 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
+    const limit = parsePositiveIntArg(args.limit, '--limit');
     const rows = await cache.search(args.keyword, {
-      maxPrice: args['max-price'] ? Number(args['max-price']) : undefined,
-      minPrice: args['min-price'] ? Number(args['min-price']) : undefined,
-      sites: args.sites?.split(','),
-      limit: Number(args.limit),
+      maxPrice: parseOptionalNumberArg(args['max-price'], '--max-price'),
+      minPrice: parseOptionalNumberArg(args['min-price'], '--min-price'),
+      sites: parseCsvArg(args.sites),
+      limit,
     });
     printTable(
       rows.map(({ site, name, brand, price }) => ({ site, name: name.slice(0, 50), brand, price })),

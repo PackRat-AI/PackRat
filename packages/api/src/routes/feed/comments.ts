@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { commentLikes, postComments, posts, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
@@ -9,13 +9,12 @@ import {
   LikeToggleResponseSchema,
 } from '@packrat/api/schemas/feed';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 
-const commentsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
 // GET /feed/:postId/comments - list comments
-const listCommentsRoute = createRoute({
+export const listCommentsRoute = createRoute({
   method: 'get',
   path: '/:postId/comments',
   tags: ['Feed'],
@@ -40,7 +39,7 @@ const listCommentsRoute = createRoute({
   },
 });
 
-commentsRoutes.openapi(listCommentsRoute, async (c) => {
+export const listCommentsHandler: RouteHandler<typeof listCommentsRoute> = async (c) => {
   const auth = c.get('user');
   const { postId } = c.req.valid('param');
   const { page, limit } = c.req.valid('query');
@@ -114,10 +113,10 @@ commentsRoutes.openapi(listCommentsRoute, async (c) => {
   }));
 
   return c.json({ items: result, page, limit, total, totalPages: Math.ceil(total / limit) }, 200);
-});
+};
 
 // POST /feed/:postId/comments - add comment
-const addCommentRoute = createRoute({
+export const addCommentRoute = createRoute({
   method: 'post',
   path: '/:postId/comments',
   tags: ['Feed'],
@@ -146,7 +145,7 @@ const addCommentRoute = createRoute({
   },
 });
 
-commentsRoutes.openapi(addCommentRoute, async (c) => {
+export const addCommentHandler: RouteHandler<typeof addCommentRoute> = async (c) => {
   const auth = c.get('user');
   const { postId } = c.req.valid('param');
   const body = c.req.valid('json');
@@ -193,10 +192,10 @@ commentsRoutes.openapi(addCommentRoute, async (c) => {
     },
     201,
   );
-});
+};
 
 // DELETE /feed/:postId/comments/:commentId - delete comment
-const deleteCommentRoute = createRoute({
+export const deleteCommentRoute = createRoute({
   method: 'delete',
   path: '/:postId/comments/:commentId',
   tags: ['Feed'],
@@ -224,7 +223,7 @@ const deleteCommentRoute = createRoute({
   },
 });
 
-commentsRoutes.openapi(deleteCommentRoute, async (c) => {
+export const deleteCommentHandler: RouteHandler<typeof deleteCommentRoute> = async (c) => {
   const auth = c.get('user');
   const { postId, commentId } = c.req.valid('param');
   const db = createDb(c);
@@ -244,10 +243,10 @@ commentsRoutes.openapi(deleteCommentRoute, async (c) => {
   await db.delete(postComments).where(eq(postComments.id, commentId));
 
   return c.json({ success: true }, 200);
-});
+};
 
 // POST /feed/:postId/comments/:commentId/like - toggle like on comment
-const toggleCommentLikeRoute = createRoute({
+export const toggleCommentLikeRoute = createRoute({
   method: 'post',
   path: '/:postId/comments/:commentId/like',
   tags: ['Feed'],
@@ -271,7 +270,7 @@ const toggleCommentLikeRoute = createRoute({
   },
 });
 
-commentsRoutes.openapi(toggleCommentLikeRoute, async (c) => {
+export const toggleCommentLikeHandler: RouteHandler<typeof toggleCommentLikeRoute> = async (c) => {
   const auth = c.get('user');
   const { postId, commentId } = c.req.valid('param');
   const db = createDb(c);
@@ -302,6 +301,16 @@ commentsRoutes.openapi(toggleCommentLikeRoute, async (c) => {
     .where(eq(commentLikes.commentId, commentId));
 
   return c.json({ liked: !existing, likeCount: likeCountResult?.cnt ?? 0 }, 200);
-});
+};
 
+const commentsOpenApiRoutes = [
+  defineOpenAPIRoute({ route: listCommentsRoute, handler: listCommentsHandler }),
+  defineOpenAPIRoute({ route: addCommentRoute, handler: addCommentHandler }),
+  defineOpenAPIRoute({ route: deleteCommentRoute, handler: deleteCommentHandler }),
+  defineOpenAPIRoute({ route: toggleCommentLikeRoute, handler: toggleCommentLikeHandler }),
+] as const;
+
+const commentsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  commentsOpenApiRoutes,
+);
 export { commentsRoutes };

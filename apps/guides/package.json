@@ -1,6 +1,6 @@
 {
   "name": "packrat-guides-app",
-  "version": "2.0.20",
+  "version": "2.0.22",
   "private": true,
   "scripts": {
     "build": "bun run build-content && next build",
@@ -8,6 +8,7 @@
     "clean": "bunx rimraf .next node_modules out",
     "demo-enhancement": "bun run scripts/demo-enhancement.ts",
     "dev": "next dev",
+    "doctor:react": "bunx react-doctor",
     "enhance-content": "bun run scripts/enhance-content.ts",
     "lint": "next lint",
     "start": "next start",
@@ -19,6 +20,7 @@
     "@ai-sdk/openai": "^2.0.11",
     "@hookform/resolvers": "^3.10.0",
     "@packrat/api": "workspace:*",
+    "@packrat/env": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",

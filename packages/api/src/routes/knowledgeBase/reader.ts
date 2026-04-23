@@ -1,11 +1,10 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { Readability } from '@mozilla/readability';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { parseHTML } from 'linkedom';
 
-const readerRoutes = new OpenAPIHono<{ Bindings: Env }>();
-
-const extractContentRoute = createRoute({
+export const extractContentRoute = createRoute({
   method: 'post',
   path: '/extract',
   request: {
@@ -86,7 +85,7 @@ function htmlToMarkdown(html: string): string {
     .trim();
 }
 
-readerRoutes.openapi(extractContentRoute, async (c) => {
+export const extractContentHandler: RouteHandler<typeof extractContentRoute> = async (c) => {
   try {
     console.log('[extract] Request received');
     const { url } = await c.req.json();
@@ -145,6 +144,12 @@ readerRoutes.openapi(extractContentRoute, async (c) => {
     console.error('[extract] Error extracting content:', error);
     return c.json({ error: 'Failed to process the URL' }, 500);
   }
-});
+};
+
+const readerOpenApiRoutes = [
+  defineOpenAPIRoute({ route: extractContentRoute, handler: extractContentHandler }),
+] as const;
+
+const readerRoutes = new OpenAPIHono<{ Bindings: Env }>().openapiRoutes(readerOpenApiRoutes);
 
 export { readerRoutes };

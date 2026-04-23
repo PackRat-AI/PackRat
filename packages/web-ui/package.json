@@ -1,6 +1,6 @@
 {
   "name": "@packrat/web-ui",
-  "version": "2.0.20",
+  "version": "2.0.22",
   "private": true,
   "type": "module",
   "exports": {
@@ -72,10 +72,5 @@
     "react": "catalog:",
     "recharts": "3.8.1",
     "tailwindcss": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "recharts": {
-      "optional": true
-    }
   }
 }

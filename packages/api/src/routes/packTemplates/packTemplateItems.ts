@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import {
@@ -8,17 +8,11 @@ import {
   SuccessResponseSchema,
   UpdatePackTemplateItemRequestSchema,
 } from '@packrat/api/schemas/packTemplates';
-import type { Env } from '@packrat/api/types/env';
-import type { Variables } from '@packrat/api/types/variables';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { and, eq } from 'drizzle-orm';
 
-const packTemplateItemsRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
 // Get all items for a template
-const getItemsRoute = createRoute({
+export const getItemsRoute = createRoute({
   method: 'get',
   path: '/{templateId}/items',
   tags: ['Pack Templates'],
@@ -69,7 +63,7 @@ const getItemsRoute = createRoute({
   },
 });
 
-packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
+export const getItemsHandler: RouteHandler<typeof getItemsRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -96,10 +90,10 @@ packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
     .where(eq(packTemplateItems.packTemplateId, templateId));
 
   return c.json(items, 200);
-});
+};
 
 // Add item to template
-const addItemRoute = createRoute({
+export const addItemRoute = createRoute({
   method: 'post',
   path: '/{templateId}/items',
   tags: ['Pack Templates'],
@@ -166,7 +160,7 @@ const addItemRoute = createRoute({
   },
 });
 
-packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
+export const addItemHandler: RouteHandler<typeof addItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -208,10 +202,10 @@ packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
     .where(eq(packTemplates.id, templateId));
 
   return c.json(newItem, 201);
-});
+};
 
 // Update a template item
-const updateItemRoute = createRoute({
+export const updateItemRoute = createRoute({
   method: 'patch',
   path: '/items/{itemId}',
   tags: ['Pack Templates'],
@@ -278,7 +272,7 @@ const updateItemRoute = createRoute({
   },
 });
 
-packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
+export const updateItemHandler: RouteHandler<typeof updateItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -326,10 +320,10 @@ packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
     .returning();
 
   return c.json(updatedItem, 200);
-});
+};
 
 // Delete a template item
-const deleteItemRoute = createRoute({
+export const deleteItemRoute = createRoute({
   method: 'delete',
   path: '/items/{itemId}',
   tags: ['Pack Templates'],
@@ -380,7 +374,7 @@ const deleteItemRoute = createRoute({
   },
 });
 
-packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
+export const deleteItemHandler: RouteHandler<typeof deleteItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -415,6 +409,4 @@ packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
     .where(eq(packTemplates.id, item.packTemplateId));
 
   return c.json({ success: true }, 200);
-});
-
-export { packTemplateItemsRoutes };
+};

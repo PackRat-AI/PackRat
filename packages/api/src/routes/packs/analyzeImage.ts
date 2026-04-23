@@ -1,5 +1,5 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import {
   AnalyzeImageRequestSchema,
   AnalyzeImageResponseSchema,
@@ -7,14 +7,13 @@ import {
 import { ErrorResponseSchema } from '@packrat/api/schemas/upload';
 import { ImageDetectionService } from '@packrat/api/services';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 
-const analyzeImageRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
 // Analyze image to detect gear items
-const analyzeImageRoute = createRoute({
+export const analyzeImageRoute = createRoute({
   method: 'post',
   path: '/analyze-image',
   tags: ['Packs'],
@@ -75,7 +74,7 @@ const analyzeImageRoute = createRoute({
   },
 });
 
-analyzeImageRoutes.openapi(analyzeImageRoute, async (c) => {
+export const analyzeImageRouteHandler: RouteHandler<typeof analyzeImageRoute> = async (c) => {
   try {
     const auth = c.get('user');
     const { image, matchLimit } = c.req.valid('json');
@@ -119,6 +118,14 @@ analyzeImageRoutes.openapi(analyzeImageRoute, async (c) => {
 
     return c.json({ error: 'Failed to analyze image' }, 500);
   }
-});
+};
 
-export { analyzeImageRoutes };
+const analyzeImageRouteEntries = [
+  defineOpenAPIRoute({ route: analyzeImageRoute, handler: analyzeImageRouteHandler }),
+] as const;
+
+const analyzeImageRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  analyzeImageRouteEntries,
+);
+
+export { analyzeImageRoutes, analyzeImageRouteEntries };

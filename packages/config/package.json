@@ -1,6 +1,6 @@
 {
   "name": "@packrat/config",
-  "version": "2.0.19",
+  "version": "2.0.22",
   "private": true,
   "type": "module",
   "exports": {
