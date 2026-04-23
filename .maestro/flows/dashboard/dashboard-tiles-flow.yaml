@@ -3,9 +3,9 @@ appId: ${APP_ID}
 # Dashboard Tiles Flow: Verify dashboard loads with key tiles
 - waitForAnimationToEnd
 
-# Navigate to Dashboard (home tab)
+# Navigate to Dashboard tab (label is "Dashboard", not "Home")
 - tapOn:
-    text: "Home"
+    text: "Dashboard"
 - waitForAnimationToEnd
 
 # Verify key dashboard tiles are present
