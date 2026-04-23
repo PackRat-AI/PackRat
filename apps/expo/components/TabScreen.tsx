@@ -1,46 +1,31 @@
 import { StatusBar } from 'expo-status-bar';
 import type React from 'react';
-import { Platform, SafeAreaView as RNSafeAreaView, StyleSheet, type ViewStyle } from 'react-native';
-import {
-  SafeAreaView,
-  type SafeAreaViewProps,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { Platform, View } from 'react-native';
 
-interface TabScreenProps extends SafeAreaViewProps {
-  useLegacySafeAreaView?: boolean;
+interface TabScreenProps {
+  children: React.ReactNode;
 }
 
-export const TabScreen: React.FC<TabScreenProps> = ({
-  children,
-  style,
-  useLegacySafeAreaView,
-  ...rest
-}) => {
-  const insets = useSafeAreaInsets();
+export const TabScreen: React.FC<TabScreenProps> = ({ children }) => {
+  const ANDROID_TAB_BAR_INSET = 80;
 
-  const TAB_BAR_INSET = Platform.OS === 'android' ? 80 : 0;
-
-  const containerStyle: ViewStyle = {
-    flex: 1,
-    ...(Platform.OS === 'ios' ? { paddingTop: insets.top } : {}),
-    paddingBottom: TAB_BAR_INSET,
-    ...(StyleSheet.flatten(style) as ViewStyle),
-  };
-
-  if (useLegacySafeAreaView && Platform.OS === 'ios')
+  if (Platform.OS === 'ios')
     return (
-      <RNSafeAreaView style={style} {...rest}>
+      <>
         <StatusBar />
         {children}
-      </RNSafeAreaView>
+      </>
     );
 
   return (
-    <SafeAreaView style={containerStyle} {...rest} edges={['bottom', 'left', 'right']}>
-      <StatusBar />
+    <View
+      style={{
+        paddingBottom: ANDROID_TAB_BAR_INSET,
+        flex: 1,
+      }}
+    >
       {children}
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -2,6 +2,7 @@ import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packra
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
@@ -98,7 +99,8 @@ function CatalogItemsScreen() {
     if (isSearching) return null;
 
     return (
-      <TabScreen useLegacySafeAreaView>
+      <>
+        <LargeTitleHeaderOverlapFixIOS />
         <CategoriesFilter
           data={categories}
           onFilter={setActiveFilter}
@@ -117,7 +119,7 @@ function CatalogItemsScreen() {
             <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
           )}
         </View>
-      </TabScreen>
+      </>
     );
   }, [
     isSearching,
@@ -131,7 +133,7 @@ function CatalogItemsScreen() {
   ]);
 
   return (
-    <>
+    <TabScreen>
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}
@@ -272,7 +274,7 @@ function CatalogItemsScreen() {
           </View>
         }
       />
-    </>
+    </TabScreen>
   );
 }
 
