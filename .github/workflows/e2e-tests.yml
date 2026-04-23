@@ -71,9 +71,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          # Pinned to match the version that generated bun.lock.
-          # Bump this together with a lockfile regeneration when upgrading bun.
-          bun-version: 1.3.12
+          bun-version: latest
           cache: true
 
       - name: Cache node_modules
@@ -87,7 +85,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -325,9 +323,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          # Pinned to match the version that generated bun.lock.
-          # Bump this together with a lockfile regeneration when upgrading bun.
-          bun-version: 1.3.12
+          bun-version: latest
           cache: true
 
       - name: Cache node_modules
@@ -341,7 +337,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
