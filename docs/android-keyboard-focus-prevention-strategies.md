@@ -58,7 +58,7 @@ export const WrappedThirdPartyInput = forwardRef((props, ref) => {
 #### 2.1 Code Review Checklist
 **Mandatory checks for any PR containing input elements:**
 
-- [ ] Does the component use the enhanced `TextInput`/`SearchInput` from `expo-app/components/?
+- [ ] Does the component use the enhanced `TextInput`/`SearchInput` from `expo-app/components/`?
 - [ ] Is there any direct import from `react-native` for TextInput?
 - [ ] If creating a new input component, does it use `useKeyboardHideBlur`?
 - [ ] Are there any third-party input components that need wrapping?
