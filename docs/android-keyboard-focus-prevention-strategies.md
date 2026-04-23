@@ -71,10 +71,7 @@ Add to ESLint config:
 ```json
 {
   "rules": {
-    "no-direct-textinput-import": {
-      "rule": "error",
-      "message": "Use enhanced TextInput component instead of direct react-native import"
-    }
+    "no-direct-textinput-import": "error"
   }
 }
 ```
