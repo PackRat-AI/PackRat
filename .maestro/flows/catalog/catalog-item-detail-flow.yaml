@@ -8,7 +8,13 @@ appId: ${APP_ID}
     text: "Catalog"
 - waitForAnimationToEnd
 
-# Scroll to find an item and tap it
+# Wait for items to load before scrolling
+- extendedWaitUntil:
+    visible:
+      text: ".*items.*"
+    timeout: 15000
+
+# Scroll to find a priced item
 - scrollUntilVisible:
     element:
       text: ".*\\$.*"

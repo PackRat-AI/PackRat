@@ -7,40 +7,58 @@ appId: ${APP_ID}
     stopApp: true
 - waitForAnimationToEnd
 
-# Navigate to Sign In
-- extendedWaitUntil:
-    visible:
-      text: "Sign In"
-    timeout: 10000
-
-- tapOn:
-    text: "Sign In"
-- waitForAnimationToEnd
-
-# Handle possible multi-step auth screens
+# Dismiss Android ANR dialog that can appear during emulator boot
 - runFlow:
     when:
-      notVisible:
-        text: "Email"
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "isn't responding"
+          commands:
+            - tapOn:
+                text: "Wait"
+            - waitForAnimationToEnd
+
+# Wait for auth entry screen
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-email-button"
+    timeout: 15000
+
+# Navigate to Sign In
+- tapOn:
+    id: "sign-in-email-button"
+- waitForAnimationToEnd
+
+# Fill in invalid email
+- runFlow:
+    when:
+      platform: iOS
     commands:
       - tapOn:
-          text: "Sign In"
-      - waitForAnimationToEnd
-
-# Fill in invalid credentials
-- tapOn:
-    text: "Email"
-- inputText: "invalid@nonexistent.com"
-
-- tapOn:
-    text: "Password"
-- inputText: "wrongpassword123"
+          text: "Email"
+      - inputText: "invalid@nonexistent.com"
+      - tapOn:
+          text: "Password"
+      - inputText: "wrongpassword123"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "email-input"
+      - inputText: "invalid@nonexistent.com"
+      - tapOn:
+          id: "password-input"
+      - inputText: "wrongpassword123"
 
 - hideKeyboard
 
-# Submit
+# Submit via testID — avoids "Submit" vs "Continue" platform difference
 - tapOn:
-    text: "Submit"
+    id: "continue-button"
 - waitForAnimationToEnd
 
 # Should show Login Failed error dialog
@@ -58,5 +76,15 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Should still be on login form
-- assertVisible:
-    text: "Email"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          text: "Email"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: "email-input"

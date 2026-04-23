@@ -446,6 +446,14 @@ jobs:
             adb shell pm disable-user com.android.launcher3 || true
             adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
+            # Give System UI time to fully initialize before launching tests.
+            # The emulator's System UI can raise an ANR dialog ("System UI isn't
+            # responding") in the seconds after boot. Without this wait, Maestro
+            # starts while that dialog is still blocking the screen.
+            sleep 10
+            # Dismiss any lingering ANR / crash dialogs left over from emulator boot
+            adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
+            adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
             bash .github/scripts/e2e.sh android --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}
