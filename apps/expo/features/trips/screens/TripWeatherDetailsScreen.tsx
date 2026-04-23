@@ -20,11 +20,15 @@ import {
 } from 'react-native';
 
 export default function TripWeatherDetailsScreen() {
-  const { lat, lon, locationName } = useLocalSearchParams();
+  const { lat, lon, locationName } = useLocalSearchParams<{
+    lat: string;
+    lon: string;
+    locationName?: string;
+  }>();
 
   const latitude = Number(lat);
   const longitude = Number(lon);
-  const tripLocationName = typeof locationName === 'string' ? locationName : undefined;
+  const tripLocationName = locationName;
 
   const [weather, setWeather] = useState<WeatherApiForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
