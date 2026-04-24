@@ -1,5 +1,5 @@
 import type { NewCatalogItem } from '../db/schema';
-import type { WeightUnit } from '../types';
+import { AvailabilitySchema, WeightUnitSchema } from '../types';
 
 export function mapCsvRowToItem({
   values,
@@ -75,7 +75,8 @@ export function mapCsvRowToItem({
   if (weightStr && parseFloat(weightStr) > 0) {
     const { weight, unit } = parseWeight(weightStr, unitStr);
     item.weight = weight || undefined;
-    item.weightUnit = (unit as WeightUnit) || undefined;
+    const parsedUnit = WeightUnitSchema.safeParse(unit);
+    item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
   }
 
   const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
@@ -139,7 +140,8 @@ export function mapCsvRowToItem({
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
           item.weight = weight || undefined;
-          item.weightUnit = (unit as WeightUnit) || undefined;
+          const parsedUnit = WeightUnitSchema.safeParse(unit);
+          item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
         }
       }
     } catch {
@@ -170,9 +172,12 @@ export function mapCsvRowToItem({
   if (fieldMap.availability !== undefined && values[fieldMap.availability]) {
     const availabilityValue = values[fieldMap.availability];
     if (availabilityValue) {
-      item.availability = availabilityValue
-        .replace(/^"|"$/g, '')
-        .trim() as NewCatalogItem['availability'];
+      const parsedAvailability = AvailabilitySchema.safeParse(
+        availabilityValue.replace(/^"|"$/g, '').trim(),
+      );
+      if (parsedAvailability.success) {
+        item.availability = parsedAvailability.data;
+      }
     }
   }
 

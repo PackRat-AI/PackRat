@@ -52,6 +52,11 @@ export const WEIGHT_UNITS = Object.freeze(['g', 'oz', 'kg', 'lb'] as const);
 export const WeightUnitSchema = z.enum(WEIGHT_UNITS);
 export type WeightUnit = z.infer<typeof WeightUnitSchema>;
 
+// --- Availability Enum ---
+export const AVAILABILITY_VALUES = Object.freeze(['in_stock', 'out_of_stock', 'preorder'] as const);
+export const AvailabilitySchema = z.enum(AVAILABILITY_VALUES);
+export type Availability = z.infer<typeof AvailabilitySchema>;
+
 export type ItemLink = {
   id: string;
   title: string;

@@ -7,7 +7,7 @@ import {
   packItems,
   packs,
 } from '@packrat/api/db/schema';
-import type { PackCategory } from '@packrat/api/types';
+import { PACK_CATEGORIES } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
@@ -31,7 +31,7 @@ const packItemConceptSchema = z.object({
 const packConceptSchema = z.object({
   name: z.string(),
   description: z.string(),
-  category: z.string(),
+  category: z.enum(PACK_CATEGORIES),
   tags: z.array(z.string()).optional(),
   items: z.array(packItemConceptSchema),
 });
@@ -104,7 +104,7 @@ export class PackService {
           userId: this.userId,
           name: pack.name,
           description: pack.description,
-          category: pack.category as PackCategory,
+          category: pack.category,
           tags: pack.tags,
           isPublic: true,
           isAIGenerated: true,
