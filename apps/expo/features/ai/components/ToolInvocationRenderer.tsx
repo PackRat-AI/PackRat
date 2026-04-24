@@ -16,7 +16,6 @@ interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
-
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
   switch (toolInvocation.type) {
     case 'tool-webSearchTool':
