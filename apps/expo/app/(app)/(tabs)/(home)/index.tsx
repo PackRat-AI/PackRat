@@ -1,6 +1,6 @@
 'use client';
 
-import { arrayIncludes, assertIsString } from '@packrat/guards';
+import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
@@ -155,7 +155,7 @@ const tileInfo = {
 };
 
 type TileName = keyof typeof tileInfo;
-const TILE_NAMES = Object.keys(tileInfo) as TileName[];
+const TILE_NAMES = objectKeys(tileInfo);
 const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 
 export default function DashboardScreen() {
