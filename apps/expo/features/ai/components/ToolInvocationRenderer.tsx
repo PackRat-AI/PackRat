@@ -16,13 +16,6 @@ interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
-type Tool =
-  | WebSearchTool
-  | WeatherTool
-  | CatalogItemsTool
-  | GuidesRAGTool
-  | PackDetailsTool
-  | PackItemTool;
 
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
   switch (toolInvocation.type) {

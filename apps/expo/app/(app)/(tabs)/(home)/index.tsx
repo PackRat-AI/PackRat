@@ -154,7 +154,6 @@ const tileInfo = {
   },
 };
 
-type TileName = keyof typeof tileInfo;
 const TILE_NAMES = objectKeys(tileInfo);
 const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 

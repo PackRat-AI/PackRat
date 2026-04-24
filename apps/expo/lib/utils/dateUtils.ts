@@ -30,5 +30,5 @@ export function formatLocalDate(dateString?: string): string {
   const parsed = parseLocalDate(dateString);
   const date = parsed ?? new Date(dateString); // 👈 fallback
 
-  return isNaN(date.getTime()) ? '\u2014' : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? '\u2014' : date.toLocaleDateString();
 }
