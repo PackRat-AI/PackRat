@@ -9,6 +9,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "radash": "catalog:"
+    "radash": "catalog:",
+    "ts-extras": "catalog:"
   }
 }
