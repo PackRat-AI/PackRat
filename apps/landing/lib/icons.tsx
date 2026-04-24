@@ -1,11 +1,13 @@
+import { keyIn } from '@packrat/guards';
 import type { LucideIcon as LucideIconType } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 
-const icons = LucideIcons as Record<string, unknown>;
-
 export const LucideIcon = (name: string): LucideIconType => {
-  const icon = icons[name];
-  return (typeof icon === 'function' ? icon : LucideIcons.FileQuestion) as LucideIconType;
+  if (keyIn(LucideIcons, name)) {
+    const icon = LucideIcons[name];
+    if (typeof icon === 'function') return icon as LucideIconType;
+  }
+  return LucideIcons.FileQuestion;
 };
 
 export function TikTokIcon({ className }: { className?: string }) {
