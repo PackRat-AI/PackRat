@@ -11,8 +11,7 @@ export const computePackTemplateWeights = (
 
   // Calculate weights based on items
   for (const item of template.items) {
-    const itemWeightInGrams =
-      convertToGrams(item.weight, item.weightUnit) * item.quantity;
+    const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
 
     // Add to total weight
     totalWeightGrams += itemWeightInGrams;

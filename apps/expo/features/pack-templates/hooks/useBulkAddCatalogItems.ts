@@ -1,5 +1,5 @@
-import { fromZod } from '@packrat/guards';
 import { WeightUnitSchema } from '@packrat/api/types';
+import { fromZod } from '@packrat/guards';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useState } from 'react';

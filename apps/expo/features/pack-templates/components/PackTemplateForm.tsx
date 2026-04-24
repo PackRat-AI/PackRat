@@ -1,3 +1,5 @@
+import { PackCategorySchema } from '@packrat/api/types';
+import { fromZod } from '@packrat/guards';
 import {
   Button,
   createDropdownItem,
@@ -7,8 +9,6 @@ import {
   FormSection,
   TextField,
 } from '@packrat/ui/nativewindui';
-import { fromZod } from '@packrat/guards';
-import { PackCategorySchema } from '@packrat/api/types';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';

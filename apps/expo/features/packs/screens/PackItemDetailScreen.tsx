@@ -1,5 +1,5 @@
-import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { isDefined } from '@packrat/guards';
+import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
