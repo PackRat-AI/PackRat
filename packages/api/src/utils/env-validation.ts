@@ -151,7 +151,9 @@ export function getEnv(c: Context): ValidatedEnv {
   }
 
   // Merge validated data with correctly typed Cloudflare bindings from rawEnv
-  const data: ValidatedEnv = {
+  // Cast: merges Zod-validated fields with Cloudflare runtime bindings whose types
+  // come from the Worker environment, not from Zod's inference.
+  const data = {
     ...validated.data,
     CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA || validated.data.CF_VERSION_METADATA,
     AI: rawEnv.AI || validated.data.AI,
@@ -162,7 +164,7 @@ export function getEnv(c: Context): ValidatedEnv {
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
     APP_CONTAINER: rawEnv.APP_CONTAINER || validated.data.APP_CONTAINER,
-  };
+  } as ValidatedEnv;
 
   // Cache the result
   envCache.set(c, data);
