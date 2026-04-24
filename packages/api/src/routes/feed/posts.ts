@@ -347,4 +347,5 @@ const postsOpenApiRoutes = [
 const postsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
   postsOpenApiRoutes,
 );
+
 export { postsRoutes };

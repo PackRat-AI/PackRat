@@ -48,8 +48,8 @@ function toReportResponse(row: Record<string, unknown>): TrailConditionReportRes
       row.localUpdatedAt instanceof Date
         ? row.localUpdatedAt.toISOString()
         : String(row.localUpdatedAt),
-  // DB row spread satisfies the shape; cast is needed because spread of
-  // Record<string, unknown> loses field-level type information.
+    // DB row spread satisfies the shape; cast is needed because spread of
+    // Record<string, unknown> loses field-level type information.
   } as TrailConditionReportResponse;
 }
 

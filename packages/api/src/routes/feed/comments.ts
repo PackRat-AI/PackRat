@@ -313,4 +313,5 @@ const commentsOpenApiRoutes = [
 const commentsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
   commentsOpenApiRoutes,
 );
+
 export { commentsRoutes };

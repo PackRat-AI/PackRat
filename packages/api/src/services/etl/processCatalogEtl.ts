@@ -76,13 +76,10 @@ export async function processCatalogETL({
       await new Promise((resolve) => setTimeout(resolve, 1)); // Yield to event loop for GC Opportunities to prevent memory bloat
       const row = record as string[];
       if (!isHeaderProcessed) {
-        fieldMap = row.reduce<Record<string, number>>(
-          (acc, header, idx) => {
-            acc[header.trim()] = idx;
-            return acc;
-          },
-          {},
-        );
+        fieldMap = row.reduce<Record<string, number>>((acc, header, idx) => {
+          acc[header.trim()] = idx;
+          return acc;
+        }, {});
         isHeaderProcessed = true;
         console.log(
           `🔍 [TRACE] Header processed - fields: ${Object.keys(fieldMap).length}, mapping:`,
