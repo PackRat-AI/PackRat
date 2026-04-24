@@ -73,8 +73,7 @@ function collectViolations(filePath: string): Violation[] {
   const violations: Violation[] = [];
   let insideImportBlock = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const [i, line] of lines.entries()) {
     const trimmed = line.trimStart();
 
     // Track multiline import blocks — `as` inside them is an alias, not a cast
@@ -95,8 +94,8 @@ function collectViolations(filePath: string): Violation[] {
 
     CAST_PATTERN.lastIndex = 0;
     for (let match = CAST_PATTERN.exec(line); match !== null; match = CAST_PATTERN.exec(line)) {
-      const castType = match[1].trim();
-      if (isSafeCast(line, castType)) continue;
+      const castType = match[1]?.trim();
+      if (!castType || isSafeCast(line, castType)) continue;
 
       // Skip single-word lowercase types (string, number, boolean, void, etc.)
       if (LOWERCASE_TYPE.test(castType)) continue;
