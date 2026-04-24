@@ -1,7 +1,8 @@
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
+import type { PackCategory, WeightUnit } from 'expo-app/types';
 
-export type WeightUnit = 'g' | 'kg' | 'oz' | 'lb';
+export type { PackCategory, WeightUnit };
 
 export interface PackItem {
   id: string;
@@ -30,17 +31,6 @@ export interface PackItem {
 
 export type { PackItemInput } from './input';
 
-export type PackCategory =
-  | 'hiking'
-  | 'backpacking'
-  | 'camping'
-  | 'climbing'
-  | 'winter'
-  | 'desert'
-  | 'water sports'
-  | 'skiing'
-  | 'custom';
-
 export type Weight = {
   value: number;
   unit: string;
@@ -56,20 +46,20 @@ export interface PackItemCategory {
 export interface Pack {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   category: PackCategory;
   userId?: number;
   templateId?: string | null;
   isPublic: boolean;
-  image?: string;
-  tags?: string[];
+  image?: string | null;
+  tags?: string[] | null;
   categories?: string[]; // For compatibility with some API responses
   items: PackItem[];
   baseWeight: number;
   totalWeight: number;
   deleted: boolean;
-  localCreatedAt: string;
-  localUpdatedAt: string;
+  localCreatedAt?: string;
+  localUpdatedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -79,7 +69,7 @@ export type PackWeightHistoryEntry = {
   packId: string;
   weight: number;
   createdAt?: string;
-  localCreatedAt: string;
+  localCreatedAt?: string;
 };
 
 export type PackInStore = Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>;

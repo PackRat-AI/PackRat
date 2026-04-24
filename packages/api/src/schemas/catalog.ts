@@ -1,3 +1,4 @@
+import { WEIGHT_UNITS } from '@packrat/api/types';
 import { z } from 'zod';
 
 export const ErrorResponseSchema = z.object({
@@ -11,7 +12,7 @@ export const CatalogItemSchema = z.object({
   productUrl: z.string(),
   sku: z.string(),
   weight: z.number(),
-  weightUnit: z.string(),
+  weightUnit: z.enum(WEIGHT_UNITS),
   description: z.string().nullable(),
   categories: z.array(z.string()).nullable(),
   images: z.array(z.string()).nullable(),
@@ -132,7 +133,7 @@ export const CreateCatalogItemRequestSchema = z.object({
   productUrl: z.string().url(),
   sku: z.string(),
   weight: z.number().positive(),
-  weightUnit: z.string(),
+  weightUnit: z.enum(WEIGHT_UNITS),
   description: z.string().optional(),
   categories: z.array(z.string()).optional(),
   images: z.array(z.string()).optional(),
@@ -216,7 +217,7 @@ export const UpdateCatalogItemRequestSchema = z.object({
   productUrl: z.string().url().optional(),
   sku: z.string().optional(),
   weight: z.number().positive().optional(),
-  weightUnit: z.string().optional(),
+  weightUnit: z.enum(WEIGHT_UNITS).optional(),
   description: z.string().optional(),
   categories: z.array(z.string()).optional(),
   images: z.array(z.string()).optional(),

@@ -147,7 +147,7 @@ export default function CurrentPackScreen() {
           style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
         >
           <Avatar className="mr-4 h-16 w-16" alt="">
-            <AvatarImage source={{ uri: pack.image }} />
+            <AvatarImage source={{ uri: pack.image ?? undefined }} />
             <AvatarFallback>
               <Text>{pack.name.substring(0, 2)}</Text>
             </AvatarFallback>
@@ -157,7 +157,9 @@ export default function CurrentPackScreen() {
               {pack.name}
             </Text>
             <Text variant="subhead" className="mt-1 text-muted-foreground">
-              {t('packs.lastUpdated', { time: getRelativeTime(pack.localUpdatedAt) })}
+              {t('packs.lastUpdated', {
+                time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt ?? ''),
+              })}
             </Text>
           </View>
         </View>

@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { Trip } from '../types';
 
 export const fetchAllTrips = async (): Promise<Trip[]> => {
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });

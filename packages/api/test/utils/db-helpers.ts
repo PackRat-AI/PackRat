@@ -38,14 +38,16 @@ function generateUniqueSku(): string {
 }
 
 /**
- * Seeds a test user via UserService (same path production register uses).
+ * Seeds a test user directly via DB insert (deterministic, no password hashing side-effects).
  * Returns the user with DB-assigned id. Does NOT register as the current JWT
  * subject — tests that want `apiWithAuth` to authenticate as this user must
  * also call `loginAs(user)` or use `seedAndLoginTestUser()`.
  */
-export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof users>>) {
+export async function seedTestUser(
+  overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
+) {
   const db = createDb();
-  const password = (overrides as { password?: string } | undefined)?.password ?? 'TestPassword1!';
+  const password = overrides?.password ?? 'TestPassword1!';
   const passwordHash = await hashPassword(password);
   const email =
     overrides?.email ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;

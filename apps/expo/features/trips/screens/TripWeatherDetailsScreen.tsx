@@ -18,10 +18,15 @@ import {
 } from 'react-native';
 
 export default function TripWeatherDetailsScreen() {
-  const { lat, lon } = useLocalSearchParams();
+  const { lat, lon, locationName } = useLocalSearchParams<{
+    lat: string;
+    lon: string;
+    locationName?: string;
+  }>();
 
   const latitude = Number(lat);
   const longitude = Number(lon);
+  const tripLocationName = locationName;
 
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -81,8 +86,11 @@ export default function TripWeatherDetailsScreen() {
   const location = weather.location;
   const current = weather.current;
 
+  // Use the trip's location name if provided, otherwise fall back to weather API location
+  const displayLocationName = tripLocationName || location.name;
+
   const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h: any) => ({
-    time: String(new Date(h.time).getHours()) + ':00',
+    time: `${new Date(h.time).getHours()}:00`,
     temp: Math.round(h.temp_c),
     weatherCode: h.condition?.code ?? 1000,
     isDay: h.is_day,
@@ -112,7 +120,7 @@ export default function TripWeatherDetailsScreen() {
 
         <ScrollView contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}>
           <View className="items-center">
-            <Text className="text-3xl text-white font-semibold">{location.name}</Text>
+            <Text className="text-3xl text-white font-semibold">{displayLocationName}</Text>
 
             <Text className="text-7xl text-white mt-6">{current.temp_c}°</Text>
 

@@ -7,6 +7,7 @@ import {
   packItems,
   packs,
 } from '@packrat/api/db/schema';
+import { PACK_CATEGORIES } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
@@ -29,7 +30,7 @@ const packItemConceptSchema = z.object({
 const packConceptSchema = z.object({
   name: z.string(),
   description: z.string(),
-  category: z.string(),
+  category: z.enum(PACK_CATEGORIES),
   tags: z.array(z.string()).optional(),
   items: z.array(packItemConceptSchema),
 });
