@@ -153,8 +153,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    testID={TestIds.PackNameInput}
-                    accessible={Platform.OS === 'ios' ? true : undefined}
+                    containerTestID={TestIds.PackNameInput}
+                    containerAccessibilityLabel={t('packs.packName')}
                     placeholder={t('packs.packName')}
                     label={Platform.OS === 'ios' ? undefined : t('packs.packName')}
                     value={field.state.value}
@@ -163,7 +163,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="folder" size={16} color={colors.grey3} ios={{ accessible: true, accessibilityLabel: '' }} />
+                        <Icon
+                          name="folder"
+                          size={16}
+                          color={colors.grey3}
+                          ios={{ accessible: true, accessibilityLabel: '' }}
+                        />
                       </View>
                     }
                   />
@@ -175,8 +180,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    testID={TestIds.PackDescriptionInput}
-                    accessible={Platform.OS === 'ios' ? true : undefined}
+                    containerTestID={TestIds.PackDescriptionInput}
+                    containerAccessibilityLabel={t('packs.description')}
                     placeholder={t('packs.description')}
                     label={Platform.OS === 'ios' ? undefined : t('packs.description')}
                     value={field.state.value}
@@ -193,7 +198,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     textAlignVertical="top"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="newspaper" size={16} color={colors.grey3} ios={{ accessible: true, accessibilityLabel: '' }} />
+                        <Icon
+                          name="newspaper"
+                          size={16}
+                          color={colors.grey3}
+                          ios={{ accessible: true, accessibilityLabel: '' }}
+                        />
                       </View>
                     }
                   />

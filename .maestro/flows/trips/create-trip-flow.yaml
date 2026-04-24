@@ -16,38 +16,14 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in the Trip Name field
-# iOS: testID not exposed through Pressable wrapper — match placeholder text instead
-# Android: testID maps reliably to resource-id
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          text: "Trip Name"
-      - inputText: ${TRIP_NAME}
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn:
-          id: "trip-name-input"
-      - inputText: ${TRIP_NAME}
+- tapOn:
+    id: "trip-name-input"
+- inputText: ${TRIP_NAME}
 
 # Fill in the Description field
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          text: "Description"
-      - inputText: "Created by Maestro E2E test"
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn:
-          id: "trip-description-input"
-      - inputText: "Created by Maestro E2E test"
+- tapOn:
+    id: "trip-description-input"
+- inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
 - hideKeyboard

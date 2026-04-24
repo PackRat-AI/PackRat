@@ -3,6 +3,6 @@
   "version": "2.0.24",
   "private": true,
   "dependencies": {
-    "@packrat-ai/nativewindui": "^2.0.2"
+    "@packrat-ai/nativewindui": "^2.0.3"
   }
 }
