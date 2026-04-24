@@ -17,12 +17,12 @@ appId: ${APP_ID}
 
 # Fill in Pack Name
 - tapOn:
-    text: "Pack Name"
+    id: "pack-name-input"
 - inputText: ${PACK_NAME}
 
 # Fill in Description
 - tapOn:
-    text: "Description"
+    id: "pack-description-input"
 - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
