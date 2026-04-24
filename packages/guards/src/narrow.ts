@@ -1,8 +1,9 @@
 /**
- * Narrowing helpers that return `T | undefined` instead of throwing.
+ * Narrowing helpers that return `T | undefined` instead of throwing,
+ * and coercion helpers that massage values into well-typed shapes.
  *
- * Useful when mapping external data (API responses, unknown records)
- * into strict internal types without `as` casts.
+ * Use these at system boundaries (API responses, CSV rows, unknown records)
+ * instead of `as` casts.
  */
 
 /** Returns the value if it's a string, otherwise undefined. */
@@ -49,3 +50,38 @@ export const asStringRecord = (value: unknown): Record<string, string> => {
   }
   return out;
 };
+
+/**
+ * Wraps a single value in an array if it isn't one already.
+ * Useful for normalising API fields that can be `T | T[]`.
+ *
+ * @example
+ * toArray('foo')       // ['foo']
+ * toArray(['foo'])     // ['foo']
+ * toArray(undefined)   // []
+ */
+export const toArray = <T>(value: T | T[] | null | undefined): T[] => {
+  if (value === null || value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
+};
+
+/** Alias for toArray — prefer whichever reads more clearly at the call site. */
+export const asArray = toArray;
+
+/**
+ * Filters nullish values out of an array and narrows the element type.
+ *
+ * @example
+ * compact([1, null, 2, undefined])  // [1, 2]  typed as number[]
+ */
+export const compact = <T>(arr: (T | null | undefined)[]): T[] =>
+  arr.filter((v): v is T => v !== null && v !== undefined);
+
+/**
+ * Returns the first non-nullish value from a list of candidates.
+ *
+ * @example
+ * firstDefined(undefined, null, 'hello', 'world')  // 'hello'
+ */
+export const firstDefined = <T>(...values: (T | null | undefined)[]): T | undefined =>
+  values.find((v): v is T => v !== null && v !== undefined);
