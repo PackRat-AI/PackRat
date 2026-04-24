@@ -72,7 +72,7 @@
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/eden": "^1.2.0",
     "@elysiajs/openapi": "^1.2.0",
-    "ai": "^5.0.136",
+    "ai": "^6.0.168",
     "chalk": "^5.6.2",
     "elysia": "^1.4.0",
     "hono": "^4.10.7",
