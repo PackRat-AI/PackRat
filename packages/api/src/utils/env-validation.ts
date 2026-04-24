@@ -162,7 +162,7 @@ export function getEnv(c: Context): ValidatedEnv {
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
     APP_CONTAINER: rawEnv.APP_CONTAINER || validated.data.APP_CONTAINER,
-  } as ValidatedEnv;
+  };
 
   // Cache the result
   envCache.set(c, data);
