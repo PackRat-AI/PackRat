@@ -8,9 +8,9 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { appConfig, featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
@@ -229,7 +229,7 @@ export default function DashboardScreen() {
   }, [searchValue, dashboardLayout, localizedTileInfo]);
 
   return (
-    <TabScreen>
+    <>
       <LargeTitleHeader
         title={t('dashboard.title')}
         searchBar={{
@@ -304,9 +304,14 @@ export default function DashboardScreen() {
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
-        ListFooterComponent={<View className="h-12" />}
+        ListFooterComponent={
+          <>
+            <View className="h-12" />
+            <AndroidTabBarInsetFix />
+          </>
+        }
       />
-    </TabScreen>
+    </>
   );
 }
 
