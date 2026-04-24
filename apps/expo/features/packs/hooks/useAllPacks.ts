@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { rpcClient } from 'expo-app/lib/api/rpcClient';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { Pack } from '../types';
 
-export const fetchAllPacks = async (): Promise<Pack[]> => {
+export const fetchAllPacks = async () => {
   const res = await rpcClient.api.packs.$get({
     query: {
       includePublic: 1,
@@ -12,7 +11,7 @@ export const fetchAllPacks = async (): Promise<Pack[]> => {
   if (!res.ok) {
     throw new Error(`Failed to fetch all packs: ${res.status}`);
   }
-  return res.json() as Promise<Pack[]>;
+  return res.json();
 };
 
 export function useAllPacks(enabled: boolean) {

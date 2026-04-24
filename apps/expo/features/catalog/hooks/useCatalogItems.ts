@@ -1,13 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { rpcClient } from 'expo-app/lib/api/rpcClient';
-import type { PaginatedCatalogItemsResponse } from '../types';
+
+type SortField = 'name' | 'brand' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
 
 interface GetCatalogItemsParams {
   pageParam?: number;
   query?: string;
   limit: number;
   category?: string;
-  sort: { field: string; order: 'asc' | 'desc' };
+  sort: { field: SortField; order: 'asc' | 'desc' };
 }
 
 // API function
@@ -17,21 +18,20 @@ export const getCatalogItems = async ({
   category,
   limit,
   sort,
-}: GetCatalogItemsParams): Promise<PaginatedCatalogItemsResponse> => {
-  // sort is serialized by the Hono client as sort[field]/sort[order] query params
+}: GetCatalogItemsParams) => {
   const res = await rpcClient.api.catalog.$get({
     query: {
       page: String(pageParam),
       limit: String(limit),
       q: query,
       category,
-      sort: sort as never,
+      sort,
     },
   });
   if (!res.ok) {
     throw new Error(`Failed to fetch catalog items: ${res.status}`);
   }
-  return res.json() as Promise<PaginatedCatalogItemsResponse>;
+  return res.json();
 };
 
 // Hook

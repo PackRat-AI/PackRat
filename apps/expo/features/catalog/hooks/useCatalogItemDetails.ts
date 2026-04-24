@@ -1,17 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { rpcClient } from 'expo-app/lib/api/rpcClient';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { CatalogItem } from '../types';
-
 // API function
-export const getCatalogItem = async (id: string): Promise<CatalogItem> => {
+export const getCatalogItem = async (id: string) => {
   const res = await rpcClient.api.catalog[':id'].$get({
     param: { id: String(id) },
   });
   if (!res.ok) {
     throw new Error(`Failed to fetch catalog item: ${res.status}`);
   }
-  return res.json() as Promise<CatalogItem>;
+  return res.json();
 };
 
 // Hook
