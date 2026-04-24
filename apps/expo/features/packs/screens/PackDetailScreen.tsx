@@ -25,7 +25,7 @@ import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import { packingModeStore } from '../store/packingMode';
-import type { PackItem } from '../types';
+import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
   const { t } = useTranslation();
