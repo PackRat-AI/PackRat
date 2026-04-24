@@ -9,8 +9,8 @@ export function useRecentPacks() {
     // Sort by localCreatedAt from latest to oldest
     const sortedPacks = packs.sort((a, b) => {
       // Convert dates to timestamps for comparison
-      const dateA = new Date(a.localCreatedAt).getTime();
-      const dateB = new Date(b.localCreatedAt).getTime();
+      const dateA = new Date(a.localCreatedAt ?? a.createdAt ?? '').getTime();
+      const dateB = new Date(b.localCreatedAt ?? b.createdAt ?? '').getTime();
 
       // Sort descending (latest first)
       return dateB - dateA;

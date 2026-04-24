@@ -50,7 +50,7 @@ export function PackCard({
         cancelButtonIndex,
         destructiveButtonIndex,
         title: pack.name,
-        message: pack.description,
+        message: pack.description ?? undefined,
         containerStyle: {
           backgroundColor: colors.card,
           paddingBottom: insets.bottom,

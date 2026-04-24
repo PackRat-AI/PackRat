@@ -1270,7 +1270,7 @@ const UpdateCatalogItemSchema = z.object({
   brand: z.string().nullable().optional(),
   categories: z.array(z.string()).nullable().optional(),
   weight: z.number().optional(),
-  weightUnit: z.string().optional(),
+  weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
   price: z.number().nullable().optional(),
   description: z.string().nullable().optional(),
 });
