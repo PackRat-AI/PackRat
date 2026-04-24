@@ -36,6 +36,6 @@ const getPresignedUrl = async (fileName: string, contentType: string) => {
   const { data, error } = await apiClient.upload.presigned.get({
     query: { fileName, contentType },
   });
-  if (error) throw new Error(`Failed to get upload URL: ${error.value}`);
-  return data as { url: string; publicUrl: string; objectKey: string };
+  if (error || !data) throw new Error(`Failed to get upload URL: ${error?.value}`);
+  return data;
 };
