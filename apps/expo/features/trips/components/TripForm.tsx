@@ -180,7 +180,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     onBlur={field.handleBlur}
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
-                      <View className="pl-2 justify-center">
+                      <View
+                        className="pl-2 justify-center"
+                        accessibilityElementsHidden={true}
+                        importantForAccessibility="no-hide-descendants"
+                      >
                         <Icon name="map" size={16} color={colors.grey3} />
                       </View>
                     }

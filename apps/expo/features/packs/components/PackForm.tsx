@@ -162,7 +162,11 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     onChangeText={field.handleChange}
                     errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
                     leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
+                      <View
+                        className="ios:pl-2 justify-center pl-2"
+                        accessibilityElementsHidden={true}
+                        importantForAccessibility="no-hide-descendants"
+                      >
                         <Icon name="folder" size={16} color={colors.grey3} />
                       </View>
                     }
@@ -192,7 +196,11 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     numberOfLines={4}
                     textAlignVertical="top"
                     leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
+                      <View
+                        className="ios:pl-2 justify-center pl-2"
+                        accessibilityElementsHidden={true}
+                        importantForAccessibility="no-hide-descendants"
+                      >
                         <Icon name="newspaper" size={16} color={colors.grey3} />
                       </View>
                     }
