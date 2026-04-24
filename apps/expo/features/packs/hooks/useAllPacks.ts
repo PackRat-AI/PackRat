@@ -2,12 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
-export const fetchAllPacks = async (): Promise<Pack[]> => {
-  const { data, error } = await apiClient.packs.get({
-    query: { includePublic: 1 },
-  });
+export const fetchAllPacks = async () => {
+  const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to fetch all packs: ${error.value}`);
-  return (data ?? []) as unknown as Pack[];
+  return data ?? [];
 };
 
 export function useAllPacks(enabled: boolean) {

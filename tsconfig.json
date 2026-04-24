@@ -3,6 +3,7 @@
     "allowJs": true,
     "baseUrl": ".",
     "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
     "jsx": "react-native",
     "lib": ["DOM", "ESNext"],
     "module": "preserve",

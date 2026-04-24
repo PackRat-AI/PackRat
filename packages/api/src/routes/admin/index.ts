@@ -853,7 +853,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ...(body.brand !== undefined && { brand: body.brand }),
             ...(body.categories !== undefined && { categories: body.categories }),
             ...(body.weight !== undefined && { weight: body.weight }),
-            ...(body.weightUnit !== undefined && { weightUnit: body.weightUnit }),
+            ...(body.weightUnit !== undefined && {
+              weightUnit: body.weightUnit as 'g' | 'oz' | 'kg' | 'lb',
+            }),
             ...(body.price !== undefined && { price: body.price }),
             ...(body.description !== undefined && { description: body.description }),
           })

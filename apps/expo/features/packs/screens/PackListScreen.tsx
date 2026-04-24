@@ -194,7 +194,8 @@ export function PackListScreen() {
             <LargeTitleHeaderSearchContentContainer>
               {searchValue ? (
                 <SearchResults
-                  results={filteredPacks || []}
+                  // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
+                  results={(filteredPacks || []) as any}
                   searchValue={searchValue}
                   onResultPress={handleSearchResultPress}
                 />
@@ -220,7 +221,8 @@ export function PackListScreen() {
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
             <PackCard
-              pack={pack}
+              // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
+              pack={pack as any}
               onPress={handlePackPress}
               showDuplicateButton={selectedTypeIndex === ALL_PACKS_INDEX}
             />

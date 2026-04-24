@@ -14,13 +14,17 @@ const listPacks = async () => {
 };
 
 const createPack = async (packData: PackInStore) => {
-  const { data, error } = await apiClient.packs.post(packData);
+  // biome-ignore lint/suspicious/noExplicitAny: store shapes diverge from Treaty's strict schema
+  const { data, error } = await apiClient.packs.post(packData as any);
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
   return data as object | null;
 };
 
 const updatePack = async ({ id, ...data }: Partial<PackInStore>) => {
-  const { data: result, error } = await apiClient.packs({ packId: String(id) }).put(data);
+  const { data: result, error } = await apiClient
+    .packs({ packId: String(id) })
+    // biome-ignore lint/suspicious/noExplicitAny: store shapes diverge from Treaty's strict schema
+    .put(data as any);
   if (error) throw new Error(`Failed to update pack: ${error.value}`);
   return result as object | null;
 };

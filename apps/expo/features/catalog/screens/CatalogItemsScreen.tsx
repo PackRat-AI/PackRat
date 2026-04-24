@@ -66,7 +66,7 @@ function CatalogItemsScreen() {
     isLoading: isVectorLoading,
     error: vectorError,
   } = useVectorSearch({ query: trimmedQuery, limit: 10 });
-  const searchResults: CatalogItem[] = (vectorResult?.items ?? []) as CatalogItem[];
+  const searchResults: CatalogItem[] = (vectorResult?.items ?? []) as unknown as CatalogItem[];
 
   const paginatedItems: CatalogItem[] = (
     (paginatedData?.pages.flatMap((page) => page.items) ?? []) as CatalogItem[]

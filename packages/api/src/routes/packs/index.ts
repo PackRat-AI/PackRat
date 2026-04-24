@@ -254,7 +254,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const updateData: Partial<NewPack> = {};
         if ('name' in data && data.name !== undefined) updateData.name = data.name;
         if ('description' in data) updateData.description = data.description;
-        if ('category' in data) updateData.category = data.category;
+        if ('category' in data) updateData.category = data.category as NewPack['category'];
         if ('isPublic' in data) updateData.isPublic = data.isPublic;
         if ('image' in data) updateData.image = data.image;
         if ('tags' in data) updateData.tags = data.tags;

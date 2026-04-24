@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
+import type { Pack } from 'expo-app/types';
 
 const fetchPackById = async (id: string): Promise<Pack> => {
   const { data, error } = await apiClient.packs({ packId: id }).get();
