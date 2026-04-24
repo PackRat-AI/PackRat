@@ -92,15 +92,22 @@ export function createApiClient(config: ApiClientConfig) {
     }
     const isRefreshPath = pathname === '/api/auth/refresh';
 
-    const buildRequest = (token: string | null): [RequestInfo | URL, RequestInit | undefined] => {
-      if (!token) return [input, init];
+    const buildRequest = (
+      token: string | null,
+      base: RequestInfo | URL,
+    ): [RequestInfo | URL, RequestInit | undefined] => {
+      if (!token) return [base, init];
       const headers = new Headers(init?.headers ?? {});
       headers.set('Authorization', `Bearer ${token}`);
-      return [input, { ...init, headers }];
+      return [base, { ...init, headers }];
     };
 
+    // Pre-clone a Request before any reads so the retry has an intact body.
+    // For URL/string inputs (the common Eden Treaty case) this is a no-op.
+    const firstBase = input instanceof Request ? input.clone() : input;
+
     const firstToken = isRefreshPath ? null : await config.auth.getAccessToken();
-    const [firstInput, firstInit] = buildRequest(firstToken);
+    const [firstInput, firstInit] = buildRequest(firstToken, firstBase);
     const response = await baseFetcher(firstInput, firstInit);
 
     if (response.status !== 401 || isRefreshPath) return response;
@@ -108,10 +115,9 @@ export function createApiClient(config: ApiClientConfig) {
     const newToken = await refreshAccessToken();
     if (!newToken) return response;
 
-    // Clone the input if it's a Request to avoid "body already used" on retry.
-    const retryInput = input instanceof Request ? input.clone() : input;
-    const [safeInput, retryInit] = buildRequest(newToken);
-    return baseFetcher(retryInput instanceof Request ? retryInput : safeInput, retryInit);
+    // `input` (the original) was never passed to fetch, so its body is still intact.
+    const [retryInput, retryInit] = buildRequest(newToken, input);
+    return baseFetcher(retryInput, retryInit);
   };
 
   // Pre-drill into the `/api` prefix so consumers write `client.catalog.get()`
