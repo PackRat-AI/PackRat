@@ -180,9 +180,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={uniqueCategories}
             keyExtractor={(item) => item.name}
-            renderItem={(item, index) => (
-              <CategoryItem category={item} index={index} />
-            )}
+            renderItem={(item, index) => <CategoryItem category={item} index={index} />}
           />
         </View>
 

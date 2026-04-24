@@ -528,15 +528,15 @@ function generateContentReport(): void {
 // Export functions for use in the frontend
 export {
   CATEGORY_DISPLAY_NAMES,
+  type ContentCategory,
+  type ContentMetadata,
+  type ContentRequest,
+  type DifficultyLevel,
   generateContentReport,
   generatePost,
   generatePosts,
   generateTopicIdeas,
   getExistingContent,
-  type ContentCategory,
-  type ContentMetadata,
-  type ContentRequest,
-  type DifficultyLevel,
 };
 
 // Command line interface

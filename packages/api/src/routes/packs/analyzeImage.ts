@@ -128,4 +128,4 @@ const analyzeImageRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables
   analyzeImageRouteEntries,
 );
 
-export { analyzeImageRoutes, analyzeImageRouteEntries };
+export { analyzeImageRouteEntries, analyzeImageRoutes };
