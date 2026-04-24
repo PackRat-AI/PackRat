@@ -39,14 +39,14 @@ function WeightCard({
   );
 }
 
-function CustomList({
+function CustomList<T>({
   data,
   renderItem,
   keyExtractor,
 }: {
-  data: unknown[];
-  renderItem: (item: unknown, index: number) => React.ReactNode;
-  keyExtractor: (item: unknown, index: number) => string;
+  data: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  keyExtractor: (item: T, index: number) => string;
 }) {
   return (
     <View>
@@ -179,10 +179,8 @@ export default function CurrentPackScreen() {
 
           <CustomList
             data={uniqueCategories}
-            keyExtractor={(item) => (item as CategorySummary).name}
-            renderItem={(item, index) => (
-              <CategoryItem category={item as CategorySummary} index={index} />
-            )}
+            keyExtractor={(item) => item.name}
+            renderItem={(item, index) => <CategoryItem category={item} index={index} />}
           />
         </View>
 
@@ -197,7 +195,9 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => <ItemRow item={item as PackItem} index={index} />}
+            renderItem={(item, index) => (
+              <ItemRow item={item as unknown as PackItem} index={index} />
+            )}
           />
         </View>
       </ScrollView>

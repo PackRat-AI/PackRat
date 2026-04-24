@@ -16,31 +16,21 @@ interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
-type Tool =
-  | WebSearchTool
-  | WeatherTool
-  | CatalogItemsTool
-  | GuidesRAGTool
-  | PackDetailsTool
-  | PackItemTool;
-
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
-  const tool = toolInvocation as Tool;
-
-  switch (tool.type) {
+  switch (toolInvocation.type) {
     case 'tool-webSearchTool':
-      return <WebSearchGenerativeUI toolInvocation={tool} />;
+      return <WebSearchGenerativeUI toolInvocation={toolInvocation as WebSearchTool} />;
     case 'tool-getWeatherForLocation':
-      return <WeatherGenerativeUI toolInvocation={tool} />;
+      return <WeatherGenerativeUI toolInvocation={toolInvocation as WeatherTool} />;
     case 'tool-getCatalogItems':
     case 'tool-catalogVectorSearch':
-      return <CatalogItemsGenerativeUI toolInvocation={tool} />;
+      return <CatalogItemsGenerativeUI toolInvocation={toolInvocation as CatalogItemsTool} />;
     case 'tool-searchPackratOutdoorGuidesRAG':
-      return <GuidesRAGGenerativeUI toolInvocation={tool} />;
+      return <GuidesRAGGenerativeUI toolInvocation={toolInvocation as GuidesRAGTool} />;
     case 'tool-getPackDetails':
-      return <PackDetailsGenerativeUI toolInvocation={tool} />;
+      return <PackDetailsGenerativeUI toolInvocation={toolInvocation as PackDetailsTool} />;
     case 'tool-getPackItemDetails':
-      return <PackItemDetailsGenerativeUI toolInvocation={tool} />;
+      return <PackItemDetailsGenerativeUI toolInvocation={toolInvocation as PackItemTool} />;
     default:
       return null;
   }
