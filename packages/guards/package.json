@@ -10,6 +10,7 @@
   "types": "./src/index.ts",
   "dependencies": {
     "radash": "catalog:",
-    "ts-extras": "catalog:"
+    "ts-extras": "catalog:",
+    "zod": "catalog:"
   }
 }

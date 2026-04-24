@@ -36,13 +36,12 @@ const SAFE_CAST_PATTERNS = [
   /\bas\s+ReturnType\b/,
   /\bas\s+InstanceType\b/,
   /\bas\s+Awaited\b/,
-  /\bas\s+unknown\s+as\b/,
 ];
 
 // Detects `as SomeType` where SomeType starts with uppercase or is a known type pattern
 // Excludes HTML element casts which are necessary in DOM manipulation
 const CAST_PATTERN = /\bas\s+([A-Z][A-Za-z0-9_<>[\]|&,\s]*?)(?=\s*[;,)\]}]|\s*\/\/|\s*$)/gm;
-const IMPORT_BLOCK_START = /^\s*(import|export)\s+type?\s*\{/;
+const IMPORT_BLOCK_START = /^\s*(import|export)(\s+type)?\s*\{/;
 const IMPORT_LINE = /^\s*(import|export)\b/;
 const ARRAY_LITERAL_CAST = /\]\s*as\s+[A-Z]/;
 const COMMENT_LINE = /^\s*(\/\/|\*)/;
