@@ -72,7 +72,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -109,7 +108,15 @@ jobs:
           restore-keys: |
             cocoapods-${{ runner.os }}-
 
+      - name: Cache iOS simulator build
+        id: ios-build-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/expo/build/PackRat-sim.tar.gz
+          key: ios-sim-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+
       - name: Build iOS app for simulator
+        if: steps.ios-build-cache.outputs.cache-hit != 'true'
         run: |
           cd apps/expo
           mkdir -p build
@@ -324,7 +331,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -377,7 +383,15 @@ jobs:
       - name: Add Maestro to PATH
         run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
+      - name: Cache Android APK build
+        id: android-build-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/expo/build/PackRat.apk
+          key: android-apk-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+
       - name: Build Android APK for emulator
+        if: steps.android-build-cache.outputs.cache-hit != 'true'
         run: |
           cd apps/expo
           mkdir -p build
