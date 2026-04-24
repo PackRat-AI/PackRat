@@ -259,6 +259,7 @@ export function safeJsonParse<T = unknown>(value: string): T | [] {
   const normalized = normalizeJsonString(value);
 
   try {
+    // caller is responsible for type safety at this boundary
     return JSON.parse(normalized) as T;
   } catch (err) {
     console.warn('❌ Failed to parse JSON:', {

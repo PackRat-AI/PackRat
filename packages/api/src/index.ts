@@ -120,6 +120,8 @@ export default {
       if (!env.ETL_QUEUE) {
         throw new Error('ETL_QUEUE is not configured');
       }
+      // The queue name check above is the runtime guard; the Worker runtime delivers
+      // correctly-typed messages for this queue binding.
       await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env });
     } else if (
       batch.queue === 'packrat-embeddings-queue' ||

@@ -2,7 +2,8 @@ import { env } from 'cloudflare:workers';
 import { Container } from '@cloudflare/containers';
 import type { Env } from '@packrat/api/types/env';
 
-// Type the module-level env binding with our known env shape
+// Module-level `env` from 'cloudflare:workers' is untyped at the TS layer;
+// the Workers runtime injects the correct shape. This double-cast is intentional.
 const typedEnv = env as unknown as Env;
 
 /**
