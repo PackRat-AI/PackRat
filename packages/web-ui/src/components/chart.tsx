@@ -72,7 +72,6 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: chart color tokens are from controlled config
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(

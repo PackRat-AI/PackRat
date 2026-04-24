@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { nullToUndefined } from '@packrat/guards';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { nullToUndefined } from '@packrat/guards';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { isAuthed } from 'expo-app/features/auth/store';
@@ -109,7 +109,13 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
       if (catalogItems.length > 0) {
         trackRecentlyUsed(catalogItems);
         try {
-          await addItemsToPack(packId, catalogItems.map(item => ({ ...item, description: nullToUndefined(item.description) })));
+          await addItemsToPack(
+            packId,
+            catalogItems.map((item) => ({
+              ...item,
+              description: nullToUndefined(item.description),
+            })),
+          );
         } catch (error) {
           console.error('Error adding catalog items to pack:', error);
           Alert.alert(t('common.error'), t('catalog.somethingWentWrong'));

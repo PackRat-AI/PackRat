@@ -1,6 +1,7 @@
 // CreatePackTemplateItemForm.tsx
 
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -8,7 +9,6 @@ import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { safeIndexOf } from '@packrat/guards';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
