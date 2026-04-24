@@ -4,7 +4,7 @@ import * as LucideIcons from 'lucide-react';
 
 export const LucideIcon = (name: string): LucideIconType => {
   if (keyIn(LucideIcons, name)) {
-    const icon = LucideIcons[name];
+    const icon = (LucideIcons as Record<string, unknown>)[name];
     if (typeof icon === 'function') return icon as LucideIconType;
   }
   return LucideIcons.FileQuestion;
