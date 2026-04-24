@@ -12,9 +12,7 @@ syncObservable(
   syncedCrud({
     persist: {
       name: 'user',
-      plugin: observablePersistSqlite(
-        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-      ),
+      plugin: observablePersistSqlite(Storage),
     },
   }),
 );

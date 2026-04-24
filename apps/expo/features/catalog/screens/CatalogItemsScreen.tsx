@@ -67,10 +67,10 @@ function CatalogItemsScreen() {
     isLoading: isVectorLoading,
     error: vectorError,
   } = useVectorSearch({ query: trimmedQuery, limit: 10 });
-  const searchResults: CatalogItem[] = vectorResult?.items ?? [];
+  const searchResults: CatalogItem[] = (vectorResult?.items ?? []) as unknown as CatalogItem[];
 
   const paginatedItems: CatalogItem[] = (
-    paginatedData?.pages.flatMap((page) => page.items) ?? []
+    (paginatedData?.pages.flatMap((page) => page.items) ?? []) as CatalogItem[]
   ).filter((item) => Boolean(item?.id));
 
   const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;

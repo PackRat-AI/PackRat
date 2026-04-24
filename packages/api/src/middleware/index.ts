@@ -1,4 +1,2 @@
-import { authMiddleware } from './auth';
-
-export { apiKeyAuthMiddleware } from './apiKeyAuth';
-export { authMiddleware };
+export type { AuthUser } from './auth';
+export { adminAuthPlugin, apiKeyAuthPlugin, authPlugin } from './auth';

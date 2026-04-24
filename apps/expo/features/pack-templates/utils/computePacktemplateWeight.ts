@@ -13,10 +13,8 @@ export const computePackTemplateWeights = (
   for (const item of template.items) {
     const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
 
-    // Add to total weight
     totalWeightGrams += itemWeightInGrams;
 
-    // Add to base weight only if not consumable and not worn
     if (!item.consumable && !item.worn) {
       baseWeightGrams += itemWeightInGrams;
     }

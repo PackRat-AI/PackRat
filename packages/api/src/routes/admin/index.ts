@@ -1,87 +1,86 @@
-import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
-import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
-import type { Env } from '@packrat/api/types/env';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import type { Variables } from '@packrat/api/types/variables';
+import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
-import { basicAuth } from 'hono/basic-auth';
-import { html, raw } from 'hono/html';
-import { sign, verify } from 'hono/jwt';
+import { Elysia, status } from 'elysia';
+import { jwtVerify, SignJWT } from 'jose';
+import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
-const adminRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
-// Token exchange endpoint — must be registered BEFORE the auth middleware so it
-// remains publicly accessible. Accepts HTTP Basic credentials and returns a
-// short-lived JWT that subsequent requests can use via Bearer auth.
-adminRoutes.post('/token', async (c) => {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Basic ')) {
-    return c.json({ error: 'Missing credentials' }, 401);
+function basicAuthGuard(request: Request): { authorized: true } | { authorized: false } {
+  const header = request.headers.get('authorization') ?? '';
+  if (!header.startsWith('Basic ')) return { authorized: false };
+  try {
+    const raw = header.slice(6);
+    const decoded = atob(raw);
+    const sep = decoded.indexOf(':');
+    if (sep === -1) return { authorized: false };
+    const username = decoded.slice(0, sep);
+    const password = decoded.slice(sep + 1);
+    const env = getEnv();
+    const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
+    const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
+    if (userOk && passOk) return { authorized: true };
+  } catch {
+    return { authorized: false };
   }
-  const decoded = atob(authHeader.slice(6));
-  const colonIndex = decoded.indexOf(':');
-  if (colonIndex < 0) {
-    return c.json({ error: 'Invalid credentials format' }, 401);
+  return { authorized: false };
+}
+
+function unauthorizedHtml(): Response {
+  return new Response('Unauthorized', {
+    status: 401,
+    headers: { 'WWW-Authenticate': 'Basic realm="PackRat Admin Panel"' },
+  });
+}
+
+async function issueAdminJwt(username: string): Promise<string> {
+  const env = getEnv();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  return new SignJWT({ role: 'admin' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(username)
+    .setIssuedAt()
+    .setExpirationTime(`${ADMIN_TOKEN_TTL_SECONDS}s`)
+    .sign(secret);
+}
+
+async function verifyAdminJwt(token: string): Promise<boolean> {
+  try {
+    const env = getEnv();
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload.role === 'admin';
+  } catch {
+    return false;
   }
-  const username = decoded.slice(0, colonIndex);
-  const password = decoded.slice(colonIndex + 1);
+}
 
-  const e = getEnv(c);
-  if (username !== e.ADMIN_USERNAME || password !== e.ADMIN_PASSWORD) {
-    return c.json({ error: 'Invalid username or password' }, 401);
-  }
-
-  const token = await sign(
-    {
-      sub: username,
-      role: 'admin',
-      exp: Math.floor(Date.now() / 1000) + ADMIN_TOKEN_TTL_SECONDS,
-    },
-    e.JWT_SECRET,
-  );
-
-  return c.json({ token, expiresIn: ADMIN_TOKEN_TTL_SECONDS });
-});
-
-adminRoutes.use('*', async (c, next) => {
+// Accept: Cloudflare Access header (prod), Bearer JWT (admin SPA), or Basic
+// auth (local dev / htmx UI). Returns true to let the request through.
+async function adminAuthGuard(request: Request): Promise<boolean> {
   // Production: Cloudflare Access injects this header after verifying the user
-  const cfEmail = c.req.header('CF-Access-Authenticated-User-Email');
-  if (cfEmail) return next();
+  if (request.headers.get('CF-Access-Authenticated-User-Email')) return true;
 
-  // Bearer JWT token (issued by /api/admin/token)
-  const authHeader = c.req.header('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const e = getEnv(c);
-      const payload = await verify(authHeader.slice(7), e.JWT_SECRET, 'HS256');
-      if (payload.role !== 'admin') {
-        return c.json({ error: 'Forbidden' }, 403);
-      }
-      return next();
-    } catch {
-      return c.json({ error: 'Invalid or expired token' }, 401);
-    }
+  const header = request.headers.get('authorization') ?? '';
+  if (header.startsWith('Bearer ')) {
+    return verifyAdminJwt(header.slice(7));
   }
+  if (header.startsWith('Basic ')) {
+    return basicAuthGuard(request).authorized;
+  }
+  return false;
+}
 
-  // Local dev / fallback: HTTP Basic Auth
-  return basicAuth({
-    verifyUser: (username, password, c) => {
-      const e = getEnv(c);
-      return username === e.ADMIN_USERNAME && password === e.ADMIN_PASSWORD;
-    },
-    realm: 'PackRat Admin',
-  })(c, next);
-});
+function htmlResponse(body: string): Response {
+  return new Response(body, { status: 200, headers: { 'Content-Type': 'text/html' } });
+}
 
-const adminLayout = (title: string, content: unknown) => html`
-<!DOCTYPE html>
+const adminLayout = (title: string, content: string) => `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -115,17 +114,53 @@ const adminLayout = (title: string, content: unknown) => html`
             </nav>
         </div>
         <div id="main-content" class="bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20">
-            ${raw(content)}
+            ${content}
         </div>
     </div>
 </body>
-</html>
-`;
+</html>`;
 
-adminRoutes.get('/', async (c) => {
-  const content = html`
+// ---------------------------------------------------------------------------
+
+export const adminRoutes = new Elysia({ prefix: '/admin' })
+  // Token exchange — must be registered BEFORE the auth guard so the admin
+  // SPA can exchange Basic credentials for a short-lived JWT.
+  .post(
+    '/token',
+    async ({ request }) => {
+      const header = request.headers.get('authorization') ?? '';
+      if (!header.startsWith('Basic ')) {
+        return status(401, { error: 'Missing credentials' });
+      }
+      const auth = basicAuthGuard(request);
+      if (!auth.authorized) return status(401, { error: 'Invalid username or password' });
+
+      // Re-decode to extract the username for the token subject.
+      const decoded = atob(header.slice(6));
+      const sep = decoded.indexOf(':');
+      const username = sep >= 0 ? decoded.slice(0, sep) : 'admin';
+
+      const token = await issueAdminJwt(username);
+      return { token, expiresIn: ADMIN_TOKEN_TTL_SECONDS };
+    },
+    {
+      detail: {
+        tags: ['Admin'],
+        summary: 'Exchange Basic credentials for a short-lived admin JWT',
+      },
+    },
+  )
+  .onBeforeHandle(async ({ request, path }) => {
+    // Public: token exchange is the only unauthenticated admin endpoint.
+    if (path === '/api/admin/token') return;
+    const ok = await adminAuthGuard(request);
+    if (!ok) return unauthorizedHtml();
+  })
+
+  // Dashboard
+  .get('/', () => {
+    const content = `
     <h2 class="text-2xl font-bold mb-6">Dashboard Overview</h2>
-    
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-lg shadow-lg">
             <h3 class="text-2xl font-bold" id="user-count">Loading...</h3>
@@ -144,1202 +179,708 @@ adminRoutes.get('/', async (c) => {
             <p class="opacity-90 font-medium">System Health</p>
         </div>
     </div>
-
-    <h3 class="text-xl font-semibold mb-4">Quick Actions</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button hx-get="/api/admin/users" hx-target="#main-content" hx-swap="innerHTML" 
-                class="p-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-            Manage Users
-        </button>
-        <button hx-get="/api/admin/packs" hx-target="#main-content" hx-swap="innerHTML"
-                class="p-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-            Manage Packs
-        </button>
-        <button hx-get="/api/admin/catalog" hx-target="#main-content" hx-swap="innerHTML"
-                class="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
-            Manage Catalog
-        </button>
-    </div>
-
     <script>
-        // Load dashboard stats on page load
-        htmx.onLoad(function() {
-            loadDashboardStats();
-        });
-        
-        async function loadDashboardStats() {
+        htmx.onLoad(async function() {
             try {
-                const response = await fetch('/api/admin/stats', {
-                    headers: {
-                        'Authorization': 'Basic ' + btoa('admin:password')
-                    }
-                });
+                const response = await fetch('/api/admin/stats');
                 const stats = await response.json();
-                if (stats) {
-                    document.getElementById('user-count').textContent = stats.users || '0';
-                    document.getElementById('pack-count').textContent = stats.packs || '0';
-                    document.getElementById('item-count').textContent = stats.items || '0';
-                }
+                document.getElementById('user-count').textContent = stats.users || '0';
+                document.getElementById('pack-count').textContent = stats.packs || '0';
+                document.getElementById('item-count').textContent = stats.items || '0';
             } catch (error) {
                 console.error('Failed to load dashboard stats:', error);
             }
-        }
+        });
     </script>
-  `;
+    `;
+    return htmlResponse(adminLayout('Dashboard', content));
+  })
 
-  return c.html(adminLayout('Dashboard', content));
-});
+  // Stats (JSON)
+  .get(
+    '/stats',
+    async () => {
+      const db = createDb();
+      try {
+        const [userCount] = await db.select({ count: count() }).from(users);
+        const [packCount] = await db
+          .select({ count: count() })
+          .from(packs)
+          .where(eq(packs.deleted, false));
+        const [itemCount] = await db.select({ count: count() }).from(catalogItems);
 
-adminRoutes.get('/users', async (c) => {
-  const content = html`
+        assertAllDefined([userCount, packCount, itemCount]);
+
+        return {
+          users: userCount?.count ?? 0,
+          packs: packCount?.count ?? 0,
+          items: itemCount?.count ?? 0,
+        };
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        return status(500, { error: 'Failed to fetch stats', code: 'STATS_ERROR' });
+      }
+    },
+    {
+      detail: {
+        tags: ['Admin'],
+        summary: 'Get admin dashboard statistics',
+      },
+    },
+  )
+
+  // Users list JSON
+  .get(
+    '/users-list',
+    async ({ query }) => {
+      const db = createDb();
+      try {
+        const limit = Number(query.limit ?? 100);
+        const offset = Number(query.offset ?? 0);
+        const usersList = await db
+          .select({
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role,
+            emailVerified: users.emailVerified,
+            createdAt: users.createdAt,
+          })
+          .from(users)
+          .orderBy(desc(users.createdAt))
+          .limit(limit)
+          .offset(offset);
+
+        return usersList.map((u) => ({
+          ...u,
+          createdAt: u.createdAt?.toISOString() || null,
+        }));
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        return status(500, { error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' });
+      }
+    },
+    {
+      query: z.object({
+        limit: z.coerce.number().int().positive().max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'List all users' },
+    },
+  )
+
+  // Packs list JSON
+  .get(
+    '/packs-list',
+    async ({ query }) => {
+      const db = createDb();
+      try {
+        const limit = Number(query.limit ?? 100);
+        const offset = Number(query.offset ?? 0);
+        const packsList = await db
+          .select({
+            id: packs.id,
+            name: packs.name,
+            description: packs.description,
+            category: packs.category,
+            isPublic: packs.isPublic,
+            createdAt: packs.createdAt,
+            userEmail: users.email,
+          })
+          .from(packs)
+          .leftJoin(users, eq(packs.userId, users.id))
+          .where(eq(packs.deleted, false))
+          .orderBy(desc(packs.createdAt))
+          .limit(limit)
+          .offset(offset);
+
+        return packsList.map((p) => ({
+          ...p,
+          createdAt: p.createdAt?.toISOString() || null,
+        }));
+      } catch (error) {
+        console.error('Error fetching packs:', error);
+        return status(500, { error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' });
+      }
+    },
+    {
+      query: z.object({
+        limit: z.coerce.number().int().positive().max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'List all packs' },
+    },
+  )
+
+  // Catalog list JSON
+  .get(
+    '/catalog-list',
+    async ({ query }) => {
+      const db = createDb();
+      try {
+        const limit = Number(query.limit ?? 25);
+        const offset = Number(query.offset ?? 0);
+        const itemsList = await db
+          .select({
+            id: catalogItems.id,
+            name: catalogItems.name,
+            categories: catalogItems.categories,
+            brand: catalogItems.brand,
+            price: catalogItems.price,
+            weight: catalogItems.weight,
+            weightUnit: catalogItems.weightUnit,
+            createdAt: catalogItems.createdAt,
+          })
+          .from(catalogItems)
+          .orderBy(desc(catalogItems.id))
+          .limit(limit)
+          .offset(offset);
+
+        return itemsList.map((it) => ({
+          ...it,
+          createdAt: it.createdAt?.toISOString() || null,
+        }));
+      } catch (error) {
+        console.error('Error fetching catalog items:', error);
+        return status(500, { error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' });
+      }
+    },
+    {
+      query: z.object({
+        limit: z.coerce.number().int().positive().max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'List catalog items' },
+    },
+  )
+
+  // HTMX endpoints - users table / search
+  .get('/users', () => {
+    const content = `
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">User Management</h2>
-        <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-            Add User
-        </button>
     </div>
-
     <div class="mb-4">
         <div class="flex gap-2">
-            <input type="text" 
-                   id="user-search" 
-                   name="q"
-                   placeholder="Search users by email, name..." 
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   hx-get="/api/admin/users-search"
-                   hx-target="#users-table"
-                   hx-trigger="keyup changed delay:500ms"
-                   hx-swap="innerHTML">
-            <button hx-get="/api/admin/users-table" 
-                    hx-target="#users-table" 
-                    hx-swap="innerHTML"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                Load All
-            </button>
+            <input type="text" id="user-search" name="q" placeholder="Search users..."
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                   hx-get="/api/admin/users-search" hx-target="#users-table"
+                   hx-trigger="keyup changed delay:500ms" hx-swap="innerHTML">
+            <button hx-get="/api/admin/users-table" hx-target="#users-table" hx-swap="innerHTML"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg">Load All</button>
         </div>
     </div>
-
     <div class="overflow-x-auto">
         <table class="w-full bg-white rounded-lg shadow-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verified</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200" id="users-table">
-                <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                        <div class="flex items-center justify-center">
-                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                            <span class="ml-2">Loading users...</span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
+            <tbody class="divide-y divide-gray-200" id="users-table"></tbody>
         </table>
     </div>
+    `;
+    return htmlResponse(adminLayout('Users', content));
+  })
+  .get('/users-table', async () => {
+    const db = createDb();
+    try {
+      const usersList = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          emailVerified: users.emailVerified,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .orderBy(desc(users.createdAt))
+        .limit(100);
 
-    <script>
-        // Auto-load users when page loads
-        htmx.onLoad(function() {
-            htmx.trigger('#users-table', 'loadUsers');
-        });
-        
-        // Add event listener for search input
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('user-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const query = this.value;
-                    if (query.length >= 2 || query.length === 0) {
-                        htmx.ajax('GET', '/api/admin/users-search?q=' + encodeURIComponent(query), {
-                            target: '#users-table',
-                            swap: 'innerHTML'
-                        });
-                    }
-                });
-            }
-        });
-    </script>
-  `;
+      const rows = usersList
+        .map(
+          (u) => `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.id}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.email}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${`${u.firstName || ''} ${u.lastName || ''}`}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                u.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+              }">${u.role || 'USER'}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.emailVerified ? '✅' : '❌'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"></td>
+          </tr>`,
+        )
+        .join('');
+      return htmlResponse(
+        rows ||
+          '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
+      );
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return htmlResponse(
+        '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading users</td></tr>',
+      );
+    }
+  })
+  .get(
+    '/users-search',
+    async ({ query }) => {
+      const db = createDb();
+      const search = query.q ?? '';
+      try {
+        const usersList = await db
+          .select({
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role,
+            emailVerified: users.emailVerified,
+            createdAt: users.createdAt,
+          })
+          .from(users)
+          .where(
+            search
+              ? or(
+                  ilike(users.email, `%${search}%`),
+                  ilike(users.firstName, `%${search}%`),
+                  ilike(users.lastName, `%${search}%`),
+                )
+              : undefined,
+          )
+          .orderBy(desc(users.createdAt))
+          .limit(100);
 
-  return c.html(adminLayout('Users', content));
-});
+        const rows = usersList
+          .map(
+            (u) => `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">${u.id}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${`${u.firstName || ''} ${u.lastName || ''}`}</td>
+            <td class="px-6 py-4 text-sm font-medium"><span class="px-2 py-1 text-xs font-semibold rounded-full ${u.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${u.role || 'USER'}</span></td>
+            <td class="px-6 py-4 text-sm text-gray-500">${u.emailVerified ? '✅' : '❌'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
+            <td class="px-6 py-4 text-sm font-medium"></td>
+          </tr>`,
+          )
+          .join('');
+        return htmlResponse(
+          rows ||
+            '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
+        );
+      } catch (error) {
+        console.error('Error searching users:', error);
+        return htmlResponse(
+          '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error searching users</td></tr>',
+        );
+      }
+    },
+    {
+      query: z.object({ q: z.string().optional() }),
+    },
+  )
 
-adminRoutes.get('/packs', async (c) => {
-  const content = html`
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Pack Management</h2>
-        <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-            Add Pack
-        </button>
-    </div>
-
+  // Packs UI
+  .get('/packs', () => {
+    const content = `
+    <h2 class="text-2xl font-bold mb-6">Pack Management</h2>
     <div class="mb-4">
         <div class="flex gap-2">
-            <input type="text" 
-                   id="pack-search" 
-                   name="q"
-                   placeholder="Search packs by name, category, owner..." 
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   hx-get="/api/admin/packs-search"
-                   hx-target="#packs-table"
-                   hx-trigger="keyup changed delay:500ms"
-                   hx-swap="innerHTML">
-            <button hx-get="/api/admin/packs-table" 
-                    hx-target="#packs-table" 
-                    hx-swap="innerHTML"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                Load All
-            </button>
+            <input type="text" name="q" placeholder="Search packs..."
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                   hx-get="/api/admin/packs-search" hx-target="#packs-table"
+                   hx-trigger="keyup changed delay:500ms">
+            <button hx-get="/api/admin/packs-table" hx-target="#packs-table" hx-swap="innerHTML"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg">Load All</button>
         </div>
     </div>
-
     <div class="overflow-x-auto">
         <table class="w-full bg-white rounded-lg shadow-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Public</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Public</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200" id="packs-table">
-                <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                        <div class="flex items-center justify-center">
-                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                            <span class="ml-2">Loading packs...</span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
+            <tbody class="divide-y divide-gray-200" id="packs-table"></tbody>
         </table>
     </div>
+    `;
+    return htmlResponse(adminLayout('Packs', content));
+  })
+  .get('/packs-table', async () => {
+    const db = createDb();
+    try {
+      const packsList = await db
+        .select({
+          id: packs.id,
+          name: packs.name,
+          category: packs.category,
+          isPublic: packs.isPublic,
+          createdAt: packs.createdAt,
+          userEmail: users.email,
+        })
+        .from(packs)
+        .leftJoin(users, eq(packs.userId, users.id))
+        .where(eq(packs.deleted, false))
+        .orderBy(desc(packs.createdAt))
+        .limit(100);
 
-    <script>
-        // Auto-load packs when page loads
-        htmx.onLoad(function() {
-            htmx.trigger('#packs-table', 'loadPacks');
-        });
-        
-        // Add event listener for search input
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('pack-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const query = this.value;
-                    if (query.length >= 2 || query.length === 0) {
-                        htmx.ajax('GET', '/api/admin/packs-search?q=' + encodeURIComponent(query), {
-                            target: '#packs-table',
-                            swap: 'innerHTML'
-                        });
-                    }
-                });
-            }
-        });
-    </script>
-  `;
-
-  return c.html(adminLayout('Packs', content));
-});
-
-adminRoutes.get('/catalog', async (c) => {
-  const content = html`
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Catalog Management</h2>
-        <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-            Add Item
-        </button>
-    </div>
-
-    <div class="mb-4">
-        <div class="flex gap-2">
-            <input type="text" 
-                   id="catalog-search" 
-                   name="q"
-                   placeholder="Search items by name, brand, category..." 
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   hx-get="/api/admin/catalog-search"
-                   hx-target="#catalog-table"
-                   hx-trigger="keyup changed delay:500ms"
-                   hx-swap="innerHTML">
-            <button hx-get="/api/admin/catalog-table" 
-                    hx-target="#catalog-table" 
-                    hx-swap="innerHTML"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                Load All
-            </button>
-        </div>
-    </div>
-
-    <div class="overflow-x-auto">
-        <table class="w-full bg-white rounded-lg shadow-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="catalog-table">
-                <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                        <div class="flex items-center justify-center">
-                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                            <span class="ml-2">Loading catalog...</span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <script>
-        // Auto-load catalog when page loads
-        htmx.onLoad(function() {
-            htmx.trigger('#catalog-table', 'loadCatalog');
-        });
-        
-        // Add event listener for search input
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('catalog-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    const query = this.value;
-                    if (query.length >= 2 || query.length === 0) {
-                        htmx.ajax('GET', '/api/admin/catalog-search?q=' + encodeURIComponent(query), {
-                            target: '#catalog-table',
-                            swap: 'innerHTML'
-                        });
-                    }
-                });
-            }
-        });
-    </script>
-  `;
-
-  return c.html(adminLayout('Catalog', content));
-});
-
-// HTMX endpoints for table data
-adminRoutes.get('/users-table', async (c) => {
-  const db = createDb(c);
-
-  try {
-    const usersList = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        emailVerified: users.emailVerified,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .orderBy(desc(users.createdAt))
-      .limit(100);
-
-    const rows = usersList
-      .map(
-        (user) => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.id}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${`${user.firstName || ''} ${user.lastName || ''}`}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-            user.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-          }">${user.role || 'USER'}</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.emailVerified ? '✅' : '❌'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="editUser(${user.id})">Edit</button>
-          <button class="text-red-600 hover:text-red-900" onclick="deleteUser(${user.id})">Delete</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join('');
-
-    return c.html(
-      rows ||
-        '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
-    );
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return c.html(
-      '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading users</td></tr>',
-    );
-  }
-});
-
-adminRoutes.get('/packs-table', async (c) => {
-  const db = createDb(c);
-
-  try {
-    const packsList = await db
-      .select({
-        id: packs.id,
-        name: packs.name,
-        description: packs.description,
-        category: packs.category,
-        isPublic: packs.isPublic,
-        createdAt: packs.createdAt,
-        userEmail: users.email,
-      })
-      .from(packs)
-      .leftJoin(users, eq(packs.userId, users.id))
-      .where(eq(packs.deleted, false))
-      .orderBy(desc(packs.createdAt))
-      .limit(100);
-
-    const rows = packsList
-      .map(
-        (pack) => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pack.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.userEmail || 'Unknown'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.category || 'Uncategorized'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.isPublic ? '✅' : '❌'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.createdAt ? new Date(pack.createdAt).toLocaleDateString() : 'N/A'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="viewPack('${pack.id}')">View</button>
-          <button class="text-red-600 hover:text-red-900" onclick="deletePack('${pack.id}')">Delete</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join('');
-
-    return c.html(
-      rows ||
-        '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No packs found</td></tr>',
-    );
-  } catch (error) {
-    console.error('Error fetching packs:', error);
-    return c.html(
-      '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading packs</td></tr>',
-    );
-  }
-});
-
-adminRoutes.get('/catalog-table', async (c) => {
-  const db = createDb(c);
-
-  try {
-    const itemsList = await db
-      .select({
-        id: catalogItems.id,
-        name: catalogItems.name,
-        categories: catalogItems.categories,
-        brand: catalogItems.brand,
-        price: catalogItems.price,
-        weight: catalogItems.weight,
-        weightUnit: catalogItems.weightUnit,
-        createdAt: catalogItems.createdAt,
-      })
-      .from(catalogItems)
-      .orderBy(desc(catalogItems.id))
-      .limit(25);
-
-    const rows = itemsList
-      .map(
-        (item) => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.brand || 'Unknown'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.categories?.join(', ') || 'Uncategorized'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.weight ? `${item.weight} ${item.weightUnit || 'g'}` : 'N/A'
-        }</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.price ? `$${item.price}` : 'N/A'
-        }</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="editItem(${item.id})">Edit</button>
-          <button class="text-red-600 hover:text-red-900" onclick="deleteItem(${item.id})">Delete</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join('');
-
-    return c.html(
-      rows ||
-        '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No catalog items found</td></tr>',
-    );
-  } catch (error) {
-    console.error('Error fetching catalog items:', error);
-    return c.html(
-      '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading catalog</td></tr>',
-    );
-  }
-});
-
-// Search endpoints
-adminRoutes.get('/users-search', async (c) => {
-  const db = createDb(c);
-  const search = c.req.query('q') || '';
-
-  try {
-    const usersList = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        emailVerified: users.emailVerified,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(
-        search
-          ? or(
-              ilike(users.email, `%${search}%`),
-              ilike(users.firstName, `%${search}%`),
-              ilike(users.lastName, `%${search}%`),
-            )
-          : undefined,
-      )
-      .orderBy(desc(users.createdAt))
-      .limit(100);
-
-    const rows = usersList
-      .map(
-        (user) => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.id}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${`${user.firstName || ''} ${user.lastName || ''}`}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-            user.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-          }">${user.role || 'USER'}</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.emailVerified ? '✅' : '❌'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="editUser(${user.id})">Edit</button>
-          <button class="text-red-600 hover:text-red-900" onclick="deleteUser(${user.id})">Delete</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join('');
-
-    return c.html(
-      rows ||
-        '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
-    );
-  } catch (error) {
-    console.error('Error searching users:', error);
-    return c.html(
-      '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error searching users</td></tr>',
-    );
-  }
-});
-
-adminRoutes.get('/packs-search', async (c) => {
-  const db = createDb(c);
-  const search = c.req.query('q') || '';
-
-  try {
-    const packsList = await db
-      .select({
-        id: packs.id,
-        name: packs.name,
-        description: packs.description,
-        category: packs.category,
-        isPublic: packs.isPublic,
-        createdAt: packs.createdAt,
-        userEmail: users.email,
-      })
-      .from(packs)
-      .leftJoin(users, eq(packs.userId, users.id))
-      .where(
-        and(
-          eq(packs.deleted, false),
-          search
-            ? or(
-                ilike(packs.name, `%${search}%`),
-                ilike(packs.description, `%${search}%`),
-                ilike(packs.category, `%${search}%`),
-                ilike(users.email, `%${search}%`),
-              )
-            : undefined,
-        ),
-      )
-      .orderBy(desc(packs.createdAt))
-      .limit(100);
-
-    const rows = packsList
-      .map(
-        (pack) => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${pack.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.userEmail || 'Unknown'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.category || 'Uncategorized'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.isPublic ? '✅' : '❌'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${pack.createdAt ? new Date(pack.createdAt).toLocaleDateString() : 'N/A'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="viewPack('${pack.id}')">View</button>
-          <button class="text-red-600 hover:text-red-900" onclick="deletePack('${pack.id}')">Delete</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join('');
-
-    return c.html(
-      rows ||
-        '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No packs found</td></tr>',
-    );
-  } catch (error) {
-    console.error('Error searching packs:', error);
-    return c.html(
-      '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error searching packs</td></tr>',
-    );
-  }
-});
-
-adminRoutes.get('/catalog-search', async (c) => {
-  const db = createDb(c);
-  const search = c.req.query('q') || '';
-
-  try {
-    const itemsList = await db
-      .select({
-        id: catalogItems.id,
-        name: catalogItems.name,
-        categories: catalogItems.categories,
-        brand: catalogItems.brand,
-        price: catalogItems.price,
-        weight: catalogItems.weight,
-        weightUnit: catalogItems.weightUnit,
-        createdAt: catalogItems.createdAt,
-      })
-      .from(catalogItems)
-      .where(
-        search
-          ? or(
-              ilike(catalogItems.name, `%${search}%`),
-              ilike(catalogItems.brand, `%${search}%`),
-              // Partial match in any category (uses jsonb_array_elements_text and ILIKE)
-              sql`
-                  EXISTS (
-                    SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
-                    WHERE cat ILIKE '%' || ${search} || '%'
+      const rows = packsList
+        .map(
+          (p) => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium text-gray-900">${p.name}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${p.userEmail || 'Unknown'}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${p.category || 'Uncategorized'}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${p.isPublic ? '✅' : '❌'}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A'}</td>
+          <td class="px-6 py-4 text-sm font-medium"></td>
+        </tr>`,
+        )
+        .join('');
+      return htmlResponse(
+        rows ||
+          '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No packs found</td></tr>',
+      );
+    } catch (error) {
+      console.error('Error fetching packs:', error);
+      return htmlResponse(
+        '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading packs</td></tr>',
+      );
+    }
+  })
+  .get(
+    '/packs-search',
+    async ({ query }) => {
+      const db = createDb();
+      const search = query.q ?? '';
+      try {
+        const packsList = await db
+          .select({
+            id: packs.id,
+            name: packs.name,
+            category: packs.category,
+            isPublic: packs.isPublic,
+            createdAt: packs.createdAt,
+            userEmail: users.email,
+          })
+          .from(packs)
+          .leftJoin(users, eq(packs.userId, users.id))
+          .where(
+            and(
+              eq(packs.deleted, false),
+              search
+                ? or(
+                    ilike(packs.name, `%${search}%`),
+                    ilike(packs.description, `%${search}%`),
+                    ilike(packs.category, `%${search}%`),
+                    ilike(users.email, `%${search}%`),
                   )
-                `,
-              ilike(catalogItems.description, `%${search}%`),
-            )
-          : undefined,
-      )
-      .orderBy(desc(catalogItems.id))
-      .limit(25);
+                : undefined,
+            ),
+          )
+          .orderBy(desc(packs.createdAt))
+          .limit(100);
 
-    const rows = itemsList
-      .map(
-        (item) => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.brand || 'Unknown'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.categories?.join(', ') || 'Uncategorized'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.weight ? `${item.weight} ${item.weightUnit || 'g'}` : 'N/A'
-        }</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.price ? `$${item.price}` : 'N/A'
-        }</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="editItem(${item.id})">Edit</button>
-          <button class="text-red-600 hover:text-red-900" onclick="deleteItem(${item.id})">Delete</button>
-        </td>
-      </tr>
-    `,
-      )
-      .join('');
-
-    return c.html(
-      rows ||
-        '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No catalog items found</td></tr>',
-    );
-  } catch (error) {
-    console.error('Error searching catalog items:', error);
-    return c.html(
-      '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error searching catalog</td></tr>',
-    );
-  }
-});
-
-// Admin API endpoints for getting data
-export const getStatsRoute = createRoute({
-  method: 'get',
-  path: '/stats',
-  tags: ['Admin'],
-  summary: 'Get admin dashboard statistics',
-  description: 'Get count statistics for users, packs, and catalog items (Admin only)',
-  responses: {
-    200: {
-      description: 'Admin statistics retrieved successfully',
-      content: {
-        'application/json': {
-          schema: z.object({
-            users: z.number().int().min(0),
-            packs: z.number().int().min(0),
-            items: z.number().int().min(0),
-          }),
-        },
-      },
+        const rows = packsList
+          .map(
+            (p) => `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">${p.name}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${p.userEmail || 'Unknown'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${p.category || 'Uncategorized'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${p.isPublic ? '✅' : '❌'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A'}</td>
+            <td class="px-6 py-4 text-sm font-medium"></td>
+          </tr>`,
+          )
+          .join('');
+        return htmlResponse(
+          rows ||
+            '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No packs found</td></tr>',
+        );
+      } catch (error) {
+        console.error('Error searching packs:', error);
+        return htmlResponse(
+          '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error searching packs</td></tr>',
+        );
+      }
     },
-
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
+    {
+      query: z.object({ q: z.string().optional() }),
     },
-  },
-});
+  )
 
-export const getStatsHandler: RouteHandler<typeof getStatsRoute> = async (c) => {
-  const db = createDb(c);
+  // Catalog UI
+  .get('/catalog', () => {
+    const content = `
+    <h2 class="text-2xl font-bold mb-6">Catalog Management</h2>
+    <div class="mb-4">
+        <div class="flex gap-2">
+            <input type="text" name="q" placeholder="Search catalog..."
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                   hx-get="/api/admin/catalog-search" hx-target="#catalog-table"
+                   hx-trigger="keyup changed delay:500ms">
+            <button hx-get="/api/admin/catalog-table" hx-target="#catalog-table" hx-swap="innerHTML"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg">Load All</button>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full bg-white rounded-lg shadow-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Weight</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200" id="catalog-table"></tbody>
+        </table>
+    </div>
+    `;
+    return htmlResponse(adminLayout('Catalog', content));
+  })
+  .get('/catalog-table', async () => {
+    const db = createDb();
+    try {
+      const itemsList = await db
+        .select({
+          id: catalogItems.id,
+          name: catalogItems.name,
+          categories: catalogItems.categories,
+          brand: catalogItems.brand,
+          price: catalogItems.price,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+        })
+        .from(catalogItems)
+        .orderBy(desc(catalogItems.id))
+        .limit(25);
 
-  try {
-    const [userCount] = await db.select({ count: count() }).from(users);
-    const [packCount] = await db
-      .select({ count: count() })
-      .from(packs)
-      .where(eq(packs.deleted, false));
-    const [itemCount] = await db.select({ count: count() }).from(catalogItems);
-
-    assertAllDefined([userCount, packCount, itemCount]);
-
-    return c.json(
-      {
-        users: userCount?.count ?? 0,
-        packs: packCount?.count ?? 0,
-        items: itemCount?.count ?? 0,
-      },
-      200,
-    );
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    return c.json({ error: 'Failed to fetch stats', code: 'STATS_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(getStatsRoute, getStatsHandler);
-
-// Keep the existing API endpoints for backward compatibility
-export const getUsersListRoute = createRoute({
-  method: 'get',
-  path: '/users-list',
-  tags: ['Admin'],
-  summary: 'List all users',
-  description: 'Get a list of all users in the system (Admin only)',
-  request: {
-    query: z.object({
-      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
-      offset: z.coerce.number().int().min(0).default(0).optional(),
-      q: z.string().optional(),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Users list retrieved successfully',
-      content: {
-        'application/json': {
-          schema: z.array(
-            z.object({
-              id: z.number(),
-              email: z.string(),
-              firstName: z.string().nullable(),
-              lastName: z.string().nullable(),
-              role: z.string().nullable(),
-              emailVerified: z.boolean().nullable(),
-              createdAt: z.string().nullable(),
-            }),
-          ),
-        },
-      },
-    },
-
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
-export const getUsersListHandler: RouteHandler<typeof getUsersListRoute> = async (c) => {
-  const db = createDb(c);
-
-  try {
-    const { limit = 100, offset = 0, q } = c.req.valid('query');
-    const usersList = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        emailVerified: users.emailVerified,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(
-        q
-          ? or(
-              ilike(users.email, `%${q}%`),
-              ilike(users.firstName, `%${q}%`),
-              ilike(users.lastName, `%${q}%`),
-            )
-          : undefined,
-      )
-      .orderBy(desc(users.createdAt))
-      .limit(Number(limit))
-      .offset(Number(offset));
-
-    const formattedUsers = usersList.map((user) => ({
-      ...user,
-      createdAt: user.createdAt?.toISOString() || null,
-    }));
-
-    return c.json(formattedUsers, 200);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return c.json({ error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(getUsersListRoute, getUsersListHandler);
-
-export const getPacksListRoute = createRoute({
-  method: 'get',
-  path: '/packs-list',
-  tags: ['Admin'],
-  summary: 'List all packs',
-  description: 'Get a list of all packs in the system (Admin only)',
-  request: {
-    query: z.object({
-      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
-      offset: z.coerce.number().int().min(0).default(0).optional(),
-      q: z.string().optional(),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Packs list retrieved successfully',
-      content: {
-        'application/json': {
-          schema: z.array(
-            z.object({
-              id: z.string(),
-              name: z.string(),
-              description: z.string().nullable(),
-              category: z.string(),
-              isPublic: z.boolean().nullable(),
-              createdAt: z.string().nullable(),
-              userEmail: z.string().nullable(),
-            }),
-          ),
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
-export const getPacksListHandler: RouteHandler<typeof getPacksListRoute> = async (c) => {
-  const db = createDb(c);
-
-  try {
-    const { limit = 100, offset = 0, q } = c.req.valid('query');
-    const packsList = await db
-      .select({
-        id: packs.id,
-        name: packs.name,
-        description: packs.description,
-        category: packs.category,
-        isPublic: packs.isPublic,
-        createdAt: packs.createdAt,
-        userEmail: users.email,
-      })
-      .from(packs)
-      .leftJoin(users, eq(packs.userId, users.id))
-      .where(
-        and(
-          eq(packs.deleted, false),
-          q
-            ? or(
-                ilike(packs.name, `%${q}%`),
-                ilike(packs.description, `%${q}%`),
-                ilike(packs.category, `%${q}%`),
-                ilike(users.email, `%${q}%`),
-              )
-            : undefined,
-        ),
-      )
-      .orderBy(desc(packs.createdAt))
-      .limit(Number(limit))
-      .offset(Number(offset));
-
-    const formattedPacks = packsList.map((pack) => ({
-      ...pack,
-      createdAt: pack.createdAt?.toISOString() || null,
-    }));
-
-    return c.json(formattedPacks, 200);
-  } catch (error) {
-    console.error('Error fetching packs:', error);
-    return c.json({ error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(getPacksListRoute, getPacksListHandler);
-
-export const getCatalogListRoute = createRoute({
-  method: 'get',
-  path: '/catalog-list',
-  tags: ['Admin'],
-  summary: 'List catalog items',
-  description: 'Get a list of catalog items (Admin only)',
-  request: {
-    query: z.object({
-      limit: z.coerce.number().int().positive().max(100).default(25).optional(),
-      offset: z.coerce.number().int().min(0).default(0).optional(),
-      q: z.string().optional(),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Catalog items list retrieved successfully',
-      content: {
-        'application/json': {
-          schema: z.array(
-            z.object({
-              id: z.number(),
-              name: z.string(),
-              categories: z.array(z.string()).nullable(),
-              brand: z.string().nullable(),
-              price: z.number().nullable(),
-              weight: z.number().nullable(),
-              weightUnit: z.string(),
-              createdAt: z.string().nullable(),
-            }),
-          ),
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
-export const getCatalogListHandler: RouteHandler<typeof getCatalogListRoute> = async (c) => {
-  const db = createDb(c);
-
-  try {
-    const { limit = 25, offset = 0, q } = c.req.valid('query');
-    const itemsList = await db
-      .select({
-        id: catalogItems.id,
-        name: catalogItems.name,
-        categories: catalogItems.categories,
-        brand: catalogItems.brand,
-        price: catalogItems.price,
-        weight: catalogItems.weight,
-        weightUnit: catalogItems.weightUnit,
-        createdAt: catalogItems.createdAt,
-      })
-      .from(catalogItems)
-      .where(
-        q
-          ? or(
-              ilike(catalogItems.name, `%${q}%`),
-              ilike(catalogItems.brand, `%${q}%`),
-              sql`EXISTS (
-                SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
-                WHERE cat ILIKE '%' || ${q} || '%'
-              )`,
-            )
-          : undefined,
-      )
-      .orderBy(desc(catalogItems.id))
-      .limit(Number(limit))
-      .offset(Number(offset));
-
-    const formattedItems = itemsList.map((item) => ({
-      ...item,
-      createdAt: item.createdAt?.toISOString() || null,
-    }));
-
-    return c.json(formattedItems, 200);
-  } catch (error) {
-    console.error('Error fetching catalog items:', error);
-    return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(getCatalogListRoute, getCatalogListHandler);
-
-adminRoutes.route('/analytics', analyticsRoutes);
-
-// ─── Action routes ────────────────────────────────────────────────────────────
-
-export const deleteUserRoute = createRoute({
-  method: 'delete',
-  path: '/users/:id',
-  tags: ['Admin'],
-  summary: 'Delete a user',
-  request: {
-    params: z.object({ id: z.coerce.number().int().positive() }),
-  },
-  responses: {
-    200: {
-      description: 'User deleted',
-      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
-    },
-    404: {
-      description: 'Not found',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
-    },
-    409: {
-      description: 'Conflict — user has dependent data',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
-    },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
-    },
-  },
-});
-
-export const deleteUserHandler: RouteHandler<typeof deleteUserRoute> = async (c) => {
-  const db = createDb(c);
-  const { id } = c.req.valid('param');
-
-  try {
-    const deleted = await db.delete(users).where(eq(users.id, id)).returning();
-    if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
-    return c.json({ success: true }, 200);
-  } catch (error) {
-    // Drizzle wraps the pg error in DrizzleQueryError, so the 23503 code lives
-    // on error.cause, not error itself.
-    const pgCode =
-      (error as { code?: string }).code ?? (error as { cause?: { code?: string } }).cause?.code;
-    if (pgCode === '23503') {
-      return c.json({ error: 'Cannot delete: user has dependent data', code: 'CONFLICT' }, 409);
+      const rows = itemsList
+        .map(
+          (i) => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium text-gray-900">${i.name}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${i.brand || 'Unknown'}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${i.categories?.join(', ') || 'Uncategorized'}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${i.weight ? `${i.weight} ${i.weightUnit || 'g'}` : 'N/A'}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">${i.price ? `$${i.price}` : 'N/A'}</td>
+          <td class="px-6 py-4 text-sm font-medium"></td>
+        </tr>`,
+        )
+        .join('');
+      return htmlResponse(
+        rows ||
+          '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No catalog items found</td></tr>',
+      );
+    } catch (error) {
+      console.error('Error fetching catalog items:', error);
+      return htmlResponse(
+        '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading catalog</td></tr>',
+      );
     }
-    console.error('Error deleting user:', error);
-    return c.json({ error: 'Failed to delete user', code: 'DELETE_ERROR' }, 500);
-  }
-};
+  })
+  .get(
+    '/catalog-search',
+    async ({ query }) => {
+      const db = createDb();
+      const search = query.q ?? '';
+      try {
+        const itemsList = await db
+          .select({
+            id: catalogItems.id,
+            name: catalogItems.name,
+            categories: catalogItems.categories,
+            brand: catalogItems.brand,
+            price: catalogItems.price,
+            weight: catalogItems.weight,
+            weightUnit: catalogItems.weightUnit,
+          })
+          .from(catalogItems)
+          .where(
+            search
+              ? or(
+                  ilike(catalogItems.name, `%${search}%`),
+                  ilike(catalogItems.brand, `%${search}%`),
+                  sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat WHERE cat ILIKE '%' || ${search} || '%')`,
+                  ilike(catalogItems.description, `%${search}%`),
+                )
+              : undefined,
+          )
+          .orderBy(desc(catalogItems.id))
+          .limit(25);
 
-adminRoutes.openapi(deleteUserRoute, deleteUserHandler);
-
-export const deletePackRoute = createRoute({
-  method: 'delete',
-  path: '/packs/:id',
-  tags: ['Admin'],
-  summary: 'Soft-delete a pack',
-  request: {
-    params: z.object({ id: z.string().min(1) }),
-  },
-  responses: {
-    200: {
-      description: 'Pack deleted',
-      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+        const rows = itemsList
+          .map(
+            (i) => `
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm font-medium text-gray-900">${i.name}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${i.brand || 'Unknown'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${i.categories?.join(', ') || 'Uncategorized'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${i.weight ? `${i.weight} ${i.weightUnit || 'g'}` : 'N/A'}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">${i.price ? `$${i.price}` : 'N/A'}</td>
+            <td class="px-6 py-4 text-sm font-medium"></td>
+          </tr>`,
+          )
+          .join('');
+        return htmlResponse(
+          rows ||
+            '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No catalog items found</td></tr>',
+        );
+      } catch (error) {
+        console.error('Error searching catalog items:', error);
+        return htmlResponse(
+          '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error searching catalog</td></tr>',
+        );
+      }
     },
-    404: {
-      description: 'Not found',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+    {
+      query: z.object({ q: z.string().optional() }),
     },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+  )
+
+  // Delete a user (hard delete — also removes dependent rows where needed)
+  .delete(
+    '/users/:id',
+    async ({ params }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const db = createDb();
+      try {
+        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
+        if (!deleted.length) return status(404, { error: 'User not found' });
+        return { success: true as const };
+      } catch (error) {
+        if ((error as { code?: string })?.code === '23503') {
+          return status(409, { error: 'Cannot delete: user has dependent data' });
+        }
+        console.error('Error deleting user:', error);
+        return status(500, { error: 'Failed to delete user' });
+      }
     },
-  },
-});
-
-export const deletePackHandler: RouteHandler<typeof deletePackRoute> = async (c) => {
-  const db = createDb(c);
-  const { id } = c.req.valid('param');
-
-  try {
-    const updated = await db
-      .update(packs)
-      .set({ deleted: true })
-      .where(and(eq(packs.id, id), eq(packs.deleted, false)))
-      .returning();
-    if (!updated.length) return c.json({ error: 'Pack not found', code: 'NOT_FOUND' }, 404);
-    return c.json({ success: true }, 200);
-  } catch (error) {
-    console.error('Error deleting pack:', error);
-    return c.json({ error: 'Failed to delete pack', code: 'DELETE_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(deletePackRoute, deletePackHandler);
-
-export const deleteCatalogItemRoute = createRoute({
-  method: 'delete',
-  path: '/catalog/:id',
-  tags: ['Admin'],
-  summary: 'Delete a catalog item',
-  request: {
-    params: z.object({ id: z.coerce.number().int().positive() }),
-  },
-  responses: {
-    200: {
-      description: 'Item deleted',
-      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    {
+      params: z.object({ id: z.string() }),
+      detail: { tags: ['Admin'], summary: 'Delete a user' },
     },
-    404: {
-      description: 'Not found',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+  )
+
+  // Soft-delete a pack
+  .delete(
+    '/packs/:id',
+    async ({ params }) => {
+      const db = createDb();
+      try {
+        const updated = await db
+          .update(packs)
+          .set({ deleted: true })
+          .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
+          .returning();
+        if (!updated.length) return status(404, { error: 'Pack not found' });
+        return { success: true as const };
+      } catch (error) {
+        console.error('Error deleting pack:', error);
+        return status(500, { error: 'Failed to delete pack' });
+      }
     },
-    409: {
-      description: 'Conflict — item has dependent data',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+    {
+      params: z.object({ id: z.string() }),
+      detail: { tags: ['Admin'], summary: 'Soft-delete a pack' },
     },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+  )
+
+  // Hard-delete a catalog item
+  .delete(
+    '/catalog/:id',
+    async ({ params }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
+      const db = createDb();
+      try {
+        const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
+        if (!deleted.length) return status(404, { error: 'Catalog item not found' });
+        return { success: true as const };
+      } catch (error) {
+        if ((error as { code?: string })?.code === '23503') {
+          return status(409, { error: 'Cannot delete: item has dependent data' });
+        }
+        console.error('Error deleting catalog item:', error);
+        return status(500, { error: 'Failed to delete catalog item' });
+      }
     },
-  },
-});
-
-export const deleteCatalogItemHandler: RouteHandler<typeof deleteCatalogItemRoute> = async (c) => {
-  const db = createDb(c);
-  const { id } = c.req.valid('param');
-
-  try {
-    const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
-    if (!deleted.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
-    return c.json({ success: true }, 200);
-  } catch (error) {
-    if ((error as { code?: string })?.code === '23503') {
-      return c.json({ error: 'Cannot delete: item has dependent data', code: 'CONFLICT' }, 409);
-    }
-    console.error('Error deleting catalog item:', error);
-    return c.json({ error: 'Failed to delete catalog item', code: 'DELETE_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(deleteCatalogItemRoute, deleteCatalogItemHandler);
-
-const UpdateCatalogItemSchema = z.object({
-  name: z.string().min(1).optional(),
-  brand: z.string().nullable().optional(),
-  categories: z.array(z.string()).nullable().optional(),
-  weight: z.number().optional(),
-  weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
-  price: z.number().nullable().optional(),
-  description: z.string().nullable().optional(),
-});
-
-export const updateCatalogItemRoute = createRoute({
-  method: 'patch',
-  path: '/catalog/:id',
-  tags: ['Admin'],
-  summary: 'Update a catalog item',
-  request: {
-    params: z.object({ id: z.coerce.number().int().positive() }),
-    body: { content: { 'application/json': { schema: UpdateCatalogItemSchema } } },
-  },
-  responses: {
-    200: {
-      description: 'Item updated',
-      content: {
-        'application/json': {
-          schema: z.object({ id: z.number(), name: z.string() }),
-        },
-      },
+    {
+      params: z.object({ id: z.string() }),
+      detail: { tags: ['Admin'], summary: 'Delete a catalog item' },
     },
-    404: {
-      description: 'Not found',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+  )
+
+  // Update a catalog item
+  .patch(
+    '/catalog/:id',
+    async ({ params, body }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
+      const db = createDb();
+      try {
+        const updated = await db
+          .update(catalogItems)
+          .set({
+            updatedAt: new Date(),
+            ...(body.name !== undefined && { name: body.name }),
+            ...(body.brand !== undefined && { brand: body.brand }),
+            ...(body.categories !== undefined && { categories: body.categories }),
+            ...(body.weight !== undefined && { weight: body.weight }),
+            ...(body.weightUnit !== undefined && {
+              weightUnit: body.weightUnit as 'g' | 'oz' | 'kg' | 'lb',
+            }),
+            ...(body.price !== undefined && { price: body.price }),
+            ...(body.description !== undefined && { description: body.description }),
+          })
+          .where(eq(catalogItems.id, id))
+          .returning();
+        const first = updated[0];
+        if (!first) return status(404, { error: 'Catalog item not found' });
+        return { id: first.id, name: first.name };
+      } catch (error) {
+        console.error('Error updating catalog item:', error);
+        return status(500, { error: 'Failed to update catalog item' });
+      }
     },
-    500: {
-      description: 'Server error',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
+    {
+      params: z.object({ id: z.string() }),
+      body: z.object({
+        name: z.string().min(1).optional(),
+        brand: z.string().nullable().optional(),
+        categories: z.array(z.string()).nullable().optional(),
+        weight: z.number().optional(),
+        weightUnit: z.string().optional(),
+        price: z.number().nullable().optional(),
+        description: z.string().nullable().optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'Update a catalog item' },
     },
-  },
-});
-
-export const updateCatalogItemHandler: RouteHandler<typeof updateCatalogItemRoute> = async (c) => {
-  const db = createDb(c);
-  const { id } = c.req.valid('param');
-  const body = c.req.valid('json');
-
-  try {
-    const updated = await db
-      .update(catalogItems)
-      .set({ ...body, updatedAt: new Date() })
-      .where(eq(catalogItems.id, id))
-      .returning();
-    const first = updated[0];
-    if (!first) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
-    return c.json({ id: first.id, name: first.name }, 200);
-  } catch (error) {
-    console.error('Error updating catalog item:', error);
-    return c.json({ error: 'Failed to update catalog item', code: 'UPDATE_ERROR' }, 500);
-  }
-};
-
-adminRoutes.openapi(updateCatalogItemRoute, updateCatalogItemHandler);
-
-const adminApiOpenApiRoutes = [
-  defineOpenAPIRoute({ route: getStatsRoute, handler: getStatsHandler }),
-  defineOpenAPIRoute({ route: getUsersListRoute, handler: getUsersListHandler }),
-  defineOpenAPIRoute({ route: getPacksListRoute, handler: getPacksListHandler }),
-  defineOpenAPIRoute({ route: getCatalogListRoute, handler: getCatalogListHandler }),
-  defineOpenAPIRoute({ route: deleteUserRoute, handler: deleteUserHandler }),
-  defineOpenAPIRoute({ route: deletePackRoute, handler: deletePackHandler }),
-  defineOpenAPIRoute({ route: deleteCatalogItemRoute, handler: deleteCatalogItemHandler }),
-  defineOpenAPIRoute({ route: updateCatalogItemRoute, handler: updateCatalogItemHandler }),
-] as const;
-
-const adminRpcRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
-  adminApiOpenApiRoutes,
-);
-
-export type AdminAppType = typeof adminRpcRoutes;
-export { adminRoutes, adminRpcRoutes };
+  )
+  .use(analyticsRoutes);

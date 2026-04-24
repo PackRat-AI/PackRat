@@ -1,18 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { rpcClient } from 'expo-app/lib/api/rpcClient';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-// API function
+
 export const getCatalogItem = async (id: string) => {
-  const res = await rpcClient.api.catalog[':id'].$get({
-    param: { id: String(id) },
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch catalog item: ${res.status}`);
-  }
-  return res.json();
+  const { data, error } = await apiClient.catalog({ id }).get();
+  if (error) throw new Error(`Failed to fetch catalog item: ${error.value}`);
+  return data;
 };
 
-// Hook
 export function useCatalogItemDetails(id: string) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 

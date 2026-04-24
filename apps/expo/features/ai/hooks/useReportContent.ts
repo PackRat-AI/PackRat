@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import type { ReportReason } from '../lib/reportReasons';
 
 type ReportContentPayload = {
@@ -15,20 +15,18 @@ type ReportContentResponse = {
   reportId: string;
 };
 
-// API function
 export const reportContent = async (
   payload: ReportContentPayload,
 ): Promise<ReportContentResponse> => {
-  try {
-    const response = await axiosInstance.post('/api/chat/reports', payload);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to report content: ${message}`);
-  }
+  const { messageId: _messageId, userComment, ...rest } = payload;
+  const { data, error } = await apiClient.chat.reports.post({
+    ...rest,
+    ...(userComment != null ? { userComment } : {}),
+  });
+  if (error) throw new Error(`Failed to report content: ${error.value}`);
+  return data as unknown as ReportContentResponse;
 };
 
-// Hook
 export function useReportContent() {
   return useMutation({
     mutationFn: (payload: ReportContentPayload) => reportContent(payload),

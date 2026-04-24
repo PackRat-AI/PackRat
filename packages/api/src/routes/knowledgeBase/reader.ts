@@ -1,66 +1,22 @@
-import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { Readability } from '@mozilla/readability';
-import type { Env } from '@packrat/api/types/env';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { Elysia, status } from 'elysia';
 import { parseHTML } from 'linkedom';
-
-export const extractContentRoute = createRoute({
-  method: 'post',
-  path: '/extract',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            url: z.string().url(),
-          }),
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Extracted content from URL',
-      content: {
-        'application/json': {
-          schema: z.object({
-            title: z.string().nullable(),
-            byline: z.string().nullable(),
-            content: z.string(),
-            textContent: z.string(),
-            length: z.number(),
-            excerpt: z.string().nullable(),
-            siteName: z.string().nullable(),
-            cleanedText: z.string(),
-            markdown: z.string().nullable(),
-          }),
-        },
-      },
-    },
-    400: {
-      description: 'Bad Request',
-    },
-    500: {
-      description: 'Internal Server Error',
-    },
-  },
-});
+import { z } from 'zod';
 
 // Utility to clean up text for embeddings
 function cleanTextForEmbedding(text: string): string {
   return text
-    .replace(/\s{2,}/g, ' ') // Collapse multiple spaces
-    .replace(/\n{2,}/g, '\n') // Collapse multiple newlines
-    .replace(/\t/g, ' ') // Replace tabs with space
-    .replace(/\u00a0/g, ' ') // Replace non-breaking spaces
-    .replace(/^\s+|\s+$/g, '') // Trim
-    .replace(/(We appreciate the time and effort.*|Steve)$/gim, '') // Remove boilerplate signature
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/\t/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/^\s+|\s+$/g, '')
+    .replace(/(We appreciate the time and effort.*|Steve)$/gim, '')
     .trim();
 }
 
-// Pure TypeScript/regex HTML to Markdown converter (safe for edge)
 function htmlToMarkdown(html: string): string {
-  return html
+  let result = html
     .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '# $1\n')
     .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '## $1\n')
     .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '### $1\n')
@@ -79,77 +35,72 @@ function htmlToMarkdown(html: string): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<p[^>]*>/gi, '')
     .replace(/<\/p>/gi, '\n')
-    .replace(/<[^>]+>/g, '') // Remove all other tags
-    .replace(/\n{3,}/g, '\n\n') // Collapse 3+ newlines
-    .replace(/^[ \t]+/gm, '') // Remove leading spaces
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^[ \t]+/gm, '')
     .trim();
+
+  // Strip any remaining HTML tags in multiple passes to avoid incomplete
+  // multi-character sanitization (e.g. crafted inputs like <<script>>).
+  let prev = '';
+  let iterations = 0;
+  while (result !== prev && iterations++ < 10) {
+    prev = result;
+    result = result.replace(/<[^>]*>/g, '');
+  }
+  return result;
 }
 
-export const extractContentHandler: RouteHandler<typeof extractContentRoute> = async (c) => {
-  try {
-    console.log('[extract] Request received');
-    const { url } = await c.req.json();
-    console.log(`[extract] URL to fetch: ${url}`);
-
-    // Fetch the content from the URL
-    console.log('[extract] Starting fetch...');
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.log(`[extract] Fetch failed: ${response.status} ${response.statusText}`);
-      return c.json({ error: `Failed to fetch URL: ${response.statusText}` }, 400);
-    }
-
-    console.log('[extract] Fetch completed');
-    const html = await response.text();
-    console.log(`[extract] HTML length: ${html.length}`);
-
-    // Parse the HTML with LinkeDOM
-    console.log('[extract] Parsing HTML with LinkeDOM...');
-    const { window } = parseHTML(html);
-    console.log('[extract] DOM parse completed');
-    console.log('[extract] Running Readability...');
-    const reader = new Readability(window.document);
-    const article = reader.parse();
-    console.log('[extract] Readability completed');
-
-    if (!article) {
-      console.log('[extract] Readability failed to extract article');
-      return c.json({ error: 'Failed to extract content from the URL' }, 400);
-    }
-
-    // Clean up the text content
-    const cleanedText = cleanTextForEmbedding(article.textContent || '');
-
-    // Convert HTML to Markdown using our pure function
-    let markdown: string | null = null;
+export const readerRoutes = new Elysia({ prefix: '/reader' }).post(
+  '/extract',
+  async ({ body }) => {
     try {
-      markdown = htmlToMarkdown(article.content || '');
-    } catch (err) {
-      console.warn('[extract] Markdown conversion failed', err);
+      const { url } = body;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        return status(400, { error: `Failed to fetch URL: ${response.statusText}` });
+      }
+
+      const html = await response.text();
+
+      const { window } = parseHTML(html);
+      const reader = new Readability(window.document);
+      const article = reader.parse();
+
+      if (!article) {
+        return status(400, { error: 'Failed to extract content from the URL' });
+      }
+
+      const cleanedText = cleanTextForEmbedding(article.textContent || '');
+
+      let markdown: string | null = null;
+      try {
+        markdown = htmlToMarkdown(article.content || '');
+      } catch (err) {
+        console.warn('[extract] Markdown conversion failed', err);
+      }
+
+      return {
+        title: article.title,
+        byline: article.byline,
+        content: article.content,
+        textContent: article.textContent,
+        length: article.length,
+        excerpt: article.excerpt,
+        siteName: article.siteName,
+        cleanedText,
+        markdown,
+      };
+    } catch (error) {
+      console.error('[extract] Error extracting content:', error);
+      return status(500, { error: 'Failed to process the URL' });
     }
-
-    console.log('[extract] Extraction successful, returning response');
-    return c.json({
-      title: article.title,
-      byline: article.byline,
-      content: article.content,
-      textContent: article.textContent,
-      length: article.length,
-      excerpt: article.excerpt,
-      siteName: article.siteName,
-      cleanedText,
-      markdown,
-    });
-  } catch (error) {
-    console.error('[extract] Error extracting content:', error);
-    return c.json({ error: 'Failed to process the URL' }, 500);
-  }
-};
-
-const readerOpenApiRoutes = [
-  defineOpenAPIRoute({ route: extractContentRoute, handler: extractContentHandler }),
-] as const;
-
-const readerRoutes = new OpenAPIHono<{ Bindings: Env }>().openapiRoutes(readerOpenApiRoutes);
-
-export { readerRoutes };
+  },
+  {
+    body: z.object({ url: z.string().url() }),
+    detail: {
+      tags: ['Knowledge Base'],
+      summary: 'Extract content from a URL',
+    },
+  },
+);

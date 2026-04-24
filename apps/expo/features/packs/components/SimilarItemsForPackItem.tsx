@@ -123,7 +123,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={data.items}
+        data={data.items as unknown as SimilarItem[]}
         renderItem={({ item }) => <SimilarItemCard item={item} onPress={handleItemPress} />}
         keyExtractor={(item) => item.id.toString()}
       />

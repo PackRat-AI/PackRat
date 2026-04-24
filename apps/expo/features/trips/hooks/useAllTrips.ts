@@ -1,19 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { rpcClient } from 'expo-app/lib/api/rpcClient';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-
-// Fetch all trips for the current user
 export const fetchAllTrips = async () => {
-  const res = await rpcClient.api.trips.$get({
-    query: {},
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch all trips: ${res.status}`);
-  }
-  return res.json();
+  const { data, error } = await apiClient.trips.get();
+  if (error) throw new Error(`Failed to fetch trips: ${error.value}`);
+  return data ?? [];
 };
 
-// Hook to query trips
 export function useAllTrips(enabled: boolean) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
@@ -21,7 +14,7 @@ export function useAllTrips(enabled: boolean) {
     queryKey: ['allTrips'],
     enabled: isQueryEnabledWithAccessToken && enabled,
     queryFn: fetchAllTrips,
-    staleTime: 1000 * 60 * 5, // 5 min
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 }

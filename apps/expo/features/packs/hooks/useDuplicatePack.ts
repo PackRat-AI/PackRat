@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useCallback } from 'react';
 import type { Pack, PackInput } from '../types';
 import { useCreatePackFromPack } from './useCreatePackFromPack';
@@ -16,16 +16,15 @@ export function useDuplicatePack() {
       packId: string;
       packData?: Partial<PackInput>;
     }) => {
-      // First, fetch the full pack details with items
       const response = await queryClient.fetchQuery({
         queryKey: ['pack', packId],
         queryFn: async () => {
-          const res = await axiosInstance.get<Pack>(`/api/packs/${packId}`);
-          return res.data;
+          const { data, error } = await apiClient.packs({ packId }).get();
+          if (error) throw new Error(`Failed to fetch pack: ${error.value}`);
+          return data as unknown as Pack;
         },
       });
 
-      // Create the new pack from the fetched pack
       const newPackId = createPackFromPack(response, packData);
       return newPackId;
     },

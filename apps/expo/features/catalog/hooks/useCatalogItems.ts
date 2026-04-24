@@ -1,47 +1,54 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { rpcClient } from 'expo-app/lib/api/rpcClient';
+import { apiClient } from 'expo-app/lib/api/packrat';
+import type { PaginatedCatalogItemsResponse } from '../types';
 
-type SortField = 'name' | 'brand' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+type CatalogSortField =
+  | 'name'
+  | 'brand'
+  | 'category'
+  | 'price'
+  | 'ratingValue'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'usage';
 
 interface GetCatalogItemsParams {
   pageParam?: number;
   query?: string;
   limit: number;
   category?: string;
-  sort: { field: SortField; order: 'asc' | 'desc' };
+  sort: { field: CatalogSortField; order: 'asc' | 'desc' };
 }
 
-// API function
 export const getCatalogItems = async ({
   pageParam = 1,
   query,
   category,
   limit,
   sort,
-}: GetCatalogItemsParams) => {
-  const res = await rpcClient.api.catalog.$get({
+}: GetCatalogItemsParams): Promise<PaginatedCatalogItemsResponse> => {
+  const { data, error } = await apiClient.catalog.get({
     query: {
-      page: String(pageParam),
-      limit: String(limit),
-      q: query,
-      category,
+      page: pageParam,
+      limit,
+      ...(query ? { q: query } : {}),
+      ...(category ? { category } : {}),
       sort,
     },
   });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch catalog items: ${res.status}`);
-  }
-  return res.json();
+  if (error) throw new Error(`Failed to fetch catalog items: ${error.value}`);
+  // Treaty infers the wider Drizzle row shape; consumers expect the local
+  // `CatalogItem` projection. Bridge with an explicit assertion.
+  return data as unknown as PaginatedCatalogItemsResponse;
 };
 
-// Hook
 export function useCatalogItemsInfinite({ query, category, limit, sort }: GetCatalogItemsParams) {
   return useInfiniteQuery({
     queryKey: ['catalogItems', query, category, limit, sort],
     queryFn: ({ pageParam }) => getCatalogItems({ pageParam, query, category, limit, sort }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      if (lastPage.page < lastPage.totalPages) {
+      if (lastPage && lastPage.page < lastPage.totalPages) {
         return lastPage.page + 1;
       }
       return undefined;

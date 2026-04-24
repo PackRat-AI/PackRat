@@ -2,7 +2,7 @@ import { useSelector } from '@legendapp/state/react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store/user';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import { useEffect, useRef, useState } from 'react';
 import { trailConditionReportsStore } from '../store/trailConditionReports';
@@ -44,15 +44,14 @@ async function readCachedReports(opts: {
 export const fetchTrailConditionReports = async (
   trailName?: string,
 ): Promise<TrailConditionReport[]> => {
-  try {
-    const params = trailName ? { trailName } : {};
-    const res = await axiosInstance.get('/api/trail-conditions', { params });
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    console.error('Failed to fetch trail condition reports:', error);
-    throw new Error(message);
+  const { data, error } = await apiClient['trail-conditions'].get({
+    query: { limit: 50, ...(trailName ? { trailName } : {}) },
+  });
+  if (error) {
+    console.error('Failed to fetch trail condition reports:', error.value);
+    throw new Error(`Failed to fetch trail condition reports: ${error.value}`);
   }
+  return (data ?? []) as unknown as TrailConditionReport[];
 };
 
 export function useTrailConditionReports(trailName?: string) {

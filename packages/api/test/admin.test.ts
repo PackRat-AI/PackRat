@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { refreshTokens } from '@packrat/api/db/schema';
-import type { Context } from 'hono';
+
 import { describe, expect, it } from 'vitest';
 import { seedCatalogItem, seedPack, seedTestUser } from './utils/db-helpers';
 import {
@@ -115,7 +115,7 @@ describe('Admin Routes', () => {
       // row here triggers Postgres 23503 → 409 in the admin delete handler.
       // packs/pack_items cascade, so they can't be used to verify this path.
       const user = await seedTestUser({ email: 'admin-del-conflict@example.com' });
-      const db = createDb({} as unknown as Context);
+      const db = createDb();
       await db.insert(refreshTokens).values({
         userId: user.id,
         token: `test-${Date.now()}-${Math.random()}`,

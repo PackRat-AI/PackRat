@@ -22,7 +22,10 @@ function TableSkeleton() {
     <div className="rounded-lg border border-border/60 overflow-hidden">
       <div className="h-10 bg-muted/30 border-b border-border/60" />
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0">
+        <div
+          key={`skeleton-row-${i}`}
+          className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0"
+        >
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />

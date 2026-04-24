@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
-import type { GuidesSearchResponse } from '../types';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 interface UseSearchGuidesParams {
   query: string;
@@ -11,24 +10,19 @@ export const useSearchGuides = ({ query, category }: UseSearchGuidesParams) => {
   return useInfiniteQuery({
     queryKey: ['guides', 'search', { query, category }],
     queryFn: async ({ pageParam = 1 }) => {
-      const params: Record<string, string | number> = {
-        q: query,
-        page: pageParam,
-        limit: 20,
-      };
-
-      if (category) {
-        params.category = category;
-      }
-
-      const response = await axiosInstance.get<GuidesSearchResponse>('/api/guides/search', {
-        params,
+      const { data, error } = await apiClient.guides.search.get({
+        query: {
+          q: query,
+          page: pageParam,
+          limit: 20,
+          ...(category ? { category } : {}),
+        },
       });
-
-      return response.data;
+      if (error) throw new Error(`Failed to search guides: ${error.value}`);
+      return data;
     },
     getNextPageParam: (lastPage) => {
-      if (lastPage.page < lastPage.totalPages) {
+      if (lastPage && lastPage.page < lastPage.totalPages) {
         return lastPage.page + 1;
       }
       return undefined;
