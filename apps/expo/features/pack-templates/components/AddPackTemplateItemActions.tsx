@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { nullToUndefined } from '@packrat/guards';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
@@ -119,7 +120,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       trackRecentlyUsed(catalogItems);
-      await addItemsToPackTemplate(packTemplateId, catalogItems.map(item => ({ ...item, description: item.description ?? undefined })));
+      await addItemsToPackTemplate(packTemplateId, catalogItems.map(item => ({ ...item, description: nullToUndefined(item.description) })));
       const itemWord =
         catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Burnt.toast({
