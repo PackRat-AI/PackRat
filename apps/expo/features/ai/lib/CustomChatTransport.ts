@@ -38,7 +38,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
 
     const result = streamText({
       model: this.model,
-      messages: convertToModelMessages(options.messages),
+      messages: await convertToModelMessages(options.messages),
       abortSignal: options.abortSignal,
       ...(this.tools ? { tools: this.tools, toolChoice: 'auto' } : {}),
     });
