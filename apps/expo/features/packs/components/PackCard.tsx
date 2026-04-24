@@ -72,7 +72,7 @@ export function PackCard({
       (selectedIndex) => {
         switch (selectedIndex) {
           case viewDetailsIndex:
-            if ('items' in pack) onPress?.(pack);
+            onPress?.(pack);
             break;
           case editIndex:
             router.push({ pathname: '/pack/[id]/edit', params: { id: pack.id } });
@@ -95,9 +95,7 @@ export function PackCard({
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => {
-        if ('items' in pack) onPress?.(pack);
-      }}
+      onPress={() => onPress?.(pack)}
     >
       {pack.image && (
         <Image source={{ uri: pack.image }} className="h-40 w-full" resizeMode="cover" />
