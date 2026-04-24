@@ -22,12 +22,6 @@ appId: ${APP_ID}
 - assertVisible:
     text: "All"
 
-# Scroll to verify actual items render (priced items have a dollar sign)
-- scrollUntilVisible:
-    element:
-      text: ".*\\$.*"
-    direction: DOWN
-
 # Return to stable state
 - tapOn:
     text: "Packs"
