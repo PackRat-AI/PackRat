@@ -42,7 +42,8 @@ appId: ${APP_ID}
     when:
       platform: Android
     commands:
-      - tapOn: "${START_DAY} ${START_MONTH} ${START_YEAR}"
+      # Android calendar shows bare day numbers; tap the day digit directly
+      - tapOn: "${START_DAY}"
       - tapOn: "OK"
 
 - runFlow:
@@ -69,7 +70,7 @@ appId: ${APP_ID}
     when:
       platform: Android
     commands:
-      - tapOn: "${END_DAY} ${END_MONTH} ${END_YEAR}"
+      - tapOn: "${END_DAY}"
       - tapOn: "OK"
 
 - runFlow:
