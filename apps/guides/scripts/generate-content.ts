@@ -1,4 +1,5 @@
 import { openai } from '@ai-sdk/openai';
+import { arrayIncludes, objectEntries } from '@packrat/guards';
 import { generateText } from 'ai';
 import chalk from 'chalk';
 import { format } from 'date-fns';
@@ -31,6 +32,12 @@ type ContentCategory =
   | 'beginner-resources';
 
 type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
+const DIFFICULTY_LEVELS = [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+  'All Levels',
+] as const satisfies readonly DifficultyLevel[];
 
 interface ContentRequest {
   title: string;
@@ -81,6 +88,9 @@ const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
   'food-nutrition': 'Food & Nutrition',
   'beginner-resources': 'Beginner Resources',
 };
+
+// Valid category keys derived from CATEGORY_DISPLAY_NAMES (stays in sync with ContentCategory).
+const VALID_CONTENT_CATEGORIES = Object.keys(CATEGORY_DISPLAY_NAMES) as readonly ContentCategory[];
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -203,10 +213,7 @@ async function generateTopicIdeas(
     `;
 
     // Add category distribution analysis
-    const categoryDistribution: Record<ContentCategory, number> = {} as Record<
-      ContentCategory,
-      number
-    >;
+    const categoryDistribution: Partial<Record<ContentCategory, number>> = {};
     for (const content of existingContent) {
       for (const category of content.categories) {
         categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
@@ -214,9 +221,9 @@ async function generateTopicIdeas(
     }
 
     // Find underrepresented categories
-    const sortedCategories = Object.entries(categoryDistribution)
-      .sort(([, countA], [, countB]) => countA - countB)
-      .map(([category]) => category as ContentCategory);
+    const sortedCategories = objectEntries(categoryDistribution)
+      .sort(([, countA], [, countB]) => (countA ?? 0) - (countB ?? 0))
+      .map(([category]) => category);
 
     if (sortedCategories.length > 0 && !categories) {
       const underrepresentedCategories = sortedCategories.slice(0, 3);
@@ -264,10 +271,10 @@ async function generateTopicIdeas(
       (idea: { title: string; description: string; categories: string[]; difficulty: string }) => {
         // Map display category names back to our internal keys
         const categoryKeys = idea.categories.map((displayName: string) => {
-          const entry = Object.entries(CATEGORY_DISPLAY_NAMES).find(
-            ([_, value]) => value.toLowerCase() === displayName.toLowerCase(),
+          const entry = objectEntries(CATEGORY_DISPLAY_NAMES).find(
+            ([, value]) => value.toLowerCase() === displayName.toLowerCase(),
           );
-          return entry ? (entry[0] as ContentCategory) : 'gear-essentials';
+          return entry ? entry[0] : ('gear-essentials' as const);
         });
 
         return {
@@ -277,7 +284,9 @@ async function generateTopicIdeas(
           categories: categoryKeys,
           author: getRandomAuthor(),
           readingTime: generateReadingTime(),
-          difficulty: idea.difficulty as DifficultyLevel,
+          difficulty: (arrayIncludes(DIFFICULTY_LEVELS, idea.difficulty)
+            ? idea.difficulty
+            : 'All Levels') satisfies DifficultyLevel,
           coverImage: '/placeholder.svg?height=400&width=800',
           slug: createSlug(idea.title),
         };
@@ -551,7 +560,9 @@ if (require.main === module) {
   }
 
   const count = (args[0] && Number.parseInt(args[0], 10)) || 5;
-  const categoryArgs = args.slice(1) as ContentCategory[];
+  const categoryArgs = args
+    .slice(1)
+    .filter((a): a is ContentCategory => arrayIncludes(VALID_CONTENT_CATEGORIES, a));
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));
   if (categoryArgs.length > 0) {

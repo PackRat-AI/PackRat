@@ -23,6 +23,8 @@ type FormFieldContextValue<
   name: TName;
 };
 
+// Standard React context sentinel: {} is a valid placeholder because FormField
+// always wraps its children in a Provider before useFormField is called.
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
 const FormField = <
@@ -65,6 +67,7 @@ type FormItemContextValue = {
   id: string;
 };
 
+// Standard React context sentinel: FormItem always provides a real id before consumers run.
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
 const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

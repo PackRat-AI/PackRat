@@ -6,6 +6,6 @@ export default defineCommand({
   async run() {
     const cache = await ensureCache();
     const rows = await cache.getSiteStats();
-    printTable(rows as unknown as Record<string, unknown>[], { title: 'Site Statistics' });
+    printTable(rows, { title: 'Site Statistics' });
   },
 });

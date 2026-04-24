@@ -106,6 +106,7 @@ export class PackRatApiClient {
       throw new ApiError(errorMessage, { status: response.status, body });
     }
 
+    // T is caller-verified via the typed request methods; body shape matches the API contract.
     return body as T;
   }
 }
