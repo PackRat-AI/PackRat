@@ -119,7 +119,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       trackRecentlyUsed(catalogItems);
-      await addItemsToPackTemplate(packTemplateId, catalogItems as CatalogItemWithPackItemFields[]);
+      await addItemsToPackTemplate(packTemplateId, catalogItems.map(item => ({ ...item, description: item.description ?? undefined })));
       const itemWord =
         catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Burnt.toast({

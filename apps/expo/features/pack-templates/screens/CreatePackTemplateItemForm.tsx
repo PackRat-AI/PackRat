@@ -8,6 +8,7 @@ import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { arrayIncludes } from '@packrat/guards';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
@@ -293,7 +294,7 @@ export const CreatePackTemplateItemForm = ({
                   <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                   <SegmentedControl
                     values={WEIGHT_UNITS}
-                    selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
+                    selectedIndex={arrayIncludes(WEIGHT_UNITS, field.state.value) ? WEIGHT_UNITS.indexOf(field.state.value) : 0}
                     onIndexChange={(index) => {
                       const selectedUnit = WEIGHT_UNITS[index];
                       if (selectedUnit) {

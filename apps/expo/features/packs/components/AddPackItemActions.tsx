@@ -108,7 +108,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
       if (catalogItems.length > 0) {
         trackRecentlyUsed(catalogItems);
         try {
-          await addItemsToPack(packId, catalogItems as CatalogItemWithPackItemFields[]);
+          await addItemsToPack(packId, catalogItems.map(item => ({ ...item, description: item.description ?? undefined })));
         } catch (error) {
           console.error('Error adding catalog items to pack:', error);
           Alert.alert(t('common.error'), t('catalog.somethingWentWrong'));
