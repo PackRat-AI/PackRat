@@ -41,7 +41,11 @@ function CreateTripIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable testID={TestIds.CreateTripButton} accessibilityLabel={t('trips.createNewTrip')}>
+      <Pressable
+        testID={TestIds.CreateTripButton}
+        accessibilityLabel={t('trips.createNewTrip')}
+        className="mx-2"
+      >
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
@@ -159,11 +163,7 @@ export function TripsListScreen() {
             </LargeTitleHeaderSearchContentContainer>
           ),
         }}
-        rightView={() => (
-          <View className="flex-row items-center mr-2 ml-2">
-            <CreateTripIconButton />
-          </View>
-        )}
+        rightView={() => <CreateTripIconButton />}
       />
 
       <FlatList

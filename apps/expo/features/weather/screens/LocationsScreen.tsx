@@ -2,7 +2,6 @@ import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, useNavigation } from 'expo-router';
@@ -121,24 +120,9 @@ function LocationsScreen() {
     <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
       <LargeTitleHeader
         title={t('weather.weather')}
-        leftView={() => (
-          <Pressable
-            onPress={() => router.back()}
-            className="mr-2 ml-1.5 items-center justify-center"
-          >
-            <Icon name="arrow-left" color={colors.foreground} size={24} />
-          </Pressable>
-        )}
         rightView={() => (
-          <Pressable
-            className="opacity-80 mr-2 ml-2 items-center justify-center"
-            onPress={handleAddLocation}
-          >
-            {({ pressed }) => (
-              <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-                <Icon name="plus" color={colors.foreground} />
-              </View>
-            )}
+          <Pressable onPress={handleAddLocation} className="mx-2">
+            <Icon name="plus" color={colors.foreground} />
           </Pressable>
         )}
       />
