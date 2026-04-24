@@ -11,6 +11,6 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const rows = await cache.getTopBrands(parsePositiveIntArg(args.limit, '--limit'), args.site);
-    printTable(rows as unknown as Record<string, unknown>[], { title: 'Top Brands' });
+    printTable(rows, { title: 'Top Brands' });
   },
 });

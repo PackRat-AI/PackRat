@@ -408,7 +408,7 @@ export class EntityResolver {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as EntityRow;
+      return obj as EntityRow;
     });
   }
 }

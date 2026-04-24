@@ -11,7 +11,7 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const rows = await cache.comparePrices(args.keyword, parseCsvArg(args.sites));
-    printTable(rows as unknown as Record<string, unknown>[], {
+    printTable(rows, {
       title: `Price Comparison: "${args.keyword}"`,
     });
   },

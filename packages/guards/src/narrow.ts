@@ -45,6 +45,7 @@ export const asDate = (value: unknown): Date | undefined => {
 export const asStringRecord = (value: unknown): Record<string, string> => {
   if (value === null || typeof value !== 'object') return {};
   const out: Record<string, string> = {};
+  // TypeScript requires an explicit cast here; value is narrowed to object by the check above.
   for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
     if (typeof val === 'string') out[key] = val;
   }
