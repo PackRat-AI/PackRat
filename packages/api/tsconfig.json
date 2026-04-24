@@ -16,6 +16,5 @@
       "@packrat/api/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist", "container_src"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
