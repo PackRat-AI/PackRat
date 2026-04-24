@@ -284,7 +284,7 @@ export class Enrichment {
         if (col === undefined) continue;
         obj[col] = row[i];
       }
-      return obj as ProductImage;
+      return obj as unknown as ProductImage;
     });
   }
 
@@ -325,7 +325,7 @@ export class Enrichment {
         if (col === undefined) continue;
         obj[col] = row[i];
       }
-      return obj as ProductReview;
+      return obj as unknown as ProductReview;
     });
   }
 }

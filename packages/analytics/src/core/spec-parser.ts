@@ -235,7 +235,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      allSpecs.push(extractSpecsFromRow(obj as ProductRow));
+      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow));
     }
 
     // Create specs table
@@ -300,7 +300,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as ProductSpecs;
+      return obj as unknown as ProductSpecs;
     });
   }
 
@@ -355,7 +355,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as ProductSpecs;
+      return obj as unknown as ProductSpecs;
     });
   }
 }

@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { R2BucketService } from '../../../packages/api/src/services/r2-bucket';
+import type { ValidatedEnv } from '../../../packages/api/src/utils/env-validation';
 
 // Environment configuration for the sync script — parsed and validated at startup.
 const SyncEnvSchema = z.object({
@@ -38,7 +39,7 @@ async function syncGuidesToR2() {
   try {
     // Initialize R2 bucket service
     const bucket = new R2BucketService({
-      env,
+      env: env as unknown as ValidatedEnv,
       bucketType: 'guides',
     });
 
