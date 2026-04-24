@@ -32,19 +32,16 @@ export default function GearInventoryScreen() {
   const { t } = useTranslation();
 
   const groupByCategory = (items: PackItem[]) => {
-    return items.reduce(
-      (acc, item) => {
-        const category = item.category || 'Other';
+    return items.reduce<Record<string, PackItem[]>>((acc, item) => {
+      const category = item.category || 'Other';
 
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        assertDefined(acc[category]);
-        acc[category].push(item);
-        return acc;
-      },
-      {} as Record<string, PackItem[]>,
-    );
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      assertDefined(acc[category]);
+      acc[category].push(item);
+      return acc;
+    }, {});
   };
 
   const itemsByCategory = groupByCategory(items);

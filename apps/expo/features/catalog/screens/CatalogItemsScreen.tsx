@@ -59,7 +59,7 @@ function CatalogItemsScreen() {
   } = useCatalogItemsInfinite({
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
-    sort: { field: 'usage', order: 'desc' },
+    sort: { field: 'createdAt', order: 'desc' },
   });
 
   const {

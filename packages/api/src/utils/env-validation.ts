@@ -151,7 +151,9 @@ export function getEnv(c: Context): ValidatedEnv {
   }
 
   // Merge validated data with correctly typed Cloudflare bindings from rawEnv
-  const data: ValidatedEnv = {
+  // Cast: merges Zod-validated fields with Cloudflare runtime bindings whose types
+  // come from the Worker environment, not from Zod's inference.
+  const data = {
     ...validated.data,
     CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA || validated.data.CF_VERSION_METADATA,
     AI: rawEnv.AI || validated.data.AI,

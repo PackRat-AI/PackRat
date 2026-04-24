@@ -31,7 +31,10 @@ export function PackCard({
   const insets = useSafeAreaInsets();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
-  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
+  // packFromStore is always Pack (with computed weights); packArg may be Pack | PackInStore
+  // Cast: PackInStore lacks computed weight fields (baseWeight, totalWeight) that Pack has.
+  // We guard access to those fields with 'in' checks; the cast is safe at runtime.
+  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack;
 
   const handleActionsPress = () => {
     const options =
@@ -50,7 +53,7 @@ export function PackCard({
         cancelButtonIndex,
         destructiveButtonIndex,
         title: pack.name,
-        message: pack.description,
+        message: pack.description ?? undefined,
         containerStyle: {
           backgroundColor: colors.card,
           paddingBottom: insets.bottom,
@@ -116,11 +119,19 @@ export function PackCard({
 
         <View className="mt-3 flex-row items-center justify-between">
           <View className="flex-row gap-2">
-            <WeightBadge weight={pack.baseWeight ?? 0} unit="g" type="base" />
-            <WeightBadge weight={pack.totalWeight ?? 0} unit="g" type="total" />
+            <WeightBadge
+              weight={('baseWeight' in pack ? pack.baseWeight : undefined) ?? 0}
+              unit="g"
+              type="base"
+            />
+            <WeightBadge
+              weight={('totalWeight' in pack ? pack.totalWeight : undefined) ?? 0}
+              unit="g"
+              type="total"
+            />
           </View>
           <Text className="text-xs text-foreground">
-            {pack.items && isArray(pack.items) && pack.items.length > 0
+            {'items' in pack && isArray(pack.items) && pack.items.length > 0
               ? `${pack.items.length} item${pack.items.length > 1 ? 's' : ''}`
               : '0 items'}
           </Text>

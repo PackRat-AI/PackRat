@@ -11,6 +11,8 @@
     "api": "bun run --cwd packages/api dev",
     "bump": "bun .github/scripts/bump.ts",
     "check": "biome check --no-errors-on-unmatched",
+    "check:casts": "bun run --cwd packages/checks check:casts",
+    "check:casts:strict": "bun run --cwd packages/checks check:casts:strict",
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
     "check:circular": "bun scripts/lint/no-circular-deps.ts",
     "check:deps": "manypkg check",
@@ -62,11 +64,12 @@
     "node": ">=24.0.0"
   },
   "catalog": {
-    "ai": "^5.0.136",
+    "ai": "^6.0.168",
     "axios": "^1.12.0",
     "chalk": "^5.6.2",
     "hono": "^4.10.7",
     "radash": "^12.1.1",
+    "ts-extras": "^1.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "semver": "^7.7.4",

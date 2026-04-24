@@ -11,6 +11,6 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const rows = await cache.categoryInsights(args.name, parseCsvArg(args.sites));
-    printTable(rows as unknown as Record<string, unknown>[], { title: `Category: "${args.name}"` });
+    printTable(rows, { title: `Category: "${args.name}"` });
   },
 });

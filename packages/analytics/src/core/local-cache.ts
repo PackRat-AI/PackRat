@@ -162,6 +162,8 @@ export class LocalCacheManager {
           obj[col] = row[i];
         }
       }
+      // T is narrowed by the caller's return type annotation; obj is built
+      // from DuckDB column names so the shape is caller-verified.
       return obj as T;
     });
   }

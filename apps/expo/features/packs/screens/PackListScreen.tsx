@@ -44,7 +44,11 @@ function CreatePackIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/pack/new" asChild>
-      <Pressable testID={TestIds.CreatePackButton} accessibilityLabel={t('packs.createNewPack')}>
+      <Pressable
+        testID={TestIds.CreatePackButton}
+        accessibilityLabel={t('packs.createNewPack')}
+        className="mx-2"
+      >
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
@@ -207,11 +211,7 @@ export function PackListScreen() {
             </LargeTitleHeaderSearchContentContainer>
           ),
         }}
-        rightView={() => (
-          <View className="flex-row items-center mr-2 ml-2">
-            <CreatePackIconButton />
-          </View>
-        )}
+        rightView={() => <CreatePackIconButton />}
       />
 
       <FlatList

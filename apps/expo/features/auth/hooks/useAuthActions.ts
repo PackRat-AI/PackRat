@@ -5,7 +5,6 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import type { AxiosError } from 'axios';
 import { userStore } from 'expo-app/features/auth/store';
 import axiosInstance from 'expo-app/lib/api/client';
 import { t } from 'expo-app/lib/i18n';
@@ -218,7 +217,7 @@ export function useAuthActions() {
         throw new Error(responseData.error || t('auth.registrationFailed'));
       }
     } catch (error) {
-      console.error('Registration error:', (error as AxiosError).message);
+      console.error('Registration error:', error instanceof Error ? error.message : String(error));
       throw error;
     } finally {
       setIsLoading(false);

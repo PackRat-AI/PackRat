@@ -25,9 +25,9 @@
     "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.62",
-    "@ai-sdk/openai": "^2.0.11",
-    "@ai-sdk/perplexity": "^2.0.1",
+    "@ai-sdk/google": "^3.0.64",
+    "@ai-sdk/openai": "^3.0.53",
+    "@ai-sdk/perplexity": "^3.0.29",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@cloudflare/containers": "^0.0.30",
@@ -49,7 +49,7 @@
     "google-auth-library": "^10.1.0",
     "gray-matter": "^4.0.3",
     "hono": "catalog:",
-    "hono-openapi": "^0.4.6",
+    "hono-openapi": "^1.3.0",
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
     "pg": "^8.16.3",
@@ -59,7 +59,7 @@
     "ws": "^8.18.1",
     "youtube-transcript": "^1.3.0",
     "zod": "catalog:",
-    "zod-openapi": "^4.2.4"
+    "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.8.71",

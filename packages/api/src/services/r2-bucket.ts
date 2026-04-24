@@ -1,4 +1,4 @@
-import type { Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -253,7 +253,7 @@ export class R2BucketService {
       const r2Object = this.createR2Object(key, { ...response });
 
       let streamConsumed = false;
-      let webStream: ReadableStream<Uint8Array>;
+      let webStream: ReadableStream<Uint8Array> | undefined;
 
       const getStream = () => {
         if (webStream) {
@@ -261,21 +261,22 @@ export class R2BucketService {
         }
 
         // Check if it's a Node.js stream (like in a local Node environment)
-        if ('on' in body && typeof body.on === 'function') {
-          const nodeStream = body as Readable;
+        if (body instanceof Readable) {
           webStream = new globalThis.ReadableStream({
             start(controller) {
-              nodeStream.on('data', (chunk) => controller.enqueue(chunk));
-              nodeStream.on('end', () => controller.close());
-              nodeStream.on('error', (err) => controller.error(err));
+              body.on('data', (chunk) => controller.enqueue(chunk));
+              body.on('end', () => controller.close());
+              body.on('error', (err) => controller.error(err));
             },
             cancel() {
-              nodeStream.destroy();
+              body.destroy();
             },
           });
-        } else {
-          // Assume it's a web stream (like in Cloudflare Workers)
+        } else if (body instanceof globalThis.ReadableStream) {
+          // Web stream (Cloudflare Workers environment)
           webStream = body as ReadableStream<Uint8Array>;
+        } else {
+          throw new Error('Unsupported stream type');
         }
         return webStream;
       };
@@ -317,6 +318,7 @@ export class R2BucketService {
         },
         arrayBuffer: async () => {
           assertStreamNotConsumed();
+          // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
           return (await consumeStream()).buffer as ArrayBuffer;
         },
         bytes: async () => {
@@ -329,11 +331,13 @@ export class R2BucketService {
         },
         json: async <T>() => {
           assertStreamNotConsumed();
+          // caller is responsible for type safety at this boundary
           return JSON.parse(new TextDecoder().decode(await consumeStream())) as T;
         },
         blob: async () => {
           assertStreamNotConsumed();
           const data = await consumeStream();
+          // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
           return new globalThis.Blob([data.buffer as ArrayBuffer]);
         },
       };
@@ -596,6 +600,7 @@ export class R2BucketService {
     const toStringRecord = (v: unknown): Record<string, string> => {
       if (!isObject(v)) return {};
       const out: Record<string, string> = {};
+      // isObject(v) confirms v is a non-null object; cast is safe for entry iteration
       for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
         if (isString(val)) out[k] = val;
       }
