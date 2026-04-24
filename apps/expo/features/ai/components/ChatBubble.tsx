@@ -1,4 +1,5 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { keyIn } from '@packrat/guards';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
@@ -139,15 +140,15 @@ export const ChatBubble = React.memo(function ChatBubble({
               <Text key={key}>{part.text}</Text>
             );
 
-          if (isAI && part.type.startsWith('tool-'))
+          if (isAI && part.type.startsWith('tool-')) {
+            const toolPart = part as ToolUIPart;
+            const toolKey = keyIn(toolPart, 'toolCallId') ? toolPart.toolCallId : key;
             return (
               <View key={key} className="my-2">
-                <ToolInvocationRenderer
-                  key={(part as ToolUIPart).toolCallId}
-                  toolInvocation={part as ToolUIPart}
-                />
+                <ToolInvocationRenderer key={toolKey} toolInvocation={toolPart} />
               </View>
             );
+          }
 
           return null;
         })}

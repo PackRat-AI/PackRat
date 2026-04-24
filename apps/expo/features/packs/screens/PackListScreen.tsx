@@ -5,9 +5,10 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -43,7 +44,11 @@ function CreatePackIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/pack/new" asChild>
-      <Pressable testID={TestIds.CreatePackButton} accessibilityLabel={t('packs.createNewPack')}>
+      <Pressable
+        testID={TestIds.CreatePackButton}
+        accessibilityLabel={t('packs.createNewPack')}
+        className="mx-2"
+      >
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
@@ -181,7 +186,7 @@ export function PackListScreen() {
   };
 
   return (
-    <TabScreen useLegacySafeAreaView>
+    <LargeTitleHeaderOverlapFixIOS>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -207,11 +212,7 @@ export function PackListScreen() {
             </LargeTitleHeaderSearchContentContainer>
           ),
         }}
-        rightView={() => (
-          <View className="flex-row items-center mr-2 ml-2">
-            <CreatePackIconButton />
-          </View>
-        )}
+        rightView={() => <CreatePackIconButton />}
       />
 
       <FlatList
@@ -258,8 +259,8 @@ export function PackListScreen() {
               </ScrollView>
             </View>
             {selectedTypeIndex === USER_PACKS_INDEX && (
-              <View className="px-6 py-2">
-                <Text className="flex-1 text-muted-foreground">
+              <View className="px-6 py-2 bg-background">
+                <Text className="text-muted-foreground">
                   {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
                 </Text>
               </View>
@@ -293,8 +294,9 @@ export function PackListScreen() {
             </View>
           )
         }
+        ListFooterComponent={<AndroidTabBarInsetFix />}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </TabScreen>
+    </LargeTitleHeaderOverlapFixIOS>
   );
 }

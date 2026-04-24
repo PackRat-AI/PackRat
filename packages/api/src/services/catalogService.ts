@@ -342,13 +342,10 @@ export class CatalogService {
       .values(items)
       .onConflictDoUpdate({
         target: catalogItems.sku,
-        set: Object.values(columns).reduce(
-          (acc, col) => {
-            acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
-            return acc;
-          },
-          {} as Record<string, SQL>,
-        ),
+        set: Object.values(columns).reduce<Record<string, SQL>>((acc, col) => {
+          acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+          return acc;
+        }, {}),
       })
       .returning();
 

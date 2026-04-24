@@ -26,6 +26,19 @@ export const nullToUndefined = <T>(value: T | null): T | undefined =>
   value === null ? undefined : value;
 
 /**
+ * Type-safe indexOf — searches an array for an unknown value and returns its
+ * index, or -1 if the value is not a member of the array.
+ *
+ * Avoids `as ElementType` casts when the call site only has a `string` (or
+ * other broad type) but the array is typed as a specific union or tuple.
+ *
+ * @example
+ * safeIndexOf(['g', 'oz', 'kg', 'lb'], field.state.value)  // 0-3 or -1
+ */
+export const safeIndexOf = <T>(array: readonly T[], value: unknown): number =>
+  (array as readonly unknown[]).indexOf(value);
+
+/**
  * Returns the value if it's a Date, parses it if it's a string/number,
  * otherwise undefined.
  */
@@ -45,6 +58,7 @@ export const asDate = (value: unknown): Date | undefined => {
 export const asStringRecord = (value: unknown): Record<string, string> => {
   if (value === null || typeof value !== 'object') return {};
   const out: Record<string, string> = {};
+  // TypeScript requires an explicit cast here; value is narrowed to object by the check above.
   for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
     if (typeof val === 'string') out[key] = val;
   }
