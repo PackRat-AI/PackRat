@@ -5,9 +5,9 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -181,7 +181,7 @@ export function PackListScreen() {
   };
 
   return (
-    <TabScreen>
+    <>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -291,8 +291,9 @@ export function PackListScreen() {
             </View>
           )
         }
+        ListFooterComponent={<AndroidTabBarInsetFix />}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </TabScreen>
+    </>
   );
 }

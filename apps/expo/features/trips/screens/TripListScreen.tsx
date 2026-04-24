@@ -1,7 +1,7 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -144,7 +144,7 @@ export function TripsListScreen() {
   };
 
   return (
-    <TabScreen>
+    <>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
@@ -176,8 +176,9 @@ export function TripsListScreen() {
           </View>
         )}
         ListEmptyComponent={renderEmptyState()}
+        ListFooterComponent={<AndroidTabBarInsetFix />}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </TabScreen>
+    </>
   );
 }
