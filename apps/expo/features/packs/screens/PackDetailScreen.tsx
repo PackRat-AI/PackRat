@@ -1,4 +1,5 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -64,6 +65,8 @@ export function PackDetailScreen() {
     enabled: !isOwnedByUser,
   });
 
+  // Cast: TypeScript can't track narrowing through closures defined before the
+  // early-return guard at line ~415; the guard ensures pack is defined at render time.
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
@@ -406,6 +409,16 @@ export function PackDetailScreen() {
               <Text>Go Back</Text>
             </Button>
           </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isDefined(pack)) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center p-4">
+          <ActivityIndicator />
         </View>
       </SafeAreaView>
     );

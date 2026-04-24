@@ -1,6 +1,7 @@
 // CreatePackTemplateItemForm.tsx
 
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -17,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
-import type { PackTemplateItem, PackTemplateItemInput } from '../types';
+import type { PackTemplateItem } from '../types';
 
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
@@ -72,7 +73,7 @@ export const CreatePackTemplateItemForm = ({
           name: existingItem.name,
           description: existingItem.description || '',
           weight: existingItem.weight,
-          weightUnit: existingItem.weightUnit as WeightUnit,
+          weightUnit: existingItem.weightUnit,
           quantity: existingItem.quantity,
           category: existingItem.category || '',
           consumable: existingItem.consumable,
@@ -84,7 +85,7 @@ export const CreatePackTemplateItemForm = ({
           name: '',
           description: '',
           weight: 0,
-          weightUnit: 'g' as WeightUnit,
+          weightUnit: 'g',
           quantity: 1,
           category: '',
           consumable: false,
@@ -117,10 +118,10 @@ export const CreatePackTemplateItemForm = ({
             id: existingItem.id,
             packTemplateId: existingItem.packTemplateId,
             deleted: existingItem.deleted,
-            ...(validatedData as PackTemplateItemInput),
+            ...validatedData,
           });
         } else {
-          createItem({ packTemplateId, itemData: validatedData as PackTemplateItemInput });
+          createItem({ packTemplateId, itemData: validatedData });
         }
 
         if (isEditing && oldImageUrl && imageChanged) {
@@ -293,7 +294,7 @@ export const CreatePackTemplateItemForm = ({
                   <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                   <SegmentedControl
                     values={WEIGHT_UNITS}
-                    selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
+                    selectedIndex={safeIndexOf(WEIGHT_UNITS, field.state.value)}
                     onIndexChange={(index) => {
                       const selectedUnit = WEIGHT_UNITS[index];
                       if (selectedUnit) {

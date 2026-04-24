@@ -1,3 +1,5 @@
+import { PackCategorySchema } from '@packrat/api/types';
+import { fromZod } from '@packrat/guards';
 import {
   Button,
   createDropdownItem,
@@ -12,7 +14,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import type { PackCategory } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -86,7 +87,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
       } else {
         createTemplate({
           ...value,
-          category: value.category as PackCategory,
+          category: value.category,
         });
       }
       router.back();
@@ -155,7 +156,8 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                       }),
                     )}
                     onItemPress={(item) => {
-                      field.handleChange(item.actionKey as PackCategory);
+                      const cat = fromZod(PackCategorySchema)(item.actionKey);
+                      if (cat) field.handleChange(cat);
                     }}
                   >
                     <Button className="my-2 w-full" variant="plain">

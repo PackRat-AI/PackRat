@@ -671,4 +671,4 @@ const packRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().op
   packRouteEntries,
 );
 
-export { packRoutes, packRouteEntries };
+export { packRouteEntries, packRoutes };
