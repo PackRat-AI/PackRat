@@ -171,8 +171,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    testID={TestIds.TripNameInput}
-                    accessible={Platform.OS === 'ios' ? true : undefined}
+                    containerTestID={TestIds.TripNameInput}
+                    containerAccessibilityLabel={t('trips.tripName')}
                     placeholder={t('trips.tripName')}
                     label={Platform.OS === 'ios' ? undefined : t('trips.tripName')}
                     value={field.state.value}
@@ -181,7 +181,12 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="pl-2 justify-center">
-                        <Icon name="map" size={16} color={colors.grey3} ios={{ accessible: true, accessibilityLabel: '' }} />
+                        <Icon
+                          name="map"
+                          size={16}
+                          color={colors.grey3}
+                          ios={{ accessible: true, accessibilityLabel: '' }}
+                        />
                       </View>
                     }
                   />
@@ -194,8 +199,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    testID={TestIds.TripDescriptionInput}
-                    accessible={Platform.OS === 'ios' ? true : undefined}
+                    containerTestID={TestIds.TripDescriptionInput}
+                    containerAccessibilityLabel={t('trips.description')}
                     placeholder={t('trips.description')}
                     label={Platform.OS === 'ios' ? undefined : t('trips.description')}
                     value={field.state.value}
