@@ -1,5 +1,5 @@
 import { Text, useColorScheme } from '@packrat-ai/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { View } from 'react-native';

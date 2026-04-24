@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { positiveIntegerQueryParam } from './queryParams';
 
 export const ErrorResponseSchema = z
   .object({
@@ -74,12 +75,12 @@ export const GuideDetailSchema = GuideSchema.extend({
 
 export const GuidesQuerySchema = z
   .object({
-    page: z.coerce.number().int().positive().optional().default(1).openapi({
-      example: 1,
+    page: positiveIntegerQueryParam('1').openapi({
+      example: '1',
       description: 'Page number for pagination',
     }),
-    limit: z.coerce.number().int().positive().optional().default(20).openapi({
-      example: 20,
+    limit: positiveIntegerQueryParam('20').openapi({
+      example: '20',
       description: 'Number of guides per page',
     }),
     category: z.string().optional().openapi({

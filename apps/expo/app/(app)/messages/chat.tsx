@@ -8,8 +8,9 @@ import {
   createContextItem,
   Text,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
@@ -21,7 +22,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   View,
@@ -354,6 +354,7 @@ function ChatBubble({
 }) {
   const contextMenuRef = React.useRef<ContextMenuMethods>(null);
   const contextMenuRef2 = React.useRef<ContextMenuMethods>(null);
+
   const { colors } = useColorScheme();
   const rootStyle = useAnimatedStyle(() => {
     return {
@@ -548,7 +549,6 @@ function ChatBubble({
                 name="arrow-down"
                 ios={{
                   name: 'arrow.down.square',
-                  renderingMode: 'hierarchical',
                 }}
                 color={colors.primary}
                 size={Platform.select({ ios: 27, default: 21 })}

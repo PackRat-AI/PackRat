@@ -1,8 +1,9 @@
 import { assertDefined } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -17,7 +18,6 @@ import {
   Platform,
   ScrollView,
   Switch,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';

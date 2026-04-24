@@ -1,19 +1,15 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { type PackWithItems, packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { CreatePackRequestSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePacksWeights } from '@packrat/api/utils/compute-pack';
 import { and, eq, or } from 'drizzle-orm';
 
-const packsListRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
-const listGetRoute = createRoute({
+export const listGetRoute = createRoute({
   method: 'get',
   path: '/',
   tags: ['Packs'],
@@ -41,7 +37,7 @@ const listGetRoute = createRoute({
   },
 });
 
-packsListRoutes.openapi(listGetRoute, async (c) => {
+export const listGetRouteHandler: RouteHandler<typeof listGetRoute> = async (c) => {
   const auth = c.get('user');
 
   const { includePublic } = c.req.valid('query');
@@ -60,9 +56,9 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
   });
 
   return c.json(computePacksWeights(result), 200);
-});
+};
 
-const listPostRoute = createRoute({
+export const listPostRoute = createRoute({
   method: 'post',
   path: '/',
   tags: ['Packs'],
@@ -105,7 +101,7 @@ const listPostRoute = createRoute({
   },
 });
 
-packsListRoutes.openapi(listPostRoute, async (c) => {
+export const listPostRouteHandler: RouteHandler<typeof listPostRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -143,9 +139,9 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 
   const packWithWeights = computePacksWeights([packWithItems])[0];
   return c.json(packWithWeights, 200);
-});
+};
 
-const weightHistoryRoute = createRoute({
+export const weightHistoryRoute = createRoute({
   method: 'get',
   path: '/weight-history',
   tags: ['Packs'],
@@ -174,7 +170,7 @@ const weightHistoryRoute = createRoute({
   },
 });
 
-packsListRoutes.openapi(weightHistoryRoute, async (c) => {
+export const weightHistoryRouteHandler: RouteHandler<typeof weightHistoryRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -189,6 +185,16 @@ packsListRoutes.openapi(weightHistoryRoute, async (c) => {
   }));
 
   return c.json(historiesWithUpdatedAt, 200);
-});
+};
 
-export { packsListRoutes };
+const packsListRouteEntries = [
+  defineOpenAPIRoute({ route: listGetRoute, handler: listGetRouteHandler }),
+  defineOpenAPIRoute({ route: listPostRoute, handler: listPostRouteHandler }),
+  defineOpenAPIRoute({ route: weightHistoryRoute, handler: weightHistoryRouteHandler }),
+] as const;
+
+const packsListRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  packsListRouteEntries,
+);
+
+export { packsListRoutes, packsListRouteEntries };

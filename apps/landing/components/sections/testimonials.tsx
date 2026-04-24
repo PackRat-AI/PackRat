@@ -21,7 +21,10 @@ export default function TestimonialsSection() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {siteConfig.testimonials.items.map((testimonial) => (
-            <div key={testimonial.id} className="apple-card h-full relative overflow-hidden">
+            <div
+              key={testimonial.id}
+              className="apple-card p-5 md:p-6 h-full relative overflow-hidden"
+            >
               <QuoteIcon className="absolute top-3 left-3 h-8 w-8 md:h-10 md:w-10 rotate-180 opacity-10 text-apple-blue" />
 
               <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
@@ -45,7 +48,6 @@ export default function TestimonialsSection() {
               <div className="mt-4 md:mt-6 flex">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg
-                    // biome-ignore lint/suspicious/noArrayIndexKey: ignore
                     key={i}
                     className={`w-4 h-4 md:w-5 md:h-5 ${
                       i < testimonial.rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'

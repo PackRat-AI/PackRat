@@ -8,11 +8,12 @@
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { configureS3, createCatalogConnection } from '@packrat/analytics/core/connection';
+import { nodeEnv } from '@packrat/env/node';
 import { describe, expect, it } from 'vitest';
 
-const hasS3Creds = !!process.env.R2_ACCESS_KEY_ID && !!process.env.R2_SECRET_ACCESS_KEY;
+const hasS3Creds = !!nodeEnv.R2_ACCESS_KEY_ID && !!nodeEnv.R2_SECRET_ACCESS_KEY;
 const hasCatalogCreds =
-  !!process.env.R2_CATALOG_TOKEN && !!process.env.R2_CATALOG_URI && !!process.env.R2_WAREHOUSE_NAME;
+  !!nodeEnv.R2_CATALOG_TOKEN && !!nodeEnv.R2_CATALOG_URI && !!nodeEnv.R2_WAREHOUSE_NAME;
 
 describe.skipIf(!hasS3Creds)('configureS3', () => {
   let conn: DuckDBConnection;
@@ -23,8 +24,7 @@ describe.skipIf(!hasS3Creds)('configureS3', () => {
 
     await configureS3(conn);
 
-    const bucketName =
-      process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME || process.env.R2_BUCKET_NAME;
+    const bucketName = nodeEnv.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME || nodeEnv.R2_BUCKET_NAME;
     if (!bucketName) return;
 
     // Verify httpfs can list files from R2

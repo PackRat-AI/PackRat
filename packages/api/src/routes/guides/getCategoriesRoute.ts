@@ -46,11 +46,11 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const results = await Promise.all(promises);
 
     // Collect all categories
-    results.forEach((categories) => {
-      categories.forEach((category) => {
+    for (const categories of results) {
+      for (const category of categories) {
         categoriesSet.add(category);
-      });
-    });
+      }
+    }
 
     // Convert set to sorted array
     const categories = Array.from(categoriesSet).sort();

@@ -1,18 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { rpcClient } from 'expo-app/lib/api/rpcClient';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { Trip } from '../types';
 
 // Fetch all trips for the current user
-export const fetchAllTrips = async (): Promise<Trip[]> => {
-  try {
-    const res = await axiosInstance.get('/api/trips');
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    console.error('Failed to fetch all trips:', error);
-    throw new Error(message);
+export const fetchAllTrips = async () => {
+  const res = await rpcClient.api.trips.$get({
+    query: {},
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch all trips: ${res.status}`);
   }
+  return res.json();
 };
 
 // Hook to query trips

@@ -1,8 +1,8 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
+import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
@@ -19,7 +19,7 @@ import { obs } from 'expo-app/lib/store';
 import { TestIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Share, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
@@ -307,6 +307,17 @@ export function PackDetailScreen() {
   const handleAddItem = () => {
     addItemActionsRef.current?.present();
   };
+  const handleSharePack = async () => {
+    try {
+      const lines: string[] = [`${pack.name}`];
+      if (pack.category) lines.push(pack.category);
+      if (pack.description) lines.push(`\n${pack.description}`);
+      lines.push(`\n${pack.items?.length || 0} items · ${pack.totalWeight || 0}g`);
+      await Share.share({ message: lines.join('\n') });
+    } catch {
+      // ignore
+    }
+  };
 
   // Prepare bottom sheet actions with consistent structure
   const actions = [
@@ -437,8 +448,18 @@ export function PackDetailScreen() {
 
         {/* Header */}
         <View className="mb-4 p-4">
+          <View className="mb-2 flex-row items-start justify-between">
+            <Text className="flex-1 text-2xl font-bold text-foreground">{pack.name}</Text>
+            <Button variant="plain" size="icon" onPress={handleSharePack}>
+              <Icon
+                materialIcon={{ type: 'MaterialIcons', name: 'share' }}
+                ios={{ name: 'square.and.arrow.up' }}
+                size={22}
+                color={colors.grey2}
+              />
+            </Button>
+          </View>
           <View className="mb-2">
-            <Text className="text-2xl font-bold text-foreground">{pack.name}</Text>
             {pack.category && <Text variant="footnote">{pack.category}</Text>}
           </View>
 
@@ -541,23 +562,6 @@ export function PackDetailScreen() {
               </Button>
             )}
           </View>
-
-          {/* Start Packing inline button */}
-          {isOwnedByUser && !isPackingMode && (
-            <Button
-              variant="secondary"
-              onPress={handleTogglePackingMode}
-              className="mt-3 w-full flex-row items-center gap-2"
-            >
-              <Icon
-                size={18}
-                materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
-                ios={{ name: 'backpack' }}
-                color={colors.foreground}
-              />
-              <Text>Start Packing</Text>
-            </Button>
-          )}
         </View>
 
         {/* Tabs */}

@@ -5,6 +5,11 @@ import type { Context } from 'hono';
 import { sign, verify } from 'hono/jwt';
 import type { JWTPayload } from 'hono/utils/jwt/types';
 
+const UPPERCASE_RE = /[A-Z]/;
+const LOWERCASE_RE = /[a-z]/;
+const DIGIT_RE = /[0-9]/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // Generate a random token
 export function generateToken(length = 32): string {
   return randomBytes(length).toString('hex');
@@ -77,21 +82,21 @@ export function validatePassword(password: string): {
     };
   }
 
-  if (!/[A-Z]/.test(password)) {
+  if (!UPPERCASE_RE.test(password)) {
     return {
       valid: false,
       message: 'Password must contain at least one uppercase letter',
     };
   }
 
-  if (!/[a-z]/.test(password)) {
+  if (!LOWERCASE_RE.test(password)) {
     return {
       valid: false,
       message: 'Password must contain at least one lowercase letter',
     };
   }
 
-  if (!/[0-9]/.test(password)) {
+  if (!DIGIT_RE.test(password)) {
     return {
       valid: false,
       message: 'Password must contain at least one number',
@@ -103,8 +108,7 @@ export function validatePassword(password: string): {
 
 // Validate email format
 export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_RE.test(email);
 }
 
 // Validate API key

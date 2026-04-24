@@ -1,10 +1,8 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
-import { appAlert } from 'expo-app/app/_layout';
+import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
-import { useLocations } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,9 +20,6 @@ export function TripDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const { locationsState } = useLocations();
-
-  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
   const [showConditionReport, setShowConditionReport] = useState(false);
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
@@ -72,30 +67,12 @@ export function TripDetailScreen() {
   const handleWeatherPress = () => {
     if (!trip.location) return;
 
-    const { latitude, longitude } = trip.location;
+    const { latitude, longitude, name } = trip.location;
+    const locationName = name || trip.name;
 
-    const matchedLocation = locations.find(
-      (loc) => Math.abs(loc.lat - latitude) < 0.05 && Math.abs(loc.lon - longitude) < 0.05,
+    router.push(
+      `/weather/geo?lat=${latitude}&lon=${longitude}&locationName=${encodeURIComponent(locationName)}`,
     );
-
-    if (matchedLocation) {
-      router.push(`/weather/${matchedLocation.id}`);
-    } else {
-      appAlert.current?.alert({
-        title: 'Location not found',
-        message: 'Please add this location in Weather first.',
-        buttons: [
-          {
-            text: 'Go to Weather',
-            onPress: () => router.push('/weather'),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-      });
-    }
   };
 
   return (

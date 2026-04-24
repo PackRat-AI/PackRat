@@ -13,8 +13,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 > This project is still in development and may contain bugs or issues. Please use the app with caution and report any problems you encounter. Thank you for your understanding and cooperation.
 
 **Build & CI:**
-![Biome Check](https://github.com/PackRat-AI/PackRat/actions/workflows/biome.yml/badge.svg)
-![Check Types](https://github.com/PackRat-AI/PackRat/actions/workflows/check-types.yml/badge.svg)
+![Checks](https://github.com/PackRat-AI/PackRat/actions/workflows/checks.yml/badge.svg)
 ![API Tests](https://github.com/PackRat-AI/PackRat/actions/workflows/api-tests.yml/badge.svg)
 ![Database Migrations](https://github.com/PackRat-AI/PackRat/actions/workflows/migrations.yml/badge.svg)
 

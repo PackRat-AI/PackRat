@@ -1,5 +1,6 @@
 'use client';
 
+import { guideEnv } from '@packrat/env/next';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import {
@@ -31,7 +32,7 @@ import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // This ensures the page only works in development
-const _isDevelopment = process.env.NODE_ENV === 'development';
+const _isDevelopment = guideEnv.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =
@@ -302,7 +303,7 @@ export default function GeneratePage() {
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
+                    onValueChange={(value: string) => setDifficulty(value as DifficultyLevel)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select difficulty" />
@@ -406,7 +407,7 @@ export default function GeneratePage() {
                   max={20}
                   step={1}
                   value={[batchCount]}
-                  onValueChange={(value) => {
+                  onValueChange={(value: number[]) => {
                     const count = value[0];
                     assertDefined(count);
                     setBatchCount(count);

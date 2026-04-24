@@ -1,20 +1,13 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as ImagePicker from 'expo-image-picker';
-import { nanoid } from 'nanoid/non-secure';
+import { nanoid } from 'nanoid';
 import { useCallback, useState } from 'react';
-import {
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, Image, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useCreatePost } from '../hooks';
 
 interface SelectedPhoto {
@@ -145,7 +138,6 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       {/* Photo grid */}
       <View className="flex-row flex-wrap gap-2 mb-4">
         {photos.map((photo, idx) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: photos have no stable id
           <View key={`${photo.uri}-${idx}`} className="relative">
             <Image
               source={{ uri: photo.uri }}

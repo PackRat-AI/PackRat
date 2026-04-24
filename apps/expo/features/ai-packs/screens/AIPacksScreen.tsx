@@ -6,14 +6,15 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Modal, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 
@@ -21,6 +22,7 @@ export function AIPacksScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const alertRef = useRef<AlertMethods>(null);
+
   const { mutateAsync: generatePacks, isPending, generatedPacksFromStore } = useGeneratePacks();
   const [packsModalVisible, setPacksModalVisible] = useState(false);
   const router = useRouter();
@@ -61,7 +63,9 @@ export function AIPacksScreen() {
   const handleGeneratePacks = () => {
     alertRef.current?.alert({
       title: t('ai.generatePacksButton'),
-      message: t('ai.generatePacksConfirm', { count: form.getFieldValue('count') }),
+      message: t('ai.generatePacksConfirm', {
+        count: form.getFieldValue('count'),
+      }),
       materialIcon: { name: 'information-outline', color: colors.primary },
       buttons: [
         { text: t('common.cancel'), style: 'cancel' },

@@ -6,10 +6,12 @@ import { isValid, parse, parseISO } from 'date-fns';
  *
  * Returns `null` for missing or invalid input.
  */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 export function parseLocalDate(dateString?: string): Date | null {
   if (!dateString || typeof dateString !== 'string') return null;
 
-  const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+  const dateOnlyPattern = DATE_ONLY_PATTERN;
   if (dateOnlyPattern.test(dateString)) {
     const date = parse(dateString, 'yyyy-MM-dd', new Date());
     return isValid(date) ? date : null;
@@ -23,6 +25,10 @@ export function parseLocalDate(dateString?: string): Date | null {
  * invalid values. Uses the user's locale via `toLocaleDateString()`.
  */
 export function formatLocalDate(dateString?: string): string {
-  const date = parseLocalDate(dateString);
-  return date ? date.toLocaleDateString() : '\u2014';
+  if (!dateString) return '\u2014';
+
+  const parsed = parseLocalDate(dateString);
+  const date = parsed ?? new Date(dateString); // 👈 fallback
+
+  return isNaN(date.getTime()) ? '\u2014' : date.toLocaleDateString();
 }

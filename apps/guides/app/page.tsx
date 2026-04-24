@@ -12,7 +12,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 function HomeContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() ?? new URLSearchParams();
   const category = searchParams.get('category');
   const search = searchParams.get('search');
 

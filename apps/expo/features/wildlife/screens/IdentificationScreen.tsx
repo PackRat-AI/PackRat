@@ -1,13 +1,14 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { appAlert } from 'expo-app/app/_layout';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Image, ScrollView, TextInput, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { SpeciesCard } from '../components/SpeciesCard';
 import { useWildlifeHistory } from '../hooks/useWildlifeHistory';
 import { useWildlifeIdentification } from '../hooks/useWildlifeIdentification';

@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   ErrorResponseSchema,
   RagSearchQuerySchema,
@@ -9,14 +9,13 @@ import {
 import { AIService } from '@packrat/api/services/aiService';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { getSchemaInfo } from '@packrat/api/utils/DbUtils';
 
-const aiRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
 // ─── RAG search ─────────────────────────────────────────────────────────────
 
-const ragSearchRoute = createRoute({
+export const ragSearchRoute = createRoute({
   method: 'get',
   path: '/rag-search',
   tags: ['AI'],
@@ -38,21 +37,22 @@ const ragSearchRoute = createRoute({
   },
 });
 
-aiRoutes.openapi(ragSearchRoute, async (c) => {
+export const ragSearchHandler: RouteHandler<typeof ragSearchRoute> = async (c) => {
   try {
     const { q: query, limit } = c.req.valid('query');
     const aiService = new AIService(c);
     const result = await aiService.searchPackratOutdoorGuidesRAG(query, limit);
-    return c.json(result as any, 200);
+    const response = RagSearchResponseSchema.parse(result);
+    return c.json(response, 200);
   } catch (error) {
     console.error('RAG search error:', error);
     return c.json({ error: 'Failed to search outdoor guides' }, 500);
   }
-});
+};
 
 // ─── Web search ──────────────────────────────────────────────────────────────
 
-const webSearchRoute = createRoute({
+export const webSearchRoute = createRoute({
   method: 'get',
   path: '/web-search',
   tags: ['AI'],
@@ -74,7 +74,7 @@ const webSearchRoute = createRoute({
   },
 });
 
-aiRoutes.openapi(webSearchRoute, async (c) => {
+export const webSearchHandler: RouteHandler<typeof webSearchRoute> = async (c) => {
   try {
     const { q: query } = c.req.valid('query');
     const aiService = new AIService(c);
@@ -84,7 +84,7 @@ aiRoutes.openapi(webSearchRoute, async (c) => {
     console.error('Web search error:', error);
     return c.json({ error: 'Search failed' }, 500);
   }
-});
+};
 
 // ─── Execute SQL ─────────────────────────────────────────────────────────────
 
@@ -101,7 +101,7 @@ const ExecuteSqlBodySchema = z
   })
   .openapi('ExecuteSqlBody');
 
-const executeSqlRoute = createRoute({
+export const executeSqlRoute = createRoute({
   method: 'post',
   path: '/execute-sql',
   tags: ['AI'],
@@ -145,7 +145,7 @@ const executeSqlRoute = createRoute({
   },
 });
 
-aiRoutes.openapi(executeSqlRoute, async (c) => {
+export const executeSqlHandler: RouteHandler<typeof executeSqlRoute> = async (c) => {
   try {
     const auth = c.get('user');
     const { query, limit = 100 } = c.req.valid('json');
@@ -167,11 +167,11 @@ aiRoutes.openapi(executeSqlRoute, async (c) => {
     console.error('Execute SQL error:', error);
     return c.json({ error: 'Failed to execute query' }, 500);
   }
-});
+};
 
 // ─── Database schema ─────────────────────────────────────────────────────────
 
-const dbSchemaRoute = createRoute({
+export const dbSchemaRoute = createRoute({
   method: 'get',
   path: '/db-schema',
   tags: ['AI'],
@@ -194,7 +194,7 @@ const dbSchemaRoute = createRoute({
   },
 });
 
-aiRoutes.openapi(dbSchemaRoute, async (c) => {
+export const dbSchemaHandler: RouteHandler<typeof dbSchemaRoute> = async (c) => {
   try {
     const result = await getSchemaInfo(c);
     if (typeof result !== 'string') {
@@ -205,6 +205,17 @@ aiRoutes.openapi(dbSchemaRoute, async (c) => {
     console.error('DB schema error:', error);
     return c.json({ error: 'Failed to retrieve database schema' }, 500);
   }
-});
+};
+
+const aiOpenApiRoutes = [
+  defineOpenAPIRoute({ route: ragSearchRoute, handler: ragSearchHandler }),
+  defineOpenAPIRoute({ route: webSearchRoute, handler: webSearchHandler }),
+  defineOpenAPIRoute({ route: executeSqlRoute, handler: executeSqlHandler }),
+  defineOpenAPIRoute({ route: dbSchemaRoute, handler: dbSchemaHandler }),
+] as const;
+
+const aiRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  aiOpenApiRoutes,
+);
 
 export { aiRoutes };

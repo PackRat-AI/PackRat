@@ -11,7 +11,7 @@ export function useRecentlyUsedCatalogItems() {
 
   const trackRecentlyUsed = useCallback(
     (items: CatalogItem[]) => {
-      setRecentItems((current) => buildUpdatedRecentlyUsed(current, items));
+      setRecentItems((current: CatalogItem[]) => buildUpdatedRecentlyUsed(current, items));
     },
     [setRecentItems],
   );

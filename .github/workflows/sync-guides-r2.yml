@@ -26,19 +26,20 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
           
       - name: Authenticate with GitHub for private packages
         run: |
           echo "PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
           
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
         timeout-minutes: 5
         
       - name: Sync guides to R2 bucket

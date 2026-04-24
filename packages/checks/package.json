@@ -1,0 +1,9 @@
+{
+  "name": "@packrat/checks",
+  "version": "2.0.22",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:magic-strings": "bun ./src/check-magic-strings.ts"
+  }
+}

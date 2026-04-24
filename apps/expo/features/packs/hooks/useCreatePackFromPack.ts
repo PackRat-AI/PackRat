@@ -1,7 +1,7 @@
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
 import { recordPackWeight } from 'expo-app/features/packs/store/packWeightHistory';
 import type { Pack, PackInput, PackInStore } from 'expo-app/features/packs/types';
-import { nanoid } from 'nanoid/non-secure';
+import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 
 export function useCreatePackFromPack() {

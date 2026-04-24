@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { etlJobs } from '@packrat/api/db/schema';
 import { apiKeyAuthMiddleware, authMiddleware } from '@packrat/api/middleware';
@@ -6,7 +6,6 @@ import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { HTTPException } from 'hono/http-exception';
-import { z } from 'zod';
 
 export const queueCatalogEtlRoute = new OpenAPIHono<{ Bindings: Env }>();
 

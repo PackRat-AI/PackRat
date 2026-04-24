@@ -1,4 +1,5 @@
 import { openai } from '@ai-sdk/openai';
+import { guideEnv } from '@packrat/env/next';
 import { generateText, tool } from 'ai';
 import axios from 'axios';
 import { z } from 'zod';
@@ -44,7 +45,7 @@ export async function enhanceGuideContent(
     temperature = 0.3,
     maxSearchResults = 5,
     apiBaseUrl = 'http://localhost:8787',
-    apiKey = process.env.PACKRAT_API_KEY,
+    apiKey = guideEnv.PACKRAT_API_KEY,
   } = options;
 
   if (!apiKey) {
@@ -126,16 +127,18 @@ export async function enhanceGuideContent(
 
               // Track products for reporting
               if (searchResults.items) {
-                searchResults.items.forEach(
-                  (item: { name: string; productUrl: string; similarity?: number }) => {
-                    productsUsed.push({
-                      name: item.name,
-                      url: item.productUrl,
-                      context: query,
-                      similarity: item.similarity,
-                    });
-                  },
-                );
+                for (const item of searchResults.items as {
+                  name: string;
+                  productUrl: string;
+                  similarity?: number;
+                }[]) {
+                  productsUsed.push({
+                    name: item.name,
+                    url: item.productUrl,
+                    context: query,
+                    similarity: item.similarity,
+                  });
+                }
               }
 
               console.log(`✅ Found ${searchResults.items?.length || 0} relevant products`);

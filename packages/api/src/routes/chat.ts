@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
 import {
@@ -10,21 +10,18 @@ import {
   UpdateReportStatusRequestSchema,
 } from '@packrat/api/schemas/chat';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { parseIntegerId } from '@packrat/api/utils/routeParams';
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
-const chatRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
-const chatRoute = createRoute({
+export const chatRoute = createRoute({
   method: 'post',
   path: '/',
   tags: ['Chat'],
@@ -55,7 +52,7 @@ const chatRoute = createRoute({
   },
 });
 
-chatRoutes.openapi(chatRoute, async (c) => {
+export const chatHandler: RouteHandler<typeof chatRoute> = async (c) => {
   const auth = c.get('user');
 
   let body: {
@@ -81,7 +78,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
     let systemPrompt = `
       You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
       You help users manage their hiking packs and gear efficiently using ultralight principles.
-            
+
       Guidelines:
       - Focus on ultralight hiking principles when appropriate
       - For beginners, emphasize safety and comfort over weight savings
@@ -166,9 +163,9 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     throw error;
   }
-});
+};
 
-const createReportRoute = createRoute({
+export const createReportRoute = createRoute({
   method: 'post',
   path: '/reports',
   tags: ['Chat'],
@@ -205,7 +202,7 @@ const createReportRoute = createRoute({
   },
 });
 
-chatRoutes.openapi(createReportRoute, async (c) => {
+export const createReportHandler: RouteHandler<typeof createReportRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -222,10 +219,9 @@ chatRoutes.openapi(createReportRoute, async (c) => {
   });
 
   return c.json({ success: true }, 200);
-});
+};
 
-// Get all reported content (admin only) - separate endpoint
-const getReportsRoute = createRoute({
+export const getReportsRoute = createRoute({
   method: 'get',
   path: '/reports',
   tags: ['Chat'],
@@ -260,7 +256,7 @@ const getReportsRoute = createRoute({
   },
 });
 
-chatRoutes.openapi(getReportsRoute, async (c) => {
+export const getReportsHandler: RouteHandler<typeof getReportsRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -285,10 +281,9 @@ chatRoutes.openapi(getReportsRoute, async (c) => {
   }));
 
   return c.json({ reportedItems: reportedItemsWithUpdatedAt }, 200);
-});
+};
 
-// Update reported content status (admin only)
-const updateReportRoute = createRoute({
+export const updateReportRoute = createRoute({
   method: 'patch',
   path: '/reports/{id}',
   tags: ['Chat'],
@@ -347,7 +342,7 @@ const updateReportRoute = createRoute({
   },
 });
 
-chatRoutes.openapi(updateReportRoute, async (c) => {
+export const updateReportHandler: RouteHandler<typeof updateReportRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -358,7 +353,10 @@ chatRoutes.openapi(updateReportRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  const id = Number.parseInt(c.req.param('id'), 10);
+  const id = parseIntegerId(c.req.param('id'));
+  if (id === null) {
+    return c.json({ error: 'Report not found' }, 404);
+  }
   const { status } = await c.req.json();
 
   await db
@@ -372,6 +370,18 @@ chatRoutes.openapi(updateReportRoute, async (c) => {
     .where(eq(reportedContent.id, id));
 
   return c.json({ success: true }, 200);
-});
+};
+
+const chatOpenApiRoutes = [
+  defineOpenAPIRoute({ route: chatRoute, handler: chatHandler }),
+  defineOpenAPIRoute({ route: createReportRoute, handler: createReportHandler }),
+  defineOpenAPIRoute({ route: getReportsRoute, handler: getReportsHandler }),
+  defineOpenAPIRoute({ route: updateReportRoute, handler: updateReportHandler }),
+] as const;
+
+const chatRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>().openapiRoutes(chatOpenApiRoutes);
 
 export { chatRoutes };

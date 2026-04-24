@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 export default function CategoryFilter({ categories }: { categories: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() ?? new URLSearchParams();
   const currentCategory = searchParams.get('category');
 
   const handleCategoryClick = (category: string) => {

@@ -10,6 +10,9 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { asNumber, asString, isArray } from '@packrat/guards';
 import matter from 'gray-matter';
 
+const GUIDE_FILE_EXTENSION_PATTERN = /\.(mdx?|md)$/;
+const DASH_PATTERN = /-/g;
+
 export const routeDefinition = createRoute({
   method: 'get',
   path: '/',
@@ -89,12 +92,12 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
         }
 
         return {
-          id: obj.key.replace(/\.(mdx?|md)$/, ''), // Remove .mdx or .md extension
+          id: obj.key.replace(GUIDE_FILE_EXTENSION_PATTERN, ''), // Remove .mdx or .md extension
           key: obj.key,
           title:
             asString(frontmatter.title) ||
             obj.customMetadata?.title ||
-            obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
+            obj.key.replace(GUIDE_FILE_EXTENSION_PATTERN, '').replace(DASH_PATTERN, ' '),
           category: obj.customMetadata?.category || 'general',
           categories: (frontmatter.categories as string[]) || [],
           description: asString(frontmatter.description) || obj.customMetadata?.description || '',

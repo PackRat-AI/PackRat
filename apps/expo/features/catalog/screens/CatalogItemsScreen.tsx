@@ -1,14 +1,16 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -32,6 +34,7 @@ function CatalogItemsScreen() {
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const isSearching = searchValue.trim().length > 0;
   const trimmedQuery = debouncedSearchValue.trim();
@@ -55,7 +58,7 @@ function CatalogItemsScreen() {
   } = useCatalogItemsInfinite({
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
-    sort: { field: 'usage', order: 'desc' },
+    sort: { field: 'createdAt', order: 'desc' },
   });
 
   const {
@@ -95,7 +98,7 @@ function CatalogItemsScreen() {
     if (isSearching) return null;
 
     return (
-      <>
+      <TabScreen useLegacySafeAreaView>
         <CategoriesFilter
           data={categories}
           onFilter={setActiveFilter}
@@ -114,7 +117,7 @@ function CatalogItemsScreen() {
             <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
           )}
         </View>
-      </>
+      </TabScreen>
     );
   }, [
     isSearching,
@@ -128,16 +131,18 @@ function CatalogItemsScreen() {
   ]);
 
   return (
-    <TabScreen>
+    <>
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: false,
           onChangeText: setSearchValue,
+          ref: asNonNullableRef(searchBarRef),
+
           placeholder: t('catalog.searchPlaceholder'),
           content: (
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <LargeTitleHeaderSearchContentContainer>
               {isSearching ? (
                 isVectorLoading || !isQueryReady ? (
                   <View className="flex-1 items-center justify-center p-6">
@@ -195,7 +200,7 @@ function CatalogItemsScreen() {
                   <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
                 </View>
               )}
-            </View>
+            </LargeTitleHeaderSearchContentContainer>
           ),
         }}
       />
@@ -267,7 +272,7 @@ function CatalogItemsScreen() {
           </View>
         }
       />
-    </TabScreen>
+    </>
   );
 }
 

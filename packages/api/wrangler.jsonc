@@ -94,6 +94,12 @@
           "to": "AppContainer"
         }
       ]
+    },
+    {
+      // Delete the stale TikTokContainer class so its container app
+      // (packrat-api-tiktokcontainer) is removed, unblocking packrat-api-appcontainer
+      "tag": "v3",
+      "deleted_classes": ["TikTokContainer"]
     }
   ],
   "env": {

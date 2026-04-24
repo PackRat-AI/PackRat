@@ -2,9 +2,9 @@ import { assertDefined } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
+import { Icon } from 'expo-app/components/Icon';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -33,7 +33,7 @@ const tripFormSchema = z
       .optional(),
     startDate: z.string().min(1, 'Start date is required'),
     endDate: z.string().min(1, 'End date is required'),
-    packId: z.string().optional(),
+    packId: z.string().nullable().optional(),
   })
   .refine(
     ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
@@ -62,7 +62,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   // so that after the user picks a new location via location-search, a
   // re-render of the same trip object does not overwrite their selection in
   // the store.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — see comment above; reseeding on trip?.location would stomp user-picked values
   useEffect(() => {
     // Set location from trip, or null if trip has no location
     setLocation(trip?.location ?? null);
@@ -113,7 +112,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
-      const submitData = { ...value, location: location ?? value.location };
+      const submitData = {
+        ...value,
+        location: location ?? value.location,
+        packId: value.packId ?? undefined,
+      };
       try {
         if (isEditingExistingTrip) {
           await updateTrip({ ...trip, ...submitData });

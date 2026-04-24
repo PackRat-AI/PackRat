@@ -150,7 +150,7 @@ export class CatalogService {
       };
     }
 
-    const [itemsWithCounts, [{ totalCount }]] = await Promise.all([
+    const [itemsWithCounts, totalCountResult] = await Promise.all([
       this.db
         .select({
           ...getTableColumns(catalogItems),
@@ -160,7 +160,7 @@ export class CatalogService {
         .leftJoin(
           sql`(
             SELECT catalog_item_id, COUNT(*) as count
-            FROM pack_items 
+            FROM pack_items
             WHERE deleted = false
             GROUP BY catalog_item_id
           ) as pack_item_counts`,
@@ -172,6 +172,7 @@ export class CatalogService {
         .offset(offset),
       this.db.select({ totalCount: count() }).from(catalogItems).where(where),
     ]);
+    const totalCount = totalCountResult[0]?.totalCount ?? 0;
 
     const items = itemsWithCounts.map(({ pack_item_count, ...item }) => item);
 
@@ -228,7 +229,7 @@ export class CatalogService {
 
     const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
-    const [items, [{ totalCount }]] = await Promise.all([
+    const [items, vectorTotalCountResult] = await Promise.all([
       this.db
         .select({
           ...columnsToSelect,
@@ -246,6 +247,7 @@ export class CatalogService {
         .from(catalogItems)
         .where(gt(similarity, 0.1)),
     ]);
+    const totalCount = vectorTotalCountResult[0]?.totalCount ?? 0;
 
     return {
       items,
@@ -402,12 +404,12 @@ export class CatalogService {
     const BATCH_SIZE = 100;
 
     // Get count of items without embeddings
-    const [{ totalCount }] = await this.db
+    const queueTotalCountResult = await this.db
       .select({ totalCount: count() })
       .from(catalogItems)
       .where(isNull(catalogItems.embedding));
 
-    const total = Number(totalCount);
+    const total = Number(queueTotalCountResult[0]?.totalCount ?? 0);
     console.log(`Queuing ${total} items for embeddings`);
 
     if (total === 0) {
@@ -471,10 +473,13 @@ export class CatalogService {
 
       // Update items with embeddings
       for (let i = 0; i < itemsToEmbed.length; i++) {
+        const item = itemsToEmbed[i];
+        const embedding = embeddings[i];
+        if (!item || embedding === undefined) continue;
         await this.db
           .update(catalogItems)
-          .set({ embedding: embeddings[i], updatedAt: new Date() })
-          .where(eq(catalogItems.id, itemsToEmbed[i].id));
+          .set({ embedding, updatedAt: new Date() })
+          .where(eq(catalogItems.id, item.id));
       }
 
       console.log(`Completed batch: ${itemsToEmbed.length} embeddings generated`);

@@ -5,7 +5,8 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
@@ -180,30 +181,33 @@ export function PackListScreen() {
   };
 
   return (
-    <TabScreen>
+    <TabScreen useLegacySafeAreaView>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
         searchBar={{
-          iosHideWhenScrolling: true,
           ref: asNonNullableRef(searchBarRef),
           onChangeText(text) {
             setSearchValue(text);
           },
-          content: searchValue ? (
-            <SearchResults
-              results={filteredPacks || []}
-              searchValue={searchValue}
-              onResultPress={handleSearchResultPress}
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center">
-              <Text>{t('packs.searchPacks')}</Text>
-            </View>
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {searchValue ? (
+                <SearchResults
+                  results={filteredPacks || []}
+                  searchValue={searchValue}
+                  onResultPress={handleSearchResultPress}
+                />
+              ) : (
+                <View className="flex-1 items-center justify-center">
+                  <Text>{t('packs.searchPacks')}</Text>
+                </View>
+              )}
+            </LargeTitleHeaderSearchContentContainer>
           ),
         }}
         rightView={() => (
-          <View className="flex-row items-center">
+          <View className="flex-row items-center mr-2 ml-2">
             <CreatePackIconButton />
           </View>
         )}

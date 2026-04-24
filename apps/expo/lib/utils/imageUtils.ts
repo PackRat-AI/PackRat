@@ -10,9 +10,11 @@ import { getDomainSpecificExtension } from './domain-specific-extensions';
  * @param url The image URL
  * @returns The inferred extension or null if it couldn't be determined
  */
+const IMAGE_EXTENSION_RE = /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i;
+
 export const inferImageExtension = (url: string): string | null => {
   // Check if URL already has an extension
-  const extensionMatch = url.match(/\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i);
+  const extensionMatch = url.match(IMAGE_EXTENSION_RE);
   if (extensionMatch && extensionMatch[1] !== undefined) {
     return extensionMatch[1].toLowerCase();
   }

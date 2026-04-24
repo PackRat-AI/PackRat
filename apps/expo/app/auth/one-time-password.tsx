@@ -3,7 +3,9 @@ import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packra
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import {
@@ -13,7 +15,8 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TextInputFocusEventData,
+  type TargetedEvent,
+  type TextInput,
   type TextInputKeyPressEventData,
   View,
 } from 'react-native';
@@ -66,7 +69,6 @@ export default function OneTimePasswordScreen() {
     }, 1000);
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need to run this on initial render
   React.useEffect(() => {
     startCountdown();
 
@@ -173,7 +175,6 @@ export default function OneTimePasswordScreen() {
           <View className="flex-row justify-between gap-2 py-3">
             {codeValues.map((value, index) => (
               <OTPField
-                // biome-ignore lint/suspicious/noArrayIndexKey: really no definite id here. code values could repeat.
                 key={index}
                 index={index}
                 value={value}
@@ -251,6 +252,10 @@ function OTPField({
   hasError,
 }: OTPFieldProps) {
   const { colors } = useColorScheme();
+  const inputRef = React.useRef<TextInput>(null);
+
+  // Apply keyboard hide blur fix
+  useKeyboardHideBlur(asNonNullableRef(inputRef));
 
   function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     if (nativeEvent.key === 'Backspace' && value === '') {
@@ -261,8 +266,8 @@ function OTPField({
     }
   }
 
-  function onFocus(e: NativeSyntheticEvent<TextInputFocusEventData>) {
-    e.currentTarget.setNativeProps({
+  function onFocus(_e: NativeSyntheticEvent<TargetedEvent>) {
+    inputRef.current?.setNativeProps({
       selection: { start: 0, end: value?.toString().length },
     });
   }
@@ -294,6 +299,7 @@ function OTPField({
 
   return (
     <TextField
+      ref={inputRef}
       value={value}
       editable={!isLoading}
       keyboardType="numeric"
