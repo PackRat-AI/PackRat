@@ -11,7 +11,7 @@ export function usePopularCatalogItems(limit = 10) {
     queryFn: () =>
       getCatalogItems({
         limit,
-        sort: { field: 'usage', order: 'desc' },
+        sort: { field: 'ratingValue', order: 'desc' },
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

@@ -2,34 +2,30 @@
 
 import fs from 'fs';
 import path from 'path';
+import { z } from 'zod';
 import { R2BucketService } from '../../../packages/api/src/services/r2-bucket';
-import type { Env } from '../../../packages/api/src/types/env';
+import type { ValidatedEnv } from '../../../packages/api/src/utils/env-validation';
 
-// Environment configuration for the sync script
-interface SyncEnv extends Env {
-  CLOUDFLARE_ACCOUNT_ID: string;
-  R2_ACCESS_KEY_ID: string;
-  R2_SECRET_ACCESS_KEY: string;
-  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: string;
-  FORCE_SYNC?: string;
-}
+// Environment configuration for the sync script — parsed and validated at startup.
+const SyncEnvSchema = z.object({
+  CLOUDFLARE_ACCOUNT_ID: z.string().min(1),
+  R2_ACCESS_KEY_ID: z.string().min(1),
+  R2_SECRET_ACCESS_KEY: z.string().min(1),
+  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: z.string().min(1),
+  FORCE_SYNC: z.string().optional(),
+});
 
-const env = process.env as unknown as SyncEnv;
+type SyncEnv = z.infer<typeof SyncEnvSchema>;
 
-// Validate required environment variables
-const requiredEnvVars = [
-  'CLOUDFLARE_ACCOUNT_ID',
-  'R2_ACCESS_KEY_ID',
-  'R2_SECRET_ACCESS_KEY',
-  'PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME',
-];
-
-for (const envVar of requiredEnvVars) {
-  if (!(env as unknown as Record<string, string | undefined>)[envVar]) {
-    console.error(`❌ Missing required environment variable: ${envVar}`);
-    process.exit(1);
+const envResult = SyncEnvSchema.safeParse(process.env);
+if (!envResult.success) {
+  for (const issue of envResult.error.issues) {
+    console.error(`❌ Missing required environment variable: ${issue.path.join('.')}`);
   }
+  process.exit(1);
 }
+
+const env: SyncEnv = envResult.data;
 
 const postsDirectory = path.join(process.cwd(), 'content/posts');
 const forceSync = env.FORCE_SYNC === 'true';
@@ -43,7 +39,7 @@ async function syncGuidesToR2() {
   try {
     // Initialize R2 bucket service
     const bucket = new R2BucketService({
-      env,
+      env: env as unknown as ValidatedEnv,
       bucketType: 'guides',
     });
 

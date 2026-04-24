@@ -33,7 +33,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
               {pack.totalWeight ?? 0} g
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {getRelativeTime(pack.localCreatedAt)}
+              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt ?? '')}
             </Text>
           </View>
         </View>
@@ -43,7 +43,9 @@ function RecentPackCard({ pack }: { pack: Pack }) {
             <Icon name="clock-outline" size={14} color={colors.grey} />
           </View>
           <Text variant="caption1" className="text-muted-foreground">
-            {t('packs.lastUpdated', { time: getRelativeTime(pack.localUpdatedAt) })}
+            {t('packs.lastUpdated', {
+              time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt ?? ''),
+            })}
           </Text>
         </View>
       </View>

@@ -39,4 +39,5 @@ const feedOpenApiRoutes = [
 const feedRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
   feedOpenApiRoutes,
 );
+
 export { feedRoutes };

@@ -20,8 +20,8 @@ export function useDuplicatePack() {
       const response = await queryClient.fetchQuery({
         queryKey: ['pack', packId],
         queryFn: async () => {
-          const res = await axiosInstance.get(`/api/packs/${packId}`);
-          return res.data as Pack;
+          const res = await axiosInstance.get<Pack>(`/api/packs/${packId}`);
+          return res.data;
         },
       });
 
