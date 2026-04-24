@@ -163,7 +163,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="folder" size={16} color={colors.grey3} ios={{ accessible: false }} />
+                        <Icon name="folder" size={16} color={colors.grey3} ios={{ accessible: true, accessibilityLabel: '' }} />
                       </View>
                     }
                   />
@@ -193,7 +193,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     textAlignVertical="top"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="newspaper" size={16} color={colors.grey3} ios={{ accessible: false }} />
+                        <Icon name="newspaper" size={16} color={colors.grey3} ios={{ accessible: true, accessibilityLabel: '' }} />
                       </View>
                     }
                   />

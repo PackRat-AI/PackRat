@@ -181,7 +181,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="pl-2 justify-center">
-                        <Icon name="map" size={16} color={colors.grey3} ios={{ accessible: false }} />
+                        <Icon name="map" size={16} color={colors.grey3} ios={{ accessible: true, accessibilityLabel: '' }} />
                       </View>
                     }
                   />
