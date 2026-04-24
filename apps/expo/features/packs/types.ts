@@ -1,7 +1,8 @@
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
+import type { PackCategory, WeightUnit } from 'expo-app/types';
 
-export type WeightUnit = 'g' | 'kg' | 'oz' | 'lb';
+export type { PackCategory, WeightUnit };
 
 export interface PackItem {
   id: string;
@@ -29,17 +30,6 @@ export interface PackItem {
 }
 
 export type { PackItemInput } from './input';
-
-export type PackCategory =
-  | 'hiking'
-  | 'backpacking'
-  | 'camping'
-  | 'climbing'
-  | 'winter'
-  | 'desert'
-  | 'water sports'
-  | 'skiing'
-  | 'custom';
 
 export type Weight = {
   value: number;

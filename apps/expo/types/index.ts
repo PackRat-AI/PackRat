@@ -1,3 +1,4 @@
+import { ITEM_CATEGORIES, PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types';
 import { z } from 'zod';
 
 // --- User Schema ---
@@ -14,40 +15,15 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 
 // --- Pack Category Enum ---
-export const PackCategorySchema = z.enum([
-  'hiking',
-  'backpacking',
-  'camping',
-  'climbing',
-  'winter',
-  'desert',
-  'custom',
-  'water sports',
-  'skiing',
-]);
-
+export const PackCategorySchema = z.enum(PACK_CATEGORIES);
 export type PackCategory = z.infer<typeof PackCategorySchema>;
 
 // --- Item Category Enum ---
-export const ItemCategorySchema = z.enum([
-  'clothing',
-  'shelter',
-  'sleep',
-  'kitchen',
-  'water',
-  'electronics',
-  'first-aid',
-  'navigation',
-  'tools',
-  'consumables',
-  'miscellaneous',
-]);
-
+export const ItemCategorySchema = z.enum(ITEM_CATEGORIES);
 export type ItemCategory = z.infer<typeof ItemCategorySchema>;
 
 // --- Weight Unit Enum ---
-export const WeightUnitSchema = z.enum(['g', 'oz', 'kg', 'lb']);
-
+export const WeightUnitSchema = z.enum(WEIGHT_UNITS);
 export type WeightUnit = z.infer<typeof WeightUnitSchema>;
 
 // --- Pack Item Schema ---

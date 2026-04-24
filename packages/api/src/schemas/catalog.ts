@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { WEIGHT_UNITS } from '@packrat/api/types';
 import { positiveIntegerQueryParam } from './queryParams';
 
 const DIGITS_REGEX = /^\d+$/;
@@ -30,7 +31,7 @@ export const CatalogItemSchema = z
     productUrl: z.string().openapi({ example: 'https://example.com/product/tent' }),
     sku: z.string().openapi({ example: 'MSR-123' }),
     weight: z.number().openapi({ example: 1720, description: 'Weight in grams' }),
-    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).openapi({ example: 'g' }),
+    weightUnit: z.enum(WEIGHT_UNITS).openapi({ example: 'g' }),
     description: z.string().nullable().openapi({
       example: 'Lightweight 2-person backpacking tent with excellent ventilation',
     }),
@@ -177,7 +178,7 @@ export const CreateCatalogItemRequestSchema = z
     productUrl: z.string().url().openapi({ example: 'https://example.com/product/tent' }),
     sku: z.string().openapi({ example: 'MSR-123' }),
     weight: z.number().positive().openapi({ example: 1720 }),
-    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).openapi({ example: 'g' }),
+    weightUnit: z.enum(WEIGHT_UNITS).openapi({ example: 'g' }),
     description: z.string().optional(),
     categories: z.array(z.string()).optional(),
     images: z.array(z.string()).optional(),
@@ -263,7 +264,7 @@ export const UpdateCatalogItemRequestSchema = z
     productUrl: z.string().url().optional(),
     sku: z.string().optional(),
     weight: z.number().positive().optional(),
-    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
+    weightUnit: z.enum(WEIGHT_UNITS).optional(),
     description: z.string().optional(),
     categories: z.array(z.string()).optional(),
     images: z.array(z.string()).optional(),

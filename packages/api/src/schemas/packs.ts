@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types';
 
 export const PackItemSchema = z
   .object({
@@ -6,7 +7,7 @@ export const PackItemSchema = z
     name: z.string().openapi({ example: 'Sleeping Bag' }),
     description: z.string().nullable().openapi({ example: 'Down sleeping bag rated to -5°C' }),
     weight: z.number().openapi({ example: 850, description: 'Weight in grams' }),
-    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).openapi({ example: 'g' }),
+    weightUnit: z.enum(WEIGHT_UNITS).openapi({ example: 'g' }),
     quantity: z.number().int().min(1).openapi({ example: 1 }),
     category: z.string().nullable().openapi({ example: 'Sleep System' }),
     consumable: z.boolean().openapi({ example: false }),
@@ -33,19 +34,7 @@ export const PackSchema = z
       .string()
       .nullable()
       .openapi({ example: 'Pack for 2-day backpacking trip in the mountains' }),
-    category: z
-      .enum([
-        'hiking',
-        'backpacking',
-        'camping',
-        'climbing',
-        'winter',
-        'desert',
-        'custom',
-        'water sports',
-        'skiing',
-      ])
-      .openapi({ example: 'backpacking' }),
+    category: z.enum(PACK_CATEGORIES).openapi({ example: 'backpacking' }),
     isPublic: z.boolean().openapi({ example: false }),
     image: z.string().nullable().openapi({ example: 'https://example.com/pack-image.jpg' }),
     tags: z
@@ -98,7 +87,7 @@ export const CreatePackItemRequestSchema = z
     name: z.string().min(1).max(255).openapi({ example: 'Sleeping Bag' }),
     description: z.string().optional().openapi({ example: 'Down sleeping bag rated to -5°C' }),
     weight: z.number().openapi({ example: 850, description: 'Weight in grams' }),
-    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).default('g').openapi({ example: 'g' }),
+    weightUnit: z.enum(WEIGHT_UNITS).default('g').openapi({ example: 'g' }),
     quantity: z.number().int().min(1).default(1).openapi({ example: 1 }),
     category: z.string().optional().openapi({ example: 'Sleep System' }),
     consumable: z.boolean().optional().default(false).openapi({ example: false }),
@@ -114,7 +103,7 @@ export const UpdatePackItemRequestSchema = z
     name: z.string().min(1).max(255).optional(),
     description: z.string().optional(),
     weight: z.number().optional(),
-    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
+    weightUnit: z.enum(WEIGHT_UNITS).optional(),
     quantity: z.number().int().min(1).optional(),
     category: z.string().optional(),
     consumable: z.boolean().optional(),
