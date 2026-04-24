@@ -11,7 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -172,6 +172,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <TextField
                     testID={TestIds.TripNameInput}
                     placeholder={t('trips.tripName')}
+                    label={Platform.OS === 'ios' ? t('trips.tripName') : undefined}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -193,6 +194,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <TextField
                     testID={TestIds.TripDescriptionInput}
                     placeholder={t('trips.description')}
+                    label={Platform.OS === 'ios' ? t('trips.description') : undefined}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -304,7 +306,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={TestIds.StartDatePicker}
                       onPress={() => setShowStartPicker(true)}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
@@ -347,7 +348,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={TestIds.EndDatePicker}
                       onPress={() => setShowEndPicker(true)}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'

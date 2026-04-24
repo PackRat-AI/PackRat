@@ -151,6 +151,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                   <TextField
                     testID={TestIds.PackNameInput}
                     placeholder={t('packs.packName')}
+                    label={Platform.OS === 'ios' ? t('packs.packName') : undefined}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -171,6 +172,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                   <TextField
                     testID={TestIds.PackDescriptionInput}
                     placeholder={t('packs.description')}
+                    label={Platform.OS === 'ios' ? t('packs.description') : undefined}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
