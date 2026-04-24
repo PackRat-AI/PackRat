@@ -16,13 +16,15 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in the Trip Name field
+# iOS: taps the label <Text> (accessible even inside FormSection)
+# Android: taps the TextInput placeholder
 - tapOn:
-    id: "trip-name-input"
+    text: "Trip Name"
 - inputText: ${TRIP_NAME}
 
 # Fill in the Description field
 - tapOn:
-    id: "trip-description-input"
+    text: "Description"
 - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
@@ -30,7 +32,7 @@ appId: ${APP_ID}
 
 # --- Start Date ---
 - tapOn:
-    id: "start-date-picker"
+    text: "Start Date"
 - waitForAnimationToEnd
 
 - repeat:
@@ -58,7 +60,7 @@ appId: ${APP_ID}
 
 # --- End Date ---
 - tapOn:
-    id: "end-date-picker"
+    text: "End Date"
 - waitForAnimationToEnd
 
 - repeat:

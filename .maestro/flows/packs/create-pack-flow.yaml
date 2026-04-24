@@ -16,13 +16,15 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in Pack Name
+# iOS: taps the label <Text> (accessible even inside FormSection)
+# Android: taps the TextInput placeholder
 - tapOn:
-    id: "pack-name-input"
+    text: "Pack Name"
 - inputText: ${PACK_NAME}
 
 # Fill in Description
 - tapOn:
-    id: "pack-description-input"
+    text: "Description"
 - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting

@@ -18,8 +18,6 @@ export enum TestIds {
   SubmitTripButton = 'submit-trip-button',
   TripNameInput = 'trip-name-input',
   TripDescriptionInput = 'trip-description-input',
-  StartDatePicker = 'start-date-picker',
-  EndDatePicker = 'end-date-picker',
 
   // Packs
   CreatePackButton = 'create-pack-button',
