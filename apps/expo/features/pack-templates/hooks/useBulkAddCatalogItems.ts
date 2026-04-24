@@ -1,6 +1,7 @@
+import { fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/api/types';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
-import type { WeightUnit } from 'expo-app/types';
 import { useState } from 'react';
 import { useCreatePackTemplateItem } from './useCreatePackTemplateItem';
 
@@ -29,7 +30,7 @@ export function useBulkAddCatalogItems() {
             name: catalogItem.name,
             description: catalogItem.description ?? undefined,
             weight: catalogItem.weight || 0,
-            weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
+            weightUnit: fromZod(WeightUnitSchema)(catalogItem.weightUnit) ?? 'g',
             quantity: catalogItem.quantity || 1,
             category: catalogItem.category || '',
             consumable: catalogItem.consumable || false,

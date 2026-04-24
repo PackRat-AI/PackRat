@@ -1,4 +1,5 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -24,7 +25,7 @@ import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import { packingModeStore } from '../store/packingMode';
-import type { Pack, PackItem } from '../types';
+import type { PackItem } from '../types';
 
 export function PackDetailScreen() {
   const { t } = useTranslation();
@@ -64,7 +65,7 @@ export function PackDetailScreen() {
     enabled: !isOwnedByUser,
   });
 
-  const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
+  const pack = isOwnedByUser ? packFromStore : packFromApi;
 
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
@@ -406,6 +407,16 @@ export function PackDetailScreen() {
               <Text>Go Back</Text>
             </Button>
           </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isDefined(pack)) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center p-4">
+          <ActivityIndicator />
         </View>
       </SafeAreaView>
     );

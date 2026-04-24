@@ -14,7 +14,7 @@ export const computePackWeights = (
   for (const item of pack.items) {
     // Convert item weight to grams for calculation
     const itemWeightInGrams =
-      convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
+      convertToGrams(item.weight, item.weightUnit) * item.quantity;
 
     // Add to total weight
     totalWeightGrams += itemWeightInGrams;

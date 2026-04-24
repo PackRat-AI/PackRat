@@ -31,7 +31,8 @@ export function PackCard({
   const insets = useSafeAreaInsets();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
-  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
+  // packFromStore is always Pack (with computed weights); packArg may be Pack | PackInStore
+  const pack: Pack | PackInStore = isOwnedByUser ? packFromStore : packArg;
 
   const handleActionsPress = () => {
     const options =
@@ -69,7 +70,7 @@ export function PackCard({
       (selectedIndex) => {
         switch (selectedIndex) {
           case viewDetailsIndex:
-            onPress?.(pack);
+            if ('items' in pack) onPress?.(pack);
             break;
           case editIndex:
             router.push({ pathname: '/pack/[id]/edit', params: { id: pack.id } });
@@ -92,7 +93,7 @@ export function PackCard({
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress?.(pack)}
+      onPress={() => { if ('items' in pack) onPress?.(pack); }}
     >
       {pack.image && (
         <Image source={{ uri: pack.image }} className="h-40 w-full" resizeMode="cover" />
@@ -116,11 +117,11 @@ export function PackCard({
 
         <View className="mt-3 flex-row items-center justify-between">
           <View className="flex-row gap-2">
-            <WeightBadge weight={pack.baseWeight ?? 0} unit="g" type="base" />
-            <WeightBadge weight={pack.totalWeight ?? 0} unit="g" type="total" />
+            <WeightBadge weight={('baseWeight' in pack ? pack.baseWeight : undefined) ?? 0} unit="g" type="base" />
+            <WeightBadge weight={('totalWeight' in pack ? pack.totalWeight : undefined) ?? 0} unit="g" type="total" />
           </View>
           <Text className="text-xs text-foreground">
-            {pack.items && isArray(pack.items) && pack.items.length > 0
+            {('items' in pack) && isArray(pack.items) && pack.items.length > 0
               ? `${pack.items.length} item${pack.items.length > 1 ? 's' : ''}`
               : '0 items'}
           </Text>

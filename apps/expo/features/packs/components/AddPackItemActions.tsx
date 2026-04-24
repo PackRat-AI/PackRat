@@ -6,7 +6,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
-import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
@@ -108,7 +108,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
       if (catalogItems.length > 0) {
         trackRecentlyUsed(catalogItems);
         try {
-          await addItemsToPack(packId, catalogItems as CatalogItemWithPackItemFields[]);
+          await addItemsToPack(packId, catalogItems);
         } catch (error) {
           console.error('Error adding catalog items to pack:', error);
           Alert.alert(t('common.error'), t('catalog.somethingWentWrong'));
