@@ -30,7 +30,7 @@ export const CatalogItemSchema = z
     productUrl: z.string().openapi({ example: 'https://example.com/product/tent' }),
     sku: z.string().openapi({ example: 'MSR-123' }),
     weight: z.number().openapi({ example: 1720, description: 'Weight in grams' }),
-    weightUnit: z.string().openapi({ example: 'g' }),
+    weightUnit: z.enum(['g', 'oz', 'kg', 'lb']).openapi({ example: 'g' }),
     description: z.string().nullable().openapi({
       example: 'Lightweight 2-person backpacking tent with excellent ventilation',
     }),

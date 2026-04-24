@@ -68,8 +68,8 @@ export interface Pack {
   baseWeight: number;
   totalWeight: number;
   deleted: boolean;
-  localCreatedAt: string;
-  localUpdatedAt: string;
+  localCreatedAt?: string;
+  localUpdatedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -79,7 +79,7 @@ export type PackWeightHistoryEntry = {
   packId: string;
   weight: number;
   createdAt?: string;
-  localCreatedAt: string;
+  localCreatedAt?: string;
 };
 
 export type PackInStore = Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>;
