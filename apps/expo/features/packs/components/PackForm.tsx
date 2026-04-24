@@ -144,14 +144,19 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
       <ScrollView contentContainerClassName="p-8">
         <Form>
-          <FormSection ios={{ title: t('packs.packDetails') }} footnote={t('packs.enterBasicInfo')}>
+          <FormSection
+            ios={{ title: t('packs.packDetails') }}
+            footnote={t('packs.enterBasicInfo')}
+            accessible={Platform.OS === 'ios' ? false : undefined}
+          >
             <form.Field name="name">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
                     testID={TestIds.PackNameInput}
+                    accessible={Platform.OS === 'ios' ? true : undefined}
                     placeholder={t('packs.packName')}
-                    label={Platform.OS === 'ios' ? t('packs.packName') : undefined}
+                    label={Platform.OS === 'ios' ? undefined : t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -168,11 +173,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
             <form.Field name="description">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
                     testID={TestIds.PackDescriptionInput}
+                    accessible={Platform.OS === 'ios' ? true : undefined}
                     placeholder={t('packs.description')}
-                    label={Platform.OS === 'ios' ? t('packs.description') : undefined}
+                    label={Platform.OS === 'ios' ? undefined : t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}

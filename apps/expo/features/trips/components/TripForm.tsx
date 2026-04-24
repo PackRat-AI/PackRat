@@ -162,15 +162,19 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         contentContainerStyle={contentContainerStyle}
       >
         <Form>
-          <FormSection ios={{ title: t('trips.tripDetails') }}>
+          <FormSection
+            ios={{ title: t('trips.tripDetails') }}
+            accessible={Platform.OS === 'ios' ? false : undefined}
+          >
             {/* Trip Name */}
             <form.Field name="name">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
                     testID={TestIds.TripNameInput}
+                    accessible={Platform.OS === 'ios' ? true : undefined}
                     placeholder={t('trips.tripName')}
-                    label={Platform.OS === 'ios' ? t('trips.tripName') : undefined}
+                    label={Platform.OS === 'ios' ? undefined : t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -188,11 +192,12 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             {/* Description */}
             <form.Field name="description">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
                     testID={TestIds.TripDescriptionInput}
+                    accessible={Platform.OS === 'ios' ? true : undefined}
                     placeholder={t('trips.description')}
-                    label={Platform.OS === 'ios' ? t('trips.description') : undefined}
+                    label={Platform.OS === 'ios' ? undefined : t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}

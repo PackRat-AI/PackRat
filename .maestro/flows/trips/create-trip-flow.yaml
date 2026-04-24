@@ -16,15 +16,13 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in the Trip Name field
-# iOS: taps the label <Text> (accessible even inside FormSection)
-# Android: taps the TextInput placeholder
 - tapOn:
-    text: "Trip Name"
+    id: "trip-name-input"
 - inputText: ${TRIP_NAME}
 
 # Fill in the Description field
 - tapOn:
-    text: "Description"
+    id: "trip-description-input"
 - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
