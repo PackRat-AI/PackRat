@@ -31,7 +31,7 @@ export function PackDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = (Array.isArray(params.id) ? params.id[0] : params.id) as string;
 
   const isOwnedByUser = usePackOwnershipCheck(id);
 
