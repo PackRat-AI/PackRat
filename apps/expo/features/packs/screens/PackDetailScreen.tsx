@@ -65,7 +65,9 @@ export function PackDetailScreen() {
     enabled: !isOwnedByUser,
   });
 
-  const pack = isOwnedByUser ? packFromStore : packFromApi;
+  // Cast: TypeScript can't track narrowing through closures defined before the
+  // early-return guard at line ~415; the guard ensures pack is defined at render time.
+  const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();

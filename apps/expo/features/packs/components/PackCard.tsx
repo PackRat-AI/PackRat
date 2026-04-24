@@ -32,7 +32,9 @@ export function PackCard({
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
   // packFromStore is always Pack (with computed weights); packArg may be Pack | PackInStore
-  const pack: Pack | PackInStore = isOwnedByUser ? packFromStore : packArg;
+  // Cast: PackInStore lacks computed weight fields (baseWeight, totalWeight) that Pack has.
+  // We guard access to those fields with 'in' checks; the cast is safe at runtime.
+  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack;
 
   const handleActionsPress = () => {
     const options =

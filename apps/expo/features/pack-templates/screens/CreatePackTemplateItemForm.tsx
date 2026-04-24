@@ -293,7 +293,7 @@ export const CreatePackTemplateItemForm = ({
                   <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                   <SegmentedControl
                     values={WEIGHT_UNITS}
-                    selectedIndex={WEIGHT_UNITS.indexOf(field.state.value)}
+                    selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
                     onIndexChange={(index) => {
                       const selectedUnit = WEIGHT_UNITS[index];
                       if (selectedUnit) {
