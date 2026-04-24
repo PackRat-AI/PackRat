@@ -22,8 +22,7 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes)
-# The dialog button also reads "Log Out", so use index 1 to select the dialog button
-# (index 0 is the original row behind the dialog).
+# On Android this is now a native Alert.alert() dialog — just tap by text with no index needed.
 - runFlow:
     when:
       visible:
@@ -31,11 +30,10 @@ appId: ${APP_ID}
     commands:
       - tapOn:
           text: "Log Out"
-          index: 1
 
 - waitForAnimationToEnd
 
-# Handle post-logout dialog - choose to Sign-in again
+# Handle post-logout dialog if it appears - choose to Sign-in again
 - runFlow:
     when:
       visible:
@@ -46,6 +44,8 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Assert we are back on the auth screen
-- assertVisible:
-    text: "Sign In"
+# Assert we are back on the auth screen (allow up to 30s for app reload)
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 30000

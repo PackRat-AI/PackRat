@@ -209,6 +209,7 @@ export function useAuthActions() {
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();
+      userStore.set(null);
       setNeedsReauth(false);
       setIsLoading(false);
     }
