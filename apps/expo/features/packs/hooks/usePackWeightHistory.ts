@@ -28,7 +28,7 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
   const monthData: Record<string, { totalWeight: number; count: number }> = {};
 
   for (const entry of data) {
-    const date = new Date(entry.localCreatedAt);
+    const date = new Date(entry.localCreatedAt ?? entry.createdAt ?? '');
     const key = `${date.getFullYear()}-${date.getMonth()}`; // "YYYY-M"
     if (!monthData[key]) {
       monthData[key] = { totalWeight: 0, count: 0 };
@@ -64,7 +64,9 @@ const filterLast6Months = (data: PackWeightHistoryEntry[]) => {
   const today = new Date();
   const sixMonthsAgo = new Date(today);
   sixMonthsAgo.setMonth(today.getMonth() - 6);
-  return data.filter((entry) => new Date(entry.localCreatedAt) >= sixMonthsAgo);
+  return data.filter(
+    (entry) => new Date(entry.localCreatedAt ?? entry.createdAt ?? '') >= sixMonthsAgo,
+  );
 };
 
 export function usePackWeightHistory(packId: string) {
@@ -73,8 +75,8 @@ export function usePackWeightHistory(packId: string) {
       .filter((item) => item.packId === packId)
       .sort((a, b) => {
         // Convert dates to timestamps for comparison
-        const dateA = new Date(a.localCreatedAt).getTime();
-        const dateB = new Date(b.localCreatedAt).getTime();
+        const dateA = new Date(a.localCreatedAt ?? a.createdAt ?? '').getTime();
+        const dateB = new Date(b.localCreatedAt ?? b.createdAt ?? '').getTime();
 
         // Sort descending (latest first)
         return dateB - dateA;

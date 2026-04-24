@@ -1,5 +1,4 @@
 import { createDb } from '@packrat/api/db';
-import { UserService } from '@packrat/api/services/userService';
 import { assertDefined } from '@packrat/guards';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -9,7 +8,7 @@ import {
   packs,
   packTemplateItems,
   packTemplates,
-  type users,
+  users,
 } from '../../src/db/schema';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
 import { createTestPack, createTestPackItem } from '../fixtures/pack-fixtures';
@@ -37,7 +36,7 @@ function generateUniqueSku(): string {
 }
 
 /**
- * Seeds a test user via UserService (same path production register uses).
+ * Seeds a test user directly via DB insert (deterministic, no password hashing side-effects).
  * Returns the user with DB-assigned id. Does NOT register as the current JWT
  * subject — tests that want `apiWithAuth` to authenticate as this user must
  * also call `loginAs(user)` or use `seedAndLoginTestUser()`.
@@ -45,19 +44,26 @@ function generateUniqueSku(): string {
 export async function seedTestUser(
   overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
 ) {
-  const userService = new UserService({} as unknown as Context);
+  const db = createDb({} as unknown as Context);
   const role = (overrides?.role as 'USER' | 'ADMIN') ?? 'USER';
 
-  return userService.create({
-    email:
-      overrides?.email ??
-      `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-    password: overrides?.password,
-    firstName: overrides?.firstName ?? 'Test',
-    lastName: overrides?.lastName ?? 'User',
-    role,
-    emailVerified: overrides?.emailVerified ?? true,
-  });
+  const [user] = await db
+    .insert(users)
+    .values({
+      email:
+        overrides?.email ??
+        `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
+      passwordHash: null,
+      firstName: overrides?.firstName ?? 'Test',
+      lastName: overrides?.lastName ?? 'User',
+      role,
+      emailVerified: overrides?.emailVerified ?? true,
+    })
+    .returning();
+
+  assertDefined(user);
+
+  return user;
 }
 
 /**

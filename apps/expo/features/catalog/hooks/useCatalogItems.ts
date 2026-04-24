@@ -1,13 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
-import type { PaginatedCatalogItemsResponse } from '../types';
+import { rpcClient } from 'expo-app/lib/api/rpcClient';
+
+type SortField = 'name' | 'brand' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
 
 interface GetCatalogItemsParams {
   pageParam?: number;
   query?: string;
   limit: number;
   category?: string;
-  sort: { field: string; order: 'asc' | 'desc' };
+  sort: { field: SortField; order: 'asc' | 'desc' };
 }
 
 // API function
@@ -17,22 +18,20 @@ export const getCatalogItems = async ({
   category,
   limit,
   sort,
-}: GetCatalogItemsParams): Promise<PaginatedCatalogItemsResponse> => {
-  try {
-    const response = await axiosInstance.get('/api/catalog', {
-      params: {
-        page: pageParam,
-        limit,
-        q: query,
-        category,
-        sort,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to fetch catalog items: ${message}`);
+}: GetCatalogItemsParams) => {
+  const res = await rpcClient.api.catalog.$get({
+    query: {
+      page: String(pageParam),
+      limit: String(limit),
+      q: query,
+      category,
+      sort,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch catalog items: ${res.status}`);
   }
+  return res.json();
 };
 
 // Hook
