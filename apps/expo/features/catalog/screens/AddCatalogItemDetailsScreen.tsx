@@ -1,4 +1,5 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/api/types';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
@@ -8,7 +9,6 @@ import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/pa
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
-import type { WeightUnit } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -82,7 +82,7 @@ export function AddCatalogItemDetailsScreen() {
         name: catalogItem.name,
         description: catalogItem.description ?? undefined,
         weight: catalogItem.weight || 0,
-        weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
+        weightUnit: fromZod(WeightUnitSchema)(catalogItem.weightUnit) ?? 'g',
         quantity: Number.parseInt(quantity, 10) || 1,
         category,
         consumable: isConsumable,

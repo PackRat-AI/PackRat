@@ -1,6 +1,6 @@
 'use client';
 
-import { assertIsString } from '@packrat/guards';
+import { arrayIncludes, assertIsString } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
@@ -155,6 +155,7 @@ const tileInfo = {
 };
 
 type TileName = keyof typeof tileInfo;
+const TILE_NAMES = Object.keys(tileInfo) as TileName[];
 const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 
 export default function DashboardScreen() {
@@ -217,8 +218,8 @@ export default function DashboardScreen() {
 
     const searchLower = searchValue.toLowerCase();
     return dashboardLayout.filter((item) => {
-      if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
-        const info = localizedTileInfo[item as TileName];
+      if (!item.startsWith(DASHBOARD_GAP_PREFIX) && arrayIncludes(TILE_NAMES, item)) {
+        const info = localizedTileInfo[item];
         return (
           info.title.toLowerCase().includes(searchLower) ||
           info.keywords.some((k) => k.toLowerCase().includes(searchLower))
@@ -245,8 +246,8 @@ export default function DashboardScreen() {
                   contentContainerClassName="gap-4 px-4 pb-4"
                   renderItem={({ item }) => {
                     assertIsString(item);
-                    if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
-                      const Component = tileInfo[item as TileName].component;
+                    if (!item.startsWith(DASHBOARD_GAP_PREFIX) && arrayIncludes(TILE_NAMES, item)) {
+                      const Component = tileInfo[item].component;
                       return (
                         <Pressable
                           key={item}
@@ -317,7 +318,8 @@ function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>
     return <ListSectionHeader {...info} />;
   }
 
-  const TileItem = tileInfo[item as TileName].component;
+  if (!arrayIncludes(TILE_NAMES, item)) return null;
+  const TileItem = tileInfo[item].component;
   return (
     <View
       className={cn(

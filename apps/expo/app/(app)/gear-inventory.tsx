@@ -32,7 +32,7 @@ export default function GearInventoryScreen() {
   const { t } = useTranslation();
 
   const groupByCategory = (items: PackItem[]) => {
-    return items.reduce(
+    return items.reduce<Record<string, PackItem[]>>(
       (acc, item) => {
         const category = item.category || 'Other';
 
@@ -43,7 +43,7 @@ export default function GearInventoryScreen() {
         acc[category].push(item);
         return acc;
       },
-      {} as Record<string, PackItem[]>,
+      {},
     );
   };
 
