@@ -7,6 +7,7 @@ import {
   packItems,
   packs,
 } from '@packrat/api/db/schema';
+import type { PackCategory } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
@@ -103,7 +104,7 @@ export class PackService {
           userId: this.userId,
           name: pack.name,
           description: pack.description,
-          category: pack.category,
+          category: pack.category as PackCategory,
           tags: pack.tags,
           isPublic: true,
           isAIGenerated: true,

@@ -1,4 +1,5 @@
 import type { NewCatalogItem } from '../db/schema';
+import type { WeightUnit } from '../types';
 
 export function mapCsvRowToItem({
   values,
@@ -74,7 +75,7 @@ export function mapCsvRowToItem({
   if (weightStr && parseFloat(weightStr) > 0) {
     const { weight, unit } = parseWeight(weightStr, unitStr);
     item.weight = weight || undefined;
-    item.weightUnit = unit || undefined;
+    item.weightUnit = (unit as WeightUnit) || undefined;
   }
 
   const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
@@ -138,7 +139,7 @@ export function mapCsvRowToItem({
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
           item.weight = weight || undefined;
-          item.weightUnit = unit || undefined;
+          item.weightUnit = (unit as WeightUnit) || undefined;
         }
       }
     } catch {

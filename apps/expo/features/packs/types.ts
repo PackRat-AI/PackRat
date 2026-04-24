@@ -56,13 +56,13 @@ export interface PackItemCategory {
 export interface Pack {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   category: PackCategory;
   userId?: number;
   templateId?: string | null;
   isPublic: boolean;
-  image?: string;
-  tags?: string[];
+  image?: string | null;
+  tags?: string[] | null;
   categories?: string[]; // For compatibility with some API responses
   items: PackItem[];
   baseWeight: number;
