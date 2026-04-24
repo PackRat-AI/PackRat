@@ -195,7 +195,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => <ItemRow item={item} index={index} />}
+            renderItem={(item, index) => <ItemRow item={item as PackItem} index={index} />}
           />
         </View>
       </ScrollView>
