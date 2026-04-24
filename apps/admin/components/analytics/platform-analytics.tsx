@@ -89,7 +89,12 @@ export function PlatformAnalytics() {
       {/* Period selector */}
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">Period:</span>
-        <Tabs value={period} onValueChange={(v) => { if (arrayIncludes(PERIODS, v)) setPeriod(v); }}>
+        <Tabs
+          value={period}
+          onValueChange={(v) => {
+            if (arrayIncludes(PERIODS, v)) setPeriod(v);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="day">Daily</TabsTrigger>
             <TabsTrigger value="week">Weekly</TabsTrigger>

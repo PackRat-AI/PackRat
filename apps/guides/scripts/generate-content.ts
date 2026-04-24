@@ -32,8 +32,12 @@ type ContentCategory =
   | 'beginner-resources';
 
 type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
-const DIFFICULTY_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'All Levels'] as const satisfies readonly DifficultyLevel[];
-
+const DIFFICULTY_LEVELS = [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+  'All Levels',
+] as const satisfies readonly DifficultyLevel[];
 
 interface ContentRequest {
   title: string;
@@ -280,7 +284,9 @@ async function generateTopicIdeas(
           categories: categoryKeys,
           author: getRandomAuthor(),
           readingTime: generateReadingTime(),
-          difficulty: (arrayIncludes(DIFFICULTY_LEVELS, idea.difficulty) ? idea.difficulty : 'All Levels') satisfies DifficultyLevel,
+          difficulty: (arrayIncludes(DIFFICULTY_LEVELS, idea.difficulty)
+            ? idea.difficulty
+            : 'All Levels') satisfies DifficultyLevel,
           coverImage: '/placeholder.svg?height=400&width=800',
           slug: createSlug(idea.title),
         };
@@ -531,15 +537,15 @@ function generateContentReport(): void {
 // Export functions for use in the frontend
 export {
   CATEGORY_DISPLAY_NAMES,
+  type ContentCategory,
+  type ContentMetadata,
+  type ContentRequest,
+  type DifficultyLevel,
   generateContentReport,
   generatePost,
   generatePosts,
   generateTopicIdeas,
   getExistingContent,
-  type ContentCategory,
-  type ContentMetadata,
-  type ContentRequest,
-  type DifficultyLevel,
 };
 
 // Command line interface
