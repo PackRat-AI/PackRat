@@ -100,72 +100,72 @@ export function ActivityPicker({
 
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
-        <View className="flex-1 bg-background">
-          <View className="px-4 mb-4 py-2 border-b border-border flex-row gap-2 justify-between items-center">
-            <View className="flex-row flex-1 items-center gap-2">
-              <TouchableOpacity onPress={onClose}>
-                <Icon name="close" size={20} color={colors.foreground} />
-              </TouchableOpacity>
-              <View>
-                <Text className="text-lg font-semibold">{title}</Text>
-                {subtitle && <Text className="text-xs text-muted-foreground">{subtitle}</Text>}
-              </View>
+      <View className="flex-1 bg-background">
+        <View className="px-4 mb-4 py-2 border-b border-border flex-row gap-2 justify-between items-center">
+          <View className="flex-row flex-1 items-center gap-2">
+            <TouchableOpacity onPress={onClose}>
+              <Icon name="close" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+            <View>
+              <Text className="text-lg font-semibold">{title}</Text>
+              {subtitle && <Text className="text-xs text-muted-foreground">{subtitle}</Text>}
             </View>
           </View>
-          <ScrollView>
-            <View className="gap-2 p-4">
-              {ACTIVITIES.map((activity) => (
-                <Pressable
-                  key={activity.key}
-                  onPress={() => setSelectedActivity(activity.key)}
-                  className={cn(
-                    'flex-row items-center rounded-lg p-3 border border-border bg-card',
-                    activity.key === selectedActivity && 'border-primary bg-primary/5',
-                  )}
-                  style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
-                >
-                  <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-neutral-300 dark:bg-neutral-600">
-                    <Icon materialIcon={activity.materialIcon} size={20} color={colors.grey} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-medium">{activity.label}</Text>
-                    <Text className="text-xs text-muted-foreground">{activity.description}</Text>
-                  </View>
-                  {activity.key === selectedActivity && (
-                    <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-                      <Icon name="check" size={14} color="white" />
-                    </View>
-                  )}
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
-          <View className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between">
-            {onSkip && (
-              <Button
-                onPress={() => {
-                  onClose();
-                  onSkip();
-                }}
-                variant="secondary"
+        </View>
+        <ScrollView>
+          <View className="gap-2 p-4">
+            {ACTIVITIES.map((activity) => (
+              <Pressable
+                key={activity.key}
+                onPress={() => setSelectedActivity(activity.key)}
+                className={cn(
+                  'flex-row items-center rounded-lg p-3 border border-border bg-card',
+                  activity.key === selectedActivity && 'border-primary bg-primary/5',
+                )}
+                style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
               >
-                <Text>{skipText}</Text>
-              </Button>
-            )}
+                <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-neutral-300 dark:bg-neutral-600">
+                  <Icon materialIcon={activity.materialIcon} size={20} color={colors.grey} />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">{activity.label}</Text>
+                  <Text className="text-xs text-muted-foreground">{activity.description}</Text>
+                </View>
+                {activity.key === selectedActivity && (
+                  <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
+                    <Icon name="check" size={14} color="white" />
+                  </View>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+        <View className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between">
+          {onSkip && (
             <Button
               onPress={() => {
                 onClose();
-                if (selectedActivity) {
-                  onSelect(selectedActivity);
-                }
+                onSkip();
               }}
-              disabled={!selectedActivity}
-              variant="tonal"
+              variant="secondary"
             >
-              <Text>{selectText}</Text>
+              <Text>{skipText}</Text>
             </Button>
-          </View>
+          )}
+          <Button
+            onPress={() => {
+              onClose();
+              if (selectedActivity) {
+                onSelect(selectedActivity);
+              }
+            }}
+            disabled={!selectedActivity}
+            variant="tonal"
+          >
+            <Text>{selectText}</Text>
+          </Button>
         </View>
-      </Modal>
+      </View>
+    </Modal>
   );
 }
