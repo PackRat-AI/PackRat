@@ -1,6 +1,13 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext"],
+    "types": ["@cloudflare/workers-types"],
     "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "esModuleInterop": true,
@@ -8,5 +15,6 @@
     "paths": {
       "@packrat/api/*": ["src/*"]
     }
-  }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

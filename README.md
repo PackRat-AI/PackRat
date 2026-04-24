@@ -296,6 +296,9 @@ For GitHub Actions and other CI platforms:
 
 > **Note**: The default `GITHUB_TOKEN` provided by GitHub Actions does not have access to packages in other repositories, even within the same organization. A custom PAT is required.
 
+> **Tip**: The `check-types.yml` workflow runs a filtered Turborepo command on pull requests to
+> limit type-checking to changed workspaces and dependencies.
+
 ### Environment Setup
 
 1. Clone the repository:
@@ -445,6 +448,15 @@ bun install
 PackRat uses modern tools for code quality and consistency:
 
 ```bash
+# Build/test across workspaces with Turborepo
+bun build
+bun test
+
+# Limit build/test/type-checking to affected workspaces (great for PRs)
+bun build:affected
+bun test:affected
+bun check-types:affected
+
 # Format all code
 bun format
 
