@@ -150,6 +150,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                 <FormItem>
                   <TextField
                     placeholder={t('packs.packName')}
+                    label={t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -169,6 +170,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                 <FormItem>
                   <TextField
                     placeholder={t('packs.description')}
+                    label={t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}

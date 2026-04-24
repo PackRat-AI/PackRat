@@ -169,6 +169,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 <FormItem>
                   <TextField
                     placeholder={t('trips.tripName')}
+                    label={t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -189,6 +190,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 <FormItem>
                   <TextField
                     placeholder={t('trips.description')}
+                    label={t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
