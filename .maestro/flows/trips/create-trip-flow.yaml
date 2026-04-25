@@ -102,10 +102,29 @@ appId: ${APP_ID}
 
 # Wait for the list to refresh and show the new trip (handles post-navigation sync delay)
 - waitForAnimationToEnd
-- extendedWaitUntil:
-    visible:
-      text: ${TRIP_NAME}
-    timeout: 30000
+
+# iOS: new trip appears at top — wait for data to load without scrolling
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: ${TRIP_NAME}
+          timeout: 30000
+
+# Android: list may have accumulated old trips pushing the new one below the fold
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: ${TRIP_NAME}
+          direction: DOWN
+          timeout: 30000
+          speed: 40
+
 - assertVisible:
     text: ${TRIP_NAME}
 
