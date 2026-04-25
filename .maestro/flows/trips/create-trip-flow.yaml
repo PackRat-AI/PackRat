@@ -99,12 +99,13 @@ appId: ${APP_ID}
 # for the header create button, then verify the new trip appears
 - assertVisible:
     id: "create-trip-button"
-- scrollUntilVisible:
-    element:
+
+# Wait for the list to refresh and show the new trip (handles post-navigation sync delay)
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
       text: ${TRIP_NAME}
-    direction: DOWN
-    timeout: 60000
-    speed: 99
+    timeout: 30000
 - assertVisible:
     text: ${TRIP_NAME}
 
