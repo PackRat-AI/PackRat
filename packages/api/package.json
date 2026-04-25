@@ -17,7 +17,7 @@
     "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.62",
+    "@ai-sdk/google": "^3.0.64",
     "@ai-sdk/openai": "^2.0.11",
     "@ai-sdk/perplexity": "^2.0.1",
     "@aws-sdk/client-s3": "^3.787.0",
