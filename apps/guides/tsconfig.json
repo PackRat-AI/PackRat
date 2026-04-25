@@ -20,6 +20,8 @@
     ],
     "paths": {
       "guides-app/*": ["./*"],
+      "@packrat/guards": ["../../packages/guards/src"],
+      "@packrat/guards/*": ["../../packages/guards/src/*"],
       "@packrat/web-ui": ["../../packages/web-ui/src"],
       "@packrat/web-ui/*": ["../../packages/web-ui/src/*"]
     }

@@ -11,6 +11,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-avatar": "catalog:",
