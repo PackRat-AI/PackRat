@@ -19,9 +19,9 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
     "@hookform/resolvers": "^5.2.2",
-    "@packrat/guards": "workspace:*",
     "@packrat/api": "workspace:*",
     "@packrat/env": "workspace:*",
+    "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",
