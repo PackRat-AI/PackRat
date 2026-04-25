@@ -1,24 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { Pack } from '../types';
+import type { Pack } from 'expo-app/types';
 
 const fetchPackById = async (id: string): Promise<Pack> => {
-  const res = await axiosInstance.get(`/api/packs/${id}`);
-  return res.data;
+  const { data, error } = await apiClient.packs({ packId: id }).get();
+  if (error) throw new Error(`Failed to fetch pack: ${error.value}`);
+  return data as unknown as Pack;
 };
 
-/**
- * Use this to retrieve details of a pack not owned by the current user.
- * Since packs not owned by the user aren't available in the local store, they must be fetched from the API.
- *
- * @param params - An object containing:
- *  - id: The id of the pack to fetch
- *  - enabled: A boolean indicating whether the query should be enabled
- * @returns An object containing:
- *  - pack: The fetched pack data
- *  - Additional React Query state and helper methods
- */
 export function usePackDetailsFromApi({ id, enabled }: { id: string; enabled: boolean }) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 

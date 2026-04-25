@@ -1,19 +1,11 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Env } from '@packrat/api/types/env';
-import { catalogRoutes } from './catalog';
-import { platformRoutes } from './platform';
+import { Elysia } from 'elysia';
+import { catalogAnalyticsRoutes } from './catalog';
+import { platformAnalyticsRoutes } from './platform';
 
-export const analyticsRoutes = new OpenAPIHono<{ Bindings: Env }>();
-
-// ─── Sub-routers ─────────────────────────────────────────────────────────────
-
-analyticsRoutes.route('/platform', platformRoutes);
-analyticsRoutes.route('/catalog', catalogRoutes);
-
-// ─── Analytics root ───────────────────────────────────────────────────────────
-
-analyticsRoutes.get('/', (c) =>
-  c.json({
+export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
+  .use(platformAnalyticsRoutes)
+  .use(catalogAnalyticsRoutes)
+  .get('/', () => ({
     analytics: {
       platform: {
         growth: '/api/admin/analytics/platform/growth',
@@ -28,5 +20,4 @@ analyticsRoutes.get('/', (c) =>
         embeddings: '/api/admin/analytics/catalog/embeddings',
       },
     },
-  }),
-);
+  }));

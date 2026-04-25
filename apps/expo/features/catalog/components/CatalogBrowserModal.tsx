@@ -1,7 +1,8 @@
-import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
+import { SearchInput } from 'expo-app/components/SearchInput';
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -163,7 +164,7 @@ export function CatalogBrowserModal({
   const { recentItems } = useRecentlyUsedCatalogItems();
   const { data: popularData, isLoading: isPopularLoading } = usePopularCatalogItems(8);
 
-  const popularItems = popularData?.items ?? [];
+  const popularItems = (popularData?.items ?? []) as CatalogItem[];
 
   const {
     data: paginatedData,
@@ -186,9 +187,11 @@ export function CatalogBrowserModal({
     error: searchError,
   } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
-  const items = isSearching
-    ? searchResult?.items || []
-    : paginatedData?.pages.flatMap((page) => page.items) || [];
+  const items = (
+    isSearching
+      ? searchResult?.items || []
+      : paginatedData?.pages.flatMap((page) => page.items) || []
+  ) as CatalogItem[];
   const isLoading = isSearching ? isSearchLoading : isPaginatedLoading;
   const error = isSearching ? searchError : paginatedError;
 

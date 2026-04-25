@@ -49,8 +49,9 @@ function deepFreeze<T>(value: T): Readonly<T> {
   if (value === null || typeof value !== 'object') return value;
   if (Object.isFrozen(value)) return value;
 
-  const record = value as Record<string, unknown>;
-  for (const nestedValue of Object.values(record)) {
+  // value is narrowed to object by the check above; cast is required because
+  // TypeScript's Object.values signature needs a non-abstract type.
+  for (const nestedValue of Object.values(value as Record<string, unknown>)) {
     deepFreeze(nestedValue);
   }
 

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { User } from 'expo-app/features/profile/types';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 type ReportedContentResponse = {
@@ -23,18 +23,12 @@ type ReportedContentCount = {
   total: number;
 };
 
-// API function for fetching reported content
 export const getReportedContent = async (): Promise<ReportedContentResponse> => {
-  try {
-    const response = await axiosInstance.get('/api/chat/reports');
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to fetch reported content: ${message}`);
-  }
+  const { data, error } = await apiClient.chat.reports.get();
+  if (error) throw new Error(`Failed to fetch reported content: ${error.value}`);
+  return data as unknown as ReportedContentResponse;
 };
 
-// Hook for fetching reported content count
 export function useReportedContentCount() {
   const user = useUser();
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
@@ -52,7 +46,6 @@ export function useReportedContentCount() {
   });
 }
 
-// Hook for fetching all reported content
 export function useReportedContent() {
   const user = useUser();
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();

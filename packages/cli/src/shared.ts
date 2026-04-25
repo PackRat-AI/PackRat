@@ -45,7 +45,7 @@ export async function ensureCache(forceRefresh = false): Promise<LocalCacheManag
 }
 
 /** Print an array of objects as a formatted CLI table. */
-export function printTable(rows: Record<string, unknown>[], options?: { title?: string }): void {
+export function printTable(rows: unknown[], options?: { title?: string }): void {
   if (rows.length === 0) {
     consola.warn('No results found.');
     return;
@@ -53,7 +53,7 @@ export function printTable(rows: Record<string, unknown>[], options?: { title?: 
 
   const firstRow = rows[0];
   assertDefined(firstRow, 'rows[0] must be defined after length check');
-  const keys = Object.keys(firstRow);
+  const keys = Object.keys(firstRow as Record<string, unknown>);
 
   const table = new Table({
     head: keys.map((k) => chalk.cyan(k)),
@@ -61,7 +61,7 @@ export function printTable(rows: Record<string, unknown>[], options?: { title?: 
   });
 
   for (const row of rows) {
-    table.push(keys.map((k) => formatValue(row[k])));
+    table.push(keys.map((k) => formatValue((row as Record<string, unknown>)[k])));
   }
 
   if (options?.title) {

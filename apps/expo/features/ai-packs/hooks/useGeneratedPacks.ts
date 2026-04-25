@@ -2,20 +2,14 @@ import { use$ } from '@legendapp/state/react';
 import { useMutation } from '@tanstack/react-query';
 import type { Pack } from 'expo-app/features/packs';
 import { packsStore } from 'expo-app/features/packs/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
 import type { GenerationRequest } from '../types';
 
 const generatePacks = async (request: GenerationRequest): Promise<Pack[]> => {
-  try {
-    const response = await axiosInstance.post('/api/packs/generate-packs', request, {
-      timeout: 0,
-    });
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to generate packs: ${message}`);
-  }
+  const { data, error } = await apiClient.packs['generate-packs'].post(request);
+  if (error) throw new Error(`Failed to generate packs: ${error.value}`);
+  return (data ?? []) as unknown as Pack[];
 };
 
 export function useGeneratePacks() {

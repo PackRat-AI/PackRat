@@ -35,7 +35,15 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Run API tests
-        run: bun run --cwd packages/api test
+        run: bun run --cwd packages/api test 2>&1 | tee /tmp/api-tests-output.log
+
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-tests-output
+          path: /tmp/api-tests-output.log
+          if-no-files-found: ignore

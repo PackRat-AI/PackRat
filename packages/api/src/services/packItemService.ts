@@ -1,15 +1,14 @@
 import { createDb } from '@packrat/api/db';
 import { packItems } from '@packrat/api/db/schema';
 import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 export class PackItemService {
   private db;
   private userId: number;
 
-  constructor(c: Context, userId: number) {
-    this.db = createDb(c);
+  constructor(userId: number) {
     this.userId = userId;
+    this.db = createDb();
   }
 
   async getPackItemDetails(itemId: string) {
@@ -25,10 +24,6 @@ export class PackItemService {
       },
     });
 
-    if (!item) {
-      return null;
-    }
-
-    return item;
+    return item ?? null;
   }
 }

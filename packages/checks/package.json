@@ -1,9 +1,11 @@
 {
   "name": "@packrat/checks",
-  "version": "2.0.22",
+  "version": "2.0.23",
   "private": true,
   "type": "module",
   "scripts": {
+    "check:casts": "bun ./src/check-type-casts.ts",
+    "check:casts:strict": "bun ./src/check-type-casts.ts --strict",
     "check:magic-strings": "bun ./src/check-magic-strings.ts"
   }
 }
