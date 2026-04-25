@@ -44,30 +44,15 @@ appId: ${APP_ID}
 - assertVisible:
     id: "create-pack-button"
 
-# Wait for the list to refresh and show the new pack (handles post-navigation sync delay)
+# Wait for the list to refresh, then scroll to find the new pack.
+# Both platforms accumulate old packs from previous runs, so the new pack
+# may appear below the fold. speed:40 avoids scrolling past it.
 - waitForAnimationToEnd
-
-# iOS: new pack appears at top — wait for data to load without scrolling
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - extendedWaitUntil:
-          visible:
-            text: ${PACK_NAME}
-          timeout: 30000
-
-# Android: list may have accumulated old packs pushing the new one below the fold
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: ${PACK_NAME}
-          direction: DOWN
-          timeout: 30000
-          speed: 40
-
+- scrollUntilVisible:
+    element:
+      text: ${PACK_NAME}
+    direction: DOWN
+    timeout: 30000
+    speed: 40
 - assertVisible:
     text: ${PACK_NAME}
