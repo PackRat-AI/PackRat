@@ -8,6 +8,9 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { PackInStore } from '../types';
 
+let _refreshPacksList: (() => void) | undefined;
+export const refreshPacksList = () => _refreshPacksList?.();
+
 const listPacks = async (): Promise<PackInStore[] | null> => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packs: ${error.value}`);
@@ -28,6 +31,9 @@ const createPack = async (packData: PackInStore): Promise<PackInStore | null> =>
     localUpdatedAt: packData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
+  // Refresh the list after create so the new pack appears immediately without
+  // waiting for the 30-second polling interval.
+  setTimeout(() => refreshPacksList(), 100);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
 };
@@ -74,11 +80,13 @@ syncObservable(
     update: updatePack,
     changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
+      _refreshPacksList = refresh;
       const intervalId = setInterval(() => {
         refresh();
       }, 30000);
 
       return () => {
+        _refreshPacksList = undefined;
         clearInterval(intervalId);
       };
     },
