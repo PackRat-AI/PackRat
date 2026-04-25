@@ -1,5 +1,6 @@
 import { clientEnvs } from '@packrat/env/expo-client';
-import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button } from '@packrat/ui/nativewindui';
+import { SearchInput } from 'expo-app/components/SearchInput';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
