@@ -36,8 +36,7 @@ export class AIService {
         prompt: query,
       });
 
-      const { text, sources } = resp;
-      return { answer: text, sources };
+      return { answer: resp.text, sources: resp.sources ?? [] };
     } catch (error) {
       console.error('Search error:', error);
       throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

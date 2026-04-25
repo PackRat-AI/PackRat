@@ -98,6 +98,7 @@ export const readerRoutes = new Elysia({ prefix: '/reader' }).post(
   },
   {
     body: z.object({ url: z.string().url() }),
+    isAuthenticated: true,
     detail: {
       tags: ['Knowledge Base'],
       summary: 'Extract content from a URL',

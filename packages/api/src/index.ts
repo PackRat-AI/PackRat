@@ -41,7 +41,7 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(packratOpenApi)
   .onError(({ error, code }) => {
     console.error('Error occurred:', error);
-    if (code === 'VALIDATION') {
+    if (code === 'VALIDATION' || code === 'PARSE') {
       return new Response(JSON.stringify({ error: 'Validation failed' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
