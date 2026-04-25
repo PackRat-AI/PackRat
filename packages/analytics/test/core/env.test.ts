@@ -55,6 +55,8 @@ describe('env validation', () => {
         ANALYTICS_MODE: 'local',
         R2_ACCESS_KEY_ID: 'test-key',
         R2_SECRET_ACCESS_KEY: 'test-secret',
+        R2_BUCKET_NAME: 'test-bucket',
+        R2_ENDPOINT_URL: 'https://test.r2.cloudflarestorage.com',
       },
       () => {
         const config = env();
@@ -88,6 +90,8 @@ describe('env validation', () => {
         ANALYTICS_MODE: 'local',
         R2_ACCESS_KEY_ID: 'key',
         R2_SECRET_ACCESS_KEY: 'secret',
+        R2_BUCKET_NAME: 'test-bucket',
+        R2_ENDPOINT_URL: 'https://test.r2.cloudflarestorage.com',
         R2_CATALOG_TOKEN: undefined,
       },
       () => expect(() => env()).not.toThrow(),
@@ -114,6 +118,8 @@ describe('env validation', () => {
         ANALYTICS_MODE: undefined,
         R2_ACCESS_KEY_ID: 'key',
         R2_SECRET_ACCESS_KEY: 'secret',
+        R2_BUCKET_NAME: 'test-bucket',
+        R2_ENDPOINT_URL: 'https://test.r2.cloudflarestorage.com',
       },
       () => {
         const config = env();
