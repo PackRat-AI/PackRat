@@ -7,6 +7,9 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { TripInStore } from '../types';
 
+let _refreshTripsList: (() => void) | undefined;
+export const refreshTripsList = () => _refreshTripsList?.();
+
 const listTrips = async () => {
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list trips: ${error.value}`);
@@ -30,6 +33,9 @@ const createTrip = async (tripData: TripInStore) => {
     localUpdatedAt: tripData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create trip: ${error.value}`);
+  // Refresh the list after create so the new trip appears immediately without
+  // waiting for the 30-second polling interval.
+  setTimeout(() => refreshTripsList(), 100);
   return data as object | null;
 };
 
@@ -76,10 +82,14 @@ syncObservable(
     update: updateTrip,
     changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
+      _refreshTripsList = refresh;
       const intervalId = setInterval(() => {
         refresh();
       }, 30000);
-      return () => clearInterval(intervalId);
+      return () => {
+        _refreshTripsList = undefined;
+        clearInterval(intervalId);
+      };
     },
   }),
 );
