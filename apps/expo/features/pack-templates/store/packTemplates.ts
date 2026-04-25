@@ -3,38 +3,52 @@ import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-s
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { isAuthed } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { PackTemplate, PackTemplateInStore } from '../types';
 
 const listPackTemplates = async () => {
-  try {
-    const res = await axiosInstance.get('/api/pack-templates');
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to list pack templates: ${message}`);
-  }
+  const { data, error } = await apiClient['pack-templates'].get();
+  if (error) throw new Error(`Failed to list pack templates: ${error.value}`);
+  return data as object[] | null;
 };
 
 const createPackTemplate = async (templateData: PackTemplate) => {
-  try {
-    const response = await axiosInstance.post('/api/pack-templates', templateData);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to create pack template: ${message}`);
-  }
+  const { data, error } = await apiClient['pack-templates'].post({
+    id: templateData.id,
+    name: templateData.name,
+    category: templateData.category,
+    ...(templateData.description !== undefined ? { description: templateData.description } : {}),
+    ...(templateData.image ? { image: templateData.image } : {}),
+    ...(templateData.tags !== undefined ? { tags: templateData.tags } : {}),
+    ...(templateData.isAppTemplate !== undefined
+      ? { isAppTemplate: templateData.isAppTemplate }
+      : {}),
+    localCreatedAt: templateData.localCreatedAt ?? new Date().toISOString(),
+    localUpdatedAt: templateData.localUpdatedAt ?? new Date().toISOString(),
+  });
+  if (error) throw new Error(`Failed to create pack template: ${error.value}`);
+  return data as object | null;
 };
 
 const updatePackTemplate = async ({ id, ...data }: Partial<PackTemplate>) => {
-  try {
-    const response = await axiosInstance.put(`/api/pack-templates/${id}`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to update pack template: ${message}`);
-  }
+  // Server's UpdatePackTemplateRequestSchema requires `description`, `image`,
+  // `tags` to be present (they're nullable). Forward what we have, defaulting
+  // to null when the field is omitted from the partial update.
+  const { data: result, error } = await apiClient['pack-templates']({
+    templateId: String(id),
+  }).put({
+    ...(data.name !== undefined ? { name: data.name } : {}),
+    description: data.description ?? null,
+    ...(data.category !== undefined ? { category: data.category } : {}),
+    image: data.image ?? null,
+    tags: data.tags ?? null,
+    ...(data.isAppTemplate !== undefined ? { isAppTemplate: data.isAppTemplate } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
+    ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+  });
+  if (error) throw new Error(`Failed to update pack template: ${error.value}`);
+  return result as object | null;
 };
 
 export const packTemplatesStore = observable<Record<string, PackTemplateInStore>>({});
@@ -47,9 +61,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(
-        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-      ),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packTemplates',
     },

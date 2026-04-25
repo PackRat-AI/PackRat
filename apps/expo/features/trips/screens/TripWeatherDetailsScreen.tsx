@@ -1,12 +1,10 @@
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
-import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
-import type {
-  WeatherApiForecastResponse,
-  ForecastDay as WeatherForecastDay,
-  HourWeather as WeatherHourlyForecast,
-} from 'expo-app/features/weather/types';
-import axiosInstance from 'expo-app/lib/api/client';
+import {
+  getWeatherBackgroundColors,
+  getWeatherData,
+  searchLocationsByCoordinates,
+} from 'expo-app/features/weather/lib/weatherService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -20,12 +18,17 @@ import {
 } from 'react-native';
 
 export default function TripWeatherDetailsScreen() {
-  const { lat, lon } = useLocalSearchParams();
+  const { lat, lon, locationName } = useLocalSearchParams<{
+    lat: string;
+    lon: string;
+    locationName?: string;
+  }>();
 
   const latitude = Number(lat);
   const longitude = Number(lon);
+  const tripLocationName = locationName;
 
-  const [weather, setWeather] = useState<WeatherApiForecastResponse | null>(null);
+  const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
@@ -39,22 +42,14 @@ export default function TripWeatherDetailsScreen() {
       setLoading(true);
       setError(null);
 
-      const locations = await axiosInstance.get(`/api/weather/search-by-coordinates`, {
-        params: {
-          lat: latitude.toFixed(6),
-          lon: longitude.toFixed(6),
-        },
-      });
-      const { id } = locations.data[0];
-      const weather = await axiosInstance.get(`/api/weather/forecast`, {
-        params: {
-          id,
-        },
-      });
+      const locations = await searchLocationsByCoordinates(latitude, longitude);
+      const first = locations[0];
+      if (!first) throw new Error('No location found for these coordinates');
+      const weather = await getWeatherData(first.id);
 
-      setWeather(weather.data);
-      const weatherCode = weather.data.current?.condition?.code || 1000;
-      const isNight = weather.data.current?.is_day === 0;
+      setWeather(weather);
+      const weatherCode = weather.current?.condition?.code || 1000;
+      const isNight = weather.current?.is_day === 0;
 
       setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
     } catch (e) {
@@ -90,18 +85,18 @@ export default function TripWeatherDetailsScreen() {
 
   const location = weather.location;
   const current = weather.current;
-  const todayForecast = weather.forecast.forecastday[0];
 
-  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map(
-    (h: WeatherHourlyForecast) => ({
-      time: `${new Date(h.time).getHours()}:00`,
-      temp: Math.round(h.temp_c),
-      weatherCode: h.condition?.code ?? 1000,
-      isDay: h.is_day,
-    }),
-  );
+  // Use the trip's location name if provided, otherwise fall back to weather API location
+  const displayLocationName = tripLocationName || location.name;
 
-  const dailyForecast = weather?.forecast?.forecastday?.map((fd: WeatherForecastDay) => ({
+  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h: any) => ({
+    time: `${new Date(h.time).getHours()}:00`,
+    temp: Math.round(h.temp_c),
+    weatherCode: h.condition?.code ?? 1000,
+    isDay: h.is_day,
+  }));
+
+  const dailyForecast = weather?.forecast?.forecastday?.map((fd: any) => ({
     day: new Intl.DateTimeFormat('en', { weekday: 'short' }).format(new Date(fd.date)),
     icon: 'weather-partly-cloudy',
     low: Math.round(fd.day.mintemp_c),
@@ -125,16 +120,15 @@ export default function TripWeatherDetailsScreen() {
 
         <ScrollView contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}>
           <View className="items-center">
-            <Text className="text-3xl text-white font-semibold">{location.name}</Text>
+            <Text className="text-3xl text-white font-semibold">{displayLocationName}</Text>
 
             <Text className="text-7xl text-white mt-6">{current.temp_c}°</Text>
 
             <Text className="text-xl text-white">{current.condition.text}</Text>
 
             <Text className="text-white/80 mt-2">
-              {todayForecast
-                ? `H:${todayForecast.day.maxtemp_c}° L:${todayForecast.day.mintemp_c}°`
-                : 'H:— L:—'}
+              H:{weather.forecast.forecastday[0].day.maxtemp_c}° L:
+              {weather.forecast.forecastday[0].day.mintemp_c}°
             </Text>
           </View>
           <WeatherForecast

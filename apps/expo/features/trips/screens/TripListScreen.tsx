@@ -1,7 +1,7 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -41,7 +41,11 @@ function CreateTripIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable testID={TestIds.CreateTripButton} accessibilityLabel={t('trips.createNewTrip')}>
+      <Pressable
+        testID={TestIds.CreateTripButton}
+        accessibilityLabel={t('trips.createNewTrip')}
+        className="mx-2"
+      >
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
@@ -144,7 +148,7 @@ export function TripsListScreen() {
   };
 
   return (
-    <TabScreen>
+    <>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
@@ -159,11 +163,7 @@ export function TripsListScreen() {
             </LargeTitleHeaderSearchContentContainer>
           ),
         }}
-        rightView={() => (
-          <View className="flex-row items-center mr-2 ml-2">
-            <CreateTripIconButton />
-          </View>
-        )}
+        rightView={() => <CreateTripIconButton />}
       />
 
       <FlatList
@@ -176,8 +176,9 @@ export function TripsListScreen() {
           </View>
         )}
         ListEmptyComponent={renderEmptyState()}
+        ListFooterComponent={<AndroidTabBarInsetFix />}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </TabScreen>
+    </>
   );
 }

@@ -1,8 +1,9 @@
 /**
- * Narrowing helpers that return `T | undefined` instead of throwing.
+ * Narrowing helpers that return `T | undefined` instead of throwing,
+ * and coercion helpers that massage values into well-typed shapes.
  *
- * Useful when mapping external data (API responses, unknown records)
- * into strict internal types without `as` casts.
+ * Use these at system boundaries (API responses, CSV rows, unknown records)
+ * instead of `as` casts.
  */
 
 /** Returns the value if it's a string, otherwise undefined. */
@@ -25,6 +26,19 @@ export const nullToUndefined = <T>(value: T | null): T | undefined =>
   value === null ? undefined : value;
 
 /**
+ * Type-safe indexOf — searches an array for an unknown value and returns its
+ * index, or -1 if the value is not a member of the array.
+ *
+ * Avoids `as ElementType` casts when the call site only has a `string` (or
+ * other broad type) but the array is typed as a specific union or tuple.
+ *
+ * @example
+ * safeIndexOf(['g', 'oz', 'kg', 'lb'], field.state.value)  // 0-3 or -1
+ */
+export const safeIndexOf = <T>(array: readonly T[], value: unknown): number =>
+  (array as readonly unknown[]).indexOf(value);
+
+/**
  * Returns the value if it's a Date, parses it if it's a string/number,
  * otherwise undefined.
  */
@@ -44,8 +58,44 @@ export const asDate = (value: unknown): Date | undefined => {
 export const asStringRecord = (value: unknown): Record<string, string> => {
   if (value === null || typeof value !== 'object') return {};
   const out: Record<string, string> = {};
+  // TypeScript requires an explicit cast here; value is narrowed to object by the check above.
   for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
     if (typeof val === 'string') out[key] = val;
   }
   return out;
 };
+
+/**
+ * Wraps a single value in an array if it isn't one already.
+ * Useful for normalising API fields that can be `T | T[]`.
+ *
+ * @example
+ * toArray('foo')       // ['foo']
+ * toArray(['foo'])     // ['foo']
+ * toArray(undefined)   // []
+ */
+export const toArray = <T>(value: T | T[] | null | undefined): T[] => {
+  if (value === null || value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
+};
+
+/** Alias for toArray — prefer whichever reads more clearly at the call site. */
+export const asArray = toArray;
+
+/**
+ * Filters nullish values out of an array and narrows the element type.
+ *
+ * @example
+ * compact([1, null, 2, undefined])  // [1, 2]  typed as number[]
+ */
+export const compact = <T>(arr: (T | null | undefined)[]): T[] =>
+  arr.filter((v): v is T => v !== null && v !== undefined);
+
+/**
+ * Returns the first non-nullish value from a list of candidates.
+ *
+ * @example
+ * firstDefined(undefined, null, 'hello', 'world')  // 'hello'
+ */
+export const firstDefined = <T>(...values: (T | null | undefined)[]): T | undefined =>
+  values.find((v): v is T => v !== null && v !== undefined);

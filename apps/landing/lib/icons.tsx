@@ -2,8 +2,11 @@ import type { LucideIcon as LucideIconType } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 
 export const LucideIcon = (name: string): LucideIconType => {
-  const icons = LucideIcons;
-  return (icons[name as keyof typeof icons] as LucideIconType) || LucideIcons.FileQuestion;
+  if (name in LucideIcons) {
+    const icon = (LucideIcons as Record<string, unknown>)[name];
+    if (typeof icon === 'function') return icon as LucideIconType;
+  }
+  return LucideIcons.FileQuestion;
 };
 
 export function TikTokIcon({ className }: { className?: string }) {

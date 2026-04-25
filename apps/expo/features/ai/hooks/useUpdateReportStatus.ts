@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 type UpdateReportStatusPayload = {
   id: string;
@@ -9,15 +9,11 @@ type UpdateReportStatusPayload = {
 export const updateReportStatus = async (
   payload: UpdateReportStatusPayload,
 ): Promise<{ success: boolean }> => {
-  try {
-    const response = await axiosInstance.patch(`/api/chat/reports/${payload.id}`, {
-      status: payload.status,
-    });
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to update report status: ${message}`);
-  }
+  const { data, error } = await apiClient.chat.reports({ id: payload.id }).patch({
+    status: payload.status,
+  });
+  if (error) throw new Error(`Failed to update report status: ${error.value}`);
+  return data as unknown as { success: boolean };
 };
 
 export function useUpdateReportStatus() {
@@ -26,7 +22,6 @@ export function useUpdateReportStatus() {
   return useMutation({
     mutationFn: (payload: UpdateReportStatusPayload) => updateReportStatus(payload),
     onSuccess: () => {
-      // Invalidate reported content queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['reportedContent'] });
     },
     onError: (error) => {

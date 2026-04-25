@@ -1,7 +1,7 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
@@ -179,7 +179,8 @@ export const GuidesListScreen = () => {
     if (isSearchMode) return null;
 
     return (
-      <TabScreen useLegacySafeAreaView>
+      <>
+        <LargeTitleHeaderOverlapFixIOS />
         <CategoriesFilter
           data={categories}
           onFilter={handleCategoryChange}
@@ -188,7 +189,7 @@ export const GuidesListScreen = () => {
           retry={refetchCategories}
           className="px-4 pb-2"
         />
-      </TabScreen>
+      </>
     );
   };
 

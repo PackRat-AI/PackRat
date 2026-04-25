@@ -1,6 +1,6 @@
 {
   "name": "packrat-admin-app",
-  "version": "2.0.23",
+  "version": "2.0.24",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -11,6 +11,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-avatar": "catalog:",
@@ -34,11 +35,11 @@
     "react-dom": "catalog:",
     "recharts": "3.8.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^2.5.5",
+    "tailwind-merge": "^3.5.0",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.15.33",
+    "@types/node": "^25.6.0",
     "@types/react": "~19.1.10",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",

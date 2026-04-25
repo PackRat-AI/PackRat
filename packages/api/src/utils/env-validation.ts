@@ -1,6 +1,4 @@
 import type { Container } from '@cloudflare/containers';
-import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { z } from 'zod';
 
 // Define the Zod schema for all environment variables
@@ -20,6 +18,7 @@ export const apiEnvSchema = z.object({
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
   PACKRAT_API_KEY: z.string(),
+  REFRESH_TOKEN_PEPPER: z.string().min(32).optional(),
 
   // Email Configuration
   EMAIL_PROVIDER: z.enum(['resend', 'sendgrid', 'ses']),
@@ -84,7 +83,6 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   APP_CONTAINER: z.unknown().optional(),
 });
 
-// Infer the base type from Zod schema
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
 
 // Override Cloudflare binding types with proper TypeScript types
@@ -100,7 +98,6 @@ export type ValidatedEnv = Omit<
   | 'EMBEDDINGS_QUEUE'
   | 'APP_CONTAINER'
 > & {
-  // Properly typed Cloudflare bindings
   CF_VERSION_METADATA: WorkerVersionMetadata;
   AI: Ai;
   PACKRAT_SCRAPY_BUCKET: R2Bucket;
@@ -109,71 +106,93 @@ export type ValidatedEnv = Omit<
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
-  // AppContainer Durable Object binding (APP_CONTAINER)
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
 };
 
-// Cache for validated environments per request
-const envCache = new WeakMap<Context, ValidatedEnv>();
+// Cache for validated envs keyed by the raw env reference.
+const envCache = new WeakMap<object, ValidatedEnv>();
 
-// Check if we're in a test environment
 function isTestEnvironment(): boolean {
   return (
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
-    (typeof global !== 'undefined' &&
-      (global as unknown as { __vitest__?: unknown }).__vitest__ !== undefined)
+    (typeof globalThis !== 'undefined' &&
+      (globalThis as unknown as { __vitest__?: unknown }).__vitest__ !== undefined)
   );
 }
 
-/**
- * Get and validate environment variables from Hono context
- * Results are cached per request context
- */
-export function getEnv(c: Context): ValidatedEnv {
-  // Check if we already have validated env for this context
-  const cached = envCache.get(c);
-  if (cached) {
-    return cached;
-  }
-
-  // Get raw environment
-  const rawEnv = env<ValidatedEnv>(c);
-
-  // Use relaxed validation for test environments
+function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
   const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
-
-  // Validate all environment variables with Zod
-  // This ensures all required fields exist, including CF bindings
   const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);
   }
 
-  // Merge validated data with correctly typed Cloudflare bindings from rawEnv
-  const data: ValidatedEnv = {
+  return {
     ...validated.data,
-    CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA || validated.data.CF_VERSION_METADATA,
-    AI: rawEnv.AI || validated.data.AI,
-    PACKRAT_SCRAPY_BUCKET: rawEnv.PACKRAT_SCRAPY_BUCKET || validated.data.PACKRAT_SCRAPY_BUCKET,
-    PACKRAT_BUCKET: rawEnv.PACKRAT_BUCKET || validated.data.PACKRAT_BUCKET,
-    PACKRAT_GUIDES_BUCKET: rawEnv.PACKRAT_GUIDES_BUCKET || validated.data.PACKRAT_GUIDES_BUCKET,
-    ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
-    LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
-    EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
-    APP_CONTAINER: rawEnv.APP_CONTAINER || validated.data.APP_CONTAINER,
+    CF_VERSION_METADATA: (rawEnv.CF_VERSION_METADATA ??
+      validated.data.CF_VERSION_METADATA) as WorkerVersionMetadata,
+    AI: (rawEnv.AI ?? validated.data.AI) as Ai,
+    PACKRAT_SCRAPY_BUCKET: (rawEnv.PACKRAT_SCRAPY_BUCKET ??
+      validated.data.PACKRAT_SCRAPY_BUCKET) as R2Bucket,
+    PACKRAT_BUCKET: (rawEnv.PACKRAT_BUCKET ?? validated.data.PACKRAT_BUCKET) as R2Bucket,
+    PACKRAT_GUIDES_BUCKET: (rawEnv.PACKRAT_GUIDES_BUCKET ??
+      validated.data.PACKRAT_GUIDES_BUCKET) as R2Bucket,
+    ETL_QUEUE: (rawEnv.ETL_QUEUE ?? validated.data.ETL_QUEUE) as Queue,
+    LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue,
+    EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue,
+    APP_CONTAINER: (rawEnv.APP_CONTAINER ?? validated.data.APP_CONTAINER) as DurableObjectNamespace<
+      Container<unknown>
+    >,
   } as ValidatedEnv;
-
-  // Cache the result
-  envCache.set(c, data);
-
-  return data;
 }
 
 /**
- * Validate Cloudflare API environment variables at build/deploy time
- * Called after root postinstall populates env vars
- * Throws an error if validation fails
+ * Module-level cache of the Cloudflare Worker env bindings. Primed once per
+ * isolate by the entry point (`src/index.ts`).
+ */
+let cachedRawEnv: Record<string, unknown> | undefined;
+
+function getRawEnv(): Record<string, unknown> {
+  if (cachedRawEnv) return cachedRawEnv;
+
+  const primed = (globalThis as Record<string, unknown>).__cfWorkersEnv__;
+  if (primed && typeof primed === 'object') {
+    cachedRawEnv = primed as Record<string, unknown>;
+    return cachedRawEnv;
+  }
+
+  // Test / Node fallback
+  cachedRawEnv = { ...process.env } as Record<string, unknown>;
+  return cachedRawEnv;
+}
+
+/**
+ * Called from the Cloudflare Worker fetch/queue handler to prime the isolate
+ * env cache before any downstream code runs.
+ */
+export function setWorkerEnv(rawEnv: Record<string, unknown>): void {
+  cachedRawEnv = rawEnv;
+  (globalThis as Record<string, unknown>).__cfWorkersEnv__ = rawEnv;
+}
+
+/**
+ * Get and validate environment variables for the current isolate.
+ *
+ * Accepts an optional explicit env object (used primarily by tests) – when
+ * omitted, reads from the cached isolate env.
+ */
+export function getEnv(explicitEnv?: Record<string, unknown>): ValidatedEnv {
+  const rawEnv = explicitEnv ?? getRawEnv();
+  const cached = envCache.get(rawEnv as object);
+  if (cached) return cached;
+  const validated = validate(rawEnv);
+  envCache.set(rawEnv as object, validated);
+  return validated;
+}
+
+/**
+ * Validate Cloudflare API environment variables at build/deploy time.
  */
 export function validateCloudflareApiEnv(env: Record<string, unknown>): void {
   apiEnvSchema.parse(env);

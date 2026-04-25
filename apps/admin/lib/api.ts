@@ -29,6 +29,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`Admin API error: ${res.status} ${res.statusText} — ${path}`);
   }
 
+  // T is caller-verified via the typed adminFetch<T> call-sites above.
   return res.json() as Promise<T>;
 }
 

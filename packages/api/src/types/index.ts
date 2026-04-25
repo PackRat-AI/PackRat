@@ -14,7 +14,7 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 
 // --- Pack Category Enum ---
-export const PackCategorySchema = z.enum([
+export const PACK_CATEGORIES = Object.freeze([
   'hiking',
   'backpacking',
   'camping',
@@ -24,12 +24,13 @@ export const PackCategorySchema = z.enum([
   'custom',
   'water sports',
   'skiing',
-]);
+] as const);
 
+export const PackCategorySchema = z.enum(PACK_CATEGORIES);
 export type PackCategory = z.infer<typeof PackCategorySchema>;
 
 // --- Item Category Enum ---
-export const ItemCategorySchema = z.enum([
+export const ITEM_CATEGORIES = Object.freeze([
   'clothing',
   'shelter',
   'sleep',
@@ -41,14 +42,20 @@ export const ItemCategorySchema = z.enum([
   'tools',
   'consumables',
   'miscellaneous',
-]);
+] as const);
 
+export const ItemCategorySchema = z.enum(ITEM_CATEGORIES);
 export type ItemCategory = z.infer<typeof ItemCategorySchema>;
 
 // --- Weight Unit Enum ---
-export const WeightUnitSchema = z.enum(['g', 'oz', 'kg', 'lb']);
-
+export const WEIGHT_UNITS = Object.freeze(['g', 'oz', 'kg', 'lb'] as const);
+export const WeightUnitSchema = z.enum(WEIGHT_UNITS);
 export type WeightUnit = z.infer<typeof WeightUnitSchema>;
+
+// --- Availability Enum ---
+export const AVAILABILITY_VALUES = Object.freeze(['in_stock', 'out_of_stock', 'preorder'] as const);
+export const AvailabilitySchema = z.enum(AVAILABILITY_VALUES);
+export type Availability = z.infer<typeof AvailabilitySchema>;
 
 export type ItemLink = {
   id: string;

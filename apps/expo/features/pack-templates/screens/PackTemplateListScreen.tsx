@@ -142,7 +142,7 @@ export function PackTemplateListScreen() {
           )}
         </View>
 
-        {filteredTemplates.map((template: PackTemplate) => (
+        {filteredTemplates.map((template) => (
           <View className="px-4 pt-4" key={template.id}>
             <PackTemplateCard templateId={template.id} onPress={handleTemplatePress} />
           </View>
