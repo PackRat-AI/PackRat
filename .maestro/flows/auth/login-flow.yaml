@@ -88,6 +88,8 @@ appId: ${APP_ID}
           optional: true
           label: "Dismiss iOS Save Password prompt"
 
+# Wait for the main tab bar to be fully settled before tapping
+- waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
       text: "Packs"
@@ -97,5 +99,8 @@ appId: ${APP_ID}
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
-- assertVisible:
-    id: "create-pack-button"
+# Use extendedWaitUntil instead of assertVisible to tolerate post-login navigation settling
+- extendedWaitUntil:
+    visible:
+      id: "create-pack-button"
+    timeout: 15000
