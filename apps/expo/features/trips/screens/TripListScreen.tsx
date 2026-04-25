@@ -1,7 +1,9 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
+import { useFocusEffect } from '@react-navigation/native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
+import { tripsSyncState } from 'expo-app/features/trips/store/trips';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -58,6 +60,12 @@ export function TripsListScreen() {
   const trips = useTrips();
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const [searchValue, setSearchValue] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      tripsSyncState.peek()?.sync?.();
+    }, []),
+  );
 
   const filteredTrips = useMemo(() => {
     const trimmed = searchValue.trim();
