@@ -10,7 +10,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  transpilePackages: ['@packrat/web-ui', '@packrat/guards'],
+  transpilePackages: ['@packrat/web-ui'],
 };
 
 export default nextConfig;
