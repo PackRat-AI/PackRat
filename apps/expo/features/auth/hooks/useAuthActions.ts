@@ -36,6 +36,7 @@ function redirect(route: string) {
 
 function extractAuthError(value: unknown, fallback: string): string {
   if (isObject(value) && 'error' in value) {
+    // safe-cast: value is an object (checked above); indexed access to extract error field
     return String((value as Record<string, unknown>).error) || fallback;
   }
   return fallback;
@@ -68,6 +69,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
+      // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -98,6 +100,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
+      // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -144,6 +147,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
+      // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -250,6 +254,7 @@ export function useAuthActions() {
         await Storage.setItem('refresh_token', data.refreshToken);
         await setToken(data.accessToken);
         await setRefreshToken(data.refreshToken);
+        // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
         userStore.set(data.user as unknown as User);
         redirect(redirectTo);
       }

@@ -11,6 +11,7 @@ import type { PackInStore } from '../types';
 const listPacks = async (): Promise<PackInStore[] | null> => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packs: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.array().parse(data) as unknown as PackInStore[];
 };
 
@@ -27,6 +28,7 @@ const createPack = async (packData: PackInStore): Promise<PackInStore | null> =>
     localUpdatedAt: packData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
 };
 
@@ -42,6 +44,7 @@ const updatePack = async ({ id, ...data }: Partial<PackInStore>): Promise<PackIn
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update pack: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.parse(result) as unknown as PackInStore;
 };
 

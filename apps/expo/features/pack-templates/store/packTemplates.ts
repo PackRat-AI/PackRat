@@ -14,6 +14,7 @@ import type { PackTemplate, PackTemplateInStore } from '../types';
 const listPackTemplates = async (): Promise<PackTemplateInStore[] | null> => {
   const { data, error } = await apiClient['pack-templates'].get();
   if (error) throw new Error(`Failed to list pack templates: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackTemplateInStore extends the Zod-inferred type
   return PackTemplateWithItemsSchema.array().parse(data) as unknown as PackTemplateInStore[];
 };
 
@@ -34,6 +35,7 @@ const createPackTemplate = async (
     localUpdatedAt: templateData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack template: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackTemplateInStore extends the Zod-inferred type
   return PackTemplateSchema.parse(data) as unknown as PackTemplateInStore;
 };
 
@@ -57,6 +59,7 @@ const updatePackTemplate = async ({
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update pack template: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackTemplateInStore extends the Zod-inferred type
   return PackTemplateSchema.parse(result) as unknown as PackTemplateInStore;
 };
 
