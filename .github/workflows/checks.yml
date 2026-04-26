@@ -51,10 +51,8 @@ jobs:
         run: bun scripts/format/sort-package-json.ts --check
       - name: Custom lint rules (typeof guards, raw regex, process.env)
         run: bun lint:custom
-      # TODO: remove continue-on-error once the type-cast backlog (130) is cleared.
       - name: Check unsafe type casts
         run: bun check:casts:strict
-        continue-on-error: true
       - name: Check types
         run: bun check-types
       - name: Run Expo Doctor
