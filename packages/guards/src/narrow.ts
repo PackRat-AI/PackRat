@@ -99,3 +99,7 @@ export const compact = <T>(arr: (T | null | undefined)[]): T[] =>
  */
 export const firstDefined = <T>(...values: (T | null | undefined)[]): T | undefined =>
   values.find((v): v is T => v !== null && v !== undefined);
+
+/** Returns true when a string is an absolute HTTP/HTTPS URL. */
+export const isRemoteUrl = (value: string): boolean =>
+  value.startsWith('http://') || value.startsWith('https://');

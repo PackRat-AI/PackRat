@@ -2,6 +2,7 @@ import { observable, syncState } from '@legendapp/state';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { isRemoteUrl } from '@packrat/guards';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -14,8 +15,6 @@ const listAllPackItems = async () => {
   if (error) throw new Error(`Failed to list packitems: ${error.value}`);
   return ((data as unknown as Pack[]) ?? []).flatMap((pack) => pack.items) as object[];
 };
-
-const isRemoteUrl = (url: string) => url.startsWith('http://') || url.startsWith('https://');
 
 const createPackItem = async ({ packId, ...data }: PackItem) => {
   if (data.image && !isRemoteUrl(data.image)) {

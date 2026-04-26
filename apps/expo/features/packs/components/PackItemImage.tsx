@@ -1,3 +1,4 @@
+import { isRemoteUrl } from '@packrat/guards';
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
@@ -10,8 +11,6 @@ import { CachedImage } from './CachedImage';
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {
   item: PackItem;
 }
-
-const isRemoteUrl = (url: string) => url.startsWith('http://') || url.startsWith('https://');
 
 export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
   const isItemOwnedByUser = usePackItemOwnershipCheck(item.id);
