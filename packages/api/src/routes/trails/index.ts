@@ -45,6 +45,13 @@ async function stitchTrailGeometry(
 
   if (wayRefs.length === 0) return null;
 
+  // Build a parameterized ARRAY literal — each ref bound individually so the
+  // driver handles escaping, avoiding sql.raw() on external OSM data.
+  const arrayLiteral = sql.join(
+    wayRefs.map((ref) => sql`${ref}`),
+    sql`, `,
+  );
+
   const result = await db.execute(sql`
     SELECT ST_AsGeoJSON(
       ST_LineMerge(
@@ -53,7 +60,7 @@ async function stitchTrailGeometry(
     ) AS geojson
     FROM hiking_ways
     JOIN unnest(
-      ARRAY[${sql.raw(wayRefs.join(','))}]::bigint[]
+      ARRAY[${arrayLiteral}]::bigint[]
     ) WITH ORDINALITY AS t(osm_id, ordinality)
       USING (osm_id)
     WHERE geometry IS NOT NULL
@@ -209,7 +216,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
             await db.execute(sql`
               UPDATE hiking_relations
               SET
-                geometry = ST_GeomFromGeoJSON(${JSON.stringify(geometry)}),
+                geometry = ST_Multi(ST_GeomFromGeoJSON(${JSON.stringify(geometry)})),
                 cached_at = NOW()
               WHERE osm_id = ${osmId}
             `);
@@ -313,7 +320,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         return status(400, { error: 'Invalid URL' });
       }
 
-      if (!parsed.hostname.endsWith('alltrails.com')) {
+      const { hostname } = parsed;
+      if (hostname !== 'alltrails.com' && !hostname.endsWith('.alltrails.com')) {
         return status(400, { error: 'Only alltrails.com URLs are supported' });
       }
 
@@ -325,6 +333,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           },
           signal: AbortSignal.timeout(8000),
         });
+
+        // Validate final URL after redirects to prevent open redirect SSRF
+        const finalHostname = new URL(response.url).hostname;
+        if (finalHostname !== 'alltrails.com' && !finalHostname.endsWith('.alltrails.com')) {
+          return status(400, { error: 'Redirect target is not alltrails.com' });
+        }
 
         if (!response.ok) {
           return status(502, { error: `AllTrails returned ${response.status}` });
