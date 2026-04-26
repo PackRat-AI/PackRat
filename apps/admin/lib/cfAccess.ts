@@ -7,12 +7,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from 'admin-app/lib/queryKeys';
+import { z } from 'zod';
 
-export type CFAccessIdentityResponse = {
-  email: string;
-  name: string;
-  jwt: string;
-};
+const CFAccessIdentitySchema = z.object({
+  email: z.string(),
+  name: z.string().optional().default(''),
+  jwt: z.string(),
+});
+
+export type CFAccessIdentityResponse = z.infer<typeof CFAccessIdentitySchema>;
 
 // Cache the in-flight Promise — all concurrent callers share one network request.
 // Avoids thundering-herd on first render when multiple components call simultaneously.
@@ -22,19 +25,11 @@ function fetchIdentity(): Promise<CFAccessIdentityResponse | null> {
   return fetch('/cdn-cgi/access/get-identity', { credentials: 'include' })
     .then((res) => {
       if (!res.ok) return null;
-      return res.json() as Promise<unknown>;
+      return res.json();
     })
     .then((data) => {
-      if (
-        typeof data !== 'object' ||
-        data === null ||
-        typeof (data as Record<string, unknown>).email !== 'string' ||
-        typeof (data as Record<string, unknown>).jwt !== 'string'
-      ) {
-        return null;
-      }
-      const d = data as { email: string; name?: string; jwt: string };
-      return { email: d.email, name: d.name ?? '', jwt: d.jwt };
+      const result = CFAccessIdentitySchema.safeParse(data);
+      return result.success ? result.data : null;
     })
     .catch(() => null);
 }
