@@ -33,7 +33,7 @@ const createPack = async (packData: PackInStore): Promise<PackInStore | null> =>
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
   // Refresh the list after create so the new pack appears immediately without
   // waiting for the 30-second polling interval.
-  setTimeout(() => refreshPacksList(), 100);
+  setTimeout(() => refreshPacksList(), 500);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
 };
