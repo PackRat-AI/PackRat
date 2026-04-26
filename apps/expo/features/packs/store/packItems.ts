@@ -15,8 +15,10 @@ const listAllPackItems = async () => {
   return ((data as unknown as Pack[]) ?? []).flatMap((pack) => pack.items) as object[];
 };
 
+const isRemoteUrl = (url: string) => url.startsWith('http://') || url.startsWith('https://');
+
 const createPackItem = async ({ packId, ...data }: PackItem) => {
-  if (data.image) {
+  if (data.image && !isRemoteUrl(data.image)) {
     await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
   const { data: result, error } = await apiClient
@@ -27,7 +29,7 @@ const createPackItem = async ({ packId, ...data }: PackItem) => {
 };
 
 const updatePackItem = async ({ id, ...data }: PackItem) => {
-  if (data.image) {
+  if (data.image && !isRemoteUrl(data.image)) {
     await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
   const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
