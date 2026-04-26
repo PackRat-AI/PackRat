@@ -11,9 +11,10 @@ import {
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
 import { storeToken } from 'admin-app/lib/auth';
-import { Package } from 'lucide-react';
+import { isBehindCFAccess } from 'admin-app/lib/cfAccess';
+import { Package, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 if (!API_BASE) {
@@ -26,6 +27,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [cfAccess, setCFAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    isBehindCFAccess().then((behind) => {
+      setCFAccess(behind);
+      if (behind) router.replace('/dashboard');
+    });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,10 +69,12 @@ export default function LoginPage() {
     }
   }
 
+  // Redirect in progress (behind CF Access) — show nothing while navigating
+  if (cfAccess === true) return null;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15 border border-primary/20">
             <Package className="w-5 h-5 text-primary" />
@@ -110,6 +121,13 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
+
+        {cfAccess === false && (
+          <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+            <Shield className="w-3 h-3" />
+            Local dev mode — Cloudflare Access not detected
+          </p>
+        )}
       </div>
     </div>
   );

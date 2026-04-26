@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
+import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
@@ -10,6 +11,8 @@ import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
+const ADMIN_JWT_ISSUER = 'packrat-api';
+const ADMIN_JWT_AUDIENCE = 'packrat-admin';
 
 function basicAuthGuard(request: Request): { authorized: true } | { authorized: false } {
   const header = request.headers.get('authorization') ?? '';
@@ -44,6 +47,8 @@ async function issueAdminJwt(username: string): Promise<string> {
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(username)
+    .setIssuer(ADMIN_JWT_ISSUER)
+    .setAudience(ADMIN_JWT_AUDIENCE)
     .setIssuedAt()
     .setExpirationTime(`${ADMIN_TOKEN_TTL_SECONDS}s`)
     .sign(secret);
@@ -53,26 +58,32 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   try {
     const env = getEnv();
     const secret = new TextEncoder().encode(env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: ADMIN_JWT_ISSUER,
+      audience: ADMIN_JWT_AUDIENCE,
+    });
     return payload.role === 'admin';
   } catch {
     return false;
   }
 }
 
-// Accept: Cloudflare Access header (prod), Bearer JWT (admin SPA), or Basic
-// auth (local dev / htmx UI). Returns true to let the request through.
+// Accept: Cloudflare Access JWT (prod, cryptographically verified), Bearer JWT
+// (admin SPA session token), or Basic auth (local dev only).
 async function adminAuthGuard(request: Request): Promise<boolean> {
-  // Production: Cloudflare Access injects this header after verifying the user
-  if (request.headers.get('CF-Access-Authenticated-User-Email')) return true;
+  const env = getEnv();
+  const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
 
+  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+    // CF Access configured: cryptographic JWT verification only, no fallthrough.
+    const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
+    return cfIdentity !== null;
+  }
+
+  // CF Access not configured — local dev fallbacks only.
   const header = request.headers.get('authorization') ?? '';
-  if (header.startsWith('Bearer ')) {
-    return verifyAdminJwt(header.slice(7));
-  }
-  if (header.startsWith('Basic ')) {
-    return basicAuthGuard(request).authorized;
-  }
+  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+  if (header.startsWith('Basic ')) return basicAuthGuard(request).authorized;
   return false;
 }
 
