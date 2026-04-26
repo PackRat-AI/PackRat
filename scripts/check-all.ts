@@ -9,6 +9,7 @@
 //   - scripts/lint/no-circular-deps.ts
 //   - scripts/lint/no-duplicate-deps.ts  (skipped if file doesn't exist)
 //   - scripts/lint/no-duplicate-guards.ts
+//   - scripts/lint/no-unauth-routes.ts
 //   - packages/checks/src/check-magic-strings.ts
 //   - packages/checks/src/check-type-casts.ts --strict
 //   - scripts/lint/check-react-doctor.ts
@@ -76,6 +77,10 @@ const ALL_CHECKS: CheckDef[] = [
   {
     name: 'no-duplicate-guards',
     script: join(ROOT, 'scripts', 'lint', 'no-duplicate-guards.ts'),
+  },
+  {
+    name: 'no-unauth-routes',
+    script: join(ROOT, 'scripts', 'lint', 'no-unauth-routes.ts'),
   },
   {
     name: 'check-type-casts',
