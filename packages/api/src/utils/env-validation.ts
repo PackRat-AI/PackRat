@@ -20,6 +20,10 @@ export const apiEnvSchema = z.object({
   PACKRAT_API_KEY: z.string(),
   REFRESH_TOKEN_PEPPER: z.string().min(32).optional(),
 
+  // Cloudflare Zero Trust / Access (optional — enables CF Access JWT verification for admin routes)
+  CF_ACCESS_TEAM_DOMAIN: z.string().optional(), // e.g. "packrat.cloudflareaccess.com"
+  CF_ACCESS_AUD: z.string().optional(),          // CF Access policy Application Audience tag
+
   // Email Configuration
   EMAIL_PROVIDER: z.enum(['resend', 'sendgrid', 'ses']),
   RESEND_API_KEY: z.string(),
