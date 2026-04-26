@@ -44,6 +44,22 @@ appId: ${APP_ID}
 - assertVisible:
     id: "create-pack-button"
 
+# iOS: the "Save Password?" keychain prompt can appear late — after returning
+# from any form with a password field. Dismiss it before scrolling so it
+# doesn't intercept taps or obscure the list.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Not Now"
+          commands:
+            - tapOn:
+                text: "Not Now"
+            - waitForAnimationToEnd
+
 # Wait for the list to refresh, then scroll to find the new pack.
 # Both platforms accumulate old packs from previous runs, so the new pack
 # may appear below the fold. speed:40 avoids scrolling past it.
