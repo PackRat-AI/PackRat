@@ -3,45 +3,40 @@ import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Zod schemas (used for DB row parsing + API validation) ─────────────────
 
-interface OsmMember {
-  type: string;
-  ref: number;
-  role: string;
-}
+const OsmMemberSchema = z.object({
+  type: z.string(),
+  ref: z.number(),
+  role: z.string(),
+});
 
-interface TrailSearchResult {
-  osm_id: string;
-  name: string | null;
-  network: string | null;
-  distance: string | null;
-  difficulty: string | null;
-  description: string | null;
-  bbox: unknown;
-}
+const TrailSearchRowSchema = z.object({
+  osm_id: z.string(),
+  name: z.string().nullable(),
+  network: z.string().nullable(),
+  distance: z.string().nullable(),
+  difficulty: z.string().nullable(),
+  description: z.string().nullable(),
+  bbox: z.string().nullable(),
+});
 
-interface TrailRelation {
-  osm_id: string;
-  name: string | null;
-  network: string | null;
-  distance: string | null;
-  difficulty: string | null;
-  description: string | null;
-  members: OsmMember[] | null;
-  geometry: unknown;
-  cached_at: Date | null;
-}
+const TrailRelationRowSchema = z.object({
+  osm_id: z.string(),
+  name: z.string().nullable(),
+  network: z.string().nullable(),
+  distance: z.string().nullable(),
+  difficulty: z.string().nullable(),
+  description: z.string().nullable(),
+  members: z.array(OsmMemberSchema).nullable(),
+  geojson: z.string().nullable(),
+  cached_at: z.coerce.date().nullable(),
+});
+
+type OsmMember = z.infer<typeof OsmMemberSchema>;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Stitch member ways into a merged linestring using PostGIS.
- *
- * Collects all hiking_ways geometries referenced by this relation's members
- * then runs ST_LineMerge to produce a continuous (or near-continuous) line.
- * Falls back gracefully when ways are missing or geometry is degenerate.
- */
 async function stitchTrailGeometry(
   db: ReturnType<typeof createDb>,
   members: OsmMember[],
@@ -64,7 +59,10 @@ async function stitchTrailGeometry(
     WHERE geometry IS NOT NULL
   `);
 
-  const row = result.rows?.[0] as { geojson: string } | undefined;
+  const row = z
+    .object({ geojson: z.string().nullable() })
+    .nullable()
+    .parse(result.rows?.[0] ?? null);
   if (!row?.geojson) return null;
 
   try {
@@ -96,7 +94,6 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       const db = createDb();
 
       try {
-        // Build query dynamically based on which filters are present
         const conditions: ReturnType<typeof sql>[] = [];
 
         if (q) {
@@ -104,7 +101,6 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         }
 
         if (lat !== undefined && lon !== undefined) {
-          // ST_DWithin with geography cast for accurate km-based radius
           conditions.push(sql`
             ST_DWithin(
               geometry::geography,
@@ -136,14 +132,16 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           LIMIT 50
         `);
 
-        return (result.rows as unknown as TrailSearchResult[]).map((row) => ({
+        const rows = z.array(TrailSearchRowSchema).parse(result.rows);
+
+        return rows.map((row) => ({
           osmId: row.osm_id,
           name: row.name,
           network: row.network,
           distance: row.distance,
           difficulty: row.difficulty,
           description: row.description,
-          bbox: row.bbox ? JSON.parse(row.bbox as string) : null,
+          bbox: row.bbox ? JSON.parse(row.bbox) : null,
         }));
       } catch (error) {
         console.error('Trail search error:', error);
@@ -196,20 +194,17 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = result.rows?.[0] as (TrailRelation & { geojson: string | null }) | undefined;
+        const row = TrailRelationRowSchema.nullable().parse(result.rows?.[0] ?? null);
 
         if (!row) return status(404, { error: 'Trail not found' });
 
         let geometry: unknown = null;
 
         if (row.geojson) {
-          // osm2pgsql already built the geometry — use it directly
           geometry = JSON.parse(row.geojson);
-        } else if (row.members && Array.isArray(row.members) && row.members.length > 0) {
-          // Stitch from member ways at runtime
+        } else if (row.members && row.members.length > 0) {
           geometry = await stitchTrailGeometry(db, row.members);
 
-          // Cache the stitched result back so we don't repeat the work
           if (geometry) {
             await db.execute(sql`
               UPDATE hiking_relations
@@ -269,9 +264,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = result.rows?.[0] as
-          | (TrailSearchResult & { geojson: string | null })
-          | undefined;
+        const row = TrailSearchRowSchema.nullable().parse(result.rows?.[0] ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         return {
@@ -281,7 +274,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           distance: row.distance,
           difficulty: row.difficulty,
           description: row.description,
-          bbox: row.bbox ? JSON.parse(row.bbox as string) : null,
+          bbox: row.bbox ? JSON.parse(row.bbox) : null,
         };
       } catch (error) {
         console.error('Trail fetch error:', error);
@@ -330,7 +323,6 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
             'User-Agent': 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)',
             Accept: 'text/html',
           },
-          // Cloudflare Workers fetch has no keepalive issues
           signal: AbortSignal.timeout(8000),
         });
 

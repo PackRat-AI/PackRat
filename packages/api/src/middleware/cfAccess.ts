@@ -19,21 +19,16 @@ function getJwks(teamDomain: string): ReturnType<typeof createRemoteJWKSet> {
   return moduleJwks;
 }
 
-/**
- * Extracts and verifies the CF-Access-JWT-Assertion header from the request
- * against the team's public JWKS. Validates both issuer and audience.
- *
- * Only call when both teamDomain and aud are configured.
- * Returns null when the header is absent or the token fails verification.
- *
- * teamDomain must be the full URL: "https://<team>.cloudflareaccess.com"
- * aud is the CF Access Application Audience tag.
- */
+interface CFAccessOptions {
+  teamDomain: string;
+  aud: string;
+}
+
 export async function verifyCFAccessRequest(
   request: Request,
-  teamDomain: string,
-  aud: string,
+  opts: CFAccessOptions,
 ): Promise<CFAccessIdentity | null> {
+  const { teamDomain, aud } = opts;
   const token = request.headers.get('cf-access-jwt-assertion');
   if (!token) return null;
   try {
