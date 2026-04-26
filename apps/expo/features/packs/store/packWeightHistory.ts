@@ -2,6 +2,7 @@ import { observable, syncState } from '@legendapp/state';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { PackWeightHistoryResponseSchema } from '@packrat/api/schemas/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
@@ -15,17 +16,20 @@ import { packsStore } from './packs';
 const listPackWeightHistories = async () => {
   const { data, error } = await apiClient.packs['weight-history'].get();
   if (error) throw new Error(`Failed to list packWeightHistories: ${error.value}`);
-  return data as object[] | null;
+  return PackWeightHistoryResponseSchema.array().parse(data);
 };
 
 const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHistoryEntry) => {
   const endpoint = apiClient.packs({ packId: String(packWeightHistoryEntry.packId) })[
     'weight-history'
   ];
-  // biome-ignore lint/suspicious/noExplicitAny: Treaty client types diverge from actual API schema
-  const { data, error } = await endpoint.post(packWeightHistoryEntry as any);
+  const { data, error } = await endpoint.post({
+    id: packWeightHistoryEntry.id,
+    weight: packWeightHistoryEntry.weight,
+    localCreatedAt: packWeightHistoryEntry.localCreatedAt ?? new Date().toISOString(),
+  });
   if (error) throw new Error(`Failed to create packWeightHistoryEntry: ${error.value}`);
-  return data as object | null;
+  return PackWeightHistoryResponseSchema.array().parse(data)[0] ?? null;
 };
 
 export const packWeigthHistoryStore = observable<Record<string, PackWeightHistoryEntry>>({});
@@ -43,7 +47,7 @@ syncObservable(
     waitFor: isAuthed,
     waitForSet: isAuthed,
     retry: {
-      infinite: true, // Keep retrying until it saves
+      infinite: true,
       backoff: 'exponential',
       maxDelay: 30000,
     },
@@ -53,7 +57,7 @@ syncObservable(
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {
         refresh();
-      }, 30000); // 30 seconds interval
+      }, 30000);
 
       return () => {
         clearInterval(intervalId);

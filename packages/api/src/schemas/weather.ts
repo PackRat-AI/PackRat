@@ -20,8 +20,8 @@ export const WeatherAPILocationSchema = z.object({
   name: z.string(),
   region: z.string(),
   country: z.string(),
-  lat: z.union([z.string(), z.number()]),
-  lon: z.union([z.string(), z.number()]),
+  lat: z.number(),
+  lon: z.number(),
   tz_id: z.string().optional(),
   localtime_epoch: z.number().optional(),
   localtime: z.string().optional(),
@@ -81,7 +81,7 @@ export const WeatherCurrentSchema = z.object({
   gust_mph: z.number().optional(),
   gust_kph: z.number().optional(),
   // Additional fields from actual API response
-  is_day: z.number().optional(),
+  is_day: z.number(),
   windchill_c: z.number().optional(),
   windchill_f: z.number().optional(),
   heatindex_c: z.number().optional(),
@@ -147,7 +147,7 @@ export const WeatherHourSchema = z.object({
   chance_of_rain: z.number().optional(),
   chance_of_snow: z.number().optional(),
   // Additional fields from actual API response
-  is_day: z.number().optional(),
+  is_day: z.number(),
   windchill_c: z.number().optional(),
   windchill_f: z.number().optional(),
   heatindex_c: z.number().optional(),
@@ -178,7 +178,7 @@ export const WeatherForecastDaySchema = z.object({
       moon_illumination: z.number(),
     })
     .optional(),
-  hour: z.array(WeatherHourSchema).optional(),
+  hour: z.array(WeatherHourSchema),
 });
 
 export const WeatherAlertSchema = z
@@ -220,8 +220,8 @@ export const WeatherAPISearchResponseSchema = z.array(
     name: z.string(),
     region: z.string(),
     country: z.string(),
-    lat: z.union([z.string(), z.number()]),
-    lon: z.union([z.string(), z.number()]),
+    lat: z.number(),
+    lon: z.number(),
     url: z.string().optional(),
   }),
 );
