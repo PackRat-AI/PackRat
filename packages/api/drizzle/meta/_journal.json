@@ -272,7 +272,7 @@
       "idx": 37,
       "version": "7",
       "when": 1777170392780,
-      "tag": "0037_osm_hiking_tables",
+      "tag": "0037_trips_trail_osm_id",
       "breakpoints": true
     }
   ]
