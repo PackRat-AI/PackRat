@@ -12,6 +12,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function SeasonSuggestionsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background">
       <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
 
       <ScrollView className="flex-1 px-4">
@@ -180,6 +181,6 @@ export default function SeasonSuggestionsScreen() {
         onSelect={handleGenerateSuggestions}
         selectText={t('auth.next')}
       />
-    </View>
+    </SafeAreaView>
   );
 }
