@@ -40,7 +40,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   // T is caller-verified via the typed adminFetch<T> call-sites above.
-  return res.json() as Promise<T>;
+  return res.json() as Promise<T>; // safe-cast: fetch boundary — caller provides T
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
