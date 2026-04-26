@@ -1,0 +1,10 @@
+{
+  "name": "@packrat/osm-import",
+  "version": "2.0.24",
+  "private": true,
+  "description": "osm2pgsql flex config and import tooling for PackRat trail data",
+  "scripts": {
+    "import": "bash import.sh",
+    "import:utah": "bash import.sh"
+  }
+}
