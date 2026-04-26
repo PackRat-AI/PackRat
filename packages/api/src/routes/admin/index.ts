@@ -69,7 +69,10 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
 
   if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
     // CF Access configured: cryptographic JWT verification only, no fallthrough.
-    const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
+    const cfIdentity = await verifyCFAccessRequest(request, {
+      teamDomain: CF_ACCESS_TEAM_DOMAIN,
+      aud: CF_ACCESS_AUD,
+    });
     return cfIdentity !== null;
   }
 

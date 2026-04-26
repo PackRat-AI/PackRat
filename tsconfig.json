@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
     "esModuleInterop": true,
-    "ignoreDeprecations": "6.0",
     "jsx": "react-native",
     "lib": ["DOM", "ESNext"],
     "module": "preserve",
@@ -58,6 +56,8 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    "packages/mcp"
+    "packages/mcp",
+    "packages/osm-db",
+    "packages/osm-import"
   ]
 }

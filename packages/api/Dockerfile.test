@@ -1,0 +1,7 @@
+# Extends the pgvector image with PostGIS so integration tests can use
+# both vector similarity and geometry/spatial queries in the same DB.
+FROM pgvector/pgvector:pg15
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-15-postgis-3 \
+    && rm -rf /var/lib/apt/lists/*

@@ -515,6 +515,7 @@ vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
+  createOsmDb: vi.fn(() => testDb),
 }));
 
 vi.mock('youtube-transcript', () => ({
@@ -627,6 +628,8 @@ beforeEach(async () => {
     'posts',
     'trips',
     'users',
+    'osm_ways',
+    'osm_routes',
   ];
 
   const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');

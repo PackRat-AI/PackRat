@@ -1,0 +1,13 @@
+{
+  "name": "@packrat/osm-import",
+  "version": "0.1.0",
+  "private": true,
+  "description": "osm2pgsql flex config and import tooling for PackRat outdoor routes",
+  "type": "module",
+  "scripts": {
+    "import": "bun run import.ts"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

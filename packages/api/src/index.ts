@@ -81,13 +81,23 @@ type CfFetchFn = (
   ctx: ExecutionContext,
 ) => Response | Promise<Response>;
 
+function enrichEnv(env: Env): Env {
+  // If the OSM Hyperdrive binding is present, use its connection string so
+  // createOsmDb() routes through Hyperdrive instead of a plain env var URL.
+  if (env.OSM_HYPERDRIVE) {
+    return { ...env, OSM_DATABASE_URL: env.OSM_HYPERDRIVE.connectionString };
+  }
+  return env;
+}
+
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
-    setWorkerEnv(env as unknown as Record<string, unknown>);
-    return (app.fetch as unknown as CfFetchFn)(request, env, ctx);
+    const e = enrichEnv(env);
+    setWorkerEnv(e as unknown as Record<string, unknown>);
+    return (app.fetch as unknown as CfFetchFn)(request, e, ctx);
   },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    setWorkerEnv(env as unknown as Record<string, unknown>);
+    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>);
 
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {
