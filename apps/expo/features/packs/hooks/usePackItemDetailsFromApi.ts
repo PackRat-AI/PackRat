@@ -7,6 +7,7 @@ import type { PackItem } from '../types';
 export async function fetchPackItemById(id: string) {
   const { data, error } = await apiClient.packs.items({ itemId: id }).get();
   if (error) throw new Error(`Failed to fetch pack item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; TypeScript types diverge from Zod-inferred type
   return PackItemSchema.parse(data) as unknown as PackItem;
 }
 

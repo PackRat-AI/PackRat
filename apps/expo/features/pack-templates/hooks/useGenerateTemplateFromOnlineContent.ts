@@ -58,12 +58,14 @@ export function useGenerateTemplateFromOnlineContent() {
         // server returns a structured object (e.g. { code, existingTemplateId })
         // we extract it onto the thrown ImportError so callers can branch on
         // the duplicate-detection path.
+        // safe-cast: treaty surfaces error.value as unknown; we probe its shape before use
         const value = error.value as
           | { error?: string; code?: string; existingTemplateId?: string }
           | string
           | null
           | undefined;
         const message = isObject(value) && value?.error ? value.error : (value ?? 'Import failed');
+        // safe-cast: augmenting the base Error with ImportError fields assigned immediately below
         const importError = new Error(String(message)) as ImportError;
         importError.status = error.status;
         if (isObject(value)) {
@@ -72,6 +74,7 @@ export function useGenerateTemplateFromOnlineContent() {
         }
         throw importError;
       }
+      // safe-cast: treaty response shape matches GeneratedTemplate as validated by the API schema
       return data as unknown as GeneratedTemplate;
     },
     onSuccess: (data) => {

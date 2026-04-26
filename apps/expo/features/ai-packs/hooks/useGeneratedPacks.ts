@@ -9,6 +9,7 @@ import type { GenerationRequest } from '../types';
 const generatePacks = async (request: GenerationRequest): Promise<Pack[]> => {
   const { data, error } = await apiClient.packs['generate-packs'].post(request);
   if (error) throw new Error(`Failed to generate packs: ${error.value}`);
+  // safe-cast: treaty response shape matches Pack[] as validated by the API schema
   return (data ?? []) as unknown as Pack[];
 };
 

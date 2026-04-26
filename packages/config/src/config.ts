@@ -51,8 +51,7 @@ function deepFreeze<T>(value: T): Readonly<T> {
   if (!isObject(value)) return value;
   if (Object.isFrozen(value)) return value;
 
-  // value is narrowed to object by the check above; cast is required because
-  // TypeScript's Object.values signature needs a non-abstract type.
+  // safe-cast: value is narrowed to non-null object by isObject() guard above
   for (const nestedValue of Object.values(value as Record<string, unknown>)) {
     deepFreeze(nestedValue);
   }

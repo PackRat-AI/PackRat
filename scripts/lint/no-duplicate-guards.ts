@@ -92,7 +92,7 @@ function isTargetFile(name: string): boolean {
 }
 
 function isExcluded(relPath: string): boolean {
-  return EXCLUDED_ROOTS.some((p) => relPath === p || relPath.startsWith(p + '/'));
+  return EXCLUDED_ROOTS.some((p) => relPath === p || relPath.startsWith(`${p}/`));
 }
 
 function walkDir(dir: string, relPath: string, violations: Violation[]): void {

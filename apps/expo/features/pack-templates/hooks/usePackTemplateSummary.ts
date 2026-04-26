@@ -30,8 +30,7 @@ export function usePackTemplateSummary(
     for (const item of Object.values(items)) {
       if (item.packTemplateId !== templateId || item.deleted) continue;
       itemCount++;
-      const itemWeightInGrams =
-        convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
+      const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
       totalWeightGrams += itemWeightInGrams;
       if (!item.consumable && !item.worn) {
         baseWeightGrams += itemWeightInGrams;
@@ -73,8 +72,7 @@ export function usePackTemplateSummaries(
       const bucket = grams[item.packTemplateId];
       if (!bucket) continue;
       bucket.count++;
-      const itemWeightInGrams =
-        convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
+      const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
       bucket.total += itemWeightInGrams;
       if (!item.consumable && !item.worn) {
         bucket.base += itemWeightInGrams;

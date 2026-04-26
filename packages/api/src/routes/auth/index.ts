@@ -48,7 +48,7 @@ const { passwordHash: _pw, ...userWithoutPassword } = getTableColumns(users);
 export const authRoutes = new Elysia({ prefix: '/auth' })
   .use(authPlugin)
 
-  // Login
+  // public-route: credentials are the auth mechanism
   .post(
     '/login',
     async ({ body }) => {
@@ -94,7 +94,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Register
+  // public-route: pre-authentication account creation
   .post(
     '/register',
     async ({ body }) => {
@@ -155,7 +155,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Verify email
+  // public-route: OTP code is the credential; no prior session needed
   .post(
     '/verify-email',
     async ({ body }) => {
@@ -227,7 +227,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Resend verification
+  // public-route: pre-authentication email flow
   .post(
     '/resend-verification',
     async ({ body }) => {
@@ -270,7 +270,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Forgot password
+  // public-route: pre-authentication email flow
   .post(
     '/forgot-password',
     async ({ body }) => {
@@ -312,7 +312,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Reset password
+  // public-route: OTP code is the credential; no prior session needed
   .post(
     '/reset-password',
     async ({ body }) => {
@@ -364,7 +364,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Refresh token
+  // public-route: refresh token is the credential
   .post(
     '/refresh',
     async ({ body }) => {
@@ -421,7 +421,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Logout
+  // public-route: refresh token is the credential; no JWT required
   .post(
     '/logout',
     async ({ body }) => {
@@ -494,7 +494,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Apple sign-in
+  // public-route: Apple identity token is the credential
   .post(
     '/apple',
     async ({ body }) => {
@@ -563,7 +563,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
   )
 
-  // Google sign-in
+  // public-route: Google ID token is the credential
   .post(
     '/google',
     async ({ body }) => {
