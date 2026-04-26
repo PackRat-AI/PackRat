@@ -28,6 +28,7 @@ import { registerCatalogTools } from './tools/catalog';
 import { registerKnowledgeTools } from './tools/knowledge';
 import { registerPackTools } from './tools/packs';
 import { registerTrailConditionTools } from './tools/trail-conditions';
+import { registerTrailTools } from './tools/trails';
 import { registerTripTools } from './tools/trips';
 import { registerWeatherTools } from './tools/weather';
 
@@ -101,6 +102,7 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     registerWeatherTools(this);
     registerKnowledgeTools(this);
     registerTrailConditionTools(this);
+    registerTrailTools(this);
     registerResources(this);
     registerPrompts(this);
   }
