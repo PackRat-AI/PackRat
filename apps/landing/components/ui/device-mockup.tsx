@@ -73,9 +73,7 @@ export default function DeviceMockup({
         </div>
 
         {/* Animated screen glare */}
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 -translate-x-1/2 rotate-[15deg] transition-all duration-700 group-hover:opacity-40 group-hover:translate-x-1/2"
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 -translate-x-1/2 rotate-[15deg] transition-all duration-700 group-hover:opacity-40 group-hover:translate-x-1/2" />
       </div>
     </div>
   );

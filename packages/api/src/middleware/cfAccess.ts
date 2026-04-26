@@ -20,6 +20,8 @@ function getJwks(teamDomain: string): ReturnType<typeof createRemoteJWKSet> {
   return moduleJwks;
 }
 
+type CFAccessVerifyOptions = { teamDomain: string; aud: string };
+
 /**
  * Extracts and verifies the CF-Access-JWT-Assertion header from the request
  * against the team's public JWKS. Validates both issuer and audience.
@@ -32,8 +34,7 @@ function getJwks(teamDomain: string): ReturnType<typeof createRemoteJWKSet> {
  */
 export async function verifyCFAccessRequest(
   request: Request,
-  teamDomain: string,
-  aud: string,
+  { teamDomain, aud }: CFAccessVerifyOptions,
 ): Promise<CFAccessIdentity | null> {
   const token = request.headers.get('cf-access-jwt-assertion');
   if (!token) return null;

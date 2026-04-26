@@ -14,10 +14,7 @@ export default function LandingHero() {
           {/* Text column */}
           <div className="space-y-6 max-w-2xl mx-auto lg:mx-0 text-center lg:text-left">
             {/* Badge */}
-            <div
-              className="animate-fade-up"
-              style={{ animationDelay: '0.2s' }}
-            >
+            <div className="animate-fade-up" style={{ animationDelay: '0.2s' }}>
               <div className="apple-badge mx-auto lg:mx-0 w-fit">
                 <span className="mr-1.5 h-2 w-2 rounded-full bg-apple-blue animate-pulse inline-block" />
                 {siteConfig.hero.badge}

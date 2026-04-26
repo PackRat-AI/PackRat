@@ -32,7 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => {
       canceled = true;
     };
-  }, []); // router is stable in App Router
+  }, [router.replace]);
 
   if (!ready) return null;
   return <>{children}</>;
