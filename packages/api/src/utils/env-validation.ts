@@ -20,6 +20,10 @@ export const apiEnvSchema = z.object({
   PACKRAT_API_KEY: z.string(),
   REFRESH_TOKEN_PEPPER: z.string().min(32).optional(),
 
+  // Cloudflare Zero Trust / Access (optional — enables CF Access JWT verification for admin routes)
+  CF_ACCESS_TEAM_DOMAIN: z.string().optional(), // e.g. "packrat.cloudflareaccess.com"
+  CF_ACCESS_AUD: z.string().optional(), // CF Access policy Application Audience tag
+
   // Email Configuration
   EMAIL_PROVIDER: z.enum(['resend', 'sendgrid', 'ses']),
   RESEND_API_KEY: z.string(),
@@ -63,6 +67,8 @@ export const apiEnvSchema = z.object({
   EMBEDDINGS_QUEUE: z.unknown(),
   // App container Durable Object binding (APP_CONTAINER)
   APP_CONTAINER: z.unknown(),
+  // Rate limiting binding (optional — not present in local dev/test)
+  TOKEN_RATE_LIMITER: z.unknown().optional(),
 });
 
 // Relaxed schema for test environments
@@ -97,6 +103,7 @@ export type ValidatedEnv = Omit<
   | 'LOGS_QUEUE'
   | 'EMBEDDINGS_QUEUE'
   | 'APP_CONTAINER'
+  | 'TOKEN_RATE_LIMITER'
 > & {
   CF_VERSION_METADATA: WorkerVersionMetadata;
   AI: Ai;
@@ -107,6 +114,7 @@ export type ValidatedEnv = Omit<
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
+  TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
 };
 
 // Cache for validated envs keyed by the raw env reference.
@@ -144,6 +152,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     APP_CONTAINER: (rawEnv.APP_CONTAINER ?? validated.data.APP_CONTAINER) as DurableObjectNamespace<
       Container<unknown>
     >,
+    TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined,
   } as ValidatedEnv;
 }
 
