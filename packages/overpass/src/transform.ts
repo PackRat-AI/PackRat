@@ -1,4 +1,4 @@
-import type { OverpassElement, OverpassNodeGeom } from './types';
+import type { OverpassElement, OverpassMember, OverpassNodeGeom } from './types';
 
 const OSM_ROUTE_TO_SPORT: Record<string, string> = {
   hiking: 'hiking',
@@ -53,15 +53,13 @@ export function toTrailSummary(element: OverpassElement): TrailSummary {
 
 export function toTrailGeometry(element: OverpassElement): GeoJsonGeometry | null {
   const ways = (element.members ?? []).filter(
-    (m) => m.type === 'way' && Array.isArray(m.geometry) && m.geometry.length > 0,
+    (m): m is OverpassMember & { geometry: OverpassNodeGeom[] } =>
+      m.type === 'way' && Array.isArray(m.geometry) && m.geometry.length > 0,
   );
 
   if (ways.length === 0) return null;
 
-  const lineStrings = ways.map((m) =>
-    // safe-cast: way elements always have geometry as OverpassNodeGeom[] per Overpass API contract
-    (m.geometry as OverpassNodeGeom[]).map((pt): [number, number] => [pt.lon, pt.lat]),
-  );
+  const lineStrings = ways.map((m) => m.geometry.map((pt): [number, number] => [pt.lon, pt.lat]));
 
   if (lineStrings.length === 1) {
     return { type: 'LineString', coordinates: lineStrings[0] };

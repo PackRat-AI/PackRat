@@ -1,4 +1,4 @@
-import { isObject } from '@packrat/guards';
+import { OverpassResponseSchema } from './schemas';
 import type { OverpassResponse } from './types';
 
 const DEFAULT_ENDPOINT = 'https://overpass-api.de/api/interpreter';
@@ -28,12 +28,11 @@ export async function queryOverpass(
   }
 
   const data = await response.json();
+  const parsed = OverpassResponseSchema.safeParse(data);
 
-  // safe-cast: isObject + Array.isArray check above validates the shape before cast
-  if (!isObject(data) || !Array.isArray((data as OverpassResponse).elements)) {
-    throw new Error('Overpass response is not valid JSON');
+  if (!parsed.success) {
+    throw new Error('Overpass response did not match expected schema');
   }
 
-  // safe-cast: structure validated by the isObject + Array.isArray guard above
-  return data as OverpassResponse;
+  return parsed.data;
 }

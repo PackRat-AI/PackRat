@@ -489,6 +489,10 @@
     "packages/overpass": {
       "name": "@packrat/overpass",
       "version": "0.1.0",
+      "dependencies": {
+        "@packrat/guards": "workspace:*",
+        "zod": "catalog:",
+      },
       "devDependencies": {
         "typescript": "catalog:",
         "vitest": "~3.1.4",
