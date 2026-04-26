@@ -80,10 +80,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
 
       try {
         const response = await queryOverpass(ql);
-        if (response.elements.length === 0) {
+        const [element] = response.elements;
+        if (element === undefined) {
           return status(404, { error: `Trail ${osmId} not found` });
         }
-        return toTrailSummary(response.elements[0]);
+        return toTrailSummary(element);
       } catch (err) {
         if (isOverpassTimeout(err)) {
           return status(504, { error: 'Overpass query timed out' });
@@ -115,10 +116,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
 
       try {
         const response = await queryOverpass(ql);
-        if (response.elements.length === 0) {
+        const [element] = response.elements;
+        if (element === undefined) {
           return status(404, { error: `Trail ${osmId} not found` });
         }
-        return toTrailDetail(response.elements[0]);
+        return toTrailDetail(element);
       } catch (err) {
         if (isOverpassTimeout(err)) {
           return status(504, { error: 'Overpass query timed out' });

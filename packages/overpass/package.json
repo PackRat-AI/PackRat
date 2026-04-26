@@ -18,7 +18,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@packrat/guards": "workspace:*"
+    "@packrat/guards": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:",

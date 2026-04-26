@@ -1,5 +1,8 @@
 import type { OsmSport } from './types';
 
+const RE_BACKSLASH = /\\/g;
+const RE_DOUBLE_QUOTE = /"/g;
+
 const OSM_SPORT_MAP: Record<OsmSport, string> = {
   hiking: 'hiking',
   cycling: 'bicycle',
@@ -20,7 +23,7 @@ export class TrailQueryBuilder {
   }
 
   name(q: string): this {
-    const escaped = q.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const escaped = q.replace(RE_BACKSLASH, '\\\\').replace(RE_DOUBLE_QUOTE, '\\"');
     this._filters.push(`["name"~"${escaped}",i]`);
     return this;
   }
