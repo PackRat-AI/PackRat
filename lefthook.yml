@@ -6,3 +6,12 @@ pre-commit:
     lint:
       run: bun check {staged_files}
       fail_text: "Linting failed! \nRun `bun lint` to fix. \nCommit with `--no-verify` to bypass check."
+
+pre-push:
+  skip:
+    - run: test "${CI:-false}" = "true"
+    - run: test "${GITHUB_ACTIONS:-false}" = "true"
+  commands:
+    custom-checks:
+      run: bun scripts/check-all.ts
+      fail_text: "Custom checks failed! \nRun `bun check:all` to see details."

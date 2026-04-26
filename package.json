@@ -11,6 +11,7 @@
     "api": "bun run --cwd packages/api dev",
     "bump": "bun .github/scripts/bump.ts",
     "check": "biome check --no-errors-on-unmatched",
+    "check:all": "bun scripts/check-all.ts",
     "check:casts": "bun run --cwd packages/checks check:casts",
     "check:casts:strict": "bun run --cwd packages/checks check:casts:strict",
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
