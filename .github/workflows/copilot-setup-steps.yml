@@ -49,7 +49,7 @@ jobs:
 
       # Pin Node to the exact major required by package.json engines (>=24).
       - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
 
