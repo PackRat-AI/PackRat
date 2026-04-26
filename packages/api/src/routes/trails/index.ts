@@ -1,3 +1,4 @@
+import { authPlugin } from '@packrat/api/middleware/auth';
 import { queryOverpass, TrailQueryBuilder, toTrailDetail, toTrailSummary } from '@packrat/overpass';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -10,6 +11,7 @@ function isOverpassTimeout(err: unknown): boolean {
 }
 
 export const trailsRoutes = new Elysia({ prefix: '/trails' })
+  .use(authPlugin)
   .get(
     '/search',
     async ({ query }) => {
@@ -55,12 +57,14 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         limit: z.coerce.number().int().min(1).max(200).optional().default(50),
         offset: z.coerce.number().int().min(0).optional().default(0),
       }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Search trails via Overpass',
         description:
           'Search for OSM hiking/cycling/skiing routes by name and/or location. ' +
           'Requires q (text) or lat+lon (spatial), or both.',
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -90,10 +94,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ osmId: z.string() }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Get trail metadata',
         description: 'Fetch a single OSM route relation by ID (no geometry).',
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -123,11 +129,13 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ osmId: z.string() }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Get trail geometry',
         description:
           'Fetch a single OSM route relation by ID including GeoJSON geometry assembled from member ways.',
+        security: [{ bearerAuth: [] }],
       },
     },
   );

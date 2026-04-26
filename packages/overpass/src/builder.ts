@@ -20,7 +20,7 @@ export class TrailQueryBuilder {
   }
 
   name(q: string): this {
-    const escaped = q.replace(/"/g, '\\"');
+    const escaped = q.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     this._filters.push(`["name"~"${escaped}",i]`);
     return this;
   }

@@ -13,7 +13,7 @@ const baseElement: OverpassElement = {
     difficulty: 'demanding',
     description: 'Long-distance hiking trail',
   },
-  bounds: { minlat: 32.5, minlon: -117.1, maxlat: 49.0, maxlon: -120.8 },
+  bounds: { minlat: 32.5, minlon: -120.8, maxlat: 49.0, maxlon: -117.1 },
   members: [],
 };
 
@@ -28,7 +28,7 @@ describe('toTrailSummary()', () => {
       distance: '4265 km',
       difficulty: 'demanding',
       description: 'Long-distance hiking trail',
-      bbox: [-117.1, 32.5, -120.8, 49.0],
+      bbox: [-120.8, 32.5, -117.1, 49.0],
     });
   });
 
@@ -62,7 +62,7 @@ describe('toTrailSummary()', () => {
   it('bbox is [minlon, minlat, maxlon, maxlat]', () => {
     const summary = toTrailSummary(baseElement);
     // GeoJSON bbox convention: [west, south, east, north]
-    expect(summary.bbox).toEqual([-117.1, 32.5, -120.8, 49.0]);
+    expect(summary.bbox).toEqual([-120.8, 32.5, -117.1, 49.0]);
   });
 });
 

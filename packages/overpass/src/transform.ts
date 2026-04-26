@@ -1,5 +1,13 @@
 import type { OverpassElement, OverpassNodeGeom } from './types';
 
+const OSM_ROUTE_TO_SPORT: Record<string, string> = {
+  hiking: 'hiking',
+  bicycle: 'cycling',
+  ski: 'skiing',
+  running: 'running',
+  horse_riding: 'horse_riding',
+};
+
 export interface TrailSummary {
   osmId: string;
   name: string | null;
@@ -34,7 +42,7 @@ export function toTrailSummary(element: OverpassElement): TrailSummary {
   return {
     osmId: String(element.id),
     name: tags.name ?? null,
-    sport: tags.route ?? null,
+    sport: tags.route ? (OSM_ROUTE_TO_SPORT[tags.route] ?? tags.route) : null,
     network: tags.network ?? null,
     distance: tags.distance ?? tags.length ?? null,
     difficulty: tags.difficulty ?? tags.sac_scale ?? tags['mtb:scale'] ?? null,
