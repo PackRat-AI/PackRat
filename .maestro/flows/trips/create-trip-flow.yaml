@@ -17,12 +17,12 @@ appId: ${APP_ID}
 
 # Fill in the Trip Name field
 - tapOn:
-    text: "Trip Name"
+    id: "trip-name-input"
 - inputText: ${TRIP_NAME}
 
 # Fill in the Description field
 - tapOn:
-    text: "Description"
+    id: "trip-description-input"
 - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
@@ -42,7 +42,8 @@ appId: ${APP_ID}
     when:
       platform: Android
     commands:
-      - tapOn: "${START_DAY} ${START_MONTH} ${START_YEAR}"
+      # Android calendar shows bare day numbers; tap the day digit directly
+      - tapOn: "${START_DAY}"
       - tapOn: "OK"
 
 - runFlow:
@@ -69,7 +70,7 @@ appId: ${APP_ID}
     when:
       platform: Android
     commands:
-      - tapOn: "${END_DAY} ${END_MONTH} ${END_YEAR}"
+      - tapOn: "${END_DAY}"
       - tapOn: "OK"
 
 - runFlow:
@@ -98,12 +99,17 @@ appId: ${APP_ID}
 # for the header create button, then verify the new trip appears
 - assertVisible:
     id: "create-trip-button"
+
+# Wait for the list to refresh, then scroll to find the new trip.
+# Both platforms accumulate old trips from previous runs, so the new trip
+# may appear below the fold. speed:40 avoids scrolling past it.
+- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       text: ${TRIP_NAME}
     direction: DOWN
-    timeout: 60000
-    speed: 99
+    timeout: 30000
+    speed: 40
 - assertVisible:
     text: ${TRIP_NAME}
 

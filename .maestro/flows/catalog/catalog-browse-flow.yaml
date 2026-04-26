@@ -8,17 +8,21 @@ appId: ${APP_ID}
     text: "Catalog"
 - waitForAnimationToEnd
 
-# Assert catalog loaded with items
+# Assert catalog header loaded
 - assertVisible:
     text: "Catalog"
 
-# Scroll to verify items render
-- scrollUntilVisible:
-    element:
-      text: ".*\\$.*"
-    direction: DOWN
+# Wait for items to load (the item count text confirms data arrived)
+- extendedWaitUntil:
+    visible:
+      text: ".*items.*"
+    timeout: 15000
 
-# Go back to a stable state
+# Assert category filters render
+- assertVisible:
+    text: "All"
+
+# Return to stable state
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd

@@ -55,7 +55,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
         
       - name: Run API unit tests
         run: bun run --cwd packages/api test:unit:coverage
@@ -85,7 +85,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
         
       - name: Run Expo unit tests
         run: bun run --cwd apps/expo test:coverage

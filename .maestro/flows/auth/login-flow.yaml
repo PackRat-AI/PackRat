@@ -3,8 +3,25 @@ appId: ${APP_ID}
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 
-# Wait for the auth entry screen to appear
-- waitForAnimationToEnd
+# Dismiss Android ANR dialog that can appear during emulator boot before first interaction
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "isn't responding"
+          commands:
+            - tapOn:
+                text: "Wait"
+            - waitForAnimationToEnd
+
+# Wait for the auth entry screen — ensures sign-in button is rendered before tapping
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-email-button"
+    timeout: 15000
 
 # Tap the "Sign In" (email) button to navigate to the email login screen
 - tapOn:
@@ -13,15 +30,40 @@ appId: ${APP_ID}
 # Wait for login form to appear
 - waitForAnimationToEnd
 
-# Fill in the email field
-- tapOn:
-    id: "email-input"
-- inputText: "${TEST_EMAIL}"
+# Fill in the email field.
+# iOS: NativeWindUI's TextField inside accessible={false} FormSection doesn't expose
+#      testID to Maestro's XCTest snapshot, so we match the placeholder text instead.
+# Android: testID maps reliably to resource-id.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Email"
+      - inputText: "${TEST_EMAIL}"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "email-input"
+      - inputText: "${TEST_EMAIL}"
 
 # Fill in the password field
-- tapOn:
-    id: "password-input"
-- inputText: ${TEST_PASSWORD}
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Password"
+      - inputText: ${TEST_PASSWORD}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "password-input"
+      - inputText: ${TEST_PASSWORD}
 
 # Dismiss the keyboard before submitting
 - hideKeyboard
@@ -46,14 +88,19 @@ appId: ${APP_ID}
           optional: true
           label: "Dismiss iOS Save Password prompt"
 
+# Wait for the main tab bar to be fully settled before tapping
+- waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
       text: "Packs"
-    timeout: 15000
+    timeout: 20000
 
 # Assert we are now logged in by navigating to Packs and verifying a stable testID
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
-- assertVisible:
-    id: "create-pack-button"
+# Use extendedWaitUntil instead of assertVisible to tolerate post-login navigation settling
+- extendedWaitUntil:
+    visible:
+      id: "create-pack-button"
+    timeout: 15000

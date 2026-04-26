@@ -72,7 +72,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -85,7 +84,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -109,7 +108,15 @@ jobs:
           restore-keys: |
             cocoapods-${{ runner.os }}-
 
+      - name: Cache iOS simulator build
+        id: ios-build-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/expo/build/PackRat-sim.tar.gz
+          key: ios-sim-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+
       - name: Build iOS app for simulator
+        if: steps.ios-build-cache.outputs.cache-hit != 'true'
         run: |
           cd apps/expo
           mkdir -p build
@@ -324,7 +331,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -337,7 +343,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -377,7 +383,15 @@ jobs:
       - name: Add Maestro to PATH
         run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
+      - name: Cache Android APK build
+        id: android-build-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/expo/build/PackRat.apk
+          key: android-apk-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+
       - name: Build Android APK for emulator
+        if: steps.android-build-cache.outputs.cache-hit != 'true'
         run: |
           cd apps/expo
           mkdir -p build
@@ -446,6 +460,14 @@ jobs:
             adb shell pm disable-user com.android.launcher3 || true
             adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
+            # Give System UI time to fully initialize before launching tests.
+            # The emulator's System UI can raise an ANR dialog ("System UI isn't
+            # responding") in the seconds after boot. Without this wait, Maestro
+            # starts while that dialog is still blocking the screen.
+            sleep 10
+            # Dismiss any lingering ANR / crash dialogs left over from emulator boot
+            adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
+            adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
             bash .github/scripts/e2e.sh android --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}

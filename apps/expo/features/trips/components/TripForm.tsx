@@ -11,7 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -162,20 +162,31 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         contentContainerStyle={contentContainerStyle}
       >
         <Form>
-          <FormSection ios={{ title: t('trips.tripDetails') }}>
+          <FormSection
+            ios={{ title: t('trips.tripDetails') }}
+            accessible={Platform.OS === 'ios' ? false : undefined}
+          >
             {/* Trip Name */}
             <form.Field name="name">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
+                    containerTestID={TestIds.TripNameInput}
+                    containerAccessibilityLabel={t('trips.tripName')}
                     placeholder={t('trips.tripName')}
+                    label={Platform.OS === 'ios' ? undefined : t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="pl-2 justify-center">
-                        <Icon name="map" size={16} color={colors.grey3} />
+                        <Icon
+                          name="map"
+                          size={16}
+                          color={colors.grey3}
+                          ios={{ accessible: true, accessibilityLabel: '' }}
+                        />
                       </View>
                     }
                   />
@@ -186,9 +197,12 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             {/* Description */}
             <form.Field name="description">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
+                    containerTestID={TestIds.TripDescriptionInput}
+                    containerAccessibilityLabel={t('trips.description')}
                     placeholder={t('trips.description')}
+                    label={Platform.OS === 'ios' ? undefined : t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}

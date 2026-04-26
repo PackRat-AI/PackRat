@@ -8,15 +8,23 @@ appId: ${APP_ID}
     text: "Catalog"
 - waitForAnimationToEnd
 
-# Scroll to find an item and tap it
+# Wait for items to load
+- extendedWaitUntil:
+    visible:
+      text: ".*items.*"
+    timeout: 15000
+
+# CatalogItemCard renders weight as a plain <Text> (e.g. "1.5 kg", "300 g").
+# Tapping the weight text fires the card's TouchableWithoutFeedback onPress,
+# navigating to the item detail screen.
 - scrollUntilVisible:
     element:
-      text: ".*\\$.*"
+      text: ".*\\d+\\.?\\d* (kg|g|oz|lb|lbs)"
     direction: DOWN
+    timeout: 15000
 
-# Tap the first visible priced item
 - tapOn:
-    text: ".*\\$.*"
+    text: ".*\\d+\\.?\\d* (kg|g|oz|lb|lbs)"
 - waitForAnimationToEnd
 
 # Assert item detail elements via testIDs

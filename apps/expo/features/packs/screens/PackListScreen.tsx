@@ -63,6 +63,7 @@ export function PackListScreen() {
   const router = useRouter();
   const userPacks = usePacks();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
+
   const [activeFilter, setActiveFilter] = useAtom(activeFilterAtom);
   const { isAuthenticated } = useAuth();
   const { view } = useLocalSearchParams();

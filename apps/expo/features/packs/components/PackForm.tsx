@@ -10,6 +10,7 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
 import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
@@ -114,15 +115,20 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       onChange: packFormSchema,
     },
     onSubmit: async ({ value }) => {
-      if (isCreatingFromTemplate) {
-        createPackFromTemplate(params.templateId as string, value);
-      } else if (isEditingExistingPack) {
-        updatePack({ ...pack, ...value });
-      } else {
-        createPack({ ...value, category: value.category });
+      try {
+        if (isCreatingFromTemplate) {
+          await createPackFromTemplate(params.templateId as string, value);
+        } else if (isEditingExistingPack) {
+          await updatePack({ ...pack, ...value });
+          Burnt.toast({ title: t('packs.packUpdatedSuccess'), preset: 'done' });
+        } else {
+          await createPack({ ...value, category: value.category });
+          Burnt.toast({ title: t('packs.packCreatedSuccess'), preset: 'done' });
+        }
+        router.back();
+      } catch (_e) {
+        Burnt.toast({ title: t('errors.tryAgain'), preset: 'error' });
       }
-
-      router.back();
     },
   });
 
@@ -144,19 +150,31 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
       <ScrollView contentContainerClassName="p-8">
         <Form>
-          <FormSection ios={{ title: t('packs.packDetails') }} footnote={t('packs.enterBasicInfo')}>
+          <FormSection
+            ios={{ title: t('packs.packDetails') }}
+            footnote={t('packs.enterBasicInfo')}
+            accessible={Platform.OS === 'ios' ? false : undefined}
+          >
             <form.Field name="name">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
+                    containerTestID={TestIds.PackNameInput}
+                    containerAccessibilityLabel={t('packs.packName')}
                     placeholder={t('packs.packName')}
+                    label={Platform.OS === 'ios' ? undefined : t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
                     errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="folder" size={16} color={colors.grey3} />
+                        <Icon
+                          name="folder"
+                          size={16}
+                          color={colors.grey3}
+                          ios={{ accessible: true, accessibilityLabel: '' }}
+                        />
                       </View>
                     }
                   />
@@ -166,9 +184,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
             <form.Field name="description">
               {(field) => (
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
+                    containerTestID={TestIds.PackDescriptionInput}
+                    containerAccessibilityLabel={t('packs.description')}
                     placeholder={t('packs.description')}
+                    label={Platform.OS === 'ios' ? undefined : t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -183,7 +204,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     textAlignVertical="top"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="newspaper" size={16} color={colors.grey3} />
+                        <Icon
+                          name="newspaper"
+                          size={16}
+                          color={colors.grey3}
+                          ios={{ accessible: true, accessibilityLabel: '' }}
+                        />
                       </View>
                     }
                   />
