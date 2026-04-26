@@ -6,13 +6,14 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Storage from 'expo-sqlite/kv-store';
-import type { Pack, PackItem } from '../types';
+import { PackItemSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import type { PackItem } from '../types';
 import { uploadImage } from '../utils';
 
 const listAllPackItems = async () => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packitems: ${error.value}`);
-  return ((data as unknown as Pack[]) ?? []).flatMap((pack) => pack.items) as object[];
+  return PackWithWeightsSchema.array().parse(data).flatMap((pack) => pack.items ?? []);
 };
 
 const createPackItem = async ({ packId, ...data }: PackItem) => {
@@ -23,7 +24,7 @@ const createPackItem = async ({ packId, ...data }: PackItem) => {
     .packs({ packId: String(packId) })
     .items.post(data);
   if (error) throw new Error(`Failed to create pack item: ${error.value}`);
-  return result as object | null;
+  return PackItemSchema.parse(result);
 };
 
 const updatePackItem = async ({ id, ...data }: PackItem) => {
@@ -32,7 +33,7 @@ const updatePackItem = async ({ id, ...data }: PackItem) => {
   }
   const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
   if (error) throw new Error(`Failed to update pack item: ${error.value}`);
-  return result as object | null;
+  return PackItemSchema.parse(result);
 };
 
 export const packItemsStore = observable<Record<string, PackItem>>({});
