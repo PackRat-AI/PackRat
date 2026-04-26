@@ -1,6 +1,6 @@
 'use client';
 
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, isNumber, isObject, isString } from '@packrat/guards';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
 import { cn } from '../lib/utils';
@@ -156,7 +156,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
       const key = `${labelKey ?? item?.dataKey ?? item?.name ?? 'value'}`;
       const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
       const value =
-        !labelKey && typeof label === 'string'
+        !labelKey && isString(label)
           ? (config[label as keyof typeof config]?.label ?? label)
           : itemConfig?.label;
 
@@ -242,7 +242,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                           {itemConfig?.label ?? item.name}
                         </span>
                       </div>
-                      {typeof item.value === 'number' && (
+                      {isNumber(item.value) && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
                           {item.value.toLocaleString()}
                         </span>
@@ -326,14 +326,12 @@ ChartLegendContent.displayName = 'ChartLegendContent';
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(config: ChartConfig, opts: { payload: unknown; key: string }) {
   const { payload, key } = opts;
-  if (typeof payload !== 'object' || payload === null) {
+  if (!isObject(payload)) {
     return undefined;
   }
 
   const payloadPayload =
-    'payload' in payload && typeof payload.payload === 'object' && payload.payload !== null
-      ? payload.payload
-      : undefined;
+    'payload' in payload && isObject(payload.payload) ? payload.payload : undefined;
 
   let configLabelKey: string = key;
 

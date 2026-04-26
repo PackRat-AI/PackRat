@@ -3,6 +3,7 @@
  */
 
 import { assertDefined, CatalogCacheManager, env, LocalCacheManager } from '@packrat/analytics';
+import { isNumber } from '@packrat/guards';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import consola from 'consola';
@@ -84,7 +85,7 @@ export function printSummary(data: Record<string, unknown>, title?: string): voi
 
 function formatValue(val: unknown): string {
   if (val === null || val === undefined) return chalk.dim('—');
-  if (typeof val === 'number') {
+  if (isNumber(val)) {
     return Number.isInteger(val) ? val.toLocaleString() : val.toFixed(2);
   }
   const str = String(val);
