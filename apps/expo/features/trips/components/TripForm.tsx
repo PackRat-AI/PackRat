@@ -1,3 +1,4 @@
+import { when } from '@legendapp/state';
 import { assertDefined } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,6 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
+import { tripsSyncState } from '../store/trips';
 import type { Trip } from '../types';
 
 const tripFormSchema = z
@@ -125,6 +127,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             preset: 'done',
           });
         } else {
+          // Guard: initial obs$.set() (mode=undefined, no lastSync) would wipe the local create.
+          await when(tripsSyncState.isLoaded);
           await createTrip(submitData);
           Burnt.toast({
             title: t('trips.tripCreatedSuccess'),
