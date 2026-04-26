@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { StatsCards } from 'admin-app/components/stats-cards';
 import { getCatalogItems, getPacks, getStats, getUsers } from 'admin-app/lib/api';
 import { formatDistanceToNow } from 'admin-app/lib/date';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { Backpack, Package, Users } from 'lucide-react';
 
 function OverviewSkeleton() {
@@ -47,22 +48,22 @@ function OverviewSkeleton() {
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['admin', 'stats'],
+    queryKey: queryKeys.admin.stats,
     queryFn: getStats,
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ['admin', 'users', 5],
+    queryKey: queryKeys.admin.users(5),
     queryFn: () => getUsers({ limit: 5 }),
   });
 
   const { data: packs = [], isLoading: packsLoading } = useQuery({
-    queryKey: ['admin', 'packs', 5],
+    queryKey: queryKeys.admin.packs(5),
     queryFn: () => getPacks({ limit: 5 }),
   });
 
   const { data: catalog = [], isLoading: catalogLoading } = useQuery({
-    queryKey: ['admin', 'catalog', 5],
+    queryKey: queryKeys.admin.catalog(5),
     queryFn: () => getCatalogItems({ limit: 5 }),
   });
 

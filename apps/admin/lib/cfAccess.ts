@@ -5,6 +5,9 @@
 // /cdn-cgi/access/get-identity returns the signed JWT assertion we can forward
 // to the API for cryptographic verification.
 
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from 'admin-app/lib/queryKeys';
+
 export type CFAccessIdentityResponse = {
   email: string;
   name: string;
@@ -55,4 +58,23 @@ export async function getCFAccessJWT(): Promise<string | null> {
 /** True when the app is running behind CF Access (identity endpoint responds). */
 export async function isBehindCFAccess(): Promise<boolean> {
   return (await getCFAccessIdentity()) !== null;
+}
+
+/**
+ * TanStack Query hook for the CF Access identity.
+ * - staleTime: Infinity — identity is valid for the page lifetime, no re-fetch needed.
+ * - gcTime: Infinity — don't garbage-collect mid-session when AuthGuard unmounts during navigation.
+ * - retry: false — null means "not behind CF Access" (local dev), not a transient error.
+ *
+ * The underlying Promise memoization in getCFAccessIdentity() still applies — both
+ * layers complement each other during the window before TanStack's cache is populated.
+ */
+export function useCFAccessIdentity() {
+  return useQuery({
+    queryKey: queryKeys.cfAccessIdentity,
+    queryFn: getCFAccessIdentity,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+  });
 }
