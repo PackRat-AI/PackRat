@@ -255,3 +255,29 @@ export function getCatalogEtl(limit = 20): Promise<EtlResponse> {
 export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   return adminFetch('/analytics/catalog/embeddings');
 }
+
+// ─── OSM Trail Viewer ─────────────────────────────────────────────────────────
+
+async function trailsFetch<T>(path: string): Promise<T> {
+  const authHeaders = await buildAuthHeaders();
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
+  });
+  if (!res.ok) throw new Error(`Trails API error: ${res.status} ${res.statusText}`);
+  return res.json() as Promise<T>;
+}
+
+export interface TrailGeometry {
+  osmId: string;
+  name: string | null;
+  sport: string | null;
+  network: string | null;
+  distance: string | null;
+  difficulty: string | null;
+  description: string | null;
+  geometry: object | null;
+}
+
+export function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
+  return trailsFetch<TrailGeometry>(`/trails/${osmId}/geometry`);
+}
