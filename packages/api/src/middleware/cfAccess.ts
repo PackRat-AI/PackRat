@@ -29,6 +29,7 @@ function getJwks(teamDomain: string): ReturnType<typeof createRemoteJWKSet> {
  * teamDomain must be the full URL: "https://<team>.cloudflareaccess.com"
  * aud is the CF Access Application Audience tag.
  */
+// biome-ignore lint/complexity/useMaxParams: three semantically distinct required params
 export async function verifyCFAccessRequest(
   request: Request,
   teamDomain: string,
