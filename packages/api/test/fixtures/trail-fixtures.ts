@@ -4,11 +4,11 @@
 
 export interface HikingWayOpts {
   osmId: number;
-  name?: string;
-  surface?: string;
-  difficulty?: string;
-  access?: string;
-  foot?: string;
+  name?: string | null;
+  surface?: string | null;
+  difficulty?: string | null;
+  access?: string | null;
+  foot?: string | null;
   // WKT LineString — defaults to a short segment in the Sierra Nevada
   geometryWkt?: string;
 }
@@ -21,11 +21,11 @@ export interface OsmMember {
 
 export interface HikingRelationOpts {
   osmId: number;
-  name?: string;
-  network?: string;
-  distance?: string;
-  difficulty?: string;
-  description?: string;
+  name?: string | null;
+  network?: string | null;
+  distance?: string | null;
+  difficulty?: string | null;
+  description?: string | null;
   members?: OsmMember[];
   // WKT MultiLineString — omit to leave geometry NULL (triggers stitching path)
   geometryWkt?: string | null;

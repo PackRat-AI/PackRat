@@ -136,7 +136,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           LIMIT 50
         `);
 
-        return (result.rows as TrailSearchResult[]).map((row) => ({
+        return (result.rows as unknown as TrailSearchResult[]).map((row) => ({
           osmId: row.osm_id,
           name: row.name,
           network: row.network,
