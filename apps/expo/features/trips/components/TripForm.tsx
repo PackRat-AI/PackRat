@@ -1,3 +1,4 @@
+import { when } from '@legendapp/state';
 import { assertDefined } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,6 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
+import { tripsSyncState } from '../store/trips';
 import type { Trip } from '../types';
 
 const tripFormSchema = z
@@ -125,7 +127,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             preset: 'done',
           });
         } else {
-          await createTrip(submitData);
+          createTrip(submitData);
+          // Wait for initial sync to settle (so merge completes) before
+          // navigating back — bounded at 3 s to avoid blocking on network issues.
+          await Promise.race([
+            when(tripsSyncState.isLoaded),
+            new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+          ]);
           Burnt.toast({
             title: t('trips.tripCreatedSuccess'),
             preset: 'done',
