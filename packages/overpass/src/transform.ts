@@ -60,9 +60,10 @@ export function toTrailGeometry(element: OverpassElement): GeoJsonGeometry | nul
   if (ways.length === 0) return null;
 
   const lineStrings = ways.map((m) => m.geometry.map((pt): [number, number] => [pt.lon, pt.lat]));
+  const [first] = lineStrings;
 
-  if (lineStrings.length === 1) {
-    return { type: 'LineString', coordinates: lineStrings[0] };
+  if (lineStrings.length === 1 && first !== undefined) {
+    return { type: 'LineString', coordinates: first };
   }
 
   return { type: 'MultiLineString', coordinates: lineStrings };
