@@ -14,10 +14,12 @@ pre-push:
   commands:
     # Only gates on checks that are currently clean.
     # Add each check back here as its backlog is cleared.
-    # Remaining backlog (CI continue-on-error): no-raw-regex, no-raw-process-env, check-type-casts
+    # Remaining backlog (CI continue-on-error): check-type-casts
     clean-checks:
       run: >
         bun scripts/lint/no-raw-typeof.ts &&
+        bun scripts/lint/no-raw-regex.ts &&
+        bun packages/env/scripts/no-raw-process-env.ts &&
         bun scripts/lint/no-circular-deps.ts &&
         bun scripts/lint/no-duplicate-deps.ts &&
         bun scripts/lint/no-duplicate-guards.ts &&

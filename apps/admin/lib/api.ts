@@ -8,11 +8,9 @@
 
 import { clearToken, getAuthHeader } from './auth';
 import { getCFAccessJWT } from './cfAccess';
+import { adminEnv } from './env';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
+const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 async function buildAuthHeaders(): Promise<Record<string, string>> {
   const cfJwt = await getCFAccessJWT();

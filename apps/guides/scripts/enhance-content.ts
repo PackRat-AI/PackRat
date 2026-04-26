@@ -4,6 +4,9 @@ import matter from 'gray-matter';
 import path from 'path';
 import { type ContentEnhancementOptions, enhanceGuideContent } from '../lib/enhanceGuideContent';
 
+// ── Script regex constants ──
+const TIMESTAMP_UNSAFE_CHARS = /[:.]/g;
+
 // Configuration
 const CONTENT_DIR = path.join(process.cwd(), 'content/posts');
 const BACKUP_DIR = path.join(process.cwd(), 'content/backups');
@@ -41,7 +44,7 @@ function ensureBackupDir(): void {
  */
 function createBackup(filePath: string): string {
   const fileName = path.basename(filePath);
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const timestamp = new Date().toISOString().replace(TIMESTAMP_UNSAFE_CHARS, '-');
   const backupPath = path.join(BACKUP_DIR, `${timestamp}-${fileName}`);
 
   fs.copyFileSync(filePath, backupPath);
@@ -107,10 +110,8 @@ function getContentFiles(pattern?: string): string[] {
     .map((file) => path.join(CONTENT_DIR, file));
 
   if (pattern) {
-    // Escape special regex characters to prevent regex injection
-    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escapedPattern, 'i');
-    return files.filter((file) => regex.test(path.basename(file)));
+    const lowerPattern = pattern.toLowerCase();
+    return files.filter((file) => path.basename(file).toLowerCase().includes(lowerPattern));
   }
 
   return files;
