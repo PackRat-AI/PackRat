@@ -1,4 +1,4 @@
-import { SignJWT } from 'jose';
+import { type KeyLike, SignJWT } from 'jose';
 import { expect } from 'vitest';
 import { app } from '../../src/index';
 
@@ -167,3 +167,49 @@ export const apiWithApiKey = (path: string, init?: RequestInit) => {
     }),
   );
 };
+
+// ---------------------------------------------------------------------------
+// CF Access JWT builder — used by cfAccess tests and adminAuthGuard tests.
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a signed RS256 JWT that mimics a Cloudflare Access token.
+ *
+ * @param email      - Value for the `email` claim (default: 'admin@example.com')
+ * @param teamDomain - Issuer / team domain URL
+ * @param aud        - Audience (CF Access Application Audience tag)
+ * @param privateKey - RS256 private key to sign with
+ * @param overrides  - Optional claim overrides applied after defaults
+ */
+export async function makeCFJwt({
+  email = 'admin@example.com',
+  teamDomain,
+  aud,
+  privateKey,
+  overrides = {},
+}: {
+  email?: string;
+  teamDomain: string;
+  aud: string;
+  privateKey: KeyLike;
+  overrides?: Partial<{ iss: string; aud: string; email: string; exp: number }>;
+}): Promise<string> {
+  const payload: Record<string, unknown> = {
+    email,
+    ...('email' in overrides ? { email: overrides.email } : {}),
+  };
+
+  const jwt = new SignJWT(payload)
+    .setProtectedHeader({ alg: 'RS256' })
+    .setIssuedAt()
+    .setIssuer(overrides.iss ?? teamDomain)
+    .setAudience(overrides.aud ?? aud);
+
+  if (overrides.exp !== undefined) {
+    jwt.setExpirationTime(overrides.exp);
+  } else {
+    jwt.setExpirationTime('1h');
+  }
+
+  return jwt.sign(privateKey);
+}
