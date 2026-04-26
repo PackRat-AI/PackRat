@@ -5,11 +5,18 @@
 // /cdn-cgi/access/get-identity returns the signed JWT assertion we can forward
 // to the API for cryptographic verification.
 
-export type CFAccessIdentityResponse = {
-  email: string;
-  name: string;
-  jwt: string;
-};
+import { fromZod } from '@packrat/guards';
+import { z } from 'zod';
+
+const CFAccessIdentityResponseSchema = z.object({
+  email: z.string(),
+  name: z.string().default(''),
+  jwt: z.string(),
+});
+
+export type CFAccessIdentityResponse = z.infer<typeof CFAccessIdentityResponseSchema>;
+
+const parseCFAccessIdentity = fromZod(CFAccessIdentityResponseSchema);
 
 // Cache the in-flight Promise — all concurrent callers share one network request.
 // Avoids thundering-herd on first render when multiple components call simultaneously.
@@ -17,22 +24,8 @@ let identityPromise: Promise<CFAccessIdentityResponse | null> | undefined;
 
 function fetchIdentity(): Promise<CFAccessIdentityResponse | null> {
   return fetch('/cdn-cgi/access/get-identity', { credentials: 'include' })
-    .then((res) => {
-      if (!res.ok) return null;
-      return res.json() as Promise<unknown>;
-    })
-    .then((data) => {
-      if (
-        typeof data !== 'object' ||
-        data === null ||
-        typeof (data as Record<string, unknown>).email !== 'string' ||
-        typeof (data as Record<string, unknown>).jwt !== 'string'
-      ) {
-        return null;
-      }
-      const d = data as { email: string; name?: string; jwt: string };
-      return { email: d.email, name: d.name ?? '', jwt: d.jwt };
-    })
+    .then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
+    .then((data) => parseCFAccessIdentity(data) ?? null)
     .catch(() => null);
 }
 

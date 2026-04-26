@@ -22,8 +22,11 @@ const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHi
   const endpoint = apiClient.packs({ packId: String(packWeightHistoryEntry.packId) })[
     'weight-history'
   ];
-  // biome-ignore lint/suspicious/noExplicitAny: store shapes diverge from Treaty's strict schema
-  const { data, error } = await endpoint.post(packWeightHistoryEntry as any);
+  const { data, error } = await endpoint.post({
+    id: packWeightHistoryEntry.id,
+    weight: packWeightHistoryEntry.weight,
+    localCreatedAt: packWeightHistoryEntry.localCreatedAt ?? new Date().toISOString(),
+  });
   if (error) throw new Error(`Failed to create packWeightHistoryEntry: ${error.value}`);
   return data as object | null;
 };
