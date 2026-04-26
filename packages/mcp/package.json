@@ -23,6 +23,6 @@
     "partyserver": "^0.4.1",
     "typescript": "catalog:",
     "vitest": "~3.1.4",
-    "wrangler": "^4.21.2"
+    "wrangler": "^4.59.1"
   }
 }

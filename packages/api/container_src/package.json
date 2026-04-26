@@ -6,7 +6,7 @@
     "@aws-sdk/client-s3": "^3.0.0",
     "@google/genai": "^1.46.0",
     "@tobyg74/tiktok-api-dl": "^1.0.0",
-    "hono": "^4.0.0",
+    "hono": "^4.12.4",
     "zod": "^3.22.4"
   }
 }

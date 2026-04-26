@@ -363,7 +363,7 @@
         "drizzle-zod": "^0.8.3",
         "google-auth-library": "^10.1.0",
         "gray-matter": "^4.0.3",
-        "hono": "^4.7.5",
+        "hono": "^4.12.4",
         "hono-openapi": "^0.4.6",
         "linkedom": "^0.18.11",
         "nodemailer": "^6.10.0",
@@ -387,7 +387,7 @@
         "drizzle-orm": "^0.45.2",
         "typed-htmx": "^0.3.1",
         "vitest": "~3.1.4",
-        "wrangler": "^4.21.2",
+        "wrangler": "^4.59.1",
       },
     },
     "packages/cli": {
@@ -434,7 +434,7 @@
         "partyserver": "^0.4.1",
         "typescript": "catalog:",
         "vitest": "~3.1.4",
-        "wrangler": "^4.21.2",
+        "wrangler": "^4.59.1",
       },
     },
     "packages/ui": {
