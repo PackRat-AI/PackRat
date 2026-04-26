@@ -17,10 +17,7 @@ export async function processValidItemsBatch({
 }): Promise<void> {
   const catalogService = new CatalogService(env, true);
 
-  // Consolidate items with identical SKUs before upserting to avoid conflicting duplicate upserts.
-  // items are Partial<NewCatalogItem> at the type level, but all required fields
-  // have been confirmed present by CatalogItemValidator before reaching here.
-  const mergedItems = mergeItemsBySku(items as NewCatalogItem[]);
+  const mergedItems = mergeItemsBySku(items as NewCatalogItem[]); // safe-cast: items are Partial<NewCatalogItem> at the type level, but all required fields have been confirmed present by CatalogItemValidator before reaching here
 
   // Prepare texts for batch embedding
   const embeddingTexts = mergedItems.map((item) => getEmbeddingText(item));

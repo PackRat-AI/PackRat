@@ -242,11 +242,11 @@ export class PackRatApiClient {
     if (!response.ok) {
       const errorMessage =
         isObject(body) && 'error' in body
-          ? String((body as Record<string, unknown>).error)
+          ? String((body as Record<string, unknown>).error) // safe-cast: isObject() guard confirms body is a non-null object; error field access is safe
           : `HTTP ${response.status}`;
       throw new ApiError(errorMessage, { status: response.status, body });
     }
-    return body as T;
+    return body as T; // safe-cast: caller-provided generic boundary — T is verified at each typed call-site
   }
 }
 
