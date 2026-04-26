@@ -5,7 +5,7 @@
 // Runs the following checks in parallel and prints a unified summary table:
 //   - scripts/lint/no-raw-regex.ts
 //   - scripts/lint/no-raw-typeof.ts
-//   - scripts/lint/no-raw-process-env.ts
+//   - packages/env/scripts/no-raw-process-env.ts
 //   - scripts/lint/no-circular-deps.ts
 //   - scripts/lint/no-duplicate-deps.ts  (skipped if file doesn't exist)
 //   - scripts/lint/no-duplicate-guards.ts

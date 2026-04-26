@@ -22,7 +22,7 @@
 //   0 — no violations
 //   1 — violations found
 //
-// Wired into check-all.ts and CI via checks.yml.
+// Wired into check-all.ts and lint:custom.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -65,7 +65,7 @@ const GUARD_NAMES = new Set([
 ]);
 
 // Excluded source roots (the canonical definitions live here).
-const EXCLUDED_PREFIXES = ['packages/guards/', 'packages/checks/'];
+const EXCLUDED_ROOTS = ['packages/guards', 'packages/checks'];
 
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.next', '.expo', 'drizzle']);
 
@@ -92,7 +92,7 @@ function isTargetFile(name: string): boolean {
 }
 
 function isExcluded(relPath: string): boolean {
-  return EXCLUDED_PREFIXES.some((p) => relPath.startsWith(p));
+  return EXCLUDED_ROOTS.some((p) => relPath === p || relPath.startsWith(p + '/'));
 }
 
 function walkDir(dir: string, relPath: string, violations: Violation[]): void {
