@@ -117,7 +117,7 @@
     "i": "^0.3.7",
     "i18next": "^25.8.18",
     "jotai": "^2.12.2",
-    "llama.rn": "0.10.1",
+    "llama.rn": "0.11.5",
     "nanoid": "^5.1.9",
     "nativewind": "^4.2.3",
     "radash": "catalog:",
