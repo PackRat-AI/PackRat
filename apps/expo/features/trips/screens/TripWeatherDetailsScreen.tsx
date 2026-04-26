@@ -5,6 +5,11 @@ import {
   getWeatherData,
   searchLocationsByCoordinates,
 } from 'expo-app/features/weather/lib/weatherService';
+import type {
+  ForecastDay,
+  HourWeather,
+  WeatherApiForecastResponse,
+} from 'expo-app/features/weather/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -28,7 +33,7 @@ export default function TripWeatherDetailsScreen() {
   const longitude = Number(lon);
   const tripLocationName = locationName;
 
-  const [weather, setWeather] = useState<any>(null);
+  const [weather, setWeather] = useState<WeatherApiForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
@@ -89,14 +94,14 @@ export default function TripWeatherDetailsScreen() {
   // Use the trip's location name if provided, otherwise fall back to weather API location
   const displayLocationName = tripLocationName || location.name;
 
-  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h: any) => ({
+  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h: HourWeather) => ({
     time: `${new Date(h.time).getHours()}:00`,
     temp: Math.round(h.temp_c),
     weatherCode: h.condition?.code ?? 1000,
     isDay: h.is_day,
   }));
 
-  const dailyForecast = weather?.forecast?.forecastday?.map((fd: any) => ({
+  const dailyForecast = weather?.forecast?.forecastday?.map((fd: ForecastDay) => ({
     day: new Intl.DateTimeFormat('en', { weekday: 'short' }).format(new Date(fd.date)),
     icon: 'weather-partly-cloudy',
     low: Math.round(fd.day.mintemp_c),

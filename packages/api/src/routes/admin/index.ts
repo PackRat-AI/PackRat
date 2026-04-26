@@ -91,6 +91,13 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .post(
     '/token',
     async ({ request }) => {
+      const env = getEnv();
+      if (env.TOKEN_RATE_LIMITER) {
+        const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+        const { success } = await env.TOKEN_RATE_LIMITER.limit({ key: ip });
+        if (!success) return status(429, { error: 'Too many requests' });
+      }
+
       const header = request.headers.get('authorization') ?? '';
       if (!header.startsWith('Basic ')) {
         return status(401, { error: 'Missing credentials' });

@@ -57,6 +57,44 @@ let testPool: Pool;
 let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
 
+// Prevent Elysia's AOT compilation from using new Function() inside the
+// workerd/QuickJS sandbox, which disallows code-generation outside a request
+// handler.  We wrap the Elysia constructor with a Proxy so every instance gets
+// aot:false immediately after construction, and stub
+// CloudflareAdapter.beforeCompile (which also calls composeErrorHandler via
+// new Function()) to a no-op.
+vi.mock('elysia', async (importOriginal) => {
+  const original = await importOriginal<typeof import('elysia')>();
+  const OriginalElysia = original.Elysia as new (...args: unknown[]) => unknown;
+
+  const PatchedElysia = new Proxy(OriginalElysia, {
+    construct(target, args, newTarget) {
+      const instance = Reflect.construct(target, args, newTarget) as {
+        config: { aot: boolean };
+      };
+      // Force dynamic (no-eval) handler path for all instances in workerd.
+      instance.config.aot = false;
+      return instance;
+    },
+  });
+
+  return { ...original, Elysia: PatchedElysia };
+});
+
+// CloudflareAdapter.beforeCompile unconditionally calls composeErrorHandler
+// (which also uses new Function()) regardless of the aot flag.  Replace it
+// with a no-op since aot is already forced to false via the Elysia proxy above.
+vi.mock('elysia/adapter/cloudflare-worker', async (importOriginal) => {
+  const original = await importOriginal<typeof import('elysia/adapter/cloudflare-worker')>();
+  return {
+    ...original,
+    CloudflareAdapter: {
+      ...original.CloudflareAdapter,
+      beforeCompile: () => {},
+    },
+  };
+});
+
 // Mock AWS SDK S3Client to prevent actual network calls
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: vi.fn().mockResolvedValue('https://mock-signed-url.com/test.jpg'),
@@ -481,6 +519,16 @@ vi.mock('@packrat/api/db', () => ({
 
 vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
+}));
+
+// Global cfAccess mock — verifyCFAccessRequest defaults to returning null
+// (no CF access JWT present). Tests that need CF Access to succeed call
+// vi.mocked(verifyCFAccessRequest).mockResolvedValueOnce({ email: '...' }).
+// Must be global because singleWorker: true shares the module cache across
+// test files, so admin/index.ts (which imports verifyCFAccessRequest) would
+// capture the real function before any per-file mock could replace it.
+vi.mock('@packrat/api/middleware/cfAccess', () => ({
+  verifyCFAccessRequest: vi.fn(async () => null),
 }));
 
 // Global @cloudflare/containers mock — the real getContainer calls
