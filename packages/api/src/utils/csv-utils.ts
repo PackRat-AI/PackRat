@@ -9,8 +9,8 @@ const WRAPPING_QUOTES = /^"|"$/g;
 const PYTHON_NONE = /\bNone\b/g;
 const PYTHON_TRUE = /\bTrue\b/g;
 const PYTHON_FALSE = /\bFalse\b/g;
-const CURLY_SINGLE_QUOTES = /[''‛‹›]/g;
-const CURLY_DOUBLE_QUOTES = /[""„‟«»]/g;
+const CURLY_SINGLE_QUOTES = /[‘’‛‹›]/g;
+const CURLY_DOUBLE_QUOTES = /[“”„‟«»]/g;
 const BACKTICK_CHARS = /[`]/g;
 const UNQUOTED_OBJECT_KEY = /([{,]\s*)'([^']+?)'\s*:/g;
 const SINGLE_QUOTED_VALUE = /:\s*'(.*?)'(?=\s*[},])/g;
@@ -248,8 +248,8 @@ export function normalizeJsonString(value: string): string {
       .replace(PYTHON_FALSE, 'false')
 
       // Normalize smart/special quotes to standard quotes
-      .replace(CURLY_SINGLE_QUOTES, '’')
-      .replace(CURLY_DOUBLE_QUOTES, '”')
+      .replace(CURLY_SINGLE_QUOTES, "'")
+      .replace(CURLY_DOUBLE_QUOTES, '"')
       .replace(BACKTICK_CHARS, '')
 
       // Convert object keys from 'key': to "key":

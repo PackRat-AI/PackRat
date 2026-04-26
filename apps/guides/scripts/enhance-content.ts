@@ -5,7 +5,7 @@ import path from 'path';
 import { type ContentEnhancementOptions, enhanceGuideContent } from '../lib/enhanceGuideContent';
 
 // ── Script regex constants ──
-const TIMESTAMP_SAFE_CHARS = /[:.]/g;
+const TIMESTAMP_UNSAFE_CHARS = /[:.]/g;
 
 // Configuration
 const CONTENT_DIR = path.join(process.cwd(), 'content/posts');
@@ -44,7 +44,7 @@ function ensureBackupDir(): void {
  */
 function createBackup(filePath: string): string {
   const fileName = path.basename(filePath);
-  const timestamp = new Date().toISOString().replace(TIMESTAMP_SAFE_CHARS, '-');
+  const timestamp = new Date().toISOString().replace(TIMESTAMP_UNSAFE_CHARS, '-');
   const backupPath = path.join(BACKUP_DIR, `${timestamp}-${fileName}`);
 
   fs.copyFileSync(filePath, backupPath);
