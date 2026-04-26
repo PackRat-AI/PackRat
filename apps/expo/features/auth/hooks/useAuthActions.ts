@@ -28,6 +28,8 @@ function redirect(route: string) {
     const parsedRoute: Href = JSON.parse(route);
     return router.dismissTo(parsedRoute);
   } catch {
+    // safe-cast: route is a plain string path from redirectToAtom (atom<string>);
+    // Expo Router's Href accepts string paths directly.
     router.dismissTo(route as Href);
   }
 }

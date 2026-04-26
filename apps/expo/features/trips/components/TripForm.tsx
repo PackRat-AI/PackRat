@@ -109,6 +109,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
+      // safe-cast: defaultValues object matches TripFormValues shape; useForm generic infers
+      // narrower literal types from the object literal without the cast.
     } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
