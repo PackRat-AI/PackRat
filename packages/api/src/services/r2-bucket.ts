@@ -15,6 +15,9 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import { isDate, isFunction, isNumber, isObject, isString } from '@packrat/guards';
 
+// ── ETag normalization ────────────────────────────────────────────────
+const STRIP_DOUBLE_QUOTES = /"/g;
+
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
   contentType?: string;
@@ -614,7 +617,7 @@ export class R2BucketService {
       key,
       version: isString(response.VersionId) ? response.VersionId : '',
       size: isNumber(response.ContentLength) ? response.ContentLength : 0,
-      etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
+      etag: isString(response.ETag) ? response.ETag.replace(STRIP_DOUBLE_QUOTES, '') : '',
       httpEtag: isString(response.ETag) ? response.ETag : '',
       checksums: this.createChecksums(response),
       uploaded: toUploaded(response.LastModified),

@@ -12,14 +12,12 @@ import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
 import { storeToken } from 'admin-app/lib/auth';
 import { useCFAccessIdentity } from 'admin-app/lib/cfAccess';
+import { adminEnv } from 'admin-app/lib/env';
 import { Package, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
+const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
   const router = useRouter();

@@ -25,24 +25,26 @@ const MAX_BLOCK_SIZE = 5000;
 const URL_QUERY_OR_HASH_PATTERN = /[?#].*$/;
 const FILE_EXTENSION_PATTERN = /\.\w+$/;
 const WHITESPACE_SPLIT_PATTERN = /\s+/;
+const GENDER_SIZE_WORDS = /\b(men'?s?|women'?s?|unisex|kids?|youth)\b/gi;
+const SIZE_ABBREVIATIONS = /\b(xs|s|m|l|xl|xxl|one size)\b/gi;
+const NON_ALPHANUMERIC_SPACES = /[^a-z0-9\s]/g;
+const MULTIPLE_SPACES = /\s+/g;
+const NON_ALPHANUMERIC = /[^a-z0-9]/g;
 
 // ── Normalization ─────────────────────────────────────────────────────
 
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/\b(men'?s?|women'?s?|unisex|kids?|youth)\b/gi, '')
-    .replace(/\b(xs|s|m|l|xl|xxl|one size)\b/gi, '')
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(GENDER_SIZE_WORDS, '')
+    .replace(SIZE_ABBREVIATIONS, '')
+    .replace(NON_ALPHANUMERIC_SPACES, '')
+    .replace(MULTIPLE_SPACES, ' ')
     .trim();
 }
 
 function normalizeBrand(brand: string): string {
-  return brand
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
+  return brand.toLowerCase().replace(NON_ALPHANUMERIC, '').trim();
 }
 
 function canonicalId(brand: string, name: string): string {
