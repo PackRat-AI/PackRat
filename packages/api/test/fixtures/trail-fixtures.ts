@@ -1,14 +1,13 @@
-// Trail fixture builders — for hiking_ways and hiking_relations tables.
+// Fixture builders for osm_ways and osm_routes tables.
 // These tables are created by the OSM migration and populated by osm2pgsql in
 // production. Tests seed them directly with raw PostGIS SQL.
 
-export interface HikingWayOpts {
+export interface OsmWayOpts {
   osmId: number;
   name?: string | null;
+  sport?: string | null;
   surface?: string | null;
   difficulty?: string | null;
-  access?: string | null;
-  foot?: string | null;
   // WKT LineString — defaults to a short segment in the Sierra Nevada
   geometryWkt?: string;
 }
@@ -19,9 +18,10 @@ export interface OsmMember {
   role: string;
 }
 
-export interface HikingRelationOpts {
+export interface OsmRouteOpts {
   osmId: number;
   name?: string | null;
+  sport?: string | null;
   network?: string | null;
   distance?: string | null;
   difficulty?: string | null;
@@ -37,8 +37,8 @@ export interface HikingRelationOpts {
 export const DEFAULT_WAY_WKT =
   'LINESTRING(-118.50 37.50, -118.48 37.52, -118.45 37.55, -118.42 37.58, -118.40 37.60)';
 
-// Same coordinates wrapped as a MultiLineString for relation geometry.
-export const DEFAULT_RELATION_WKT =
+// Same coordinates wrapped as a MultiLineString for route geometry.
+export const DEFAULT_ROUTE_WKT =
   'MULTILINESTRING((-118.50 37.50, -118.48 37.52, -118.45 37.55, -118.42 37.58, -118.40 37.60))';
 
 // A second segment for multi-way stitching tests (continues from the first).
@@ -50,27 +50,27 @@ export const TEST_GEOMETRY_LON = -118.45;
 
 // ── Fixture factories ───────────────────────────────────────────────────────
 
-export function makeHikingWay(overrides: HikingWayOpts): HikingWayOpts {
+export function makeOsmWay(overrides: OsmWayOpts): OsmWayOpts {
   return {
     osmId: overrides.osmId,
-    name: overrides.name ?? 'Test Hiking Way',
+    name: overrides.name ?? 'Test Way',
+    sport: overrides.sport ?? 'hiking',
     surface: overrides.surface ?? 'dirt',
     difficulty: overrides.difficulty ?? null,
-    access: overrides.access ?? null,
-    foot: overrides.foot ?? 'yes',
     geometryWkt: overrides.geometryWkt ?? DEFAULT_WAY_WKT,
   };
 }
 
-export function makeHikingRelation(overrides: HikingRelationOpts): HikingRelationOpts {
+export function makeOsmRoute(overrides: OsmRouteOpts): OsmRouteOpts {
   return {
     osmId: overrides.osmId,
-    name: overrides.name ?? 'Test Hiking Trail',
+    name: overrides.name ?? 'Test Route',
+    sport: overrides.sport ?? 'hiking',
     network: overrides.network ?? 'lwn',
     distance: overrides.distance ?? '5 km',
     difficulty: overrides.difficulty ?? 'easy',
     description: overrides.description ?? null,
     members: overrides.members ?? [],
-    geometryWkt: overrides.geometryWkt !== undefined ? overrides.geometryWkt : DEFAULT_RELATION_WKT,
+    geometryWkt: overrides.geometryWkt !== undefined ? overrides.geometryWkt : DEFAULT_ROUTE_WKT,
   };
 }

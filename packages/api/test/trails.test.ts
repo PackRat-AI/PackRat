@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TEST_GEOMETRY_LAT, TEST_GEOMETRY_LON } from './fixtures/trail-fixtures';
-import { seedHikingRelation, seedHikingWay } from './utils/osm-db-helpers';
+import { seedOsmRoute, seedOsmWay } from './utils/osm-db-helpers';
 import { api, expectBadRequest, expectJsonResponse, expectNotFound } from './utils/test-helpers';
 
 // ── OSM IDs used across this file ───────────────────────────────────────────
@@ -15,15 +15,14 @@ describe('Trails Routes', () => {
   beforeEach(async () => {
     // ── Seed ways ─────────────────────────────────────────────────────────
 
-    await seedHikingWay({
+    await seedOsmWay({
       osmId: WAY_OSM_ID,
       name: 'Sierra Test Way',
       surface: 'dirt',
-      foot: 'yes',
       // Default WKT: ~15 km segment in Sierra Nevada
     });
 
-    await seedHikingWay({
+    await seedOsmWay({
       osmId: WAY2_OSM_ID,
       name: 'Sierra Test Way 2',
       surface: 'rock',
@@ -34,7 +33,7 @@ describe('Trails Routes', () => {
     // ── Seed relations ─────────────────────────────────────────────────────
 
     // A relation that osm2pgsql already built geometry for (happy path).
-    await seedHikingRelation({
+    await seedOsmRoute({
       osmId: RELATION_WITH_GEOM_ID,
       name: 'John Muir Test Trail',
       network: 'rwn',
@@ -42,11 +41,11 @@ describe('Trails Routes', () => {
       difficulty: 'moderate',
       description: 'A test trail inspired by the John Muir Trail',
       members: [{ type: 'w', ref: WAY_OSM_ID, role: '' }],
-      // geometryWkt defaults to DEFAULT_RELATION_WKT
+      // geometryWkt defaults to DEFAULT_ROUTE_WKT
     });
 
     // A relation without stored geometry — triggers runtime stitching.
-    await seedHikingRelation({
+    await seedOsmRoute({
       osmId: RELATION_NO_GEOM_ID,
       name: 'Unstored Geometry Trail',
       network: 'lwn',
@@ -55,7 +54,7 @@ describe('Trails Routes', () => {
     });
 
     // A multi-way relation to test ST_LineMerge across two segments.
-    await seedHikingRelation({
+    await seedOsmRoute({
       osmId: RELATION_MULTI_WAY_ID,
       name: 'Multi Way Test Trail',
       network: 'lwn',

@@ -11,9 +11,10 @@ const OsmMemberSchema = z.object({
   role: z.string(),
 });
 
-const TrailSearchRowSchema = z.object({
+const RouteSearchRowSchema = z.object({
   osm_id: z.string(),
   name: z.string().nullable(),
+  sport: z.string().nullable(),
   network: z.string().nullable(),
   distance: z.string().nullable(),
   difficulty: z.string().nullable(),
@@ -21,32 +22,29 @@ const TrailSearchRowSchema = z.object({
   bbox: z.string().nullable(),
 });
 
-const TrailRelationRowSchema = z.object({
+const RouteDetailRowSchema = z.object({
   osm_id: z.string(),
   name: z.string().nullable(),
+  sport: z.string().nullable(),
   network: z.string().nullable(),
   distance: z.string().nullable(),
   difficulty: z.string().nullable(),
   description: z.string().nullable(),
   members: z.array(OsmMemberSchema).nullable(),
   geojson: z.string().nullable(),
-  cached_at: z.coerce.date().nullable(),
 });
 
 type OsmMember = z.infer<typeof OsmMemberSchema>;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-async function stitchTrailGeometry(
+async function stitchRouteGeometry(
   db: ReturnType<typeof createDb>,
   members: OsmMember[],
 ): Promise<unknown> {
   const wayRefs = members.filter((m) => m.type === 'w').map((m) => m.ref);
-
   if (wayRefs.length === 0) return null;
 
-  // Build a parameterized ARRAY literal — each ref bound individually so the
-  // driver handles escaping, avoiding sql.raw() on external OSM data.
   const arrayLiteral = sql.join(
     wayRefs.map((ref) => sql`${ref}`),
     sql`, `,
@@ -58,7 +56,7 @@ async function stitchTrailGeometry(
         ST_Collect(geometry ORDER BY ordinality)
       )
     ) AS geojson
-    FROM hiking_ways
+    FROM osm_ways
     JOIN unnest(
       ARRAY[${arrayLiteral}]::bigint[]
     ) WITH ORDINALITY AS t(osm_id, ordinality)
@@ -86,13 +84,14 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
   /**
    * GET /api/trails/search
    *
-   * Fast text + spatial search over hiking_relations.
+   * Fast text + spatial search over osm_routes.
+   * Supports optional sport filter (hiking, cycling, skiing, …).
    * Returns lightweight results (no geometry) suitable for a search list.
    */
   .get(
     '/search',
     async ({ query }) => {
-      const { q, lat, lon, radius = 50 } = query;
+      const { q, lat, lon, radius = 50, sport } = query;
 
       if (!q && (lat === undefined || lon === undefined)) {
         return status(400, { error: 'Provide q (text) and/or lat+lon for spatial search' });
@@ -103,9 +102,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       try {
         const conditions: ReturnType<typeof sql>[] = [];
 
-        if (q) {
-          conditions.push(sql`name ILIKE ${`%${q}%`}`);
-        }
+        if (q) conditions.push(sql`name ILIKE ${`%${q}%`}`);
+
+        if (sport) conditions.push(sql`sport = ${sport}`);
 
         if (lat !== undefined && lon !== undefined) {
           conditions.push(sql`
@@ -126,12 +125,13 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           SELECT
             osm_id::text,
             name,
+            sport,
             network,
             distance,
             difficulty,
             description,
             ST_AsGeoJSON(ST_Envelope(geometry)) AS bbox
-          FROM hiking_relations
+          FROM osm_routes
           ${whereClause}
           ORDER BY
             CASE WHEN name IS NOT NULL THEN 0 ELSE 1 END,
@@ -139,11 +139,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           LIMIT 50
         `);
 
-        const rows = z.array(TrailSearchRowSchema).parse(result.rows);
+        const rows = z.array(RouteSearchRowSchema).parse(result.rows);
 
         return rows.map((row) => ({
           osmId: row.osm_id,
           name: row.name,
+          sport: row.sport,
           network: row.network,
           distance: row.distance,
           difficulty: row.difficulty,
@@ -161,10 +162,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         lat: z.coerce.number().min(-90).max(90).optional(),
         lon: z.coerce.number().min(-180).max(180).optional(),
         radius: z.coerce.number().positive().max(500).optional(),
+        sport: z.string().optional(),
       }),
       detail: {
         tags: ['Trails'],
-        summary: 'Search hiking trails by text and/or location',
+        summary: 'Search outdoor routes by text, location, and/or sport',
       },
     },
   )
@@ -172,12 +174,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
   /**
    * GET /api/trails/:osmId/geometry
    *
-   * Returns the full GeoJSON geometry for a trail relation.
-   * Uses the pre-built geometry from osm2pgsql when available; falls back to
-   * runtime ST_LineMerge stitching from member ways otherwise.
-   *
-   * Writes the stitched result back to hiking_relations.geometry so subsequent
-   * requests are fast (cached_at tracks when this happened).
+   * Returns the full GeoJSON geometry for a route.
+   * Uses stored geometry when available; falls back to runtime ST_LineMerge
+   * stitching from member ways otherwise.
    */
   .get(
     '/:osmId/geometry',
@@ -190,19 +189,18 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           SELECT
             osm_id::text,
             name,
+            sport,
             network,
             distance,
             difficulty,
             description,
             members,
-            ST_AsGeoJSON(geometry) AS geojson,
-            cached_at
-          FROM hiking_relations
+            ST_AsGeoJSON(geometry) AS geojson
+          FROM osm_routes
           WHERE osm_id = ${osmId}
         `);
 
-        const row = TrailRelationRowSchema.nullable().parse(result.rows?.[0] ?? null);
-
+        const row = RouteDetailRowSchema.nullable().parse(result.rows?.[0] ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         let geometry: unknown = null;
@@ -210,22 +208,13 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (row.geojson) {
           geometry = JSON.parse(row.geojson);
         } else if (row.members && row.members.length > 0) {
-          geometry = await stitchTrailGeometry(db, row.members);
-
-          if (geometry) {
-            await db.execute(sql`
-              UPDATE hiking_relations
-              SET
-                geometry = ST_Multi(ST_GeomFromGeoJSON(${JSON.stringify(geometry)})),
-                cached_at = NOW()
-              WHERE osm_id = ${osmId}
-            `);
-          }
+          geometry = await stitchRouteGeometry(db, row.members);
         }
 
         return {
           osmId: row.osm_id,
           name: row.name,
+          sport: row.sport,
           network: row.network,
           distance: row.distance,
           difficulty: row.difficulty,
@@ -241,7 +230,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       params: z.object({ osmId: z.string().regex(/^\d+$/, 'osmId must be a positive integer') }),
       detail: {
         tags: ['Trails'],
-        summary: 'Get full GeoJSON geometry for a trail (stitches from OSM ways if needed)',
+        summary: 'Get full GeoJSON geometry for a route (stitches from OSM ways if needed)',
       },
     },
   )
@@ -249,7 +238,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
   /**
    * GET /api/trails/:osmId
    *
-   * Lightweight trail metadata without geometry (for detail screens).
+   * Lightweight route metadata without geometry (for detail screens).
    */
   .get(
     '/:osmId',
@@ -262,21 +251,23 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           SELECT
             osm_id::text,
             name,
+            sport,
             network,
             distance,
             difficulty,
             description,
             ST_AsGeoJSON(ST_Envelope(geometry)) AS bbox
-          FROM hiking_relations
+          FROM osm_routes
           WHERE osm_id = ${osmId}
         `);
 
-        const row = TrailSearchRowSchema.nullable().parse(result.rows?.[0] ?? null);
+        const row = RouteSearchRowSchema.nullable().parse(result.rows?.[0] ?? null);
         if (!row) return status(404, { error: 'Trail not found' });
 
         return {
           osmId: row.osm_id,
           name: row.name,
+          sport: row.sport,
           network: row.network,
           distance: row.distance,
           difficulty: row.difficulty,
@@ -292,7 +283,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       params: z.object({ osmId: z.string().regex(/^\d+$/, 'osmId must be a positive integer') }),
       detail: {
         tags: ['Trails'],
-        summary: 'Get trail metadata by OSM relation ID',
+        summary: 'Get route metadata by OSM relation ID',
       },
     },
   )
@@ -301,18 +292,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
    * POST /api/trails/alltrails-preview
    *
    * Fetches an AllTrails URL server-side and extracts OpenGraph metadata.
-   * Returns a trail card (title, description, image) without requiring
-   * any AllTrails account or API key.
-   *
-   * AllTrails pages are SSR, so OG tags are present in the raw HTML.
-   * Single on-demand fetches triggered by user paste are low-risk.
    */
   .post(
     '/alltrails-preview',
     async ({ body }) => {
       const { url } = body;
 
-      // Only allow alltrails.com URLs to prevent SSRF
       let parsed: URL;
       try {
         parsed = new URL(url);
@@ -334,7 +319,6 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           signal: AbortSignal.timeout(8000),
         });
 
-        // Validate final URL after redirects to prevent open redirect SSRF
         const finalHostname = new URL(response.url).hostname;
         if (finalHostname !== 'alltrails.com' && !finalHostname.endsWith('.alltrails.com')) {
           return status(400, { error: 'Redirect target is not alltrails.com' });

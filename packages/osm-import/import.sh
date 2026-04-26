@@ -15,7 +15,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LUA_CONFIG="${SCRIPT_DIR}/hiking.lua"
+LUA_CONFIG="${SCRIPT_DIR}/routes.lua"
 
 # ── Database URL ────────────────────────────────────────────────────────────
 
@@ -72,4 +72,4 @@ echo ""
 echo "Import complete."
 echo ""
 echo "Verify row counts:"
-psql "$DB_URL" -c "SELECT 'hiking_ways' AS table, count(*) FROM hiking_ways UNION ALL SELECT 'hiking_relations', count(*) FROM hiking_relations;"
+psql "$DB_URL" -c "SELECT sport, count(*) FROM osm_ways GROUP BY sport ORDER BY sport; SELECT sport, count(*) FROM osm_routes GROUP BY sport ORDER BY sport;"
