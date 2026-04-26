@@ -1,3 +1,4 @@
+import { isObject } from '@packrat/guards';
 import type { OverpassResponse } from './types';
 
 const DEFAULT_ENDPOINT = 'https://overpass-api.de/api/interpreter';
@@ -28,11 +29,7 @@ export async function queryOverpass(
 
   const data = await response.json();
 
-  if (
-    typeof data !== 'object' ||
-    data === null ||
-    !Array.isArray((data as OverpassResponse).elements)
-  ) {
+  if (!isObject(data) || !Array.isArray((data as OverpassResponse).elements)) {
     throw new Error('Overpass response is not valid JSON');
   }
 

@@ -17,6 +17,9 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@packrat/guards": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "catalog:",
     "vitest": "~3.1.4"
