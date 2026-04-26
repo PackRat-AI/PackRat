@@ -72,6 +72,9 @@ export const apiEnvSchema = z.object({
   APP_CONTAINER: z.unknown(),
   // Rate limiting binding (optional — not present in local dev/test)
   TOKEN_RATE_LIMITER: z.unknown().optional(),
+  // Hyperdrive binding for the dedicated OSM/trail Postgres instance.
+  // When present, its connectionString overrides OSM_DATABASE_URL at runtime.
+  OSM_HYPERDRIVE: z.unknown().optional(),
 });
 
 // Relaxed schema for test environments
@@ -119,6 +122,7 @@ export type ValidatedEnv = Omit<
   EMBEDDINGS_QUEUE: Queue;
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
+  OSM_HYPERDRIVE?: Hyperdrive;
 };
 
 // Cache for validated envs keyed by the raw env reference.
@@ -157,6 +161,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
       Container<unknown>
     >,
     TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined,
+    OSM_HYPERDRIVE: rawEnv.OSM_HYPERDRIVE as Hyperdrive | undefined,
   } as ValidatedEnv;
 }
 

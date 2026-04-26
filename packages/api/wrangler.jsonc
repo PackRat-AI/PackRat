@@ -80,6 +80,15 @@
   "ai": {
     "binding": "AI"
   },
+  // OSM / trail database — dedicated Postgres instance with PostGIS.
+  // Create via: wrangler hyperdrive create osm-db --connection-string="postgresql://..."
+  // Then replace the id below with the output ID.
+  "hyperdrive": [
+    {
+      "binding": "OSM_HYPERDRIVE",
+      "id": "TODO_replace_with_hyperdrive_config_id"
+    }
+  ],
   // App Container configuration - runs Node.js TikTok API service
   "containers": [
     {
@@ -181,6 +190,15 @@
       "ai": {
         "binding": "AI"
       },
+      // Local dev: points directly at the Docker PostGIS container.
+      // Replace localConnectionString with your local OSM DB URL.
+      "hyperdrive": [
+        {
+          "binding": "OSM_HYPERDRIVE",
+          "id": "TODO_replace_with_hyperdrive_config_id",
+          "localConnectionString": "postgresql://packrat:packrat@localhost:5433/osm"
+        }
+      ],
       "containers": [
         {
           "name": "packrat-api-container-dev",

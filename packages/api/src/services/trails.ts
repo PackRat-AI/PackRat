@@ -14,6 +14,12 @@ export type OsmMember = z.infer<typeof OsmMemberSchema>;
  * Stitches a MultiLineString geometry from member way IDs using ST_LineMerge.
  * Used when an osm_routes row has NULL geometry (osm2pgsql left it unbuilt).
  * Order is preserved via unnest WITH ORDINALITY.
+ *
+ * Limitation: osm_ways only stores trail-classified ways (hiking paths,
+ * cycleways, piste ways). Road-based cycling routes (ncn/rcn) include road
+ * segments (highway=primary/secondary) that are not in osm_ways, so stitching
+ * will return null for those routes. This only affects the rare null-geometry
+ * fallback path — osm2pgsql assembles geometry for >99% of routes directly.
  */
 export async function stitchRouteGeometry(
   db: ReturnType<typeof createOsmDb>,
