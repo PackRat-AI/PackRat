@@ -6,6 +6,10 @@ import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
+// ── Slug normalization patterns ───────────────────────────────────────
+const SPACES_AND_DOTS = /[\s.]+/g;
+const NON_SLUG_CHARS = /[^a-z0-9-]/g;
+
 const IdentifyRequestSchema = z.object({
   image: z.string().describe('Uploaded image key in R2'),
 });
@@ -55,10 +59,7 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' }).use(authPlugin
 
     // Map AI results with stable IDs derived from scientific name
     const slugify = (name: string) =>
-      name
-        .toLowerCase()
-        .replaceAll(/[\s.]+/g, '-')
-        .replaceAll(/[^a-z0-9-]/g, '');
+      name.toLowerCase().replaceAll(SPACES_AND_DOTS, '-').replaceAll(NON_SLUG_CHARS, '');
 
     const results = identification.results.map((r, index) => {
       const id = r.scientificName?.trim()

@@ -11,6 +11,7 @@ import { DBConfig, QUALITY_WEIGHTS } from './constants';
 import { SQLFragments } from './query-builder';
 
 const FILE_EXTENSION_PATTERN = /\.\w+$/;
+const TIMESTAMP_UNSAFE_CHARS = /[:.]/g;
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ export class DataExporter {
 
     mkdirSync(outputDir, { recursive: true });
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const timestamp = new Date().toISOString().replace(TIMESTAMP_UNSAFE_CHARS, '-').slice(0, 19);
     const filename = `packrat_export_${timestamp}.${format}`;
     const filepath = `${outputDir}/${filename}`;
 
