@@ -71,6 +71,7 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
+
       setNeedsReauth(false);
       redirect(redirectTo);
     } catch (error) {
@@ -102,6 +103,7 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
+
       setNeedsReauth(false);
       redirect(redirectTo);
     } catch (error) {
@@ -149,6 +151,7 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
+
       setNeedsReauth(false);
       redirect(redirectTo);
     } catch (error) {
