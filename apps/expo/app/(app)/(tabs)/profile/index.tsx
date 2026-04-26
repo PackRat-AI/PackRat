@@ -1,4 +1,5 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { isString } from '@packrat/guards';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
@@ -140,7 +141,7 @@ function renderItem(info: ListRenderItemInfo<DataItem>) {
 }
 
 function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
-  if (typeof info.item === 'string') {
+  if (isString(info.item)) {
     return <ListSectionHeader {...info} />;
   }
   return (

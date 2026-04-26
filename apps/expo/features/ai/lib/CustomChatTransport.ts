@@ -1,4 +1,5 @@
 import type { UIMessage } from '@ai-sdk/react';
+import { isString } from '@packrat/guards';
 import {
   type ChatRequestOptions,
   type ChatTransport,
@@ -48,7 +49,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
         if (error == null) {
           return 'Unknown error';
         }
-        if (typeof error === 'string') {
+        if (isString(error)) {
           return error;
         }
         if (error instanceof Error) {

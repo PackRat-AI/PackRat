@@ -1,3 +1,5 @@
+import { isFunction } from '@packrat/guards';
+
 /**
  * Domain-specific extension mappings for common image hosts
  * This helps us avoid network requests for known domains
@@ -48,7 +50,7 @@ const domainPatterns: DomainPattern[] = [
 export const getDomainSpecificExtension = (url: string): string | null => {
   for (const { pattern, extension } of domainPatterns) {
     if (pattern.test(url)) {
-      return typeof extension === 'function' ? extension(url) : extension;
+      return isFunction(extension) ? extension(url) : extension;
     }
   }
   return null;
