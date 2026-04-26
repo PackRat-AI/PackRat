@@ -1,0 +1,4 @@
+node_modules
+
+# lockfile (standalone container service — not committed)
+bun.lock

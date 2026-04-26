@@ -13,7 +13,7 @@ updates:
     commit-message:
       prefix: 'chore(ci)'
 
-  # bun workspaces — root
+  # bun workspaces — root (covers all workspace members via the shared bun.lock)
   - package-ecosystem: 'bun'
     directory: '/'
     schedule:
@@ -39,59 +39,11 @@ updates:
       react-query:
         patterns:
           - '@tanstack/*'
-      hono:
+      elysia:
         patterns:
-          - 'hono'
-          - '@hono/*'
+          - 'elysia'
+          - '@elysiajs/*'
       drizzle:
         patterns:
           - 'drizzle-orm'
           - 'drizzle-kit'
-
-  # bun — API package
-  - package-ecosystem: 'bun'
-    directory: '/packages/api'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    labels:
-      - 'dependencies'
-      - 'api'
-    commit-message:
-      prefix: 'chore(deps/api)'
-
-  # bun — Expo app
-  - package-ecosystem: 'bun'
-    directory: '/apps/expo'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    labels:
-      - 'dependencies'
-      - 'mobile'
-    commit-message:
-      prefix: 'chore(deps/expo)'
-
-  # bun — Landing page
-  - package-ecosystem: 'bun'
-    directory: '/apps/landing'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    labels:
-      - 'dependencies'
-      - 'web'
-    commit-message:
-      prefix: 'chore(deps/landing)'
-
-  # bun — Guides site
-  - package-ecosystem: 'bun'
-    directory: '/apps/guides'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-    labels:
-      - 'dependencies'
-      - 'web'
-    commit-message:
-      prefix: 'chore(deps/guides)'
