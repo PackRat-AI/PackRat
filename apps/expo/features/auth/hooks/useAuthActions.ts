@@ -164,7 +164,12 @@ export function useAuthActions() {
   }) => {
     setIsLoading(true);
     try {
-      const { error } = await apiClient.auth.register.post({ email, password, firstName, lastName });
+      const { error } = await apiClient.auth.register.post({
+        email,
+        password,
+        firstName,
+        lastName,
+      });
       if (error) {
         throw new Error(extractAuthError(error.value, t('auth.registrationFailed')));
       }

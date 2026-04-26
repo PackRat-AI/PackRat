@@ -24,7 +24,8 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
     wrapped.isApiError = true;
     throw wrapped;
   }
-  if (!isIdentifyResponse(data)) throw new Error('Unexpected response from wildlife identify endpoint');
+  if (!isIdentifyResponse(data))
+    throw new Error('Unexpected response from wildlife identify endpoint');
   return data.results as IdentificationResult[];
 }
 
