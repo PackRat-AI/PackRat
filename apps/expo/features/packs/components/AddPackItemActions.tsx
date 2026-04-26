@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { nullToUndefined } from '@packrat/guards';
+import { isFunction, nullToUndefined } from '@packrat/guards';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { isAuthed } from 'expo-app/features/auth/store';
@@ -33,7 +33,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
 
     const handleAddFromPhoto = () => {
-      ref && typeof ref !== 'function' && ref.current?.close();
+      ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
         return router.push({
@@ -91,7 +91,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     };
 
     const handleAddFromCatalog = () => {
-      ref && typeof ref !== 'function' && ref.current?.close();
+      ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
         return router.push({
@@ -139,7 +139,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 testID={TestIds.AddManuallyOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={() => {
-                  ref && typeof ref !== 'function' && ref.current?.close();
+                  ref && !isFunction(ref) && ref.current?.close();
                   router.push({
                     pathname: '/item/new',
                     params: { packId },

@@ -1,12 +1,13 @@
 import type { NewCatalogItem } from '@packrat/api/db/schema';
 import type { ValidatedCatalogItem, ValidationError } from '@packrat/api/types/etl';
+import { isNumber, isString } from '@packrat/guards';
 
 export class CatalogItemValidator {
   validateItem(item: Partial<NewCatalogItem>): ValidatedCatalogItem {
     const errors: ValidationError[] = [];
 
     // Required field validations
-    if (!item.name || typeof item.name !== 'string' || item.name.trim().length === 0) {
+    if (!item.name || !isString(item.name) || item.name.trim().length === 0) {
       errors.push({
         field: 'name',
         reason: 'Name is required and must be a non-empty string',
@@ -14,7 +15,7 @@ export class CatalogItemValidator {
       });
     }
 
-    if (!item.sku || typeof item.sku !== 'string' || item.sku.trim().length === 0) {
+    if (!item.sku || !isString(item.sku) || item.sku.trim().length === 0) {
       errors.push({
         field: 'sku',
         reason: 'SKU is required and must be a non-empty string',
@@ -22,11 +23,7 @@ export class CatalogItemValidator {
       });
     }
 
-    if (
-      !item.productUrl ||
-      typeof item.productUrl !== 'string' ||
-      item.productUrl.trim().length === 0
-    ) {
+    if (!item.productUrl || !isString(item.productUrl) || item.productUrl.trim().length === 0) {
       errors.push({
         field: 'productUrl',
         reason: 'Product URL is required and must be a non-empty string',
@@ -34,7 +31,7 @@ export class CatalogItemValidator {
       });
     }
 
-    if (!item.weight || typeof item.weight !== 'number' || item.weight <= 0) {
+    if (!item.weight || !isNumber(item.weight) || item.weight <= 0) {
       errors.push({
         field: 'weight',
         reason: 'Weight is required and must be a positive number',
@@ -42,11 +39,7 @@ export class CatalogItemValidator {
       });
     }
 
-    if (
-      !item.weightUnit ||
-      typeof item.weightUnit !== 'string' ||
-      item.weightUnit.trim().length === 0
-    ) {
+    if (!item.weightUnit || !isString(item.weightUnit) || item.weightUnit.trim().length === 0) {
       errors.push({
         field: 'weightUnit',
         reason: 'Weight unit is required and must be a non-empty string',
@@ -63,7 +56,7 @@ export class CatalogItemValidator {
       });
     }
 
-    if (item.price !== undefined && (typeof item.price !== 'number' || item.price < 0)) {
+    if (item.price !== undefined && (!isNumber(item.price) || item.price < 0)) {
       errors.push({
         field: 'price',
         reason: 'Price must be a non-negative number',

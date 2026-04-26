@@ -1,3 +1,4 @@
+import { isObject } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -32,7 +33,7 @@ function redirect(route: string) {
 }
 
 function extractAuthError(value: unknown, fallback: string): string {
-  if (typeof value === 'object' && value !== null && 'error' in value) {
+  if (isObject(value) && 'error' in value) {
     return String((value as Record<string, unknown>).error) || fallback;
   }
   return fallback;

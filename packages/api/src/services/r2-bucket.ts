@@ -13,7 +13,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import { isDate, isNumber, isObject, isString } from '@packrat/guards';
+import { isDate, isFunction, isNumber, isObject, isString } from '@packrat/guards';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -26,7 +26,7 @@ interface R2HTTPMetadata {
 }
 
 function isR2HTTPMetadata(obj: unknown): obj is R2HTTPMetadata {
-  if (typeof obj !== 'object' || obj === null) {
+  if (!isObject(obj)) {
     return false;
   }
 
@@ -35,11 +35,11 @@ function isR2HTTPMetadata(obj: unknown): obj is R2HTTPMetadata {
 
   // Check that all properties, if present, are the correct type
   return (
-    (record.contentType === undefined || typeof record.contentType === 'string') &&
-    (record.contentLanguage === undefined || typeof record.contentLanguage === 'string') &&
-    (record.contentDisposition === undefined || typeof record.contentDisposition === 'string') &&
-    (record.contentEncoding === undefined || typeof record.contentEncoding === 'string') &&
-    (record.cacheControl === undefined || typeof record.cacheControl === 'string') &&
+    (record.contentType === undefined || isString(record.contentType)) &&
+    (record.contentLanguage === undefined || isString(record.contentLanguage)) &&
+    (record.contentDisposition === undefined || isString(record.contentDisposition)) &&
+    (record.contentEncoding === undefined || isString(record.contentEncoding)) &&
+    (record.cacheControl === undefined || isString(record.cacheControl)) &&
     (record.cacheExpiry === undefined || record.cacheExpiry instanceof Date)
   );
 }
@@ -217,7 +217,7 @@ export class R2BucketService {
 
       return this.createR2Object(key, { ...response });
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'name' in error) {
+      if (isObject(error) && 'name' in error) {
         const errorObj = error as {
           name: string;
           $metadata?: { httpStatusCode?: number };
@@ -344,7 +344,7 @@ export class R2BucketService {
 
       return objectBody;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'name' in error) {
+      if (isObject(error) && 'name' in error) {
         const errorObj = error as {
           name: string;
           $metadata?: { httpStatusCode?: number };
@@ -577,7 +577,7 @@ export class R2BucketService {
     if (ArrayBuffer.isView(value)) {
       return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
     }
-    if (typeof value === 'string') {
+    if (isString(value)) {
       return value;
     }
     if (value instanceof globalThis.Blob) {
@@ -670,7 +670,7 @@ export class R2BucketService {
   }
 
   private formatRange(range: R2Range | Headers): string | undefined {
-    if (typeof range === 'object' && range && 'get' in range && typeof range.get === 'function') {
+    if (isObject(range) && 'get' in range && isFunction(range.get)) {
       // It's a Headers object
       return range.get('range') || undefined;
     }
@@ -690,12 +690,7 @@ export class R2BucketService {
   private extractHttpMetadata(metadata?: R2HTTPMetadata | Headers): R2HTTPMetadata | undefined {
     if (!metadata) return undefined;
 
-    if (
-      typeof metadata === 'object' &&
-      metadata &&
-      'get' in metadata &&
-      typeof metadata.get === 'function'
-    ) {
+    if (isObject(metadata) && 'get' in metadata && isFunction(metadata.get)) {
       // It's a Headers object
       return {
         contentType: metadata.get('content-type') || undefined,

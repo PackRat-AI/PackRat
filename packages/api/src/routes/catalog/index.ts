@@ -12,6 +12,7 @@ import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import {
   and,
   cosineDistance,
@@ -45,7 +46,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ query, request }) => {
       const { page, limit, q, category: encodedCategory } = query;
       let category: string | undefined;
-      if (typeof encodedCategory === 'string' && encodedCategory.length > 0) {
+      if (isString(encodedCategory) && encodedCategory.length > 0) {
         try {
           category = decodeURIComponent(encodedCategory);
         } catch {

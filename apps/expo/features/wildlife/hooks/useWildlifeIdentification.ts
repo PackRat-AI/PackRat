@@ -1,4 +1,4 @@
-import { zodGuard } from '@packrat/guards';
+import { isObject, zodGuard } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
 import type { SelectedImage } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils';
@@ -31,7 +31,7 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
 
 function isNetworkError(error: unknown): boolean {
   // Primitives and null are not classifiable as network errors
-  if (typeof error !== 'object' || error === null) {
+  if (!isObject(error)) {
     return false;
   }
 

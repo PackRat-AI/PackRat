@@ -1,5 +1,6 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
+import { isObject, isString } from '@packrat/guards';
 
 /**
  * Auth integration hooks. Session state (token storage, refresh dedup,
@@ -82,8 +83,7 @@ export function createApiClient(config: ApiClientConfig) {
    * refresh endpoint itself, in which case the user must re-auth).
    */
   const authFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url =
-      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const url = isString(input) ? input : input instanceof URL ? input.toString() : input.url;
     let pathname = '';
     try {
       pathname = new URL(url, config.baseUrl).pathname;
@@ -241,7 +241,7 @@ export class PackRatApiClient {
     const body = await response.json().catch(() => null);
     if (!response.ok) {
       const errorMessage =
-        typeof body === 'object' && body !== null && 'error' in body
+        isObject(body) && 'error' in body
           ? String((body as Record<string, unknown>).error)
           : `HTTP ${response.status}`;
       throw new ApiError(errorMessage, { status: response.status, body });

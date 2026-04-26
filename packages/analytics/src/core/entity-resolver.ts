@@ -11,6 +11,7 @@
 
 import { createHash } from 'node:crypto';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { isString } from '@packrat/guards';
 import { SQLFragments } from './query-builder';
 import { assertDefined } from './type-assertions';
 
@@ -377,7 +378,7 @@ export class EntityResolver {
           const v = (x: unknown) =>
             x === null || x === undefined
               ? 'NULL'
-              : typeof x === 'string'
+              : isString(x)
                 ? `'${SQLFragments.escapeSql(String(x))}'`
                 : String(x);
           return `(${v(e.canonical_id)}, ${v(e.canonical_name)}, ${v(e.canonical_brand)}, ${v(e.site)}, ${v(e.name)}, ${v(e.brand)}, ${v(e.category)}, ${v(e.price)}, ${v(e.product_url)}, ${v(e.confidence)}, ${v(e.match_method)})`;

@@ -334,6 +334,7 @@
       "dependencies": {
         "@duckdb/node-api": "1.5.0-r.1",
         "@packrat/env": "workspace:*",
+        "@packrat/guards": "workspace:*",
         "consola": "^3.4.2",
         "magic-regexp": "^0.11.0",
         "radash": "catalog:",
@@ -403,6 +404,7 @@
       "version": "2.0.24",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
+        "@packrat/guards": "workspace:*",
       },
       "devDependencies": {
         "@packrat/api": "workspace:*",
@@ -429,6 +431,7 @@
         "@duckdb/node-api": "1.5.0-r.1",
         "@packrat/analytics": "workspace:*",
         "@packrat/env": "workspace:*",
+        "@packrat/guards": "workspace:*",
         "chalk": "catalog:",
         "citty": "^0.2.1",
         "cli-table3": "^0.6.5",
@@ -442,6 +445,9 @@
     "packages/config": {
       "name": "@packrat/config",
       "version": "2.0.24",
+      "dependencies": {
+        "@packrat/guards": "workspace:*",
+      },
     },
     "packages/env": {
       "name": "@packrat/env",
