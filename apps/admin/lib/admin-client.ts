@@ -2,11 +2,9 @@ import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api-client';
 import { clearToken, getAuthHeader } from './auth';
 import { getCFAccessJWT } from './cfAccess';
+import { adminEnv } from './env';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
+const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 async function buildAuthHeaders(): Promise<Record<string, string>> {
   const cfJwt = await getCFAccessJWT();
@@ -17,13 +15,10 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
 export const adminClient = treaty<App>(API_BASE, {
   fetcher: async (input, init) => {
     const authHeaders = await buildAuthHeaders();
+    const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
     const response = await fetch(input, {
       ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-        ...(init?.headers as Record<string, string> | undefined),
-      },
+      headers: { 'Content-Type': 'application/json', ...authHeaders, ...existing },
     });
     if (response.status === 401) {
       clearToken();
