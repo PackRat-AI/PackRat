@@ -47,7 +47,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^9.0.0",
     "fs-extra": "^11.3.0",
-    "glob": "^11.0.3",
+    "glob": "^11.1.0",
     "lefthook": "^1.11.14",
     "semver": "catalog:",
     "sort-package-json": "^3.6.1"
