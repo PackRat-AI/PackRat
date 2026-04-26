@@ -73,7 +73,7 @@ export const CreatePackItemRequestSchema = z.object({
   consumable: z.boolean().optional().default(false),
   worn: z.boolean().optional().default(false),
   image: z.string().nullish(),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
   catalogItemId: z.number().int().nullish(),
 });
 
@@ -87,7 +87,7 @@ export const UpdatePackItemRequestSchema = z.object({
   consumable: z.boolean().optional(),
   worn: z.boolean().optional(),
   image: z.string().nullish(),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
   catalogItemId: z.number().int().nullish(),
   deleted: z.boolean().optional(),
 });
