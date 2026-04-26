@@ -483,6 +483,7 @@
       "version": "0.1.0",
       "devDependencies": {
         "typescript": "catalog:",
+        "vitest": "~3.1.4",
       },
     },
     "packages/ui": {

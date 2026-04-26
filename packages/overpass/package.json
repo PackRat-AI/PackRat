@@ -14,9 +14,11 @@
     }
   },
   "scripts": {
+    "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "~3.1.4"
   }
 }
