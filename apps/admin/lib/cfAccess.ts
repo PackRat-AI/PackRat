@@ -28,8 +28,8 @@ function fetchIdentity(): Promise<CFAccessIdentityResponse | null> {
       if (
         typeof data !== 'object' ||
         data === null ||
-        typeof (data as Record<string, unknown>)['email'] !== 'string' ||
-        typeof (data as Record<string, unknown>)['jwt'] !== 'string'
+        typeof (data as Record<string, unknown>).email !== 'string' ||
+        typeof (data as Record<string, unknown>).jwt !== 'string'
       ) {
         return null;
       }
