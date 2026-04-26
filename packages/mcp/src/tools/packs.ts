@@ -3,6 +3,21 @@ import { err, ok } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
+interface PackDetailResponse {
+  items?: Array<{
+    name: string;
+    category: string;
+    weight: number;
+    quantity: number;
+    worn: boolean;
+    consumable: boolean;
+  }>;
+  totalWeight?: number;
+  baseWeight?: number;
+  wornWeight?: number;
+  consumableWeight?: number;
+}
+
 export function registerPackTools(agent: AgentContext): void {
   // ── List packs ────────────────────────────────────────────────────────────
 
@@ -232,20 +247,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const pack = (await agent.api.get(`/packs/${pack_id}`)) as {
-          items?: Array<{
-            name: string;
-            category: string;
-            weight: number;
-            quantity: number;
-            worn: boolean;
-            consumable: boolean;
-          }>;
-          totalWeight?: number;
-          baseWeight?: number;
-          wornWeight?: number;
-          consumableWeight?: number;
-        };
+        const pack = await agent.api.get<PackDetailResponse>(`/packs/${pack_id}`);
 
         const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> =
           {};

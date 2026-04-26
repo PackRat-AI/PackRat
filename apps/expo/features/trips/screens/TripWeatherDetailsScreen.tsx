@@ -1,3 +1,4 @@
+import type { WeatherAPIForecastResponse } from '@packrat/api/schemas/weather';
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import {
@@ -5,11 +6,6 @@ import {
   getWeatherData,
   searchLocationsByCoordinates,
 } from 'expo-app/features/weather/lib/weatherService';
-import type {
-  ForecastDay,
-  HourWeather,
-  WeatherApiForecastResponse,
-} from 'expo-app/features/weather/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -33,7 +29,7 @@ export default function TripWeatherDetailsScreen() {
   const longitude = Number(lon);
   const tripLocationName = locationName;
 
-  const [weather, setWeather] = useState<WeatherApiForecastResponse | null>(null);
+  const [weather, setWeather] = useState<WeatherAPIForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
@@ -94,14 +90,14 @@ export default function TripWeatherDetailsScreen() {
   // Use the trip's location name if provided, otherwise fall back to weather API location
   const displayLocationName = tripLocationName || location.name;
 
-  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h: HourWeather) => ({
+  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h) => ({
     time: `${new Date(h.time).getHours()}:00`,
     temp: Math.round(h.temp_c),
     weatherCode: h.condition?.code ?? 1000,
     isDay: h.is_day,
   }));
 
-  const dailyForecast = weather?.forecast?.forecastday?.map((fd: ForecastDay) => ({
+  const dailyForecast = weather?.forecast?.forecastday?.map((fd) => ({
     day: new Intl.DateTimeFormat('en', { weekday: 'short' }).format(new Date(fd.date)),
     icon: 'weather-partly-cloudy',
     low: Math.round(fd.day.mintemp_c),

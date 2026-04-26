@@ -6,3 +6,20 @@ pre-commit:
     lint:
       run: bun check {staged_files}
       fail_text: "Linting failed! \nRun `bun lint` to fix. \nCommit with `--no-verify` to bypass check."
+
+pre-push:
+  skip:
+    - run: test "${CI:-false}" = "true"
+    - run: test "${GITHUB_ACTIONS:-false}" = "true"
+  commands:
+    # Only gates on checks that are currently clean.
+    # Add each check back here as its backlog is cleared.
+    # Remaining backlog (CI continue-on-error): no-raw-regex, no-raw-process-env, check-type-casts
+    clean-checks:
+      run: >
+        bun scripts/lint/no-raw-typeof.ts &&
+        bun scripts/lint/no-circular-deps.ts &&
+        bun scripts/lint/no-duplicate-deps.ts &&
+        bun scripts/lint/no-duplicate-guards.ts &&
+        bun scripts/format/sort-package-json.ts --check
+      fail_text: "Pre-push checks failed! Run `bun check:all` for the full picture."

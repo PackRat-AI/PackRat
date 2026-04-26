@@ -1,4 +1,5 @@
 import type { Container } from '@cloudflare/containers';
+import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
 // Define the Zod schema for all environment variables
@@ -175,7 +176,7 @@ function getRawEnv(): Record<string, unknown> {
   if (cachedRawEnv) return cachedRawEnv;
 
   const primed = (globalThis as Record<string, unknown>).__cfWorkersEnv__;
-  if (primed && typeof primed === 'object') {
+  if (isObject(primed)) {
     cachedRawEnv = primed as Record<string, unknown>;
     return cachedRawEnv;
   }

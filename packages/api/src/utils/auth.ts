@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isNumber } from '@packrat/guards';
 import * as bcrypt from 'bcryptjs';
 import { jwtVerify, SignJWT } from 'jose';
 
@@ -47,7 +48,7 @@ export async function generateJWT({
   const { JWT_SECRET } = getEnv();
   const jwt = new SignJWT({ ...payload }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt();
 
-  if (typeof payload.exp === 'number') {
+  if (isNumber(payload.exp)) {
     jwt.setExpirationTime(payload.exp);
   } else {
     jwt.setExpirationTime(expiresIn);

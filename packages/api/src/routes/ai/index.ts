@@ -3,6 +3,7 @@ import { RagSearchQuerySchema, WebSearchQuerySchema } from '@packrat/api/schemas
 import { AIService } from '@packrat/api/services/aiService';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { getSchemaInfo } from '@packrat/api/utils/DbUtils';
+import { isString } from '@packrat/guards';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
@@ -90,7 +91,7 @@ export const aiRoutes = new Elysia({ prefix: '/ai' })
     async () => {
       try {
         const result = await getSchemaInfo();
-        if (typeof result !== 'string') {
+        if (!isString(result)) {
           return status(500, { error: result.error ?? 'Failed to retrieve database schema' });
         }
         return { schema: result };

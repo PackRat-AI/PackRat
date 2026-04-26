@@ -7,6 +7,7 @@
  */
 
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { isString } from '@packrat/guards';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 
@@ -259,7 +260,7 @@ export class SpecParser {
           const v = (x: unknown) =>
             x === null || x === undefined
               ? 'NULL'
-              : typeof x === 'string'
+              : isString(x)
                 ? `'${SQLFragments.escapeSql(String(x))}'`
                 : String(x);
           return `(${v(s.site)}, ${v(s.name)}, ${v(s.brand)}, ${v(s.category)}, ${v(s.price)}, ${v(s.product_url)}, ${v(s.weight_grams)}, ${v(s.capacity_liters)}, ${v(s.temp_rating_f)}, ${v(s.fill_power)}, ${v(s.waterproof_rating)}, ${v(s.seasons)}, ${v(s.gender)}, ${v(s.fabric)})`;

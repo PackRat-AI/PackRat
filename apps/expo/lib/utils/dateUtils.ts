@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import { isValid, parse, parseISO } from 'date-fns';
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -9,7 +10,7 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
  * Returns `null` for missing or invalid input.
  */
 export function parseLocalDate(dateString?: string): Date | null {
-  if (!dateString || typeof dateString !== 'string') return null;
+  if (!dateString || !isString(dateString)) return null;
 
   if (DATE_ONLY_PATTERN.test(dateString)) {
     const date = parse(dateString, 'yyyy-MM-dd', new Date());

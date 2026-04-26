@@ -9,7 +9,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@elysiajs/eden": "catalog:"
+    "@elysiajs/eden": "catalog:",
+    "@packrat/guards": "workspace:*"
   },
   "devDependencies": {
     "@packrat/api": "workspace:*",

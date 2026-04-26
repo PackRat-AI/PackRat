@@ -1,4 +1,4 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -91,7 +91,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     if (value instanceof Date) {
       return value.toISOString().split('T')[0];
     }
-    if (typeof value === 'string') {
+    if (isString(value)) {
       return value.split('T')[0];
     }
     return '';

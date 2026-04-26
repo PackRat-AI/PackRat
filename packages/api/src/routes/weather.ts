@@ -8,6 +8,7 @@ import {
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import { Elysia, status } from 'elysia';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
@@ -36,8 +37,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           name: item.name,
           region: item.region,
           country: item.country,
-          lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
-          lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+          lat: isString(item.lat) ? Number.parseFloat(item.lat) : item.lat,
+          lon: isString(item.lon) ? Number.parseFloat(item.lon) : item.lon,
         }));
       } catch (error) {
         console.error('Error searching weather locations:', error);
@@ -103,8 +104,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           name: item.name,
           region: item.region,
           country: item.country,
-          lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
-          lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+          lat: isString(item.lat) ? Number.parseFloat(item.lat) : item.lat,
+          lon: isString(item.lon) ? Number.parseFloat(item.lon) : item.lon,
         }));
       } catch (error) {
         console.error('Error searching weather locations by coordinates:', error);

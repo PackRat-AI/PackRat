@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import type { NewCatalogItem } from '../db/schema';
 import { AvailabilitySchema, WeightUnitSchema } from '../types';
 
@@ -272,7 +273,7 @@ export function safeJsonParse<T = unknown>(value: string): T | [] {
 }
 
 export function parseFaqs(input: string): Array<{ question: string; answer: string }> {
-  if (!input || typeof input !== 'string') return [];
+  if (!input || !isString(input)) return [];
 
   const results: Array<{ question: string; answer: string }> = [];
 
