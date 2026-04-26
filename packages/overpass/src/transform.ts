@@ -59,6 +59,7 @@ export function toTrailGeometry(element: OverpassElement): GeoJsonGeometry | nul
   if (ways.length === 0) return null;
 
   const lineStrings = ways.map((m) =>
+    // safe-cast: way elements always have geometry as OverpassNodeGeom[] per Overpass API contract
     (m.geometry as OverpassNodeGeom[]).map((pt): [number, number] => [pt.lon, pt.lat]),
   );
 

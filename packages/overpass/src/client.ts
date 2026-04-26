@@ -29,9 +29,11 @@ export async function queryOverpass(
 
   const data = await response.json();
 
+  // safe-cast: isObject + Array.isArray check above validates the shape before cast
   if (!isObject(data) || !Array.isArray((data as OverpassResponse).elements)) {
     throw new Error('Overpass response is not valid JSON');
   }
 
+  // safe-cast: structure validated by the isObject + Array.isArray guard above
   return data as OverpassResponse;
 }
