@@ -105,6 +105,7 @@ export function WildlifeScreen() {
                 <HistoryItem item={item} onPress={() => handleHistoryItemPress(item)} />
               )}
               contentContainerStyle={{ paddingBottom: 24 }}
+              contentInsetAdjustmentBehavior="automatic"
             />
           </>
         ) : (

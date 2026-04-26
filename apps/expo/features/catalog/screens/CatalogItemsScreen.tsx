@@ -223,6 +223,7 @@ function CatalogItemsScreen() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+        contentInsetAdjustmentBehavior="automatic"
         ListFooterComponent={
           <>
             <View className="py-4">
