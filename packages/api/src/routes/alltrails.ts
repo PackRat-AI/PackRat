@@ -28,7 +28,7 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
     }
 
     if (parsed.protocol !== 'https:' || !ALLTRAILS_HOSTNAME_RE.test(parsed.hostname)) {
-      return status(400, { error: 'URL must be an https://alltrails.com URL' });
+      return status(400, { error: 'URL must be an https://alltrails.com (or subdomain) URL' });
     }
 
     let response: Response;
