@@ -477,6 +477,10 @@
         "wrangler": "^4.21.2",
       },
     },
+    "packages/osm-import": {
+      "name": "@packrat/osm-import",
+      "version": "2.0.24",
+    },
     "packages/ui": {
       "name": "@packrat/ui",
       "version": "2.0.24",
@@ -1274,6 +1278,8 @@
     "@packrat/guards": ["@packrat/guards@workspace:packages/guards"],
 
     "@packrat/mcp": ["@packrat/mcp@workspace:packages/mcp"],
+
+    "@packrat/osm-import": ["@packrat/osm-import@workspace:packages/osm-import"],
 
     "@packrat/ui": ["@packrat/ui@workspace:packages/ui"],
 
