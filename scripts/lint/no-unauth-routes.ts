@@ -34,7 +34,8 @@ const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '__tests__', 'ad
 const ROUTE_START = /\.(get|post|put|patch|delete|all)\s*\(\s*['"`]\//g;
 
 // Auth macros that indicate the route is protected.
-const AUTH_MACRO = /\bisAuthenticated\s*:\s*true\b|\bisAdmin\s*:\s*true\b|\bisValidApiKey\s*:\s*true\b/;
+const AUTH_MACRO =
+  /\bisAuthenticated\s*:\s*true\b|\bisAdmin\s*:\s*true\b|\bisValidApiKey\s*:\s*true\b/;
 
 // Explicit opt-out annotation for intentionally public routes.
 const PUBLIC_ANNOTATION = /\/\/\s*public-route:/;
@@ -91,9 +92,10 @@ function checkFile(filePath: string): Violation[] {
 
   // Reset and scan for all route starts.
   ROUTE_START.lastIndex = 0;
-  let match: RegExpExecArray | null;
 
-  while ((match = ROUTE_START.exec(content)) !== null) {
+  for (;;) {
+    const match = ROUTE_START.exec(content);
+    if (match === null) break;
     const method = match[1] ?? 'get';
     const callStart = match.index; // position of the '.'
     const parenOpen = content.indexOf('(', callStart + 1); // opening paren of the call
@@ -169,6 +171,6 @@ for (const v of allViolations) {
 }
 
 console.log(
-  "\nFix: add isAuthenticated/isAdmin/isValidApiKey to the route options, or add a // public-route: <reason> comment above the route.",
+  '\nFix: add isAuthenticated/isAdmin/isValidApiKey to the route options, or add a // public-route: <reason> comment above the route.',
 );
 process.exit(1);
