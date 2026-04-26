@@ -1,4 +1,3 @@
-import { when } from '@legendapp/state';
 import { PackCategorySchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
 import {
@@ -32,7 +31,6 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
-import { packsSyncState } from '../store/packs';
 import type { Pack } from '../types';
 
 // Define Zod schema
@@ -124,8 +122,6 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
           await updatePack({ ...pack, ...value });
           Burnt.toast({ title: t('packs.packUpdatedSuccess'), preset: 'done' });
         } else {
-          // Guard: initial obs$.set() (mode=undefined, no lastSync) would wipe the local create.
-          await when(packsSyncState.isLoaded);
           await createPack({ ...value, category: value.category });
           Burnt.toast({ title: t('packs.packCreatedSuccess'), preset: 'done' });
         }

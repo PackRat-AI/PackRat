@@ -11,7 +11,11 @@ import type { PackInStore } from '../types';
 let _refreshPacksList: (() => void) | undefined;
 export const refreshPacksList = () => _refreshPacksList?.();
 
-const listPacks = async (): Promise<PackInStore[] | null> => {
+// biome-ignore lint/suspicious/noExplicitAny: crud.js getParams is untyped
+const listPacks = async (getParams: any): Promise<PackInStore[] | null> => {
+  // Force merge mode on every list sync (including initial when lastSync is null),
+  // so obs$.set() is never called and local-only items are never wiped.
+  getParams.mode = 'merge';
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packs: ${error.value}`);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
