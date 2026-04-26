@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import { cn } from 'expo-app/lib/cn';
 import type { WeightUnit } from 'expo-app/types';
 import { formatWeight } from 'expo-app/utils/weight';
@@ -30,7 +31,7 @@ export function WeightBadge({
   };
 
   const safeWeight = Number(weight) || 0;
-  const safeUnit = typeof unit === 'string' ? unit : 'g';
+  const safeUnit = isString(unit) ? unit : 'g';
   const formattedWeight = formatWeight(safeWeight, safeUnit);
 
   return (

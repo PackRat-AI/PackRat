@@ -1,3 +1,4 @@
+import { isObject } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
@@ -62,11 +63,10 @@ export function useGenerateTemplateFromOnlineContent() {
           | string
           | null
           | undefined;
-        const message =
-          typeof value === 'object' && value?.error ? value.error : (value ?? 'Import failed');
+        const message = isObject(value) && value?.error ? value.error : (value ?? 'Import failed');
         const importError = new Error(String(message)) as ImportError;
         importError.status = error.status;
-        if (typeof value === 'object' && value) {
+        if (isObject(value)) {
           importError.code = value.code;
           importError.existingTemplateId = value.existingTemplateId;
         }

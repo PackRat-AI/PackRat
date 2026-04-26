@@ -1,13 +1,13 @@
+import { isObject, zodGuard } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
 import type { SelectedImage } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils';
 import { apiClient } from 'expo-app/lib/api/packrat';
+import { z } from 'zod';
 import { identifyFromDescription } from '../lib/offlineIdentifier';
 import type { IdentificationResult } from '../types';
 
-interface OnlineIdentificationResponse {
-  results: IdentificationResult[];
-}
+const isIdentifyResponse = zodGuard(z.object({ results: z.array(z.unknown()) }));
 
 async function identifyOnline(selectedImage: SelectedImage): Promise<IdentificationResult[]> {
   const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
@@ -24,12 +24,14 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
     wrapped.isApiError = true;
     throw wrapped;
   }
-  return (data as unknown as OnlineIdentificationResponse).results;
+  if (!isIdentifyResponse(data))
+    throw new Error('Unexpected response from wildlife identify endpoint');
+  return data.results as IdentificationResult[];
 }
 
 function isNetworkError(error: unknown): boolean {
   // Primitives and null are not classifiable as network errors
-  if (typeof error !== 'object' || error === null) {
+  if (!isObject(error)) {
     return false;
   }
 

@@ -8,6 +8,7 @@
  * from any component, even while the bottom sheet is closed.
  */
 
+import { isString } from '@packrat/guards';
 import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
 import { store } from 'expo-app/atoms/store';
 import { Platform } from 'react-native';
@@ -82,8 +83,7 @@ let _isCancellingDownload = false;
 export function isAppleIntelligenceAvailable(): boolean {
   if (Platform.OS !== 'ios') return false;
 
-  const version =
-    typeof Platform.Version === 'string' ? parseInt(Platform.Version, 10) : Platform.Version;
+  const version = isString(Platform.Version) ? parseInt(Platform.Version, 10) : Platform.Version;
 
   if (version < 26) return false;
 

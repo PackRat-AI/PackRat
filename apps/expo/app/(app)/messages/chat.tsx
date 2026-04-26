@@ -1,4 +1,4 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, isString } from '@packrat/guards';
 import type { ContextMenuMethods } from '@packrat/ui/nativewindui';
 import {
   Avatar,
@@ -167,13 +167,14 @@ export default function ChatIos() {
             }}
             data={messages}
             renderItem={({ item, index }) => {
-              if (typeof item === 'string') {
+              if (isString(item)) {
                 return <DateSeparator date={item} />;
               }
 
               const nextMessage = messages[index - 1];
-              const isSameNextSender =
-                typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
+              const isSameNextSender = !isString(nextMessage)
+                ? nextMessage?.sender === item.sender
+                : false;
 
               return (
                 <ChatBubble

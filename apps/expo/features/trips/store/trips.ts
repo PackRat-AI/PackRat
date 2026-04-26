@@ -2,6 +2,7 @@ import { observable, syncState } from '@legendapp/state';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { TripSchema } from '@packrat/api/schemas/trips';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
@@ -10,7 +11,7 @@ import type { TripInStore } from '../types';
 const listTrips = async () => {
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list trips: ${error.value}`);
-  return data as object[] | null;
+  return TripSchema.array().parse(data);
 };
 
 const createTrip = async (tripData: TripInStore) => {
@@ -30,7 +31,7 @@ const createTrip = async (tripData: TripInStore) => {
     localUpdatedAt: tripData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create trip: ${error.value}`);
-  return data as object | null;
+  return TripSchema.parse(data);
 };
 
 const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
@@ -45,7 +46,7 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update trip: ${error.value}`);
-  return result as object | null;
+  return TripSchema.parse(result);
 };
 
 // Observable trips store

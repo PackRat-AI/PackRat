@@ -2,6 +2,7 @@ import { createPerplexity } from '@ai-sdk/perplexity';
 import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isFunction } from '@packrat/guards';
 import { generateText } from 'ai';
 
 interface SearchResult {
@@ -19,7 +20,7 @@ export class AIService {
   constructor() {
     this.env = getEnv();
     // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
-    if (this.env.AI && typeof this.env.AI.autorag === 'function') {
+    if (this.env.AI && isFunction(this.env.AI.autorag)) {
       this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
     }
   }
