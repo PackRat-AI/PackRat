@@ -2,6 +2,7 @@ import type { PackCategory, WeightUnit } from '@packrat/api/types';
 import { type InferInsertModel, type InferSelectModel, relations, sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
+  bigint,
   boolean,
   index,
   integer,
@@ -334,6 +335,7 @@ export const trips = pgTable('trips', {
     .references(() => users.id)
     .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
+  trailOsmId: bigint('trail_osm_id', { mode: 'number' }),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),
