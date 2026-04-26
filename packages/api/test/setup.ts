@@ -579,6 +579,8 @@ beforeEach(async () => {
     'posts',
     'trips',
     'users',
+    'hiking_ways',
+    'hiking_relations',
   ];
 
   const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
