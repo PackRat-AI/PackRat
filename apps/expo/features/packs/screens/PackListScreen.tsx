@@ -5,7 +5,6 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
-import { useFocusEffect } from '@react-navigation/native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
@@ -15,7 +14,6 @@ import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
-import { packsSyncState } from 'expo-app/features/packs/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -66,11 +64,6 @@ export function PackListScreen() {
   const userPacks = usePacks();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
 
-  useFocusEffect(
-    useCallback(() => {
-      packsSyncState.peek()?.sync?.();
-    }, []),
-  );
   const [activeFilter, setActiveFilter] = useAtom(activeFilterAtom);
   const { isAuthenticated } = useAuth();
   const { view } = useLocalSearchParams();

@@ -35,7 +35,7 @@ const createTrip = async (tripData: TripInStore) => {
   if (error) throw new Error(`Failed to create trip: ${error.value}`);
   // Refresh the list after create so the new trip appears immediately without
   // waiting for the 30-second polling interval.
-  setTimeout(() => refreshTripsList(), 100);
+  setTimeout(() => refreshTripsList(), 500);
   return data as object | null;
 };
 

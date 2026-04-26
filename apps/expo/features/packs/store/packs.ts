@@ -22,7 +22,7 @@ const createPack = async (packData: PackInStore) => {
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
   // Refresh the list after create so the new pack appears immediately without
   // waiting for the 30-second polling interval.
-  setTimeout(() => refreshPacksList(), 100);
+  setTimeout(() => refreshPacksList(), 500);
   return data as object | null;
 };
 
