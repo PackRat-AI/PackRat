@@ -21,6 +21,10 @@
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
   // - Local development: .dev.vars file (not committed to git)
+  //
+  // Cloudflare Zero Trust / Access (optional — set to enable JWT verification on /api/admin/*):
+  //   CF_ACCESS_TEAM_DOMAIN=<team>.cloudflareaccess.com
+  //   CF_ACCESS_AUD=<Application Audience tag from CF Access dashboard>
   "r2_buckets": [
     {
       "binding": "PACKRAT_BUCKET",
