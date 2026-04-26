@@ -1,4 +1,5 @@
 import { createOsmDb } from '@packrat/api/db';
+import { authPlugin } from '@packrat/api/middleware/auth';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -34,6 +35,7 @@ const RouteDetailRowSchema = RouteBaseRowSchema.extend({
 // ── Routes ─────────────────────────────────────────────────────────────────
 
 export const trailsRoutes = new Elysia({ prefix: '/trails' })
+  .use(authPlugin)
 
   /**
    * GET /api/trails/search
@@ -120,9 +122,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         limit: z.coerce.number().int().min(1).max(200).optional(),
         offset: z.coerce.number().int().min(0).optional(),
       }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Search outdoor routes by text, location, and/or sport',
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -190,9 +194,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ osmId: z.string().regex(/^\d+$/, 'osmId must be a positive integer') }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Get full GeoJSON geometry for a route (stitches from OSM ways if needed)',
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -249,9 +255,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ osmId: z.string().regex(/^\d+$/, 'osmId must be a positive integer') }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Get route metadata by OSM relation ID',
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -273,23 +281,45 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         return status(400, { error: 'Invalid URL' });
       }
 
-      const { hostname } = parsed;
-      if (hostname !== 'alltrails.com' && !hostname.endsWith('.alltrails.com')) {
-        return status(400, { error: 'Only alltrails.com URLs are supported' });
+      const { hostname, protocol } = parsed;
+      if (
+        protocol !== 'https:' ||
+        (hostname !== 'alltrails.com' && !hostname.endsWith('.alltrails.com'))
+      ) {
+        return status(400, { error: 'Only https://alltrails.com URLs are supported' });
       }
 
+      const AT_UA = 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)';
+
       try {
-        const response = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)',
-            Accept: 'text/html',
-          },
+        let response = await fetch(url, {
+          headers: { 'User-Agent': AT_UA, Accept: 'text/html' },
+          redirect: 'manual',
           signal: AbortSignal.timeout(8000),
         });
 
-        const finalHostname = new URL(response.url).hostname;
-        if (finalHostname !== 'alltrails.com' && !finalHostname.endsWith('.alltrails.com')) {
-          return status(400, { error: 'Redirect target is not alltrails.com' });
+        if (response.status >= 300 && response.status < 400) {
+          const location = response.headers.get('location');
+          if (!location)
+            return status(502, { error: 'AllTrails redirected without Location header' });
+          let redirectUrl: URL;
+          try {
+            redirectUrl = new URL(location, url);
+          } catch {
+            return status(502, { error: 'Invalid redirect URL' });
+          }
+          if (
+            redirectUrl.protocol !== 'https:' ||
+            (redirectUrl.hostname !== 'alltrails.com' &&
+              !redirectUrl.hostname.endsWith('.alltrails.com'))
+          ) {
+            return status(400, { error: 'Redirect target is not alltrails.com' });
+          }
+          response = await fetch(redirectUrl.toString(), {
+            headers: { 'User-Agent': AT_UA, Accept: 'text/html' },
+            redirect: 'error',
+            signal: AbortSignal.timeout(8000),
+          });
         }
 
         if (!response.ok) {
@@ -334,9 +364,11 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       body: z.object({ url: z.string().url() }),
+      isAuthenticated: true,
       detail: {
         tags: ['Trails'],
         summary: 'Fetch trail card metadata from an AllTrails URL via OG tags',
+        security: [{ bearerAuth: [] }],
       },
     },
   );
