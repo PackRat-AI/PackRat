@@ -65,21 +65,7 @@ export function useLocationSearch() {
         const formattedData = formatWeatherData(weatherData);
 
         // Create new location with weather data
-        const newLocation: WeatherLocation = {
-          id: formattedData.id,
-          name: formattedData.name,
-          temperature: formattedData.temperature,
-          condition: formattedData.condition,
-          time: formattedData.time,
-          highTemp: formattedData.highTemp,
-          lowTemp: formattedData.lowTemp,
-          alerts: formattedData.alerts,
-          lat: formattedData.lat,
-          lon: formattedData.lon,
-          details: formattedData.details,
-          hourlyForecast: formattedData.hourlyForecast,
-          dailyForecast: formattedData.dailyForecast,
-        };
+        const newLocation = formattedData as unknown as WeatherLocation;
 
         addLocation(newLocation);
         return true;

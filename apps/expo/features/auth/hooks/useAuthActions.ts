@@ -5,6 +5,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { userStore } from 'expo-app/features/auth/store';
+import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -64,7 +65,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
+      userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
       redirect(redirectTo);
     } catch (error) {
@@ -94,7 +95,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
+      userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
       redirect(redirectTo);
     } catch (error) {
@@ -140,7 +141,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
+      userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
       redirect(redirectTo);
     } catch (error) {
@@ -246,7 +247,7 @@ export function useAuthActions() {
         await Storage.setItem('refresh_token', data.refreshToken);
         await setToken(data.accessToken);
         await setRefreshToken(data.refreshToken);
-        userStore.set(data.user);
+        userStore.set(data.user as unknown as User);
         redirect(redirectTo);
       }
 

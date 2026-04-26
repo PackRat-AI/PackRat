@@ -56,7 +56,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
   const alerts = data.alerts;
 
   // Format date and time
-  const localTime = new Date(location.localtime);
+  const localTime = new Date(location.localtime ?? '');
   const formattedTime = localTime.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -82,7 +82,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
           hour12: true,
         }),
         temp: Math.round(hour.temp_f),
-        icon: getIconNameFromCode(hour.condition.code, hour.is_day),
+        icon: getIconNameFromCode(hour.condition.code, hour.is_day) as string,
         weatherCode: hour.condition.code,
         isDay: hour.is_day,
       };
@@ -95,7 +95,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
       high: Math.round(day.day.maxtemp_f),
       low: Math.round(day.day.mintemp_f),
-      icon: getIconNameFromCode(day.day.condition.code, 1), // Always use day icon for daily forecast
+      icon: getIconNameFromCode(day.day.condition.code, 1) as string, // Always use day icon for daily forecast
       weatherCode: day.day.condition.code,
     };
   });

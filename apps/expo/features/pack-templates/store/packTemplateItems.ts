@@ -16,7 +16,7 @@ const listAllPackTemplateItems = async (): Promise<PackTemplateItem[]> => {
   if (error) throw new Error(`Failed to list PackTemplateItems: ${error.value}`);
   return PackTemplateWithItemsSchema.array()
     .parse(data)
-    .flatMap((template) => template.items);
+    .flatMap((template) => template.items) as unknown as PackTemplateItem[];
 };
 
 const createPackTemplateItem = async (item: PackTemplateItem): Promise<PackTemplateItem> => {
@@ -36,7 +36,7 @@ const createPackTemplateItem = async (item: PackTemplateItem): Promise<PackTempl
     notes: item.notes,
   });
   if (error) throw new Error(`Failed to create pack template item: ${error.value}`);
-  return PackTemplateItemSchema.parse(data);
+  return PackTemplateItemSchema.parse(data) as unknown as PackTemplateItem;
 };
 
 const updatePackTemplateItem = async ({
@@ -63,7 +63,7 @@ const updatePackTemplateItem = async ({
       deleted: data.deleted,
     });
   if (error) throw new Error(`Failed to update pack template item: ${error.value}`);
-  return PackTemplateItemSchema.parse(result);
+  return PackTemplateItemSchema.parse(result) as unknown as PackTemplateItem;
 };
 
 // Local observable store

@@ -8,13 +8,13 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { PackInStore } from '../types';
 
-const listPacks = async () => {
+const listPacks = async (): Promise<PackInStore[] | null> => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packs: ${error.value}`);
-  return PackWithWeightsSchema.array().parse(data);
+  return PackWithWeightsSchema.array().parse(data) as unknown as PackInStore[];
 };
 
-const createPack = async (packData: PackInStore) => {
+const createPack = async (packData: PackInStore): Promise<PackInStore | null> => {
   const { data, error } = await apiClient.packs.post({
     id: packData.id,
     name: packData.name,
@@ -27,10 +27,10 @@ const createPack = async (packData: PackInStore) => {
     localUpdatedAt: packData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
-  return PackWithWeightsSchema.parse(data);
+  return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
 };
 
-const updatePack = async ({ id, ...data }: Partial<PackInStore>) => {
+const updatePack = async ({ id, ...data }: Partial<PackInStore>): Promise<PackInStore | null> => {
   const { data: result, error } = await apiClient.packs({ packId: String(id) }).put({
     ...(data.name !== undefined ? { name: data.name } : {}),
     ...(data.description !== undefined ? { description: data.description ?? undefined } : {}),
@@ -42,7 +42,7 @@ const updatePack = async ({ id, ...data }: Partial<PackInStore>) => {
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update pack: ${error.value}`);
-  return PackWithWeightsSchema.parse(result);
+  return PackWithWeightsSchema.parse(result) as unknown as PackInStore;
 };
 
 export const packsStore = observable<Record<string, PackInStore>>({});
