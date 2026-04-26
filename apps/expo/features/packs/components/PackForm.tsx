@@ -1,4 +1,3 @@
-import { when } from '@legendapp/state';
 import { PackCategorySchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
 import {
@@ -16,7 +15,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
 import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
-import { packsSyncState } from 'expo-app/features/packs/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -125,12 +123,6 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
           Burnt.toast({ title: t('packs.packUpdatedSuccess'), preset: 'done' });
         } else {
           createPack({ ...value, category: value.category });
-          // Wait for initial sync to settle (so merge completes) before
-          // navigating back — bounded at 3 s to avoid blocking on network issues.
-          await Promise.race([
-            when(packsSyncState.isLoaded),
-            new Promise<void>((resolve) => setTimeout(resolve, 3000)),
-          ]);
           Burnt.toast({ title: t('packs.packCreatedSuccess'), preset: 'done' });
         }
         router.back();
