@@ -67,6 +67,7 @@ Common ones:
 - **Full docs**: `apps/expo/lib/i18n/README.md`
 - **Migration guide**: `apps/expo/lib/i18n/MIGRATION.md`
 - **Code examples**: `apps/expo/lib/i18n/EXAMPLES.tsx`
+- **Summary**: `apps/expo/I18N_SUMMARY.md`
 
 ## Find Hardcoded Strings
 
