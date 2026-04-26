@@ -40,7 +40,7 @@ jobs:
         run: bun lint
       - name: Commit Biome autofixes
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.fix == true }}
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore: apply biome autofixes via checks workflow'
       - name: Check circular dependencies
