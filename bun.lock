@@ -477,9 +477,26 @@
         "wrangler": "^4.21.2",
       },
     },
+    "packages/osm-db": {
+      "name": "@packrat/osm-db",
+      "version": "0.1.0",
+      "dependencies": {
+        "@neondatabase/serverless": "^1.0.0",
+        "drizzle-orm": "^0.45.2",
+        "pg": "^8.16.3",
+        "ws": "^8.18.1",
+      },
+      "devDependencies": {
+        "drizzle-kit": "^0.31.10",
+        "typescript": "catalog:",
+      },
+    },
     "packages/osm-import": {
       "name": "@packrat/osm-import",
-      "version": "2.0.24",
+      "version": "0.1.0",
+      "dependencies": {
+        "pg": "^8.16.3",
+      },
     },
     "packages/ui": {
       "name": "@packrat/ui",
@@ -1278,6 +1295,8 @@
     "@packrat/guards": ["@packrat/guards@workspace:packages/guards"],
 
     "@packrat/mcp": ["@packrat/mcp@workspace:packages/mcp"],
+
+    "@packrat/osm-db": ["@packrat/osm-db@workspace:packages/osm-db"],
 
     "@packrat/osm-import": ["@packrat/osm-import@workspace:packages/osm-import"],
 

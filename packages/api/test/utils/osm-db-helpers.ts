@@ -1,8 +1,8 @@
 // Raw-SQL seeding helpers for osm_ways and osm_routes.
-// These tables are NOT in the Drizzle schema (managed by osm2pgsql in prod)
-// so we seed them via db.execute() with PostGIS geometry literals.
+// Schema is defined in packages/osm-db; seeding uses raw PostGIS SQL
+// since geometry literals can't be expressed through Drizzle's insert API.
 
-import { createDb } from '@packrat/api/db';
+import { createOsmDb } from '@packrat/api/db';
 import { sql } from 'drizzle-orm';
 import {
   DEFAULT_ROUTE_WKT,
@@ -22,7 +22,7 @@ function quoted(s: string | null | undefined): string {
  * Returns the osm_id so callers can reference it in routes.
  */
 export async function seedOsmWay(opts: OsmWayOpts): Promise<number> {
-  const db = createDb();
+  const db = createOsmDb();
   const wkt = opts.geometryWkt ?? DEFAULT_WAY_WKT;
 
   await db.execute(
@@ -48,13 +48,6 @@ export async function seedOsmWay(opts: OsmWayOpts): Promise<number> {
 }
 
 /**
- * Seeds multiple osm_ways rows.
- */
-export async function seedOsmWays(rows: OsmWayOpts[]): Promise<number[]> {
-  return Promise.all(rows.map(seedOsmWay));
-}
-
-/**
  * Seeds a single osm_routes row via raw PostGIS SQL.
  *
  * Pass `geometryWkt: null` to leave the geometry column NULL — this exercises
@@ -63,7 +56,7 @@ export async function seedOsmWays(rows: OsmWayOpts[]): Promise<number[]> {
  * Returns the osm_id.
  */
 export async function seedOsmRoute(opts: OsmRouteOpts): Promise<number> {
-  const db = createDb();
+  const db = createOsmDb();
   const members: OsmMember[] = opts.members ?? [];
   const membersJson = JSON.stringify(members).replace(/'/g, "''");
 

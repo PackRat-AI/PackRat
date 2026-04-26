@@ -41,36 +41,6 @@ export const DEFAULT_WAY_WKT =
 export const DEFAULT_ROUTE_WKT =
   'MULTILINESTRING((-118.50 37.50, -118.48 37.52, -118.45 37.55, -118.42 37.58, -118.40 37.60))';
 
-// A second segment for multi-way stitching tests (continues from the first).
-export const SECOND_WAY_WKT = 'LINESTRING(-118.40 37.60, -118.38 37.62, -118.35 37.65)';
-
 // Centroid lat/lon of the test geometry (useful for spatial search tests).
 export const TEST_GEOMETRY_LAT = 37.55;
 export const TEST_GEOMETRY_LON = -118.45;
-
-// ── Fixture factories ───────────────────────────────────────────────────────
-
-export function makeOsmWay(overrides: OsmWayOpts): OsmWayOpts {
-  return {
-    osmId: overrides.osmId,
-    name: overrides.name ?? 'Test Way',
-    sport: overrides.sport ?? 'hiking',
-    surface: overrides.surface ?? 'dirt',
-    difficulty: overrides.difficulty ?? null,
-    geometryWkt: overrides.geometryWkt ?? DEFAULT_WAY_WKT,
-  };
-}
-
-export function makeOsmRoute(overrides: OsmRouteOpts): OsmRouteOpts {
-  return {
-    osmId: overrides.osmId,
-    name: overrides.name ?? 'Test Route',
-    sport: overrides.sport ?? 'hiking',
-    network: overrides.network ?? 'lwn',
-    distance: overrides.distance ?? '5 km',
-    difficulty: overrides.difficulty ?? 'easy',
-    description: overrides.description ?? null,
-    members: overrides.members ?? [],
-    geometryWkt: overrides.geometryWkt !== undefined ? overrides.geometryWkt : DEFAULT_ROUTE_WKT,
-  };
-}

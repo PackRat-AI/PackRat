@@ -219,7 +219,7 @@ describe('Trails Routes', () => {
       expect(data.geometry.type).toMatch(/^(LineString|MultiLineString)$/);
     });
 
-    it('writes the stitched geometry back (cached_at is set after first call)', async () => {
+    it('returns stitched geometry on repeated calls when stored geometry is null', async () => {
       // First call: triggers stitching and caching
       await api(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
 

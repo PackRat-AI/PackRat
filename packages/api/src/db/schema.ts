@@ -335,7 +335,7 @@ export const trips = pgTable('trips', {
     .references(() => users.id)
     .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
-  trailOsmId: bigint('trail_osm_id', { mode: 'number' }),
+  trailOsmId: bigint('trail_osm_id', { mode: 'bigint' }),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),

@@ -1,9 +1,10 @@
-import { createDb } from '@packrat/api/db';
+import { createOsmDb } from '@packrat/api/db';
+import { stitchRouteGeometry } from '@packrat/api/services/trails';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-// ── Zod schemas (used for DB row parsing + API validation) ─────────────────
+// ── Zod schemas ─────────────────────────────────────────────────────────────
 
 const OsmMemberSchema = z.object({
   type: z.string(),
@@ -11,7 +12,7 @@ const OsmMemberSchema = z.object({
   role: z.string(),
 });
 
-const RouteSearchRowSchema = z.object({
+const RouteBaseRowSchema = z.object({
   osm_id: z.string(),
   name: z.string().nullable(),
   sport: z.string().nullable(),
@@ -19,63 +20,16 @@ const RouteSearchRowSchema = z.object({
   distance: z.string().nullable(),
   difficulty: z.string().nullable(),
   description: z.string().nullable(),
+});
+
+const RouteSearchRowSchema = RouteBaseRowSchema.extend({
   bbox: z.string().nullable(),
 });
 
-const RouteDetailRowSchema = z.object({
-  osm_id: z.string(),
-  name: z.string().nullable(),
-  sport: z.string().nullable(),
-  network: z.string().nullable(),
-  distance: z.string().nullable(),
-  difficulty: z.string().nullable(),
-  description: z.string().nullable(),
+const RouteDetailRowSchema = RouteBaseRowSchema.extend({
   members: z.array(OsmMemberSchema).nullable(),
   geojson: z.string().nullable(),
 });
-
-type OsmMember = z.infer<typeof OsmMemberSchema>;
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-async function stitchRouteGeometry(
-  db: ReturnType<typeof createDb>,
-  members: OsmMember[],
-): Promise<unknown> {
-  const wayRefs = members.filter((m) => m.type === 'w').map((m) => m.ref);
-  if (wayRefs.length === 0) return null;
-
-  const arrayLiteral = sql.join(
-    wayRefs.map((ref) => sql`${ref}`),
-    sql`, `,
-  );
-
-  const result = await db.execute(sql`
-    SELECT ST_AsGeoJSON(
-      ST_LineMerge(
-        ST_Collect(geometry ORDER BY ordinality)
-      )
-    ) AS geojson
-    FROM osm_ways
-    JOIN unnest(
-      ARRAY[${arrayLiteral}]::bigint[]
-    ) WITH ORDINALITY AS t(osm_id, ordinality)
-      USING (osm_id)
-    WHERE geometry IS NOT NULL
-  `);
-
-  const row = z
-    .object({ geojson: z.string().nullable() })
-    .nullable()
-    .parse(result.rows?.[0] ?? null);
-  if (!row?.geojson) return null;
-
-  try {
-    return JSON.parse(row.geojson);
-  } catch {
-    return null;
-  }
-}
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
@@ -91,13 +45,13 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
   .get(
     '/search',
     async ({ query }) => {
-      const { q, lat, lon, radius = 50, sport } = query;
+      const { q, lat, lon, radius = 50, sport, limit = 50, offset = 0 } = query;
 
       if (!q && (lat === undefined || lon === undefined)) {
         return status(400, { error: 'Provide q (text) and/or lat+lon for spatial search' });
       }
 
-      const db = createDb();
+      const db = createOsmDb();
 
       try {
         const conditions: ReturnType<typeof sql>[] = [];
@@ -136,7 +90,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           ORDER BY
             CASE WHEN name IS NOT NULL THEN 0 ELSE 1 END,
             name
-          LIMIT 50
+          LIMIT ${limit} OFFSET ${offset}
         `);
 
         const rows = z.array(RouteSearchRowSchema).parse(result.rows);
@@ -163,6 +117,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         lon: z.coerce.number().min(-180).max(180).optional(),
         radius: z.coerce.number().positive().max(500).optional(),
         sport: z.string().optional(),
+        limit: z.coerce.number().int().min(1).max(200).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
       }),
       detail: {
         tags: ['Trails'],
@@ -181,8 +137,14 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
   .get(
     '/:osmId/geometry',
     async ({ params }) => {
-      const osmId = BigInt(params.osmId);
-      const db = createDb();
+      let osmId: bigint;
+      try {
+        osmId = BigInt(params.osmId);
+      } catch {
+        return status(400, { error: 'osmId must be a positive integer' });
+      }
+
+      const db = createOsmDb();
 
       try {
         const result = await db.execute(sql`
@@ -194,7 +156,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
             distance,
             difficulty,
             description,
-            members,
+            CASE WHEN geometry IS NULL THEN members ELSE NULL END AS members,
             ST_AsGeoJSON(geometry) AS geojson
           FROM osm_routes
           WHERE osm_id = ${osmId}
@@ -243,8 +205,14 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
   .get(
     '/:osmId',
     async ({ params }) => {
-      const osmId = BigInt(params.osmId);
-      const db = createDb();
+      let osmId: bigint;
+      try {
+        osmId = BigInt(params.osmId);
+      } catch {
+        return status(400, { error: 'osmId must be a positive integer' });
+      }
+
+      const db = createOsmDb();
 
       try {
         const result = await db.execute(sql`
@@ -284,91 +252,6 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       detail: {
         tags: ['Trails'],
         summary: 'Get route metadata by OSM relation ID',
-      },
-    },
-  )
-
-  /**
-   * POST /api/trails/alltrails-preview
-   *
-   * Fetches an AllTrails URL server-side and extracts OpenGraph metadata.
-   */
-  .post(
-    '/alltrails-preview',
-    async ({ body }) => {
-      const { url } = body;
-
-      let parsed: URL;
-      try {
-        parsed = new URL(url);
-      } catch {
-        return status(400, { error: 'Invalid URL' });
-      }
-
-      const { hostname } = parsed;
-      if (hostname !== 'alltrails.com' && !hostname.endsWith('.alltrails.com')) {
-        return status(400, { error: 'Only alltrails.com URLs are supported' });
-      }
-
-      try {
-        const response = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)',
-            Accept: 'text/html',
-          },
-          signal: AbortSignal.timeout(8000),
-        });
-
-        const finalHostname = new URL(response.url).hostname;
-        if (finalHostname !== 'alltrails.com' && !finalHostname.endsWith('.alltrails.com')) {
-          return status(400, { error: 'Redirect target is not alltrails.com' });
-        }
-
-        if (!response.ok) {
-          return status(502, { error: `AllTrails returned ${response.status}` });
-        }
-
-        const html = await response.text();
-
-        const extract = (property: string): string | null => {
-          const match =
-            html.match(
-              new RegExp(
-                `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
-                'i',
-              ),
-            ) ??
-            html.match(
-              new RegExp(
-                `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
-                'i',
-              ),
-            );
-          return match?.[1] ?? null;
-        };
-
-        const title = extract('og:title');
-        const description = extract('og:description');
-        const image = extract('og:image');
-
-        if (!title) {
-          return status(422, { error: 'Could not extract trail metadata from page' });
-        }
-
-        return { title, description, image, url };
-      } catch (error) {
-        if (error instanceof Error && error.name === 'TimeoutError') {
-          return status(504, { error: 'AllTrails request timed out' });
-        }
-        console.error('AllTrails preview error:', error);
-        return status(502, { error: 'Failed to fetch AllTrails page' });
-      }
-    },
-    {
-      body: z.object({ url: z.string().url() }),
-      detail: {
-        tags: ['Trails'],
-        summary: 'Fetch trail card metadata from an AllTrails URL via OG tags',
       },
     },
   );
