@@ -77,41 +77,34 @@ if (exitCode !== 0) {
   process.exit(exitCode);
 }
 
-// ── Post-import indexes ──────────────────────────────────────────────────────
+// ── Post-import migrations ───────────────────────────────────────────────────
 // osm2pgsql --create drops and recreates output tables, losing any pre-existing
-// indexes. Re-apply the full set idempotently before opening for queries.
+// indexes. Clear the migration journal so osm-db migrations re-run and restore
+// the full index set. The SQL uses IF NOT EXISTS so it is safe on both first
+// imports and re-imports.
 
-console.log('\nApplying post-import indexes...');
-const indexClient = new pg.Client({ connectionString: DB_URL });
-await indexClient.connect();
+console.log('\nRe-applying migrations to restore indexes...');
+const journalClient = new pg.Client({ connectionString: DB_URL });
+await journalClient.connect();
 try {
-  await indexClient.query(`
-    CREATE EXTENSION IF NOT EXISTS postgis;
-    CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='osm_routes'::regclass AND contype='p')
-      THEN ALTER TABLE osm_routes ADD PRIMARY KEY (osm_id); END IF;
-    END $$;
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='osm_ways'::regclass AND contype='p')
-      THEN ALTER TABLE osm_ways ADD PRIMARY KEY (osm_id); END IF;
-    END $$;
-
-    CREATE INDEX IF NOT EXISTS osm_routes_geography_idx ON osm_routes USING gist ((geometry::geography));
-    CREATE INDEX IF NOT EXISTS osm_ways_geography_idx   ON osm_ways   USING gist ((geometry::geography));
-
-    CREATE INDEX IF NOT EXISTS osm_routes_sport_idx   ON osm_routes USING btree (sport)   WHERE sport   IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS osm_routes_network_idx ON osm_routes USING btree (network) WHERE network IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS osm_ways_sport_idx     ON osm_ways   USING btree (sport)   WHERE sport   IS NOT NULL;
-
-    CREATE INDEX IF NOT EXISTS osm_routes_name_trgm_idx ON osm_routes USING gin (name gin_trgm_ops) WHERE name IS NOT NULL;
-    CREATE INDEX IF NOT EXISTS osm_ways_name_trgm_idx   ON osm_ways   USING gin (name gin_trgm_ops) WHERE name IS NOT NULL;
-  `);
-  console.log('Indexes applied.');
+  await journalClient.query(`DELETE FROM drizzle.__drizzle_migrations`);
+} catch {
+  // Journal table doesn't exist yet on a brand-new database — that's fine.
 } finally {
-  await indexClient.end();
+  await journalClient.end();
 }
+
+const migrateProc = Bun.spawn(['bun', 'run', './migrate.ts'], {
+  cwd: join(__dirname, '../osm-db'),
+  env: { ...process.env, OSM_DATABASE_URL: DB_URL },
+  stdout: 'inherit',
+  stderr: 'inherit',
+});
+if ((await migrateProc.exited) !== 0) {
+  console.error('Migration failed after import');
+  process.exit(1);
+}
+console.log('Migrations applied.');
 
 // ── Verify ──────────────────────────────────────────────────────────────────
 
