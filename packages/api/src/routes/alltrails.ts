@@ -15,6 +15,7 @@ function extractOgTag(html: string, property: string): string | null {
   return match?.[1] ?? null;
 }
 
+// public-route: link-preview proxy; fetches OG metadata from AllTrails, no user data involved
 export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
   '/preview',
   async ({ body }) => {
