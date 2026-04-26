@@ -11,6 +11,8 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
   item: PackItem;
 }
 
+const isRemoteUrl = (url: string) => url.startsWith('http://') || url.startsWith('https://');
+
 export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
   const isItemOwnedByUser = usePackItemOwnershipCheck(item.id);
   const { colors } = useColorScheme();
@@ -27,6 +29,10 @@ export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
         <Icon name="image" size={24} color={colors.grey} />
       </View>
     );
+
+  if (isRemoteUrl(item.image)) {
+    return <Image source={{ uri: item.image }} {...imageProps} />;
+  }
 
   const imageUrl = buildImageUrl(item);
 
