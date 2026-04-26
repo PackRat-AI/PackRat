@@ -254,4 +254,89 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         summary: 'Get route metadata by OSM relation ID',
       },
     },
+  )
+
+  /**
+   * POST /api/trails/alltrails-preview
+   *
+   * Fetches an AllTrails URL server-side and extracts OpenGraph metadata.
+   */
+  .post(
+    '/alltrails-preview',
+    async ({ body }) => {
+      const { url } = body;
+
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return status(400, { error: 'Invalid URL' });
+      }
+
+      const { hostname } = parsed;
+      if (hostname !== 'alltrails.com' && !hostname.endsWith('.alltrails.com')) {
+        return status(400, { error: 'Only alltrails.com URLs are supported' });
+      }
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)',
+            Accept: 'text/html',
+          },
+          signal: AbortSignal.timeout(8000),
+        });
+
+        const finalHostname = new URL(response.url).hostname;
+        if (finalHostname !== 'alltrails.com' && !finalHostname.endsWith('.alltrails.com')) {
+          return status(400, { error: 'Redirect target is not alltrails.com' });
+        }
+
+        if (!response.ok) {
+          return status(502, { error: `AllTrails returned ${response.status}` });
+        }
+
+        const html = await response.text();
+
+        const extract = (property: string): string | null => {
+          const match =
+            html.match(
+              new RegExp(
+                `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
+                'i',
+              ),
+            ) ??
+            html.match(
+              new RegExp(
+                `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
+                'i',
+              ),
+            );
+          return match?.[1] ?? null;
+        };
+
+        const title = extract('og:title');
+        const description = extract('og:description');
+        const image = extract('og:image');
+
+        if (!title) {
+          return status(422, { error: 'Could not extract trail metadata from page' });
+        }
+
+        return { title, description, image, url };
+      } catch (error) {
+        if (error instanceof Error && error.name === 'TimeoutError') {
+          return status(504, { error: 'AllTrails request timed out' });
+        }
+        console.error('AllTrails preview error:', error);
+        return status(502, { error: 'Failed to fetch AllTrails page' });
+      }
+    },
+    {
+      body: z.object({ url: z.string().url() }),
+      detail: {
+        tags: ['Trails'],
+        summary: 'Fetch trail card metadata from an AllTrails URL via OG tags',
+      },
+    },
   );

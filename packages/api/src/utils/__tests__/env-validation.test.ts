@@ -8,6 +8,7 @@ function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unk
     SENTRY_DSN: 'https://test@test.ingest.sentry.io/123',
     NEON_DATABASE_URL: 'postgres://user:pass@host/db',
     NEON_DATABASE_URL_READONLY: 'postgres://user:pass@host/db',
+    OSM_DATABASE_URL: 'postgres://user:pass@host/osm_db',
     JWT_SECRET: 'secret',
     PASSWORD_RESET_SECRET: 'reset',
     GOOGLE_CLIENT_ID: 'google',

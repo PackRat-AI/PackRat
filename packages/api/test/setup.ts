@@ -515,6 +515,7 @@ vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
+  createOsmDb: vi.fn(() => testDb),
 }));
 
 vi.mock('youtube-transcript', () => ({

@@ -56,6 +56,8 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    "packages/mcp"
+    "packages/mcp",
+    "packages/osm-db",
+    "packages/osm-import"
   ]
 }
