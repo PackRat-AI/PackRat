@@ -141,6 +141,7 @@ export default function CurrentPackScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
+        contentInsetAdjustmentBehavior="automatic"
       >
         <View
           className="flex-row items-center p-4"

@@ -79,6 +79,7 @@ export default function ReportedContentScreen() {
           data={filteredData}
           keyExtractor={(item) => item.id.toString()}
           contentContainerClassName="p-4"
+          contentInsetAdjustmentBehavior="automatic"
           renderItem={({ item }) => (
             <View className="mb-4 rounded-lg border border-border bg-card p-4">
               <View className="mb-2 flex-row justify-between">

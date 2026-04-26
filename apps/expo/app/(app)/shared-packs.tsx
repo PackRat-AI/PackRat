@@ -181,7 +181,7 @@ export default function SharedPacksScreen() {
   return (
     <>
       <LargeTitleHeader title={t('packs.sharedPacks')} />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
             {t('packs.collaborateOnPacks')}
