@@ -18,9 +18,8 @@ export default function LandingHero() {
   };
 
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: {},
     visible: {
-      opacity: 1,
       transition: { staggerChildren: 0.1, delayChildren: 0.2 },
     },
   };
@@ -56,24 +55,18 @@ export default function LandingHero() {
               </div>
             </motion.div>
 
-            {/* Heading */}
-            <motion.h1
-              className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl"
-              variants={itemVariants}
-            >
+            {/* Heading — rendered immediately for LCP */}
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
               <span className="block text-foreground">{siteConfig.hero.titleLine1}</span>
               <span className="block mt-1 bg-clip-text text-transparent bg-gradient-to-r from-apple-blue to-blue-400">
                 {siteConfig.hero.titleLine2}
               </span>
-            </motion.h1>
+            </h1>
 
-            {/* Subtitle */}
-            <motion.p
-              className="text-xl text-muted-foreground font-medium max-w-xl mx-auto lg:mx-0"
-              variants={itemVariants}
-            >
+            {/* Subtitle — rendered immediately for LCP */}
+            <p className="text-xl text-muted-foreground font-medium max-w-xl mx-auto lg:mx-0">
               {siteConfig.hero.subtitle}
-            </motion.p>
+            </p>
 
             {/* CTA buttons */}
             <motion.div

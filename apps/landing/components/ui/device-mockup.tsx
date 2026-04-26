@@ -2,7 +2,7 @@
 
 import { cn } from '@packrat/web-ui/lib/utils';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface DeviceMockupProps {
   image: string;
@@ -25,12 +25,7 @@ export default function DeviceMockup({
   showGradient = true,
   aspectRatio = 'portrait',
 }: DeviceMockupProps) {
-  const [mounted, setMounted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: ignore
@@ -38,8 +33,6 @@ export default function DeviceMockup({
       className={cn(
         'relative mx-auto w-full transition-all duration-500',
         aspectRatio === 'portrait' ? 'max-w-[280px] md:max-w-[320px]' : 'max-w-[560px] w-full',
-        // Use invisible instead of null — preserves layout space, no CLS
-        !mounted && 'invisible',
         className,
       )}
       onMouseEnter={() => setIsHovered(true)}
