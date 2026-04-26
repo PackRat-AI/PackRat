@@ -1,6 +1,6 @@
+import { CatalogItemsResponseSchema } from '@packrat/api/schemas/catalog';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
-import type { PaginatedCatalogItemsResponse } from '../types';
 
 type CatalogSortField =
   | 'name'
@@ -26,7 +26,7 @@ export const getCatalogItems = async ({
   category,
   limit,
   sort,
-}: GetCatalogItemsParams): Promise<PaginatedCatalogItemsResponse> => {
+}: GetCatalogItemsParams) => {
   const { data, error } = await apiClient.catalog.get({
     query: {
       page: pageParam,
@@ -37,9 +37,7 @@ export const getCatalogItems = async ({
     },
   });
   if (error) throw new Error(`Failed to fetch catalog items: ${error.value}`);
-  // Treaty infers the wider Drizzle row shape; consumers expect the local
-  // `CatalogItem` projection. Bridge with an explicit assertion.
-  return data as unknown as PaginatedCatalogItemsResponse;
+  return CatalogItemsResponseSchema.parse(data);
 };
 
 export function useCatalogItemsInfinite({ query, category, limit, sort }: GetCatalogItemsParams) {

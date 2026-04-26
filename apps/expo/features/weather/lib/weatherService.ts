@@ -1,30 +1,28 @@
+import {
+  LocationSearchResponseSchema,
+  type WeatherAPIForecastResponse,
+  WeatherAPIForecastResponseSchema,
+} from '@packrat/api/schemas/weather';
 import { assertDefined } from '@packrat/guards';
-import type {
-  LocationSearchResult,
-  WeatherApiForecastResponse,
-} from 'expo-app/features/weather/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
  * Search for locations by name
  */
-export async function searchLocations(query: string): Promise<LocationSearchResult[]> {
+export async function searchLocations(query: string) {
   const { data, error } = await apiClient.weather.search.get({ query: { q: query } });
   if (error) {
     console.error('Error searching locations:', error.value);
     throw new Error('Failed to search locations');
   }
-  return (data ?? []) as unknown as LocationSearchResult[];
+  return LocationSearchResponseSchema.parse(data ?? []);
 }
 
 /**
  * Search for locations by coordinates
  */
-export async function searchLocationsByCoordinates(
-  latitude: number,
-  longitude: number,
-): Promise<LocationSearchResult[]> {
+export async function searchLocationsByCoordinates(latitude: number, longitude: number) {
   const { data, error } = await apiClient.weather['search-by-coordinates'].get({
     query: { lat: latitude.toFixed(6), lon: longitude.toFixed(6) },
   });
@@ -32,25 +30,25 @@ export async function searchLocationsByCoordinates(
     console.error('Error searching locations by coordinates:', error.value);
     throw new Error('Failed to find locations near you');
   }
-  return (data ?? []) as unknown as LocationSearchResult[];
+  return LocationSearchResponseSchema.parse(data ?? []);
 }
 
 /**
  * Get detailed weather data for a location
  */
-export async function getWeatherData(id: number): Promise<WeatherApiForecastResponse> {
+export async function getWeatherData(id: number) {
   const { data, error } = await apiClient.weather.forecast.get({ query: { id: String(id) } });
   if (error) {
     console.error('Error getting weather data:', error.value);
     throw new Error('Failed to get weather data');
   }
-  return data as unknown as WeatherApiForecastResponse;
+  return WeatherAPIForecastResponseSchema.parse(data);
 }
 
 /**
  * Format raw weather data into our application's format
  */
-export function formatWeatherData(data: WeatherApiForecastResponse) {
+export function formatWeatherData(data: WeatherAPIForecastResponse) {
   // Extract location data
   const location = data.location;
   const current = data.current;
@@ -58,7 +56,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
   const alerts = data.alerts;
 
   // Format date and time
-  const localTime = new Date(location.localtime);
+  const localTime = new Date(location.localtime ?? '');
   const formattedTime = localTime.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
@@ -84,7 +82,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
           hour12: true,
         }),
         temp: Math.round(hour.temp_f),
-        icon: getIconNameFromCode(hour.condition.code, hour.is_day),
+        icon: getIconNameFromCode(hour.condition.code, hour.is_day) as string,
         weatherCode: hour.condition.code,
         isDay: hour.is_day,
       };
@@ -97,7 +95,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
       high: Math.round(day.day.maxtemp_f),
       low: Math.round(day.day.mintemp_f),
-      icon: getIconNameFromCode(day.day.condition.code, 1), // Always use day icon for daily forecast
+      icon: getIconNameFromCode(day.day.condition.code, 1) as string, // Always use day icon for daily forecast
       weatherCode: day.day.condition.code,
     };
   });

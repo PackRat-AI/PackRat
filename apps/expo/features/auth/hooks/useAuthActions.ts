@@ -1,4 +1,3 @@
-import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -6,6 +5,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { userStore } from 'expo-app/features/auth/store';
+import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -31,6 +31,13 @@ function redirect(route: string) {
   }
 }
 
+function extractAuthError(value: unknown, fallback: string): string {
+  if (typeof value === 'object' && value !== null && 'error' in value) {
+    return String((value as Record<string, unknown>).error) || fallback;
+  }
+  return fallback;
+}
+
 export function useAuthActions() {
   const setToken = useSetAtom(tokenAtom);
   const setRefreshToken = useSetAtom(refreshTokenAtom);
@@ -51,29 +58,15 @@ export function useAuthActions() {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignIn'));
+      const { data, error } = await apiClient.auth.login.post({ email, password });
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToSignIn')));
       }
-
-      console.log(data.accessToken, data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
+      userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
-
       redirect(redirectTo);
     } catch (error) {
       console.error('Sign in error:', error);
@@ -87,41 +80,23 @@ export function useAuthActions() {
     try {
       setIsLoading(true);
 
-      // Check if user is already signed in to Google
       await GoogleSignin.hasPlayServices();
-
-      // Sign in with Google
       const _userInfo = await GoogleSignin.signIn();
-
-      // Get the ID token
       const { idToken } = await GoogleSignin.getTokens();
 
       if (!idToken) {
         throw new Error(t('auth.noIdTokenFromGoogle'));
       }
 
-      // Send the token to backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignInWithGoogle'));
+      const { data, error } = await apiClient.auth.google.post({ idToken });
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToSignInWithGoogle')));
       }
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
+      userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
-
       redirect(redirectTo);
     } catch (error) {
       setIsLoading(false);
@@ -156,31 +131,18 @@ export function useAuthActions() {
         ],
       });
 
-      // Send the identity token to your backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/apple`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          identityToken: credential.identityToken,
-          authorizationCode: credential.authorizationCode,
-        }),
+      const { data, error } = await apiClient.auth.apple.post({
+        identityToken: credential.identityToken ?? '',
+        authorizationCode: credential.authorizationCode ?? '',
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignInWithApple'));
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToSignInWithApple')));
       }
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
+      userStore.set(data.user as unknown as User);
       setNeedsReauth(false);
-
       redirect(redirectTo);
     } catch (error) {
       console.error('Apple sign in error:', error);
@@ -203,18 +165,14 @@ export function useAuthActions() {
   }) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+      const { error } = await apiClient.auth.register.post({
+        email,
+        password,
+        firstName,
+        lastName,
       });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || t('auth.registrationFailed'));
+      if (error) {
+        throw new Error(extractAuthError(error.value, t('auth.registrationFailed')));
       }
     } catch (error) {
       console.error('Registration error:', error instanceof Error ? error.message : String(error));
@@ -227,27 +185,17 @@ export function useAuthActions() {
   const signOut = async () => {
     setIsLoading(true);
     try {
-      // Sign out from Google if signed in
       const isSignedIn = await GoogleSignin.hasPreviousSignIn();
       if (isSignedIn) {
         await GoogleSignin.signOut();
       }
 
-      // Get the refresh token
       if (refreshToken) {
-        // Call the logout endpoint to revoke the refresh token
-        await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
+        await apiClient.auth.logout.post({ refreshToken });
       }
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
-      // Clear tokens and user data
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();
@@ -258,20 +206,10 @@ export function useAuthActions() {
 
   const forgotPassword = async (email: string) => {
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToProcessRequest'));
+      const { data, error } = await apiClient.auth['forgot-password'].post({ email });
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToProcessRequest')));
       }
-
       return data;
     } catch (error) {
       console.error('Forgot password error:', error);
@@ -282,20 +220,14 @@ export function useAuthActions() {
   const resetPassword = async (email: string, opts: { code: string; newPassword: string }) => {
     const { code, newPassword } = opts;
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code, newPassword }),
+      const { data, error } = await apiClient.auth['reset-password'].post({
+        email,
+        code,
+        newPassword,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.resetPasswordFailed'));
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.resetPasswordFailed')));
       }
-
       return data;
     } catch (error) {
       console.error('Reset password error:', error);
@@ -305,28 +237,17 @@ export function useAuthActions() {
 
   const verifyEmail = async (email: string, code: string) => {
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToVerifyEmail'));
+      const { data, error } = await apiClient.auth['verify-email'].post({ email, code });
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToVerifyEmail')));
       }
 
-      // If verification is successful, set the user and tokens
       if (data.accessToken && data.refreshToken && data.user) {
         await Storage.setItem('access_token', data.accessToken);
         await Storage.setItem('refresh_token', data.refreshToken);
-
         await setToken(data.accessToken);
         await setRefreshToken(data.refreshToken);
-        userStore.set(data.user);
+        userStore.set(data.user as unknown as User);
         redirect(redirectTo);
       }
 
@@ -339,23 +260,10 @@ export function useAuthActions() {
 
   const resendVerificationEmail = async (email: string) => {
     try {
-      const response = await fetch(
-        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/resend-verification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToResendVerificationEmail'));
+      const { data, error } = await apiClient.auth['resend-verification'].post({ email });
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToResendVerificationEmail')));
       }
-
       return data;
     } catch (error) {
       console.error('Resend verification email error:', error);
@@ -371,7 +279,6 @@ export function useAuthActions() {
         throw new Error(String(error.value ?? t('auth.failedToDeleteAccount')));
       }
 
-      // Clear tokens and user data
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();

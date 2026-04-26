@@ -14,6 +14,7 @@ import { Label } from '@packrat/web-ui/components/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AdminCatalogItem } from 'admin-app/lib/api';
 import { updateCatalogItem } from 'admin-app/lib/api';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 
@@ -28,7 +29,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
   const { mutate, isPending } = useMutation({
     mutationFn: (data: Parameters<typeof updateCatalogItem>[1]) => updateCatalogItem(item.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog() });
       setOpen(false);
     },
   });
