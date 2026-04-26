@@ -11,7 +11,7 @@ import {
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
 import { storeToken } from 'admin-app/lib/auth';
-import { isBehindCFAccess } from 'admin-app/lib/cfAccess';
+import { useCFAccessIdentity } from 'admin-app/lib/cfAccess';
 import { Package, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -27,14 +27,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [cfAccess, setCFAccess] = useState<boolean | null>(null);
+
+  const { data: cfIdentity, isPending: cfPending } = useCFAccessIdentity();
 
   useEffect(() => {
-    isBehindCFAccess().then((behind) => {
-      setCFAccess(behind);
-      if (behind) router.replace('/dashboard');
-    });
-  }, [router]);
+    if (!cfPending && cfIdentity) router.replace('/dashboard');
+  }, [cfPending, cfIdentity, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,7 +68,7 @@ export default function LoginPage() {
   }
 
   // Redirect in progress (behind CF Access) — show nothing while navigating
-  if (cfAccess === true) return null;
+  if (!cfPending && cfIdentity) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -122,7 +120,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {cfAccess === false && (
+        {!cfPending && !cfIdentity && (
           <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <Shield className="w-3 h-3" />
             Local dev mode — Cloudflare Access not detected
