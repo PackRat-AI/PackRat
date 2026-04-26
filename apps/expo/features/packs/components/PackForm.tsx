@@ -10,6 +10,7 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
 import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
@@ -114,15 +115,20 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       onChange: packFormSchema,
     },
     onSubmit: async ({ value }) => {
-      if (isCreatingFromTemplate) {
-        createPackFromTemplate(params.templateId as string, value);
-      } else if (isEditingExistingPack) {
-        updatePack({ ...pack, ...value });
-      } else {
-        createPack({ ...value, category: value.category });
+      try {
+        if (isCreatingFromTemplate) {
+          await createPackFromTemplate(params.templateId as string, value);
+        } else if (isEditingExistingPack) {
+          await updatePack({ ...pack, ...value });
+          Burnt.toast({ title: t('packs.packUpdatedSuccess'), preset: 'done' });
+        } else {
+          await createPack({ ...value, category: value.category });
+          Burnt.toast({ title: t('packs.packCreatedSuccess'), preset: 'done' });
+        }
+        router.back();
+      } catch (_e) {
+        Burnt.toast({ title: t('errors.tryAgain'), preset: 'error' });
       }
-
-      router.back();
     },
   });
 
