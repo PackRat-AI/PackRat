@@ -44,7 +44,6 @@ interface TrailRelation {
  */
 async function stitchTrailGeometry(
   db: ReturnType<typeof createDb>,
-  osmId: bigint,
   members: OsmMember[],
 ): Promise<unknown> {
   const wayRefs = members.filter((m) => m.type === 'w').map((m) => m.ref);
@@ -101,7 +100,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         const conditions: ReturnType<typeof sql>[] = [];
 
         if (q) {
-          conditions.push(sql`name ILIKE ${'%' + q + '%'}`);
+          conditions.push(sql`name ILIKE ${`%${q}%`}`);
         }
 
         if (lat !== undefined && lon !== undefined) {
@@ -197,9 +196,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = result.rows?.[0] as
-          | (TrailRelation & { geojson: string | null })
-          | undefined;
+        const row = result.rows?.[0] as (TrailRelation & { geojson: string | null }) | undefined;
 
         if (!row) return status(404, { error: 'Trail not found' });
 
@@ -210,7 +207,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           geometry = JSON.parse(row.geojson);
         } else if (row.members && Array.isArray(row.members) && row.members.length > 0) {
           // Stitch from member ways at runtime
-          geometry = await stitchTrailGeometry(db, osmId, row.members);
+          geometry = await stitchTrailGeometry(db, row.members);
 
           // Cache the stitched result back so we don't repeat the work
           if (geometry) {
@@ -272,7 +269,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           WHERE osm_id = ${osmId}
         `);
 
-        const row = result.rows?.[0] as (TrailSearchResult & { geojson: string | null }) | undefined;
+        const row = result.rows?.[0] as
+          | (TrailSearchResult & { geojson: string | null })
+          | undefined;
         if (!row) return status(404, { error: 'Trail not found' });
 
         return {
@@ -328,8 +327,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       try {
         const response = await fetch(url, {
           headers: {
-            'User-Agent':
-              'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)',
+            'User-Agent': 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)',
             Accept: 'text/html',
           },
           // Cloudflare Workers fetch has no keepalive issues
@@ -343,11 +341,19 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         const html = await response.text();
 
         const extract = (property: string): string | null => {
-          const match = html.match(
-            new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i'),
-          ) ?? html.match(
-            new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, 'i'),
-          );
+          const match =
+            html.match(
+              new RegExp(
+                `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
+                'i',
+              ),
+            ) ??
+            html.match(
+              new RegExp(
+                `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
+                'i',
+              ),
+            );
           return match?.[1] ?? null;
         };
 

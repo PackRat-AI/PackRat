@@ -42,8 +42,7 @@ export const DEFAULT_RELATION_WKT =
   'MULTILINESTRING((-118.50 37.50, -118.48 37.52, -118.45 37.55, -118.42 37.58, -118.40 37.60))';
 
 // A second segment for multi-way stitching tests (continues from the first).
-export const SECOND_WAY_WKT =
-  'LINESTRING(-118.40 37.60, -118.38 37.62, -118.35 37.65)';
+export const SECOND_WAY_WKT = 'LINESTRING(-118.40 37.60, -118.38 37.62, -118.35 37.65)';
 
 // Centroid lat/lon of the test geometry (useful for spatial search tests).
 export const TEST_GEOMETRY_LAT = 37.55;
@@ -72,7 +71,6 @@ export function makeHikingRelation(overrides: HikingRelationOpts): HikingRelatio
     difficulty: overrides.difficulty ?? 'easy',
     description: overrides.description ?? null,
     members: overrides.members ?? [],
-    geometryWkt:
-      overrides.geometryWkt !== undefined ? overrides.geometryWkt : DEFAULT_RELATION_WKT,
+    geometryWkt: overrides.geometryWkt !== undefined ? overrides.geometryWkt : DEFAULT_RELATION_WKT,
   };
 }

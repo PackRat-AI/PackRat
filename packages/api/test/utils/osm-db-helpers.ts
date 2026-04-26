@@ -4,8 +4,13 @@
 
 import { createDb } from '@packrat/api/db';
 import { sql } from 'drizzle-orm';
-import type { HikingRelationOpts, HikingWayOpts, OsmMember } from '../fixtures/trail-fixtures';
-import { DEFAULT_RELATION_WKT, DEFAULT_WAY_WKT } from '../fixtures/trail-fixtures';
+import {
+  DEFAULT_RELATION_WKT,
+  DEFAULT_WAY_WKT,
+  type HikingRelationOpts,
+  type HikingWayOpts,
+  type OsmMember,
+} from '../fixtures/trail-fixtures';
 
 function quoted(s: string | null | undefined): string {
   if (s == null) return 'NULL';
@@ -20,7 +25,8 @@ export async function seedHikingWay(opts: HikingWayOpts): Promise<number> {
   const db = createDb();
   const wkt = opts.geometryWkt ?? DEFAULT_WAY_WKT;
 
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     INSERT INTO hiking_ways (osm_id, name, surface, difficulty, access, foot, geometry)
     VALUES (
       ${opts.osmId},
@@ -35,7 +41,8 @@ export async function seedHikingWay(opts: HikingWayOpts): Promise<number> {
       name     = EXCLUDED.name,
       surface  = EXCLUDED.surface,
       geometry = EXCLUDED.geometry
-  `));
+  `),
+  );
 
   return opts.osmId;
 }
@@ -62,11 +69,10 @@ export async function seedHikingRelation(opts: HikingRelationOpts): Promise<numb
 
   const wkt = opts.geometryWkt !== undefined ? opts.geometryWkt : DEFAULT_RELATION_WKT;
   const geometrySql =
-    wkt != null
-      ? `ST_SetSRID(ST_GeomFromText('${wkt.replace(/'/g, "''")}'), 4326)`
-      : 'NULL';
+    wkt != null ? `ST_SetSRID(ST_GeomFromText('${wkt.replace(/'/g, "''")}'), 4326)` : 'NULL';
 
-  await db.execute(sql.raw(`
+  await db.execute(
+    sql.raw(`
     INSERT INTO hiking_relations
       (osm_id, name, network, distance, difficulty, description, members, geometry)
     VALUES (
@@ -83,7 +89,8 @@ export async function seedHikingRelation(opts: HikingRelationOpts): Promise<numb
       name     = EXCLUDED.name,
       members  = EXCLUDED.members,
       geometry = EXCLUDED.geometry
-  `));
+  `),
+  );
 
   return opts.osmId;
 }

@@ -28,8 +28,7 @@ describe('Trails Routes', () => {
       name: 'Sierra Test Way 2',
       surface: 'rock',
       // Continues from first way — good for multi-way stitching
-      geometryWkt:
-        'LINESTRING(-118.40 37.60, -118.38 37.62, -118.35 37.65)',
+      geometryWkt: 'LINESTRING(-118.40 37.60, -118.38 37.62, -118.35 37.65)',
     });
 
     // ── Seed relations ─────────────────────────────────────────────────────
@@ -81,9 +80,7 @@ describe('Trails Routes', () => {
       const data = await expectJsonResponse(res);
 
       expect(Array.isArray(data)).toBe(true);
-      const found = data.find(
-        (t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID),
-      );
+      const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID));
       expect(found).toBeDefined();
       expect(found.name).toBe('John Muir Test Trail');
       expect(found.network).toBe('rwn');
@@ -94,9 +91,7 @@ describe('Trails Routes', () => {
       const res = await api('/trails/search?q=john+muir+test');
       const data = await expectJsonResponse(res);
 
-      const found = data.find(
-        (t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID),
-      );
+      const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID));
       expect(found).toBeDefined();
     });
 
@@ -146,9 +141,7 @@ describe('Trails Routes', () => {
     it('returns bbox when geometry is present', async () => {
       const res = await api('/trails/search?q=John+Muir+Test');
       const data = await expectJsonResponse(res);
-      const found = data.find(
-        (t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID),
-      );
+      const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID));
       expect(found.bbox).not.toBeNull();
       expect(found.bbox.type).toBe('Polygon');
     });
@@ -156,9 +149,7 @@ describe('Trails Routes', () => {
     it('returns null bbox when geometry is null', async () => {
       const res = await api('/trails/search?q=Unstored+Geometry');
       const data = await expectJsonResponse(res);
-      const found = data.find(
-        (t: { osmId: string }) => t.osmId === String(RELATION_NO_GEOM_ID),
-      );
+      const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_NO_GEOM_ID));
       expect(found).toBeDefined();
       expect(found.bbox).toBeNull();
     });
@@ -330,10 +321,7 @@ describe('Trails Routes', () => {
         </head></html>
       `;
 
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(new Response(mockHtml, { status: 200 })),
-      );
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(mockHtml, { status: 200 })));
 
       const res = await api('/trails/alltrails-preview', {
         method: 'POST',
@@ -349,9 +337,11 @@ describe('Trails Routes', () => {
     it('returns 422 when the page has no OG title', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(
-          new Response('<html><head><title>Page</title></head></html>', { status: 200 }),
-        ),
+        vi
+          .fn()
+          .mockResolvedValue(
+            new Response('<html><head><title>Page</title></head></html>', { status: 200 }),
+          ),
       );
 
       const res = await api('/trails/alltrails-preview', {
@@ -363,10 +353,7 @@ describe('Trails Routes', () => {
     });
 
     it('returns 502 when AllTrails returns a non-OK status', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(new Response('Not Found', { status: 404 })),
-      );
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Not Found', { status: 404 })));
 
       const res = await api('/trails/alltrails-preview', {
         method: 'POST',
