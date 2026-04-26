@@ -10,7 +10,11 @@ import type { TripInStore } from '../types';
 let _refreshTripsList: (() => void) | undefined;
 export const refreshTripsList = () => _refreshTripsList?.();
 
-const listTrips = async () => {
+// biome-ignore lint/suspicious/noExplicitAny: crud.js getParams is untyped
+const listTrips = async (getParams: any) => {
+  // Force merge mode on every list sync (including initial when lastSync is null),
+  // so obs$.set() is never called and local-only items are never wiped.
+  getParams.mode = 'merge';
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list trips: ${error.value}`);
   return data as object[] | null;
