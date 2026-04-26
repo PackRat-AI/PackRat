@@ -14,7 +14,9 @@ import type { PackTemplateItem } from '../types';
 const listAllPackTemplateItems = async (): Promise<PackTemplateItem[]> => {
   const { data, error } = await apiClient['pack-templates'].get();
   if (error) throw new Error(`Failed to list PackTemplateItems: ${error.value}`);
-  return PackTemplateWithItemsSchema.array().parse(data).flatMap((template) => template.items);
+  return PackTemplateWithItemsSchema.array()
+    .parse(data)
+    .flatMap((template) => template.items);
 };
 
 const createPackTemplateItem = async (item: PackTemplateItem): Promise<PackTemplateItem> => {

@@ -13,7 +13,9 @@ import { uploadImage } from '../utils';
 const listAllPackItems = async () => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packitems: ${error.value}`);
-  return PackWithWeightsSchema.array().parse(data).flatMap((pack) => pack.items ?? []);
+  return PackWithWeightsSchema.array()
+    .parse(data)
+    .flatMap((pack) => pack.items ?? []);
 };
 
 const createPackItem = async ({ packId, ...data }: PackItem) => {
