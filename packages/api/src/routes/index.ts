@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
+import { alltrailsRoutes } from './alltrails';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
@@ -39,4 +40,5 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(uploadRoutes)
   .use(trailConditionsRoutes)
   .use(wildlifeRoutes)
-  .use(knowledgeBaseRoutes);
+  .use(knowledgeBaseRoutes)
+  .use(alltrailsRoutes);
