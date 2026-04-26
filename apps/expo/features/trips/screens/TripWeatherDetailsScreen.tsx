@@ -132,8 +132,8 @@ export default function TripWeatherDetailsScreen() {
             <Text className="text-xl text-white">{current.condition.text}</Text>
 
             <Text className="text-white/80 mt-2">
-              H:{weather.forecast.forecastday[0].day.maxtemp_c}° L:
-              {weather.forecast.forecastday[0].day.mintemp_c}°
+              H:{weather.forecast.forecastday[0]?.day.maxtemp_c}° L:
+              {weather.forecast.forecastday[0]?.day.mintemp_c}°
             </Text>
           </View>
           <WeatherForecast

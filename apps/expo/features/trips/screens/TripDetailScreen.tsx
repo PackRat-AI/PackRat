@@ -8,7 +8,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, ScrollView, Share, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
@@ -147,7 +147,6 @@ export function TripDetailScreen() {
                 <View className="h-36">
                   <MapView
                     key={mapKey}
-                    provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
                     initialRegion={{
                       latitude: trip.location.latitude,
