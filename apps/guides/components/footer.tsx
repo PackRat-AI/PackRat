@@ -1,6 +1,3 @@
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { footerConfig, siteConfig } from 'guides-app/lib/config';
@@ -8,11 +5,7 @@ import { Backpack, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Footer() {
-  // Fetch categories using TanStack Query
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getAllCategories,
-  });
+  const categories = getAllCategories();
 
   const company = footerConfig.mainSections[1];
   assertDefined(company);
