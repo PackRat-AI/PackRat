@@ -14,9 +14,9 @@
     }
   },
   "scripts": {
+    "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
-    "db:migrate": "bun run ./migrate.ts",
-    "check-types": "tsc --noEmit"
+    "db:migrate": "bun run ./migrate.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
