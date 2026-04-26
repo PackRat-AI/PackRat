@@ -1,4 +1,6 @@
 import { openai } from '@ai-sdk/openai';
+import { treaty } from '@elysiajs/eden';
+import type { App } from '@packrat/api';
 import { guideEnv } from '@packrat/env/next';
 import { generateText, tool } from 'ai';
 import { z } from 'zod';
@@ -50,6 +52,16 @@ export async function enhanceGuideContent(
   if (!apiKey) {
     throw new Error('PACKRAT_API_KEY environment variable is required for content enhancement');
   }
+
+  const catalogClient = treaty<App>(apiBaseUrl, {
+    fetcher: (input, init) => {
+      const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
+      return fetch(input, {
+        ...init,
+        headers: { ...existing, 'X-API-KEY': apiKey },
+      });
+    },
+  }).api.catalog;
 
   // Track products used for reporting
   const productsUsed: Array<{
@@ -114,26 +126,15 @@ export async function enhanceGuideContent(
                 offset,
               );
 
-              const searchUrl = new URL(`${apiBaseUrl}/api/catalog/vector-search`);
-              searchUrl.searchParams.set('q', query);
-              if (limit !== undefined) searchUrl.searchParams.set('limit', String(limit));
-              if (offset !== undefined) searchUrl.searchParams.set('offset', String(offset));
-
-              const response = await fetch(searchUrl.toString(), {
-                method: 'GET',
-                headers: {
-                  'X-API-KEY': apiKey,
-                  'Content-Type': 'application/json',
-                  Accept: 'application/json',
-                },
+              const { data, error } = await catalogClient['vector-search'].get({
+                query: { q: query, limit, offset },
               });
-              if (!response.ok) {
-                throw new Error(`Catalog search failed: ${response.status} ${response.statusText}`);
+
+              if (error) {
+                throw new Error(`Catalog search failed: ${error.status}`);
               }
 
-              const searchResults = (await response.json()) as {
-                items?: Array<{ name: string; productUrl: string; similarity?: number }>;
-              };
+              const searchResults = data;
 
               // Track products for reporting
               for (const item of searchResults.items ?? []) {
