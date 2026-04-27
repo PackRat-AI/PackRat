@@ -147,18 +147,22 @@ export type GrowthPoint = { period: string; users: number; packs: number; catalo
 export type ActivityPoint = { period: string; trips: number; trailReports: number; posts: number };
 export type BreakdownItem = { category: string; count: number };
 
-export async function getPlatformGrowth(period: 'day' | 'week' | 'month'): Promise<GrowthPoint[]> {
+export async function getPlatformGrowth(
+  period: 'day' | 'week' | 'month',
+  range = 12,
+): Promise<GrowthPoint[]> {
   const { data, error } = await adminClient.analytics.platform.growth.get({
-    query: { period },
+    query: { period, range },
   });
   return unwrap({ data, error }, '/admin/analytics/platform/growth');
 }
 
 export async function getPlatformActivity(
   period: 'day' | 'week' | 'month',
+  range = 12,
 ): Promise<ActivityPoint[]> {
   const { data, error } = await adminClient.analytics.platform.activity.get({
-    query: { period },
+    query: { period, range },
   });
   return unwrap({ data, error }, '/admin/analytics/platform/activity');
 }
