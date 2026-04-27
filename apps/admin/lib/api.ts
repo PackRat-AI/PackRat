@@ -107,7 +107,7 @@ export interface UpdateCatalogItemInput {
   name?: string;
   brand?: string | null;
   categories?: string[] | null;
-  weight?: number | null;
+  weight?: number;
   weightUnit?: string;
   price?: number | null;
   description?: string | null;
@@ -147,14 +147,16 @@ export type GrowthPoint = { period: string; users: number; packs: number; catalo
 export type ActivityPoint = { period: string; trips: number; trailReports: number; posts: number };
 export type BreakdownItem = { category: string; count: number };
 
-export async function getPlatformGrowth(period: string): Promise<GrowthPoint[]> {
+export async function getPlatformGrowth(period: 'day' | 'week' | 'month'): Promise<GrowthPoint[]> {
   const { data, error } = await adminClient.analytics.platform.growth.get({
     query: { period },
   });
   return unwrap({ data, error }, '/admin/analytics/platform/growth');
 }
 
-export async function getPlatformActivity(period: string): Promise<ActivityPoint[]> {
+export async function getPlatformActivity(
+  period: 'day' | 'week' | 'month',
+): Promise<ActivityPoint[]> {
   const { data, error } = await adminClient.analytics.platform.activity.get({
     query: { period },
   });

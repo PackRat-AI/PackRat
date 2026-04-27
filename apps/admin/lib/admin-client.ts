@@ -12,8 +12,10 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
   return getAuthHeader();
 }
 
-export const adminClient = treaty<App>(API_BASE, {
-  fetcher: async (input, init) => {
+// safe-cast: Eden Treaty fetcher expects typeof fetch; CF Workers adds preconnect
+// which is never called by Eden — only the (input, init) signature is used.
+const adminFetcher: typeof fetch = Object.assign(
+  async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
     const authHeaders = await buildAuthHeaders();
     const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
     const response = await fetch(input, {
@@ -26,4 +28,7 @@ export const adminClient = treaty<App>(API_BASE, {
     }
     return response;
   },
-}).api.admin;
+  fetch,
+);
+
+export const adminClient = treaty<App>(API_BASE, { fetcher: adminFetcher }).api.admin;
