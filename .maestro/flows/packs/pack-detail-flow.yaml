@@ -8,10 +8,26 @@ appId: ${APP_ID}
     text: "Packs"
 - waitForAnimationToEnd
 
-# Tap the test pack
-- tapOn:
-    text: ${PACK_NAME}
-- waitForAnimationToEnd
+# Tap the test pack.
+# iOS: create-pack-flow leaves the search overlay active with ${PACK_NAME} typed. The pack
+# name text appears in both the search bar text field and the result row, so tapOn: text
+# would hit the text field. Use the pack-search-result testID to target the result row.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "pack-search-result"
+      - waitForAnimationToEnd
+
+# Android: search is not active; tap the pack card in the list.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${PACK_NAME}
+      - waitForAnimationToEnd
 
 # Assert pack detail elements via testIDs
 - assertVisible:
