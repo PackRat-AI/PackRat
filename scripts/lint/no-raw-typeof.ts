@@ -41,7 +41,7 @@ const GLOBAL_IDENTIFIERS = new Set([
   'process',
 ]);
 
-const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build']);
+const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.wrangler']);
 
 function isExcludedPath(relPath: string): boolean {
   return relPath === 'packages/guards' || relPath.startsWith('packages/guards/');
