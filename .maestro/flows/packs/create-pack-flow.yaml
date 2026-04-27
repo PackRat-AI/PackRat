@@ -60,15 +60,33 @@ appId: ${APP_ID}
                 text: "Not Now"
             - waitForAnimationToEnd
 
-# New packs appear at the BOTTOM of the list (oldest-first insertion order).
-# direction: DOWN causes Maestro to swipe UP from center, scrolling content
-# toward the bottom to reveal newer items.
-- waitForAnimationToEnd
-- scrollUntilVisible:
-    element:
-      text: ${PACK_NAME}
-    direction: DOWN
-    timeout: 60000
-    speed: 80
-- assertVisible:
-    text: ${PACK_NAME}
+# Verify the new pack is in the list.
+# Android: scrollUntilVisible works correctly. New packs are at the BOTTOM of the oldest-first
+# list, so direction: DOWN (Maestro swipes UP from center) reveals them.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            text: ${PACK_NAME}
+          direction: DOWN
+          timeout: 60000
+          speed: 80
+      - assertVisible:
+          text: ${PACK_NAME}
+
+# iOS: scrollUntilVisible cannot reliably detect FlatList items through the LargeTitleHeader
+# accessibility tree even when the item is visually present. Use the native search bar instead
+# to filter directly to the new pack.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "Search..."
+      - inputText: ${PACK_NAME}
+      - assertVisible:
+          text: ${PACK_NAME}
