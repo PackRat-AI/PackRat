@@ -46,8 +46,11 @@ appId: ${APP_ID}
       - waitForAnimationToEnd
 
 # --- Start Date ---
+# Use testID so the row is findable by XCTest accessibilityIdentifier even
+# when the keyboard is still visible (text-based lookup fails when keyboard
+# partially obscures the row on iOS).
 - tapOn:
-    text: "Start Date"
+    id: "start-date-row"
 - waitForAnimationToEnd
 
 - repeat:
@@ -75,7 +78,7 @@ appId: ${APP_ID}
 
 # --- End Date ---
 - tapOn:
-    text: "End Date"
+    id: "end-date-row"
 - waitForAnimationToEnd
 
 - repeat:
