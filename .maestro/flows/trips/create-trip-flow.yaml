@@ -172,6 +172,11 @@ appId: ${APP_ID}
           visible:
             id: "trip-search-result"
           timeout: 30000
+      # Navigating to a different tab dismisses the search overlay and keyboard.
+      # Tapping the already-selected Trips tab does NOT dismiss it on iOS.
+      - tapOn:
+          text: "Packs"
+      - waitForAnimationToEnd
       - tapOn:
           text: "Trips"
       - waitForAnimationToEnd
