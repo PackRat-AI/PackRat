@@ -1,23 +1,39 @@
-import { differenceInSeconds, parseISO } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
 
-const UNITS: Array<{ label: string; seconds: number }> = [
-  { label: 'month', seconds: 2592000 },
-  { label: 'week', seconds: 604800 },
-  { label: 'day', seconds: 86400 },
-  { label: 'hour', seconds: 3600 },
-  { label: 'minute', seconds: 60 },
+type TFunction = (key: string, options?: Record<string, unknown>) => string;
+
+const UNITS: Array<{ key: string; seconds: number }> = [
+  { key: 'months', seconds: 2592000 },
+  { key: 'weeks', seconds: 604800 },
+  { key: 'days', seconds: 86400 },
+  { key: 'hours', seconds: 3600 },
+  { key: 'minutes', seconds: 60 },
 ];
 
-export function getRelativeTime(dateString: string | null | undefined): string {
-  if (!dateString) return 'Just now';
-  const date = parseISO(dateString);
-  if (Number.isNaN(date.getTime())) return 'Just now';
+function toDate(value: Date | string | null | undefined): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function getRelativeTime(
+  dateValue: Date | string | null | undefined,
+  t?: TFunction,
+): string {
+  const date = toDate(dateValue);
+  if (!date) return t ? t('common.timeAgo.justNow') : 'Just now';
+
   const diff = differenceInSeconds(new Date(), date);
 
-  for (const { label, seconds } of UNITS) {
+  for (const { key, seconds } of UNITS) {
     const val = Math.floor(diff / seconds);
-    if (val >= 1) return `${val} ${label}${val > 1 ? 's' : ''} ago`;
+    if (val >= 1) {
+      return t
+        ? t(`common.timeAgo.${key}`, { count: val })
+        : `${val} ${key.slice(0, -1)}${val > 1 ? 's' : ''} ago`;
+    }
   }
 
-  return 'Just now';
+  return t ? t('common.timeAgo.justNow') : 'Just now';
 }
