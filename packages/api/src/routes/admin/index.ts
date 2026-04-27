@@ -71,9 +71,11 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
 
   if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
 
-  // Local dev only: allow Basic auth directly on protected routes as a convenience
-  // (avoids needing the /token exchange in curl / local scripts).
-  if (!CF_ACCESS_TEAM_DOMAIN && !CF_ACCESS_AUD && header.startsWith('Basic ')) {
+  // Local dev only: allow Basic auth directly on protected routes as a convenience.
+  // Both CF vars absent AND non-production environment must hold — missing CF vars
+  // alone is not enough so a misconfigured prod cannot fall back to Basic auth.
+  const isDev = process.env.NODE_ENV !== 'production';
+  if (isDev && !CF_ACCESS_TEAM_DOMAIN && !CF_ACCESS_AUD && header.startsWith('Basic ')) {
     return basicAuthGuard(request).authorized;
   }
 
@@ -97,12 +99,16 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
       const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
 
-      // Prod (CF Access configured): require both CF JWT and Basic credentials.
-      // This is the two-factor gate — CF proves the user is behind Access,
-      // Basic proves they know the admin password.
+      // CF JWT required when: CF vars are set OR running in production.
+      // The NODE_ENV check is a safety net — missing CF vars in prod must not
+      // silently downgrade to Basic-only.
+      const isProd = process.env.NODE_ENV === 'production';
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
         const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
+      } else if (isProd) {
+        // CF vars missing but we're in production — refuse rather than fall back.
+        return status(503, { error: 'Server misconfiguration: CF Access not configured' });
       }
 
       const header = request.headers.get('authorization') ?? '';
