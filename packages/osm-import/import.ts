@@ -39,6 +39,9 @@ if (!DB_URL) {
 
 const LUA_CONFIG = join(__dirname, 'routes.lua');
 const IMPORT_MODE = process.env.IMPORT_MODE ?? 'create';
+// Node cache in MB. Default (800) is fine for small extracts; use 4000-8000 for
+// continent-scale imports to avoid extreme disk I/O during the way-processing pass.
+const CACHE_MB = process.env.OSM_CACHE_MB ?? '800';
 const UTAH_PBF_URL = 'https://download.geofabrik.de/north-america/us/utah-latest.osm.pbf';
 
 // ── PBF file ────────────────────────────────────────────────────────────────
@@ -62,6 +65,7 @@ if (!pbfPath) {
 console.log(`PBF file:   ${pbfPath}`);
 console.log(`Lua config: ${LUA_CONFIG}`);
 console.log(`Mode:       ${IMPORT_MODE}`);
+console.log(`Cache:      ${CACHE_MB} MB`);
 console.log('');
 
 // ── Import ──────────────────────────────────────────────────────────────────
@@ -69,7 +73,19 @@ console.log('');
 const modeFlags = IMPORT_MODE === 'append' ? ['--append'] : ['--create', '--drop'];
 
 const proc = Bun.spawn(
-  ['osm2pgsql', '--slim', ...modeFlags, '-O', 'flex', '-S', LUA_CONFIG, '-d', DB_URL, pbfPath],
+  [
+    'osm2pgsql',
+    '--slim',
+    `--cache=${CACHE_MB}`,
+    ...modeFlags,
+    '-O',
+    'flex',
+    '-S',
+    LUA_CONFIG,
+    '-d',
+    DB_URL,
+    pbfPath,
+  ],
   { stdout: 'inherit', stderr: 'inherit' },
 );
 

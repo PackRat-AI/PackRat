@@ -42,6 +42,8 @@ export const nodeEnvSchema = z.object({
   OSM_DATABASE_URL: z.string().url().optional(),
   // Local Docker PostGIS used by osm2pgsql during import (scratch/processing DB).
   OSM_DATABASE_URL_LOCAL: z.string().url().optional(),
+  // osm2pgsql node cache in MB — increase for continent-scale imports (e.g. 6000).
+  OSM_CACHE_MB: z.string().regex(/^\d+$/).optional(),
 
   // ── R2 / S3 credentials (packages/analytics/scripts/smoke-test.ts) ─
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
