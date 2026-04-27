@@ -1,15 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TEST_GEOMETRY_LAT, TEST_GEOMETRY_LON } from './fixtures/trail-fixtures';
 import { seedOsmRoute, seedOsmWay } from './utils/osm-db-helpers';
-import { api, expectBadRequest, expectJsonResponse, expectNotFound } from './utils/test-helpers';
+import {
+  apiWithAuth,
+  expectBadRequest,
+  expectJsonResponse,
+  expectNotFound,
+} from './utils/test-helpers';
 
 // ── OSM IDs used across this file ───────────────────────────────────────────
 // Use large numbers to avoid collision with any other test data.
 const WAY_OSM_ID = 9_000_001;
 const WAY2_OSM_ID = 9_000_002;
+// Two geographically disconnected ways — can't be merged by ST_LineMerge
+const WAY_DISCONNECTED_A_ID = 9_000_003;
+const WAY_DISCONNECTED_B_ID = 9_000_004;
+
 const RELATION_WITH_GEOM_ID = 9_100_001;
 const RELATION_NO_GEOM_ID = 9_100_002;
 const RELATION_MULTI_WAY_ID = 9_100_003;
+const RELATION_HIKING_ID = 9_100_004;
+const RELATION_CYCLING_ID = 9_100_005;
+const RELATION_MIXED_MEMBERS_ID = 9_100_006;
+const RELATION_MISSING_WAYS_ID = 9_100_007;
+const RELATION_DISCONNECTED_ID = 9_100_008;
 
 describe('Trails Routes', () => {
   beforeEach(async () => {
@@ -64,18 +78,90 @@ describe('Trails Routes', () => {
       ],
       geometryWkt: null,
     });
+
+    // ── Sport filter fixtures ──────────────────────────────────────────────
+    await seedOsmRoute({
+      osmId: RELATION_HIKING_ID,
+      name: 'Pacific Crest Hiking Trail',
+      sport: 'hiking',
+      network: 'nwn',
+      members: [{ type: 'w', ref: WAY_OSM_ID, role: '' }],
+      // geometryWkt defaults to DEFAULT_ROUTE_WKT
+    });
+
+    await seedOsmRoute({
+      osmId: RELATION_CYCLING_ID,
+      name: 'Pacific Crest Cycling Route',
+      sport: 'cycling',
+      network: 'ncn',
+      members: [{ type: 'w', ref: WAY_OSM_ID, role: '' }],
+    });
+
+    // ── Mixed member types (node + way + sub-relation) ─────────────────────
+    // Real OSM relations contain node and sub-relation members; only 'w' rows
+    // should be used during geometry stitching.
+    await seedOsmRoute({
+      osmId: RELATION_MIXED_MEMBERS_ID,
+      name: 'Mixed Member Trail',
+      network: 'lwn',
+      members: [
+        { type: 'n', ref: 12345, role: 'start' },
+        { type: 'w', ref: WAY_OSM_ID, role: '' },
+        { type: 'r', ref: 67890, role: 'alternate' },
+      ],
+      geometryWkt: null,
+    });
+
+    // ── Member ways not in osm_ways (road segments filtered by Lua) ────────
+    // Mirrors road-based cycling/hiking routes (ncn/rcn) whose road members
+    // (highway=primary/secondary) are absent from osm_ways. Stitching must
+    // gracefully return null rather than throw.
+    await seedOsmRoute({
+      osmId: RELATION_MISSING_WAYS_ID,
+      name: 'Road Cycling Route',
+      sport: 'cycling',
+      network: 'ncn',
+      members: [
+        { type: 'w', ref: 999_888_777, role: '' }, // not in osm_ways
+        { type: 'w', ref: 999_888_778, role: '' },
+      ],
+      geometryWkt: null,
+    });
+
+    // ── Disconnected way segments ──────────────────────────────────────────
+    // Sierra Nevada segment
+    await seedOsmWay({
+      osmId: WAY_DISCONNECTED_A_ID,
+      geometryWkt: 'LINESTRING(-118.50 37.50, -118.48 37.52)',
+    });
+    // Geographically unconnected segment in Utah
+    await seedOsmWay({
+      osmId: WAY_DISCONNECTED_B_ID,
+      geometryWkt: 'LINESTRING(-111.50 40.50, -111.48 40.52)',
+    });
+
+    await seedOsmRoute({
+      osmId: RELATION_DISCONNECTED_ID,
+      name: 'Disconnected Segment Route',
+      network: 'rwn',
+      members: [
+        { type: 'w', ref: WAY_DISCONNECTED_A_ID, role: '' },
+        { type: 'w', ref: WAY_DISCONNECTED_B_ID, role: '' },
+      ],
+      geometryWkt: null,
+    });
   });
 
   // ── GET /trails/search ────────────────────────────────────────────────────
 
   describe('GET /trails/search', () => {
     it('returns 400 when neither q nor lat/lon is provided', async () => {
-      const res = await api('/trails/search');
+      const res = await apiWithAuth('/trails/search');
       expectBadRequest(res);
     });
 
     it('searches by text and returns matching relations', async () => {
-      const res = await api('/trails/search?q=John+Muir+Test');
+      const res = await apiWithAuth('/trails/search?q=John+Muir+Test');
       const data = await expectJsonResponse(res);
 
       expect(Array.isArray(data)).toBe(true);
@@ -87,7 +173,7 @@ describe('Trails Routes', () => {
     });
 
     it('is case-insensitive in text search', async () => {
-      const res = await api('/trails/search?q=john+muir+test');
+      const res = await apiWithAuth('/trails/search?q=john+muir+test');
       const data = await expectJsonResponse(res);
 
       const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID));
@@ -95,7 +181,7 @@ describe('Trails Routes', () => {
     });
 
     it('returns empty array for a query that matches nothing', async () => {
-      const res = await api('/trails/search?q=zzz_no_match_zzz');
+      const res = await apiWithAuth('/trails/search?q=zzz_no_match_zzz');
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data)).toBe(true);
       expect(data).toHaveLength(0);
@@ -103,7 +189,7 @@ describe('Trails Routes', () => {
 
     it('does spatial search by lat/lon and returns nearby trails', async () => {
       // TEST_GEOMETRY_LAT/LON is at the centroid of the seeded geometry
-      const res = await api(
+      const res = await apiWithAuth(
         `/trails/search?lat=${TEST_GEOMETRY_LAT}&lon=${TEST_GEOMETRY_LON}&radius=50`,
       );
       const data = await expectJsonResponse(res);
@@ -116,7 +202,7 @@ describe('Trails Routes', () => {
 
     it('combines text and spatial filters', async () => {
       // Correct name + close location → match
-      const resHit = await api(
+      const resHit = await apiWithAuth(
         `/trails/search?q=John+Muir+Test&lat=${TEST_GEOMETRY_LAT}&lon=${TEST_GEOMETRY_LON}&radius=50`,
       );
       const hit = await expectJsonResponse(resHit);
@@ -125,7 +211,7 @@ describe('Trails Routes', () => {
       );
 
       // Correct name but very far location → no match
-      const resMiss = await api('/trails/search?q=John+Muir+Test&lat=0&lon=0&radius=1');
+      const resMiss = await apiWithAuth('/trails/search?q=John+Muir+Test&lat=0&lon=0&radius=1');
       const miss = await expectJsonResponse(resMiss);
       expect(miss.some((t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID))).toBe(
         false,
@@ -133,12 +219,54 @@ describe('Trails Routes', () => {
     });
 
     it('returns 400 for out-of-range coordinates', async () => {
-      const res = await api('/trails/search?lat=200&lon=0');
+      const res = await apiWithAuth('/trails/search?lat=200&lon=0');
       expectBadRequest(res);
     });
 
+    it('returns 400 for radius greater than 500', async () => {
+      const res = await apiWithAuth(
+        `/trails/search?lat=${TEST_GEOMETRY_LAT}&lon=${TEST_GEOMETRY_LON}&radius=501`,
+      );
+      expectBadRequest(res);
+    });
+
+    it('filters by sport and excludes other sports', async () => {
+      const res = await apiWithAuth(
+        `/trails/search?lat=${TEST_GEOMETRY_LAT}&lon=${TEST_GEOMETRY_LON}&radius=500&sport=hiking`,
+      );
+      const data = await expectJsonResponse(res);
+
+      const osmIds = data.map((t: { osmId: string }) => t.osmId);
+      expect(osmIds).toContain(String(RELATION_HIKING_ID));
+      expect(osmIds).not.toContain(String(RELATION_CYCLING_ID));
+    });
+
+    it('returns sport field in search results', async () => {
+      const res = await apiWithAuth('/trails/search?q=Pacific+Crest+Hiking');
+      const data = await expectJsonResponse(res);
+      const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_HIKING_ID));
+      expect(found).toBeDefined();
+      expect(found.sport).toBe('hiking');
+    });
+
+    it('paginates results with limit and offset', async () => {
+      const res1 = await apiWithAuth(
+        `/trails/search?lat=${TEST_GEOMETRY_LAT}&lon=${TEST_GEOMETRY_LON}&radius=500&limit=1&offset=0`,
+      );
+      const page1 = await expectJsonResponse(res1);
+      expect(page1).toHaveLength(1);
+
+      const res2 = await apiWithAuth(
+        `/trails/search?lat=${TEST_GEOMETRY_LAT}&lon=${TEST_GEOMETRY_LON}&radius=500&limit=1&offset=1`,
+      );
+      const page2 = await expectJsonResponse(res2);
+      expect(page2).toHaveLength(1);
+
+      expect(page1[0].osmId).not.toBe(page2[0].osmId);
+    });
+
     it('returns bbox when geometry is present', async () => {
-      const res = await api('/trails/search?q=John+Muir+Test');
+      const res = await apiWithAuth('/trails/search?q=John+Muir+Test');
       const data = await expectJsonResponse(res);
       const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_WITH_GEOM_ID));
       expect(found.bbox).not.toBeNull();
@@ -146,7 +274,7 @@ describe('Trails Routes', () => {
     });
 
     it('returns null bbox when geometry is null', async () => {
-      const res = await api('/trails/search?q=Unstored+Geometry');
+      const res = await apiWithAuth('/trails/search?q=Unstored+Geometry');
       const data = await expectJsonResponse(res);
       const found = data.find((t: { osmId: string }) => t.osmId === String(RELATION_NO_GEOM_ID));
       expect(found).toBeDefined();
@@ -158,7 +286,7 @@ describe('Trails Routes', () => {
 
   describe('GET /trails/:osmId', () => {
     it('returns trail metadata for a known OSM ID', async () => {
-      const res = await api(`/trails/${RELATION_WITH_GEOM_ID}`);
+      const res = await apiWithAuth(`/trails/${RELATION_WITH_GEOM_ID}`);
       const data = await expectJsonResponse(res, ['osmId', 'name', 'network']);
 
       expect(data.osmId).toBe(String(RELATION_WITH_GEOM_ID));
@@ -170,19 +298,19 @@ describe('Trails Routes', () => {
     });
 
     it('includes bbox in the response when geometry is present', async () => {
-      const res = await api(`/trails/${RELATION_WITH_GEOM_ID}`);
+      const res = await apiWithAuth(`/trails/${RELATION_WITH_GEOM_ID}`);
       const data = await expectJsonResponse(res);
       expect(data.bbox).not.toBeNull();
       expect(data.bbox.type).toBe('Polygon');
     });
 
     it('returns 404 for an OSM ID that does not exist', async () => {
-      const res = await api('/trails/9999999999');
+      const res = await apiWithAuth('/trails/9999999999');
       expectNotFound(res);
     });
 
     it('returns 400 for a non-numeric OSM ID', async () => {
-      const res = await api('/trails/not-a-number');
+      const res = await apiWithAuth('/trails/not-a-number');
       expectBadRequest(res);
     });
   });
@@ -191,7 +319,7 @@ describe('Trails Routes', () => {
 
   describe('GET /trails/:osmId/geometry', () => {
     it('returns pre-built GeoJSON geometry for a relation that has one', async () => {
-      const res = await api(`/trails/${RELATION_WITH_GEOM_ID}/geometry`);
+      const res = await apiWithAuth(`/trails/${RELATION_WITH_GEOM_ID}/geometry`);
       const data = await expectJsonResponse(res, ['osmId', 'name', 'geometry']);
 
       expect(data.osmId).toBe(String(RELATION_WITH_GEOM_ID));
@@ -202,7 +330,7 @@ describe('Trails Routes', () => {
     });
 
     it('stitches geometry from member ways when stored geometry is null', async () => {
-      const res = await api(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
+      const res = await apiWithAuth(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
       const data = await expectJsonResponse(res, ['osmId', 'geometry']);
 
       expect(data.geometry).not.toBeNull();
@@ -211,7 +339,7 @@ describe('Trails Routes', () => {
     });
 
     it('stitches and merges two connecting way segments', async () => {
-      const res = await api(`/trails/${RELATION_MULTI_WAY_ID}/geometry`);
+      const res = await apiWithAuth(`/trails/${RELATION_MULTI_WAY_ID}/geometry`);
       const data = await expectJsonResponse(res, ['osmId', 'geometry']);
 
       expect(data.geometry).not.toBeNull();
@@ -221,23 +349,52 @@ describe('Trails Routes', () => {
 
     it('returns stitched geometry on repeated calls when stored geometry is null', async () => {
       // First call: triggers stitching and caching
-      await api(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
+      await apiWithAuth(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
 
       // Second call: should now hit the cached geometry branch
-      const res2 = await api(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
+      const res2 = await apiWithAuth(`/trails/${RELATION_NO_GEOM_ID}/geometry`);
       const data2 = await expectJsonResponse(res2, ['osmId', 'geometry']);
 
       expect(data2.geometry).not.toBeNull();
     });
 
     it('returns 404 for a non-existent relation', async () => {
-      const res = await api('/trails/9999999999/geometry');
+      const res = await apiWithAuth('/trails/9999999999/geometry');
       expectNotFound(res);
     });
 
     it('returns 400 for a non-numeric OSM ID', async () => {
-      const res = await api('/trails/bad-id/geometry');
+      const res = await apiWithAuth('/trails/bad-id/geometry');
       expectBadRequest(res);
+    });
+
+    it('ignores node and sub-relation members — only way members are stitched', async () => {
+      // RELATION_MIXED_MEMBERS_ID has type:n, type:w, type:r members.
+      // Only the type:w member (WAY_OSM_ID) should be used; non-way members
+      // must not cause an error or empty result.
+      const res = await apiWithAuth(`/trails/${RELATION_MIXED_MEMBERS_ID}/geometry`);
+      const data = await expectJsonResponse(res, ['osmId', 'geometry']);
+
+      expect(data.geometry).not.toBeNull();
+      expect(data.geometry.type).toMatch(/^(LineString|MultiLineString)$/);
+    });
+
+    it('returns null geometry when member ways are not in osm_ways', async () => {
+      // Mirrors road-based cycling routes (ncn/rcn) whose road segments are
+      // absent from osm_ways (Lua config filters highway=primary/secondary).
+      const res = await apiWithAuth(`/trails/${RELATION_MISSING_WAYS_ID}/geometry`);
+      const data = await expectJsonResponse(res, ['osmId', 'geometry']);
+
+      expect(data.geometry).toBeNull();
+    });
+
+    it('returns MultiLineString for geographically disconnected way segments', async () => {
+      // Disconnected ways cannot be merged by ST_LineMerge → MultiLineString.
+      const res = await apiWithAuth(`/trails/${RELATION_DISCONNECTED_ID}/geometry`);
+      const data = await expectJsonResponse(res, ['osmId', 'geometry']);
+
+      expect(data.geometry).not.toBeNull();
+      expect(data.geometry.type).toBe('MultiLineString');
     });
   });
 
@@ -249,7 +406,7 @@ describe('Trails Routes', () => {
     });
 
     it('returns 400 for a non-alltrails.com URL', async () => {
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: 'https://example.com/trail' }),
         headers: { 'Content-Type': 'application/json' },
@@ -258,7 +415,7 @@ describe('Trails Routes', () => {
     });
 
     it('returns 400 for an invalid (non-URL) string', async () => {
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: 'not-a-url' }),
         headers: { 'Content-Type': 'application/json' },
@@ -267,7 +424,7 @@ describe('Trails Routes', () => {
     });
 
     it('returns 400 for a URL on an alltrails subdomain that is not alltrails.com', async () => {
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: 'https://evil.alltrails.com.attacker.com/trail' }),
         headers: { 'Content-Type': 'application/json' },
@@ -298,7 +455,7 @@ describe('Trails Routes', () => {
       );
 
       const testUrl = 'https://www.alltrails.com/trail/us/utah/angels-landing-trail';
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: testUrl }),
         headers: { 'Content-Type': 'application/json' },
@@ -322,7 +479,7 @@ describe('Trails Routes', () => {
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(mockHtml, { status: 200 })));
 
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: 'https://www.alltrails.com/trail/us/co/summit-peak' }),
         headers: { 'Content-Type': 'application/json' },
@@ -343,7 +500,7 @@ describe('Trails Routes', () => {
           ),
       );
 
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: 'https://www.alltrails.com/trail/us/ut/no-og-trail' }),
         headers: { 'Content-Type': 'application/json' },
@@ -354,7 +511,7 @@ describe('Trails Routes', () => {
     it('returns 502 when AllTrails returns a non-OK status', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Not Found', { status: 404 })));
 
-      const res = await api('/trails/alltrails-preview', {
+      const res = await apiWithAuth('/trails/alltrails-preview', {
         method: 'POST',
         body: JSON.stringify({ url: 'https://www.alltrails.com/trail/us/ut/missing' }),
         headers: { 'Content-Type': 'application/json' },
