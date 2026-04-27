@@ -7,8 +7,8 @@
 
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
-import { DBConfig } from './constants';
 import { analyticsEnv as env } from '@packrat/env/analytics';
+import { DBConfig } from './constants';
 
 /** Configure S3/R2 credentials on a DuckDB connection. */
 export async function configureS3(conn: DuckDBConnection): Promise<void> {
