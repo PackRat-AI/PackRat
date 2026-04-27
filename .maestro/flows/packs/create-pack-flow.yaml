@@ -91,7 +91,9 @@ appId: ${APP_ID}
 
 # iOS: scrollUntilVisible cannot reliably detect FlatList items through the LargeTitleHeader
 # accessibility tree even when the item is visually present. Use the native search bar instead
-# to filter directly to the new pack, then dismiss search so subsequent flows see the full list.
+# to filter to the new pack, then verify a result row appears.
+# assertVisible by text fails on iOS because Pressable accessible={true} absorbs child Text
+# nodes — the Text is not separately accessible. Check by testID instead.
 - runFlow:
     when:
       platform: iOS
@@ -99,9 +101,12 @@ appId: ${APP_ID}
       - waitForAnimationToEnd
       - tapOn:
           text: "Search..."
+      - waitForAnimationToEnd
       - inputText: ${PACK_NAME}
-      - assertVisible:
-          text: ${PACK_NAME}
+      - extendedWaitUntil:
+          visible:
+            id: "pack-search-result"
+          timeout: 30000
       - tapOn:
           text: "Trips"
       - waitForAnimationToEnd
