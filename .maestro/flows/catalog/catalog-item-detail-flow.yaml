@@ -34,5 +34,17 @@ appId: ${APP_ID}
     id: "view-retailer-button"
 
 # Go back
-- back
-- waitForAnimationToEnd
+# iOS: hardware back is unreliable from a root-stack screen with NativeTabs as parent.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: RIGHT
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd

@@ -18,5 +18,17 @@ appId: ${APP_ID}
     text: ${TRIP_NAME}
 
 # Go back to trips list
-- back
-- waitForAnimationToEnd
+# iOS: hardware back is unreliable from a root-stack screen with NativeTabs as parent.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: RIGHT
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd
