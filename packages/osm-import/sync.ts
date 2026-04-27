@@ -2,19 +2,19 @@
 /**
  * sync.ts — Push local OSM output tables to the managed production database.
  *
- * Dumps osm_ways + osm_routes from the local PostGIS instance (OSM_DATABASE_URL)
- * and restores them into the managed database (OSM_PRODUCTION_DATABASE_URL).
+ * Dumps osm_ways + osm_routes from the local PostGIS instance (OSM_DATABASE_URL_LOCAL)
+ * and restores them into the managed database (OSM_DATABASE_URL).
  * Run after a successful import to promote local data to production.
  *
  * Prerequisites:
  *   - pg_dump / pg_restore installed (postgresql-client)
  *   - Managed DB has the PostGIS extension enabled
- *   - Both OSM_DATABASE_URL and OSM_PRODUCTION_DATABASE_URL set in root .env
+ *   - Both OSM_DATABASE_URL_LOCAL and OSM_DATABASE_URL set in root .env
  *
  * Usage (standalone):
  *   bun run sync
  *
- * When OSM_PRODUCTION_DATABASE_URL is set, `bun run import` calls this automatically.
+ * When OSM_DATABASE_URL is set, `bun run import` calls this automatically.
  */
 
 import { rmSync } from 'node:fs';
@@ -22,15 +22,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { nodeEnv } from '@packrat/env/node';
 
-const LOCAL_URL = nodeEnv.OSM_DATABASE_URL;
-const PRODUCTION_URL = nodeEnv.OSM_PRODUCTION_DATABASE_URL;
+const LOCAL_URL = nodeEnv.OSM_DATABASE_URL_LOCAL;
+const PRODUCTION_URL = nodeEnv.OSM_DATABASE_URL;
 
 if (!LOCAL_URL) {
-  console.error('Error: OSM_DATABASE_URL is not set — add it to your root .env');
+  console.error('Error: OSM_DATABASE_URL_LOCAL is not set — add it to your root .env');
   process.exit(1);
 }
 if (!PRODUCTION_URL) {
-  console.error('Error: OSM_PRODUCTION_DATABASE_URL is not set — add it to your root .env');
+  console.error('Error: OSM_DATABASE_URL is not set — add it to your root .env');
   process.exit(1);
 }
 

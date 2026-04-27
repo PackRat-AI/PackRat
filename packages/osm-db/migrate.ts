@@ -28,8 +28,8 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 async function runMigrations() {
-  const url = process.env.OSM_DATABASE_URL;
-  if (!url) throw new Error('OSM_DATABASE_URL is required');
+  const url = process.env.OSM_DATABASE_URL_LOCAL;
+  if (!url) throw new Error('OSM_DATABASE_URL_LOCAL is required');
 
   console.log('Running OSM DB migrations...');
 

@@ -4,13 +4,13 @@
  *
  * Prerequisites:
  *   - osm2pgsql >= 1.9 installed (flex output)
- *   - OSM_DATABASE_URL set in root .env (see .env.example)
+ *   - OSM_DATABASE_URL_LOCAL set in root .env (see .env.example)
  *
  * Usage:
  *   bun run import                        # downloads Utah extract
  *   bun run import [path/to/region.pbf]  # imports a specific PBF
  *
- * Set OSM_PRODUCTION_DATABASE_URL in .env to auto-sync to production after import.
+ * Set OSM_DATABASE_URL in .env to auto-sync to production after import.
  * Set IMPORT_MODE=append for incremental .osc diff imports.
  *
  * Index lifecycle:
@@ -31,9 +31,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
-const DB_URL = nodeEnv.OSM_DATABASE_URL;
+const DB_URL = nodeEnv.OSM_DATABASE_URL_LOCAL;
 if (!DB_URL) {
-  console.error('Error: OSM_DATABASE_URL is not set — add it to your root .env');
+  console.error('Error: OSM_DATABASE_URL_LOCAL is not set — add it to your root .env');
   process.exit(1);
 }
 
@@ -98,7 +98,7 @@ try {
 
 const migrateProc = Bun.spawn(['bun', 'run', './migrate.ts'], {
   cwd: join(__dirname, '../osm-db'),
-  env: { ...process.env, OSM_DATABASE_URL: DB_URL },
+  env: { ...process.env, OSM_DATABASE_URL_LOCAL: DB_URL },
   stdout: 'inherit',
   stderr: 'inherit',
 });
@@ -133,11 +133,11 @@ try {
 console.log('\nImport complete.');
 
 // ── Sync to production (optional) ───────────────────────────────────────────
-// Set OSM_PRODUCTION_DATABASE_URL in .env to automatically promote the local
+// Set OSM_DATABASE_URL in .env to automatically promote the local
 // output tables to the managed PostgreSQL instance after every import.
 
-if (nodeEnv.OSM_PRODUCTION_DATABASE_URL) {
-  console.log('\nOSM_PRODUCTION_DATABASE_URL detected — syncing to production...');
+if (nodeEnv.OSM_DATABASE_URL) {
+  console.log('\nOSM_DATABASE_URL detected — syncing to production...');
   const syncProc = Bun.spawn(['bun', 'run', './sync.ts'], {
     cwd: __dirname,
     env: { ...process.env },

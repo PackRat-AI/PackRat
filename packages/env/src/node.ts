@@ -38,10 +38,10 @@ export const nodeEnvSchema = z.object({
   NEON_DATABASE_URL_READONLY: z.string().url().optional(),
 
   // ── OSM trail database (packages/osm-import) ──────────────────────
-  // Local PostGIS instance used by osm2pgsql during import.
+  // Managed production PostGIS (mirrors OSM_DATABASE_URL in the Worker via Hyperdrive).
   OSM_DATABASE_URL: z.string().url().optional(),
-  // Managed production PostGIS — set to auto-sync after import.
-  OSM_PRODUCTION_DATABASE_URL: z.string().url().optional(),
+  // Local Docker PostGIS used by osm2pgsql during import (scratch/processing DB).
+  OSM_DATABASE_URL_LOCAL: z.string().url().optional(),
 
   // ── R2 / S3 credentials (packages/analytics/scripts/smoke-test.ts) ─
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
