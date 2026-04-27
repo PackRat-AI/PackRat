@@ -29,8 +29,9 @@ export function SeasonSuggestionsTile() {
         <View className="px-3">
           <View className="h-6 w-6 items-center justify-center rounded-md bg-orange-500">
             <Icon
+              name="leaf"
+              namingScheme="sfSymbol"
               materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
-              ios={{ name: 'leaf' }}
               size={15}
               color="white"
             />
