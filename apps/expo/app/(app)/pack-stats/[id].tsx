@@ -33,7 +33,7 @@ export default function PackStatsScreen() {
     <View className="flex-1">
       <LargeTitleHeader title={t('packs.packStats')} />
       {weightHistory || CATEGORY_DISTRIBUTION ? (
-        <ScrollView className="flex-1 px-4">
+        <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
           {/* Weight History Section */}
           {WEIGHT_HISTORY && (
             <View className="my-4 rounded-lg bg-card p-4">

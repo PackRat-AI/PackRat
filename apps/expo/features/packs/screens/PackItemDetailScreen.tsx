@@ -49,7 +49,7 @@ export function ItemDetailScreen() {
   // Loading state for non-owned items
   if (!isOwnedByUser && isLoading) {
     return (
-      <SafeAreaView className="flex-1">
+      <SafeAreaView edges={['bottom']} className="flex-1">
         <View className="flex-1 items-center justify-center p-4">
           <ActivityIndicator />
         </View>
@@ -60,7 +60,7 @@ export function ItemDetailScreen() {
   // Error state for non-owned packs
   if (!isOwnedByUser && isError) {
     return (
-      <SafeAreaView className="flex-1">
+      <SafeAreaView edges={['bottom']} className="flex-1">
         <View className="flex-1 items-center justify-center p-8">
           <View className="mb-4 rounded-full bg-destructive/10 p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
@@ -86,7 +86,7 @@ export function ItemDetailScreen() {
 
   if (!isDefined(item)) {
     return (
-      <SafeAreaView className="flex-1">
+      <SafeAreaView edges={['bottom']} className="flex-1">
         <View className="flex-1 items-center justify-center p-4">
           <ActivityIndicator />
         </View>
@@ -134,7 +134,7 @@ export function ItemDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView edges={['bottom']} className="flex-1">
       <ScrollView>
         <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 

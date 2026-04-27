@@ -219,6 +219,7 @@ export function PackListScreen() {
         data={filteredPacks}
         keyExtractor={(pack) => pack.id}
         stickyHeaderIndices={[0]}
+        contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
             <PackCard

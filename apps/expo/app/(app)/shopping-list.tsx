@@ -170,7 +170,7 @@ export default function ShoppingListScreen() {
   return (
     <>
       <LargeTitleHeader title={t('shopping.shoppingList')} />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <View className="mb-4 flex-row items-center justify-between">
             <Text variant="subhead" className="text-muted-foreground">
