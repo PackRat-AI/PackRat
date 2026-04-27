@@ -53,15 +53,19 @@ export async function enhanceGuideContent(
     throw new Error('PACKRAT_API_KEY environment variable is required for content enhancement');
   }
 
-  const catalogClient = treaty<App>(apiBaseUrl, {
-    fetcher: (input, init) => {
+  // safe-cast: Eden Treaty fetcher expects typeof fetch; CF Workers adds preconnect
+  // which is never called by Eden — only the (input, init) signature is used.
+  const catalogFetcher: typeof fetch = Object.assign(
+    (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
       const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
       return fetch(input, {
         ...init,
         headers: { ...existing, 'X-API-KEY': apiKey },
       });
     },
-  }).api.catalog;
+    fetch,
+  );
+  const catalogClient = treaty<App>(apiBaseUrl, { fetcher: catalogFetcher }).api.catalog;
 
   // Track products used for reporting
   const productsUsed: Array<{
