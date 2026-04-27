@@ -6,9 +6,9 @@ import {
   Text,
   Toggle,
 } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

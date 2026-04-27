@@ -1,4 +1,4 @@
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
 
 export default function WildlifeLayout() {

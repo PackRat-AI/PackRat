@@ -1,10 +1,10 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { featureFlags } from 'expo-app/config';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
-import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
-import { computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { featureFlags } from 'app/config';
+import { userStore } from 'app/features/auth/store';
+import { usePackDetailsFromStore } from 'app/features/packs/hooks/usePackDetailsFromStore';
+import { usePackWeightHistory } from 'app/features/packs/hooks/usePackWeightHistory';
+import { computeCategorySummaries } from 'app/features/packs/utils';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 

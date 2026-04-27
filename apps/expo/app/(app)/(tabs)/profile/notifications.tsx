@@ -1,7 +1,7 @@
 import { Button, Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { cn } from 'app/lib/cn';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';

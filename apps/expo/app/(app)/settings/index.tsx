@@ -1,23 +1,23 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
-import * as Burnt from 'burnt';
-import { appAlert } from 'expo-app/app/_layout';
-import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
+import { Icon, type MaterialIconName } from 'app/components/Icon';
 import {
   localModelFileAvailableAtom,
   localModelProgressAtom,
   localModelStatusAtom,
-} from 'expo-app/features/ai/atoms/aiModeAtoms';
-import { LLAMA_MODEL_SIZE } from 'expo-app/features/ai/lib/constants';
+} from 'app/features/ai/atoms/aiModeAtoms';
+import { LLAMA_MODEL_SIZE } from 'app/features/ai/lib/constants';
 import {
   cancelLocalModelDownload,
   deleteLocalModel,
   downloadLocalModel,
   isAppleIntelligenceAvailable,
-} from 'expo-app/features/ai/lib/localModelManager';
-import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+} from 'app/features/ai/lib/localModelManager';
+import { DeleteAccountButton } from 'app/features/auth/components/DeleteAccountButton';
+import { useAuth } from 'app/features/auth/hooks/useAuth';
+import { appAlert } from 'app/lib/appAlert';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import * as Burnt from 'burnt';
 import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';

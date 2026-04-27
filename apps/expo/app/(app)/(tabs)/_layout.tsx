@@ -1,5 +1,5 @@
-import { featureFlags } from 'expo-app/config';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { featureFlags } from 'app/config';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function TabLayout() {

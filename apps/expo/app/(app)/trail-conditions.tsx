@@ -1,10 +1,10 @@
 import { ActivityIndicator, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { featureFlags } from 'expo-app/config';
-import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
-import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
-import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
-import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail-conditions/types';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { featureFlags } from 'app/config';
+import { SubmitConditionReportForm } from 'app/features/trail-conditions/components/SubmitConditionReportForm';
+import { TrailConditionReportCard } from 'app/features/trail-conditions/components/TrailConditionReportCard';
+import { useTrailConditionReports } from 'app/features/trail-conditions/hooks/useTrailConditionReports';
+import type { TrailConditionReport, TrailSurface } from 'app/features/trail-conditions/types';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';

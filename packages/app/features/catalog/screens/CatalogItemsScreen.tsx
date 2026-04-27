@@ -1,0 +1,287 @@
+import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
+import { searchValueAtom } from 'app/atoms/itemListAtoms';
+import { AndroidTabBarInsetFix } from 'app/components/AndroidTabBarInsetFix';
+import { CategoriesFilter } from 'app/components/CategoriesFilter';
+import { Icon } from 'app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from 'app/components/LargeTitleHeaderOverlapFixIOS';
+import { LargeTitleHeaderSearchContentContainer } from 'app/components/LargeTitleHeaderSearchContentContainer';
+import { withAuthWall } from 'app/features/auth/hocs';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { asNonNullableRef } from 'app/lib/utils/asNonNullableRef';
+import { useRouter } from 'expo-router';
+import { useAtom } from 'jotai';
+import { useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useDebounce } from 'use-debounce';
+import { CatalogItemsAuthWall } from '../components';
+import { CatalogItemCard } from '../components/CatalogItemCard';
+import { useCatalogItemsInfinite } from '../hooks';
+import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
+import { useVectorSearch } from '../hooks/useVectorSearch';
+import type { CatalogItem } from '../types';
+
+function CatalogItemsScreen() {
+  const router = useRouter();
+  const { colors } = useColorScheme();
+  const { t } = useTranslation();
+  const [searchValue, setSearchValue] = useAtom(searchValueAtom);
+  const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
+  const [debouncedSearchValue] = useDebounce(searchValue, 400);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+
+  const isSearching = searchValue.trim().length > 0;
+  const trimmedQuery = debouncedSearchValue.trim();
+  const isQueryReady = trimmedQuery.length > 0;
+
+  const {
+    data: categories,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useCatalogItemsCategories();
+
+  const {
+    data: paginatedData,
+    isLoading: isPaginatedLoading,
+    isRefetching,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error: paginatedError,
+  } = useCatalogItemsInfinite({
+    category: activeFilter === 'All' ? undefined : activeFilter,
+    limit: 20,
+    sort: { field: 'createdAt', order: 'desc' },
+  });
+
+  const {
+    data: vectorResult,
+    isLoading: isVectorLoading,
+    error: vectorError,
+  } = useVectorSearch({ query: trimmedQuery, limit: 10 });
+  // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
+  const searchResults: CatalogItem[] = (vectorResult?.items ?? []) as unknown as CatalogItem[];
+
+  const paginatedItems: CatalogItem[] =
+    // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
+    ((paginatedData?.pages.flatMap((page) => page.items) ?? []) as CatalogItem[]).filter((item) =>
+      Boolean(item?.id),
+    );
+
+  const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
+
+  const totalItemsText = `${Number(totalItems).toLocaleString()} ${
+    totalItems === 1 ? t('catalog.item') : t('catalog.items')
+  }`;
+  const showingText = t('catalog.showingItems', {
+    current: paginatedItems.length,
+    total: Number(totalItems).toLocaleString(),
+  });
+
+  const handleItemPress = (item: CatalogItem) => {
+    router.push({ pathname: '/catalog/[id]', params: { id: item.id } });
+  };
+
+  const loadMore = () => {
+    if (!isSearching && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
+
+  const listHeader = useMemo(() => {
+    if (isSearching) return null;
+
+    return (
+      <>
+        <LargeTitleHeaderOverlapFixIOS />
+        <CategoriesFilter
+          data={categories}
+          onFilter={setActiveFilter}
+          activeFilter={activeFilter}
+          error={categoriesError}
+          retry={refetchCategories}
+          className="px-4 py-2"
+        />
+
+        <View className="mb-4 px-4">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-muted-foreground">{totalItemsText}</Text>
+          </View>
+
+          {paginatedItems.length > 0 && (
+            <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
+          )}
+        </View>
+      </>
+    );
+  }, [
+    isSearching,
+    categories,
+    activeFilter,
+    categoriesError,
+    totalItemsText,
+    paginatedItems.length,
+    showingText,
+    refetchCategories,
+  ]);
+
+  return (
+    <>
+      <LargeTitleHeader
+        title={t('catalog.title')}
+        backVisible={false}
+        searchBar={{
+          iosHideWhenScrolling: false,
+          onChangeText: setSearchValue,
+          ref: asNonNullableRef(searchBarRef),
+
+          placeholder: t('catalog.searchPlaceholder'),
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {isSearching ? (
+                isVectorLoading || !isQueryReady ? (
+                  <View className="flex-1 items-center justify-center p-6">
+                    <ActivityIndicator className="text-primary" size="large" />
+                  </View>
+                ) : (
+                  <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+                    <View className="px-4 pt-2">
+                      {searchResults.length > 0 && (
+                        <Text className="text-xs text-muted-foreground">
+                          {searchResults.length} {t('catalog.results')}
+                        </Text>
+                      )}
+                    </View>
+
+                    {searchResults.map((item: CatalogItem) => (
+                      <View className="px-4 pt-4" key={item.id}>
+                        <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
+                      </View>
+                    ))}
+
+                    {searchResults.length === 0 && (
+                      <View className="flex-1 items-center justify-center p-8">
+                        {vectorError ? (
+                          <>
+                            <View className="bg-destructive/10 mb-4 rounded-full p-4">
+                              <Icon name="close-circle" size={32} color="text-destructive" />
+                            </View>
+                            <Text className="mb-1 text-lg font-medium text-foreground">
+                              {t('catalog.searchError')}
+                            </Text>
+                            <Text className="text-center text-muted-foreground">
+                              {t('catalog.unableToSearch')}
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            <View className="mb-4 rounded-full bg-muted p-4">
+                              <Icon name="magnify" size={32} color="text-muted-foreground" />
+                            </View>
+                            <Text className="mb-1 text-lg font-medium text-foreground">
+                              {t('catalog.noResults')}
+                            </Text>
+                            <Text className="text-center text-muted-foreground">
+                              {t('catalog.tryAdjustingFilters')}
+                            </Text>
+                          </>
+                        )}
+                      </View>
+                    )}
+                  </ScrollView>
+                )
+              ) : (
+                <View className="flex-1 items-center justify-center p-4">
+                  <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
+                </View>
+              )}
+            </LargeTitleHeaderSearchContentContainer>
+          ),
+        }}
+      />
+
+      <FlatList
+        key={activeFilter}
+        data={paginatedItems}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
+        )}
+        ItemSeparatorComponent={ItemSeparatorComponent}
+        ListHeaderComponent={listHeader}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+        ListFooterComponent={
+          <>
+            <View className="py-4">
+              {isFetchingNextPage ? (
+                <ActivityIndicator className="text-primary" />
+              ) : hasNextPage ? (
+                <Text className="text-center text-xs text-muted-foreground">
+                  {t('catalog.scrollToLoadMore')}
+                </Text>
+              ) : paginatedItems.length > 0 ? (
+                <Text className="text-center text-xs text-muted-foreground">
+                  {t('catalog.endOfCatalog')}
+                </Text>
+              ) : null}
+            </View>
+            <AndroidTabBarInsetFix />
+          </>
+        }
+        ListEmptyComponent={
+          <View className="flex-1 items-center justify-center p-8">
+            {isPaginatedLoading ? (
+              <ActivityIndicator color={colors.primary} size="large" />
+            ) : paginatedError ? (
+              <>
+                <View className="bg-destructive/10 mb-4 rounded-full p-4">
+                  <Icon name="close" size={32} color="text-destructive" />
+                </View>
+                <Text className="mb-1 text-lg font-medium text-foreground">
+                  {t('catalog.errorLoadingItems')}
+                </Text>
+                <Text className="text-center text-muted-foreground">
+                  {paginatedError.message || t('catalog.somethingWentWrong')}
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => refetch()}
+                  className="mt-4 rounded-lg bg-primary px-4 py-2"
+                >
+                  <Text className="font-medium text-primary-foreground">{t('catalog.retry')}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View className="mb-4 rounded-full bg-muted p-4">
+                  <Icon name="magnify" size={32} color="text-muted-foreground" />
+                </View>
+                <Text className="mb-1 text-lg font-medium text-foreground">
+                  {t('catalog.noItemsFound')}
+                </Text>
+                <Text className="text-center text-muted-foreground">
+                  {t('catalog.tryDifferentCategory')}
+                </Text>
+              </>
+            )}
+          </View>
+        }
+      />
+    </>
+  );
+}
+
+export default withAuthWall(CatalogItemsScreen, CatalogItemsAuthWall);

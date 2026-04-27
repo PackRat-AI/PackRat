@@ -5,6 +5,7 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "packages/app/**"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
   # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
@@ -14,6 +15,7 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "packages/app/**"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
   workflow_dispatch:
@@ -105,7 +107,7 @@ jobs:
           path: |
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
-          key: cocoapods-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'apps/expo/app.config.ts', 'bun.lock') }}
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'packages/app/package.json', 'apps/expo/app.config.ts', 'bun.lock') }}
           restore-keys: |
             cocoapods-${{ runner.os }}-
 

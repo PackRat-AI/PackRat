@@ -2,7 +2,7 @@
 
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for name validation
 const nameFormSchema = z.object({

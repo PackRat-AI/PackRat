@@ -1,8 +1,8 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useUser } from 'app/features/auth/hooks/useUser';
+import { useUpdateProfile } from 'app/features/profile/hooks/useUpdateProfile';
+import { cn } from 'app/lib/cn';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Alert, Platform, View } from 'react-native';

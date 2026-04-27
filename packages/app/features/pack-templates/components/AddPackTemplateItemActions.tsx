@@ -1,0 +1,197 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { isFunction, nullToUndefined } from '@packrat/guards';
+import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Icon } from 'app/components/Icon';
+import { isAuthed } from 'app/features/auth/store';
+import { CatalogBrowserModal } from 'app/features/catalog/components';
+import { useRecentlyUsedCatalogItems } from 'app/features/catalog/hooks/useRecentlyUsedCatalogItems';
+import type { CatalogItem } from 'app/features/catalog/types';
+import { useImagePicker } from 'app/features/packs';
+import { appAlert } from 'app/lib/appAlert';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import * as Burnt from 'burnt';
+import { router } from 'expo-router';
+import React from 'react';
+import { TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBulkAddCatalogItems } from '../hooks';
+
+interface AddPackTemplateItemActionsProps {
+  packTemplateId: string;
+}
+
+export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProps>(
+  function AddPackTemplateItemActions({ packTemplateId }, ref) {
+    const [isCatalogModalVisible, setIsCatalogModalVisible] = React.useState(false);
+    const { pickImage, takePhoto } = useImagePicker();
+    const { showActionSheetWithOptions } = useActionSheet();
+    const { colors } = useColorScheme();
+    const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
+
+    const { addItemsToPackTemplate } = useBulkAddCatalogItems();
+    const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
+
+    const handleAddFromCatalog = () => {
+      if (!isAuthed.peek()) {
+        return router.push({
+          pathname: '/auth',
+          params: {
+            redirectTo: `/pack-templates/${packTemplateId}`,
+            showSignInCopy: 'true',
+          },
+        });
+      }
+      setIsCatalogModalVisible(true);
+      ref && !isFunction(ref) && ref.current?.close();
+    };
+
+    const handleAddFromPhoto = () => {
+      ref && !isFunction(ref) && ref.current?.close();
+
+      if (!isAuthed.peek()) {
+        return router.push({
+          pathname: '/auth',
+          params: {
+            redirectTo: `/pack-templates/${packTemplateId}`,
+            showSignInCopy: 'true',
+          },
+        });
+      }
+      const options = [
+        t('packTemplates.takePhoto'),
+        t('packTemplates.chooseFromLibrary'),
+        t('common.cancel'),
+      ];
+      const cancelButtonIndex = 2;
+
+      showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+          containerStyle: {
+            backgroundColor: colors.card,
+            paddingBottom: insets.bottom,
+          },
+          textStyle: {
+            color: colors.foreground,
+          },
+        },
+        async (selectedIndex) => {
+          try {
+            switch (selectedIndex) {
+              case 0: {
+                // Take Photo
+                const fileInfo = await takePhoto();
+                if (fileInfo)
+                  router.push({
+                    pathname: '/pack-templates/items-scan',
+                    params: { packTemplateId, ...fileInfo },
+                  });
+                break;
+              }
+              case 1: {
+                // Choose from Library
+                const fileInfo = await pickImage();
+                if (fileInfo)
+                  router.push({
+                    pathname: '/pack-templates/items-scan',
+                    params: { packTemplateId, ...fileInfo },
+                  });
+                break;
+              }
+              case cancelButtonIndex:
+                // Canceled
+                return;
+            }
+          } catch (err) {
+            console.error('Error handling image:', err);
+            appAlert.current?.alert({
+              title: t('packTemplates.error'),
+              message: t('packTemplates.failedToProcessImage'),
+              buttons: [{ text: t('common.ok'), style: 'default' }],
+            });
+          }
+        },
+      );
+    };
+
+    const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
+      trackRecentlyUsed(catalogItems);
+      await addItemsToPackTemplate(
+        packTemplateId,
+        catalogItems.map((item) => ({ ...item, description: nullToUndefined(item.description) })),
+      );
+      const itemWord =
+        catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
+      Burnt.toast({
+        title: t('packTemplates.addedItems', { count: catalogItems.length, itemWord }),
+        preset: 'done',
+      });
+    };
+
+    return (
+      <>
+        <Sheet
+          ref={ref}
+          enableDynamicSizing={true}
+          enablePanDownToClose
+          backgroundStyle={{ backgroundColor: colors.card }}
+          handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+          bottomInset={insets.bottom}
+        >
+          <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+            <View className="gap-2 mb-4">
+              <TouchableOpacity
+                className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
+                onPress={() => {
+                  ref && !isFunction(ref) && ref.current?.close();
+                  router.push({
+                    pathname: '/templateItem/new',
+                    params: { packTemplateId },
+                  });
+                }}
+              >
+                <Icon name="plus" size={20} color={colors.foreground} />
+                <Text className="text-center font-medium">{t('packTemplates.addManually')}</Text>
+                <View className="ml-auto">
+                  <Icon name="chevron-right" size={20} color={colors.grey2} />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
+                onPress={handleAddFromPhoto}
+              >
+                <Icon name="camera-outline" size={20} color={colors.foreground} />
+                <Text className="text-center font-medium">
+                  {t('packTemplates.scanItemsFromPhoto')}
+                </Text>
+                <View className="ml-auto">
+                  <Icon name="chevron-right" size={20} color={colors.grey2} />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
+                onPress={handleAddFromCatalog}
+              >
+                <Icon name="cart-outline" size={20} color={colors.foreground} />
+                <Text className="text-center font-medium">{t('packTemplates.addFromCatalog')}</Text>
+                <View className="ml-auto">
+                  <Icon name="chevron-right" size={20} color={colors.grey2} />
+                </View>
+              </TouchableOpacity>
+            </View>
+          </BottomSheetView>
+        </Sheet>
+
+        <CatalogBrowserModal
+          visible={isCatalogModalVisible}
+          onClose={() => setIsCatalogModalVisible(false)}
+          onItemsSelected={handleCatalogItemsSelected}
+        />
+      </>
+    );
+  },
+);

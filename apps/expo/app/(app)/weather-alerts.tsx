@@ -1,9 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { useWeatherAlerts } from 'expo-app/features/weather/hooks/useWeatherAlert';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useWeatherAlerts } from 'app/features/weather/hooks/useWeatherAlert';
+import { cn } from 'app/lib/cn';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

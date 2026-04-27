@@ -1,0 +1,242 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { Icon } from 'app/components/Icon';
+import { Chip } from 'app/components/initial/Chip';
+import { ExpandableText } from 'app/components/initial/ExpandableText';
+import { ItemLinks } from 'app/features/catalog/components/ItemLinks';
+import { ItemReviews } from 'app/features/catalog/components/ItemReviews';
+import { SimilarItems } from 'app/features/catalog/components/SimilarItems';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { TestIds } from 'app/lib/testIds';
+import { decodeHtmlEntities } from 'app/lib/utils/decodeHtmlEntities';
+import { ErrorScreen } from 'app/screens/ErrorScreen';
+import { LoadingSpinnerScreen } from 'app/screens/LoadingSpinnerScreen';
+import { NotFoundScreen } from 'app/screens/NotFoundScreen';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Linking, Text as RNText, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CatalogItemImage } from '../components/CatalogItemImage';
+import { useCatalogItemDetails } from '../hooks';
+
+export function CatalogItemDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
+  const { colors } = useColorScheme();
+  const { t } = useTranslation();
+  const MATERIAL_LENGTH_THRESHOLD = 60;
+
+  const handleAddToPack = () => {
+    router.push({
+      pathname: '/catalog/add-to-pack',
+      params: { catalogItemId: item?.id },
+    });
+  };
+
+  if (isLoading) {
+    return <LoadingSpinnerScreen />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorScreen
+        title={t('catalog.errorLoadingItem')}
+        message={t('catalog.pleaseTryAgainLater')}
+        onRetry={refetch}
+        variant="destructive"
+      />
+    );
+  }
+
+  if (!item) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center">
+        <NotFoundScreen
+          title={t('catalog.itemNotFound')}
+          message={t('catalog.pleaseTryAgainLater')}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView>
+        <CatalogItemImage
+          imageUrl={item.images?.[0]}
+          resizeMode="contain"
+          className="h-64 w-full"
+        />
+
+        <View className="bg-background p-4">
+          <View className="mb-2">
+            <View className="flex-row items-baseline justify-between">
+              <View className="flex-1">
+                <Text className="text-2xl font-bold text-foreground">{item.name}</Text>
+              </View>
+              {item.ratingValue && (
+                <View className="flex-row items-center">
+                  <Icon name="star" size={16} color={colors.yellow} />
+                  <Text className="ml-1 text-sm text-muted-foreground">
+                    {item.ratingValue.toFixed(1)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {item.brand && <Text className="text-sm text-muted-foreground">{item.brand}</Text>}
+          </View>
+
+          {item.price && (
+            <Text className="mb-4 text-xl text-foreground">
+              ${item.price.toFixed(2)} {item.currency}
+            </Text>
+          )}
+
+          {item.categories && item.categories.length > 0 && (
+            <View className="mb-4">
+              <Text className="mb-2 text-xs uppercase text-muted-foreground">
+                {t('catalog.categoriesLabel')}
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {item.categories.map((category) => (
+                  <Chip key={category} textClassName="text-xs" variant="outline">
+                    <Text> {decodeHtmlEntities(category)}</Text>
+                  </Chip>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <View className="mb-4">
+            <Text className="mb-2 text-foreground">{item.description}</Text>
+          </View>
+
+          <View className="mb-4 flex-row flex-wrap gap-1">
+            <View className="mb-2 mr-4">
+              <Text className="text-xs uppercase text-muted-foreground">
+                {t('catalog.weightLabel')}
+              </Text>
+              <Chip textClassName="text-center" variant="secondary">
+                <RNText>
+                  {item.weight !== undefined && item.weightUnit
+                    ? `${item.weight} ${item.weightUnit}`
+                    : t('catalog.notSpecified')}
+                </RNText>
+              </Chip>
+            </View>
+
+            {item.material && (
+              <View className="mb-2 mr-4">
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.materialLabel')}
+                </Text>
+                {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
+                  <Chip textClassName="text-center" variant="secondary">
+                    <RNText>{item.material}</RNText>
+                  </Chip>
+                ) : (
+                  <ExpandableText text={item.material} />
+                )}
+              </View>
+            )}
+
+            {item.usageCount && item.usageCount > 0 ? (
+              <View className="mb-2">
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.usedInLabel')}
+                </Text>
+                <Chip textClassName="text-center" variant="secondary">
+                  <RNText>
+                    {item.usageCount}{' '}
+                    {item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs')}
+                  </RNText>
+                </Chip>
+              </View>
+            ) : null}
+          </View>
+
+          {item.availability && (
+            <View className="mb-4 flex-row items-center">
+              <Ionicons
+                name={
+                  item.availability === 'in_stock'
+                    ? 'checkmark-circle-outline'
+                    : item.availability === 'out_of_stock'
+                      ? 'close-circle-outline'
+                      : 'time-outline'
+                }
+                size={16}
+                color={
+                  item.availability === 'in_stock'
+                    ? '#22c55e' // green
+                    : item.availability === 'out_of_stock'
+                      ? '#ef4444' // red
+                      : '#f59e0b' // amber for preorder
+                }
+              />
+              <Text className="ml-1 text-sm text-foreground">
+                {item.availability === 'in_stock'
+                  ? t('catalog.inStock')
+                  : item.availability === 'out_of_stock'
+                    ? t('catalog.outOfStock')
+                    : t('catalog.preorder')}
+              </Text>
+            </View>
+          )}
+
+          <View className="mb-4 gap-2 flex-row justify-between">
+            <View>
+              <Button testID={TestIds.AddToPackButton} onPress={handleAddToPack}>
+                <Text>{t('catalog.addToPack')}</Text>
+              </Button>
+            </View>
+            <View>
+              <Button
+                testID={TestIds.ViewRetailerButton}
+                variant="secondary"
+                onPress={() => Linking.openURL(item.productUrl as string)}
+              >
+                <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
+              </Button>
+            </View>
+          </View>
+
+          {item.techs && Object.keys(item.techs).length > 0 && (
+            <View className="mt-8">
+              <Text variant="callout" className="mb-2">
+                {t('catalog.specifications')}
+              </Text>
+              <View className="rounded-lg p-3 gap-4">
+                {Object.entries(item.techs).map(([key, value]) => (
+                  <View key={key} className="gap-1">
+                    <Text className="text-xs text-muted-foreground uppercase">{key}</Text>
+                    <Text className="font-medium text-foreground">{value}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Links Section */}
+          {item.links && item.links.length > 0 && <ItemLinks links={item.links} />}
+
+          {/* Reviews Section */}
+          {item.reviews && item.reviews.length > 0 && (
+            <View className="mt-2">
+              <ItemReviews reviews={item.reviews} />
+            </View>
+          )}
+
+          {/* Similar Items Section */}
+          <SimilarItems
+            catalogItemId={item.id.toString()}
+            itemName={item.name}
+            limit={5}
+            threshold={0.1}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
