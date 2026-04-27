@@ -114,19 +114,13 @@ appId: ${APP_ID}
           optional: true
           label: "Dismiss iOS Save Password prompt"
 
-# Wait for the main tab bar to be fully settled before tapping
+# Wait for the main tab bar to appear — confirms we are logged in and on the main app.
+# We only assert the tab bar is visible here; navigation to specific tabs is left to
+# subsequent flows (dashboard-tiles-flow taps Packs, providing a stable entry point for
+# create-pack-flow). Navigating to Packs directly after login is unreliable on iOS
+# because Expo Router's post-login routing is still settling at this point.
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
       text: "Packs"
     timeout: 20000
-
-# Assert we are now logged in by navigating to Packs and verifying a stable testID
-- tapOn:
-    text: "Packs"
-- waitForAnimationToEnd
-# Use extendedWaitUntil instead of assertVisible to tolerate post-login navigation settling
-- extendedWaitUntil:
-    visible:
-      id: "create-pack-button"
-    timeout: 15000
