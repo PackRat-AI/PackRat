@@ -3,8 +3,7 @@
  *
  * Auth model:
  *   - /token (CF configured):  CF JWT + Basic  → Bearer JWT
- *   - /token (dev, no CF vars): Basic only      → Bearer JWT
- *   - /token (prod, no CF vars): 503 misconfiguration
+ *   - /token (no CF vars, any env): Basic only → Bearer JWT
  *   - Protected routes: Bearer JWT always accepted; Basic only in dev (no CF vars)
  *
  * verifyCFAccessRequest is globally mocked in test/setup.ts (returns null by
@@ -236,18 +235,18 @@ describe('/api/admin/token — CF Access configured (two-factor)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// /token — ENVIRONMENT=production, no CF vars: 503 misconfiguration guard
+// /token — no CF vars (any environment): Basic-only is accepted
 // ---------------------------------------------------------------------------
-describe('/api/admin/token — ENVIRONMENT=production, no CF vars', () => {
-  it('returns 503 instead of falling back to Basic-only', async () => {
+describe('/api/admin/token — no CF vars configured (any environment)', () => {
+  it('issues a JWT with Basic credentials when CF vars are absent in production', async () => {
     const envProd = withEnv({ ENVIRONMENT: 'production' }) as ReturnType<typeof getEnv>;
-    vi.mocked(getEnv).mockReturnValueOnce(envProd);
+    vi.mocked(getEnv).mockReturnValueOnce(envProd).mockReturnValueOnce(envProd);
 
     const credentials = btoa('admin:admin-password');
     const res = await app.fetch(tokenReq({ authorization: `Basic ${credentials}` }));
-    expect(res.status).toBe(503);
-    const body = (await res.json()) as { error: string };
-    expect(body.error).toContain('misconfiguration');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { token: string };
+    expect(typeof body.token).toBe('string');
   });
 });
 
