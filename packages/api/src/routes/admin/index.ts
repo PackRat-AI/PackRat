@@ -61,22 +61,28 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Accept: Cloudflare Access JWT (prod, cryptographically verified), Bearer JWT
-// (admin SPA session token), or Basic auth (local dev only).
+// Protected routes: Bearer JWT only.
+// The JWT is issued by /token, which already enforced both factors (CF JWT + Basic
+// in prod, Basic-only in local dev). No need to re-check CF or Basic here.
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+  const header = request.headers.get('authorization') ?? '';
 
-  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    // CF Access configured: cryptographic JWT verification only, no fallthrough.
-    const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
-    return cfIdentity !== null;
+  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+
+  // Local dev only: allow Basic auth directly on protected routes as a convenience.
+  // Both CF vars absent AND non-production environment must hold — missing CF vars
+  // alone is not enough so a misconfigured prod cannot fall back to Basic auth.
+  if (
+    env.ENVIRONMENT !== 'production' &&
+    !CF_ACCESS_TEAM_DOMAIN &&
+    !CF_ACCESS_AUD &&
+    header.startsWith('Basic ')
+  ) {
+    return basicAuthGuard(request).authorized;
   }
 
-  // CF Access not configured — local dev fallbacks only.
-  const header = request.headers.get('authorization') ?? '';
-  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
-  if (header.startsWith('Basic ')) return basicAuthGuard(request).authorized;
   return false;
 }
 
@@ -93,6 +99,23 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
         const { success } = await env.TOKEN_RATE_LIMITER.limit({ key: ip });
         if (!success) return status(429, { error: 'Too many requests' });
+      }
+
+      const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+
+      // CF JWT required when: CF vars are set OR running in production.
+      // The ENVIRONMENT check is a safety net — missing CF vars in prod must not
+      // silently downgrade to Basic-only.
+      if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+        const cfIdentity = await verifyCFAccessRequest(
+          request,
+          CF_ACCESS_TEAM_DOMAIN,
+          CF_ACCESS_AUD,
+        );
+        if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
+      } else if (env.ENVIRONMENT === 'production') {
+        // CF vars missing but we're in production — refuse rather than fall back.
+        return status(503, { error: 'Server misconfiguration: CF Access not configured' });
       }
 
       const header = request.headers.get('authorization') ?? '';
@@ -112,7 +135,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     {
       detail: {
         tags: ['Admin'],
-        summary: 'Exchange Basic credentials for a short-lived admin JWT',
+        summary: 'Exchange Basic credentials for a short-lived admin JWT (CF JWT required in prod)',
       },
     },
   )

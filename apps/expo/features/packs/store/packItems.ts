@@ -13,9 +13,12 @@ import { uploadImage } from '../utils';
 const listAllPackItems = async (): Promise<PackItem[] | null> => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packitems: ${error.value}`);
-  return PackWithWeightsSchema.array()
-    .parse(data)
-    .flatMap((pack) => pack.items ?? []) as unknown as PackItem[];
+  return (
+    PackWithWeightsSchema.array()
+      .parse(data)
+      // safe-cast: Zod parse validates the shape; PackItem extends the Zod-inferred type
+      .flatMap((pack) => pack.items ?? []) as unknown as PackItem[]
+  );
 };
 
 const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem | null> => {
@@ -26,6 +29,7 @@ const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem |
     .packs({ packId: String(packId) })
     .items.post(data);
   if (error) throw new Error(`Failed to create pack item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackItem extends the Zod-inferred type
   return PackItemSchema.parse(result) as unknown as PackItem;
 };
 
@@ -35,6 +39,7 @@ const updatePackItem = async ({ id, ...data }: PackItem): Promise<PackItem | nul
   }
   const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
   if (error) throw new Error(`Failed to update pack item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackItem extends the Zod-inferred type
   return PackItemSchema.parse(result) as unknown as PackItem;
 };
 

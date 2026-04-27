@@ -40,6 +40,18 @@ const ALLOWED: string[] = [
   'packages/api/container_src/server.ts',
   'packages/analytics/test/core/env.test.ts',
   'apps/expo/app.config.ts',
+  // The check script itself (process.env appears in string literals / regex)
+  'packages/env/scripts/no-raw-process-env.ts',
+  // Startup script — passes process.env to a validator; correct pattern for Node scripts
+  'packages/api/scripts/validate-cloudflare-api-env.ts',
+  // Analytics env shim — this IS the shim, same as packages/env/src/*.ts above
+  'packages/analytics/src/core/env.ts',
+  // One-off sync script, not app code
+  'apps/guides/scripts/sync-to-r2.ts',
+  // Test files that mutate process.env to exercise env-validation logic
+  'packages/api/src/utils/__tests__/',
+  // Admin env shim — parses process.env once at module load
+  'apps/admin/lib/env.ts',
 ];
 
 // Directories to skip entirely

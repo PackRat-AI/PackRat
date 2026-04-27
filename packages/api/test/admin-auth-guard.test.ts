@@ -1,13 +1,16 @@
 /**
- * Integration tests for adminAuthGuard branching logic.
+ * Integration tests for adminAuthGuard and /token two-factor design.
  *
- * Two distinct code paths are exercised:
- *   1. CF_ACCESS_TEAM_DOMAIN + CF_ACCESS_AUD set  →  CF JWT-only, no fallthrough
- *   2. CF vars absent                              →  Bearer JWT / Basic auth
+ * Auth model:
+ *   - /token (CF configured):  CF JWT + Basic  → Bearer JWT
+ *   - /token (dev, no CF vars): Basic only      → Bearer JWT
+ *   - /token (prod, no CF vars): 503 misconfiguration
+ *   - Protected routes: Bearer JWT always accepted; Basic only in dev (no CF vars)
  *
  * verifyCFAccessRequest is globally mocked in test/setup.ts (returns null by
  * default). Individual tests use mockResolvedValueOnce() to simulate success.
- * getEnv is also globally mocked; per-test overrides inject CF vars.
+ * getEnv is also globally mocked; per-test overrides inject CF vars or
+ * ENVIRONMENT=production.
  */
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -51,8 +54,12 @@ function adminReq(path: string, headers: Record<string, string> = {}): Request {
   return new Request(`http://localhost/api/admin${path}`, { headers });
 }
 
+function tokenReq(headers: Record<string, string> = {}): Request {
+  return new Request('http://localhost/api/admin/token', { method: 'POST', headers });
+}
+
 // ---------------------------------------------------------------------------
-// CF_ACCESS_TEAM_DOMAIN + CF_ACCESS_AUD configured
+// adminAuthGuard — CF Access configured
 // ---------------------------------------------------------------------------
 describe('adminAuthGuard — CF Access configured', () => {
   it('allows request when verifyCFAccessRequest resolves an identity', async () => {
@@ -73,7 +80,6 @@ describe('adminAuthGuard — CF Access configured', () => {
 
   it('returns 401 for the old spoofable CF-Access-Authenticated-User-Email header alone', async () => {
     vi.mocked(getEnv).mockReturnValueOnce(withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>);
-    // verifyCFAccessRequest returns null — the header is not read by the new code
 
     const res = await app.fetch(
       adminReq('/stats', { 'cf-access-authenticated-user-email': 'admin@packrat.world' }),
@@ -81,20 +87,16 @@ describe('adminAuthGuard — CF Access configured', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns 401 for a valid Bearer JWT when CF is active (no fallthrough)', async () => {
-    // Issue the JWT first (issueTestAdminJwt calls getEnv() internally, which
-    // would consume mockReturnValueOnce if set before the call).
+  it('allows a valid Bearer JWT even when CF vars are set (JWT proves both factors at issuance)', async () => {
     const token = await issueTestAdminJwt();
-    // Now arm the mock so adminAuthGuard sees CF vars on its getEnv() call.
+    // adminAuthGuard now accepts Bearer JWT unconditionally — no CF re-check needed.
     vi.mocked(getEnv).mockReturnValueOnce(withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>);
-    // verifyCFAccessRequest returns null — Bearer path is not attempted
     const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
-    expect(res.status).toBe(401);
+    expect(res.status).not.toBe(401);
   });
 
-  it('returns 401 for valid Basic credentials when CF is active (no fallthrough)', async () => {
+  it('returns 401 for valid Basic credentials on protected routes when CF is active', async () => {
     vi.mocked(getEnv).mockReturnValueOnce(withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>);
-    // verifyCFAccessRequest returns null — Basic path is not attempted
 
     const credentials = btoa('admin:admin-password');
     const res = await app.fetch(adminReq('/stats', { authorization: `Basic ${credentials}` }));
@@ -103,16 +105,16 @@ describe('adminAuthGuard — CF Access configured', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CF_ACCESS_TEAM_DOMAIN not set — local dev fallbacks
+// adminAuthGuard — CF Access not configured (dev)
 // ---------------------------------------------------------------------------
-describe('adminAuthGuard — CF Access not configured', () => {
+describe('adminAuthGuard — CF Access not configured (dev, ENVIRONMENT=development)', () => {
   it('allows a valid Bearer admin JWT', async () => {
     const token = await issueTestAdminJwt();
     const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
     expect(res.status).not.toBe(401);
   });
 
-  it('allows valid Basic credentials', async () => {
+  it('allows valid Basic credentials as a dev convenience', async () => {
     const credentials = btoa('admin:admin-password');
     const res = await app.fetch(adminReq('/stats', { authorization: `Basic ${credentials}` }));
     expect(res.status).not.toBe(401);
@@ -132,37 +134,225 @@ describe('adminAuthGuard — CF Access not configured', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Token endpoint — exempt from auth guard
+// adminAuthGuard — ENVIRONMENT=production without CF vars: Basic blocked
 // ---------------------------------------------------------------------------
-describe('/api/admin/token', () => {
-  it('issues a JWT for valid Basic credentials (guard does not apply)', async () => {
-    const credentials = btoa('admin:admin-password');
-    const res = await app.fetch(
-      new Request('http://localhost/api/admin/token', {
-        method: 'POST',
-        headers: { authorization: `Basic ${credentials}` },
-      }),
+describe('adminAuthGuard — ENVIRONMENT=production, no CF vars', () => {
+  it('blocks Basic auth on protected routes even without CF vars when ENVIRONMENT=production', async () => {
+    vi.mocked(getEnv).mockReturnValueOnce(
+      withEnv({ ENVIRONMENT: 'production' }) as ReturnType<typeof getEnv>,
     );
+
+    const credentials = btoa('admin:admin-password');
+    const res = await app.fetch(adminReq('/stats', { authorization: `Basic ${credentials}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('still allows Bearer JWT when ENVIRONMENT=production (JWT was issued after proper auth)', async () => {
+    const token = await issueTestAdminJwt();
+    vi.mocked(getEnv).mockReturnValueOnce(
+      withEnv({ ENVIRONMENT: 'production' }) as ReturnType<typeof getEnv>,
+    );
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
+    expect(res.status).not.toBe(401);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// /token — CF Access not configured (dev): Basic only
+// ---------------------------------------------------------------------------
+describe('/api/admin/token — CF Access not configured (dev)', () => {
+  it('issues a JWT for valid Basic credentials', async () => {
+    const credentials = btoa('admin:admin-password');
+    const res = await app.fetch(tokenReq({ authorization: `Basic ${credentials}` }));
     expect(res.status).toBe(200);
     const body = (await res.json()) as { token: string; expiresIn: number };
     expect(typeof body.token).toBe('string');
     expect(typeof body.expiresIn).toBe('number');
   });
 
-  it('returns 401 for invalid Basic credentials on token endpoint', async () => {
+  it('returns 401 for invalid Basic credentials', async () => {
+    const res = await app.fetch(tokenReq({ authorization: `Basic ${btoa('wrong:wrong')}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 when Authorization header is missing', async () => {
+    const res = await app.fetch(tokenReq());
+    expect(res.status).toBe(401);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// /token — CF Access configured: requires CF JWT + Basic (two-factor)
+// ---------------------------------------------------------------------------
+describe('/api/admin/token — CF Access configured (two-factor)', () => {
+  it('issues a JWT when CF JWT is valid and Basic credentials are correct', async () => {
+    const envWithCF = withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>;
+    // /token calls getEnv() once for CF vars + once inside basicAuthGuard
+    vi.mocked(getEnv).mockReturnValueOnce(envWithCF).mockReturnValueOnce(envWithCF);
+    vi.mocked(verifyCFAccessRequest).mockResolvedValueOnce({ email: 'admin@packrat.world' });
+
+    const credentials = btoa('admin:admin-password');
+    const res = await app.fetch(tokenReq({ authorization: `Basic ${credentials}` }));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { token: string };
+    expect(typeof body.token).toBe('string');
+  });
+
+  it('returns 401 when CF JWT is absent (Basic alone is not enough in prod)', async () => {
+    const envWithCF = withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>;
+    vi.mocked(getEnv).mockReturnValueOnce(envWithCF);
+    // verifyCFAccessRequest returns null (default)
+
+    const credentials = btoa('admin:admin-password');
+    const res = await app.fetch(tokenReq({ authorization: `Basic ${credentials}` }));
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('CF Access authentication required');
+  });
+
+  it('returns 401 when CF JWT is valid but Basic credentials are wrong', async () => {
+    const envWithCF = withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>;
+    vi.mocked(getEnv).mockReturnValueOnce(envWithCF).mockReturnValueOnce(envWithCF);
+    vi.mocked(verifyCFAccessRequest).mockResolvedValueOnce({ email: 'admin@packrat.world' });
+
     const res = await app.fetch(
-      new Request('http://localhost/api/admin/token', {
-        method: 'POST',
-        headers: { authorization: `Basic ${btoa('wrong:wrong')}` },
-      }),
+      tokenReq({ authorization: `Basic ${btoa('admin:wrong-password')}` }),
+    );
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('Invalid username or password');
+  });
+
+  it('returns 401 when Authorization header is missing even with a valid CF JWT', async () => {
+    const envWithCF = withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>;
+    vi.mocked(getEnv).mockReturnValueOnce(envWithCF);
+    vi.mocked(verifyCFAccessRequest).mockResolvedValueOnce({ email: 'admin@packrat.world' });
+
+    const res = await app.fetch(tokenReq());
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('Missing credentials');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// /token — ENVIRONMENT=production, no CF vars: 503 misconfiguration guard
+// ---------------------------------------------------------------------------
+describe('/api/admin/token — ENVIRONMENT=production, no CF vars', () => {
+  it('returns 503 instead of falling back to Basic-only', async () => {
+    const envProd = withEnv({ ENVIRONMENT: 'production' }) as ReturnType<typeof getEnv>;
+    vi.mocked(getEnv).mockReturnValueOnce(envProd);
+
+    const credentials = btoa('admin:admin-password');
+    const res = await app.fetch(tokenReq({ authorization: `Basic ${credentials}` }));
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('misconfiguration');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Adversarial / bypass attempts
+// ---------------------------------------------------------------------------
+describe('bypass attempts', () => {
+  // --- Spoofed / crafted headers on protected routes ---
+  it('rejects a JWT signed with the wrong secret', async () => {
+    const wrongSecret = new TextEncoder().encode('not-the-real-secret');
+    const token = await new SignJWT({ role: 'admin' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject('admin')
+      .setIssuer('packrat-api')
+      .setAudience('packrat-admin')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(wrongSecret);
+
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a regular user JWT (correct secret, wrong role)', async () => {
+    const env = vi.mocked(getEnv)();
+    const secret = new TextEncoder().encode(String(env.JWT_SECRET ?? 'secret'));
+    const token = await new SignJWT({ role: 'USER', userId: 42 })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject('42')
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(secret);
+
+    const res = await app.fetch(adminReq('/stats', { authorization: `Bearer ${token}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a Bearer token that is plaintext (not a JWT)', async () => {
+    const res = await app.fetch(adminReq('/stats', { authorization: 'Bearer not-a-real-jwt' }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects Basic auth on protected routes when CF vars are set (even with correct credentials)', async () => {
+    vi.mocked(getEnv).mockReturnValueOnce(withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>);
+    const res = await app.fetch(
+      adminReq('/stats', { authorization: `Basic ${btoa('admin:admin-password')}` }),
     );
     expect(res.status).toBe(401);
   });
 
-  it('returns 401 when Authorization header is missing on token endpoint', async () => {
+  it('rejects Basic auth on protected routes when ENVIRONMENT=production (even without CF vars)', async () => {
+    vi.mocked(getEnv).mockReturnValueOnce(
+      withEnv({ ENVIRONMENT: 'production' }) as ReturnType<typeof getEnv>,
+    );
     const res = await app.fetch(
-      new Request('http://localhost/api/admin/token', { method: 'POST' }),
+      adminReq('/stats', { authorization: `Basic ${btoa('admin:admin-password')}` }),
     );
     expect(res.status).toBe(401);
+  });
+
+  it('rejects the spoofable CF-Access-Authenticated-User-Email header on protected routes', async () => {
+    vi.mocked(getEnv).mockReturnValueOnce(withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>);
+    const res = await app.fetch(
+      adminReq('/stats', { 'cf-access-authenticated-user-email': 'admin@example.com' }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an empty Authorization header', async () => {
+    const res = await app.fetch(adminReq('/stats', { authorization: '' }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a malformed Basic credential (no colon separator)', async () => {
+    const res = await app.fetch(adminReq('/stats', { authorization: `Basic ${btoa('nocolon')}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a Bearer JWT with the admin role but correct CF vars configured and no CF JWT at /token', async () => {
+    // Even if you somehow have a valid Bearer JWT, /token cannot have issued it
+    // without CF JWT in prod — this is the defence-in-depth proof: attempting
+    // to call /token with CF configured but no CF JWT is still rejected.
+    const envWithCF = withEnv(CF_OVERRIDES) as ReturnType<typeof getEnv>;
+    vi.mocked(getEnv).mockReturnValueOnce(envWithCF);
+    // verifyCFAccessRequest returns null (CF JWT absent)
+
+    const credentials = btoa('admin:admin-password');
+    const res = await app.fetch(tokenReq({ authorization: `Basic ${credentials}` }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a timing attack: wrong username takes same time as wrong password', async () => {
+    // Both bad-username and bad-password attempts return 401 without leaking which
+    // field was wrong — verifying the error message is the same.
+    const badUser = await app.fetch(
+      tokenReq({ authorization: `Basic ${btoa('wronguser:admin-password')}` }),
+    );
+    const badPass = await app.fetch(
+      tokenReq({ authorization: `Basic ${btoa('admin:wrongpass')}` }),
+    );
+    expect(badUser.status).toBe(401);
+    expect(badPass.status).toBe(401);
+    const u = (await badUser.json()) as { error: string };
+    const p = (await badPass.json()) as { error: string };
+    // Both must return the same error message (no username enumeration)
+    expect(u.error).toBe(p.error);
   });
 });

@@ -1,27 +1,17 @@
 // Browser-callable API client for the admin app.
 //
-// Auth priority (first match wins):
-//   1. CF Zero Trust — CF-Access-JWT-Assertion fetched from /cdn-cgi/access/get-identity
-//      (available when the admin app is deployed behind Cloudflare Access)
-//   2. Session JWT  — short-lived Bearer token stored in sessionStorage after Basic auth login
-//      (local dev fallback)
+// Auth: when behind CF Access, the Cf-Access-Jwt-Assertion header is added
+// automatically by CF Access on every request to a protected service — no manual
+// forwarding needed. For local dev, a short-lived Bearer token from Basic auth
+// login is used instead.
 
 import { clearToken, getAuthHeader } from './auth';
-import { getCFAccessJWT } from './cfAccess';
+import { adminEnv } from './env';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
-
-async function buildAuthHeaders(): Promise<Record<string, string>> {
-  const cfJwt = await getCFAccessJWT();
-  if (cfJwt) return { 'CF-Access-JWT-Assertion': cfJwt };
-  return getAuthHeader();
-}
+const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const authHeaders = await buildAuthHeaders();
+  const authHeaders = getAuthHeader();
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
     ...init,
     headers: {
@@ -42,7 +32,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   // T is caller-verified via the typed adminFetch<T> call-sites above.
-  return res.json() as Promise<T>;
+  return res.json() as Promise<T>; // safe-cast: fetch boundary — caller provides T
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────

@@ -44,6 +44,7 @@
     "@neondatabase/serverless": "^1.0.0",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/overpass": "workspace:*",
     "@sinclair/typebox": "^0.34.15",
     "@types/nodemailer": "^6.4.17",
     "ai": "catalog:",

@@ -49,6 +49,12 @@ jobs:
         run: bun scripts/lint/no-duplicate-deps.ts
       - name: Check package.json ordering
         run: bun scripts/format/sort-package-json.ts --check
+      - name: Custom lint rules (typeof guards, raw regex, process.env)
+        run: bun lint:custom
+      - name: Check for unauthenticated routes
+        run: bun scripts/lint/no-unauth-routes.ts
+      - name: Check unsafe type casts
+        run: bun check:casts:strict
       - name: Check types
         run: bun check-types
       - name: Run Expo Doctor

@@ -1,3 +1,10 @@
+// ── Formatting regex constants ──
+const BULLET_LINE_PATTERN = /^\s*[-*]\s+(.+)$/gm;
+const SENTENCE_BOUNDARY_PATTERN = /([.?!])\s*(?=[A-Z])/g;
+const BOLD_MARKDOWN_PATTERN = /\*\*(.+?)\*\*/g;
+const ITALIC_MARKDOWN_PATTERN = /\*(.+?)\*/g;
+const MARKDOWN_HEADER_PATTERN = /^#+\s+(.+)$/gm;
+
 /**
  * Formats AI responses to improve readability in the chat UI
  * - Converts markdown lists to plain text with proper spacing
@@ -6,17 +13,17 @@
  */
 export function formatAIResponse(text: string): string {
   // Convert markdown lists to plain text with emoji bullets
-  let formatted = text.replace(/^\s*[-*]\s+(.+)$/gm, '• $1');
+  let formatted = text.replace(BULLET_LINE_PATTERN, '• $1');
 
   // Add proper spacing after periods, question marks, and exclamation points
-  formatted = formatted.replace(/([.?!])\s*(?=[A-Z])/g, '$1\n\n');
+  formatted = formatted.replace(SENTENCE_BOUNDARY_PATTERN, '$1\n\n');
 
   // Convert markdown emphasis to plain text
-  formatted = formatted.replace(/\*\*(.+?)\*\*/g, '$1');
-  formatted = formatted.replace(/\*(.+?)\*/g, '$1');
+  formatted = formatted.replace(BOLD_MARKDOWN_PATTERN, '$1');
+  formatted = formatted.replace(ITALIC_MARKDOWN_PATTERN, '$1');
 
   // Handle markdown headers
-  formatted = formatted.replace(/^#+\s+(.+)$/gm, '$1');
+  formatted = formatted.replace(MARKDOWN_HEADER_PATTERN, '$1');
 
   return formatted.trim();
 }

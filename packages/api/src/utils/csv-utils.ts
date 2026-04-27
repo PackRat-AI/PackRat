@@ -1,5 +1,28 @@
+import { isString } from '@packrat/guards';
 import type { NewCatalogItem } from '../db/schema';
 import { AvailabilitySchema, WeightUnitSchema } from '../types';
+
+// ── CSV sanitization regex constants ──
+const NEWLINE_CHARS = /[\r\n]+/g;
+const SINGLE_QUOTE_TO_DOUBLE = /'/g;
+const WRAPPING_QUOTES = /^"|"$/g;
+const PYTHON_NONE = /\bNone\b/g;
+const PYTHON_TRUE = /\bTrue\b/g;
+const PYTHON_FALSE = /\bFalse\b/g;
+const CURLY_SINGLE_QUOTES = /[‘’‛‹›]/g;
+const CURLY_DOUBLE_QUOTES = /[“”„‟«»]/g;
+const BACKTICK_CHARS = /[`]/g;
+const UNQUOTED_OBJECT_KEY = /([{,]\s*)'([^']+?)'\s*:/g;
+const SINGLE_QUOTED_VALUE = /:\s*'(.*?)'(?=\s*[},])/g;
+const ESCAPE_BACKSLASHES = /\\/g;
+const ESCAPE_DOUBLE_QUOTES = /"/g;
+const CONTROL_CHARS = /\\n|\\r|\\b|\\t|\\f|\r?\n|\r|\b|\t|\f/g;
+const UNICODE_LINE_SEPARATORS = /\u2028|\u2029/g;
+const HEX_ESCAPE = /\\x([0-9A-Fa-f]{2})/g;
+const LONE_BACKSLASH = /([^\\])\\(?![\\/"'bfnrtu])/g;
+const TRAILING_COMMA = /,\s*([}\]])/g;
+const ESCAPED_DOUBLE_QUOTE = /\\"/g;
+const NON_NUMERIC_PRICE = /[^0-9.]/g;
 
 export function mapCsvRowToItem({
   values,
@@ -12,7 +35,7 @@ export function mapCsvRowToItem({
   // --- Optional Scalars ---
   item.description =
     fieldMap.description !== undefined
-      ? values[fieldMap.description]?.replace(/[\r\n]+/g, ' ').trim()
+      ? values[fieldMap.description]?.replace(NEWLINE_CHARS, ' ').trim()
       : undefined;
 
   const name = fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
@@ -92,7 +115,7 @@ export function mapCsvRowToItem({
         item.variants = JSON.parse(val);
       } catch {
         try {
-          item.variants = JSON.parse(val.replace(/'/g, '"'));
+          item.variants = JSON.parse(val.replace(SINGLE_QUOTE_TO_DOUBLE, '"'));
         } catch {
           item.variants = [];
         }
@@ -164,7 +187,7 @@ export function mapCsvRowToItem({
   for (const field of stringFields) {
     const index = fieldMap[field];
     if (index !== undefined && values[index]) {
-      item[field] = values[index].replace(/^"|"$/g, '').trim();
+      item[field] = values[index].replace(WRAPPING_QUOTES, '').trim();
     }
   }
 
@@ -173,7 +196,7 @@ export function mapCsvRowToItem({
     const availabilityValue = values[fieldMap.availability];
     if (availabilityValue) {
       const parsedAvailability = AvailabilitySchema.safeParse(
-        availabilityValue.replace(/^"|"$/g, '').trim(),
+        availabilityValue.replace(WRAPPING_QUOTES, '').trim(),
       );
       if (parsedAvailability.success) {
         item.availability = parsedAvailability.data;
@@ -220,36 +243,36 @@ export function normalizeJsonString(value: string): string {
       .trim()
 
       // Replace Python-style null/booleans with JS equivalents
-      .replace(/\bNone\b/g, 'null')
-      .replace(/\bTrue\b/g, 'true')
-      .replace(/\bFalse\b/g, 'false')
+      .replace(PYTHON_NONE, 'null')
+      .replace(PYTHON_TRUE, 'true')
+      .replace(PYTHON_FALSE, 'false')
 
       // Normalize smart/special quotes to standard quotes
-      .replace(/[‘’‛‹›]/g, "'")
-      .replace(/[“”„‟«»]/g, '"')
-      .replace(/[`]/g, '')
+      .replace(CURLY_SINGLE_QUOTES, "'")
+      .replace(CURLY_DOUBLE_QUOTES, '"')
+      .replace(BACKTICK_CHARS, '')
 
       // Convert object keys from 'key': to "key":
-      .replace(/([{,]\s*)'([^']+?)'\s*:/g, '$1"$2":')
+      .replace(UNQUOTED_OBJECT_KEY, '$1"$2":')
 
       // Convert string values from 'value' to "escaped value"
-      .replace(/:\s*'(.*?)'(?=\s*[},])/g, (_, val) => {
+      .replace(SINGLE_QUOTED_VALUE, (_, val) => {
         const escaped = val
-          .replace(/\\/g, '\\\\') // Escape backslashes
-          .replace(/"/g, '\\"') // Escape double quotes
-          .replace(/\\n|\\r|\\b|\\t|\\f|\r?\n|\r|\b|\t|\f/g, '') // Remove newlines/control chars
-          .replace(/\u2028|\u2029/g, ''); // Remove special Unicode line separators
+          .replace(ESCAPE_BACKSLASHES, '\\\\') // Escape backslashes
+          .replace(ESCAPE_DOUBLE_QUOTES, '\\"') // Escape double quotes
+          .replace(CONTROL_CHARS, '') // Remove newlines/control chars
+          .replace(UNICODE_LINE_SEPARATORS, ''); // Remove special Unicode line separators
         return `: "${escaped}"`;
       })
 
       // Decode \xNN hex escapes to characters
-      .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .replace(HEX_ESCAPE, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
 
       // Escape lone backslashes (e.g., \ not followed by valid escape)
-      .replace(/([^\\])\\(?![\\/"'bfnrtu])/g, '$1\\\\')
+      .replace(LONE_BACKSLASH, '$1\\\\')
 
       // Remove trailing commas before closing braces/brackets
-      .replace(/,\s*([}\]])/g, '$1')
+      .replace(TRAILING_COMMA, '$1')
   );
 }
 
@@ -259,8 +282,7 @@ export function safeJsonParse<T = unknown>(value: string): T | [] {
   const normalized = normalizeJsonString(value);
 
   try {
-    // caller is responsible for type safety at this boundary
-    return JSON.parse(normalized) as T;
+    return JSON.parse(normalized) as T; // safe-cast: caller-provided generic boundary — caller is responsible for type safety
   } catch (err) {
     console.warn('❌ Failed to parse JSON:', {
       error: err,
@@ -272,14 +294,14 @@ export function safeJsonParse<T = unknown>(value: string): T | [] {
 }
 
 export function parseFaqs(input: string): Array<{ question: string; answer: string }> {
-  if (!input || typeof input !== 'string') return [];
+  if (!input || !isString(input)) return [];
 
   const results: Array<{ question: string; answer: string }> = [];
 
   // Remove outer quotes
   let cleaned = input.trim();
   if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
-    cleaned = cleaned.slice(1, -1).replace(/\\"/g, '"');
+    cleaned = cleaned.slice(1, -1).replace(ESCAPED_DOUBLE_QUOTE, '"');
   }
 
   // Replace smart quotes
@@ -304,6 +326,6 @@ export function parseFaqs(input: string): Array<{ question: string; answer: stri
 
 export function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
-  const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+  const price = parseFloat(priceStr.replace(NON_NUMERIC_PRICE, ''));
   return Number.isNaN(price) ? null : price;
 }

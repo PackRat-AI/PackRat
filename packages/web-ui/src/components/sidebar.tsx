@@ -1,5 +1,6 @@
 'use client';
 
+import { isFunction, isString } from '@packrat/guards';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeft } from 'lucide-react';
@@ -70,7 +71,7 @@ const SidebarProvider = React.forwardRef<
     const open = openProp ?? _open;
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
-        const openState = typeof value === 'function' ? value(open) : value;
+        const openState = isFunction(value) ? value(open) : value;
         if (setOpenProp) {
           setOpenProp(openState);
         } else {
@@ -552,7 +553,7 @@ const SidebarMenuButton = React.forwardRef<
       return button;
     }
 
-    if (typeof tooltip === 'string') {
+    if (isString(tooltip)) {
       tooltip = {
         children: tooltip,
       };

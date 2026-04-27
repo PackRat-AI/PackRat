@@ -123,6 +123,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
+        // safe-cast: treaty response shape matches SimilarItem[]; items field is untyped by treaty
         data={data.items as unknown as SimilarItem[]}
         renderItem={({ item }) => <SimilarItemCard item={item} onPress={handleItemPress} />}
         keyExtractor={(item) => item.id.toString()}

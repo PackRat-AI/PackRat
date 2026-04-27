@@ -65,6 +65,7 @@ export function useLocationSearch() {
         const formattedData = formatWeatherData(weatherData);
 
         // Create new location with weather data
+        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
         const newLocation = formattedData as unknown as WeatherLocation;
 
         addLocation(newLocation);

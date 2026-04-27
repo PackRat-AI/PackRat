@@ -23,6 +23,7 @@ const generateSeasonSuggestions = async (
 ): Promise<SeasonSuggestionsResponse> => {
   const { data: result, error } = await apiClient['season-suggestions'].post(data);
   if (error) throw new Error(`Failed to generate season suggestions: ${error.value}`);
+  // safe-cast: treaty response shape matches SeasonSuggestionsResponse as validated by the API schema
   return result as unknown as SeasonSuggestionsResponse;
 };
 

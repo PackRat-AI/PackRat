@@ -634,7 +634,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           notes: data.notes,
           userId: user.userId,
           embedding,
-        } as NewPackItem)
+        } as NewPackItem) // safe-cast: object literal matches NewPackItem shape; cast required because embedding field type is narrower in the inferred type
         .returning();
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));

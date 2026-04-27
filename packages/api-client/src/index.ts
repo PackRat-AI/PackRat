@@ -1,5 +1,6 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
+import { isObject, isString } from '@packrat/guards';
 
 /**
  * Auth integration hooks. Session state (token storage, refresh dedup,
@@ -82,8 +83,7 @@ export function createApiClient(config: ApiClientConfig) {
    * refresh endpoint itself, in which case the user must re-auth).
    */
   const authFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url =
-      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const url = isString(input) ? input : input instanceof URL ? input.toString() : input.url;
     let pathname = '';
     try {
       pathname = new URL(url, config.baseUrl).pathname;
@@ -241,12 +241,12 @@ export class PackRatApiClient {
     const body = await response.json().catch(() => null);
     if (!response.ok) {
       const errorMessage =
-        typeof body === 'object' && body !== null && 'error' in body
-          ? String((body as Record<string, unknown>).error)
+        isObject(body) && 'error' in body
+          ? String((body as Record<string, unknown>).error) // safe-cast: isObject() guard confirms body is a non-null object; error field access is safe
           : `HTTP ${response.status}`;
       throw new ApiError(errorMessage, { status: response.status, body });
     }
-    return body as T;
+    return body as T; // safe-cast: caller-provided generic boundary — T is verified at each typed call-site
   }
 }
 

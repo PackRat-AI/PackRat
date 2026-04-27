@@ -1,4 +1,5 @@
 import type { Container } from '@cloudflare/containers';
+import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
 // Define the Zod schema for all environment variables
@@ -139,21 +140,22 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
   return {
     ...validated.data,
     CF_VERSION_METADATA: (rawEnv.CF_VERSION_METADATA ??
-      validated.data.CF_VERSION_METADATA) as WorkerVersionMetadata,
-    AI: (rawEnv.AI ?? validated.data.AI) as Ai,
+      validated.data.CF_VERSION_METADATA) as WorkerVersionMetadata, // safe-cast: Cloudflare Worker binding injected by runtime
+    AI: (rawEnv.AI ?? validated.data.AI) as Ai, // safe-cast: Cloudflare Worker binding injected by runtime
     PACKRAT_SCRAPY_BUCKET: (rawEnv.PACKRAT_SCRAPY_BUCKET ??
-      validated.data.PACKRAT_SCRAPY_BUCKET) as R2Bucket,
-    PACKRAT_BUCKET: (rawEnv.PACKRAT_BUCKET ?? validated.data.PACKRAT_BUCKET) as R2Bucket,
+      validated.data.PACKRAT_SCRAPY_BUCKET) as R2Bucket, // safe-cast: Cloudflare Worker binding injected by runtime
+    PACKRAT_BUCKET: (rawEnv.PACKRAT_BUCKET ?? validated.data.PACKRAT_BUCKET) as R2Bucket, // safe-cast: Cloudflare Worker binding injected by runtime
     PACKRAT_GUIDES_BUCKET: (rawEnv.PACKRAT_GUIDES_BUCKET ??
-      validated.data.PACKRAT_GUIDES_BUCKET) as R2Bucket,
-    ETL_QUEUE: (rawEnv.ETL_QUEUE ?? validated.data.ETL_QUEUE) as Queue,
-    LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue,
-    EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue,
+      validated.data.PACKRAT_GUIDES_BUCKET) as R2Bucket, // safe-cast: Cloudflare Worker binding injected by runtime
+    ETL_QUEUE: (rawEnv.ETL_QUEUE ?? validated.data.ETL_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
+    LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
+    EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
+    // safe-cast: Cloudflare Worker binding injected by runtime
     APP_CONTAINER: (rawEnv.APP_CONTAINER ?? validated.data.APP_CONTAINER) as DurableObjectNamespace<
       Container<unknown>
     >,
-    TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined,
-  } as ValidatedEnv;
+    TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
+  } as ValidatedEnv; // safe-cast: all fields have been individually assigned above with correct runtime binding types
 }
 
 /**
@@ -165,14 +167,15 @@ let cachedRawEnv: Record<string, unknown> | undefined;
 function getRawEnv(): Record<string, unknown> {
   if (cachedRawEnv) return cachedRawEnv;
 
+  // safe-cast: accessing arbitrary Cloudflare Worker isolate env property injected at runtime
   const primed = (globalThis as Record<string, unknown>).__cfWorkersEnv__;
-  if (primed && typeof primed === 'object') {
-    cachedRawEnv = primed as Record<string, unknown>;
+  if (isObject(primed)) {
+    cachedRawEnv = primed as Record<string, unknown>; // safe-cast: isObject confirmed above
     return cachedRawEnv;
   }
 
   // Test / Node fallback
-  cachedRawEnv = { ...process.env } as Record<string, unknown>;
+  cachedRawEnv = { ...process.env } as Record<string, unknown>; // safe-cast: widening to generic env dict
   return cachedRawEnv;
 }
 
@@ -182,6 +185,7 @@ function getRawEnv(): Record<string, unknown> {
  */
 export function setWorkerEnv(rawEnv: Record<string, unknown>): void {
   cachedRawEnv = rawEnv;
+  // safe-cast: storing rawEnv on globalThis for cross-request access in the Worker isolate
   (globalThis as Record<string, unknown>).__cfWorkersEnv__ = rawEnv;
 }
 

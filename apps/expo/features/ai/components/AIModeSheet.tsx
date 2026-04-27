@@ -1,5 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { isFunction } from '@packrat/guards';
 import { Sheet, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
@@ -55,7 +56,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
         return;
       }
       setMode(selected);
-      if (ref && typeof ref !== 'function') ref.current?.close();
+      if (ref && !isFunction(ref)) ref.current?.close();
     };
 
     const handleDownload = () => {

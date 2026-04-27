@@ -5,6 +5,9 @@ import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 import { clearCurrentTestUsers } from './utils/test-helpers';
 
+// ── Setup regex constants ──
+const MARKDOWN_EXT_PATTERN = /\.(mdx?|md)$/;
+
 // Route @neondatabase/serverless through the local wsproxy (docker-compose.test.yml),
 // so tests use the same driver as production against Docker Postgres.
 // wsproxy upgrades on /v1 and reads the target from ?address= (resolved inside the
@@ -439,7 +442,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
         put: vi.fn(async (key: string, _value: unknown, _options?: unknown) => {
           return createMockR2Object({
             key,
-            title: key.replace(/\.(mdx?|md)$/, ''),
+            title: key.replace(MARKDOWN_EXT_PATTERN, ''),
             category: 'general',
             categories: ['general'],
             description: 'Mock guide',

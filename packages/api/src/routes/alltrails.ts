@@ -35,6 +35,7 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
     try {
       response = await fetch(url, {
         headers: { 'User-Agent': UA },
+        redirect: 'manual',
         signal: AbortSignal.timeout(8000),
       });
     } catch (e) {
@@ -44,18 +45,37 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
       return status(502, { error: 'Failed to fetch AllTrails URL' });
     }
 
-    if (!response.ok) {
-      return status(502, { error: `AllTrails returned status ${response.status}` });
-    }
-
-    const finalUrl = response.url || url;
-    try {
-      const finalHostname = new URL(finalUrl).hostname;
-      if (!ALLTRAILS_HOSTNAME_RE.test(finalHostname)) {
+    // Validate any redirect before following it (SSRF guard)
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (!location) {
+        return status(502, { error: 'AllTrails redirected without a Location header' });
+      }
+      let redirectUrl: URL;
+      try {
+        redirectUrl = new URL(location, url);
+      } catch {
+        return status(502, { error: 'Invalid redirect URL from AllTrails' });
+      }
+      if (redirectUrl.protocol !== 'https:' || !ALLTRAILS_HOSTNAME_RE.test(redirectUrl.hostname)) {
         return status(400, { error: 'URL redirected outside alltrails.com' });
       }
-    } catch {
-      return status(502, { error: 'Could not parse redirect URL' });
+      try {
+        response = await fetch(redirectUrl.toString(), {
+          headers: { 'User-Agent': UA },
+          redirect: 'error',
+          signal: AbortSignal.timeout(8000),
+        });
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'TimeoutError') {
+          return status(504, { error: 'Request to AllTrails timed out' });
+        }
+        return status(502, { error: 'Failed to fetch AllTrails URL' });
+      }
+    }
+
+    if (!response.ok) {
+      return status(502, { error: `AllTrails returned status ${response.status}` });
     }
 
     const html = await response.text();
@@ -68,9 +88,10 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
     const description = extractOgTag(html, 'og:description');
     const image = extractOgTag(html, 'og:image');
 
-    return { title, description, image, url: finalUrl };
+    return { title, description, image, url: response.url || url };
   },
   {
+    isAuthenticated: true,
     body: z.object({
       url: z.string().url(),
     }),

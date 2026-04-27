@@ -11,6 +11,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@elysiajs/eden": "catalog:",
+    "@packrat/api-client": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",

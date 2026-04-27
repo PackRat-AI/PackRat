@@ -196,6 +196,7 @@ export default function CurrentPackScreen() {
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
             renderItem={(item, index) => (
+              // safe-cast: Treaty response type has createdAt?: string but PackItem schema requires string
               <ItemRow item={item as unknown as PackItem} index={index} />
             )}
           />

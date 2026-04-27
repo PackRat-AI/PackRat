@@ -13,6 +13,7 @@
   "dependencies": {
     "@emotion/is-prop-valid": "^1.3.1",
     "@hookform/resolvers": "^5.2.2",
+    "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",
