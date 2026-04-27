@@ -25,7 +25,7 @@ export const TabScreen: React.FC<TabScreenProps> = ({
     flex: 1,
     ...(Platform.OS === 'ios' ? { paddingTop: insets.top } : {}),
     paddingBottom: TAB_BAR_INSET,
-    ...(StyleSheet.flatten(style) as ViewStyle),
+    ...(StyleSheet.flatten(style) ?? {}),
   };
 
   if (useLegacySafeAreaView && Platform.OS === 'ios')
