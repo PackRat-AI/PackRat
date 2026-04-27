@@ -16,6 +16,7 @@ appId: ${APP_ID}
     commands:
       - tapOn:
           text: "Search..."
+      - eraseText: 100  # clear any text left from a previous flow before typing
       - inputText: ${PACK_NAME}
       - tapOn:
           id: "pack-search-result"
