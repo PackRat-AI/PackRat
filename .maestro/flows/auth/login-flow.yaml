@@ -27,7 +27,19 @@ appId: ${APP_ID}
 - tapOn:
     id: "sign-in-email-button"
 
-# Wait for login form to appear
+# Wait for login form to appear.
+# auth/(login) is presented as a modal; waitForAnimationToEnd alone is not
+# sufficient — the XCTest accessibility tree may not include the modal until
+# the presentation animation fully settles. extendedWaitUntil polls until
+# the field is accessible, giving the modal time to fully render.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Email"
+          timeout: 20000
 - waitForAnimationToEnd
 
 # Fill in the email field.
