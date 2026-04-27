@@ -90,6 +90,8 @@ appId: ${APP_ID}
       - inputText: ${PACK_NAME}
       - assertVisible:
           text: ${PACK_NAME}
+      - hideKeyboard
+      - waitForAnimationToEnd
       - tapOn:
-          text: "Cancel"
+          text: "Trips"
       - waitForAnimationToEnd
