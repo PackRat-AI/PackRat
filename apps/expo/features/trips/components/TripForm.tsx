@@ -11,7 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Keyboard, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -317,7 +317,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       testID={TestIds.StartDateRow}
-                      onPress={() => setShowStartPicker(true)}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setShowStartPicker(true);
+                      }}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
@@ -337,7 +340,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       <DateTimePicker
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
-                        display="default"
+                        display={Platform.OS === 'ios' ? 'inline' : 'default'}
                         onChange={(_event, date) => {
                           setShowStartPicker(false);
                           if (date) {
@@ -360,7 +363,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       testID={TestIds.EndDateRow}
-                      onPress={() => setShowEndPicker(true)}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setShowEndPicker(true);
+                      }}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
@@ -380,7 +386,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       <DateTimePicker
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
-                        display="default"
+                        display={Platform.OS === 'ios' ? 'inline' : 'default'}
                         onChange={(_event, date) => {
                           setShowEndPicker(false);
                           if (date) {
