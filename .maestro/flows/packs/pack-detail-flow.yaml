@@ -9,13 +9,16 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Tap the test pack.
-# iOS: create-pack-flow leaves the search overlay active with ${PACK_NAME} typed. The pack
-# name text appears in both the search bar text field and the result row, so tapOn: text
-# would hit the text field. Use the pack-search-result testID to target the result row.
+# iOS: PackListScreen clears the search bar on blur, so search is not active when this
+# flow starts. Re-activate search to filter to the pack, then tap the result row via
+# testID to avoid hitting the UITextField (which contains the same text).
 - runFlow:
     when:
       platform: iOS
     commands:
+      - tapOn:
+          text: "Search..."
+      - inputText: ${PACK_NAME}
       - tapOn:
           id: "pack-search-result"
       - waitForAnimationToEnd
@@ -42,5 +45,18 @@ appId: ${APP_ID}
     text: ${PACK_NAME}
 
 # Go back to packs list
-- back
-- waitForAnimationToEnd
+# iOS: hardware back is unreliable when NativeTabs is the parent navigator; use the
+# interactive edge-swipe gesture instead.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: RIGHT
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd

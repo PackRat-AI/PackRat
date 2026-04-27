@@ -8,10 +8,27 @@ appId: ${APP_ID}
     text: "Packs"
 - waitForAnimationToEnd
 
-# Tap the test pack
-- tapOn:
-    text: ${PACK_NAME}
-- waitForAnimationToEnd
+# Tap the test pack.
+# iOS: use search + testID to avoid hitting the UITextField that shares the same text.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Search..."
+      - inputText: ${PACK_NAME}
+      - tapOn:
+          id: "pack-search-result"
+      - waitForAnimationToEnd
+
+# Android: tap pack card in the list.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${PACK_NAME}
+      - waitForAnimationToEnd
 
 # Tap Add Item button
 - tapOn:
@@ -31,5 +48,17 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Go back to packs list
-- back
-- waitForAnimationToEnd
+# iOS: use edge-swipe gesture for reliable stack-pop navigation.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: RIGHT
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd

@@ -18,7 +18,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -75,6 +75,18 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+
+  // Clear the search bar when the screen loses focus (e.g. navigating to pack detail).
+  // LargeTitleHeader.ios.tsx keeps internal searchValue state across navigation; clearing
+  // here prevents the absoluteFill search overlay from reappearing on the way back.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        searchBarRef.current?.clearText();
+        setSearchValue('');
+      };
+    }, [setSearchValue]),
+  );
 
   const { colors } = useColorScheme();
 
