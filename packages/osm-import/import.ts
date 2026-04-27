@@ -4,12 +4,14 @@
  *
  * Prerequisites:
  *   - osm2pgsql >= 1.9 installed (flex output)
- *   - OSM_DATABASE_URL set (postgresql://...)
+ *   - Copy .env.example → .env and fill in OSM_DATABASE_URL
  *
  * Usage:
- *   bun run import                          # downloads Utah extract
- *   bun run import [path/to/region.pbf]    # imports a specific PBF
- *   IMPORT_MODE=append bun run import [...] # append mode for subsequent regions
+ *   bun run import                        # downloads Utah extract
+ *   bun run import [path/to/region.pbf]  # imports a specific PBF
+ *
+ * Set MANAGED_DB_URL in .env to auto-sync to production after import.
+ * Set IMPORT_MODE=append for incremental .osc diff imports.
  *
  * Index lifecycle:
  *   osm2pgsql --create drops and recreates the output tables, so any indexes
