@@ -51,6 +51,8 @@ appId: ${APP_ID}
 # Go back to packs list
 # iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
 # Tap the native navigation bar back button instead (accessibility label "Back").
+# The first tap may land on the sheet's dimmed overlay (dismissing it) rather than
+# on the nav button. If we're still on Pack Details after the first tap, tap Back again.
 - runFlow:
     when:
       platform: iOS
@@ -58,6 +60,14 @@ appId: ${APP_ID}
       - tapOn:
           text: "Back"
       - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible:
+              id: "add-item-button"
+          commands:
+            - tapOn:
+                text: "Back"
+            - waitForAnimationToEnd
 - runFlow:
     when:
       platform: Android
