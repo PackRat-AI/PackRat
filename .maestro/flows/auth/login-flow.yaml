@@ -87,6 +87,20 @@ appId: ${APP_ID}
 # Wait for navigation to complete — login can take a few seconds
 - waitForAnimationToEnd
 
+# Handle transient network error: if the API call failed (e.g. "Network request
+# failed" dialog), dismiss the alert and retry once with the same credentials.
+- runFlow:
+    when:
+      visible:
+        text: "Network request failed"
+    commands:
+      - tapOn:
+          text: "OK"
+      - waitForAnimationToEnd
+      - tapOn:
+          id: "continue-button"
+      - waitForAnimationToEnd
+
 # iOS only: dismiss the system "Save Password?" Keychain prompt that appears
 # after submitting any form with a password field (textContentType="password").
 # This prompt is a blocking OS-level dialog and would intercept subsequent taps
