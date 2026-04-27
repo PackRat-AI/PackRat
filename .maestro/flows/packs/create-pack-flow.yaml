@@ -15,6 +15,18 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
+# iOS: the "Save Password?" Keychain prompt from login can appear late (up to ~2 min
+# after login). Dismiss it here before touching form fields so it doesn't block inputs.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Not Now"
+          optional: true
+          label: "Dismiss late iOS Save Password prompt"
+      - waitForAnimationToEnd
+
 # Fill in Pack Name
 - tapOn:
     id: "pack-name-input"
