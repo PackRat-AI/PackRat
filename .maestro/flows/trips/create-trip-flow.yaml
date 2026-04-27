@@ -25,10 +25,9 @@ appId: ${APP_ID}
     id: "trip-description-input"
 - inputText: "Created by Maestro E2E test"
 
-# Dismiss the keyboard before submitting
-- hideKeyboard
-
 # --- Start Date ---
+# Note: no explicit hideKeyboard needed — TripForm uses keyboardShouldPersistTaps="handled",
+# so tapping "Start Date" (a touchable) both dismisses the keyboard and opens the picker.
 - tapOn:
     text: "Start Date"
 - waitForAnimationToEnd
