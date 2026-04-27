@@ -286,9 +286,7 @@ describe('bypass attempts', () => {
   });
 
   it('rejects a Bearer token that is plaintext (not a JWT)', async () => {
-    const res = await app.fetch(
-      adminReq('/stats', { authorization: 'Bearer not-a-real-jwt' }),
-    );
+    const res = await app.fetch(adminReq('/stats', { authorization: 'Bearer not-a-real-jwt' }));
     expect(res.status).toBe(401);
   });
 
@@ -324,9 +322,7 @@ describe('bypass attempts', () => {
   });
 
   it('rejects a malformed Basic credential (no colon separator)', async () => {
-    const res = await app.fetch(
-      adminReq('/stats', { authorization: `Basic ${btoa('nocolon')}` }),
-    );
+    const res = await app.fetch(adminReq('/stats', { authorization: `Basic ${btoa('nocolon')}` }));
     expect(res.status).toBe(401);
   });
 
