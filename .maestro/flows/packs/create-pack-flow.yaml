@@ -60,10 +60,16 @@ appId: ${APP_ID}
                 text: "Not Now"
             - waitForAnimationToEnd
 
-# Wait for the list to refresh, then scroll to find the new pack.
-# Both platforms accumulate old packs from previous runs, so the new pack
-# may appear below the fold. speed:40 avoids scrolling past it.
+# Packs are sorted newest-first, so the new pack appears at the TOP of the
+# list. The list may be scrolled mid-way from a previous interaction, so
+# scroll back to the top before searching to avoid moving away from the new item.
 - waitForAnimationToEnd
+- repeat:
+    times: 8
+    commands:
+      - scroll:
+          direction: UP
+          duration: 200
 - scrollUntilVisible:
     element:
       text: ${PACK_NAME}
