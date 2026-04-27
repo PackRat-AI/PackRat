@@ -25,9 +25,27 @@ appId: ${APP_ID}
     id: "trip-description-input"
 - inputText: "Created by Maestro E2E test"
 
+# Dismiss the keyboard before interacting with the date picker rows.
+# Android: hideKeyboard keeps focus off the description so the submit button
+#   stays visible after the date pickers close.
+# iOS: hideKeyboard fails on multiline TextInput (no toolbar "Done" button).
+#   Tap in the navigation bar title area instead — this blurs the description
+#   input and dismisses the keyboard without triggering any navigation action.
+#   Once the keyboard is gone the date rows are accessible to Maestro.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "50%,8%"
+      - waitForAnimationToEnd
+
 # --- Start Date ---
-# Note: no explicit hideKeyboard needed — TripForm uses keyboardShouldPersistTaps="handled",
-# so tapping "Start Date" (a touchable) both dismisses the keyboard and opens the picker.
 - tapOn:
     text: "Start Date"
 - waitForAnimationToEnd
