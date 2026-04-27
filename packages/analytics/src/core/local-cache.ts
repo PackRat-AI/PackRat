@@ -27,7 +27,7 @@ import {
 } from './cache-metadata';
 import { configureS3 } from './connection';
 import { DBConfig } from './constants';
-import { env } from './env';
+import { analyticsEnv as env } from '@packrat/env/analytics';
 import { QueryBuilder, SQLFragments } from './query-builder';
 
 const TABLE_NAME = 'gear_data';
