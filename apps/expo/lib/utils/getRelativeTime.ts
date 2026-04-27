@@ -8,8 +8,10 @@ const UNITS: Array<{ label: string; seconds: number }> = [
   { label: 'minute', seconds: 60 },
 ];
 
-export function getRelativeTime(dateString: string): string {
+export function getRelativeTime(dateString: string | null | undefined): string {
+  if (!dateString) return 'Just now';
   const date = parseISO(dateString);
+  if (Number.isNaN(date.getTime())) return 'Just now';
   const diff = differenceInSeconds(new Date(), date);
 
   for (const { label, seconds } of UNITS) {
