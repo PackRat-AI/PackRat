@@ -53,8 +53,8 @@ appId: ${APP_ID}
       platform: iOS
     commands:
       - swipe:
-          startRelative: "2%,50%"
-          endRelative: "80%,50%"
+          start: "2%,50%"
+          end: "80%,50%"
           duration: 500
       - waitForAnimationToEnd
 - runFlow:
