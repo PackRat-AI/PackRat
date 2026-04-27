@@ -61,7 +61,7 @@ export default function RecentPacksScreen() {
     <View className="flex-1">
       <LargeTitleHeader title={t('packs.recentPacks')} />
       {recentPacks.length ? (
-        <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
+        <ScrollView className="flex-1">
           <View className="p-4">
             <Text variant="subhead" className="mb-2 text-muted-foreground">
               {t('packs.recentlyUpdated')}

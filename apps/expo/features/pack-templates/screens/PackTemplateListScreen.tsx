@@ -224,7 +224,6 @@ export function PackTemplateListScreen() {
       <FlatList
         data={filteredTemplates}
         keyExtractor={(item) => item.id}
-        contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item }) => (
           <View className="px-4 pt-4">
             <PackTemplateCard templateId={item.id} onPress={handleTemplatePress} />

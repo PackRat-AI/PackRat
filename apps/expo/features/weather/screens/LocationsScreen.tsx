@@ -190,7 +190,6 @@ function LocationsScreen() {
             paddingBottom: insets.bottom + 16,
             flexGrow: showEmptyState ? 1 : undefined,
           }}
-          contentInsetAdjustmentBehavior="automatic"
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

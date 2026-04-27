@@ -54,7 +54,6 @@ export default function WeightAnalysisScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
-        contentInsetAdjustmentBehavior="automatic"
       >
         <View
           className="grid grid-cols-2 gap-3 p-4"

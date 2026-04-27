@@ -49,7 +49,7 @@ export default function GearInventoryScreen() {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader title={t('packs.gearInventory')} />
-      <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
+      <ScrollView className="flex-1 px-4">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
             {t('packs.itemsInInventory', { count: items?.length })}

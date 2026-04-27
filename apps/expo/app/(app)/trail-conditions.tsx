@@ -186,7 +186,6 @@ export default function TrailConditionsScreen() {
         ListFooterComponent={listFooter}
         ListEmptyComponent={listEmptyComponent}
         contentContainerClassName="pb-4"
-        contentInsetAdjustmentBehavior="automatic"
       />
 
       {/* Submit Report Modal */}

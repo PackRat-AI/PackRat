@@ -170,7 +170,6 @@ export function TripsListScreen() {
         data={filteredTrips}
         keyExtractor={(trip) => trip.id}
         ListHeaderComponent={<TrailConditionsBanner />}
-        contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
             <TripCard trip={trip} onPress={handleTripPress} />
