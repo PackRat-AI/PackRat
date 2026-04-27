@@ -15,7 +15,7 @@ import { useCFAccessIdentity } from 'admin-app/lib/cfAccess';
 import { adminEnv } from 'admin-app/lib/env';
 import { Package, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
@@ -27,10 +27,6 @@ export default function LoginPage() {
   const [pending, setPending] = useState(false);
 
   const { data: cfIdentity, isPending: cfPending } = useCFAccessIdentity();
-
-  useEffect(() => {
-    if (!cfPending && cfIdentity) router.replace('/dashboard');
-  }, [cfPending, cfIdentity, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,9 +60,6 @@ export default function LoginPage() {
       setPending(false);
     }
   }
-
-  // Redirect in progress (behind CF Access) — show nothing while navigating
-  if (!cfPending && cfIdentity) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
