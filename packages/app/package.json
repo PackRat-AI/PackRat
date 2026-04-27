@@ -43,7 +43,6 @@
     "@tanstack/react-form": "^1.0.5",
     "@tanstack/react-query": "^5.70.0",
     "ai": "catalog:",
-    "axios": "catalog:",
     "burnt": "^0.13.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
