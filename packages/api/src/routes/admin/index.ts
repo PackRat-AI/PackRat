@@ -67,14 +67,19 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
 
+  const header = request.headers.get('authorization') ?? '';
+
   if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    // CF Access configured: cryptographic JWT verification only, no fallthrough.
     const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
-    return cfIdentity !== null;
+    if (cfIdentity !== null) return true;
+    // CF Access env vars set but no CF JWT present — fall back to admin Bearer JWT only.
+    // Bearer requires a prior /token exchange (which itself requires Basic credentials),
+    // so the two-factor bar is preserved. Raw Basic auth on protected routes stays blocked.
+    if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+    return false;
   }
 
-  // CF Access not configured — local dev fallbacks only.
-  const header = request.headers.get('authorization') ?? '';
+  // CF Access not configured — local dev fallbacks.
   if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
   if (header.startsWith('Basic ')) return basicAuthGuard(request).authorized;
   return false;
