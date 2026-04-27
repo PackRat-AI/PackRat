@@ -70,7 +70,9 @@ appId: ${APP_ID}
     when:
       platform: iOS
     commands:
-      - tapOn: "${START_MONTH} ${START_DAY}"
+      # Inline calendar (display="inline") exposes day cells as bare numbers.
+      # Use anchored regex ^N$ so "4" matches only day 4, not "14" or "24".
+      - tapOn: "^${START_DAY}$"
       - tapOn:
           point: "5%,5%"
 
@@ -97,7 +99,7 @@ appId: ${APP_ID}
     when:
       platform: iOS
     commands:
-      - tapOn: "${END_MONTH} ${END_DAY}"
+      - tapOn: "^${END_DAY}$"
       - tapOn:
           point: "5%,5%"
 
