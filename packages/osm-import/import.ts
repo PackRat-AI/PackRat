@@ -4,13 +4,13 @@
  *
  * Prerequisites:
  *   - osm2pgsql >= 1.9 installed (flex output)
- *   - Copy .env.example → .env and fill in OSM_DATABASE_URL
+ *   - OSM_DATABASE_URL set in root .env (see .env.example)
  *
  * Usage:
  *   bun run import                        # downloads Utah extract
  *   bun run import [path/to/region.pbf]  # imports a specific PBF
  *
- * Set MANAGED_DB_URL in .env to auto-sync to production after import.
+ * Set OSM_PRODUCTION_DATABASE_URL in .env to auto-sync to production after import.
  * Set IMPORT_MODE=append for incremental .osc diff imports.
  *
  * Index lifecycle:
@@ -24,16 +24,16 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { nodeEnv } from '@packrat/env/node';
 import pg from 'pg';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
-const DB_URL = process.env.OSM_DATABASE_URL ?? '';
+const DB_URL = nodeEnv.OSM_DATABASE_URL;
 if (!DB_URL) {
-  console.error('Error: OSM_DATABASE_URL is not set');
-  console.error('Run: OSM_DATABASE_URL=... bun run --cwd packages/osm-db db:migrate');
+  console.error('Error: OSM_DATABASE_URL is not set — add it to your root .env');
   process.exit(1);
 }
 
@@ -132,12 +132,12 @@ try {
 
 console.log('\nImport complete.');
 
-// ── Sync to managed DB (optional) ───────────────────────────────────────────
-// Set MANAGED_DB_URL to automatically promote the local output tables to a
-// managed PostgreSQL instance (Supabase, Neon, RDS, etc.) after every import.
+// ── Sync to production (optional) ───────────────────────────────────────────
+// Set OSM_PRODUCTION_DATABASE_URL in .env to automatically promote the local
+// output tables to the managed PostgreSQL instance after every import.
 
-if (process.env.MANAGED_DB_URL) {
-  console.log('\nMANAGED_DB_URL detected — syncing to production...');
+if (nodeEnv.OSM_PRODUCTION_DATABASE_URL) {
+  console.log('\nOSM_PRODUCTION_DATABASE_URL detected — syncing to production...');
   const syncProc = Bun.spawn(['bun', 'run', './sync.ts'], {
     cwd: __dirname,
     env: { ...process.env },
@@ -145,7 +145,7 @@ if (process.env.MANAGED_DB_URL) {
     stderr: 'inherit',
   });
   if ((await syncProc.exited) !== 0) {
-    console.error('Sync to managed DB failed — local import succeeded, re-run: bun run sync');
+    console.error('Sync to production failed — local import succeeded, re-run: bun run sync');
     process.exit(1);
   }
 }

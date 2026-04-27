@@ -1,34 +1,36 @@
 #!/usr/bin/env bun
 /**
- * sync.ts — Push local OSM output tables to a managed PostgreSQL database.
+ * sync.ts — Push local OSM output tables to the managed production database.
  *
- * Dumps osm_ways + osm_routes from the local PostGIS instance and restores
- * them into a managed database (Supabase, Neon, RDS, etc.). Run after a
- * successful import to promote local data to production.
+ * Dumps osm_ways + osm_routes from the local PostGIS instance (OSM_DATABASE_URL)
+ * and restores them into the managed database (OSM_PRODUCTION_DATABASE_URL).
+ * Run after a successful import to promote local data to production.
  *
  * Prerequisites:
  *   - pg_dump / pg_restore installed (postgresql-client)
  *   - Managed DB has the PostGIS extension enabled
+ *   - Both OSM_DATABASE_URL and OSM_PRODUCTION_DATABASE_URL set in root .env
  *
  * Usage (standalone):
- *   OSM_DATABASE_URL=postgresql://... MANAGED_DB_URL=postgresql://... bun run sync
+ *   bun run sync
  *
- * When MANAGED_DB_URL is set, `bun run import` calls this automatically.
+ * When OSM_PRODUCTION_DATABASE_URL is set, `bun run import` calls this automatically.
  */
 
 import { rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
 
-const LOCAL_URL = process.env.OSM_DATABASE_URL ?? '';
-const MANAGED_URL = process.env.MANAGED_DB_URL ?? '';
+const LOCAL_URL = nodeEnv.OSM_DATABASE_URL;
+const PRODUCTION_URL = nodeEnv.OSM_PRODUCTION_DATABASE_URL;
 
 if (!LOCAL_URL) {
-  console.error('Error: OSM_DATABASE_URL is not set');
+  console.error('Error: OSM_DATABASE_URL is not set — add it to your root .env');
   process.exit(1);
 }
-if (!MANAGED_URL) {
-  console.error('Error: MANAGED_DB_URL is not set');
+if (!PRODUCTION_URL) {
+  console.error('Error: OSM_PRODUCTION_DATABASE_URL is not set — add it to your root .env');
   process.exit(1);
 }
 
@@ -61,7 +63,7 @@ if ((await dump.exited) !== 0) {
 
 // ── Restore ─────────────────────────────────────────────────────────────────
 
-console.log('\nRestoring to managed DB...');
+console.log('\nRestoring to production DB...');
 console.log('  (--clean will drop existing tables before recreating them)');
 
 const restore = Bun.spawn(
@@ -72,7 +74,7 @@ const restore = Bun.spawn(
     '--no-owner',
     '--no-privileges',
     '-d',
-    MANAGED_URL,
+    PRODUCTION_URL,
     dumpPath,
   ],
   { stdout: 'inherit', stderr: 'inherit' },
@@ -89,4 +91,4 @@ if (restoreCode !== 0) {
   process.exit(1);
 }
 
-console.log('\nSync complete — managed DB is up to date.');
+console.log('\nSync complete — production DB is up to date.');

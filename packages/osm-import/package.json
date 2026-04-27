@@ -9,6 +9,7 @@
     "sync": "bun run sync.ts"
   },
   "dependencies": {
+    "@packrat/env": "workspace:*",
     "pg": "^8.16.3"
   }
 }
