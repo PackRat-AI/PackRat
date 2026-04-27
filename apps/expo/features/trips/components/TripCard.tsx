@@ -14,6 +14,7 @@ import type { Trip } from '../types';
 interface TripCardProps {
   trip: Trip;
   onPress?: (trip: Trip) => void;
+  testID?: string;
 }
 
 function getTripDurationDays(startDate?: string, endDate?: string): number | null {
@@ -31,7 +32,7 @@ function formatShortDate(isoString?: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function TripCard({ trip, onPress }: TripCardProps) {
+export function TripCard({ trip, onPress, testID }: TripCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const deleteTrip = useDeleteTrip();
@@ -90,6 +91,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
 
   return (
     <Pressable
+      testID={testID}
       className="mb-4 overflow-hidden rounded-xl bg-card border border-border"
       onPress={() => onPress?.(trip)}
     >

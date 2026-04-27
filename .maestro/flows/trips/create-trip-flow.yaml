@@ -138,14 +138,41 @@ appId: ${APP_ID}
                 text: "Not Now"
             - waitForAnimationToEnd
 
-# Wait for the list to refresh, then scroll to find the new trip.
-- waitForAnimationToEnd
-- scrollUntilVisible:
-    element:
-      text: ${TRIP_NAME}
-    direction: DOWN
-    timeout: 30000
-    speed: 40
-- assertVisible:
-    text: ${TRIP_NAME}
+# Verify the new trip is in the list.
+# Android: scrollUntilVisible works correctly.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            text: ${TRIP_NAME}
+          direction: DOWN
+          timeout: 30000
+          speed: 40
+      - assertVisible:
+          text: ${TRIP_NAME}
+
+# iOS: scrollUntilVisible cannot reliably detect FlatList items through the LargeTitleHeader
+# accessibility tree even when the item is visually present. Use the native search bar instead
+# to filter to the new trip, then verify a result row appears.
+# assertVisible by text fails on iOS because Pressable accessible={true} absorbs child Text
+# nodes — the Text is not separately accessible. Check by testID instead.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "Search trips..."
+      - waitForAnimationToEnd
+      - inputText: ${TRIP_NAME}
+      - extendedWaitUntil:
+          visible:
+            id: "trip-search-result"
+          timeout: 30000
+      - tapOn:
+          text: "Trips"
+      - waitForAnimationToEnd
 

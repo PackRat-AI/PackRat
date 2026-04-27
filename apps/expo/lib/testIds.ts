@@ -20,6 +20,7 @@ export enum TestIds {
   TripDescriptionInput = 'trip-description-input',
   StartDateRow = 'start-date-row',
   EndDateRow = 'end-date-row',
+  TripSearchResult = 'trip-search-result',
 
   // Packs
   CreatePackButton = 'create-pack-button',

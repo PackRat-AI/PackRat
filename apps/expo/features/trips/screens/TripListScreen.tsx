@@ -129,7 +129,7 @@ export function TripsListScreen() {
 
         {filteredTrips.map((trip: Trip) => (
           <View className="px-4 pt-4" key={trip.id}>
-            <TripCard trip={trip} onPress={handleTripPress} />
+            <TripCard trip={trip} onPress={handleTripPress} testID={TestIds.TripSearchResult} />
           </View>
         ))}
 
