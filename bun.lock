@@ -21,6 +21,8 @@
       "name": "packrat-admin-app",
       "version": "2.0.24",
       "dependencies": {
+        "@elysiajs/eden": "catalog:",
+        "@packrat/api-client": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@packrat/web-ui": "workspace:*",
         "@radix-ui/react-alert-dialog": "catalog:",
