@@ -11,6 +11,7 @@
 //   - packages/env/src/next.ts          — the Next.js shim itself
 //   - packages/env/src/expo-client.ts   — the Expo client shim itself
 //   - packages/env/src/expo-server.ts   — the Expo server shim itself
+//   - packages/env/src/analytics.ts     — the analytics CLI shim itself
 //   - .github/scripts/configure-deps.ts — preinstall hook, runs before node_modules
 //   - .github/scripts/env.ts            — postinstall hook, runs before node_modules
 //   - packages/api/src/utils/env-validation.ts — Cloudflare Worker runtime (uses c.env)
@@ -34,6 +35,7 @@ const ALLOWED: string[] = [
   'packages/env/src/next.ts',
   'packages/env/src/expo-client.ts',
   'packages/env/src/expo-server.ts',
+  'packages/env/src/analytics.ts',
   '.github/scripts/configure-deps.ts',
   '.github/scripts/env.ts',
   'packages/api/src/utils/env-validation.ts',
@@ -44,8 +46,6 @@ const ALLOWED: string[] = [
   'packages/env/scripts/no-raw-process-env.ts',
   // Startup script — passes process.env to a validator; correct pattern for Node scripts
   'packages/api/scripts/validate-cloudflare-api-env.ts',
-  // Analytics env shim — this IS the shim, same as packages/env/src/*.ts above
-  'packages/analytics/src/core/env.ts',
   // One-off sync script, not app code
   'apps/guides/scripts/sync-to-r2.ts',
   // Test files that mutate process.env to exercise env-validation logic

@@ -24,4 +24,7 @@ export type GuideEnv = z.infer<typeof guideEnvSchema>;
  * Typed env parsed from `process.env` at module load. Throws a Zod
  * validation error if any value fails its schema constraint.
  */
-export const guideEnv = guideEnvSchema.parse(process.env);
+export const guideEnv = guideEnvSchema.parse({
+  NODE_ENV: process.env.NODE_ENV,
+  PACKRAT_API_KEY: process.env.PACKRAT_API_KEY,
+});
