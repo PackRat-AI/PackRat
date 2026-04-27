@@ -28,7 +28,20 @@
     "username": "Username",
     "default": "Default",
     "high": "High",
-    "submit": "Submit"
+    "submit": "Submit",
+    "timeAgo": {
+      "justNow": "Just now",
+      "minutes_one": "{{count}} minute ago",
+      "minutes_other": "{{count}} minutes ago",
+      "hours_one": "{{count}} hour ago",
+      "hours_other": "{{count}} hours ago",
+      "days_one": "{{count}} day ago",
+      "days_other": "{{count}} days ago",
+      "weeks_one": "{{count}} week ago",
+      "weeks_other": "{{count}} weeks ago",
+      "months_one": "{{count}} month ago",
+      "months_other": "{{count}} months ago"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -140,7 +153,7 @@
     "loginFailed": "Login Failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "resumeSync": "Resume Sync",
-    "syncPaused": "Sync paused — please sign in again."
+    "syncPaused": "Sync paused \u2014 please sign in again."
   },
   "profile": {
     "profile": "Profile",
@@ -227,10 +240,10 @@
     "lastUpdatedShort": "Last updated",
     "itemsCount": "{{count}} items",
     "sharingBenefits": "Sharing Benefits",
-    "distributeGroupGear": "• Distribute group gear among members to reduce individual pack weight",
-    "sharingBenefit1": "• Coordinate who brings shared items like tent, stove, and water filter",
-    "sharingBenefit2": "• See real-time updates when members modify the pack",
-    "sharingBenefit3": "• Plan together and ensure nothing essential is forgotten",
+    "distributeGroupGear": "\u2022 Distribute group gear among members to reduce individual pack weight",
+    "sharingBenefit1": "\u2022 Coordinate who brings shared items like tent, stove, and water filter",
+    "sharingBenefit2": "\u2022 See real-time updates when members modify the pack",
+    "sharingBenefit3": "\u2022 Plan together and ensure nothing essential is forgotten",
     "itemsInInventory": "{{count}} items in your inventory",
     "all": "All",
     "byCategory": "By Category",
