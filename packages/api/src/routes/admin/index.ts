@@ -74,7 +74,12 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
   // Local dev only: allow Basic auth directly on protected routes as a convenience.
   // Both CF vars absent AND non-production environment must hold — missing CF vars
   // alone is not enough so a misconfigured prod cannot fall back to Basic auth.
-  if (env.ENVIRONMENT !== 'production' && !CF_ACCESS_TEAM_DOMAIN && !CF_ACCESS_AUD && header.startsWith('Basic ')) {
+  if (
+    env.ENVIRONMENT !== 'production' &&
+    !CF_ACCESS_TEAM_DOMAIN &&
+    !CF_ACCESS_AUD &&
+    header.startsWith('Basic ')
+  ) {
     return basicAuthGuard(request).authorized;
   }
 
@@ -102,7 +107,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       // The ENVIRONMENT check is a safety net — missing CF vars in prod must not
       // silently downgrade to Basic-only.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
+        const cfIdentity = await verifyCFAccessRequest(
+          request,
+          CF_ACCESS_TEAM_DOMAIN,
+          CF_ACCESS_AUD,
+        );
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       } else if (env.ENVIRONMENT === 'production') {
         // CF vars missing but we're in production — refuse rather than fall back.
