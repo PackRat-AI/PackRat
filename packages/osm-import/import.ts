@@ -129,3 +129,21 @@ try {
 }
 
 console.log('\nImport complete.');
+
+// ── Sync to managed DB (optional) ───────────────────────────────────────────
+// Set MANAGED_DB_URL to automatically promote the local output tables to a
+// managed PostgreSQL instance (Supabase, Neon, RDS, etc.) after every import.
+
+if (process.env.MANAGED_DB_URL) {
+  console.log('\nMANAGED_DB_URL detected — syncing to production...');
+  const syncProc = Bun.spawn(['bun', 'run', './sync.ts'], {
+    cwd: __dirname,
+    env: { ...process.env },
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  if ((await syncProc.exited) !== 0) {
+    console.error('Sync to managed DB failed — local import succeeded, re-run: bun run sync');
+    process.exit(1);
+  }
+}

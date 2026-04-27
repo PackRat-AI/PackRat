@@ -5,7 +5,8 @@
   "description": "osm2pgsql flex config and import tooling for PackRat outdoor routes",
   "type": "module",
   "scripts": {
-    "import": "bun run import.ts"
+    "import": "bun run import.ts",
+    "sync": "bun run sync.ts"
   },
   "dependencies": {
     "pg": "^8.16.3"
