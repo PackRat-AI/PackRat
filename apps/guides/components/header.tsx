@@ -8,7 +8,6 @@ import {
 } from '@packrat/web-ui/components/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@packrat/web-ui/components/sheet';
 import { cn } from '@packrat/web-ui/lib/utils';
-import { useQuery } from '@tanstack/react-query';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { navigationConfig, siteConfig } from 'guides-app/lib/config';
 import { Backpack, ChevronDown } from 'lucide-react';
@@ -20,11 +19,7 @@ import { ThemeToggle } from './theme-toggle';
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
 
-  // Fetch categories using TanStack Query
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getAllCategories,
-  });
+  const categories = getAllCategories();
 
   // Add scroll listener
   useEffect(() => {

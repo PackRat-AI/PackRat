@@ -1,8 +1,5 @@
-'use client';
-
 import { cn } from '@packrat/web-ui/lib/utils';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 
 interface DeviceMockupProps {
   image: string;
@@ -25,32 +22,17 @@ export default function DeviceMockup({
   showGradient = true,
   aspectRatio = 'portrait',
 }: DeviceMockupProps) {
-  const [mounted, setMounted] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: ignore
     <div
       className={cn(
-        'relative mx-auto w-full transition-all duration-500',
+        'group relative mx-auto w-full transition-all duration-500',
         aspectRatio === 'portrait' ? 'max-w-[280px] md:max-w-[320px]' : 'max-w-[560px] w-full',
-        // Use invisible instead of null — preserves layout space, no CLS
-        !mounted && 'invisible',
         className,
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Glow effect */}
       <div
-        className={cn(
-          'absolute -inset-4 rounded-[60px] blur-2xl transition-opacity duration-500',
-          isHovered ? 'opacity-30' : 'opacity-0',
-        )}
+        className="absolute -inset-4 rounded-[60px] blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500"
         style={{
           background: 'linear-gradient(45deg, hsl(var(--primary)), hsl(var(--secondary)))',
         }}
@@ -58,10 +40,9 @@ export default function DeviceMockup({
 
       <div
         className={cn(
-          'relative w-full overflow-hidden rounded-[40px] border-[14px] bg-black transition-transform duration-500',
+          'relative w-full overflow-hidden rounded-[40px] border-[14px] bg-black transition-transform duration-500 group-hover:scale-[1.02]',
           aspectRatio === 'portrait' ? 'aspect-[9/19.5]' : 'aspect-[16/9]',
           showShadow && 'shadow-2xl shadow-black/20',
-          isHovered && 'scale-[1.02]',
         )}
         style={{ borderColor: 'var(--device-notch-color)' }}
       >
@@ -92,18 +73,7 @@ export default function DeviceMockup({
         </div>
 
         {/* Animated screen glare */}
-        <div
-          className={cn(
-            'absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity duration-1000',
-            isHovered && 'opacity-40',
-          )}
-          style={{
-            transform: isHovered
-              ? 'translateX(50%) rotate(15deg)'
-              : 'translateX(-50%) rotate(15deg)',
-            transition: 'transform 1.5s ease-in-out, opacity 0.5s ease-in-out',
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 -translate-x-1/2 rotate-[15deg] transition-all duration-700 group-hover:opacity-40 group-hover:translate-x-1/2" />
       </div>
     </div>
   );
