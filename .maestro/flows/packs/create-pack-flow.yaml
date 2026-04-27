@@ -60,20 +60,13 @@ appId: ${APP_ID}
                 text: "Not Now"
             - waitForAnimationToEnd
 
-# Packs are sorted newest-first, so the new pack appears at the TOP of the
-# list. The list may be scrolled mid-way from a previous interaction, so
-# scroll back to the top before searching to avoid moving away from the new item.
+# New packs are prepended at the TOP of the list. Use direction: UP so
+# Maestro swipes DOWN toward the beginning of the list to find the item.
 - waitForAnimationToEnd
-- repeat:
-    times: 5
-    commands:
-      - swipe:
-          direction: DOWN
-          duration: 300
 - scrollUntilVisible:
     element:
       text: ${PACK_NAME}
-    direction: DOWN
+    direction: UP
     timeout: 30000
     speed: 40
 - assertVisible:

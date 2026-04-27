@@ -116,16 +116,8 @@ appId: ${APP_ID}
                 text: "Not Now"
             - waitForAnimationToEnd
 
-# Trips are sorted newest-first, so the new trip appears at the TOP of the
-# list. The list may be scrolled mid-way from a previous interaction, so
-# scroll back to the top before searching to avoid moving away from the new item.
+# Wait for the list to refresh, then scroll to find the new trip.
 - waitForAnimationToEnd
-- repeat:
-    times: 5
-    commands:
-      - swipe:
-          direction: DOWN
-          duration: 300
 - scrollUntilVisible:
     element:
       text: ${TRIP_NAME}
