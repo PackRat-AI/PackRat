@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react-native';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import type { ErrorInfo, ReactElement } from 'react';
 import { Pressable, Text, View } from 'react-native';

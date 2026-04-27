@@ -7,11 +7,11 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { Icon } from 'expo-app/components/Icon';
-import { TextInput } from 'expo-app/components/TextInput';
-import { PackCard } from 'expo-app/features/packs/components/PackCard';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { TextInput } from 'app/components/TextInput';
+import { PackCard } from 'app/features/packs/components/PackCard';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';

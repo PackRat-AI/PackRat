@@ -1,7 +1,7 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { LocationPicker } from 'app/features/weather/components/LocationPicker';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';

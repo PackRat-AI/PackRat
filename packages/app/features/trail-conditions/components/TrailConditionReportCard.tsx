@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { View } from 'react-native';
 import type { TrailConditionReport, TrailSurface, WaterCrossingDifficulty } from '../types';
 import { ConditionBadge } from './ConditionBadge';

@@ -1,8 +1,8 @@
 import { isObject, zodGuard } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
-import type { SelectedImage } from 'expo-app/features/packs/hooks/useImagePicker';
-import { uploadImage } from 'expo-app/features/packs/utils';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import type { SelectedImage } from 'app/features/packs/hooks/useImagePicker';
+import { uploadImage } from 'app/features/packs/utils';
+import { apiClient } from 'app/lib/api/packrat';
 import { z } from 'zod';
 import { identifyFromDescription } from '../lib/offlineIdentifier';
 import type { IdentificationResult } from '../types';

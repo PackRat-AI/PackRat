@@ -1,8 +1,8 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { AIModeSelector } from 'expo-app/features/ai/components/AIModeSelector';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { AIModeSelector } from 'app/features/ai/components/AIModeSelector';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { Platform, View } from 'react-native';

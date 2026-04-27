@@ -1,4 +1,4 @@
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import ImageCacheManager from 'app/lib/utils/ImageCacheManager';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';

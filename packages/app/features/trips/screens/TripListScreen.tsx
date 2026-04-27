@@ -1,11 +1,11 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
-import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
-import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
+import { AndroidTabBarInsetFix } from 'app/components/AndroidTabBarInsetFix';
+import { Icon } from 'app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'app/components/LargeTitleHeaderSearchContentContainer';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { TestIds } from 'app/lib/testIds';
+import { asNonNullableRef } from 'app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';

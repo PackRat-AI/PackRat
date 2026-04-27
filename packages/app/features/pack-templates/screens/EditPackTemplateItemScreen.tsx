@@ -1,5 +1,5 @@
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { NotFoundScreen } from 'app/screens/NotFoundScreen';
 import { useLocalSearchParams } from 'expo-router';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
 import { CreatePackTemplateItemForm } from './CreatePackTemplateItemForm';

@@ -1,11 +1,7 @@
 import { createApiClient } from '@packrat/api-client';
 import { clientEnvs } from '@packrat/env/expo-client';
-import { store } from 'expo-app/atoms/store';
-import {
-  needsReauthAtom,
-  refreshTokenAtom,
-  tokenAtom,
-} from 'expo-app/features/auth/atoms/authAtoms';
+import { store } from 'app/atoms/store';
+import { needsReauthAtom, refreshTokenAtom, tokenAtom } from 'app/features/auth/atoms/authAtoms';
 import Storage from 'expo-sqlite/kv-store';
 
 /**
@@ -18,7 +14,7 @@ import Storage from 'expo-sqlite/kv-store';
  *
  * Usage:
  * ```ts
- * import { apiClient } from 'expo-app/lib/api/packrat';
+ * import { apiClient } from 'app/lib/api/packrat';
  * const { data, error } = await apiClient.catalog.get({ query: { limit: 10 } });
  * ```
  */

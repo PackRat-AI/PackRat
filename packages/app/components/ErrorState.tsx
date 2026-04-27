@@ -1,6 +1,6 @@
 import { Button, cn, Text, useColorScheme } from '@packrat-ai/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { View } from 'react-native';
 
 interface ErrorStateProps {

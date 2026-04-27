@@ -1,7 +1,7 @@
 import { PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
+import { apiClient } from 'app/lib/api/packrat';
+import { useAuthenticatedQueryToolkit } from 'app/lib/hooks/useAuthenticatedQueryToolkit';
 
 const fetchPackById = async (id: string) => {
   const { data, error } = await apiClient.packs({ packId: id }).get();

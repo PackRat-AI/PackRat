@@ -1,4 +1,4 @@
-import { obs } from 'expo-app/lib/store';
+import { obs } from 'app/lib/store';
 import { packsStore } from '../store';
 
 export function usePackOwnershipCheck(id: string) {

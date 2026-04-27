@@ -10,7 +10,7 @@
 
 import { isString } from '@packrat/guards';
 import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
-import { store } from 'expo-app/atoms/store';
+import { store } from 'app/atoms/store';
 import { Platform } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
 import {

@@ -1,4 +1,4 @@
-import { userStore } from 'expo-app/features/auth/store';
+import { userStore } from 'app/features/auth/store';
 import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
 import { usePackDetailsFromStore } from './usePackDetailsFromStore';
 

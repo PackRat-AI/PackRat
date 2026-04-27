@@ -1,5 +1,5 @@
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
+import ImageCacheManager from 'app/lib/utils/ImageCacheManager';
+import { getImageExtension } from 'app/lib/utils/imageUtils';
 import { nanoid } from 'nanoid';
 
 export async function cacheCatalogItemImage(imageUrl?: string): Promise<string | null> {

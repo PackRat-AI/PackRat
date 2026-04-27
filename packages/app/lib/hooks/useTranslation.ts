@@ -14,7 +14,7 @@
  *
  * Usage:
  * ```tsx
- * import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+ * import { useTranslation } from 'app/lib/hooks/useTranslation';
  *
  * function MyComponent() {
  *   const { t } = useTranslation();

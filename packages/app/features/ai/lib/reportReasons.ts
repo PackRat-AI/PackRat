@@ -1,4 +1,4 @@
-import type { TranslationKeys } from 'expo-app/lib/i18n/types';
+import type { TranslationKeys } from 'app/lib/i18n/types';
 
 export const reportReasons = [
   'inappropriate_content',

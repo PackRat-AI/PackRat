@@ -3,8 +3,8 @@ import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-s
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { TripSchema } from '@packrat/api/schemas/trips';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { isAuthed } from 'app/features/auth/store';
+import { apiClient } from 'app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { TripInStore } from '../types';
 

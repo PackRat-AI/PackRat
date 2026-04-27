@@ -1,5 +1,5 @@
-import { packsStore } from 'expo-app/features/packs/store';
-import { obs } from 'expo-app/lib/store';
+import { packsStore } from 'app/features/packs/store';
+import { obs } from 'app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 import type { PackInput, PackInStore } from '../types';

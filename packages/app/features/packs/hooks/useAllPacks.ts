@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
+import { apiClient } from 'app/lib/api/packrat';
+import { useAuthenticatedQueryToolkit } from 'app/lib/hooks/useAuthenticatedQueryToolkit';
 
 export const fetchAllPacks = async () => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });

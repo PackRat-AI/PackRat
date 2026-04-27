@@ -1,4 +1,4 @@
-import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
+import { packItemsStore, packsStore } from 'app/features/packs/store';
 import { useCallback } from 'react';
 import { recordPackWeight } from '../store/packWeightHistory';
 import type { PackItem } from '../types';

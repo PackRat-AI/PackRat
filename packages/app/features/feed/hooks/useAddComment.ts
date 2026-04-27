@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { apiClient } from 'app/lib/api/packrat';
 
 interface AddCommentInput {
   postId: number;

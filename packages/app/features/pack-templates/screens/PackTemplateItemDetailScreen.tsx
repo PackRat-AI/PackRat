@@ -1,10 +1,10 @@
 import { assertDefined } from '@packrat/guards';
 import { Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { Chip } from 'expo-app/components/initial/Chip';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { Chip } from 'app/components/initial/Chip';
+import { WeightBadge } from 'app/components/initial/WeightBadge';
+import { isAuthed } from 'app/features/auth/store';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
   getNotes,
@@ -13,7 +13,7 @@ import {
   isConsumable,
   isWorn,
   shouldShowQuantity,
-} from 'expo-app/lib/utils/itemCalculations';
+} from 'app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

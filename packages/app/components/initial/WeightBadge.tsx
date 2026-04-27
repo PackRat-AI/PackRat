@@ -1,7 +1,7 @@
 import { isString } from '@packrat/guards';
-import { cn } from 'expo-app/lib/cn';
-import type { WeightUnit } from 'expo-app/types';
-import { formatWeight } from 'expo-app/utils/weight';
+import { cn } from 'app/lib/cn';
+import type { WeightUnit } from 'app/types';
+import { formatWeight } from 'app/utils/weight';
 import { Text, View } from 'react-native';
 
 type WeightBadgeProps = {

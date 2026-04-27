@@ -1,6 +1,6 @@
-import { PackCard } from 'expo-app/features/packs/components/PackCard';
-import type { Pack } from 'expo-app/features/packs/types';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { PackCard } from 'app/features/packs/components/PackCard';
+import type { Pack } from 'app/features/packs/types';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 

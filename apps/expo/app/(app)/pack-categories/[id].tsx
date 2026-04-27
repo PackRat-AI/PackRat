@@ -1,10 +1,10 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
-import { computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon, type MaterialIconName } from 'app/components/Icon';
+import { userStore } from 'app/features/auth/store';
+import { usePackDetailsFromStore } from 'app/features/packs/hooks/usePackDetailsFromStore';
+import { computeCategorySummaries } from 'app/features/packs/utils';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 

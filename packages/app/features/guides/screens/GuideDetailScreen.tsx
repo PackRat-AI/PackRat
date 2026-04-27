@@ -1,8 +1,8 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Chip } from 'expo-app/components/initial/Chip';
-import { Markdown } from 'expo-app/components/Markdown';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Chip } from 'app/components/initial/Chip';
+import { Markdown } from 'app/components/Markdown';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';

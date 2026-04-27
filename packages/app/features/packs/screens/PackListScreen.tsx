@@ -5,19 +5,19 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
-import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
-import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { PackCard } from 'expo-app/features/packs/components/PackCard';
-import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
-import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
-import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
+import { AndroidTabBarInsetFix } from 'app/components/AndroidTabBarInsetFix';
+import { Icon } from 'app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from 'app/components/LargeTitleHeaderOverlapFixIOS';
+import { LargeTitleHeaderSearchContentContainer } from 'app/components/LargeTitleHeaderSearchContentContainer';
+import { useAuth } from 'app/features/auth/hooks/useAuth';
+import { PackCard } from 'app/features/packs/components/PackCard';
+import { SearchResults } from 'app/features/packs/components/SearchResults';
+import SyncBanner from 'app/features/packs/components/SyncBanner';
+import { activeFilterAtom, searchValueAtom } from 'app/features/packs/packListAtoms';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { TestIds } from 'app/lib/testIds';
+import { asNonNullableRef } from 'app/lib/utils/asNonNullableRef';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';

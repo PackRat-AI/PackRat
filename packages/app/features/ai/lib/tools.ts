@@ -11,10 +11,10 @@
  */
 
 import { tool } from 'ai';
-import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
-import { packsStore } from 'expo-app/features/packs/store/packs';
-import { getWeatherData, searchLocations } from 'expo-app/features/weather/lib/weatherService';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { getPackItems, packItemsStore } from 'app/features/packs/store/packItems';
+import { packsStore } from 'app/features/packs/store/packs';
+import { getWeatherData, searchLocations } from 'app/features/weather/lib/weatherService';
+import { apiClient } from 'app/lib/api/packrat';
 import { z } from 'zod';
 
 export function createLocalTools() {

@@ -1,6 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { TextInput } from 'expo-app/components/TextInput';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TextInput } from 'app/components/TextInput';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSubmitTrailConditionReport } from '../hooks/useSubmitTrailConditionReport';

@@ -1,10 +1,10 @@
-import { Icon } from 'expo-app/components/Icon';
-import { UserAvatar } from 'expo-app/components/initial/UserAvatar';
-import type { Pack } from 'expo-app/features/packs';
-import { PackCard } from 'expo-app/features/packs/components/PackCard';
-import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
-import { getPackItems } from 'expo-app/features/packs/store';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { UserAvatar } from 'app/components/initial/UserAvatar';
+import type { Pack } from 'app/features/packs';
+import { PackCard } from 'app/features/packs/components/PackCard';
+import { usePacks } from 'app/features/packs/hooks/usePacks';
+import { getPackItems } from 'app/features/packs/store';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { currentUser } from '../data/mockData';

@@ -1,5 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import ImageCacheManager from 'app/lib/utils/ImageCacheManager';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid';
 import { useState } from 'react';

@@ -1,12 +1,12 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { useAuth } from 'app/features/auth/hooks/useAuth';
+import { useUser } from 'app/features/auth/hooks/useUser';
+import { useBottomSheetAction } from 'app/lib/hooks/useBottomSheetAction';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';

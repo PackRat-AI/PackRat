@@ -1,5 +1,5 @@
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { obs } from 'expo-app/lib/store';
+import { useUser } from 'app/features/auth/hooks/useUser';
+import { obs } from 'app/lib/store';
 import { packTemplatesStore } from '../store';
 
 export function useWritePermissionCheck(id: string) {

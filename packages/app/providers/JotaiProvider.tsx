@@ -1,4 +1,4 @@
-import { store } from 'expo-app/atoms/store';
+import { store } from 'app/atoms/store';
 import { Provider } from 'jotai';
 
 export function JotaiProvider({ children }: { children: React.ReactNode }) {

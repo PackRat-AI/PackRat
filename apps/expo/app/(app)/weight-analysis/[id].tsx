@@ -1,10 +1,10 @@
 'use client';
 
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { userStore } from 'app/features/auth/store';
+import { usePackWeightAnalysis } from 'app/features/packs/hooks/usePackWeightAnalysis';
+import { cn } from 'app/lib/cn';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';

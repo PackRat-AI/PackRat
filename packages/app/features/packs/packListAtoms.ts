@@ -1,4 +1,4 @@
-import type { PackCategory } from 'expo-app/types';
+import type { PackCategory } from 'app/types';
 import { atom } from 'jotai';
 
 export const activeFilterAtom = atom<PackCategory | 'all'>('all');

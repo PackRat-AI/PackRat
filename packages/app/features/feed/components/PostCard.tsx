@@ -1,6 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Icon } from 'app/components/Icon';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {

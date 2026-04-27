@@ -1,6 +1,6 @@
 // useUpdatePackTemplateItem.ts
 
-import { obs } from 'expo-app/lib/store';
+import { obs } from 'app/lib/store';
 import { useCallback } from 'react';
 import { packTemplateItemsStore, packTemplatesStore } from '../store';
 import type { PackTemplateItem } from '../types';

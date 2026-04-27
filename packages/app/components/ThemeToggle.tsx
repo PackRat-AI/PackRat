@@ -1,7 +1,7 @@
-import { Icon } from 'expo-app/components/Icon';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { COLORS } from 'expo-app/theme/colors';
+import { Icon } from 'app/components/Icon';
+import { cn } from 'app/lib/cn';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { COLORS } from 'app/theme/colors';
 import { Pressable, View } from 'react-native';
 import Animated, { LayoutAnimationConfig, ZoomInRotate } from 'react-native-reanimated';
 

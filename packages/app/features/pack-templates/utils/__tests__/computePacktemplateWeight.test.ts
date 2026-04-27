@@ -3,11 +3,11 @@ import type { PackTemplate, PackTemplateItem } from '../../types';
 
 // The SUT imports convertFromGrams/convertToGrams from the packs/utils barrel,
 // which also re-exports uploadImage (expo-file-system) and computeCategories
-// (expo-app/features/auth/store). Replace the barrel with the real pure
+// (app/features/auth/store). Replace the barrel with the real pure
 // conversion helpers so the test stays in a Node environment.
-vi.mock('expo-app/features/packs/utils', async () => {
-  const fromGrams = await import('expo-app/features/packs/utils/convertFromGrams');
-  const toGrams = await import('expo-app/features/packs/utils/convertToGrams');
+vi.mock('app/features/packs/utils', async () => {
+  const fromGrams = await import('app/features/packs/utils/convertFromGrams');
+  const toGrams = await import('app/features/packs/utils/convertToGrams');
   return {
     convertFromGrams: fromGrams.convertFromGrams,
     convertToGrams: toGrams.convertToGrams,

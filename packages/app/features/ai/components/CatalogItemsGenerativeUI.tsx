@@ -1,7 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { CatalogItemCard } from 'expo-app/features/catalog/components';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { CatalogItemCard } from 'app/features/catalog/components';
+import type { CatalogItem } from 'app/features/catalog/types';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Dimensions, ScrollView, View } from 'react-native';
 import type { ToolInvocation } from '../types';

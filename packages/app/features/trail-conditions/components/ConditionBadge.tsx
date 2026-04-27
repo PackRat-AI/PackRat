@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { cn } from 'expo-app/lib/cn';
+import { cn } from 'app/lib/cn';
 import { View } from 'react-native';
 import type { OverallCondition } from '../types';
 

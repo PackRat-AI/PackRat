@@ -1,7 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
-import { type SimilarItem, useSimilarPackItems } from 'expo-app/features/catalog/hooks';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { CatalogItemImage } from 'app/features/catalog/components/CatalogItemImage';
+import { type SimilarItem, useSimilarPackItems } from 'app/features/catalog/hooks';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import type React from 'react';
 import { FlatList, Pressable, View } from 'react-native';

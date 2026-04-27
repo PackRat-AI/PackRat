@@ -1,6 +1,6 @@
 import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { t } from 'expo-app/lib/i18n';
+import { Icon } from 'app/components/Icon';
+import { t } from 'app/lib/i18n';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import AddPackItemActions from '../components/AddPackItemActions';

@@ -1,8 +1,8 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import type { CatalogItem } from 'app/features/catalog/types';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { Linking, TouchableOpacity, View } from 'react-native';
 
 type ItemLinksProps = {

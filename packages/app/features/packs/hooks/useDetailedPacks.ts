@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-import { getPackItems, packsStore } from 'expo-app/features/packs/store';
+import { getPackItems, packsStore } from 'app/features/packs/store';
 import type { Pack } from '../types';
 import { computePackWeights } from '../utils';
 

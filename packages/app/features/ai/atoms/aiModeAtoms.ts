@@ -1,4 +1,4 @@
-import { atomWithAsyncStorage } from 'expo-app/atoms/atomWithAsyncStorage';
+import { atomWithAsyncStorage } from 'app/atoms/atomWithAsyncStorage';
 import { atom } from 'jotai';
 
 export type AIMode = 'cloud' | 'local';

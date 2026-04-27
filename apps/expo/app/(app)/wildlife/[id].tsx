@@ -1,5 +1,5 @@
-import { featureFlags } from 'expo-app/config';
-import { SpeciesDetailScreen } from 'expo-app/features/wildlife/screens/SpeciesDetailScreen';
+import { featureFlags } from 'app/config';
+import { SpeciesDetailScreen } from 'app/features/wildlife/screens/SpeciesDetailScreen';
 import { Redirect } from 'expo-router';
 
 export default function SpeciesDetailRoute() {

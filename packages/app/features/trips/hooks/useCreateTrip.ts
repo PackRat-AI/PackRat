@@ -1,5 +1,5 @@
-import { tripsStore } from 'expo-app/features/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
+import { tripsStore } from 'app/features/trips/store/trips';
+import { obs } from 'app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 import type { TripInput, TripInStore } from '../types';

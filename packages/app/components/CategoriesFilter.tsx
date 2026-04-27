@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { decodeHtmlEntities } from 'app/lib/utils/decodeHtmlEntities';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
 export function CategoriesFilter({

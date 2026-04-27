@@ -1,7 +1,7 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useTripDetailsFromStore } from 'app/features/trips/hooks/useTripDetailsFromStore';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, Text } from 'react-native';

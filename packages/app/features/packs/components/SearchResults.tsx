@@ -1,4 +1,4 @@
-import { Icon } from 'expo-app/components/Icon';
+import { Icon } from 'app/components/Icon';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import type { Pack } from '../types';
 

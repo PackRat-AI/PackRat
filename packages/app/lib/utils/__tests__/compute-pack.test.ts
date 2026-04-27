@@ -1,4 +1,4 @@
-import type { Pack, PackItem } from 'expo-app/types';
+import type { Pack, PackItem } from 'app/types';
 import { describe, expect, it } from 'vitest';
 import { computePacksWeights, computePackWeights } from '../compute-pack';
 

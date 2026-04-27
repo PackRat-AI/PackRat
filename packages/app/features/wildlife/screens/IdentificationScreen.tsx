@@ -1,11 +1,11 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { appAlert } from 'expo-app/app/_layout';
-import { Icon } from 'expo-app/components/Icon';
-import { TextInput } from 'expo-app/components/TextInput';
-import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { TextInput } from 'app/components/TextInput';
+import { useImagePicker } from 'app/features/packs/hooks/useImagePicker';
+import { appAlert } from 'app/lib/appAlert';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';

@@ -1,7 +1,7 @@
 import { useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
-import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
+import { Icon } from 'app/components/Icon';
+import { CatalogItemImage } from 'app/features/catalog/components/CatalogItemImage';
+import { buildImageUrl } from 'app/lib/utils/buildImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
 import type { PackItem } from '../types';

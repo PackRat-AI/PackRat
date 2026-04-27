@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtom } from 'jotai';
 import { ActivityIndicator, ScrollView, View } from 'react-native';

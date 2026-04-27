@@ -7,6 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "expo-app/*": ["./*"],
+      "app/*": ["../../packages/app/*"],
       "@packrat/api": ["../../packages/api/src/index.ts"],
       "@packrat/api/*": ["../../packages/api/src/*"],
       "@packrat/api-client": ["../../packages/api-client/src/index.ts"],

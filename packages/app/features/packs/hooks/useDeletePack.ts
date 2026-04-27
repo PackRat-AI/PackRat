@@ -1,5 +1,5 @@
-import { getPackItems, packItemsStore, packsStore } from 'expo-app/features/packs/store';
-import { obs } from 'expo-app/lib/store';
+import { getPackItems, packItemsStore, packsStore } from 'app/features/packs/store';
+import { obs } from 'app/lib/store';
 import { useCallback } from 'react';
 
 export function useDeletePack() {

@@ -1,5 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import { userStore } from 'expo-app/features/auth/store';
+import { userStore } from 'app/features/auth/store';
 import type { Pack } from '../types';
 import { convertFromGrams } from './convertFromGrams';
 import { convertToGrams } from './convertToGrams';

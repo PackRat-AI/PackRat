@@ -10,7 +10,7 @@ vi.mock('@packrat/env/expo-client', () => ({
 
 // Also mock getRelativeTime so that formatRelativeDate has a predictable
 // alias target that does not depend on the current clock.
-vi.mock('expo-app/lib/utils/getRelativeTime', () => ({
+vi.mock('app/lib/utils/getRelativeTime', () => ({
   getRelativeTime: (input: string | Date) => `relative(${String(input)})`,
 }));
 

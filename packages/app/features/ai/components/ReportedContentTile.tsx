@@ -1,8 +1,8 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { useUser } from 'app/features/auth/hooks/useUser';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useReportedContentCount } from '../hooks/useReportedContent';

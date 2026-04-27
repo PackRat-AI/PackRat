@@ -1,4 +1,4 @@
-import { getWeatherData } from 'expo-app/features/weather/lib/weatherService';
+import { getWeatherData } from 'app/features/weather/lib/weatherService';
 import { useAtomValue } from 'jotai';
 import { useEffect, useState } from 'react';
 import { activeLocationAtom } from '../atoms/locationsAtoms';

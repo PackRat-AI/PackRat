@@ -1,5 +1,5 @@
-import { tripsStore } from 'expo-app/features/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
+import { tripsStore } from 'app/features/trips/store/trips';
+import { obs } from 'app/lib/store';
 import { useCallback } from 'react';
 
 export function useDeleteTrip() {

@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 import type { IdentificationResult } from '../types';
 

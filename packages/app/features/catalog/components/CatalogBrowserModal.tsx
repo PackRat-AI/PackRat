@@ -1,11 +1,11 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
-import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { Icon } from 'expo-app/components/Icon';
-import { SearchInput } from 'expo-app/components/SearchInput';
-import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { searchValueAtom } from 'app/atoms/itemListAtoms';
+import { CategoriesFilter } from 'app/components/CategoriesFilter';
+import { Icon } from 'app/components/Icon';
+import { SearchInput } from 'app/components/SearchInput';
+import { HorizontalCatalogItemCard } from 'app/features/packs/components/HorizontalCatalogItemCard';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useAtom } from 'jotai';
 import { useCallback, useMemo, useState } from 'react';
 import {

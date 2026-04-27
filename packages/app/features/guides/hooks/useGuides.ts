@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { apiClient } from 'app/lib/api/packrat';
 
 interface UseGuidesParams {
   category?: string;

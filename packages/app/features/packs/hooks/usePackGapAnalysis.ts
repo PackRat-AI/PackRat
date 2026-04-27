@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { apiClient } from 'app/lib/api/packrat';
 
 export interface GapAnalysisRequest {
   destination?: string;

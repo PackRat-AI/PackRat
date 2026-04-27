@@ -1,5 +1,5 @@
 import { clientEnvs } from '@packrat/env/expo-client';
-import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
+import { getRelativeTime } from 'app/lib/utils/getRelativeTime';
 import type { Comment, Post } from '../types';
 
 export function buildPostImageUrl(imageKey: string): string {
@@ -16,6 +16,6 @@ export function formatAuthorName(entity: Post | Comment): string {
 }
 
 /**
- * @deprecated Use getRelativeTime from 'expo-app/lib/utils/getRelativeTime' directly.
+ * @deprecated Use getRelativeTime from 'app/lib/utils/getRelativeTime' directly.
  */
 export const formatRelativeDate = getRelativeTime;

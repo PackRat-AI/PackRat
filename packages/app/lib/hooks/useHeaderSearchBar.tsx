@@ -1,4 +1,4 @@
-import { COLORS } from 'expo-app/theme/colors';
+import { COLORS } from 'app/theme/colors';
 import { useNavigation } from 'expo-router';
 import * as React from 'react';
 import type { SearchBarProps } from 'react-native-screens';

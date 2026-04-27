@@ -1,8 +1,8 @@
 import { ActivityIndicator, Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { userStore } from 'expo-app/features/auth/store';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { userStore } from 'app/features/auth/store';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';

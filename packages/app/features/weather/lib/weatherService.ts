@@ -4,7 +4,7 @@ import {
   WeatherAPIForecastResponseSchema,
 } from '@packrat/api/schemas/weather';
 import { assertDefined } from '@packrat/guards';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { apiClient } from 'app/lib/api/packrat';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**

@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-import { obs } from 'expo-app/lib/store';
+import { obs } from 'app/lib/store';
 import { getTemplateItems } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
 import { computePackTemplateWeights } from '../utils/computePacktemplateWeight';

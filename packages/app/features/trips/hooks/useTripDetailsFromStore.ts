@@ -1,6 +1,6 @@
 import { use$ } from '@legendapp/state/react';
-import { tripsStore } from 'expo-app/features/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
+import { tripsStore } from 'app/features/trips/store/trips';
+import { obs } from 'app/lib/store';
 
 /**
  * Retrieves a trip from the store.

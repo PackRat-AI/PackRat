@@ -1,9 +1,9 @@
 import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
-import { Chip } from 'expo-app/components/initial/Chip';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import { Chip } from 'app/components/initial/Chip';
+import { WeightBadge } from 'app/components/initial/WeightBadge';
+import { useUser } from 'app/features/auth/hooks/useUser';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { NotFoundScreen } from 'app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';

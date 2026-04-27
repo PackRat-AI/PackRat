@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { apiClient } from 'app/lib/api/packrat';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 
 export const useGuideCategories = () => {
   const { t } = useTranslation();

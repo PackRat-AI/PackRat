@@ -1,4 +1,4 @@
-import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { CatalogItem } from 'app/features/catalog/types';
 import { atomWithAsyncStorage } from './atomWithAsyncStorage';
 
 const MAX_RECENTLY_USED = 10;

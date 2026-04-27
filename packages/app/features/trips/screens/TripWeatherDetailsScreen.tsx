@@ -1,11 +1,11 @@
 import type { WeatherAPIForecastResponse } from '@packrat/api/schemas/weather';
-import { Icon } from 'expo-app/components/Icon';
-import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
+import { Icon } from 'app/components/Icon';
+import { WeatherForecast } from 'app/features/weather/components/WeatherForecast';
 import {
   getWeatherBackgroundColors,
   getWeatherData,
   searchLocationsByCoordinates,
-} from 'expo-app/features/weather/lib/weatherService';
+} from 'app/features/weather/lib/weatherService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';

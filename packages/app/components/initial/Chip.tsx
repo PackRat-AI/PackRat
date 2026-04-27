@@ -1,4 +1,4 @@
-import { cn } from 'expo-app/lib/cn';
+import { cn } from 'app/lib/cn';
 import type React from 'react';
 import { Text, View } from 'react-native';
 

@@ -18,11 +18,11 @@ export type TranslationKeys = ParseKeys;
 /**
  * Type of a `t()` function that accepts only valid translation keys.
  * Use this to annotate parameters/props that receive `t` from
- * `useTranslation()` or the named export from `expo-app/lib/i18n`.
+ * `useTranslation()` or the named export from `app/lib/i18n`.
  *
  * Example:
  * ```ts
- * import type { TranslationFunction } from 'expo-app/lib/i18n/types';
+ * import type { TranslationFunction } from 'app/lib/i18n/types';
  * function getOptions(t: TranslationFunction) { ... }
  * ```
  */

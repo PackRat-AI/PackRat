@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-import { convertFromGrams, convertToGrams } from 'expo-app/features/packs/utils';
+import { convertFromGrams, convertToGrams } from 'app/features/packs/utils';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import type { WeightUnit } from '../types';
 

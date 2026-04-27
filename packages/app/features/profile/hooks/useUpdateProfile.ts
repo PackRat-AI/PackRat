@@ -1,5 +1,5 @@
-import { userStore } from 'expo-app/features/auth/store';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { userStore } from 'app/features/auth/store';
+import { apiClient } from 'app/lib/api/packrat';
 import { useState } from 'react';
 
 export type UpdateProfilePayload = {

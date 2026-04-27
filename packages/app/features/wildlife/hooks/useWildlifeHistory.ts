@@ -1,4 +1,4 @@
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import ImageCacheManager from 'app/lib/utils/ImageCacheManager';
 import { useAtom } from 'jotai';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';

@@ -5,11 +5,11 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { userStore } from 'expo-app/features/auth/store';
-import type { User } from 'expo-app/features/profile/types';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { t } from 'expo-app/lib/i18n';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { userStore } from 'app/features/auth/store';
+import type { User } from 'app/features/profile/types';
+import { apiClient } from 'app/lib/api/packrat';
+import { t } from 'app/lib/i18n';
+import ImageCacheManager from 'app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';

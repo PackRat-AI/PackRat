@@ -10,13 +10,13 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { Icon } from 'expo-app/components/Icon';
-import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
-import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
-import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { Icon } from 'app/components/Icon';
+import { useCreatePackFromTemplate } from 'app/features/pack-templates';
+import { getTemplateItems, packTemplatesStore } from 'app/features/pack-templates/store';
+import { TemplateItemsSection } from 'app/features/packs/components/TemplateItemsSection';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { TestIds } from 'app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {

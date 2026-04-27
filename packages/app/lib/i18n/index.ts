@@ -35,7 +35,7 @@ if (!i18next.isInitialized) {
  *
  * Usage:
  * ```ts
- * import { t } from 'expo-app/lib/i18n';
+ * import { t } from 'app/lib/i18n';
  * const msg = t('errors.somethingWentWrong');
  * ```
  */

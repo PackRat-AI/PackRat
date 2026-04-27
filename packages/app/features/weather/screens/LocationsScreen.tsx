@@ -1,9 +1,9 @@
 import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { SearchInput } from 'expo-app/components/SearchInput';
-import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from 'app/components/Icon';
+import { SearchInput } from 'app/components/SearchInput';
+import { withAuthWall } from 'app/features/auth/hocs';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { router, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';

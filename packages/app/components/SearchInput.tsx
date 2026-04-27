@@ -1,7 +1,7 @@
 import { assertPresent } from '@packrat/guards';
 import { SearchInput as NativeWindUISearchInput } from '@packrat/ui/nativewindui';
-import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
+import { useKeyboardHideBlur } from 'app/lib/hooks/useKeyboardHideBlur';
+import { asNonNullableRef } from 'app/lib/utils/asNonNullableRef';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 /**

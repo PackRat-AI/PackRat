@@ -1,4 +1,4 @@
-import type { PackItem } from 'expo-app/types';
+import type { PackItem } from 'app/types';
 import { describe, expect, it } from 'vitest';
 import { calculateBaseWeight, calculateTotalWeight, convertWeight, formatWeight } from '../weight';
 

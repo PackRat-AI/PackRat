@@ -1,6 +1,6 @@
 import { clientEnvs } from '@packrat/env/expo-client';
-import type { PackTemplateItem } from 'expo-app/features/pack-templates';
-import type { PackItem } from 'expo-app/features/packs';
+import type { PackTemplateItem } from 'app/features/pack-templates';
+import type { PackItem } from 'app/features/packs';
 
 export function buildImageUrl({ userId, image }: PackTemplateItem | PackItem): string {
   const baseUrl = clientEnvs.EXPO_PUBLIC_R2_PUBLIC_URL;

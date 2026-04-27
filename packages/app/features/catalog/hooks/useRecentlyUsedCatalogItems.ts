@@ -1,7 +1,7 @@
 import {
   buildUpdatedRecentlyUsed,
   recentlyUsedCatalogItemsAtom,
-} from 'expo-app/atoms/recentlyUsedCatalogItemsAtom';
+} from 'app/atoms/recentlyUsedCatalogItemsAtom';
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
 import type { CatalogItem } from '../types';

@@ -1,4 +1,4 @@
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { tokenAtom } from 'app/features/auth/atoms/authAtoms';
 import { useAtomValue } from 'jotai';
 
 export const useAuthenticatedQueryToolkit = () => {

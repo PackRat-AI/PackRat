@@ -1,13 +1,13 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
+import { Icon } from 'app/components/Icon';
 import {
   formatWeatherData,
   getWeatherBackgroundColors,
   getWeatherData,
-} from 'expo-app/features/weather/lib/weatherService';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-// import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+} from 'app/features/weather/lib/weatherService';
+import { cn } from 'app/lib/cn';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+// import { useColorScheme } from 'app/lib/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';

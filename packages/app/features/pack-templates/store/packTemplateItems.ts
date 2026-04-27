@@ -6,8 +6,8 @@ import {
   PackTemplateItemSchema,
   PackTemplateWithItemsSchema,
 } from '@packrat/api/schemas/packTemplates';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { isAuthed } from 'app/features/auth/store';
+import { apiClient } from 'app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { PackTemplateItem } from '../types';
 

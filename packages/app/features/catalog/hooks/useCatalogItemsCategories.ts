@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
+import { apiClient } from 'app/lib/api/packrat';
+import { useAuthenticatedQueryToolkit } from 'app/lib/hooks/useAuthenticatedQueryToolkit';
 
 const getCategories = async (): Promise<string[]> => {
   // Treaty types `limit` as required despite Zod's `.default(10)` — pass it

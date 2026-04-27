@@ -1,4 +1,4 @@
-import { obs } from 'expo-app/lib/store';
+import { obs } from 'app/lib/store';
 import { useCallback } from 'react';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 
