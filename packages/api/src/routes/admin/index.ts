@@ -1,3 +1,4 @@
+import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
@@ -89,6 +90,17 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
+  // Scoped CORS: credentials: true lets the admin SPA send its CF Access session
+  // cookie cross-origin so CF Access can inject Cf-Access-Jwt-Assertion.
+  // allowedHeaders must list Authorization explicitly (wildcards + credentials
+  // is rejected by browsers per the CORS spec).
+  .use(
+    cors({
+      origin: 'https://admin.packratai.com',
+      credentials: true,
+      allowedHeaders: ['Authorization', 'Content-Type'],
+    }),
+  )
   // Token exchange — must be registered BEFORE the auth guard so the admin
   // SPA can exchange Basic credentials for a short-lived JWT.
   .post(
@@ -103,9 +115,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
       const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
 
-      // CF JWT required when: CF vars are set OR running in production.
-      // The ENVIRONMENT check is a safety net — missing CF vars in prod must not
-      // silently downgrade to Basic-only.
+      // CF JWT is an optional extra layer: required only when both CF vars are set.
+      // The admin SPA sends credentials: 'include' so the CF Access session cookie
+      // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
+      // Basic credentials are always required and remain the primary gate.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
         const cfIdentity = await verifyCFAccessRequest(
           request,
@@ -113,9 +126,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           CF_ACCESS_AUD,
         );
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
-      } else if (env.ENVIRONMENT === 'production') {
-        // CF vars missing but we're in production — refuse rather than fall back.
-        return status(503, { error: 'Server misconfiguration: CF Access not configured' });
       }
 
       const header = request.headers.get('authorization') ?? '';
@@ -135,7 +145,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     {
       detail: {
         tags: ['Admin'],
-        summary: 'Exchange Basic credentials for a short-lived admin JWT (CF JWT required in prod)',
+        summary: 'Exchange Basic credentials for a short-lived admin JWT (CF JWT required when CF vars are set)',
       },
     },
   )

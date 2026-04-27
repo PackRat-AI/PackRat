@@ -13,6 +13,7 @@ const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const authHeaders = getAuthHeader();
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
+    credentials: 'include',
     ...init,
     headers: {
       'Content-Type': 'application/json',
