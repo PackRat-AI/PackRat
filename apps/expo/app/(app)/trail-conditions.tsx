@@ -7,7 +7,7 @@ import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type SurfaceFilter = TrailSurface | 'all';
 
@@ -40,6 +40,7 @@ export default function TrailConditionsScreen() {
   const [selectedSurface, setSelectedSurface] = useState<SurfaceFilter>('all');
   const { data: reports, isLoading, error } = useTrailConditionReports();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const SURFACE_FILTERS: FilterItem[] = useMemo(
     () => [
@@ -159,7 +160,7 @@ export default function TrailConditionsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
       <LargeTitleHeader
         title={t('trailConditions.title')}
         rightView={() => (
