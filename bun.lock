@@ -190,6 +190,7 @@
         "@hookform/resolvers": "^5.2.2",
         "@packrat/api": "workspace:*",
         "@packrat/env": "workspace:*",
+        "@packrat/guards": "workspace:*",
         "@packrat/web-ui": "workspace:*",
         "@radix-ui/react-accordion": "catalog:",
         "@radix-ui/react-alert-dialog": "catalog:",
@@ -270,6 +271,7 @@
       "dependencies": {
         "@emotion/is-prop-valid": "^1.3.1",
         "@hookform/resolvers": "^5.2.2",
+        "@packrat/guards": "workspace:*",
         "@packrat/web-ui": "workspace:*",
         "@radix-ui/react-accordion": "catalog:",
         "@radix-ui/react-alert-dialog": "catalog:",
@@ -335,6 +337,7 @@
       "dependencies": {
         "@duckdb/node-api": "1.5.0-r.1",
         "@packrat/env": "workspace:*",
+        "@packrat/guards": "workspace:*",
         "consola": "^3.4.2",
         "magic-regexp": "^0.11.0",
         "radash": "catalog:",
@@ -362,6 +365,7 @@
         "@neondatabase/serverless": "^1.0.0",
         "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
+        "@packrat/overpass": "workspace:*",
         "@sinclair/typebox": "^0.34.15",
         "@types/nodemailer": "^6.4.17",
         "ai": "catalog:",
@@ -404,6 +408,7 @@
       "version": "2.0.24",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
+        "@packrat/guards": "workspace:*",
       },
       "devDependencies": {
         "@packrat/api": "workspace:*",
@@ -430,6 +435,7 @@
         "@duckdb/node-api": "1.5.0-r.1",
         "@packrat/analytics": "workspace:*",
         "@packrat/env": "workspace:*",
+        "@packrat/guards": "workspace:*",
         "chalk": "catalog:",
         "citty": "^0.2.1",
         "cli-table3": "^0.6.5",
@@ -443,6 +449,9 @@
     "packages/config": {
       "name": "@packrat/config",
       "version": "2.0.24",
+      "dependencies": {
+        "@packrat/guards": "workspace:*",
+      },
     },
     "packages/env": {
       "name": "@packrat/env",
@@ -476,6 +485,18 @@
         "typescript": "catalog:",
         "vitest": "~3.1.4",
         "wrangler": "^4.21.2",
+      },
+    },
+    "packages/overpass": {
+      "name": "@packrat/overpass",
+      "version": "0.1.0",
+      "dependencies": {
+        "@packrat/guards": "workspace:*",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "typescript": "catalog:",
+        "vitest": "~3.1.4",
       },
     },
     "packages/ui": {
@@ -1275,6 +1296,8 @@
     "@packrat/guards": ["@packrat/guards@workspace:packages/guards"],
 
     "@packrat/mcp": ["@packrat/mcp@workspace:packages/mcp"],
+
+    "@packrat/overpass": ["@packrat/overpass@workspace:packages/overpass"],
 
     "@packrat/ui": ["@packrat/ui@workspace:packages/ui"],
 
