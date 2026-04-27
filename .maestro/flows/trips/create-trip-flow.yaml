@@ -121,11 +121,11 @@ appId: ${APP_ID}
 # scroll back to the top before searching to avoid moving away from the new item.
 - waitForAnimationToEnd
 - repeat:
-    times: 8
+    times: 5
     commands:
-      - scroll:
-          direction: UP
-          duration: 200
+      - swipe:
+          direction: DOWN
+          duration: 300
 - scrollUntilVisible:
     element:
       text: ${TRIP_NAME}
