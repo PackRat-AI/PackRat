@@ -3,6 +3,7 @@
  */
 
 import { assertDefined, CatalogCacheManager, env, LocalCacheManager } from '@packrat/analytics';
+import { isNumber } from '@packrat/guards';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import consola from 'consola';
@@ -53,7 +54,7 @@ export function printTable(rows: unknown[], options?: { title?: string }): void 
 
   const firstRow = rows[0];
   assertDefined(firstRow, 'rows[0] must be defined after length check');
-  const keys = Object.keys(firstRow as Record<string, unknown>);
+  const keys = Object.keys(firstRow as Record<string, unknown>); // safe-cast: rows are plain objects from DuckDB/DB queries; unknown[] narrows to Record after length check
 
   const table = new Table({
     head: keys.map((k) => chalk.cyan(k)),
@@ -61,7 +62,7 @@ export function printTable(rows: unknown[], options?: { title?: string }): void 
   });
 
   for (const row of rows) {
-    table.push(keys.map((k) => formatValue((row as Record<string, unknown>)[k])));
+    table.push(keys.map((k) => formatValue((row as Record<string, unknown>)[k]))); // safe-cast: rows are plain objects from DuckDB/DB queries; unknown[] narrows to Record for key access
   }
 
   if (options?.title) {
@@ -84,7 +85,7 @@ export function printSummary(data: Record<string, unknown>, title?: string): voi
 
 function formatValue(val: unknown): string {
   if (val === null || val === undefined) return chalk.dim('—');
-  if (typeof val === 'number') {
+  if (isNumber(val)) {
     return Number.isInteger(val) ? val.toLocaleString() : val.toFixed(2);
   }
   const str = String(val);

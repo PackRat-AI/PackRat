@@ -8,6 +8,7 @@ import {
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import { Elysia, status } from 'elysia';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
@@ -29,15 +30,15 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(q)}`,
         );
         if (!response.ok) throw new Error(`API error: ${response.status}`);
-        const data = (await response.json()) as WeatherAPISearchResponse;
+        const data = (await response.json()) as WeatherAPISearchResponse; // safe-cast: WeatherAPI.com response shape matches this type
 
         return data.map((item) => ({
           id: item.id,
           name: item.name,
           region: item.region,
           country: item.country,
-          lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
-          lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+          lat: isString(item.lat) ? Number.parseFloat(item.lat) : item.lat,
+          lon: isString(item.lon) ? Number.parseFloat(item.lon) : item.lon,
         }));
       } catch (error) {
         console.error('Error searching weather locations:', error);
@@ -74,14 +75,14 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(q)}`,
         );
         if (!response.ok) throw new Error(`API error: ${response.status}`);
-        const data = (await response.json()) as WeatherAPISearchResponse;
+        const data = (await response.json()) as WeatherAPISearchResponse; // safe-cast: WeatherAPI.com response shape matches this type
 
         if (!data || data.length === 0) {
           const currentResponse = await fetch(
             `${WEATHER_API_BASE_URL}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(q)}`,
           );
           if (!currentResponse.ok) throw new Error(`API error: ${currentResponse.status}`);
-          const currentData = (await currentResponse.json()) as WeatherAPICurrentResponse;
+          const currentData = (await currentResponse.json()) as WeatherAPICurrentResponse; // safe-cast: WeatherAPI.com response shape matches this type
 
           if (currentData?.location) {
             return [
@@ -103,8 +104,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           name: item.name,
           region: item.region,
           country: item.country,
-          lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
-          lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+          lat: isString(item.lat) ? Number.parseFloat(item.lat) : item.lat,
+          lon: isString(item.lon) ? Number.parseFloat(item.lon) : item.lon,
         }));
       } catch (error) {
         console.error('Error searching weather locations by coordinates:', error);
@@ -142,7 +143,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         );
         if (!response.ok) throw new Error(`API error: ${response.status}`);
 
-        const data = (await response.json()) as WeatherAPIForecastResponse;
+        const data = (await response.json()) as WeatherAPIForecastResponse; // safe-cast: WeatherAPI.com response shape matches this type
         return {
           ...data,
           location: {

@@ -2,18 +2,25 @@ import { observable, syncState } from '@legendapp/state';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import {
+  PackTemplateSchema,
+  PackTemplateWithItemsSchema,
+} from '@packrat/api/schemas/packTemplates';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { PackTemplate, PackTemplateInStore } from '../types';
 
-const listPackTemplates = async () => {
+const listPackTemplates = async (): Promise<PackTemplateInStore[] | null> => {
   const { data, error } = await apiClient['pack-templates'].get();
   if (error) throw new Error(`Failed to list pack templates: ${error.value}`);
-  return data as object[] | null;
+  // safe-cast: Zod parse validates the shape; PackTemplateInStore extends the Zod-inferred type
+  return PackTemplateWithItemsSchema.array().parse(data) as unknown as PackTemplateInStore[];
 };
 
-const createPackTemplate = async (templateData: PackTemplate) => {
+const createPackTemplate = async (
+  templateData: PackTemplate,
+): Promise<PackTemplateInStore | null> => {
   const { data, error } = await apiClient['pack-templates'].post({
     id: templateData.id,
     name: templateData.name,
@@ -28,10 +35,14 @@ const createPackTemplate = async (templateData: PackTemplate) => {
     localUpdatedAt: templateData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack template: ${error.value}`);
-  return data as object | null;
+  // safe-cast: Zod parse validates the shape; PackTemplateInStore extends the Zod-inferred type
+  return PackTemplateSchema.parse(data) as unknown as PackTemplateInStore;
 };
 
-const updatePackTemplate = async ({ id, ...data }: Partial<PackTemplate>) => {
+const updatePackTemplate = async ({
+  id,
+  ...data
+}: Partial<PackTemplate>): Promise<PackTemplateInStore | null> => {
   // Server's UpdatePackTemplateRequestSchema requires `description`, `image`,
   // `tags` to be present (they're nullable). Forward what we have, defaulting
   // to null when the field is omitted from the partial update.
@@ -48,7 +59,8 @@ const updatePackTemplate = async ({ id, ...data }: Partial<PackTemplate>) => {
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update pack template: ${error.value}`);
-  return result as object | null;
+  // safe-cast: Zod parse validates the shape; PackTemplateInStore extends the Zod-inferred type
+  return PackTemplateSchema.parse(result) as unknown as PackTemplateInStore;
 };
 
 export const packTemplatesStore = observable<Record<string, PackTemplateInStore>>({});

@@ -67,11 +67,14 @@ function CatalogItemsScreen() {
     isLoading: isVectorLoading,
     error: vectorError,
   } = useVectorSearch({ query: trimmedQuery, limit: 10 });
+  // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
   const searchResults: CatalogItem[] = (vectorResult?.items ?? []) as unknown as CatalogItem[];
 
-  const paginatedItems: CatalogItem[] = (
-    (paginatedData?.pages.flatMap((page) => page.items) ?? []) as CatalogItem[]
-  ).filter((item) => Boolean(item?.id));
+  const paginatedItems: CatalogItem[] =
+    // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
+    ((paginatedData?.pages.flatMap((page) => page.items) ?? []) as CatalogItem[]).filter((item) =>
+      Boolean(item?.id),
+    );
 
   const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
 

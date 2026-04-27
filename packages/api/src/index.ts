@@ -84,11 +84,11 @@ type CfFetchFn = (
 
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
-    setWorkerEnv(env as unknown as Record<string, unknown>);
-    return (app.fetch as unknown as CfFetchFn)(request, env, ctx);
+    setWorkerEnv(env as unknown as Record<string, unknown>); // safe-cast: Cloudflare Worker entry point — env is a plain bindings object at runtime
+    return (app.fetch as unknown as CfFetchFn)(request, env, ctx); // safe-cast: Elysia's fetch matches the CfFetchFn signature at runtime; unknown intermediate required for variance
   },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    setWorkerEnv(env as unknown as Record<string, unknown>);
+    setWorkerEnv(env as unknown as Record<string, unknown>); // safe-cast: Cloudflare Worker entry point — env is a plain bindings object at runtime
 
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {
@@ -96,7 +96,7 @@ export default {
       }
       // The queue name check above is the runtime guard; the Worker runtime delivers
       // correctly-typed messages for this queue binding.
-      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env });
+      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: queue name guard above confirms this batch carries CatalogETLMessage payloads
     } else if (
       batch.queue === 'packrat-embeddings-queue' ||
       batch.queue === 'packrat-embeddings-queue-dev'

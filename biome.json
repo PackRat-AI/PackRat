@@ -47,7 +47,7 @@
         "noUnusedImports": "error"
       },
       "performance": {
-        "useTopLevelRegex": "warn"
+        "useTopLevelRegex": "error"
       },
       "style": {
         "noNonNullAssertion": "error"

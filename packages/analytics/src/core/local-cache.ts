@@ -8,6 +8,7 @@
 import { mkdirSync } from 'node:fs';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
+import { analyticsEnv as env } from '@packrat/env/analytics';
 import { tryit } from 'radash';
 import type {
   BrandAnalysis,
@@ -27,7 +28,6 @@ import {
 } from './cache-metadata';
 import { configureS3 } from './connection';
 import { DBConfig } from './constants';
-import { env } from './env';
 import { QueryBuilder, SQLFragments } from './query-builder';
 
 const TABLE_NAME = 'gear_data';
@@ -162,9 +162,7 @@ export class LocalCacheManager {
           obj[col] = row[i];
         }
       }
-      // T is narrowed by the caller's return type annotation; obj is built
-      // from DuckDB column names so the shape is caller-verified.
-      return obj as T;
+      return obj as T; // safe-cast: caller-provided generic boundary — obj is built from DuckDB column names and the caller's return type annotation verifies the shape
     });
   }
 

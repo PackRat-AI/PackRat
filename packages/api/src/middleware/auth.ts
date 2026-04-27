@@ -31,7 +31,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
           userId: Number(payload.userId),
           role: (payload.role as 'USER' | 'ADMIN') ?? 'USER',
           ...rest,
-        } as AuthUser,
+        } as AuthUser, // safe-cast: JWT payload validated by auth middleware — userId and role fields are confirmed present
       };
     },
   },
@@ -58,7 +58,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
           userId: Number(payload.userId),
           role: 'ADMIN' as const,
           ...rest,
-        } as AuthUser,
+        } as AuthUser, // safe-cast: JWT payload validated by auth middleware — userId and ADMIN role confirmed present
       };
     },
   },

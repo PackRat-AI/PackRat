@@ -3,6 +3,24 @@ import { err, ok } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
+// ── Tool regex constants ──
+const STRIP_HYPHENS = /-/g;
+
+interface PackDetailResponse {
+  items?: Array<{
+    name: string;
+    category: string;
+    weight: number;
+    quantity: number;
+    worn: boolean;
+    consumable: boolean;
+  }>;
+  totalWeight?: number;
+  baseWeight?: number;
+  wornWeight?: number;
+  consumableWeight?: number;
+}
+
 export function registerPackTools(agent: AgentContext): void {
   // ── List packs ────────────────────────────────────────────────────────────
 
@@ -69,7 +87,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ name, description, category, is_public, tags }) => {
       try {
-        const id = `p_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const id = `p_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
         const data = await agent.api.post('/packs', {
           id,
@@ -177,7 +195,7 @@ export function registerPackTools(agent: AgentContext): void {
       notes,
     }) => {
       try {
-        const id = `i_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const id = `i_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
         const data = await agent.api.post(`/packs/${pack_id}/items`, {
           id,
@@ -232,20 +250,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const pack = (await agent.api.get(`/packs/${pack_id}`)) as {
-          items?: Array<{
-            name: string;
-            category: string;
-            weight: number;
-            quantity: number;
-            worn: boolean;
-            consumable: boolean;
-          }>;
-          totalWeight?: number;
-          baseWeight?: number;
-          wornWeight?: number;
-          consumableWeight?: number;
-        };
+        const pack = await agent.api.get<PackDetailResponse>(`/packs/${pack_id}`);
 
         const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> =
           {};

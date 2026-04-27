@@ -19,6 +19,8 @@ import { assertDefined } from '@packrat/guards';
  * obs(packItemsStore, id).deleted.set(true);
  */
 export function obs<T>(store: Observable<Record<string, T>>, id: string): Observable<T> {
+  // safe-cast: Legend-State v3 uses JavaScript Proxy for deep reactive access via store[id];
+  // TypeScript resolves store[id] to T rather than Observable<T>, so we bridge with a single cast.
   const observable = (store as unknown as Record<string, Observable<T>>)[id];
   assertDefined(observable);
   return observable;

@@ -1,10 +1,11 @@
+import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
-import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -34,13 +35,6 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
   return { authorized: false };
 }
 
-function unauthorizedHtml(): Response {
-  return new Response('Unauthorized', {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="PackRat Admin Panel"' },
-  });
-}
-
 async function issueAdminJwt(username: string): Promise<string> {
   const env = getEnv();
   const secret = new TextEncoder().encode(env.JWT_SECRET);
@@ -68,77 +62,72 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Accept: Cloudflare Access JWT (prod, cryptographically verified), Bearer JWT
-// (admin SPA session token), or Basic auth (local dev only).
+// Protected routes: Bearer JWT only.
+// The JWT is issued by /token, which already enforced both factors (CF JWT + Basic
+// in prod, Basic-only in local dev). No need to re-check CF or Basic here.
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+  const header = request.headers.get('authorization') ?? '';
 
-  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    // CF Access configured: cryptographic JWT verification only, no fallthrough.
-    const cfIdentity = await verifyCFAccessRequest(request, CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD);
-    return cfIdentity !== null;
+  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+
+  // Local dev only: allow Basic auth directly on protected routes as a convenience.
+  // Both CF vars absent AND non-production environment must hold — missing CF vars
+  // alone is not enough so a misconfigured prod cannot fall back to Basic auth.
+  if (
+    env.ENVIRONMENT !== 'production' &&
+    !CF_ACCESS_TEAM_DOMAIN &&
+    !CF_ACCESS_AUD &&
+    header.startsWith('Basic ')
+  ) {
+    return basicAuthGuard(request).authorized;
   }
 
-  // CF Access not configured — local dev fallbacks only.
-  const header = request.headers.get('authorization') ?? '';
-  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
-  if (header.startsWith('Basic ')) return basicAuthGuard(request).authorized;
   return false;
 }
-
-function htmlResponse(body: string): Response {
-  return new Response(body, { status: 200, headers: { 'Content-Type': 'text/html' } });
-}
-
-const adminLayout = (title: string, content: string) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} - PackRat Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script>
-        tailwind.config = {
-          theme: {
-            extend: {
-              colors: {
-                primary: '#667eea',
-                secondary: '#764ba2'
-              }
-            }
-          }
-        };
-    </script>
-</head>
-<body class="bg-gradient-to-br from-primary to-secondary min-h-screen">
-    <div class="container mx-auto p-6 max-w-7xl">
-        <div class="bg-white/95 backdrop-blur-sm rounded-xl p-6 mb-6 shadow-xl border border-white/20">
-            <h1 class="text-3xl font-bold text-gray-800 mb-4">🎒 PackRat Admin Panel</h1>
-            <nav class="flex gap-4 flex-wrap">
-                <a href="/api/admin" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Dashboard</a>
-                <a href="/api/admin/users" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Users</a>
-                <a href="/api/admin/packs" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Packs</a>
-                <a href="/api/admin/catalog" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Catalog</a>
-                <a href="/api/admin/analytics" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">Analytics</a>
-            </nav>
-        </div>
-        <div id="main-content" class="bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20">
-            ${content}
-        </div>
-    </div>
-</body>
-</html>`;
 
 // ---------------------------------------------------------------------------
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
+  // Scoped CORS: credentials: true lets the admin SPA send its CF Access session
+  // cookie cross-origin so CF Access can inject Cf-Access-Jwt-Assertion.
+  // allowedHeaders must list Authorization explicitly (wildcards + credentials
+  // is rejected by browsers per the CORS spec).
+  .use(
+    cors({
+      origin: 'https://admin.packratai.com',
+      credentials: true,
+      allowedHeaders: ['Authorization', 'Content-Type'],
+    }),
+  )
   // Token exchange — must be registered BEFORE the auth guard so the admin
   // SPA can exchange Basic credentials for a short-lived JWT.
   .post(
     '/token',
     async ({ request }) => {
+      const env = getEnv();
+      if (env.TOKEN_RATE_LIMITER) {
+        const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+        const { success } = await env.TOKEN_RATE_LIMITER.limit({ key: ip });
+        if (!success) return status(429, { error: 'Too many requests' });
+      }
+
+      const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+
+      // CF JWT is an optional extra layer: required only when both CF vars are set.
+      // The admin SPA sends credentials: 'include' so the CF Access session cookie
+      // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
+      // Basic credentials are always required and remain the primary gate.
+      if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+        const cfIdentity = await verifyCFAccessRequest(
+          request,
+          CF_ACCESS_TEAM_DOMAIN,
+          CF_ACCESS_AUD,
+        );
+        if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
+      }
+
       const header = request.headers.get('authorization') ?? '';
       if (!header.startsWith('Basic ')) {
         return status(401, { error: 'Missing credentials' });
@@ -146,7 +135,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       const auth = basicAuthGuard(request);
       if (!auth.authorized) return status(401, { error: 'Invalid username or password' });
 
-      // Re-decode to extract the username for the token subject.
       const decoded = atob(header.slice(6));
       const sep = decoded.indexOf(':');
       const username = sep >= 0 ? decoded.slice(0, sep) : 'admin';
@@ -157,57 +145,18 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     {
       detail: {
         tags: ['Admin'],
-        summary: 'Exchange Basic credentials for a short-lived admin JWT',
+        summary:
+          'Exchange Basic credentials for a short-lived admin JWT (CF JWT required when CF vars are set)',
       },
     },
   )
   .onBeforeHandle(async ({ request, path }) => {
-    // Public: token exchange is the only unauthenticated admin endpoint.
     if (path === '/api/admin/token') return;
     const ok = await adminAuthGuard(request);
-    if (!ok) return unauthorizedHtml();
+    if (!ok) return status(401, { error: 'Unauthorized' });
   })
 
-  // Dashboard
-  .get('/', () => {
-    const content = `
-    <h2 class="text-2xl font-bold mb-6">Dashboard Overview</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-2xl font-bold" id="user-count">Loading...</h3>
-            <p class="opacity-90 font-medium">Total Users</p>
-        </div>
-        <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-2xl font-bold" id="pack-count">Loading...</h3>
-            <p class="opacity-90 font-medium">Total Packs</p>
-        </div>
-        <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-2xl font-bold" id="item-count">Loading...</h3>
-            <p class="opacity-90 font-medium">Catalog Items</p>
-        </div>
-        <div class="bg-gradient-to-r from-primary to-secondary text-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-2xl font-bold">✅</h3>
-            <p class="opacity-90 font-medium">System Health</p>
-        </div>
-    </div>
-    <script>
-        htmx.onLoad(async function() {
-            try {
-                const response = await fetch('/api/admin/stats');
-                const stats = await response.json();
-                document.getElementById('user-count').textContent = stats.users || '0';
-                document.getElementById('pack-count').textContent = stats.packs || '0';
-                document.getElementById('item-count').textContent = stats.items || '0';
-            } catch (error) {
-                console.error('Failed to load dashboard stats:', error);
-            }
-        });
-    </script>
-    `;
-    return htmlResponse(adminLayout('Dashboard', content));
-  })
-
-  // Stats (JSON)
+  // Stats
   .get(
     '/stats',
     async () => {
@@ -233,14 +182,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       }
     },
     {
-      detail: {
-        tags: ['Admin'],
-        summary: 'Get admin dashboard statistics',
-      },
+      detail: { tags: ['Admin'], summary: 'Get admin dashboard statistics' },
     },
   )
 
-  // Users list JSON
+  // Users list
   .get(
     '/users-list',
     async ({ query }) => {
@@ -248,211 +194,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       try {
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
-        const usersList = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            role: users.role,
-            emailVerified: users.emailVerified,
-            createdAt: users.createdAt,
-          })
-          .from(users)
-          .orderBy(desc(users.createdAt))
-          .limit(limit)
-          .offset(offset);
-
-        return usersList.map((u) => ({
-          ...u,
-          createdAt: u.createdAt?.toISOString() || null,
-        }));
-      } catch (error) {
-        console.error('Error fetching users:', error);
-        return status(500, { error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' });
-      }
-    },
-    {
-      query: z.object({
-        limit: z.coerce.number().int().positive().max(100).optional(),
-        offset: z.coerce.number().int().min(0).optional(),
-      }),
-      detail: { tags: ['Admin'], summary: 'List all users' },
-    },
-  )
-
-  // Packs list JSON
-  .get(
-    '/packs-list',
-    async ({ query }) => {
-      const db = createDb();
-      try {
-        const limit = Number(query.limit ?? 100);
-        const offset = Number(query.offset ?? 0);
-        const packsList = await db
-          .select({
-            id: packs.id,
-            name: packs.name,
-            description: packs.description,
-            category: packs.category,
-            isPublic: packs.isPublic,
-            createdAt: packs.createdAt,
-            userEmail: users.email,
-          })
-          .from(packs)
-          .leftJoin(users, eq(packs.userId, users.id))
-          .where(eq(packs.deleted, false))
-          .orderBy(desc(packs.createdAt))
-          .limit(limit)
-          .offset(offset);
-
-        return packsList.map((p) => ({
-          ...p,
-          createdAt: p.createdAt?.toISOString() || null,
-        }));
-      } catch (error) {
-        console.error('Error fetching packs:', error);
-        return status(500, { error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' });
-      }
-    },
-    {
-      query: z.object({
-        limit: z.coerce.number().int().positive().max(100).optional(),
-        offset: z.coerce.number().int().min(0).optional(),
-      }),
-      detail: { tags: ['Admin'], summary: 'List all packs' },
-    },
-  )
-
-  // Catalog list JSON
-  .get(
-    '/catalog-list',
-    async ({ query }) => {
-      const db = createDb();
-      try {
-        const limit = Number(query.limit ?? 25);
-        const offset = Number(query.offset ?? 0);
-        const itemsList = await db
-          .select({
-            id: catalogItems.id,
-            name: catalogItems.name,
-            categories: catalogItems.categories,
-            brand: catalogItems.brand,
-            price: catalogItems.price,
-            weight: catalogItems.weight,
-            weightUnit: catalogItems.weightUnit,
-            createdAt: catalogItems.createdAt,
-          })
-          .from(catalogItems)
-          .orderBy(desc(catalogItems.id))
-          .limit(limit)
-          .offset(offset);
-
-        return itemsList.map((it) => ({
-          ...it,
-          createdAt: it.createdAt?.toISOString() || null,
-        }));
-      } catch (error) {
-        console.error('Error fetching catalog items:', error);
-        return status(500, { error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' });
-      }
-    },
-    {
-      query: z.object({
-        limit: z.coerce.number().int().positive().max(100).optional(),
-        offset: z.coerce.number().int().min(0).optional(),
-      }),
-      detail: { tags: ['Admin'], summary: 'List catalog items' },
-    },
-  )
-
-  // HTMX endpoints - users table / search
-  .get('/users', () => {
-    const content = `
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">User Management</h2>
-    </div>
-    <div class="mb-4">
-        <div class="flex gap-2">
-            <input type="text" id="user-search" name="q" placeholder="Search users..."
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-                   hx-get="/api/admin/users-search" hx-target="#users-table"
-                   hx-trigger="keyup changed delay:500ms" hx-swap="innerHTML">
-            <button hx-get="/api/admin/users-table" hx-target="#users-table" hx-swap="innerHTML"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg">Load All</button>
-        </div>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full bg-white rounded-lg shadow-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verified</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="users-table"></tbody>
-        </table>
-    </div>
-    `;
-    return htmlResponse(adminLayout('Users', content));
-  })
-  .get('/users-table', async () => {
-    const db = createDb();
-    try {
-      const usersList = await db
-        .select({
-          id: users.id,
-          email: users.email,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          role: users.role,
-          emailVerified: users.emailVerified,
-          createdAt: users.createdAt,
-        })
-        .from(users)
-        .orderBy(desc(users.createdAt))
-        .limit(100);
-
-      const rows = usersList
-        .map(
-          (u) => `
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.id}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.email}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${`${u.firstName || ''} ${u.lastName || ''}`}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-                u.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-              }">${u.role || 'USER'}</span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.emailVerified ? '✅' : '❌'}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"></td>
-          </tr>`,
-        )
-        .join('');
-      return htmlResponse(
-        rows ||
-          '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
-      );
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return htmlResponse(
-        '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading users</td></tr>',
-      );
-    }
-  })
-  .get(
-    '/users-search',
-    async ({ query }) => {
-      const db = createDb();
-      const search = query.q ?? '';
-      try {
+        const search = query.q;
         const usersList = await db
           .select({
             id: users.id,
@@ -474,122 +216,42 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               : undefined,
           )
           .orderBy(desc(users.createdAt))
-          .limit(100);
+          .limit(limit)
+          .offset(offset);
 
-        const rows = usersList
-          .map(
-            (u) => `
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">${u.id}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${u.email}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${`${u.firstName || ''} ${u.lastName || ''}`}</td>
-            <td class="px-6 py-4 text-sm font-medium"><span class="px-2 py-1 text-xs font-semibold rounded-full ${u.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${u.role || 'USER'}</span></td>
-            <td class="px-6 py-4 text-sm text-gray-500">${u.emailVerified ? '✅' : '❌'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
-            <td class="px-6 py-4 text-sm font-medium"></td>
-          </tr>`,
-          )
-          .join('');
-        return htmlResponse(
-          rows ||
-            '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
-        );
+        return usersList.map((u) => ({
+          ...u,
+          createdAt: u.createdAt?.toISOString() || null,
+        }));
       } catch (error) {
-        console.error('Error searching users:', error);
-        return htmlResponse(
-          '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error searching users</td></tr>',
-        );
+        console.error('Error fetching users:', error);
+        return status(500, { error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' });
       }
     },
     {
-      query: z.object({ q: z.string().optional() }),
+      query: z.object({
+        limit: z.coerce.number().int().positive().max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+        q: z.string().optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'List users' },
     },
   )
 
-  // Packs UI
-  .get('/packs', () => {
-    const content = `
-    <h2 class="text-2xl font-bold mb-6">Pack Management</h2>
-    <div class="mb-4">
-        <div class="flex gap-2">
-            <input type="text" name="q" placeholder="Search packs..."
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-                   hx-get="/api/admin/packs-search" hx-target="#packs-table"
-                   hx-trigger="keyup changed delay:500ms">
-            <button hx-get="/api/admin/packs-table" hx-target="#packs-table" hx-swap="innerHTML"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg">Load All</button>
-        </div>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full bg-white rounded-lg shadow-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Public</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="packs-table"></tbody>
-        </table>
-    </div>
-    `;
-    return htmlResponse(adminLayout('Packs', content));
-  })
-  .get('/packs-table', async () => {
-    const db = createDb();
-    try {
-      const packsList = await db
-        .select({
-          id: packs.id,
-          name: packs.name,
-          category: packs.category,
-          isPublic: packs.isPublic,
-          createdAt: packs.createdAt,
-          userEmail: users.email,
-        })
-        .from(packs)
-        .leftJoin(users, eq(packs.userId, users.id))
-        .where(eq(packs.deleted, false))
-        .orderBy(desc(packs.createdAt))
-        .limit(100);
-
-      const rows = packsList
-        .map(
-          (p) => `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm font-medium text-gray-900">${p.name}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${p.userEmail || 'Unknown'}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${p.category || 'Uncategorized'}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${p.isPublic ? '✅' : '❌'}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A'}</td>
-          <td class="px-6 py-4 text-sm font-medium"></td>
-        </tr>`,
-        )
-        .join('');
-      return htmlResponse(
-        rows ||
-          '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No packs found</td></tr>',
-      );
-    } catch (error) {
-      console.error('Error fetching packs:', error);
-      return htmlResponse(
-        '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading packs</td></tr>',
-      );
-    }
-  })
+  // Packs list
   .get(
-    '/packs-search',
+    '/packs-list',
     async ({ query }) => {
       const db = createDb();
-      const search = query.q ?? '';
       try {
+        const limit = Number(query.limit ?? 100);
+        const offset = Number(query.offset ?? 0);
+        const search = query.q;
         const packsList = await db
           .select({
             id: packs.id,
             name: packs.name,
+            description: packs.description,
             category: packs.category,
             isPublic: packs.isPublic,
             createdAt: packs.createdAt,
@@ -611,116 +273,37 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ),
           )
           .orderBy(desc(packs.createdAt))
-          .limit(100);
+          .limit(limit)
+          .offset(offset);
 
-        const rows = packsList
-          .map(
-            (p) => `
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">${p.name}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${p.userEmail || 'Unknown'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${p.category || 'Uncategorized'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${p.isPublic ? '✅' : '❌'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A'}</td>
-            <td class="px-6 py-4 text-sm font-medium"></td>
-          </tr>`,
-          )
-          .join('');
-        return htmlResponse(
-          rows ||
-            '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No packs found</td></tr>',
-        );
+        return packsList.map((p) => ({
+          ...p,
+          createdAt: p.createdAt?.toISOString() || null,
+        }));
       } catch (error) {
-        console.error('Error searching packs:', error);
-        return htmlResponse(
-          '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error searching packs</td></tr>',
-        );
+        console.error('Error fetching packs:', error);
+        return status(500, { error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' });
       }
     },
     {
-      query: z.object({ q: z.string().optional() }),
+      query: z.object({
+        limit: z.coerce.number().int().positive().max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+        q: z.string().optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'List packs' },
     },
   )
 
-  // Catalog UI
-  .get('/catalog', () => {
-    const content = `
-    <h2 class="text-2xl font-bold mb-6">Catalog Management</h2>
-    <div class="mb-4">
-        <div class="flex gap-2">
-            <input type="text" name="q" placeholder="Search catalog..."
-                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-                   hx-get="/api/admin/catalog-search" hx-target="#catalog-table"
-                   hx-trigger="keyup changed delay:500ms">
-            <button hx-get="/api/admin/catalog-table" hx-target="#catalog-table" hx-swap="innerHTML"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg">Load All</button>
-        </div>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full bg-white rounded-lg shadow-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Weight</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200" id="catalog-table"></tbody>
-        </table>
-    </div>
-    `;
-    return htmlResponse(adminLayout('Catalog', content));
-  })
-  .get('/catalog-table', async () => {
-    const db = createDb();
-    try {
-      const itemsList = await db
-        .select({
-          id: catalogItems.id,
-          name: catalogItems.name,
-          categories: catalogItems.categories,
-          brand: catalogItems.brand,
-          price: catalogItems.price,
-          weight: catalogItems.weight,
-          weightUnit: catalogItems.weightUnit,
-        })
-        .from(catalogItems)
-        .orderBy(desc(catalogItems.id))
-        .limit(25);
-
-      const rows = itemsList
-        .map(
-          (i) => `
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm font-medium text-gray-900">${i.name}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${i.brand || 'Unknown'}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${i.categories?.join(', ') || 'Uncategorized'}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${i.weight ? `${i.weight} ${i.weightUnit || 'g'}` : 'N/A'}</td>
-          <td class="px-6 py-4 text-sm text-gray-500">${i.price ? `$${i.price}` : 'N/A'}</td>
-          <td class="px-6 py-4 text-sm font-medium"></td>
-        </tr>`,
-        )
-        .join('');
-      return htmlResponse(
-        rows ||
-          '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No catalog items found</td></tr>',
-      );
-    } catch (error) {
-      console.error('Error fetching catalog items:', error);
-      return htmlResponse(
-        '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading catalog</td></tr>',
-      );
-    }
-  })
+  // Catalog items list
   .get(
-    '/catalog-search',
+    '/catalog-list',
     async ({ query }) => {
       const db = createDb();
-      const search = query.q ?? '';
       try {
+        const limit = Number(query.limit ?? 25);
+        const offset = Number(query.offset ?? 0);
+        const search = query.q;
         const itemsList = await db
           .select({
             id: catalogItems.id,
@@ -730,6 +313,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             price: catalogItems.price,
             weight: catalogItems.weight,
             weightUnit: catalogItems.weightUnit,
+            createdAt: catalogItems.createdAt,
           })
           .from(catalogItems)
           .where(
@@ -737,44 +321,34 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               ? or(
                   ilike(catalogItems.name, `%${search}%`),
                   ilike(catalogItems.brand, `%${search}%`),
-                  sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat WHERE cat ILIKE '%' || ${search} || '%')`,
                   ilike(catalogItems.description, `%${search}%`),
                 )
               : undefined,
           )
           .orderBy(desc(catalogItems.id))
-          .limit(25);
+          .limit(limit)
+          .offset(offset);
 
-        const rows = itemsList
-          .map(
-            (i) => `
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">${i.name}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${i.brand || 'Unknown'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${i.categories?.join(', ') || 'Uncategorized'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${i.weight ? `${i.weight} ${i.weightUnit || 'g'}` : 'N/A'}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">${i.price ? `$${i.price}` : 'N/A'}</td>
-            <td class="px-6 py-4 text-sm font-medium"></td>
-          </tr>`,
-          )
-          .join('');
-        return htmlResponse(
-          rows ||
-            '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No catalog items found</td></tr>',
-        );
+        return itemsList.map((it) => ({
+          ...it,
+          createdAt: it.createdAt?.toISOString() || null,
+        }));
       } catch (error) {
-        console.error('Error searching catalog items:', error);
-        return htmlResponse(
-          '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error searching catalog</td></tr>',
-        );
+        console.error('Error fetching catalog items:', error);
+        return status(500, { error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' });
       }
     },
     {
-      query: z.object({ q: z.string().optional() }),
+      query: z.object({
+        limit: z.coerce.number().int().positive().max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+        q: z.string().optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'List catalog items' },
     },
   )
 
-  // Delete a user (hard delete — also removes dependent rows where needed)
+  // Delete a user
   .delete(
     '/users/:id',
     async ({ params }) => {
@@ -823,7 +397,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
   )
 
-  // Hard-delete a catalog item
+  // Delete a catalog item
   .delete(
     '/catalog/:id',
     async ({ params }) => {
