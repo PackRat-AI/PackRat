@@ -18,15 +18,14 @@ appId: ${APP_ID}
     text: ${TRIP_NAME}
 
 # Go back to trips list
-# iOS: hardware back is unreliable from a root-stack screen with NativeTabs as parent.
+# iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
+# Tap the native navigation bar back button instead (accessibility label "Back").
 - runFlow:
     when:
       platform: iOS
     commands:
-      - swipe:
-          start: "2%,50%"
-          end: "80%,50%"
-          duration: 500
+      - tapOn:
+          text: "Back"
       - waitForAnimationToEnd
 - runFlow:
     when:
