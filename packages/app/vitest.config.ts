@@ -12,8 +12,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      // Mirror the tsconfig.json paths for the expo app
-      'expo-app': resolve(__dirname, '.'),
+      // Mirror the tsconfig.json paths for packages/app
+      app: resolve(__dirname, '.'),
     },
   },
   test: {
