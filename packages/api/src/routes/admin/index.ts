@@ -145,7 +145,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     {
       detail: {
         tags: ['Admin'],
-        summary: 'Exchange Basic credentials for a short-lived admin JWT (CF JWT required when CF vars are set)',
+        summary:
+          'Exchange Basic credentials for a short-lived admin JWT (CF JWT required when CF vars are set)',
       },
     },
   )
