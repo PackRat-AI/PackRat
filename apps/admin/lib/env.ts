@@ -18,4 +18,6 @@ export type AdminEnv = z.infer<typeof adminEnvSchema>;
  * Typed env parsed from `process.env` at module load. Throws a Zod
  * validation error if any value fails its schema constraint.
  */
-export const adminEnv = adminEnvSchema.parse(process.env);
+export const adminEnv = adminEnvSchema.parse({
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+});
