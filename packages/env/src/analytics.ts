@@ -1,8 +1,15 @@
-// Bun loads .env files automatically — no dotenv needed.
+/**
+ * Analytics CLI environment shim (`packages/analytics`).
+ * Parses `process.env` lazily on first call using Zod and exports typed
+ * accessors. Kept in `@packrat/env` so all env validation lives in one place.
+ *
+ * Adding a new variable: declare it on `analyticsEnvSchema`, mark it
+ * `.optional()` unless every caller genuinely requires it.
+ */
 
 import { z } from 'zod';
 
-const envSchema = z
+const analyticsEnvSchema = z
   .object({
     ANALYTICS_MODE: z.enum(['local', 'catalog']).default('local'),
 
@@ -95,14 +102,14 @@ const envSchema = z
     }
   });
 
-export type AnalyticsEnv = z.output<typeof envSchema>;
+export type AnalyticsEnv = z.output<typeof analyticsEnvSchema>;
 
 let _cached: AnalyticsEnv | undefined;
 
 /** Lazily validates and returns analytics env vars. Throws on missing required vars. */
-export function env(): AnalyticsEnv {
+export function analyticsEnv(): AnalyticsEnv {
   if (!_cached)
-    _cached = envSchema.parse({
+    _cached = analyticsEnvSchema.parse({
       ANALYTICS_MODE: process.env.ANALYTICS_MODE,
       R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
       R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -119,6 +126,6 @@ export function env(): AnalyticsEnv {
 }
 
 /** Reset cached env (for testing). */
-export function resetEnv(): void {
+export function resetAnalyticsEnv(): void {
   _cached = undefined;
 }
