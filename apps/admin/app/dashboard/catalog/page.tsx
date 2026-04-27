@@ -16,6 +16,7 @@ import { EditCatalogDialog } from 'admin-app/components/edit-catalog-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { useSearchParams } from 'next/navigation';
 
 function TableSkeleton() {
@@ -45,7 +46,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteCatalogItem(item.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog() });
     },
   });
 
@@ -115,7 +116,7 @@ export default function CatalogPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['admin', 'catalog', q],
+    queryKey: queryKeys.admin.catalog(q),
     queryFn: () => getCatalogItems({ q }),
   });
 

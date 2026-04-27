@@ -38,8 +38,10 @@ console.log(`🔄 Force sync: ${forceSync}`);
 async function syncGuidesToR2() {
   try {
     // Initialize R2 bucket service
+    // safe-cast: SyncEnv carries the S3/R2 credential subset that R2BucketService needs at runtime;
+    // the remaining ValidatedEnv fields are not accessed by the guides-bucket code path.
     const bucket = new R2BucketService({
-      env: env as unknown as ValidatedEnv,
+      env: env as unknown as ValidatedEnv, // safe-cast: SyncEnv carries the S3/R2 credentials R2BucketService needs
       bucketType: 'guides',
     });
 

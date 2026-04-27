@@ -32,8 +32,11 @@ export const PackSchema = z.object({
   isPublic: z.boolean(),
   image: z.string().nullable(),
   tags: z.array(z.string()).nullable(),
+  templateId: z.string().nullable().optional(),
   deleted: z.boolean(),
   isAIGenerated: z.boolean(),
+  localCreatedAt: z.string().datetime().optional(),
+  localUpdatedAt: z.string().datetime().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   items: z.array(PackItemSchema).optional(),
@@ -73,7 +76,7 @@ export const CreatePackItemRequestSchema = z.object({
   consumable: z.boolean().optional().default(false),
   worn: z.boolean().optional().default(false),
   image: z.string().nullish(),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
   catalogItemId: z.number().int().nullish(),
 });
 
@@ -87,7 +90,7 @@ export const UpdatePackItemRequestSchema = z.object({
   consumable: z.boolean().optional(),
   worn: z.boolean().optional(),
   image: z.string().nullish(),
-  notes: z.string().optional(),
+  notes: z.string().nullish(),
   catalogItemId: z.number().int().nullish(),
   deleted: z.boolean().optional(),
 });
@@ -132,4 +135,32 @@ export const GapAnalysisItemSchema = z.object({
 export const GapAnalysisResponseSchema = z.object({
   gaps: z.array(GapAnalysisItemSchema),
   summary: z.string().optional(),
+});
+
+// Body schemas mirroring the inline route schemas (exported so stores/clients
+// can use ApiBody<> or direct z.infer<> without importing from route files).
+export const CreatePackBodySchema = CreatePackRequestSchema.extend({
+  id: z.string(),
+  localCreatedAt: z.string().datetime(),
+  localUpdatedAt: z.string().datetime(),
+});
+
+export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({
+  localUpdatedAt: z.string().datetime().optional(),
+});
+
+export const PackWeightHistoryResponseSchema = z.object({
+  id: z.string(),
+  packId: z.string(),
+  userId: z.number(),
+  weight: z.number(),
+  localCreatedAt: z.string().datetime().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const CreatePackWeightHistoryBodySchema = z.object({
+  id: z.string(),
+  weight: z.number(),
+  localCreatedAt: z.string().datetime(),
 });

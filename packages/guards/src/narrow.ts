@@ -58,7 +58,7 @@ export const asDate = (value: unknown): Date | undefined => {
 export const asStringRecord = (value: unknown): Record<string, string> => {
   if (value === null || typeof value !== 'object') return {};
   const out: Record<string, string> = {};
-  // TypeScript requires an explicit cast here; value is narrowed to object by the check above.
+  // safe-cast: guards package internal narrowing — value is confirmed non-null object by preceding check
   for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
     if (typeof val === 'string') out[key] = val;
   }
@@ -99,3 +99,7 @@ export const compact = <T>(arr: (T | null | undefined)[]): T[] =>
  */
 export const firstDefined = <T>(...values: (T | null | undefined)[]): T | undefined =>
   values.find((v): v is T => v !== null && v !== undefined);
+
+/** Returns true when a string is an absolute HTTP/HTTPS URL. */
+export const isRemoteUrl = (value: string): boolean =>
+  value.startsWith('http://') || value.startsWith('https://');

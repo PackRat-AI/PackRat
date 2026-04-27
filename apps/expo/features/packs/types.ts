@@ -25,8 +25,8 @@ export interface PackItem {
   userId?: number;
   deleted: boolean;
   isAIGenerated: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export type { PackItemInput } from './input';
@@ -60,15 +60,15 @@ export interface Pack {
   deleted: boolean;
   localCreatedAt?: string;
   localUpdatedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export type PackWeightHistoryEntry = {
   id: string;
   packId: string;
   weight: number;
-  createdAt?: string;
+  createdAt?: Date | string;
   localCreatedAt?: string;
 };
 

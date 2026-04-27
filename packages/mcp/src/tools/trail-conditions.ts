@@ -3,6 +3,9 @@ import { err, ok } from '../client';
 import { CrossingDifficulty, TrailCondition, TrailSurface } from '../enums';
 import type { AgentContext } from '../types';
 
+// ── Tool regex constants ──
+const STRIP_HYPHENS = /-/g;
+
 export function registerTrailConditionTools(agent: AgentContext): void {
   // ── Get trail conditions ──────────────────────────────────────────────────
 
@@ -84,7 +87,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       notes,
     }) => {
       try {
-        const id = `tcr_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const id = `tcr_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
         const data = await agent.api.post('/trail-conditions', {
           id,

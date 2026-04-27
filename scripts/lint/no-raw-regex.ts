@@ -39,10 +39,14 @@ const ROOTS = ['apps', 'packages'];
 const REGEX_PATTERN =
   /(new\s+RegExp\s*\()|(\.(replace|replaceAll|match|matchAll|test|split|search)\(\/)/;
 
-const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build']);
+const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.wrangler']);
 
-// The reference implementation is allowed to use raw regex
-const EXCLUDED_FILES = new Set(['packages/analytics/src/core/enrichment.ts']);
+// Files explicitly allowed to use raw regex.
+// alltrails.ts: builds regex from a dynamic `property` argument — can't be a static constant.
+const EXCLUDED_FILES = new Set([
+  'packages/analytics/src/core/enrichment.ts',
+  'packages/api/src/routes/alltrails.ts',
+]);
 
 function isTargetFile(name: string): boolean {
   return /\.(ts|tsx|cts|mts)$/.test(name) && !/\.(test|spec)\.(ts|tsx|cts|mts)$/.test(name);

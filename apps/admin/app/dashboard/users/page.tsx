@@ -15,6 +15,7 @@ import { DeleteButton } from 'admin-app/components/delete-button';
 import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminUser, deleteUser, getUsers } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { useSearchParams } from 'next/navigation';
 
 function TableSkeleton() {
@@ -43,7 +44,7 @@ function UserRow({ user }: { user: AdminUser }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteUser(user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() });
     },
   });
 
@@ -100,7 +101,7 @@ export default function UsersPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['admin', 'users', q],
+    queryKey: queryKeys.admin.users(q),
     queryFn: () => getUsers({ q }),
   });
 

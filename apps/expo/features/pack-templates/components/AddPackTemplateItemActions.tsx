@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { nullToUndefined } from '@packrat/guards';
+import { isFunction, nullToUndefined } from '@packrat/guards';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -45,11 +45,11 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
         });
       }
       setIsCatalogModalVisible(true);
-      ref && typeof ref !== 'function' && ref.current?.close();
+      ref && !isFunction(ref) && ref.current?.close();
     };
 
     const handleAddFromPhoto = () => {
-      ref && typeof ref !== 'function' && ref.current?.close();
+      ref && !isFunction(ref) && ref.current?.close();
 
       if (!isAuthed.peek()) {
         return router.push({
@@ -147,7 +147,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
               <TouchableOpacity
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={() => {
-                  ref && typeof ref !== 'function' && ref.current?.close();
+                  ref && !isFunction(ref) && ref.current?.close();
                   router.push({
                     pathname: '/templateItem/new',
                     params: { packTemplateId },

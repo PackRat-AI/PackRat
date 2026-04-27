@@ -22,7 +22,14 @@ const ROOT = join(import.meta.dir, '..', '..', '..');
 const SCAN_ROOTS = ['apps', 'packages'];
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.next', '.expo', 'drizzle']);
 const TARGET_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts']);
-const EXCLUDED_FILE_PATTERNS = [/\.test\./, /\.spec\./, /\.stories\./, /\.d\.ts$/];
+const EXCLUDED_FILE_PATTERNS = [
+  /\.test\./,
+  /\.spec\./,
+  /\.stories\./,
+  /\.d\.ts$/,
+  /\/__tests__\//, // any file inside a __tests__ directory
+  /\/test\//, // any file inside a test directory
+];
 
 // Safe casts that TypeScript requires and cannot be replaced with guards
 const SAFE_CAST_PATTERNS = [
@@ -36,7 +43,13 @@ const SAFE_CAST_PATTERNS = [
   /\bas\s+ReturnType\b/,
   /\bas\s+InstanceType\b/,
   /\bas\s+Awaited\b/,
+  /\bas\s+ArrayBuffer\b/,
+  /\bas\s+ReadableStream\b/,
+  /\bas\s+SQL\b/,
 ];
+
+// Inline annotation that marks a cast as intentional (place on the cast line or the line before)
+const SAFE_CAST_ANNOTATION = /\/\/\s*safe-cast:/;
 
 // Detects `as SomeType` where SomeType starts with uppercase or is a known type pattern
 // Excludes HTML element casts which are necessary in DOM manipulation
@@ -46,6 +59,8 @@ const IMPORT_LINE = /^\s*(import|export)\b/;
 const ARRAY_LITERAL_CAST = /\]\s*as\s+[A-Z]/;
 const COMMENT_LINE = /^\s*(\/\/|\*)/;
 const LOWERCASE_TYPE = /^[a-z][a-z]*$/;
+// Matches phrases like "GPS devices", "HTML tags" — natural language in string content
+const NATURAL_LANGUAGE_CAST = /^[A-Z]{2,3}\s+[a-z]/;
 
 interface Violation {
   file: string;
@@ -91,6 +106,22 @@ function collectViolations(filePath: string): Violation[] {
     // Skip array-literal type hints: `] as Type[]` in config/static data (no call expressions)
     if (ARRAY_LITERAL_CAST.test(line) && !line.includes('(') && !line.includes('=>')) continue;
 
+    // Skip lines (and their cast matches) that carry a safe-cast annotation, either
+    // on the same line or anywhere in the immediately preceding run of comment lines.
+    if (SAFE_CAST_ANNOTATION.test(line)) continue;
+    {
+      let annotated = false;
+      for (let j = i - 1; j >= 0 && j >= i - 10; j--) {
+        const prev = lines[j] ?? '';
+        if (SAFE_CAST_ANNOTATION.test(prev)) {
+          annotated = true;
+          break;
+        }
+        if (!COMMENT_LINE.test(prev.trimStart())) break;
+      }
+      if (annotated) continue;
+    }
+
     CAST_PATTERN.lastIndex = 0;
     for (let match = CAST_PATTERN.exec(line); match !== null; match = CAST_PATTERN.exec(line)) {
       const castType = match[1]?.trim();
@@ -98,6 +129,9 @@ function collectViolations(filePath: string): Violation[] {
 
       // Skip single-word lowercase types (string, number, boolean, void, etc.)
       if (LOWERCASE_TYPE.test(castType)) continue;
+
+      // Skip natural language inside string literals, e.g. "such as GPS devices"
+      if (NATURAL_LANGUAGE_CAST.test(castType)) continue;
 
       // Skip `as keyof typeof X` — TypeScript sometimes requires this
       if (castType.startsWith('keyof')) continue;

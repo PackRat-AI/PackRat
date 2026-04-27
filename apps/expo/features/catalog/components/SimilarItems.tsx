@@ -124,7 +124,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={data.items as SimilarItem[]}
+        data={data.items}
         renderItem={({ item }) => <SimilarItemCard item={item} onPress={handleItemPress} />}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ paddingHorizontal: 16 }}

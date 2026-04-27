@@ -1,3 +1,4 @@
+import { isObject } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
@@ -57,21 +58,23 @@ export function useGenerateTemplateFromOnlineContent() {
         // server returns a structured object (e.g. { code, existingTemplateId })
         // we extract it onto the thrown ImportError so callers can branch on
         // the duplicate-detection path.
+        // safe-cast: treaty surfaces error.value as unknown; we probe its shape before use
         const value = error.value as
           | { error?: string; code?: string; existingTemplateId?: string }
           | string
           | null
           | undefined;
-        const message =
-          typeof value === 'object' && value?.error ? value.error : (value ?? 'Import failed');
+        const message = isObject(value) && value?.error ? value.error : (value ?? 'Import failed');
+        // safe-cast: augmenting the base Error with ImportError fields assigned immediately below
         const importError = new Error(String(message)) as ImportError;
         importError.status = error.status;
-        if (typeof value === 'object' && value) {
+        if (isObject(value)) {
           importError.code = value.code;
           importError.existingTemplateId = value.existingTemplateId;
         }
         throw importError;
       }
+      // safe-cast: treaty response shape matches GeneratedTemplate as validated by the API schema
       return data as unknown as GeneratedTemplate;
     },
     onSuccess: (data) => {

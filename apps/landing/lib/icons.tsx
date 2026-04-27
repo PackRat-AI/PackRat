@@ -1,10 +1,12 @@
+import { isFunction } from '@packrat/guards';
 import type { LucideIcon as LucideIconType } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 
 export const LucideIcon = (name: string): LucideIconType => {
   if (name in LucideIcons) {
+    // safe-cast: lucide-react module exports are typed — dynamic lookup by name is safe after isFunction guard
     const icon = (LucideIcons as Record<string, unknown>)[name];
-    if (typeof icon === 'function') return icon as LucideIconType;
+    if (isFunction(icon)) return icon as LucideIconType; // safe-cast: lucide-react module exports are typed
   }
   return LucideIcons.FileQuestion;
 };

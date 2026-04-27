@@ -1,4 +1,4 @@
-import { env, resetEnv } from '@packrat/analytics/core/env';
+import { analyticsEnv as env, resetAnalyticsEnv as resetEnv } from '@packrat/env/analytics';
 import { afterEach, describe, expect, it } from 'vitest';
 
 afterEach(() => resetEnv());
