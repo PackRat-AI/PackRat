@@ -1,14 +1,14 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button } from '@packrat/ui/nativewindui';
-import { SearchInput } from 'expo-app/components/SearchInput';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { SearchInput } from 'app/components/SearchInput';
+import { useTripLocation } from 'app/features/trips/store/tripLocationStore';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
 
 const GOOGLE_MAPS_API_KEY =
   Constants.expoConfig?.extra?.googleMapsApiKey || clientEnvs.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;

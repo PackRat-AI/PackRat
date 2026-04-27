@@ -1,5 +1,5 @@
-import { featureFlags } from 'expo-app/config';
-import { CreateTripScreen } from 'expo-app/features/trips/screens/CreateTripScreen';
+import { featureFlags } from 'app/config';
+import { CreateTripScreen } from 'app/features/trips/screens/CreateTripScreen';
 import { Redirect } from 'expo-router';
 
 export default function TripNewScreen() {

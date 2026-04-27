@@ -1,18 +1,18 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { featureFlags } from 'expo-app/config';
-import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { featureFlags } from 'app/config';
+import { needsReauthAtom, redirectToAtom } from 'app/features/auth/atoms/authAtoms';
+import { useAuth } from 'app/features/auth/hooks/useAuth';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { TestIds } from 'app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('app/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',

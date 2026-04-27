@@ -72,6 +72,18 @@ updates:
     commit-message:
       prefix: 'chore(deps/expo)'
 
+  # bun — Shared mobile app package
+  - package-ecosystem: 'bun'
+    directory: '/packages/app'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'mobile'
+    commit-message:
+      prefix: 'chore(deps/app)'
+
   # bun — Landing page
   - package-ecosystem: 'bun'
     directory: '/apps/landing'

@@ -1,0 +1,287 @@
+import { PackCategorySchema } from '@packrat/api/types';
+import { fromZod } from '@packrat/guards';
+import {
+  Button,
+  createDropdownItem,
+  DropdownMenu,
+  Form,
+  FormItem,
+  FormSection,
+  TextField,
+} from '@packrat/ui/nativewindui';
+import { useForm } from '@tanstack/react-form';
+import { Icon } from 'app/components/Icon';
+import { useCreatePackFromTemplate } from 'app/features/pack-templates';
+import { getTemplateItems, packTemplatesStore } from 'app/features/pack-templates/store';
+import { TemplateItemsSection } from 'app/features/packs/components/TemplateItemsSection';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { TestIds } from 'app/lib/testIds';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
+import { z } from 'zod';
+import { useCreatePack, useUpdatePack } from '../hooks';
+import type { Pack } from '../types';
+
+// Define Zod schema
+const packFormSchema = z.object({
+  name: z.string().min(1, 'Pack name is required'),
+  description: z.string(),
+  category: z.enum([
+    'hiking',
+    'backpacking',
+    'camping',
+    'climbing',
+    'winter',
+    'desert',
+    'custom',
+    'water sports',
+    'skiing',
+  ]),
+  isPublic: z.boolean(),
+  tags: z.array(z.string()),
+});
+
+// Type inference
+// type PackFormValues = z.infer<typeof packFormSchema>;
+
+export const PackForm = ({ pack }: { pack?: Pack }) => {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { colors } = useColorScheme();
+  const createPack = useCreatePack();
+  const updatePack = useUpdatePack();
+  const params = useLocalSearchParams();
+  const isCreatingFromTemplate = !!params.templateId;
+  const isEditingExistingPack = !!pack;
+
+  // Categories with icons and labels
+  const CATEGORIES = [
+    { value: 'hiking', label: t('packs.categories.hiking') },
+    { value: 'backpacking', label: t('packs.categories.backpacking') },
+    { value: 'camping', label: t('packs.categories.camping') },
+    { value: 'climbing', label: t('packs.categories.climbing') },
+    { value: 'winter', label: t('packs.categories.winter') },
+    { value: 'desert', label: t('packs.categories.desert') },
+    { value: 'custom', label: t('packs.categories.custom') },
+    { value: 'water sports', label: t('packs.categories.waterSports') },
+    { value: 'skiing', label: t('packs.categories.skiing') },
+  ];
+
+  const createPackFromTemplate = useCreatePackFromTemplate();
+  const templateId = params.templateId as string;
+  const templateAtom = isCreatingFromTemplate ? packTemplatesStore[templateId] : null;
+  const template = templateAtom ? templateAtom.get() : null;
+  const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
+  const [descriptionHeight, setDescriptionHeight] = useState(40);
+
+  const hasMounted = useRef(false);
+
+  useEffect(() => {
+    hasMounted.current = true;
+    return () => {
+      hasMounted.current = false;
+    };
+  }, []);
+
+  const form = useForm({
+    defaultValues:
+      isCreatingFromTemplate && template
+        ? {
+            name: template.name,
+            description: template.description,
+            category: fromZod(PackCategorySchema)(template.category) ?? 'hiking',
+            isPublic: false,
+            tags: template.tags,
+          }
+        : {
+            name: pack?.name || '',
+            description: pack?.description || '',
+            category: pack?.category || 'hiking',
+            isPublic: pack?.isPublic || false,
+            tags: pack?.tags || [],
+          },
+    validators: {
+      onChange: packFormSchema,
+    },
+    onSubmit: async ({ value }) => {
+      if (isCreatingFromTemplate) {
+        createPackFromTemplate(params.templateId as string, value);
+      } else if (isEditingExistingPack) {
+        updatePack({ ...pack, ...value });
+      } else {
+        createPack({ ...value, category: value.category });
+      }
+
+      router.back();
+    },
+  });
+
+  if (!packTemplatesStore[templateId]) {
+    console.warn(`No template found for ID: ${templateId}`);
+  }
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1"
+    >
+      {isCreatingFromTemplate && (
+        <Stack.Screen options={{ title: t('packs.enterNewPackDetails') }} />
+      )}
+      {isCreatingFromTemplate && template && (
+        <View>Creating pack from `{template.name}` template</View>
+      )}
+
+      <ScrollView contentContainerClassName="p-8">
+        <Form>
+          <FormSection ios={{ title: t('packs.packDetails') }} footnote={t('packs.enterBasicInfo')}>
+            <form.Field name="name">
+              {(field) => (
+                <FormItem>
+                  <TextField
+                    placeholder={t('packs.packName')}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChangeText={field.handleChange}
+                    errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
+                    leftView={
+                      <View className="ios:pl-2 justify-center pl-2">
+                        <Icon name="folder" size={16} color={colors.grey3} />
+                      </View>
+                    }
+                  />
+                </FormItem>
+              )}
+            </form.Field>
+
+            <form.Field name="description">
+              {(field) => (
+                <FormItem>
+                  <TextField
+                    placeholder={t('packs.description')}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChangeText={field.handleChange}
+                    multiline
+                    onLayout={(e) => {
+                      const h = e.nativeEvent.layout.height;
+                      if (hasMounted.current && h !== descriptionHeight) {
+                        setDescriptionHeight(h);
+                      }
+                    }}
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    leftView={
+                      <View className="ios:pl-2 justify-center pl-2">
+                        <Icon name="newspaper" size={16} color={colors.grey3} />
+                      </View>
+                    }
+                  />
+                </FormItem>
+              )}
+            </form.Field>
+
+            <form.Field name="category">
+              {(field) => (
+                <FormItem iosSeparatorClassName="hidden">
+                  <DropdownMenu
+                    items={CATEGORIES.map((category) =>
+                      createDropdownItem({
+                        actionKey: category.value,
+                        title: category.label,
+                      }),
+                    )}
+                    onItemPress={(item) => {
+                      const cat = fromZod(PackCategorySchema)(item.actionKey);
+                      if (cat) field.handleChange(cat);
+                    }}
+                  >
+                    <Button className="my-2 w-full" variant="plain">
+                      <View className="w-full flex-row items-center justify-between capitalize">
+                        <Text className="text-zinc-800 dark:text-zinc-200">
+                          {field.state.value || t('packs.selectCategory')}
+                        </Text>
+                        <Icon name="chevron-down" size={16} color={colors.grey2} />
+                      </View>
+                    </Button>
+                  </DropdownMenu>
+                </FormItem>
+              )}
+            </form.Field>
+          </FormSection>
+
+          <FormSection
+            ios={{ title: t('packs.visibility') }}
+            footnote={t('packs.publicPacksVisible')}
+          >
+            <form.Field name="isPublic">
+              {(field) => (
+                <FormItem>
+                  <View className="flex-row items-center justify-between p-4">
+                    <View className="flex-row items-center">
+                      {field.state.value ? (
+                        <Icon name="eye" size={18} color={colors.foreground} />
+                      ) : (
+                        <Icon name="eye-off" size={18} color={colors.foreground} />
+                      )}
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.makePackPublic')}
+                      </Text>
+                    </View>
+                    <Switch
+                      value={field.state.value}
+                      onValueChange={field.handleChange}
+                      trackColor={{
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
+                      }}
+                      ios_backgroundColor="hsl(var(--muted))"
+                    />
+                  </View>
+                </FormItem>
+              )}
+            </form.Field>
+          </FormSection>
+        </Form>
+
+        {isCreatingFromTemplate && (
+          <TemplateItemsSection templateItems={templateItems} templateName={template?.name} />
+        )}
+
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+          {([canSubmit, isSubmitting]) => (
+            <Pressable
+              testID={TestIds.SubmitPackButton}
+              onPress={() => form.handleSubmit()}
+              disabled={!canSubmit || isSubmitting}
+              className={`mt-6 rounded-lg px-4 py-3.5 ${
+                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
+              }`}
+            >
+              <Text className="text-center text-base font-semibold text-primary-foreground">
+                {isSubmitting
+                  ? isEditingExistingPack
+                    ? t('packs.updating')
+                    : t('packs.creating')
+                  : isEditingExistingPack
+                    ? t('packs.updatePack')
+                    : t('packs.createPack')}
+                {/* TODO use activity indicator */}
+              </Text>
+            </Pressable>
+          )}
+        </form.Subscribe>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};

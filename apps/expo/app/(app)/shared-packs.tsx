@@ -5,8 +5,8 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { cn } from 'app/lib/cn';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
 
 // Mock data for shared packs

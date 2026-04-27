@@ -1,14 +1,14 @@
 import { List, ListItem, Text } from '@packrat/ui/nativewindui';
+import { featureFlags } from 'app/config';
+import { useDetailedPacks } from 'app/features/packs/hooks/useDetailedPacks';
+import { useTrips } from 'app/features/trips/hooks';
+import { cn } from 'app/lib/cn';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import type { TranslationFunction } from 'app/lib/i18n/types';
 import { format } from 'date-fns';
-import { featureFlags } from 'expo-app/config';
-import { useTrips } from 'expo-app/features/trips/hooks';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '—';

@@ -1,4 +1,4 @@
-import { CreatePackTemplateItemForm } from 'expo-app/features/pack-templates/screens/CreatePackTemplateItemForm';
+import { CreatePackTemplateItemForm } from 'app/features/pack-templates/screens/CreatePackTemplateItemForm';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function NewTemplateItemScreen() {

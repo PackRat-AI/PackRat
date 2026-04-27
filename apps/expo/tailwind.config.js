@@ -6,9 +6,10 @@ module.exports = {
   darkMode: 'class', // Enable manual toggling of dark mode
   content: [
     './app/**/*.{js,jsx,ts,tsx}',
-    './components/**/*.{js,jsx,ts,tsx}',
-    './features/**/components/**/*.{js,jsx,ts,tsx}',
-    './features/**/screens/**/*.{js,jsx,ts,tsx}',
+    '../../packages/app/components/**/*.{js,jsx,ts,tsx}',
+    '../../packages/app/screens/**/*.{js,jsx,ts,tsx}',
+    '../../packages/app/features/**/components/**/*.{js,jsx,ts,tsx}',
+    '../../packages/app/features/**/screens/**/*.{js,jsx,ts,tsx}',
     '../../node_modules/@packrat-ai/nativewindui/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],

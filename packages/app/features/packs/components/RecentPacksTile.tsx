@@ -1,0 +1,69 @@
+import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui/nativewindui';
+import { Icon } from 'app/components/Icon';
+import { cn } from 'app/lib/cn';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { useRouter } from 'expo-router';
+import { Platform, View } from 'react-native';
+import { useRecentPacks } from '../hooks/useRecentPacks';
+
+export function RecentPacksTile() {
+  const { t } = useTranslation();
+  const recentPacks = useRecentPacks();
+
+  const router = useRouter();
+
+  const fallbackImage =
+    'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=400&auto=format&fit=crop';
+
+  const handlePress = () => {
+    router.push('/recent-packs');
+  };
+  return (
+    <ListItem
+      className={'ios:pl-0 pl-2'}
+      titleClassName="text-lg"
+      leftView={
+        <View className="flex-row px-3">
+          {recentPacks.slice(0, 2).map((pack, index) => {
+            const img = pack?.image ?? fallbackImage;
+            return (
+              <Avatar
+                key={pack.id}
+                alt={`${pack?.name ?? ''} avatar`}
+                className={cn('h-6 w-6', index > 0 && '-ml-2')}
+              >
+                <AvatarImage source={{ uri: img }} />
+                <AvatarFallback>
+                  <Text>{pack?.name.slice(0, 2).toUpperCase() ?? 'NA'}</Text>
+                </AvatarFallback>
+              </Avatar>
+            );
+          })}
+        </View>
+      }
+      rightView={
+        <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
+          <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
+            <Text variant="footnote" className="font-bold leading-4 text-primary-foreground">
+              {recentPacks.length}
+            </Text>
+          </View>
+          <ChevronRight />
+        </View>
+      }
+      item={{
+        title: t('packs.recentPacks'),
+      }}
+      onPress={handlePress}
+      target="Cell"
+      index={0}
+      removeSeparator={Platform.OS === 'ios'}
+    />
+  );
+}
+
+function ChevronRight() {
+  const { colors } = useColorScheme();
+  return <Icon name="chevron-right" size={17} color={colors.grey} />;
+}

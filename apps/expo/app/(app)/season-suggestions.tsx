@@ -1,14 +1,14 @@
 import { assertDefined } from '@packrat/guards';
 import { Button, LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
+import { Icon } from 'app/components/Icon';
+import { useCreatePackWithItems } from 'app/features/packs/hooks/useCreatePackWithItems';
 import {
   type PackSuggestion,
   useSeasonSuggestions,
-} from 'expo-app/features/packs/hooks/useSeasonSuggestions';
-import { LocationPicker } from 'expo-app/features/weather/components';
-import type { WeatherLocation } from 'expo-app/features/weather/types';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+} from 'app/features/packs/hooks/useSeasonSuggestions';
+import { LocationPicker } from 'app/features/weather/components';
+import type { WeatherLocation } from 'app/features/weather/types';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';

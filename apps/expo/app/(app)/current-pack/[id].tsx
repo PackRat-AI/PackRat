@@ -5,14 +5,14 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
-import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
-import type { PackItem } from 'expo-app/types';
+import { userStore } from 'app/features/auth/store';
+import { usePackDetailsFromStore } from 'app/features/packs/hooks/usePackDetailsFromStore';
+import { type CategorySummary, computeCategorySummaries } from 'app/features/packs/utils';
+import { cn } from 'app/lib/cn';
+import { useColorScheme } from 'app/lib/hooks/useColorScheme';
+import { useTranslation } from 'app/lib/hooks/useTranslation';
+import { getRelativeTime } from 'app/lib/utils/getRelativeTime';
+import type { PackItem } from 'app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { Platform, ScrollView, View } from 'react-native';
