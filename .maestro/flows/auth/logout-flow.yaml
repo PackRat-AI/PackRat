@@ -22,17 +22,15 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes).
-# The AlertComponent renders via a portal AFTER the profile button in the DOM tree, so the modal's
-# "Log Out" button is at index 1 (index 0 is the background profile button).
+# On Android this is a native Alert.alert() dialog — tap by text with no index needed.
+# On iOS this is a custom AlertComponent dialog — also tap by text.
 - runFlow:
     when:
       visible:
         text: "Sync in progress"
     commands:
-      - waitForAnimationToEnd
       - tapOn:
           text: "Log Out"
-          index: 1
 
 - waitForAnimationToEnd
 

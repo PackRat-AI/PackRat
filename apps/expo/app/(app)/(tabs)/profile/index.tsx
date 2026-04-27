@@ -293,22 +293,31 @@ function ListFooterComponent() {
           disabled={isSigningOut}
           onPress={() => {
             if (hasUnsyncedChanges()) {
-              alertRef.current?.alert({
-                title: t('profile.syncInProgress'),
-                message: t('profile.syncMessage'),
-                materialIcon: { name: 'repeat' },
-                buttons: [
-                  {
-                    text: t('common.cancel'),
-                    style: 'cancel',
-                  },
-                  {
-                    text: t('auth.logOut'),
-                    style: 'destructive',
-                    onPress: handleSignOut,
-                  },
-                ],
-              });
+              if (Platform.OS === 'android') {
+                // Use native Alert on Android so the dialog buttons are accessible
+                // to automated testing tools (custom portal-based dialogs are not).
+                Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
+                ]);
+              } else {
+                alertRef.current?.alert({
+                  title: t('profile.syncInProgress'),
+                  message: t('profile.syncMessage'),
+                  materialIcon: { name: 'repeat' },
+                  buttons: [
+                    {
+                      text: t('common.cancel'),
+                      style: 'cancel',
+                    },
+                    {
+                      text: t('auth.logOut'),
+                      style: 'destructive',
+                      onPress: handleSignOut,
+                    },
+                  ],
+                });
+              }
               return;
             }
             handleSignOut();
