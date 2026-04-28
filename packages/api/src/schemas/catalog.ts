@@ -1,4 +1,5 @@
 import { WEIGHT_UNITS } from '@packrat/api/types';
+import { isString } from '@packrat/guards';
 import { z } from 'zod';
 
 export const ErrorResponseSchema = z.object({
@@ -121,7 +122,7 @@ export const CatalogItemsQuerySchema = z.object({
   // z.preprocess parses the JSON string before Zod validates the shape.
   sort: z
     .preprocess((val) => {
-      if (typeof val === 'string') {
+      if (isString(val)) {
         try {
           return JSON.parse(val);
         } catch {
