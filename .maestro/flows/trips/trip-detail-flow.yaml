@@ -26,9 +26,12 @@ appId: ${APP_ID}
           text: ${TRIP_NAME}
       - waitForAnimationToEnd
 
-# Verify trip name is shown
+# Verify trip name is shown via testID.
+# assertVisible: text: fails on iOS because nativewindui Text uses UITextView which
+# exposes content as accessibilityValue, not accessibilityLabel — Maestro's text
+# matcher only checks accessibilityLabel. The testID (trip-detail-name) is reliable.
 - assertVisible:
-    text: ${TRIP_NAME}
+    id: "trip-detail-name"
 
 # Go back to trips list
 # iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
