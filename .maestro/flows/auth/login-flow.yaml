@@ -32,6 +32,8 @@ appId: ${APP_ID}
 # sufficient — the XCTest accessibility tree may not include the modal until
 # the presentation animation fully settles. extendedWaitUntil polls until
 # the field is accessible, giving the modal time to fully render.
+# iOS 26 / slow CI: the app startup takes ~10s before sign-in-button appears;
+# by the time the modal opens we may have little budget left. Use 35s here.
 - runFlow:
     when:
       platform: iOS
@@ -39,7 +41,7 @@ appId: ${APP_ID}
       - extendedWaitUntil:
           visible:
             text: "Email"
-          timeout: 20000
+          timeout: 35000
 - waitForAnimationToEnd
 
 # Fill in the email field.
