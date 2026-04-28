@@ -1,5 +1,4 @@
 import { Platform, SafeAreaView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const LargeTitleHeaderOverlapFixIOS = ({ children }: { children?: React.ReactNode }) => {
   if (Platform.OS === 'android') {
@@ -10,14 +9,8 @@ export const LargeTitleHeaderOverlapFixIOS = ({ children }: { children?: React.R
     }
   }
 
-  const insets = useSafeAreaInsets();
-
   return (
-    <SafeAreaView
-      {...(children
-        ? { className: 'flex-1 bg-background', style: { paddingTop: insets.top } }
-        : {})}
-    >
+    <SafeAreaView {...(children ? { className: 'flex-1 bg-background' } : {})}>
       {children}
       {!children && <View className="h-[0.5]" />}
     </SafeAreaView>

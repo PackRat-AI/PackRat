@@ -44,31 +44,31 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         const [userGrowth, packGrowth, catalogGrowth] = await Promise.all([
           db
             .select({
-              date: sql<string>`date_trunc(${period}, ${users.createdAt})::date::text`,
+              date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})::date::text`,
               count: count(),
             })
             .from(users)
             .where(gte(users.createdAt, startDate))
-            .groupBy(sql`date_trunc(${period}, ${users.createdAt})`)
-            .orderBy(sql`date_trunc(${period}, ${users.createdAt})`),
+            .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
+            .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
             .select({
-              date: sql<string>`date_trunc(${period}, ${packs.createdAt})::date::text`,
+              date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})::date::text`,
               count: count(),
             })
             .from(packs)
             .where(and(eq(packs.deleted, false), gte(packs.createdAt, startDate)))
-            .groupBy(sql`date_trunc(${period}, ${packs.createdAt})`)
-            .orderBy(sql`date_trunc(${period}, ${packs.createdAt})`),
+            .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`)
+            .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`),
           db
             .select({
-              date: sql<string>`date_trunc(${period}, ${catalogItems.createdAt})::date::text`,
+              date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${catalogItems.createdAt})::date::text`,
               count: count(),
             })
             .from(catalogItems)
             .where(gte(catalogItems.createdAt, startDate))
-            .groupBy(sql`date_trunc(${period}, ${catalogItems.createdAt})`)
-            .orderBy(sql`date_trunc(${period}, ${catalogItems.createdAt})`),
+            .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${catalogItems.createdAt})`)
+            .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${catalogItems.createdAt})`),
         ]);
 
         const userMap = Object.fromEntries(userGrowth.map((r) => [r.date, r.count]));
@@ -113,16 +113,16 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         const [tripActivity, trailActivity, postActivity] = await Promise.all([
           db
             .select({
-              date: sql<string>`date_trunc(${period}, ${trips.createdAt})::date::text`,
+              date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})::date::text`,
               count: count(),
             })
             .from(trips)
             .where(and(eq(trips.deleted, false), gte(trips.createdAt, startDate)))
-            .groupBy(sql`date_trunc(${period}, ${trips.createdAt})`)
-            .orderBy(sql`date_trunc(${period}, ${trips.createdAt})`),
+            .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`)
+            .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`),
           db
             .select({
-              date: sql<string>`date_trunc(${period}, ${trailConditionReports.createdAt})::date::text`,
+              date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})::date::text`,
               count: count(),
             })
             .from(trailConditionReports)
@@ -132,17 +132,19 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
                 gte(trailConditionReports.createdAt, startDate),
               ),
             )
-            .groupBy(sql`date_trunc(${period}, ${trailConditionReports.createdAt})`)
-            .orderBy(sql`date_trunc(${period}, ${trailConditionReports.createdAt})`),
+            .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})`)
+            .orderBy(
+              sql`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})`,
+            ),
           db
             .select({
-              date: sql<string>`date_trunc(${period}, ${posts.createdAt})::date::text`,
+              date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${posts.createdAt})::date::text`,
               count: count(),
             })
             .from(posts)
             .where(gte(posts.createdAt, startDate))
-            .groupBy(sql`date_trunc(${period}, ${posts.createdAt})`)
-            .orderBy(sql`date_trunc(${period}, ${posts.createdAt})`),
+            .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${posts.createdAt})`)
+            .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${posts.createdAt})`),
         ]);
 
         const tripMap = Object.fromEntries(tripActivity.map((r) => [r.date, r.count]));

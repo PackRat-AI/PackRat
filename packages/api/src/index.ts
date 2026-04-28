@@ -5,6 +5,7 @@
  * Every route is Elysia-native so Eden Treaty gets full end-to-end type
  * safety and @elysiajs/openapi generates a complete OpenAPI/Scalar UI.
  */
+
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
 import { AppContainer } from '@packrat/api/containers';

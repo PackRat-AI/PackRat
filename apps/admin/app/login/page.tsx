@@ -36,6 +36,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/token`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: `Basic ${btoa(`${username}:${password}`)}`,
         },

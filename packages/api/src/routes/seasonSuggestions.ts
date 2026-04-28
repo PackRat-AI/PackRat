@@ -64,7 +64,7 @@ ${inventoryFormatted}`;
               name: z.string(),
               description: z.string(),
               category: z.string(),
-              tags: z.array(z.string()).optional(),
+              tags: z.array(z.string()),
               items: z.array(
                 z.object({
                   id: z.string().describe('Inventory item ID'),

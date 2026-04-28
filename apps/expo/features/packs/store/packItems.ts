@@ -3,6 +3,7 @@ import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-s
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { PackItemSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import { isRemoteUrl } from '@packrat/guards';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -22,7 +23,7 @@ const listAllPackItems = async (): Promise<PackItem[] | null> => {
 };
 
 const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem | null> => {
-  if (data.image) {
+  if (data.image && !isRemoteUrl(data.image)) {
     await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
   const { data: result, error } = await apiClient
@@ -34,7 +35,7 @@ const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem |
 };
 
 const updatePackItem = async ({ id, ...data }: PackItem): Promise<PackItem | null> => {
-  if (data.image) {
+  if (data.image && !isRemoteUrl(data.image)) {
     await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
   const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
