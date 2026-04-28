@@ -47,6 +47,7 @@ export enum TestIds {
   CatalogItemCard = 'catalog-item-card',
 
   // Catalog item detail
+  CatalogDetailContent = 'catalog-detail-content',
   AddToPackButton = 'add-to-pack-button',
   ViewRetailerButton = 'view-retailer-button',
 }

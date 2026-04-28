@@ -17,16 +17,28 @@ appId: ${APP_ID}
     timeout: 15000
 
 # Tap the first visible catalog item by testID.
-# Using id: instead of text: avoids UITextView accessibilityValue issues on iOS.
 - tapOn:
     id: "catalog-item-card"
 - waitForAnimationToEnd
 
-# Wait for item detail to finish loading (network request), then assert buttons.
+# Wait for the detail screen container to confirm navigation happened.
+# The add-to-pack button is below the fold in a ScrollView; on iOS XCTest
+# does not expose off-screen ScrollView children in the accessibility tree
+# until they are scrolled into view.
 - extendedWaitUntil:
     visible:
-      id: "add-to-pack-button"
+      id: "catalog-detail-content"
     timeout: 15000
+
+# Scroll the detail screen to bring the action buttons into view.
+- scrollUntilVisible:
+    element:
+      id: "add-to-pack-button"
+    direction: DOWN
+    timeout: 15000
+
+- assertVisible:
+    id: "add-to-pack-button"
 - assertVisible:
     id: "view-retailer-button"
 
