@@ -212,6 +212,7 @@ export function useAuthActions() {
       userStore.set(null);
       setNeedsReauth(false);
       setIsLoading(false);
+      router.replace('/auth');
     }
   };
 
