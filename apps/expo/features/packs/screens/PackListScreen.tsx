@@ -75,12 +75,21 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  // Tracks whether the search bar was used so we know when to remount LargeTitleHeader.
+  // LargeTitleHeader.ios.tsx keeps internal searchValue state in a local useState; calling
+  // clearText() on the native ref does NOT fire onChangeText, so that internal state
+  // persists across navigation and the absoluteFill overlay reappears on re-focus.
+  // Incrementing this key forces React to remount LargeTitleHeader and reset its state.
+  const [searchHeaderKey, setSearchHeaderKey] = useState(0);
+  const searchWasUsed = useRef(false);
 
-  // Clear the search bar when the screen loses focus (e.g. navigating to pack detail).
-  // LargeTitleHeader.ios.tsx keeps internal searchValue state across navigation; clearing
-  // here prevents the absoluteFill search overlay from reappearing on the way back.
   useFocusEffect(
     useCallback(() => {
+      if (searchWasUsed.current) {
+        setSearchHeaderKey((k) => k + 1);
+        searchWasUsed.current = false;
+      }
+      setSearchValue('');
       return () => {
         searchBarRef.current?.clearText();
         setSearchValue('');
@@ -203,12 +212,14 @@ export function PackListScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeaderOverlapFixIOS>
         <LargeTitleHeader
+          key={searchHeaderKey}
           title={t('navigation.packs')}
           backVisible={false}
           searchBar={{
             ref: asNonNullableRef(searchBarRef),
             onChangeText(text) {
               setSearchValue(text);
+              if (text.length > 0) searchWasUsed.current = true;
             },
             content: (
               <LargeTitleHeaderSearchContentContainer>
