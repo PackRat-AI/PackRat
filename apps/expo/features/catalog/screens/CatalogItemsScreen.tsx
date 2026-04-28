@@ -8,6 +8,7 @@ import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/Larg
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -215,7 +216,11 @@ function CatalogItemsScreen() {
         data={paginatedItems}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
+          <CatalogItemCard
+            item={item}
+            onPress={() => handleItemPress(item)}
+            testID={TestIds.CatalogItemCard}
+          />
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}
         ListHeaderComponent={listHeader}

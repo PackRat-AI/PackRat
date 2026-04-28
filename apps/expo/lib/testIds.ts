@@ -43,6 +43,9 @@ export enum TestIds {
   // Profile
   SignOutButton = 'sign-out-button',
 
+  // Catalog browse
+  CatalogItemCard = 'catalog-item-card',
+
   // Catalog item detail
   AddToPackButton = 'add-to-pack-button',
   ViewRetailerButton = 'view-retailer-button',

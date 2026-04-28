@@ -8,27 +8,21 @@ appId: ${APP_ID}
     text: "Catalog"
 - waitForAnimationToEnd
 
-# Wait for items to load
+# Wait for catalog items to load via testID.
+# Text-based assertions are unreliable on iOS (nativewindui Text uses UITextView
+# which exposes content as accessibilityValue, not accessibilityLabel).
 - extendedWaitUntil:
     visible:
-      text: ".*items.*"
+      id: "catalog-item-card"
     timeout: 15000
 
-# CatalogItemCard renders weight as a plain <Text> (e.g. "1.5 kg", "300 g").
-# Tapping the weight text fires the card's TouchableWithoutFeedback onPress,
-# navigating to the item detail screen.
-- scrollUntilVisible:
-    element:
-      text: ".*\\d+\\.?\\d* (kg|g|oz|lb|lbs)"
-    direction: DOWN
-    timeout: 15000
-
+# Tap the first visible catalog item by testID.
+# Using id: instead of text: avoids UITextView accessibilityValue issues on iOS.
 - tapOn:
-    text: ".*\\d+\\.?\\d* (kg|g|oz|lb|lbs)"
+    id: "catalog-item-card"
 - waitForAnimationToEnd
 
 # Wait for item detail to finish loading (network request), then assert buttons.
-# assertVisible would fail if the detail is still showing the loading spinner.
 - extendedWaitUntil:
     visible:
       id: "add-to-pack-button"
