@@ -15,7 +15,6 @@ import {
   ListSectionHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
@@ -33,7 +32,6 @@ import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
-import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -246,7 +244,6 @@ function ListHeaderComponent() {
 
 function ListFooterComponent() {
   const { signOut } = useAuth();
-  const { colors } = useColorScheme();
   const { t } = useTranslation();
 
   const alertRef = useRef<AlertMethods>(null);
@@ -256,29 +253,7 @@ function ListFooterComponent() {
     try {
       setIsSigningOut(true);
       await signOut();
-      alertRef.current?.alert({
-        title: t('auth.loggedOut'),
-        message: t('auth.loggedOutMessage'),
-        materialIcon: { name: 'check-circle-outline', color: colors.green },
-        buttons: [
-          {
-            text: t('auth.stayLoggedOut'),
-            style: 'cancel',
-            onPress: async () => {
-              await AsyncStorage.setItem('skipped_login', 'true');
-              await Updates.reloadAsync();
-            },
-          },
-          {
-            text: t('auth.signInAgain'),
-            style: 'default',
-            onPress: async () => {
-              await AsyncStorage.setItem('skipped_login', 'false');
-              await Updates.reloadAsync();
-            },
-          },
-        ],
-      });
+      // Navigation to /auth is handled reactively by AppLayout when isAuthed becomes false.
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
