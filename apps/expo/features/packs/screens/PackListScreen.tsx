@@ -80,10 +80,13 @@ export function PackListScreen() {
   // persists across navigation. Incrementing this key on every focus remounts
   // LargeTitleHeader, resetting its internal state and restoring the navigation bar
   // buttons that iOS hides whenever UISearchController is active.
+  // cancelSearch() is also called because iOS UIKit auto-restores the UISearchController
+  // first-responder state on tab return, hiding nav bar right buttons even after remount.
   const [searchHeaderKey, setSearchHeaderKey] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
+      searchBarRef.current?.cancelSearch();
       setSearchHeaderKey((k) => k + 1);
       setSearchValue('');
       return () => {
