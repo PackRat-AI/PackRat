@@ -3,7 +3,7 @@ appId: ${APP_ID}
 # Catalog Item Detail Flow: Tap a catalog item and verify detail page
 - waitForAnimationToEnd
 
-# Navigate to Catalog tab
+# Navigate to Catalog tab (scroll-to-top if already active; normal tab tap otherwise)
 - tapOn:
     text: "Catalog"
 - waitForAnimationToEnd
@@ -25,12 +25,13 @@ appId: ${APP_ID}
             - waitForAnimationToEnd
 
 # Wait for catalog items to load via testID.
-# Text-based assertions are unreliable on iOS (nativewindui Text uses UITextView
-# which exposes content as accessibilityValue, not accessibilityLabel).
+# catalog-browse-flow already loaded items (30s wait) so these should appear
+# quickly. Use a generous timeout to handle the case where this flow is run
+# standalone (fresh load).
 - extendedWaitUntil:
     visible:
       id: "catalog-item-card"
-    timeout: 15000
+    timeout: 30000
 
 # Tap the first visible catalog item by testID.
 - tapOn:

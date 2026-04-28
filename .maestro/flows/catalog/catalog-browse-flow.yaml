@@ -12,17 +12,19 @@ appId: ${APP_ID}
 - assertVisible:
     text: "Catalog"
 
-# Wait for items to load (the item count text confirms data arrived)
+# Wait for actual catalog items to load via testID.
+# Previous text-based check (".*items.*") matched "0 items" during loading
+# state without verifying data actually arrived. Use id: for reliability.
 - extendedWaitUntil:
     visible:
-      text: ".*items.*"
-    timeout: 15000
+      id: "catalog-item-card"
+    timeout: 30000
 
 # Assert category filters render
 - assertVisible:
     text: "All"
 
-# Return to stable state
-- tapOn:
-    text: "Packs"
-- waitForAnimationToEnd
+# Intentionally stay on Catalog tab.
+# catalog-item-detail-flow runs next and starts with tapOn:"Catalog" which
+# is a scroll-to-top on the already-active tab — items remain loaded and
+# no fresh API call is needed.
