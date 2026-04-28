@@ -17,7 +17,7 @@ interface GetCatalogItemsParams {
   query?: string;
   limit: number;
   category?: string;
-  sort: { field: CatalogSortField; order: 'asc' | 'desc' };
+  sort?: { field: CatalogSortField; order: 'asc' | 'desc' };
 }
 
 export const getCatalogItems = async ({
@@ -33,7 +33,7 @@ export const getCatalogItems = async ({
       limit,
       ...(query ? { q: query } : {}),
       ...(category ? { category } : {}),
-      sort,
+      ...(sort ? { sort } : {}),
     },
   });
   if (error) throw new Error(`Failed to fetch catalog items: ${error.value}`);
