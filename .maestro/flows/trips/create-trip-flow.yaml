@@ -155,29 +155,16 @@ appId: ${APP_ID}
           text: ${TRIP_NAME}
 
 # iOS: scrollUntilVisible cannot reliably detect FlatList items through the LargeTitleHeader
-# accessibility tree even when the item is visually present. Use the native search bar instead
-# to filter to the new trip, then verify a result row appears.
-# assertVisible by text fails on iOS because Pressable accessible={true} absorbs child Text
-# nodes — the Text is not separately accessible. Check by testID instead.
+# accessibility tree even when the item is visually present. The fresh test account has only
+# this one trip so it is immediately at the top of the list — assertVisible by text works
+# because the Pressable container's accessibility label propagates the trip name on iOS.
+# Avoid the search bar entirely: activating it leaves the keyboard up and iOS restores
+# the search bar as first responder when returning to this tab, which breaks downstream flows.
 - runFlow:
     when:
       platform: iOS
     commands:
       - waitForAnimationToEnd
-      - tapOn:
-          text: "Search trips..."
-      - waitForAnimationToEnd
-      - inputText: ${TRIP_NAME}
-      - extendedWaitUntil:
-          visible:
-            id: "trip-search-result"
-          timeout: 30000
-      # Navigating to a different tab dismisses the search overlay and keyboard.
-      # Tapping the already-selected Trips tab does NOT dismiss it on iOS.
-      - tapOn:
-          text: "Packs"
-      - waitForAnimationToEnd
-      - tapOn:
-          text: "Trips"
-      - waitForAnimationToEnd
+      - assertVisible:
+          text: ${TRIP_NAME}
 
