@@ -5,7 +5,7 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { userStore } from 'expo-app/features/auth/store';
+import { isAuthed, userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
@@ -210,6 +210,7 @@ export function useAuthActions() {
       setRefreshToken(null);
       await clearLocalData();
       userStore.set(null);
+      isAuthed.set(false);
       setNeedsReauth(false);
       setIsLoading(false);
     }
