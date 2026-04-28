@@ -8,6 +8,22 @@ appId: ${APP_ID}
     text: "Catalog"
 - waitForAnimationToEnd
 
+# iOS: returning to the Catalog tab can restore the search bar as first responder,
+# overlaying the screen and suppressing the FlatList items from the accessibility tree.
+# Dismiss it if visible.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Cancel"
+          commands:
+            - tapOn:
+                text: "Cancel"
+            - waitForAnimationToEnd
+
 # Wait for catalog items to load via testID.
 # Text-based assertions are unreliable on iOS (nativewindui Text uses UITextView
 # which exposes content as accessibilityValue, not accessibilityLabel).
