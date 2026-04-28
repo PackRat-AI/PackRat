@@ -75,20 +75,16 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
-  // Tracks whether the search bar was used so we know when to remount LargeTitleHeader.
-  // LargeTitleHeader.ios.tsx keeps internal searchValue state in a local useState; calling
-  // clearText() on the native ref does NOT fire onChangeText, so that internal state
-  // persists across navigation and the absoluteFill overlay reappears on re-focus.
-  // Incrementing this key forces React to remount LargeTitleHeader and reset its state.
+  // LargeTitleHeader.ios.tsx keeps internal searchValue and isFocused state in local
+  // useStates. clearText() on the native ref does NOT fire onChangeText, so that state
+  // persists across navigation. Incrementing this key on every focus remounts
+  // LargeTitleHeader, resetting its internal state and restoring the navigation bar
+  // buttons that iOS hides whenever UISearchController is active.
   const [searchHeaderKey, setSearchHeaderKey] = useState(0);
-  const searchWasUsed = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      if (searchWasUsed.current) {
-        setSearchHeaderKey((k) => k + 1);
-        searchWasUsed.current = false;
-      }
+      setSearchHeaderKey((k) => k + 1);
       setSearchValue('');
       return () => {
         searchBarRef.current?.clearText();
@@ -217,10 +213,7 @@ export function PackListScreen() {
           backVisible={false}
           searchBar={{
             ref: asNonNullableRef(searchBarRef),
-            onChangeText(text) {
-              setSearchValue(text);
-              if (text.length > 0) searchWasUsed.current = true;
-            },
+            onChangeText: setSearchValue,
             content: (
               <LargeTitleHeaderSearchContentContainer>
                 {searchValue ? (
