@@ -1,6 +1,5 @@
 import { differenceInSeconds } from 'date-fns';
-
-type TFunction = (key: string, options?: Record<string, unknown>) => string;
+import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 
 const UNITS: Array<{ key: string; seconds: number }> = [
   { key: 'months', seconds: 2592000 },
@@ -19,21 +18,25 @@ function toDate(value: Date | string | null | undefined): Date | null {
 
 export function getRelativeTime(
   dateValue: Date | string | null | undefined,
-  t?: TFunction,
+  t?: TranslationFunction,
 ): string {
+  // i18next resolves pluralization via _one/_other suffixes at runtime.
+  // The base keys (e.g. 'common.timeAgo.months') are not in en.json as literals,
+  // so a loose cast is needed for dynamic key construction.
+  const translate = t as ((key: string, opts?: Record<string, unknown>) => string) | undefined;
   const date = toDate(dateValue);
-  if (!date) return t ? t('common.timeAgo.justNow') : 'Just now';
+  if (!date) return translate ? translate('common.timeAgo.justNow') : 'Just now';
 
   const diff = differenceInSeconds(new Date(), date);
 
   for (const { key, seconds } of UNITS) {
     const val = Math.floor(diff / seconds);
     if (val >= 1) {
-      return t
-        ? t(`common.timeAgo.${key}`, { count: val })
+      return translate
+        ? translate(`common.timeAgo.${key}`, { count: val })
         : `${val} ${key.slice(0, -1)}${val > 1 ? 's' : ''} ago`;
     }
   }
 
-  return t ? t('common.timeAgo.justNow') : 'Just now';
+  return translate ? translate('common.timeAgo.justNow') : 'Just now';
 }
