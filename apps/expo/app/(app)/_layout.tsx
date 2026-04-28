@@ -10,10 +10,11 @@ import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackI
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
+import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export {
@@ -286,12 +287,23 @@ const getSettingsOptions = (t: TranslationFunction) =>
     headerRight: () => <ThemeToggle />,
   }) as const;
 
-const getTripNewOptions = (t: TranslationFunction) =>
-  ({
-    title: t('trips.createTrip'),
-    presentation: 'modal',
-    animation: 'slide_from_bottom',
-  }) as const;
+const getTripNewOptions = (t: TranslationFunction) => ({
+  title: t('trips.createTrip'),
+  presentation: 'modal' as const,
+  animation: 'slide_from_bottom' as const,
+  headerLeft: () => {
+    const router = useRouter();
+    return (
+      <Pressable
+        testID={TestIds.CancelTripFormButton}
+        onPress={() => router.back()}
+        className="px-2"
+      >
+        <Text className="text-primary">{t('common.cancel')}</Text>
+      </Pressable>
+    );
+  },
+});
 
 const getTripEditOptions = (t: TranslationFunction) =>
   ({
@@ -312,12 +324,23 @@ const CONSENT_MODAL_OPTIONS = {
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const getPackNewOptions = (t: TranslationFunction) =>
-  ({
-    title: t('packs.createPack'),
-    presentation: 'modal',
-    animation: 'fade_from_bottom', // for android
-  }) as const;
+const getPackNewOptions = (t: TranslationFunction) => ({
+  title: t('packs.createPack'),
+  presentation: 'modal' as const,
+  animation: 'fade_from_bottom' as const,
+  headerLeft: () => {
+    const router = useRouter();
+    return (
+      <Pressable
+        testID={TestIds.CancelPackFormButton}
+        onPress={() => router.back()}
+        className="px-2"
+      >
+        <Text className="text-primary">{t('common.cancel')}</Text>
+      </Pressable>
+    );
+  },
+});
 
 const getItemNewOptions = (t: TranslationFunction) =>
   ({

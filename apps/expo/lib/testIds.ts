@@ -50,4 +50,8 @@ export enum TestIds {
   CatalogDetailContent = 'catalog-detail-content',
   AddToPackButton = 'add-to-pack-button',
   ViewRetailerButton = 'view-retailer-button',
+
+  // Modal cancel buttons (iOS 26: modals are root nav stacks with no back button)
+  CancelPackFormButton = 'cancel-pack-form-button',
+  CancelTripFormButton = 'cancel-trip-form-button',
 }

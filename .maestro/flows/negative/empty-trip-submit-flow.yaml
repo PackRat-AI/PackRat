@@ -39,14 +39,14 @@ appId: ${APP_ID}
     id: "submit-trip-button"
 
 # Go back
-# iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
-# Tap the native navigation bar back button instead (accessibility label "Back").
+# iOS: trip/new is a modal (root of its own nav stack) — no system "Back" button.
+# The modal has a Cancel button (testID: cancel-trip-form-button) added for this purpose.
 - runFlow:
     when:
       platform: iOS
     commands:
       - tapOn:
-          text: "Back"
+          id: "cancel-trip-form-button"
       - waitForAnimationToEnd
 - runFlow:
     when:
