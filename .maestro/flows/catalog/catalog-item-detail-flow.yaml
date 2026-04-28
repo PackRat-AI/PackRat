@@ -27,9 +27,12 @@ appId: ${APP_ID}
     text: ".*\\d+\\.?\\d* (kg|g|oz|lb|lbs)"
 - waitForAnimationToEnd
 
-# Assert item detail elements via testIDs
-- assertVisible:
-    id: "add-to-pack-button"
+# Wait for item detail to finish loading (network request), then assert buttons.
+# assertVisible would fail if the detail is still showing the loading spinner.
+- extendedWaitUntil:
+    visible:
+      id: "add-to-pack-button"
+    timeout: 15000
 - assertVisible:
     id: "view-retailer-button"
 
