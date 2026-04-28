@@ -216,6 +216,7 @@ export const GuidesListScreen = () => {
         renderItem={renderGuide}
         ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingHorizontal: 16, flexGrow: 1 }}
+        contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
