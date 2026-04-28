@@ -159,7 +159,7 @@ export default function TrailConditionsScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader
         title={t('trailConditions.title')}
         rightView={() => (

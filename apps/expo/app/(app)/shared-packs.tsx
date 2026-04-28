@@ -8,6 +8,7 @@ import {
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Mock data for shared packs
 const SHARED_PACKS = [
@@ -179,7 +180,7 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
 export default function SharedPacksScreen() {
   const { t } = useTranslation();
   return (
-    <>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.sharedPacks')} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
@@ -210,6 +211,6 @@ export default function SharedPacksScreen() {
           <Text variant="body">{t('packs.sharingBenefit3')}</Text>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }

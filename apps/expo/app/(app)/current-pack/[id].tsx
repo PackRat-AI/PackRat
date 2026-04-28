@@ -134,7 +134,7 @@ export default function CurrentPackScreen() {
   const uniqueCategories = computeCategorySummaries(pack);
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.currentPack')} />
       <ScrollView
         className="flex-1"
