@@ -9,15 +9,16 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Scroll down to find the log out button if needed
+# Scroll down to find the sign-out button via testID.
+# Using id: instead of text: avoids UITextView accessibilityValue issues on iOS.
 - scrollUntilVisible:
     element:
-      text: "Log Out"
+      id: "sign-out-button"
     direction: DOWN
 
-# Tap Log Out
+# Tap sign-out button
 - tapOn:
-    text: "Log Out"
+    id: "sign-out-button"
 
 - waitForAnimationToEnd
 
@@ -45,8 +46,9 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Assert we are back on the auth screen (allow up to 30s for app reload)
+# Assert we are back on the auth screen (allow up to 30s for app reload).
+# Use the sign-in-email-button testID to avoid UITextView text-matching issues on iOS.
 - extendedWaitUntil:
     visible:
-      text: "Sign In"
+      id: "sign-in-email-button"
     timeout: 30000

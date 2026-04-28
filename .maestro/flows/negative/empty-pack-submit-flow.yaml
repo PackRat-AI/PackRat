@@ -8,6 +8,22 @@ appId: ${APP_ID}
     text: "Packs"
 - waitForAnimationToEnd
 
+# iOS: returning to the Packs tab can restore the search bar as first responder,
+# overlaying the screen and suppressing the navigation bar's create-pack-button
+# from the accessibility tree. Dismiss it if visible.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Cancel"
+          commands:
+            - tapOn:
+                text: "Cancel"
+            - waitForAnimationToEnd
+
 # Tap create pack button
 - tapOn:
     id: "create-pack-button"
