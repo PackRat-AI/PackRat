@@ -10,7 +10,7 @@ Bun workspace monorepo with three apps and two packages:
 
 | Workspace | Stack | Purpose |
 |---|---|---|
-| `apps/expo` | React Native 0.81 / Expo 54 / Expo Router 6 | Mobile app (iOS + Android) |
+| `apps/expo` | React Native 0.83 / Expo 55 / Expo Router 55 | Mobile app (iOS + Android) |
 | `apps/guides` | Next.js 15 / React 19 / Radix UI / Shadcn | Content/guides site |
 | `apps/landing` | Next.js 15 / React 19 / Framer Motion | Marketing site |
 | `packages/api` | Elysia on Cloudflare Workers / Drizzle ORM / Neon PostgreSQL | Backend API |

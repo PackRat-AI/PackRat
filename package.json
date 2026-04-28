@@ -50,7 +50,7 @@
   "overrides": {
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
-    "expo-sqlite": "~16.0.10"
+    "expo-sqlite": "~55.0.15"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
