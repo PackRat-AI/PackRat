@@ -32,6 +32,7 @@ import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -253,7 +254,10 @@ function ListFooterComponent() {
     try {
       setIsSigningOut(true);
       await signOut();
-      router.replace('/auth');
+      // iOS NativeTabs swallows JS-level router.replace('/auth') from inside a
+      // tab, leaving the user on the previously-active tab. Reload the JS
+      // bundle so useAuthInit re-runs with no token and lands on /auth.
+      await Updates.reloadAsync();
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
