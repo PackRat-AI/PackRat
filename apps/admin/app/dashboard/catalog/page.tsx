@@ -16,6 +16,7 @@ import { EditCatalogDialog } from 'admin-app/components/edit-catalog-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { useSearchParams } from 'next/navigation';
 
 function TableSkeleton() {
@@ -23,7 +24,10 @@ function TableSkeleton() {
     <div className="rounded-lg border border-border/60 overflow-hidden">
       <div className="h-10 bg-muted/30 border-b border-border/60" />
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0">
+        <div
+          key={`skeleton-row-${i}`}
+          className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0"
+        >
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-16" />
@@ -42,7 +46,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteCatalogItem(item.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog() });
     },
   });
 
@@ -112,7 +116,7 @@ export default function CatalogPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['admin', 'catalog', q],
+    queryKey: queryKeys.admin.catalog(q),
     queryFn: () => getCatalogItems({ q }),
   });
 

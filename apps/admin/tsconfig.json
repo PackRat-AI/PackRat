@@ -21,6 +21,8 @@
     "paths": {
       "admin-app/*": ["./*"],
       "@packrat/api/*": ["../../packages/api/src/*"],
+      "@packrat/guards": ["../../packages/guards/src"],
+      "@packrat/guards/*": ["../../packages/guards/src/*"],
       "@packrat/web-ui": ["../../packages/web-ui/src"],
       "@packrat/web-ui/*": ["../../packages/web-ui/src/*"]
     }

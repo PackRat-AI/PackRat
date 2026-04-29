@@ -1,7 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Env } from '@packrat/api/types/env';
+import { Elysia } from 'elysia';
 import { readerRoutes } from './reader';
 
-const knowledgeBaseRoutes = new OpenAPIHono<{ Bindings: Env }>().route('/reader', readerRoutes);
-
-export { knowledgeBaseRoutes };
+export const knowledgeBaseRoutes = new Elysia({ prefix: '/knowledge-base' }).use(readerRoutes);

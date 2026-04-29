@@ -1,8 +1,8 @@
 import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, useNavigation } from 'expo-router';
@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -118,148 +117,136 @@ function LocationsScreen() {
   const showLocationsList = filteredLocations.length > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
-      <LargeTitleHeader
-        title={t('weather.weather')}
-        leftView={() => (
-          <Pressable
-            onPress={() => router.back()}
-            className="mr-2 ml-1.5 items-center justify-center"
-          >
-            <Icon name="arrow-left" color={colors.foreground} size={24} />
-          </Pressable>
-        )}
-        rightView={() => (
-          <Pressable
-            className="opacity-80 mr-2 ml-2 items-center justify-center"
-            onPress={handleAddLocation}
-          >
-            {({ pressed }) => (
-              <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-                <Icon name="plus" color={colors.foreground} />
-              </View>
-            )}
-          </Pressable>
-        )}
-      />
-
-      <View className="p-4" style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}>
-        <SearchInput
-          ref={searchInputRef}
-          placeholder={t('weather.searchSavedLocations')}
-          value={searchQuery}
-          onChangeText={handleSearchChange}
-          containerClassName="border border-border"
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => {
-            // Only unfocus if search is empty
-            if (searchQuery.length === 0) {
-              setIsSearchFocused(false);
-            }
-          }}
+    <SafeAreaView className="flex-1" edges={['bottom']}>
+      <LargeTitleHeaderOverlapFixIOS>
+        <LargeTitleHeader
+          title={t('weather.weather')}
+          rightView={() => (
+            <Pressable onPress={handleAddLocation} className="mx-2">
+              <Icon name="plus" color={colors.foreground} />
+            </Pressable>
+          )}
         />
-      </View>
 
-      {showNoSearchResults && (
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(200)}
-          className="px-4 py-2"
-        >
-          <Text className="mb-2 text-xs uppercase text-muted-foreground">
-            {t('weather.searchResults')}
-          </Text>
-          <View className="bg-muted/30 items-center rounded-lg p-4">
-            <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-            <Text className="mt-2 text-muted-foreground">
-              {t('weather.noLocationsMatch', { query: searchQuery })}
-            </Text>
-            <View className="mt-4 flex-row">
-              <TouchableOpacity
-                className="bg-primary/10 mr-2 rounded-full px-4 py-2"
-                onPress={clearSearch}
-              >
-                <Text className="text-primary">{t('weather.clearSearch')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="rounded-full bg-primary px-4 py-2"
-                onPress={handleAddLocation}
-              >
-                <Text className="text-white">{t('weather.addNewLocation')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Animated.View>
-      )}
-
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center py-12">
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-4 text-muted-foreground">{t('weather.loadingWeatherData')}</Text>
+        <View className="p-4">
+          <SearchInput
+            ref={searchInputRef}
+            placeholder={t('weather.searchSavedLocations')}
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            containerClassName="border border-border"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => {
+              // Only unfocus if search is empty
+              if (searchQuery.length === 0) {
+                setIsSearchFocused(false);
+              }
+            }}
+          />
         </View>
-      ) : (
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingTop: 8,
-            paddingBottom: insets.bottom + 16,
-            flexGrow: showEmptyState ? 1 : undefined,
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={refreshAllLocations}
-              tintColor={colors.primary}
-            />
-          }
-          keyboardShouldPersistTaps="handled"
-        >
-          {showLocationsList && (
-            <>
-              {showSearchResults && (
+
+        {showNoSearchResults && (
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+            className="px-4 py-2"
+          >
+            <Text className="mb-2 text-xs uppercase text-muted-foreground">
+              {t('weather.searchResults')}
+            </Text>
+            <View className="bg-muted/30 items-center rounded-lg p-4">
+              <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
+              <Text className="mt-2 text-muted-foreground">
+                {t('weather.noLocationsMatch', { query: searchQuery })}
+              </Text>
+              <View className="mt-4 flex-row">
+                <TouchableOpacity
+                  className="bg-primary/10 mr-2 rounded-full px-4 py-2"
+                  onPress={clearSearch}
+                >
+                  <Text className="text-primary">{t('weather.clearSearch')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="rounded-full bg-primary px-4 py-2"
+                  onPress={handleAddLocation}
+                >
+                  <Text className="text-white">{t('weather.addNewLocation')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+        )}
+
+        {isLoading ? (
+          <View className="flex-1 items-center justify-center py-12">
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text className="mt-4 text-muted-foreground">{t('weather.loadingWeatherData')}</Text>
+          </View>
+        ) : (
+          <ScrollView
+            // className="flex-1"
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingTop: 8,
+              paddingBottom: insets.bottom + 16,
+              flexGrow: showEmptyState ? 1 : undefined,
+            }}
+            contentInsetAdjustmentBehavior="automatic"
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={refreshAllLocations}
+                tintColor={colors.primary}
+              />
+            }
+            keyboardShouldPersistTaps="handled"
+          >
+            {showLocationsList && (
+              <>
+                {showSearchResults && (
+                  <View className="mb-2">
+                    <Text className="text-xs uppercase text-muted-foreground">
+                      {filteredLocations.length}{' '}
+                      {filteredLocations.length === 1 ? t('weather.result') : t('weather.results')}
+                    </Text>
+                  </View>
+                )}
+
                 <View className="mb-2">
-                  <Text className="text-xs uppercase text-muted-foreground">
-                    {filteredLocations.length}{' '}
-                    {filteredLocations.length === 1 ? t('weather.result') : t('weather.results')}
+                  <Text className="text-xs text-muted-foreground">
+                    {t('weather.longPressForOptions')}
                   </Text>
                 </View>
-              )}
 
-              <View className="mb-2">
-                <Text className="text-xs text-muted-foreground">
-                  {t('weather.longPressForOptions')}
+                {filteredLocations.map((location) => (
+                  <LocationCard
+                    key={location.id}
+                    location={location}
+                    onPress={() => handleLocationPress(location.id)}
+                    onSetActive={() => handleSetActive(location.id)}
+                    onRemove={() => handleRemoveLocation(location.id)}
+                  />
+                ))}
+              </>
+            )}
+
+            {showEmptyState && (
+              <View className="flex-1 items-center mt-16">
+                <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
+                <Text className="mt-4 text-center text-lg font-medium">
+                  {t('weather.noSavedLocations')}
                 </Text>
+                <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
+                  {t('weather.noSavedLocationsDesc')}
+                </Text>
+                <Button variant="primary" onPress={handleAddLocation}>
+                  <Text className="font-medium text-white">{t('weather.addLocation')}</Text>
+                </Button>
               </View>
-
-              {filteredLocations.map((location) => (
-                <LocationCard
-                  key={location.id}
-                  location={location}
-                  onPress={() => handleLocationPress(location.id)}
-                  onSetActive={() => handleSetActive(location.id)}
-                  onRemove={() => handleRemoveLocation(location.id)}
-                />
-              ))}
-            </>
-          )}
-
-          {showEmptyState && (
-            <View className="flex-1 items-center mt-16">
-              <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
-              <Text className="mt-4 text-center text-lg font-medium">
-                {t('weather.noSavedLocations')}
-              </Text>
-              <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
-                {t('weather.noSavedLocationsDesc')}
-              </Text>
-              <Button variant="primary" onPress={handleAddLocation}>
-                <Text className="font-medium text-white">{t('weather.addLocation')}</Text>
-              </Button>
-            </View>
-          )}
-        </ScrollView>
-      )}
+            )}
+          </ScrollView>
+        )}
+      </LargeTitleHeaderOverlapFixIOS>
     </SafeAreaView>
   );
 }

@@ -32,8 +32,8 @@ vi.mock('@packrat/api/services/packService', async () => {
       private readonly _userId: number;
       constructor(...args: ConstructorParameters<typeof actual.PackService>) {
         super(...args);
-        // Capture userId (second argument in original constructor)
-        this._userId = args[1] as number;
+        // First argument is the userId in the Elysia-native PackService.
+        this._userId = args[0] as number;
       }
       async generatePacks(count: number) {
         const mockPacks: Pack[] = [];

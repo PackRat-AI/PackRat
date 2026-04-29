@@ -32,27 +32,24 @@ export default function GearInventoryScreen() {
   const { t } = useTranslation();
 
   const groupByCategory = (items: PackItem[]) => {
-    return items.reduce(
-      (acc, item) => {
-        const category = item.category || 'Other';
+    return items.reduce<Record<string, PackItem[]>>((acc, item) => {
+      const category = item.category || 'Other';
 
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        assertDefined(acc[category]);
-        acc[category].push(item);
-        return acc;
-      },
-      {} as Record<string, PackItem[]>,
-    );
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      assertDefined(acc[category]);
+      acc[category].push(item);
+      return acc;
+    }, {});
   };
 
   const itemsByCategory = groupByCategory(items);
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.gearInventory')} />
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
             {t('packs.itemsInInventory', { count: items?.length })}

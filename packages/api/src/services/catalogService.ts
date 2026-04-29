@@ -24,23 +24,28 @@ import {
   type SQL,
   sql,
 } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { getEmbeddingText } from '../utils/embeddingHelper';
-
-const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
-  isContext;
 
 export class CatalogService {
   private db;
   private env: Env;
 
-  constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
-    if (isContext(contextOrEnv, isHonoContext)) {
-      this.db = createDb(contextOrEnv);
-      this.env = getEnv(contextOrEnv);
+  /**
+   * - `new CatalogService()` – reads the isolate-level env (Elysia routes).
+   * - `new CatalogService(env, true)` – queue handler path: caller passes the
+   *   raw validated env, and we use the HTTP-only Neon driver (which is
+   *   better suited for short-lived queue workers).
+   */
+  constructor(explicitEnv?: Env, useHttpDriver: boolean = false) {
+    if (explicitEnv && useHttpDriver) {
+      this.env = explicitEnv;
+      this.db = createDbClient(explicitEnv);
+    } else if (explicitEnv) {
+      this.env = explicitEnv;
+      this.db = createDb();
     } else {
-      this.db = createDbClient(contextOrEnv);
-      this.env = contextOrEnv;
+      this.env = getEnv();
+      this.db = createDb();
     }
   }
 
@@ -337,13 +342,10 @@ export class CatalogService {
       .values(items)
       .onConflictDoUpdate({
         target: catalogItems.sku,
-        set: Object.values(columns).reduce(
-          (acc, col) => {
-            acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
-            return acc;
-          },
-          {} as Record<string, SQL>,
-        ),
+        set: Object.values(columns).reduce<Record<string, SQL>>((acc, col) => {
+          acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+          return acc;
+        }, {}),
       })
       .returning();
 

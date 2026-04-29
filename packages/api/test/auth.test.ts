@@ -1,8 +1,8 @@
 import { createDb } from '@packrat/api/db';
 import { oneTimePasswords } from '@packrat/api/db/schema';
-import type { Context } from 'hono';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import app from '../src/index';
+import { app } from '../src/index';
 import {
   apiWithAuth,
   apiWithAuthAs,
@@ -201,7 +201,7 @@ describe('Auth Routes', () => {
         email: 'verify-happy@example.com',
         emailVerified: false,
       });
-      const db = createDb({} as unknown as Context);
+      const db = createDb();
       await db.insert(oneTimePasswords).values({
         userId: user.id,
         code: '12345',
@@ -223,7 +223,7 @@ describe('Auth Routes', () => {
         email: 'verify-expired@example.com',
         emailVerified: false,
       });
-      const db = createDb({} as unknown as Context);
+      const db = createDb();
       await db.insert(oneTimePasswords).values({
         userId: user.id,
         code: '67890',
@@ -243,7 +243,7 @@ describe('Auth Routes', () => {
         email: 'verify-wrong@example.com',
         emailVerified: false,
       });
-      const db = createDb({} as unknown as Context);
+      const db = createDb();
       await db.insert(oneTimePasswords).values({
         userId: user.id,
         code: '11111',
@@ -316,7 +316,7 @@ describe('Auth Routes', () => {
 
     it('resets password with valid code and the new password then works for login', async () => {
       const user = await createTestUser({ email: 'reset-happy@example.com' });
-      const db = createDb({} as unknown as Context);
+      const db = createDb();
       await db.insert(oneTimePasswords).values({
         userId: user.id,
         code: '54321',
@@ -351,7 +351,7 @@ describe('Auth Routes', () => {
 
     it('rejects an expired code', async () => {
       const user = await createTestUser({ email: 'reset-expired@example.com' });
-      const db = createDb({} as unknown as Context);
+      const db = createDb();
       await db.insert(oneTimePasswords).values({
         userId: user.id,
         code: '54322',

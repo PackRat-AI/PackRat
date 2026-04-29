@@ -1,20 +1,23 @@
 // Browser-callable API client for the admin app.
-// In production, CF Access protects the domain; a short-lived JWT is sent
-// as a Bearer token. In local dev, authenticate once at /login to obtain a token.
+//
+// Auth: when behind CF Access, the Cf-Access-Jwt-Assertion header is added
+// automatically by CF Access on every request to a protected service — no manual
+// forwarding needed. For local dev, a short-lived Bearer token from Basic auth
+// login is used instead.
 
 import { clearToken, getAuthHeader } from './auth';
+import { adminEnv } from './env';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
+const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const authHeaders = getAuthHeader();
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
+    credentials: 'include',
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeader(),
+      ...authHeaders,
       ...init?.headers,
     },
   });
@@ -29,7 +32,8 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`Admin API error: ${res.status} ${res.statusText} — ${path}`);
   }
 
-  return res.json() as Promise<T>;
+  // T is caller-verified via the typed adminFetch<T> call-sites above.
+  return res.json() as Promise<T>; // safe-cast: fetch boundary — caller provides T
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────

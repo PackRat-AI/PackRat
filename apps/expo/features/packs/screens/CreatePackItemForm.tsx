@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -14,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImagePicker } from '../hooks/useImagePicker';
-import type { PackItem, PackItemInput } from '../types';
+import type { PackItem } from '../types';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -82,7 +83,7 @@ export const CreatePackItemForm = ({
           name: existingItem.name,
           description: existingItem.description || '',
           weight: existingItem.weight,
-          weightUnit: existingItem.weightUnit as WeightUnit,
+          weightUnit: existingItem.weightUnit,
           quantity: existingItem.quantity,
           category: existingItem.category || '',
           consumable: existingItem.consumable,
@@ -94,7 +95,7 @@ export const CreatePackItemForm = ({
           name: '',
           description: '',
           weight: 0,
-          weightUnit: 'g' as WeightUnit,
+          weightUnit: 'g',
           quantity: 1,
           category: '',
           consumable: false,
@@ -125,10 +126,10 @@ export const CreatePackItemForm = ({
 
         // Submit the form with the image URL
         if (isEditing) {
-          updatePackItem({ ...existingItem, ...(validatedData as PackItemInput) });
+          updatePackItem({ ...existingItem, ...validatedData });
           router.back();
         } else {
-          createPackItem({ packId, itemData: validatedData as PackItemInput });
+          createPackItem({ packId, itemData: validatedData });
           router.back();
         }
 
@@ -322,7 +323,7 @@ export const CreatePackItemForm = ({
                   <Text className="text-foreground/70 mb-2 text-sm">{t('packs.unit')}</Text>
                   <SegmentedControl
                     values={WEIGHT_UNITS}
-                    selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
+                    selectedIndex={safeIndexOf(WEIGHT_UNITS, field.state.value)}
                     onIndexChange={(index) => {
                       const selectedUnit = WEIGHT_UNITS[index];
                       if (selectedUnit) {

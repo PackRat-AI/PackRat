@@ -8,38 +8,39 @@ import {
   getCatalogOverview,
   getCatalogPrices,
 } from 'admin-app/lib/api';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 
 export function useCatalogOverview() {
   return useQuery({
-    queryKey: ['catalog', 'overview'],
+    queryKey: queryKeys.catalogAnalytics.overview,
     queryFn: () => getCatalogOverview(),
   });
 }
 
 export function useCatalogBrands(limit = 20) {
   return useQuery({
-    queryKey: ['catalog', 'brands', limit],
+    queryKey: queryKeys.catalogAnalytics.brands(limit),
     queryFn: () => getCatalogBrands(limit),
   });
 }
 
 export function useCatalogPrices() {
   return useQuery({
-    queryKey: ['catalog', 'prices'],
+    queryKey: queryKeys.catalogAnalytics.prices,
     queryFn: () => getCatalogPrices(),
   });
 }
 
 export function useCatalogEtl(limit = 20) {
   return useQuery({
-    queryKey: ['catalog', 'etl', limit],
+    queryKey: queryKeys.catalogAnalytics.etl(limit),
     queryFn: () => getCatalogEtl(limit),
   });
 }
 
 export function useCatalogEmbeddings() {
   return useQuery({
-    queryKey: ['catalog', 'embeddings'],
+    queryKey: queryKeys.catalogAnalytics.embeddings,
     queryFn: () => getCatalogEmbeddings(),
   });
 }

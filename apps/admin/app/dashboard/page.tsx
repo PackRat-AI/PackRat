@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { StatsCards } from 'admin-app/components/stats-cards';
 import { getCatalogItems, getPacks, getStats, getUsers } from 'admin-app/lib/api';
 import { formatDistanceToNow } from 'admin-app/lib/date';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { Backpack, Package, Users } from 'lucide-react';
 
 function OverviewSkeleton() {
@@ -13,7 +14,7 @@ function OverviewSkeleton() {
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="border-border/60">
+          <Card key={`skeleton-row-${i}`} className="border-border/60">
             <CardHeader className="pb-2">
               <Skeleton className="h-4 w-24" />
             </CardHeader>
@@ -26,13 +27,13 @@ function OverviewSkeleton() {
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} className="border-border/60">
+          <Card key={`skeleton-row-${i}`} className="border-border/60">
             <CardHeader className="pb-3">
               <Skeleton className="h-4 w-32" />
             </CardHeader>
             <CardContent className="space-y-3">
               {Array.from({ length: 5 }).map((_, j) => (
-                <div key={j} className="flex justify-between gap-2">
+                <div key={`skeleton-cell-${j}`} className="flex justify-between gap-2">
                   <Skeleton className="h-4 flex-1" />
                   <Skeleton className="h-4 w-16" />
                 </div>
@@ -47,22 +48,22 @@ function OverviewSkeleton() {
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['admin', 'stats'],
+    queryKey: queryKeys.admin.stats,
     queryFn: getStats,
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ['admin', 'users', 5],
+    queryKey: queryKeys.admin.users(5),
     queryFn: () => getUsers({ limit: 5 }),
   });
 
   const { data: packs = [], isLoading: packsLoading } = useQuery({
-    queryKey: ['admin', 'packs', 5],
+    queryKey: queryKeys.admin.packs(5),
     queryFn: () => getPacks({ limit: 5 }),
   });
 
   const { data: catalog = [], isLoading: catalogLoading } = useQuery({
-    queryKey: ['admin', 'catalog', 5],
+    queryKey: queryKeys.admin.catalog(5),
     queryFn: () => getCatalogItems({ limit: 5 }),
   });
 

@@ -1,4 +1,4 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -91,7 +91,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     if (value instanceof Date) {
       return value.toISOString().split('T')[0];
     }
-    if (typeof value === 'string') {
+    if (isString(value)) {
       return value.split('T')[0];
     }
     return '';
@@ -109,13 +109,15 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
+      // safe-cast: defaultValues object matches TripFormValues shape; useForm generic infers
+      // narrower literal types from the object literal without the cast.
     } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
       const submitData = {
         ...value,
         location: location ?? value.location,
-        packId: value.packId ?? undefined,
+        packId: value.packId === '' ? undefined : (value.packId ?? undefined),
       };
       try {
         if (isEditingExistingTrip) {

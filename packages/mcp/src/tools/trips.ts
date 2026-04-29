@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { err, ok } from '../client';
 import type { AgentContext } from '../types';
 
+// ── Tool regex constants ──
+const STRIP_HYPHENS = /-/g;
+
 export function registerTripTools(agent: AgentContext): void {
   // ── List trips ────────────────────────────────────────────────────────────
 
@@ -88,7 +91,7 @@ export function registerTripTools(agent: AgentContext): void {
       pack_id,
     }) => {
       try {
-        const id = `t_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const id = `t_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
         const data = await agent.api.post('/trips', {
           id,

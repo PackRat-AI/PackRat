@@ -1,13 +1,13 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
 import type { Guide } from '../types';
@@ -133,29 +133,45 @@ export const GuidesListScreen = () => {
     }
 
     return (
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="px-4 pt-2">
-          {guides.length > 0 && (
-            <Text className="text-xs text-muted-foreground">
-              {guides.length} {guides.length === 1 ? t('guides.result') : t('guides.results')}
-            </Text>
-          )}
-        </View>
-
-        {guides.map((guide: Guide) => (
-          <View className="px-4 pt-4" key={guide.id}>
-            <GuideCard guide={guide} onPress={() => handleGuidePress(guide)} />
+      <FlatList
+        data={guides}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View className="px-4 pt-4">
+            <GuideCard guide={item} onPress={() => handleGuidePress(item)} />
           </View>
-        ))}
-
-        {guides.length === 0 && (
+        )}
+        ListHeaderComponent={
+          guides.length > 0 ? (
+            <View className="px-4 pt-2">
+              <Text className="text-xs text-muted-foreground">
+                {guides.length} {guides.length === 1 ? t('guides.result') : t('guides.results')}
+              </Text>
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
             <Text className="text-center text-gray-500 dark:text-gray-400">
               {t('guides.noGuidesFound', { query: searchQuery })}
             </Text>
           </View>
-        )}
-      </ScrollView>
+        }
+        ListFooterComponent={
+          isFetchingNextPageSearch ? (
+            <View className="py-4">
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null
+        }
+        onEndReached={() => {
+          if (hasNextPageSearch && !isFetchingNextPageSearch) {
+            fetchNextPageSearch();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+      />
     );
   };
 
@@ -163,7 +179,8 @@ export const GuidesListScreen = () => {
     if (isSearchMode) return null;
 
     return (
-      <TabScreen useLegacySafeAreaView>
+      <>
+        <LargeTitleHeaderOverlapFixIOS />
         <CategoriesFilter
           data={categories}
           onFilter={handleCategoryChange}
@@ -172,7 +189,7 @@ export const GuidesListScreen = () => {
           retry={refetchCategories}
           className="px-4 pb-2"
         />
-      </TabScreen>
+      </>
     );
   };
 
@@ -199,6 +216,7 @@ export const GuidesListScreen = () => {
         renderItem={renderGuide}
         ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingHorizontal: 16, flexGrow: 1 }}
+        contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

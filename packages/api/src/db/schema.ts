@@ -1,3 +1,4 @@
+import type { PackCategory, WeightUnit } from '@packrat/api/types';
 import { type InferInsertModel, type InferSelectModel, relations, sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
@@ -73,7 +74,7 @@ export const packs = pgTable('packs', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
-  category: text('category').notNull(),
+  category: text('category').notNull().$type<PackCategory>(),
   userId: integer('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
@@ -99,7 +100,7 @@ export const catalogItems = pgTable(
     productUrl: text('product_url').notNull(),
     sku: text('sku').unique().notNull(),
     weight: real('weight').notNull(),
-    weightUnit: text('weight_unit').notNull(),
+    weightUnit: text('weight_unit').notNull().$type<WeightUnit>(),
     description: text('description'),
     categories: jsonb('categories').$type<string[]>(),
     images: jsonb('images').$type<string[]>(),
@@ -191,7 +192,7 @@ export const packItems = pgTable(
     name: text('name').notNull(),
     description: text('description'),
     weight: real('weight').notNull(),
-    weightUnit: text('weight_unit').notNull(),
+    weightUnit: text('weight_unit').notNull().$type<WeightUnit>(),
     quantity: integer('quantity').default(1).notNull(),
     category: text('category'),
     consumable: boolean('consumable').notNull().default(false),
@@ -262,7 +263,7 @@ export const packTemplateItems = pgTable('pack_template_items', {
   name: text('name').notNull(),
   description: text('description'),
   weight: real('weight').notNull(),
-  weightUnit: text('weight_unit').notNull(),
+  weightUnit: text('weight_unit').notNull().$type<WeightUnit>(),
   quantity: integer('quantity').default(1).notNull(),
   category: text('category'),
   consumable: boolean('consumable').notNull().default(false),

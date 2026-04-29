@@ -1,4 +1,5 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { isString } from '@packrat/guards';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
@@ -15,8 +16,8 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -105,7 +106,7 @@ function Profile() {
   ];
 
   return (
-    <TabScreen>
+    <>
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <LargeTitleHeader
@@ -129,7 +130,7 @@ function Profile() {
         ListHeaderComponent={<ListHeaderComponent />}
         ListFooterComponent={<ListFooterComponent />}
       />
-    </TabScreen>
+    </>
   );
 }
 
@@ -140,7 +141,7 @@ function renderItem(info: ListRenderItemInfo<DataItem>) {
 }
 
 function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
-  if (typeof info.item === 'string') {
+  if (isString(info.item)) {
     return <ListSectionHeader {...info} />;
   }
   return (
@@ -286,44 +287,47 @@ function ListFooterComponent() {
   };
 
   return (
-    <View className="ios:px-0 px-4 pt-8">
-      <Button
-        testID={TestIds.SignOutButton}
-        disabled={isSigningOut}
-        onPress={() => {
-          if (hasUnsyncedChanges()) {
-            alertRef.current?.alert({
-              title: t('profile.syncInProgress'),
-              message: t('profile.syncMessage'),
-              materialIcon: { name: 'repeat' },
-              buttons: [
-                {
-                  text: t('common.cancel'),
-                  style: 'cancel',
-                },
-                {
-                  text: t('auth.proceedLogOut'),
-                  style: 'destructive',
-                  onPress: handleSignOut,
-                },
-              ],
-            });
-            return;
-          }
-          handleSignOut();
-        }}
-        size="lg"
-        variant={Platform.select({ ios: 'primary', default: 'secondary' })}
-        className="border-border bg-card"
-      >
-        {isSigningOut ? (
-          <ActivityIndicator className="text-destructive" />
-        ) : (
-          <Text className="text-destructive">{t('auth.logOut')}</Text>
-        )}
-      </Button>
-      <AlertComponent title="" buttons={[]} ref={alertRef} />
-    </View>
+    <>
+      <View className="ios:px-0 px-4 pt-8">
+        <Button
+          testID={TestIds.SignOutButton}
+          disabled={isSigningOut}
+          onPress={() => {
+            if (hasUnsyncedChanges()) {
+              alertRef.current?.alert({
+                title: t('profile.syncInProgress'),
+                message: t('profile.syncMessage'),
+                materialIcon: { name: 'repeat' },
+                buttons: [
+                  {
+                    text: t('common.cancel'),
+                    style: 'cancel',
+                  },
+                  {
+                    text: t('auth.proceedLogOut'),
+                    style: 'destructive',
+                    onPress: handleSignOut,
+                  },
+                ],
+              });
+              return;
+            }
+            handleSignOut();
+          }}
+          size="lg"
+          variant={Platform.select({ ios: 'primary', default: 'secondary' })}
+          className="border-border bg-card"
+        >
+          {isSigningOut ? (
+            <ActivityIndicator className="text-destructive" />
+          ) : (
+            <Text className="text-destructive">{t('auth.logOut')}</Text>
+          )}
+        </Button>
+        <AlertComponent title="" buttons={[]} ref={alertRef} />
+      </View>
+      <AndroidTabBarInsetFix />
+    </>
   );
 }
 

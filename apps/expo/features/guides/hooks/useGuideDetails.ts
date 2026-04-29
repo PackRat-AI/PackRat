@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
-import type { Guide } from '../types';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 export const useGuideDetails = (id: string) => {
   return useQuery({
     queryKey: ['guide', id],
     queryFn: async () => {
-      const response = await axiosInstance.get<Guide>(`/api/guides/${id}`);
-      return response.data;
+      const { data, error } = await apiClient.guides({ id }).get();
+      if (error) throw new Error(`Failed to fetch guide: ${error.value}`);
+      return data;
     },
     enabled: !!id,
   });

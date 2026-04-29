@@ -150,6 +150,7 @@ export default function LocationSearchScreen() {
     router.push({
       pathname: '/weather/preview',
       params: {
+        id: location.id.toString(),
         lat: location.lat.toString(),
         lon: location.lon.toString(),
         name: location.name,

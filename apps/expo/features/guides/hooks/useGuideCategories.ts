@@ -1,11 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-
-interface CategoriesResponse {
-  categories: string[];
-  count: number;
-}
 
 export const useGuideCategories = () => {
   const { t } = useTranslation();
@@ -13,11 +8,12 @@ export const useGuideCategories = () => {
   return useQuery({
     queryKey: ['guide-categories'],
     queryFn: async () => {
-      const response = await axiosInstance.get<CategoriesResponse>('/api/guides/categories');
+      const { data, error } = await apiClient.guides.categories.get();
+      if (error) throw new Error(`Failed to fetch guide categories: ${error.value}`);
 
       return [
         t('guides.all'),
-        ...(response.data?.categories.map((category: string) =>
+        ...(data?.categories.map((category: string) =>
           category
             .split('-')
             .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))

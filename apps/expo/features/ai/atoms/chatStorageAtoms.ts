@@ -1,4 +1,5 @@
 import type { UIMessage } from '@ai-sdk/react';
+import { isObject, isString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ChatContext = {
@@ -37,21 +38,19 @@ function isValidMessageArray(data: unknown): data is UIMessage[] {
 
   return data.every(
     (item) =>
-      typeof item === 'object' &&
-      item !== null &&
+      isObject(item) &&
       'id' in item &&
-      typeof item.id === 'string' &&
+      isString((item as { id: unknown }).id) &&
       'role' in item &&
-      typeof item.role === 'string' &&
-      validRoles.includes(item.role) &&
+      isString((item as { role: unknown }).role) &&
+      validRoles.includes((item as { role: string }).role) &&
       'parts' in item &&
-      Array.isArray(item.parts) &&
-      item.parts.every(
+      Array.isArray((item as { parts: unknown }).parts) &&
+      (item as { parts: unknown[] }).parts.every(
         (part: unknown) =>
-          typeof part === 'object' &&
-          part !== null &&
-          'type' in part &&
-          typeof part.type === 'string',
+          isObject(part) &&
+          'type' in (part as object) &&
+          isString((part as { type: unknown }).type),
       ),
   );
 }

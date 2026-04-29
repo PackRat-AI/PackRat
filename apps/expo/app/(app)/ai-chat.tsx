@@ -103,7 +103,7 @@ export default function AIChat() {
         id: '1',
         role: 'assistant',
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
+      } satisfies UIMessage,
     ],
     [context],
   );

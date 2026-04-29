@@ -2,8 +2,9 @@ import { observable, syncState } from '@legendapp/state';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { PackWeightHistoryResponseSchema } from '@packrat/api/schemas/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
 import Storage from 'expo-sqlite/kv-store';
 import { nanoid } from 'nanoid';
@@ -13,25 +14,22 @@ import { packItemsStore } from './packItems';
 import { packsStore } from './packs';
 
 const listPackWeightHistories = async () => {
-  try {
-    const res = await axiosInstance.get('/api/packs/weight-history');
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to list packWeightHistories: ${message}`);
-  }
+  const { data, error } = await apiClient.packs['weight-history'].get();
+  if (error) throw new Error(`Failed to list packWeightHistories: ${error.value}`);
+  return PackWeightHistoryResponseSchema.array().parse(data);
 };
+
 const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHistoryEntry) => {
-  try {
-    const response = await axiosInstance.post(
-      `/api/packs/${packWeightHistoryEntry.packId}/weight-history`,
-      packWeightHistoryEntry,
-    );
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to create packWeightHistoryEntry: ${message}`);
-  }
+  const endpoint = apiClient.packs({ packId: String(packWeightHistoryEntry.packId) })[
+    'weight-history'
+  ];
+  const { data, error } = await endpoint.post({
+    id: packWeightHistoryEntry.id,
+    weight: packWeightHistoryEntry.weight,
+    localCreatedAt: packWeightHistoryEntry.localCreatedAt ?? new Date().toISOString(),
+  });
+  if (error) throw new Error(`Failed to create packWeightHistoryEntry: ${error.value}`);
+  return PackWeightHistoryResponseSchema.array().parse(data)[0] ?? null;
 };
 
 export const packWeigthHistoryStore = observable<Record<string, PackWeightHistoryEntry>>({});
@@ -42,16 +40,14 @@ syncObservable(
     fieldCreatedAt: 'createdAt',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(
-        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-      ),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packWeigthHistory',
     },
     waitFor: isAuthed,
     waitForSet: isAuthed,
     retry: {
-      infinite: true, // Keep retrying until it saves
+      infinite: true,
       backoff: 'exponential',
       maxDelay: 30000,
     },
@@ -61,7 +57,7 @@ syncObservable(
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {
         refresh();
-      }, 30000); // 30 seconds interval
+      }, 30000);
 
       return () => {
         clearInterval(intervalId);

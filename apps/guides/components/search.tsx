@@ -28,6 +28,7 @@ export function Search() {
   // Handle click outside to close search
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // safe-cast: MouseEvent.target is always a DOM Node in this context
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }

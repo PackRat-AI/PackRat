@@ -46,7 +46,7 @@ type SeedItem = {
   name: string;
   description?: string;
   weight: number;
-  weightUnit: string;
+  weightUnit: 'g' | 'oz' | 'kg' | 'lb';
   quantity: number;
   category: string;
   consumable: boolean;

@@ -2,7 +2,6 @@ import { createDb } from '@packrat/api/db';
 import { type User, users } from '@packrat/api/db/schema';
 import { hashPassword } from '@packrat/api/utils/auth';
 import { eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 export type CreateUserInput = {
   email: string;
@@ -16,8 +15,8 @@ export type CreateUserInput = {
 export class UserService {
   private db;
 
-  constructor(c: Context) {
-    this.db = createDb(c);
+  constructor() {
+    this.db = createDb();
   }
 
   async findByEmail(email: string): Promise<User | null> {

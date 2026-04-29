@@ -14,6 +14,6 @@ export default defineCommand({
       category: args.category,
       topN: parsePositiveIntArg(args.top, '--top'),
     });
-    printTable(rows as unknown as Record<string, unknown>[], { title: 'Market Share' });
+    printTable(rows, { title: 'Market Share' });
   },
 });

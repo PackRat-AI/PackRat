@@ -142,7 +142,7 @@ export function PackTemplateListScreen() {
           )}
         </View>
 
-        {filteredTemplates.map((template: PackTemplate) => (
+        {filteredTemplates.map((template) => (
           <View className="px-4 pt-4" key={template.id}>
             <PackTemplateCard templateId={template.id} onPress={handleTemplatePress} />
           </View>
@@ -224,12 +224,13 @@ export function PackTemplateListScreen() {
       <FlatList
         data={filteredTemplates}
         keyExtractor={(item) => item.id}
+        contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item }) => (
           <View className="px-4 pt-4">
             <PackTemplateCard templateId={item.id} onPress={handleTemplatePress} />
           </View>
         )}
-        stickyHeaderIndices={[0]}
+        stickyHeaderIndices={listHeader() ? [0] : undefined}
         stickyHeaderHiddenOnScroll
         ListHeaderComponent={listHeader()}
         ListEmptyComponent={

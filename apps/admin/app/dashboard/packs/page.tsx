@@ -15,6 +15,7 @@ import { DeleteButton } from 'admin-app/components/delete-button';
 import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { useSearchParams } from 'next/navigation';
 
 function TableSkeleton() {
@@ -22,7 +23,10 @@ function TableSkeleton() {
     <div className="rounded-lg border border-border/60 overflow-hidden">
       <div className="h-10 bg-muted/30 border-b border-border/60" />
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0">
+        <div
+          key={`skeleton-row-${i}`}
+          className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0"
+        >
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
@@ -41,7 +45,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'packs'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs() });
     },
   });
 
@@ -97,7 +101,7 @@ export default function PacksPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['admin', 'packs', q],
+    queryKey: queryKeys.admin.packs(q),
     queryFn: () => getPacks({ q }),
   });
 

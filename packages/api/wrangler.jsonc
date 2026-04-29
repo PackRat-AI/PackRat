@@ -2,7 +2,9 @@
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
   "name": "packrat-api",
   "main": "src/index.ts",
-  "compatibility_date": "2024-09-23",
+  // Elysia 1.4+ CloudflareAdapter requires compatibility_date >= 2025-06-01.
+  "compatibility_date": "2025-06-01",
+  // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "logpush": true,
@@ -19,6 +21,20 @@
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
   // - Local development: .dev.vars file (not committed to git)
+  //
+  // Cloudflare Zero Trust / Access (optional — set to enable JWT verification on /api/admin/*):
+  //   CF_ACCESS_TEAM_DOMAIN=<team>.cloudflareaccess.com
+  //   CF_ACCESS_AUD=<Application Audience tag from CF Access dashboard>
+  "rate_limiting": [
+    {
+      "binding": "TOKEN_RATE_LIMITER",
+      "namespace_id": "1",
+      "simple": {
+        "limit": 5,
+        "period": 60
+      }
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "PACKRAT_BUCKET",
@@ -94,16 +110,20 @@
           "to": "AppContainer"
         }
       ]
-    },
-    {
-      // Delete the stale TikTokContainer class so its container app
-      // (packrat-api-tiktokcontainer) is removed, unblocking packrat-api-appcontainer
-      "tag": "v3",
-      "deleted_classes": ["TikTokContainer"]
     }
   ],
   "env": {
     "dev": {
+      "rate_limiting": [
+        {
+          "binding": "TOKEN_RATE_LIMITER",
+          "namespace_id": "1",
+          "simple": {
+            "limit": 5,
+            "period": 60
+          }
+        }
+      ],
       "version_metadata": {
         "binding": "CF_VERSION_METADATA"
       },
