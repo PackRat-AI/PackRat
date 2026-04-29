@@ -155,7 +155,7 @@ export default function CurrentPackScreen() {
             </Text>
             <Text variant="subhead" className="mt-1 text-muted-foreground">
               {t('packs.lastUpdated', {
-                time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+                time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t as any),
               })}
             </Text>
           </View>

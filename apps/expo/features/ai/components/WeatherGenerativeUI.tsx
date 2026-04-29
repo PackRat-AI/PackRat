@@ -1,4 +1,4 @@
-import { Text, useColorScheme } from '@packrat-ai/nativewindui';
+import { Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -44,7 +44,9 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
     case 'input-available':
       return (
         <ToolCard
-          text={t('ai.tools.fetchingWeatherFor', { location: toolInvocation.input.location })}
+          text={t('ai.tools.fetchingWeatherFor', {
+            location: toolInvocation.input.location,
+          })}
           icon="loading"
         />
       );
@@ -56,7 +58,9 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
             <View className="flex-row items-center gap-2">
               <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
               <Text className="text-base font-semibold text-blue-800 dark:text-blue-200">
-                {t('ai.tools.weatherIn', { location: toolInvocation.output.data.location })}
+                {t('ai.tools.weatherIn', {
+                  location: toolInvocation.output.data.location,
+                })}
               </Text>
             </View>
           </View>
@@ -117,14 +121,18 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
         </View>
       ) : (
         <ToolCard
-          text={t('ai.tools.couldntFetchWeather', { location: toolInvocation.input.location })}
+          text={t('ai.tools.couldntFetchWeather', {
+            location: toolInvocation.input.location,
+          })}
           icon="error"
         />
       );
     case 'output-error':
       return (
         <ToolCard
-          text={t('ai.tools.errorFetchingWeather', { location: toolInvocation.input.location })}
+          text={t('ai.tools.errorFetchingWeather', {
+            location: toolInvocation.input.location,
+          })}
           icon="error"
         />
       );

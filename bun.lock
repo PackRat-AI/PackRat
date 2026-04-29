@@ -506,7 +506,7 @@
       "name": "@packrat/ui",
       "version": "2.0.24",
       "dependencies": {
-        "@packrat-ai/nativewindui": "^2.0.4",
+        "@packrat-ai/nativewindui": "^2.0.5",
       },
     },
     "packages/web-ui": {
@@ -1276,7 +1276,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.127.0", "", {}, "sha512-aIYXQBo4lCbO4z0R3FHeucQHpF46l2LbMdxRvqvuRuW2OxdnSkcng5B8+K12spgLDj93rtN3+J2Vac/TIO+ciQ=="],
 
-    "@packrat-ai/nativewindui": ["@packrat-ai/nativewindui@2.0.4", "https://npm.pkg.github.com/download/@packrat-ai/nativewindui/2.0.4/d954acd54263e307ed60e06bd02a7e858027f496", { "peerDependencies": { "@expo/vector-icons": ">=15.0.0", "@gorhom/bottom-sheet": "^5.1.2", "@react-native-community/datetimepicker": "^8.4.0", "@react-native-community/slider": "^5.0.0", "@react-native-picker/picker": "^2.11.0", "@react-native-segmented-control/segmented-control": "^2.5.0", "@react-navigation/drawer": "^7.1.1", "@react-navigation/elements": "^2.3.1", "@react-navigation/native": "^7.0.14", "@rn-primitives/alert-dialog": "^1.1.0", "@rn-primitives/avatar": "^1.0.4", "@rn-primitives/checkbox": "^1.1.0", "@rn-primitives/context-menu": "^1.1.0", "@rn-primitives/dropdown-menu": "^1.1.0", "@rn-primitives/hooks": "^1.1.0", "@rn-primitives/portal": "^1.1.0", "@rn-primitives/slot": "^1.1.0", "@shopify/flash-list": "^2.0.0", "class-variance-authority": "^0.7.0", "clsx": "^2.1.0", "expo-blur": "~55.0.0", "expo-device": "~55.0.0", "expo-glass-effect": "~55.0.0", "expo-haptics": "~55.0.0", "expo-image": "~55.0.0", "expo-linear-gradient": "~55.0.0", "expo-navigation-bar": "~55.0.0", "expo-router": "~55.0.0", "expo-symbols": "~55.0.0", "nativewind": "^4.2.3", "react": ">=19.2.0", "react-native": ">=0.83.0", "react-native-keyboard-controller": "^1.21.0", "react-native-reanimated": ">=4.2.0", "react-native-safe-area-context": ">=5.6.0", "react-native-screens": ">=4.23.0", "react-native-uitextview": "^1.1.4", "rn-icon-mapper": "^0.0.1", "tailwind-merge": "^2.2.1" } }, "sha512-znht9vqMeQP+70gb3jXVrom2mkhHN/N0ZJoaXWtjKrDHd07al2U1nxwBfvQCx8NIA+E91N4PFJuS3nsvvKMFOg=="],
+    "@packrat-ai/nativewindui": ["@packrat-ai/nativewindui@2.0.5", "https://npm.pkg.github.com/download/@packrat-ai/nativewindui/2.0.5/750854c71bd0e25b0c3a62bb925ef4134735fc18", { "peerDependencies": { "@expo/vector-icons": ">=15.0.0", "@gorhom/bottom-sheet": "^5.1.2", "@react-native-community/datetimepicker": "^8.4.0", "@react-native-community/slider": "^5.0.0", "@react-native-picker/picker": "^2.11.0", "@react-native-segmented-control/segmented-control": "^2.5.0", "@react-navigation/drawer": "^7.1.1", "@react-navigation/elements": "^2.3.1", "@react-navigation/native": "^7.0.14", "@rn-primitives/alert-dialog": "^1.1.0", "@rn-primitives/avatar": "^1.0.4", "@rn-primitives/checkbox": "^1.1.0", "@rn-primitives/context-menu": "^1.1.0", "@rn-primitives/dropdown-menu": "^1.1.0", "@rn-primitives/hooks": "^1.1.0", "@rn-primitives/portal": "^1.1.0", "@rn-primitives/slot": "^1.1.0", "@shopify/flash-list": "^2.0.0", "class-variance-authority": "^0.7.0", "clsx": "^2.1.0", "expo-blur": "~55.0.0", "expo-device": "~55.0.0", "expo-glass-effect": "~55.0.0", "expo-haptics": "~55.0.0", "expo-image": "~55.0.0", "expo-linear-gradient": "~55.0.0", "expo-navigation-bar": "~55.0.0", "expo-router": "~55.0.0", "expo-symbols": "~55.0.0", "nativewind": "^4.2.3", "react": ">=19.2.0", "react-native": ">=0.83.0", "react-native-keyboard-controller": "^1.21.0", "react-native-reanimated": ">=4.2.0", "react-native-safe-area-context": ">=5.6.0", "react-native-screens": ">=4.23.0", "react-native-uitextview": "^1.1.4", "rn-icon-mapper": "^0.0.1", "tailwind-merge": "^2.2.1" } }, "sha512-Q/pw2+zLeUGzzUUgSDKk3qam9u2iN8Q/xlLqYJHrA+eHLdh7MbvTwvM1ETcmNwjUdpXNyNjewshDGpT73VKCng=="],
 
     "@packrat/analytics": ["@packrat/analytics@workspace:packages/analytics"],
 
@@ -4121,8 +4121,6 @@
     "@manypkg/tools/js-yaml": ["js-yaml@4.1.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA=="],
 
     "@modelcontextprotocol/sdk/jose": ["jose@6.2.2", "", {}, "sha512-d7kPDd34KO/YnzaDOlikGpOurfF0ByC2sEV4cANCtdqLlTfBlw2p14O/5d/zv40gJPbIQxfES3nSx1/oYNyuZQ=="],
-
-    "@packrat-ai/nativewindui/react-native-keyboard-controller": ["react-native-keyboard-controller@1.18.5", "", { "dependencies": { "react-native-is-edge-to-edge": "^1.2.1" }, "peerDependencies": { "react": "*", "react-native": "*", "react-native-reanimated": ">=3.0.0" } }, "sha512-wbYN6Tcu3G5a05dhRYBgjgd74KqoYWuUmroLpigRg9cXy5uYo7prTMIvMgvLtARQtUF7BOtFggUnzgoBOgk0TQ=="],
 
     "@pnpm/network.ca-file/graceful-fs": ["graceful-fs@4.2.10", "", {}, "sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA=="],
 
