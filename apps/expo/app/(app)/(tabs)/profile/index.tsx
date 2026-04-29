@@ -253,7 +253,7 @@ function ListFooterComponent() {
     try {
       setIsSigningOut(true);
       await signOut();
-      // Navigation to /auth is handled reactively by AppLayout when isAuthed becomes false.
+      router.replace('/auth');
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
