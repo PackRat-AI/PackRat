@@ -14,9 +14,8 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { use$ } from '@legendapp/state/react';
-import { router, Stack, useRouter } from 'expo-router';
+import { Redirect, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,20 +31,19 @@ export default function AppLayout() {
   const insets = useSafeAreaInsets();
   const isAuthenticated = use$(isAuthed);
 
-  // When the user signs out, isAuthed becomes false. Redirect to the auth
-  // entry screen from the layout so the navigation fires at the root level.
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/auth');
-    }
-  }, [isAuthenticated, isLoading]);
-
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
+  }
+
+  // When the user signs out, isAuthed becomes false. Render a Redirect so the
+  // router unmounts the (app) tree (including the iOS NativeTabs that
+  // otherwise swallows imperative router.replace calls) and lands on /auth.
+  if (!isAuthenticated) {
+    return <Redirect href="/auth" />;
   }
 
   return (
