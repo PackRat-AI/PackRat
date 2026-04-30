@@ -13,7 +13,7 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { CommonActions } from '@react-navigation/native';
-import { Stack, useNavigation, useRouter } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -24,24 +24,24 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-// Dispatches from inside the (app) screen so useNavigation() returns the ROOT Stack's
-// navigation prop — bypassing NativeTabs on iOS, which silently drops router.replace().
-// CommonActions.reset unmounts (app) + NativeTabs and replaces root state with 'auth'.
+// useNavigationContainerRef() is the absolute root of the navigation tree — bypasses
+// NativeTabs on iOS, which silently drops router.replace() and navigate() actions.
+// CommonActions.reset resets the root Stack to show only 'auth', unmounting (app).
 function SignOutNavigator() {
-  const navigation = useNavigation();
+  const navigationRef = useNavigationContainerRef();
   const signOutRequested = useAtomValue(signOutRequestedAtom);
   const setSignOutRequested = useSetAtom(signOutRequestedAtom);
 
   useEffect(() => {
     if (!signOutRequested) return;
     setSignOutRequested(false);
-    navigation.dispatch(
+    navigationRef.dispatch(
       CommonActions.reset({
         index: 0,
         routes: [{ name: 'auth' }],
       }),
     );
-  }, [navigation, signOutRequested, setSignOutRequested]);
+  }, [navigationRef, signOutRequested, setSignOutRequested]);
 
   return null;
 }
