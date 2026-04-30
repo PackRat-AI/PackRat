@@ -67,7 +67,11 @@ export const createReadOnlyDb = () => {
  */
 export const createOsmDb = () => {
   const { OSM_DATABASE_URL } = getEnv();
-  if (!OSM_DATABASE_URL) throw new Error('OSM_DATABASE_URL is not configured');
+  if (!OSM_DATABASE_URL) {
+    throw new Error(
+      'OSM_DATABASE_URL is not configured — trail features are disabled on this server',
+    );
+  }
   return createConnection(OSM_DATABASE_URL);
 };
 

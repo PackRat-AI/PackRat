@@ -53,9 +53,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         return status(400, { error: 'Provide q (text) and/or lat+lon for spatial search' });
       }
 
-      const db = createOsmDb();
-
       try {
+        const db = createOsmDb();
         const conditions: ReturnType<typeof sql>[] = [];
 
         if (q) conditions.push(sql`name ILIKE ${`%${q}%`}`);
@@ -108,6 +107,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           bbox: row.bbox ? JSON.parse(row.bbox) : null,
         }));
       } catch (error) {
+        if (error instanceof Error && error.message.includes('not configured')) {
+          return status(503, { error: 'Trail features are not enabled on this server' });
+        }
         console.error('Trail search error:', error);
         return status(500, { error: 'Trail search failed' });
       }
@@ -148,9 +150,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         return status(400, { error: 'osmId must be a positive integer' });
       }
 
-      const db = createOsmDb();
-
       try {
+        const db = createOsmDb();
         const result = await db.execute(sql`
           SELECT
             osm_id::text,
@@ -188,6 +189,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           geometry,
         };
       } catch (error) {
+        if (error instanceof Error && error.message.includes('not configured')) {
+          return status(503, { error: 'Trail features are not enabled on this server' });
+        }
         console.error('Trail geometry error:', error);
         return status(500, { error: 'Failed to fetch trail geometry' });
       }
@@ -218,9 +222,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         return status(400, { error: 'osmId must be a positive integer' });
       }
 
-      const db = createOsmDb();
-
       try {
+        const db = createOsmDb();
         const result = await db.execute(sql`
           SELECT
             osm_id::text,
@@ -249,6 +252,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           bbox: row.bbox ? JSON.parse(row.bbox) : null,
         };
       } catch (error) {
+        if (error instanceof Error && error.message.includes('not configured')) {
+          return status(503, { error: 'Trail features are not enabled on this server' });
+        }
         console.error('Trail fetch error:', error);
         return status(500, { error: 'Failed to fetch trail' });
       }

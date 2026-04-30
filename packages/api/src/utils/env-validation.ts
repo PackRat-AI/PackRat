@@ -12,7 +12,8 @@ export const apiEnvSchema = z.object({
   NEON_DATABASE_URL: z.string().url(),
   NEON_DATABASE_URL_READONLY: z.string().url(),
   // Dedicated OSM/trail DB (separate from the main app DB).
-  // Optional — omit when trails are disabled or when OSM_HYPERDRIVE provides the URL at runtime.
+  // Optional: trail routes return 503 when absent. For Cloudflare Workers,
+  // set to env.OSM_HYPERDRIVE.connectionString (Hyperdrive binding).
   OSM_DATABASE_URL: z.string().url().optional(),
 
   // Authentication & Security
