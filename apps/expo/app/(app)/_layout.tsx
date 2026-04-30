@@ -14,7 +14,8 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { use$ } from '@legendapp/state/react';
-import { type Href, router, Stack, useRouter } from 'expo-router';
+import { CommonActions } from '@react-navigation/native';
+import { Stack, useNavigation, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -31,6 +32,7 @@ export default function AppLayout() {
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
   const isAuthenticated = use$(isAuthed);
+  const navigation = useNavigation();
 
   // Track whether user has ever been authenticated in this session.
   // Used to distinguish "just signed out" from "never logged in" so we
@@ -47,13 +49,21 @@ export default function AppLayout() {
   // the action is dispatched. A router.replace issued directly from an async
   // handler (e.g. signOut) can race with NativeTabs still being focused,
   // causing the action to be silently swallowed.
+  //
+  // We dispatch CommonActions.reset via useNavigation() (which targets the
+  // root Stack directly) rather than router.replace (which goes through the
+  // globally focused navigator and can be intercepted by NativeTabs on iOS).
   useEffect(() => {
     if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
       wasAuthenticated.current = false;
-      // safe-cast: '/auth' is a compile-time string literal accepted by Expo Router
-      router.replace('/auth' as Href);
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'auth' }],
+        }),
+      );
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, navigation]);
 
   if (isLoading) {
     return (
