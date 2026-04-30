@@ -73,7 +73,6 @@ export default function AppLayout() {
           options={getCatalogAddToPackItemDetailsOptions(t)}
         />
         <Stack.Screen name="ai-chat" />
-        <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
         <Stack.Screen name="weather/index" options={{ headerShown: false }} />
         <Stack.Screen
@@ -104,7 +103,7 @@ export default function AppLayout() {
         />
 
         <Stack.Screen
-          name="current-pack"
+          name="current-pack/[id]"
           options={{
             headerShown: false,
             presentation: 'modal',
@@ -128,7 +127,7 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen
-          name="weight-analysis"
+          name="weight-analysis/[id]"
           options={{
             headerShown: false,
             presentation: 'modal',
