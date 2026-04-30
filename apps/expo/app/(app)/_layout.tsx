@@ -350,12 +350,6 @@ const getItemEditOptions = (t: TranslationFunction) =>
     title: t('common.edit'),
   }) as const;
 
-const getCatalogListOptions = (t: TranslationFunction) =>
-  ({
-    title: t('catalog.itemsCatalog'),
-    headerLargeTitle: true,
-  }) as const;
-
 const getCatalogItemDetailOptions = (t: TranslationFunction) =>
   ({
     title: t('items.itemDetails'),
