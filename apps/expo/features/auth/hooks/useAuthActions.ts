@@ -211,9 +211,9 @@ export function useAuthActions() {
       userStore.set(null);
       isAuthed.set(false);
       setNeedsReauth(false);
-      // Keep isLoading=true so AppLayout renders ActivityIndicator (no NativeTabs in
-      // the focus chain). Navigate after React processes the loading state so the
-      // focus chain is empty — same window that makes useAuthInit work at startup.
+      setIsLoading(false);
+      // Yield to let React process the state changes (unmounts NativeTabs focus chain),
+      // then navigate — same window that makes useAuthInit work at startup.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
       // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
       router.replace('/auth' as Href);
