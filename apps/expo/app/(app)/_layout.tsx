@@ -1,4 +1,5 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { NavigationContainerRefContext } from '@react-navigation/core';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { needsReauthAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -12,9 +13,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { type Href, router, Stack, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,33 +33,32 @@ export default function AppLayout() {
   // reliable than LegendState's use$(isAuthed) on iOS, where the computed
   // observable update is deferred and doesn't trigger a re-render in time.
   const isAuthenticated = Boolean(useAtomValue(tokenAtom));
+  // NavigationContainerRefContext provides the root NavigationContainer's ref.
+  // We use resetRoot() rather than router.replace('/auth') because expo-router's
+  // replace() queues an action via routingQueue → useEffect dispatch chain, which
+  // can silently drop the REPLACE on iOS when NativeTabs state is still present
+  // in the navigation tree during the sign-out transition.
+  const navContainerRef = useContext(NavigationContainerRefContext);
 
   // Track whether user has ever been authenticated in this session.
   // Used to distinguish "just signed out" from "never logged in" so we
   // don't overwrite useAuthInit's first-run navigation (which carries
-  // the showSkipLoginBtn param) with a plain router.replace('/auth').
+  // the showSkipLoginBtn param) with a root reset.
   const wasAuthenticated = useRef(false);
   useEffect(() => {
     if (isAuthenticated) wasAuthenticated.current = true;
   }, [isAuthenticated]);
 
-  // Navigate to auth after sign-out. This fires in a useEffect — AFTER
-  // AppLayout has committed a null render — which guarantees NativeTabs (iOS)
-  // has been removed from the React Navigation focus-listener chain before
-  // the action is dispatched.
-  //
-  // We use router.replace (which dispatches through Expo Router's navigationRef
-  // to the root Stack) rather than navigation.dispatch(CommonActions.reset)
-  // via useNavigation(), because useNavigation() in a layout file resolves to
-  // the layout's OWN inner navigator rather than the root Stack — meaning the
-  // auth route is not found and the dispatch is silently ignored.
+  // Navigate to auth after sign-out. Fires AFTER AppLayout has committed a null
+  // render, ensuring NativeTabs (iOS) is removed from the React component tree.
+  // resetRoot dispatches RESET directly to the root Stack, bypassing expo-router's
+  // routingQueue/linkTo/findDivergentState chain.
   useEffect(() => {
     if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
       wasAuthenticated.current = false;
-      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
-      router.replace('/auth' as Href);
+      navContainerRef?.resetRoot({ index: 0, routes: [{ name: 'auth' }] });
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, navContainerRef]);
 
   if (isLoading) {
     return (
