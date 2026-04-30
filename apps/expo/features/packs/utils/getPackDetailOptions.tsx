@@ -1,4 +1,4 @@
-import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
+import { Alert, Button, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
