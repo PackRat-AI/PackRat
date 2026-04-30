@@ -252,11 +252,6 @@ function ListFooterComponent() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      // Navigate FIRST while still inside (tabs)/profile so the imperative
-      // navigation isn't suppressed by iOS NativeTabs after the auth-state
-      // cascade unmounts the Profile component. Then perform the sign-out
-      // network/storage work from the now-mounted /auth screen.
-      router.replace('/auth');
       await signOut();
     } catch (error) {
       console.error('Logout failed:', error);

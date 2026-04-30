@@ -15,6 +15,7 @@ import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
+import { Platform } from 'react-native';
 import {
   isLoadingAtom,
   needsReauthAtom,
@@ -213,6 +214,12 @@ export function useAuthActions() {
       isAuthed.set(false);
       setNeedsReauth(false);
       setIsLoading(false);
+      // iOS NativeTabs (UITabBarController) swallows router.replace calls made
+      // from inside a tab. Force a full JS bundle reload so the app restarts
+      // without any auth tokens and lands on the auth screen naturally.
+      if (Platform.OS === 'ios') {
+        await Updates.reloadAsync();
+      }
     }
   };
 
