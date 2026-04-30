@@ -55,6 +55,7 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
       wasAuthenticated.current = false;
+      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
       router.replace('/auth' as Href);
     }
   }, [isAuthenticated, isLoading]);
