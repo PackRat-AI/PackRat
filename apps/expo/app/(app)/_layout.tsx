@@ -14,8 +14,9 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { use$ } from '@legendapp/state/react';
-import { Stack, useRouter } from 'expo-router';
+import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,6 +31,29 @@ export default function AppLayout() {
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
   const isAuthenticated = use$(isAuthed);
+
+  // Track whether user has ever been authenticated in this session.
+  // Used to distinguish "just signed out" from "never logged in" so we
+  // don't overwrite useAuthInit's first-run navigation (which carries
+  // the showSkipLoginBtn param) with a plain router.replace('/auth').
+  const wasAuthenticated = useRef(false);
+  useEffect(() => {
+    if (isAuthenticated) wasAuthenticated.current = true;
+  }, [isAuthenticated]);
+
+  // Navigate to auth after sign-out. This fires in a useEffect — AFTER
+  // AppLayout has committed a null render — which guarantees NativeTabs (iOS)
+  // has been removed from the React Navigation focus-listener chain before
+  // the action is dispatched. A router.replace issued directly from an async
+  // handler (e.g. signOut) can race with NativeTabs still being focused,
+  // causing the action to be silently swallowed.
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
+      wasAuthenticated.current = false;
+      // safe-cast: '/auth' is a compile-time string literal accepted by Expo Router
+      router.replace('/auth' as Href);
+    }
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (

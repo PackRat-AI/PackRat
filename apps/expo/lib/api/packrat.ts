@@ -6,6 +6,7 @@ import {
   refreshTokenAtom,
   tokenAtom,
 } from 'expo-app/features/auth/atoms/authAtoms';
+import { isAuthed } from 'expo-app/features/auth/store';
 import Storage from 'expo-sqlite/kv-store';
 
 /**
@@ -34,7 +35,14 @@ export const apiClient = createApiClient({
       await store.set(refreshTokenAtom, refreshToken);
     },
     onNeedsReauth: () => {
-      store.set(needsReauthAtom, true);
+      // Only signal re-auth when the user is still authenticated. An
+      // in-flight request may resolve after sign-out clears the tokens;
+      // without this guard, the race would set needsReauthAtom = true
+      // AFTER signOut has already reset it to false, showing "Resume
+      // Sync" on the auth screen instead of the normal sign-in copy.
+      if (isAuthed.peek()) {
+        store.set(needsReauthAtom, true);
+      }
     },
   },
 });

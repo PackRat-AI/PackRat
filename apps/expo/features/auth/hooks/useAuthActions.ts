@@ -210,11 +210,15 @@ export function useAuthActions() {
       await clearLocalData();
       userStore.set(null);
       isAuthed.set(false);
-      setNeedsReauth(false);
       setIsLoading(false);
       // Yield to let React process the state changes (unmounts NativeTabs focus chain),
       // then navigate — same window that makes useAuthInit work at startup.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      // Reset needsReauth after the yield so any in-flight API requests that race
+      // with token clearing (and call onNeedsReauth) have already resolved before
+      // we clear the flag. The AppLayout useEffect handles the iOS navigation;
+      // this router.replace is a belt-and-suspenders fast-path for Android.
+      setNeedsReauth(false);
       // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
       router.replace('/auth' as Href);
     }
