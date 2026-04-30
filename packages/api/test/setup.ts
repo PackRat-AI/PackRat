@@ -1,4 +1,5 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import { isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -81,12 +82,7 @@ vi.mock('elysia', async (importOriginal) => {
       // Unwrap both here before every handler fires.
       instance.onBeforeHandle((ctx) => {
         const unwrap = (val: unknown): unknown => {
-          if (
-            val &&
-            typeof val === 'object' &&
-            'value' in (val as object) &&
-            Object.keys(val as object).length === 1
-          )
+          if (isObject(val) && 'value' in val && Object.keys(val).length === 1)
             return (val as { value: unknown }).value;
           return val;
         };
