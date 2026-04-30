@@ -1,9 +1,62 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
-const { getSentryExpoConfig } = require('@sentry/react-native/metro'); // ensures unique Debug IDs get assigned to the generated bundles and source maps uploaded to Sentry [read more](https://docs.sentry.io/platforms/react-native/manual-setup/expo/#add-sentry-metro-plugin)
+const path = require('node:path');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro'); // ensures unique Debug IDs get assigned to the generated bundles and source maps uploaded to Sentry [read more](https://docs.sentry.io/platforms/react-native/manual-setup/expo/#add-sentry-metro-native-setup)
 const { withNativeWind } = require('nativewind/metro');
 
 /** @type {import('expo/metro-config').MetroConfig} */
 // eslint-disable-next-line no-undef
 const config = getSentryExpoConfig(__dirname);
+
+config.resolver = {
+  ...config.resolver,
+  assetExts: [...(config.resolver?.assetExts ?? []), 'wasm'],
+  // Exclude the ESM "import" condition so packages like Jotai resolve to their
+  // CJS builds instead of .mjs files that contain import.meta (invalid in
+  // Metro's __d() CJS module wrapper).
+  unstable_conditionNames: ['require', 'default', 'react-native', 'browser'],
+};
+
+const originalResolveRequest = config.resolver?.resolveRequest;
+config.resolver = {
+  ...config.resolver,
+  // biome-ignore lint/complexity/useMaxParams: Metro resolveRequest requires exactly 3 params
+  resolveRequest: (context, moduleName, platform) => {
+    if (platform === 'web' && moduleName === 'react-native-maps') {
+      return { filePath: path.join(__dirname, 'mocks/react-native-maps.ts'), type: 'sourceFile' };
+    }
+    if (
+      platform === 'web' &&
+      (moduleName === '@react-native-ai/llama' || moduleName === 'llama.rn')
+    ) {
+      return {
+        filePath: path.join(__dirname, 'mocks/react-native-ai-llama.ts'),
+        type: 'sourceFile',
+      };
+    }
+    if (platform === 'web' && moduleName === '@react-native-ai/apple') {
+      return {
+        filePath: path.join(__dirname, 'mocks/react-native-ai-apple.ts'),
+        type: 'sourceFile',
+      };
+    }
+    if (platform === 'web' && moduleName === '@react-native-async-storage/async-storage') {
+      return { filePath: path.join(__dirname, 'mocks/async-storage.ts'), type: 'sourceFile' };
+    }
+    if (platform === 'web' && moduleName === 'react-native-blob-util') {
+      return {
+        filePath: path.join(__dirname, 'mocks/react-native-blob-util.ts'),
+        type: 'sourceFile',
+      };
+    }
+    if (platform === 'web' && moduleName === 'expo-sqlite/kv-store') {
+      return {
+        filePath: path.join(__dirname, 'mocks/expo-sqlite-kv-store.ts'),
+        type: 'sourceFile',
+      };
+    }
+    if (originalResolveRequest) return originalResolveRequest(context, moduleName, platform);
+    return context.resolveRequest(context, moduleName, platform);
+  },
+};
 
 module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });
