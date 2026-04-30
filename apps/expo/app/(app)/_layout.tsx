@@ -1,7 +1,6 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { CommonActions } from '@react-navigation/native';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { needsReauthAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
@@ -13,9 +12,8 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,35 +27,6 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
-  // tokenAtom is a Jotai atom (set via setToken in all auth actions) — more
-  // reliable than LegendState's use$(isAuthed) on iOS, where the computed
-  // observable update is deferred and doesn't trigger a re-render in time.
-  const isAuthenticated = Boolean(useAtomValue(tokenAtom));
-  // useNavigationContainerRef() returns store.navigationRef — expo-router's own
-  // navigation container ref. resetRoot() bypasses the routingQueue → useEffect
-  // dispatch chain that router.replace() uses, dispatching RESET directly to the
-  // root Stack. This is immune to iOS NativeTabs swallowing the action.
-  const navRef = useNavigationContainerRef();
-
-  // Track whether user has ever been authenticated in this session.
-  // Used to distinguish "just signed out" from "never logged in" so we
-  // don't overwrite useAuthInit's first-run navigation (which carries
-  // the showSkipLoginBtn param) with a root reset.
-  const wasAuthenticated = useRef(false);
-  useEffect(() => {
-    if (isAuthenticated) wasAuthenticated.current = true;
-  }, [isAuthenticated]);
-
-  // Navigate to auth after sign-out. Uses dispatch(CommonActions.reset) without
-  // a target key so the root Stack handles it directly — bypassing both
-  // expo-router's routingQueue/findDivergentState chain AND resetRoot's
-  // keyedListeners.getState.root dependency (which can be null and silently no-op).
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
-      wasAuthenticated.current = false;
-      navRef.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'auth' }] }));
-    }
-  }, [isAuthenticated, isLoading, navRef]);
 
   if (isLoading) {
     return (
@@ -69,11 +38,9 @@ export default function AppLayout() {
 
   // Do NOT return null when !isAuthenticated here.
   // On iOS with NativeTabs, returning null unmounts the React tree but the native
-  // UITabBarController persists in the native layer. When navRef.dispatch fires
-  // from the useEffect below (after the null-render commit), the navigation state
-  // is already inconsistent and the dispatch silently fails.
-  // Instead, we keep the Stack/NativeTabs mounted and let the dispatch below
-  // transition the root Stack to 'auth' while the native views are still alive.
+  // UITabBarController persists. Navigation after sign-out is handled imperatively
+  // in signOut() via router.replace('/auth') — keeping the Stack/NativeTabs mounted
+  // until expo-router transitions the root navigator is required for this to work.
   // useAuthInit handles the initial-unauthenticated-load case via router.replace.
 
   return (

@@ -217,13 +217,17 @@ export function useAuthActions() {
       await clearLocalData();
       userStore.set(null);
       setIsLoading(false);
-      // Yield to let React process the state changes (unmounts NativeTabs focus chain),
-      // then clear the reauth flag. Any in-flight API requests that race with token
-      // clearing (and call onNeedsReauth) have already resolved by this point.
-      // Navigation is handled by the AppLayout useEffect via CommonActions.reset,
-      // which dispatches directly to the root Stack — immune to NativeTabs swallowing.
+      // Yield to let React process the state changes before navigating.
+      // Any in-flight API requests that race with token clearing (and call
+      // onNeedsReauth) have already resolved by this point.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
       setNeedsReauth(false);
+      // Navigate imperatively here (mirroring deleteAccount) rather than from an
+      // AppLayout useEffect — on iOS, NativeTabs swallows effect-based navigation
+      // dispatched after token state clears. Calling router.replace directly from
+      // the signOut execution context is reliable on both iOS and Android.
+      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
+      router.replace('/auth' as Href);
     }
   };
 
