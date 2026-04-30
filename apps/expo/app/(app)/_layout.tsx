@@ -67,9 +67,14 @@ export default function AppLayout() {
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  // Do NOT return null when !isAuthenticated here.
+  // On iOS with NativeTabs, returning null unmounts the React tree but the native
+  // UITabBarController persists in the native layer. When navRef.dispatch fires
+  // from the useEffect below (after the null-render commit), the navigation state
+  // is already inconsistent and the dispatch silently fails.
+  // Instead, we keep the Stack/NativeTabs mounted and let the dispatch below
+  // transition the root Stack to 'auth' while the native views are still alive.
+  // useAuthInit handles the initial-unauthenticated-load case via router.replace.
 
   return (
     <>
