@@ -12,8 +12,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { CommonActions } from '@react-navigation/native';
-import { Stack, useNavigation, useRouter } from 'expo-router';
+import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -33,7 +32,6 @@ export default function AppLayout() {
   // reliable than LegendState's use$(isAuthed) on iOS, where the computed
   // observable update is deferred and doesn't trigger a re-render in time.
   const isAuthenticated = Boolean(useAtomValue(tokenAtom));
-  const navigation = useNavigation();
 
   // Track whether user has ever been authenticated in this session.
   // Used to distinguish "just signed out" from "never logged in" so we
@@ -47,24 +45,19 @@ export default function AppLayout() {
   // Navigate to auth after sign-out. This fires in a useEffect — AFTER
   // AppLayout has committed a null render — which guarantees NativeTabs (iOS)
   // has been removed from the React Navigation focus-listener chain before
-  // the action is dispatched. A router.replace issued directly from an async
-  // handler (e.g. signOut) can race with NativeTabs still being focused,
-  // causing the action to be silently swallowed.
+  // the action is dispatched.
   //
-  // We dispatch CommonActions.reset via useNavigation() (which targets the
-  // root Stack directly) rather than router.replace (which goes through the
-  // globally focused navigator and can be intercepted by NativeTabs on iOS).
+  // We use router.replace (which dispatches through Expo Router's navigationRef
+  // to the root Stack) rather than navigation.dispatch(CommonActions.reset)
+  // via useNavigation(), because useNavigation() in a layout file resolves to
+  // the layout's OWN inner navigator rather than the root Stack — meaning the
+  // auth route is not found and the dispatch is silently ignored.
   useEffect(() => {
     if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
       wasAuthenticated.current = false;
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'auth' }],
-        }),
-      );
+      router.replace('/auth' as Href);
     }
-  }, [isAuthenticated, isLoading, navigation]);
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) {
     return (
