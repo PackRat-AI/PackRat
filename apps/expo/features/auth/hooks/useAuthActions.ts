@@ -208,11 +208,14 @@ export function useAuthActions() {
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
+      // Set isAuthed = false FIRST so the onAccessTokenRefreshed / onRefreshTokenRefreshed
+      // guards in packrat.ts see the sign-out state before any in-flight refresh completes
+      // and tries to re-set tokenAtom back to a non-null value.
+      isAuthed.set(false);
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();
       userStore.set(null);
-      isAuthed.set(false);
       setIsLoading(false);
       // Yield to let React process the state changes (unmounts NativeTabs focus chain),
       // then clear the reauth flag. Any in-flight API requests that race with token

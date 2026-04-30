@@ -29,10 +29,18 @@ export const apiClient = createApiClient({
     getAccessToken: () => Storage.getItem('access_token'),
     getRefreshToken: () => Storage.getItem('refresh_token'),
     onAccessTokenRefreshed: async (accessToken) => {
-      await store.set(tokenAtom, accessToken);
+      // Guard against re-setting the token after sign-out has cleared it.
+      // Without this, a token refresh in-flight during sign-out can call
+      // store.set(tokenAtom, accessToken) AFTER setToken(null), keeping the
+      // app authenticated and leaving NativeTabs mounted on iOS.
+      if (isAuthed.peek()) {
+        await store.set(tokenAtom, accessToken);
+      }
     },
     onRefreshTokenRefreshed: async (refreshToken) => {
-      await store.set(refreshTokenAtom, refreshToken);
+      if (isAuthed.peek()) {
+        await store.set(refreshTokenAtom, refreshToken);
+      }
     },
     onNeedsReauth: () => {
       // Only signal re-auth when the user is still authenticated. An
