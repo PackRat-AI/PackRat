@@ -1,4 +1,5 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { CommonActions } from '@react-navigation/native';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -14,8 +15,9 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { use$ } from '@legendapp/state/react';
-import { Redirect, Stack, useRouter } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,6 +32,22 @@ export default function AppLayout() {
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
   const isAuthenticated = use$(isAuthed);
+  const navRef = useNavigationContainerRef();
+
+  // iOS NativeTabs (UITabBarController) intercepts all router.replace/navigate
+  // calls dispatched from inside a tab — including <Redirect> which uses
+  // router.replace internally. Dispatch directly to the ROOT navigation
+  // container to bypass the NativeTabs hierarchy entirely.
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'auth' }],
+        }),
+      );
+    }
+  }, [isLoading, isAuthenticated, navRef]);
 
   if (isLoading) {
     return (
@@ -39,11 +57,8 @@ export default function AppLayout() {
     );
   }
 
-  // When the user signs out, isAuthed becomes false. Render a Redirect so the
-  // router unmounts the (app) tree (including the iOS NativeTabs that
-  // otherwise swallows imperative router.replace calls) and lands on /auth.
   if (!isAuthenticated) {
-    return <Redirect href="/auth" />;
+    return null;
   }
 
   return (

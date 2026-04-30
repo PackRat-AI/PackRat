@@ -214,11 +214,15 @@ export function useAuthActions() {
       isAuthed.set(false);
       setNeedsReauth(false);
       setIsLoading(false);
-      // iOS NativeTabs (UITabBarController) swallows router.replace calls made
-      // from inside a tab. Force a full JS bundle reload so the app restarts
-      // without any auth tokens and lands on the auth screen naturally.
+      // Best-effort full JS bundle reload on iOS — provides a clean restart
+      // if expo-updates is available. Navigation fallback is CommonActions.reset
+      // dispatched from AppLayout's useEffect when isAuthed becomes false.
       if (Platform.OS === 'ios') {
-        await Updates.reloadAsync();
+        try {
+          await Updates.reloadAsync();
+        } catch {
+          // expo-updates unavailable in this build; AppLayout handles redirect
+        }
       }
     }
   };
