@@ -1,8 +1,7 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { needsReauthAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -13,7 +12,6 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { use$ } from '@legendapp/state/react';
 import { CommonActions } from '@react-navigation/native';
 import { Stack, useNavigation, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
@@ -31,7 +29,10 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
-  const isAuthenticated = use$(isAuthed);
+  // tokenAtom is a Jotai atom (set via setToken in all auth actions) — more
+  // reliable than LegendState's use$(isAuthed) on iOS, where the computed
+  // observable update is deferred and doesn't trigger a re-render in time.
+  const isAuthenticated = Boolean(useAtomValue(tokenAtom));
   const navigation = useNavigation();
 
   // Track whether user has ever been authenticated in this session.
