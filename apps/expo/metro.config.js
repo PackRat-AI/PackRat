@@ -33,6 +33,7 @@ const WEB_STUBS = {
   // expo-file-system throws UnavailabilityError on web; stub all ops as no-ops
   'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
   'expo-updates': 'mocks/expo-updates.ts',
+  'expo-dev-client': 'mocks/expo-dev-client.ts',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;
