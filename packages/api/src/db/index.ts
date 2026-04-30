@@ -67,6 +67,7 @@ export const createReadOnlyDb = () => {
  */
 export const createOsmDb = () => {
   const { OSM_DATABASE_URL } = getEnv();
+  if (!OSM_DATABASE_URL) throw new Error('OSM_DATABASE_URL is not configured');
   return createConnection(OSM_DATABASE_URL);
 };
 

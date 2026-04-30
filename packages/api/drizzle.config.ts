@@ -8,6 +8,10 @@ export default defineConfig({
   // Without this, drizzle-kit push would try to drop them.
   tablesFilter: ['!osm_ways', '!osm_routes'],
   dbCredentials: {
-    url: process.env.NEON_DATABASE_URL ?? '',
+    url:
+      process.env.NEON_DATABASE_URL ??
+      (() => {
+        throw new Error('NEON_DATABASE_URL is not set');
+      })(),
   },
 });

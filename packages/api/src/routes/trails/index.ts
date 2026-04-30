@@ -353,7 +353,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           return status(422, { error: 'Could not extract trail metadata from page' });
         }
 
-        return { title, description, image, url };
+        return { title, description, image, url: response.url };
       } catch (error) {
         if (error instanceof Error && error.name === 'TimeoutError') {
           return status(504, { error: 'AllTrails request timed out' });
