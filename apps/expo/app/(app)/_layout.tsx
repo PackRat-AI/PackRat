@@ -1,5 +1,4 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { NavigationContainerRefContext } from '@react-navigation/core';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { needsReauthAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -13,9 +12,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useContext, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,12 +32,11 @@ export default function AppLayout() {
   // reliable than LegendState's use$(isAuthed) on iOS, where the computed
   // observable update is deferred and doesn't trigger a re-render in time.
   const isAuthenticated = Boolean(useAtomValue(tokenAtom));
-  // NavigationContainerRefContext provides the root NavigationContainer's ref.
-  // We use resetRoot() rather than router.replace('/auth') because expo-router's
-  // replace() queues an action via routingQueue → useEffect dispatch chain, which
-  // can silently drop the REPLACE on iOS when NativeTabs state is still present
-  // in the navigation tree during the sign-out transition.
-  const navContainerRef = useContext(NavigationContainerRefContext);
+  // useNavigationContainerRef() returns store.navigationRef — expo-router's own
+  // navigation container ref. resetRoot() bypasses the routingQueue → useEffect
+  // dispatch chain that router.replace() uses, dispatching RESET directly to the
+  // root Stack. This is immune to iOS NativeTabs swallowing the action.
+  const navRef = useNavigationContainerRef();
 
   // Track whether user has ever been authenticated in this session.
   // Used to distinguish "just signed out" from "never logged in" so we
@@ -56,9 +54,9 @@ export default function AppLayout() {
   useEffect(() => {
     if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
       wasAuthenticated.current = false;
-      navContainerRef?.resetRoot({ index: 0, routes: [{ name: 'auth' }] });
+      navRef.resetRoot({ index: 0, routes: [{ name: 'auth' }] });
     }
-  }, [isAuthenticated, isLoading, navContainerRef]);
+  }, [isAuthenticated, isLoading, navRef]);
 
   if (isLoading) {
     return (
