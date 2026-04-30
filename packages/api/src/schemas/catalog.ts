@@ -51,14 +51,16 @@ export const CatalogItemSchema = z.object({
   reviews: z
     .array(
       z.object({
-        user_name: z.string(),
+        user_name: z.string().nullable().optional(),
+        userName: z.string().nullable().optional(),
         user_avatar: z.string().nullable().optional(),
+        userAvatar: z.string().nullable().optional(),
         context: z.record(z.string(), z.string()).nullable().optional(),
         recommends: z.boolean().nullable().optional(),
         rating: z.number(),
-        title: z.string(),
-        text: z.string(),
-        date: z.string(),
+        title: z.string().nullable().optional(),
+        text: z.string().nullable().optional(),
+        date: z.string().nullable().optional(),
         images: z.array(z.string()).nullable().optional(),
         upvotes: z.number().nullable().optional(),
         downvotes: z.number().nullable().optional(),
