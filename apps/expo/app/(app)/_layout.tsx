@@ -1,4 +1,5 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { CommonActions } from '@react-navigation/native';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { needsReauthAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -47,14 +48,14 @@ export default function AppLayout() {
     if (isAuthenticated) wasAuthenticated.current = true;
   }, [isAuthenticated]);
 
-  // Navigate to auth after sign-out. Fires AFTER AppLayout has committed a null
-  // render, ensuring NativeTabs (iOS) is removed from the React component tree.
-  // resetRoot dispatches RESET directly to the root Stack, bypassing expo-router's
-  // routingQueue/linkTo/findDivergentState chain.
+  // Navigate to auth after sign-out. Uses dispatch(CommonActions.reset) without
+  // a target key so the root Stack handles it directly — bypassing both
+  // expo-router's routingQueue/findDivergentState chain AND resetRoot's
+  // keyedListeners.getState.root dependency (which can be null and silently no-op).
   useEffect(() => {
     if (!isAuthenticated && !isLoading && wasAuthenticated.current) {
       wasAuthenticated.current = false;
-      navRef.resetRoot({ index: 0, routes: [{ name: 'auth' }] });
+      navRef.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'auth' }] }));
     }
   }, [isAuthenticated, isLoading, navRef]);
 
