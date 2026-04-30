@@ -19,6 +19,7 @@ import {
   needsReauthAtom,
   redirectToAtom,
   refreshTokenAtom,
+  signOutRequestedAtom,
   tokenAtom,
 } from '../atoms/authAtoms';
 
@@ -48,6 +49,7 @@ export function useAuthActions() {
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
+  const setSignOutRequested = useSetAtom(signOutRequestedAtom);
 
   const clearLocalData = async () => {
     const allKeys = await Storage.getAllKeys();
@@ -222,9 +224,11 @@ export function useAuthActions() {
       // onNeedsReauth) have already resolved by this point.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
       setNeedsReauth(false);
-      // Navigation to /auth is handled by SignOutGuard in app/_layout.tsx.
-      // It watches tokenAtom from outside the navigator tree so router.replace
-      // dispatches directly to the root Stack, bypassing NativeTabs on iOS.
+      // Trigger SignOutGuard in app/_layout.tsx to call router.replace('/auth').
+      // Using a dedicated atom avoids false-positives during login when tokenAtom
+      // transitions null → value. SignOutGuard dispatches from outside the navigator
+      // tree so the action reaches the root Stack, bypassing NativeTabs on iOS.
+      setSignOutRequested(true);
     }
   };
 

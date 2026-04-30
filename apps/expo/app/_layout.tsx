@@ -9,12 +9,12 @@ import '../global.css';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { signOutRequestedAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 
 Sentry.init({
@@ -36,25 +36,23 @@ export {
 
 export let appAlert: React.RefObject<AlertMethods | null>;
 
-// Watches tokenAtom from OUTSIDE the navigation Stack so that router.replace
+// Watches signOutRequestedAtom from OUTSIDE the navigation Stack so that router.replace
 // dispatches directly to the root navigator — not to NativeTabs' inner navigator,
 // which would silently drop the action on iOS because 'auth' isn't a tab route.
+// Using a dedicated atom (set only by signOut()) avoids false-positives during login
+// when tokenAtom transitions null → value.
 // Rendered inside <Providers> for Jotai context but before <NavThemeProvider><Stack>.
 function SignOutGuard() {
-  const token = useAtomValue(tokenAtom);
-  const wasAuthenticated = useRef(false);
+  const signOutRequested = useAtomValue(signOutRequestedAtom);
+  const setSignOutRequested = useSetAtom(signOutRequestedAtom);
 
   useEffect(() => {
-    if (token) wasAuthenticated.current = true;
-  }, [token]);
-
-  useEffect(() => {
-    if (!token && wasAuthenticated.current) {
-      wasAuthenticated.current = false;
+    if (signOutRequested) {
+      setSignOutRequested(false);
       // safe-cast: '/auth' is a valid root route; Expo Router's Href accepts string paths directly.
       router.replace('/auth' as Href);
     }
-  }, [token]);
+  }, [signOutRequested, setSignOutRequested]);
 
   return null;
 }
