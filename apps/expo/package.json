@@ -30,7 +30,7 @@
     "format": "biome format --write",
     "ios": "APP_VARIANT=development expo run:ios",
     "lint": "biome check --write",
-    "start": "APP_VARIANT=development expo start",
+    "start": "APP_VARIANT=development EXPO_UNSTABLE_WEB_MODAL=1 expo start",
     "submit:android": "eas submit --platform android",
     "submit:ios": "eas submit --platform ios",
     "test": "vitest run",
@@ -38,7 +38,7 @@
     "update:development": "APP_VARIANT=development eas update --branch development --environment development",
     "update:preview": "APP_VARIANT=preview eas update --branch preview --environment preview",
     "update:production": "eas update --branch production --environment production",
-    "web": "expo start --web"
+    "web": "EXPO_UNSTABLE_WEB_MODAL=1 expo start --web"
   },
   "eslintConfig": {
     "extends": "universe/native",

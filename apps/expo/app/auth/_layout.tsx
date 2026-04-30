@@ -3,6 +3,10 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import { Platform } from 'react-native';
 
+export const unstable_settings = {
+  anchor: 'index',
+};
+
 export default function AuthLayout() {
   const { t } = useTranslation();
 
