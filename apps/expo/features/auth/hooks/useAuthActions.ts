@@ -13,9 +13,7 @@ import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
-import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { Platform } from 'react-native';
 import {
   isLoadingAtom,
   needsReauthAtom,
@@ -213,17 +211,11 @@ export function useAuthActions() {
       userStore.set(null);
       isAuthed.set(false);
       setNeedsReauth(false);
-      setIsLoading(false);
-      // Best-effort full JS bundle reload on iOS — provides a clean restart
-      // if expo-updates is available. Navigation fallback is CommonActions.reset
-      // dispatched from AppLayout's useEffect when isAuthed becomes false.
-      if (Platform.OS === 'ios') {
-        try {
-          await Updates.reloadAsync();
-        } catch {
-          // expo-updates unavailable in this build; AppLayout handles redirect
-        }
-      }
+      // Keep isLoading=true so AppLayout renders ActivityIndicator (no NativeTabs in
+      // the focus chain). Navigate after React processes the loading state so the
+      // focus chain is empty — same window that makes useAuthInit work at startup.
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      router.replace('/auth' as Href);
     }
   };
 
@@ -306,12 +298,14 @@ export function useAuthActions() {
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();
-      await Updates.reloadAsync();
+      userStore.set(null);
+      isAuthed.set(false);
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      router.replace('/auth' as Href);
     } catch (error) {
       console.error('Delete account error:', error);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 

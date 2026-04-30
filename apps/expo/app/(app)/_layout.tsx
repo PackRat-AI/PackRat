@@ -14,9 +14,8 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { use$ } from '@legendapp/state/react';
-import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,21 +30,6 @@ export default function AppLayout() {
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
   const isAuthenticated = use$(isAuthed);
-  const navRef = useNavigationContainerRef();
-
-  // iOS NativeTabs (UITabBarController) intercepts all router.replace/navigate
-  // calls from inside a tab. resetRoot() sets target to the root navigator's
-  // key, bypassing the focus-listener chain entirely and resetting directly.
-  // Navigation fallback: CommonActions.reset dispatched from AppLayout's
-  // useEffect when isAuthed becomes false.
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navRef.resetRoot({
-        index: 0,
-        routes: [{ name: 'auth' }],
-      });
-    }
-  }, [isLoading, isAuthenticated, navRef]);
 
   if (isLoading) {
     return (
