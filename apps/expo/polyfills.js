@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import structuredClone from '@ungap/structured-clone';
 import { Platform } from 'react-native';
 

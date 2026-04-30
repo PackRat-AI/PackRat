@@ -1,5 +1,7 @@
 import { makeEnumGuard } from '@packrat/guards';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+// Leaf import (not the barrel) — barrel re-exports hooks, one of which
+// imports back into this file, which would be a circular dependency.
 import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
 import type { PackItem, WeightUnit } from 'expo-app/features/packs';
 

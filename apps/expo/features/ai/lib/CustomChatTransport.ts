@@ -1,4 +1,5 @@
 import type { UIMessage } from '@ai-sdk/react';
+import { isString } from '@packrat/guards';
 import {
   type ChatRequestOptions,
   type ChatTransport,
@@ -38,7 +39,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
 
     const result = streamText({
       model: this.model,
-      messages: convertToModelMessages(options.messages),
+      messages: await convertToModelMessages(options.messages),
       abortSignal: options.abortSignal,
       ...(this.tools ? { tools: this.tools, toolChoice: 'auto' } : {}),
     });
@@ -48,7 +49,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
         if (error == null) {
           return 'Unknown error';
         }
-        if (typeof error === 'string') {
+        if (isString(error)) {
           return error;
         }
         if (error instanceof Error) {

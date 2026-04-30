@@ -15,6 +15,7 @@ import {
 
 // ── SQL Fragments ─────────────────────────────────────────────────────
 
+// biome-ignore lint/complexity/noStaticOnlyClass: Static SQL helpers are intentionally namespaced.
 export class SQLFragments {
   /** Escape single quotes for safe SQL string interpolation. */
   static escapeSql(value: string): string {

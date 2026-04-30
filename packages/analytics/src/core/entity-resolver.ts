@@ -11,6 +11,7 @@
 
 import { createHash } from 'node:crypto';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { isString } from '@packrat/guards';
 import { SQLFragments } from './query-builder';
 import { assertDefined } from './type-assertions';
 
@@ -21,24 +22,29 @@ const CONFIDENCE_HIGH = 0.9;
 const CONFIDENCE_MEDIUM = 0.8;
 const CONFIDENCE_LOW = 0.65;
 const MAX_BLOCK_SIZE = 5000;
+const URL_QUERY_OR_HASH_PATTERN = /[?#].*$/;
+const FILE_EXTENSION_PATTERN = /\.\w+$/;
+const WHITESPACE_SPLIT_PATTERN = /\s+/;
+const GENDER_SIZE_WORDS = /\b(men'?s?|women'?s?|unisex|kids?|youth)\b/gi;
+const SIZE_ABBREVIATIONS = /\b(xs|s|m|l|xl|xxl|one size)\b/gi;
+const NON_ALPHANUMERIC_SPACES = /[^a-z0-9\s]/g;
+const MULTIPLE_SPACES = /\s+/g;
+const NON_ALPHANUMERIC = /[^a-z0-9]/g;
 
 // ── Normalization ─────────────────────────────────────────────────────
 
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/\b(men'?s?|women'?s?|unisex|kids?|youth)\b/gi, '')
-    .replace(/\b(xs|s|m|l|xl|xxl|one size)\b/gi, '')
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(GENDER_SIZE_WORDS, '')
+    .replace(SIZE_ABBREVIATIONS, '')
+    .replace(NON_ALPHANUMERIC_SPACES, '')
+    .replace(MULTIPLE_SPACES, ' ')
     .trim();
 }
 
 function normalizeBrand(brand: string): string {
-  return brand
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .trim();
+  return brand.toLowerCase().replace(NON_ALPHANUMERIC, '').trim();
 }
 
 function canonicalId(brand: string, name: string): string {
@@ -48,11 +54,8 @@ function canonicalId(brand: string, name: string): string {
 
 function extractSlug(url: string): string {
   if (!url) return '';
-  const parts = url
-    .replace(/[?#].*$/, '')
-    .split('/')
-    .filter(Boolean);
-  return parts.at(-1)?.replace(/\.\w+$/, '') ?? '';
+  const parts = url.replace(URL_QUERY_OR_HASH_PATTERN, '').split('/').filter(Boolean);
+  return parts.at(-1)?.replace(FILE_EXTENSION_PATTERN, '') ?? '';
 }
 
 // ── Token Sort Ratio ──────────────────────────────────────────────────
@@ -63,7 +66,8 @@ function extractSlug(url: string): string {
  * Good enough for product name matching without a heavy dep.
  */
 function tokenSortRatio(a: string, b: string): number {
-  const sortTokens = (s: string) => s.toLowerCase().split(/\s+/).sort().join(' ');
+  const sortTokens = (s: string) =>
+    s.toLowerCase().split(WHITESPACE_SPLIT_PATTERN).sort().join(' ');
   const sa = sortTokens(a);
   const sb = sortTokens(b);
 
@@ -96,9 +100,9 @@ function levenshtein(a: string, b: string): number {
     assertDefined(row);
     assertDefined(prevRow);
     for (let j = 1; j <= n; j++) {
-      const diag = prevRow[j - 1];
-      const up = prevRow[j];
-      const left = row[j - 1];
+      const diag: number | undefined = prevRow[j - 1];
+      const up: number | undefined = prevRow[j];
+      const left: number | undefined = row[j - 1];
       assertDefined(diag);
       assertDefined(up);
       assertDefined(left);
@@ -376,7 +380,7 @@ export class EntityResolver {
           const v = (x: unknown) =>
             x === null || x === undefined
               ? 'NULL'
-              : typeof x === 'string'
+              : isString(x)
                 ? `'${SQLFragments.escapeSql(String(x))}'`
                 : String(x);
           return `(${v(e.canonical_id)}, ${v(e.canonical_name)}, ${v(e.canonical_brand)}, ${v(e.site)}, ${v(e.name)}, ${v(e.brand)}, ${v(e.category)}, ${v(e.price)}, ${v(e.product_url)}, ${v(e.confidence)}, ${v(e.match_method)})`;
@@ -407,7 +411,7 @@ export class EntityResolver {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as EntityRow;
+      return obj as unknown as EntityRow; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 }

@@ -5,11 +5,11 @@ export function getAllCategories(): string[] {
 
   const categories = new Set<string>();
 
-  posts.forEach((post) => {
-    post.categories?.forEach((category) => {
+  for (const post of posts) {
+    for (const category of post.categories ?? []) {
       categories.add(category);
-    });
-  });
+    }
+  }
 
   return Array.from(categories).sort();
 }

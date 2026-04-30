@@ -104,7 +104,7 @@ describe('parseWaterproofRating', () => {
   });
 
   it('parses K notation', () => {
-    expect(parseWaterproofRating('20k mm rating')).toBe(20);
+    expect(parseWaterproofRating('20k mm rating')).toBe(20000);
   });
 
   it('returns null for no rating', () => {

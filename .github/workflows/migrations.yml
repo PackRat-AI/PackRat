@@ -33,17 +33,18 @@ jobs:
     if: github.event_name != 'workflow_dispatch' || inputs.confirm == 'yes'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
 
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Determine target environment
         id: env

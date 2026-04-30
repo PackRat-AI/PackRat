@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
@@ -31,7 +31,9 @@ export function PackCard({
   const insets = useSafeAreaInsets();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
-  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
+  // safe-cast: when isOwnedByUser, packFromStore is a full Pack with computed weights;
+  // when not owned, packArg is also accepted as Pack (caller must supply the full shape).
+  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack;
 
   const handleActionsPress = () => {
     const options =
@@ -50,7 +52,7 @@ export function PackCard({
         cancelButtonIndex,
         destructiveButtonIndex,
         title: pack.name,
-        message: pack.description,
+        message: pack.description ?? undefined,
         containerStyle: {
           backgroundColor: colors.card,
           paddingBottom: insets.bottom,
@@ -116,11 +118,19 @@ export function PackCard({
 
         <View className="mt-3 flex-row items-center justify-between">
           <View className="flex-row gap-2">
-            <WeightBadge weight={pack.baseWeight ?? 0} unit="g" type="base" />
-            <WeightBadge weight={pack.totalWeight ?? 0} unit="g" type="total" />
+            <WeightBadge
+              weight={('baseWeight' in pack ? pack.baseWeight : undefined) ?? 0}
+              unit="g"
+              type="base"
+            />
+            <WeightBadge
+              weight={('totalWeight' in pack ? pack.totalWeight : undefined) ?? 0}
+              unit="g"
+              type="total"
+            />
           </View>
           <Text className="text-xs text-foreground">
-            {pack.items && isArray(pack.items) && pack.items.length > 0
+            {'items' in pack && isArray(pack.items) && pack.items.length > 0
               ? `${pack.items.length} item${pack.items.length > 1 ? 's' : ''}`
               : '0 items'}
           </Text>
@@ -137,9 +147,9 @@ export function PackCard({
             </View>
           ) : null}
 
-          <View className="ml-auto flex-row items-center gap-2">
-            {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
-            {!isOwnedByUser && showDuplicateButton && (
+          {!isOwnedByUser && showDuplicateButton && (
+            <View className="ml-auto flex-row items-center gap-2">
+              {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
               <Button
                 variant="plain"
                 size="icon"
@@ -161,28 +171,8 @@ export function PackCard({
                   <Icon name="file-copy" size={21} color={colors.grey2} />
                 )}
               </Button>
-            )}
-
-            {/* Delete button for owned packs */}
-            {!isGenUI && isOwnedByUser && (
-              <Button
-                variant="plain"
-                size="icon"
-                onPress={() =>
-                  Alert.alert(
-                    'Delete pack?',
-                    'Are you sure you want to delete this pack? This action cannot be undone.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
-                    ],
-                  )
-                }
-              >
-                <Icon name="trash-can" size={21} color={colors.grey2} />
-              </Button>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>

@@ -9,6 +9,7 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
+      "@packrat/analytics": ["src/index.ts"],
       "@packrat/analytics/*": ["src/*"]
     }
   },

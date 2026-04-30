@@ -1,7 +1,7 @@
 'use client';
 
+import { Input } from '@packrat/web-ui/components/input';
 import { useQuery } from '@tanstack/react-query';
-import { Input } from 'guides-app/components/ui/input';
 import { getAllPosts } from 'guides-app/lib/mdx-static';
 import type { Post } from 'guides-app/lib/types';
 import { SearchIcon, X } from 'lucide-react';
@@ -28,6 +28,7 @@ export function Search() {
   // Handle click outside to close search
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // safe-cast: MouseEvent.target is always a DOM Node in this context
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }

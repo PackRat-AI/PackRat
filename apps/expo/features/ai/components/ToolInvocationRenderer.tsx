@@ -16,31 +16,30 @@ interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
-type Tool =
-  | WebSearchTool
-  | WeatherTool
-  | CatalogItemsTool
-  | GuidesRAGTool
-  | PackDetailsTool
-  | PackItemTool;
-
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
-  const tool = toolInvocation as Tool;
-
-  switch (tool.type) {
+  // safe-cast: each case branch narrows toolInvocation.type to the discriminant literal; the
+  // local tool types (WebSearchTool, etc.) extend ToolUIPart with that exact `type` field, so
+  // the cast is verified by the switch guard above each arm.
+  switch (toolInvocation.type) {
     case 'tool-webSearchTool':
-      return <WebSearchGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant; local tool types extend ToolUIPart with that exact `type` field
+      return <WebSearchGenerativeUI toolInvocation={toolInvocation as WebSearchTool} />;
     case 'tool-getWeatherForLocation':
-      return <WeatherGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <WeatherGenerativeUI toolInvocation={toolInvocation as WeatherTool} />;
     case 'tool-getCatalogItems':
     case 'tool-catalogVectorSearch':
-      return <CatalogItemsGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <CatalogItemsGenerativeUI toolInvocation={toolInvocation as CatalogItemsTool} />;
     case 'tool-searchPackratOutdoorGuidesRAG':
-      return <GuidesRAGGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <GuidesRAGGenerativeUI toolInvocation={toolInvocation as GuidesRAGTool} />;
     case 'tool-getPackDetails':
-      return <PackDetailsGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <PackDetailsGenerativeUI toolInvocation={toolInvocation as PackDetailsTool} />;
     case 'tool-getPackItemDetails':
-      return <PackItemDetailsGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <PackItemDetailsGenerativeUI toolInvocation={toolInvocation as PackItemTool} />;
     default:
       return null;
   }

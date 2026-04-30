@@ -10,6 +10,9 @@ import type { DuckDBConnection } from '@duckdb/node-api';
 import { DBConfig, QUALITY_WEIGHTS } from './constants';
 import { SQLFragments } from './query-builder';
 
+const FILE_EXTENSION_PATTERN = /\.\w+$/;
+const TIMESTAMP_UNSAFE_CHARS = /[:.]/g;
+
 // ── Types ────────────────────────────────────────────────────────────────
 
 export interface ExportOptions {
@@ -73,7 +76,7 @@ export class DataExporter {
 
     mkdirSync(outputDir, { recursive: true });
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const timestamp = new Date().toISOString().replace(TIMESTAMP_UNSAFE_CHARS, '-').slice(0, 19);
     const filename = `packrat_export_${timestamp}.${format}`;
     const filepath = `${outputDir}/${filename}`;
 
@@ -204,7 +207,10 @@ export class DataExporter {
       strategy: dedup,
     };
 
-    writeFileSync(filepath.replace(/\.\w+$/, '.summary.json'), JSON.stringify(summary, null, 2));
+    writeFileSync(
+      filepath.replace(FILE_EXTENSION_PATTERN, '.summary.json'),
+      JSON.stringify(summary, null, 2),
+    );
 
     return summary;
   }

@@ -1,2 +1,2 @@
-// Export the base client for direct use if needed
-export { default as apiClient, handleApiError } from './client';
+// Typed Treaty client (replaces the legacy axios-shape `apiClient`).
+export { apiClient, type PackRatApi } from './packrat';

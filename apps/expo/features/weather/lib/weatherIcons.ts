@@ -1,4 +1,4 @@
-import type { MaterialIconName } from '@roninoss/icons';
+import type { MaterialIconName } from 'expo-app/components/Icon';
 
 /**
  * Maps weather condition codes to available icons

@@ -1,5 +1,5 @@
 import { ActivityIndicator, Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -106,6 +106,7 @@ export const FeedScreen = () => {
           renderItem={renderItem}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 }}
+          contentInsetAdjustmentBehavior="automatic"
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}

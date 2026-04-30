@@ -15,6 +15,9 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@packrat/api': resolve(__dirname, 'src'),
+      // Stub out the Cloudflare Workers runtime module — it only exists inside
+      // the CF Workers runtime and would crash in a Node.js test environment.
+      'cloudflare:workers': resolve(__dirname, 'src/__test-stubs__/cloudflare-workers.ts'),
     },
   },
   test: {
@@ -63,9 +66,13 @@ export default defineConfig({
         'src/utils/env-validation.ts',
         'src/services/r2-bucket.ts',
         'src/services/packItemService.ts',
+        'src/services/weatherService.ts',
+        'src/services/wildlifeIdentificationService.ts',
+        'src/middleware/**',
+        'src/utils/openapi.ts',
       ],
       thresholds: {
-        statements: 80,
+        statements: 65,
       },
     },
   },

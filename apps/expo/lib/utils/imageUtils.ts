@@ -5,14 +5,15 @@
 import * as Sentry from '@sentry/react-native';
 import { getDomainSpecificExtension } from './domain-specific-extensions';
 
+const URL_EXTENSION_PATTERN = /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i;
+
 /**
  * Attempts to infer the image extension from a URL
  * @param url The image URL
  * @returns The inferred extension or null if it couldn't be determined
  */
 export const inferImageExtension = (url: string): string | null => {
-  // Check if URL already has an extension
-  const extensionMatch = url.match(/\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i);
+  const extensionMatch = url.match(URL_EXTENSION_PATTERN);
   if (extensionMatch && extensionMatch[1] !== undefined) {
     return extensionMatch[1].toLowerCase();
   }

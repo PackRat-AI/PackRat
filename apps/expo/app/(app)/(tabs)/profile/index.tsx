@@ -1,3 +1,5 @@
+import { clientEnvs } from '@packrat/env/expo-client';
+import { isString } from '@packrat/guards';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
@@ -6,6 +8,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
+  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -13,7 +16,8 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import TabScreen from 'expo-app/components/TabScreen';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
+import { Icon } from 'expo-app/components/Icon';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -28,13 +32,45 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
-import { router, Stack } from 'expo-router';
+import { Link, router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Alert, Linking, Platform, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
+function SettingsIcon() {
+  const { colors } = useColorScheme();
+  return (
+    <Link href="/settings" asChild>
+      <Pressable className="opacity-80">
+        {({ pressed }) => (
+          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
+            <Icon name="cog-outline" color={colors.foreground} />
+          </View>
+        )}
+      </Pressable>
+    </Link>
+  );
+}
+
+function DemoIcon() {
+  const { colors } = useColorScheme();
+  if (clientEnvs.NODE_ENV !== 'development') return null;
+
+  return (
+    <Link href="/demo" asChild>
+      <Pressable className="opacity-80">
+        {({ pressed }) => (
+          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
+            <Icon name="tag-outline" color={colors.foreground} />
+          </View>
+        )}
+      </Pressable>
+    </Link>
+  );
+}
 
 function Profile() {
   const user = useUser();
@@ -70,8 +106,20 @@ function Profile() {
   ];
 
   return (
-    <TabScreen>
+    <>
       <Stack.Screen options={SCREEN_OPTIONS} />
+
+      <LargeTitleHeader
+        title={t('profile.profile')}
+        backVisible={false}
+        rightView={() => (
+          <View className="flex-row items-center gap-2 pr-2 pl-2">
+            <DemoIcon />
+
+            <SettingsIcon />
+          </View>
+        )}
+      />
 
       <List
         contentContainerClassName="pt-8"
@@ -82,7 +130,7 @@ function Profile() {
         ListHeaderComponent={<ListHeaderComponent />}
         ListFooterComponent={<ListFooterComponent />}
       />
-    </TabScreen>
+    </>
   );
 }
 
@@ -93,7 +141,7 @@ function renderItem(info: ListRenderItemInfo<DataItem>) {
 }
 
 function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
-  if (typeof info.item === 'string') {
+  if (isString(info.item)) {
     return <ListSectionHeader {...info} />;
   }
   return (
@@ -239,44 +287,47 @@ function ListFooterComponent() {
   };
 
   return (
-    <View className="ios:px-0 px-4 pt-8">
-      <Button
-        testID={TestIds.SignOutButton}
-        disabled={isSigningOut}
-        onPress={() => {
-          if (hasUnsyncedChanges()) {
-            alertRef.current?.alert({
-              title: t('profile.syncInProgress'),
-              message: t('profile.syncMessage'),
-              materialIcon: { name: 'repeat' },
-              buttons: [
-                {
-                  text: t('common.cancel'),
-                  style: 'cancel',
-                },
-                {
-                  text: t('auth.logOut'),
-                  style: 'destructive',
-                  onPress: handleSignOut,
-                },
-              ],
-            });
-            return;
-          }
-          handleSignOut();
-        }}
-        size="lg"
-        variant={Platform.select({ ios: 'primary', default: 'secondary' })}
-        className="border-border bg-card"
-      >
-        {isSigningOut ? (
-          <ActivityIndicator className="text-destructive" />
-        ) : (
-          <Text className="text-destructive">{t('auth.logOut')}</Text>
-        )}
-      </Button>
-      <AlertComponent title="" buttons={[]} ref={alertRef} />
-    </View>
+    <>
+      <View className="ios:px-0 px-4 pt-8">
+        <Button
+          testID={TestIds.SignOutButton}
+          disabled={isSigningOut}
+          onPress={() => {
+            if (hasUnsyncedChanges()) {
+              alertRef.current?.alert({
+                title: t('profile.syncInProgress'),
+                message: t('profile.syncMessage'),
+                materialIcon: { name: 'repeat' },
+                buttons: [
+                  {
+                    text: t('common.cancel'),
+                    style: 'cancel',
+                  },
+                  {
+                    text: t('auth.logOut'),
+                    style: 'destructive',
+                    onPress: handleSignOut,
+                  },
+                ],
+              });
+              return;
+            }
+            handleSignOut();
+          }}
+          size="lg"
+          variant={Platform.select({ ios: 'primary', default: 'secondary' })}
+          className="border-border bg-card"
+        >
+          {isSigningOut ? (
+            <ActivityIndicator className="text-destructive" />
+          ) : (
+            <Text className="text-destructive">{t('auth.logOut')}</Text>
+          )}
+        </Button>
+        <AlertComponent title="" buttons={[]} ref={alertRef} />
+      </View>
+      <AndroidTabBarInsetFix />
+    </>
   );
 }
 

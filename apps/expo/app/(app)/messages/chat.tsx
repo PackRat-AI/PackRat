@@ -1,4 +1,4 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, isString } from '@packrat/guards';
 import type { ContextMenuMethods } from '@packrat/ui/nativewindui';
 import {
   Avatar,
@@ -8,8 +8,9 @@ import {
   createContextItem,
   Text,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
@@ -21,7 +22,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   View,
@@ -167,13 +167,14 @@ export default function ChatIos() {
             }}
             data={messages}
             renderItem={({ item, index }) => {
-              if (typeof item === 'string') {
+              if (isString(item)) {
                 return <DateSeparator date={item} />;
               }
 
               const nextMessage = messages[index - 1];
-              const isSameNextSender =
-                typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
+              const isSameNextSender = !isString(nextMessage)
+                ? nextMessage?.sender === item.sender
+                : false;
 
               return (
                 <ChatBubble
@@ -354,6 +355,7 @@ function ChatBubble({
 }) {
   const contextMenuRef = React.useRef<ContextMenuMethods>(null);
   const contextMenuRef2 = React.useRef<ContextMenuMethods>(null);
+
   const { colors } = useColorScheme();
   const rootStyle = useAnimatedStyle(() => {
     return {
@@ -548,7 +550,6 @@ function ChatBubble({
                 name="arrow-down"
                 ios={{
                   name: 'arrow.down.square',
-                  renderingMode: 'hierarchical',
                 }}
                 color={colors.primary}
                 size={Platform.select({ ios: 27, default: 21 })}

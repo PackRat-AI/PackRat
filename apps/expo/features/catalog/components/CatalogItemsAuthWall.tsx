@@ -1,7 +1,7 @@
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { usePathname, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,7 +12,7 @@ export function CatalogItemsAuthWall() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <LargeTitleHeader title={t('catalog.title')} backVisible={false} />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <View className="flex-1 px-6 py-8">
         <View className="mb-8 items-center justify-center">

@@ -1,16 +1,14 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
-import { appAlert } from 'expo-app/app/_layout';
+import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
-import { useLocations } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, ScrollView, Share, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
@@ -22,11 +20,10 @@ export function TripDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const { locationsState } = useLocations();
-
-  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
   const [showConditionReport, setShowConditionReport] = useState(false);
 
+  // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
+  // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
 
@@ -72,30 +69,12 @@ export function TripDetailScreen() {
   const handleWeatherPress = () => {
     if (!trip.location) return;
 
-    const { latitude, longitude } = trip.location;
+    const { latitude, longitude, name } = trip.location;
+    const locationName = name || trip.name;
 
-    const matchedLocation = locations.find(
-      (loc) => Math.abs(loc.lat - latitude) < 0.05 && Math.abs(loc.lon - longitude) < 0.05,
+    router.push(
+      `/weather/geo?lat=${latitude}&lon=${longitude}&locationName=${encodeURIComponent(locationName)}`,
     );
-
-    if (matchedLocation) {
-      router.push(`/weather/${matchedLocation.id}`);
-    } else {
-      appAlert.current?.alert({
-        title: 'Location not found',
-        message: 'Please add this location in Weather first.',
-        buttons: [
-          {
-            text: 'Go to Weather',
-            onPress: () => router.push('/weather'),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-      });
-    }
   };
 
   return (
@@ -170,7 +149,6 @@ export function TripDetailScreen() {
                 <View className="h-36">
                   <MapView
                     key={mapKey}
-                    provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
                     initialRegion={{
                       latitude: trip.location.latitude,

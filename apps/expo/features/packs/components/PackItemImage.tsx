@@ -1,5 +1,6 @@
+import { isRemoteUrl } from '@packrat/guards';
 import { useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
@@ -27,6 +28,10 @@ export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
         <Icon name="image" size={24} color={colors.grey} />
       </View>
     );
+
+  if (isRemoteUrl(item.image)) {
+    return <Image source={{ uri: item.image }} {...imageProps} />;
+  }
 
   const imageUrl = buildImageUrl(item);
 

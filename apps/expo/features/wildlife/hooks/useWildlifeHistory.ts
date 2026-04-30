@@ -1,6 +1,6 @@
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useAtom } from 'jotai';
-import { nanoid } from 'nanoid/non-secure';
+import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 import { baseWildlifeHistoryAtom, wildlifeHistoryAtom } from '../atoms/wildlifeAtoms';
 import type { IdentificationResult, WildlifeIdentification } from '../types';

@@ -61,7 +61,6 @@ export function CategoriesFilter({
           {!data
             ? Array.from({ length: 10 }).map((_, i) => (
                 <View
-                  // biome-ignore lint/suspicious/noArrayIndexKey: just for skeleton
                   key={i}
                   className="h-8 w-20 rounded-full mr-2 bg-neutral-300 dark:bg-neutral-600"
                 />

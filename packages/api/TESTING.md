@@ -187,7 +187,7 @@ All tests run automatically on:
 - Pushes to `main` and `dev` branches
 
 **CI Workflows:**
-- `.github/workflows/check-types.yml` - TypeScript validation
+- `.github/workflows/checks.yml` - Monorepo lint and type validation
 - `.github/workflows/api-tests.yml` - Integration tests
 - Unit tests run as part of the overall test suite
 

@@ -1,5 +1,6 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useCallback, useRef, useState } from 'react';
@@ -9,9 +10,9 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  type TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -35,7 +36,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const [commentText, setCommentText] = useState('');
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<RNTextInput>(null);
 
   const {
     data: commentsData,

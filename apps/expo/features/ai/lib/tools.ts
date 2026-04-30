@@ -3,7 +3,7 @@
  *
  * These tools operate on:
  *  - Local Legend-State stores (packs, packItems) for data already on device
- *  - The API via axiosInstance for data that requires a network call
+ *  - The API via the typed `apiClient` for data that requires a network call
  *
  * All tools mirror the server-side tools in packages/api/src/utils/ai/tools.ts.
  * Network-dependent tools (vectorSearch, RAG, webSearch, executeSql) proxy
@@ -14,7 +14,7 @@ import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
 import { getWeatherData, searchLocations } from 'expo-app/features/weather/lib/weatherService';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
 export function createLocalTools() {
@@ -47,7 +47,6 @@ export function createLocalTools() {
             };
           }
 
-          // No packId — return all packs summary
           const packs = Object.values(allPacks).filter((p) => !p.deleted);
           return {
             success: true,
@@ -134,19 +133,19 @@ export function createLocalTools() {
           .describe('Number of results to return (default 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, category, limit = 10, offset = 0 }) => {
-        try {
-          const response = await axiosInstance.get('/api/catalog', {
-            params: { q: query, category, limit, offset },
-          });
-          return { success: true, data: response.data };
-        } catch (error) {
-          const { message } = handleApiError(error);
-          return {
-            success: false,
-            error: message ?? 'Failed to retrieve catalog items',
-          };
+      execute: async ({ query, category, limit = 10, offset: _offset = 0 }) => {
+        const { data, error } = await apiClient.catalog.get({
+          query: {
+            page: 1,
+            limit,
+            ...(query ? { q: query } : {}),
+            ...(category ? { category } : {}),
+          },
+        });
+        if (error) {
+          return { success: false, error: error.value ?? 'Failed to retrieve catalog items' };
         }
+        return { success: true, data };
       },
     }),
 
@@ -164,18 +163,13 @@ export function createLocalTools() {
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
       execute: async ({ query, limit = 10, offset = 0 }) => {
-        try {
-          const response = await axiosInstance.get('/api/catalog/vector-search', {
-            params: { q: query, limit, offset },
-          });
-          return { success: true, data: response.data };
-        } catch (error) {
-          const { message } = handleApiError(error);
-          return {
-            success: false,
-            error: message ?? 'Failed to perform vector search',
-          };
+        const { data, error } = await apiClient.catalog['vector-search'].get({
+          query: { q: query, limit, offset },
+        });
+        if (error) {
+          return { success: false, error: error.value ?? 'Failed to perform vector search' };
         }
+        return { success: true, data };
       },
     }),
 
@@ -192,18 +186,13 @@ export function createLocalTools() {
           .describe('Number of results to return (default 5)'),
       }),
       execute: async ({ query, limit = 5 }) => {
-        try {
-          const response = await axiosInstance.get('/api/ai/rag-search', {
-            params: { q: query, limit },
-          });
-          return { success: true, data: response.data };
-        } catch (error) {
-          const { message } = handleApiError(error);
-          return {
-            success: false,
-            error: message ?? 'Failed to search outdoor guides',
-          };
+        const { data, error } = await apiClient.ai['rag-search'].get({
+          query: { q: query, limit },
+        });
+        if (error) {
+          return { success: false, error: error.value ?? 'Failed to search outdoor guides' };
         }
+        return { success: true, data };
       },
     }),
 
@@ -220,18 +209,13 @@ export function createLocalTools() {
         query: z.string().describe('The search query - be specific and include relevant keywords'),
       }),
       execute: async ({ query }) => {
-        try {
-          const response = await axiosInstance.get('/api/ai/web-search', {
-            params: { q: query },
-          });
-          return { success: true, data: response.data };
-        } catch (error) {
-          const { message } = handleApiError(error);
-          return {
-            success: false,
-            error: message ?? 'Search failed',
-          };
+        const { data, error } = await apiClient.ai['web-search'].get({
+          query: { q: query },
+        });
+        if (error) {
+          return { success: false, error: error.value ?? 'Search failed' };
         }
+        return { success: true, data };
       },
     }),
 
@@ -251,16 +235,11 @@ export function createLocalTools() {
           .describe('Maximum number of rows to return (default: 100, max: 1000)'),
       }),
       execute: async ({ query, limit = 100 }) => {
-        try {
-          const response = await axiosInstance.post('/api/ai/execute-sql', { query, limit });
-          return response.data;
-        } catch (error) {
-          const { message } = handleApiError(error);
-          return {
-            success: false,
-            error: message ?? 'Failed to execute query',
-          };
+        const { data, error } = await apiClient.ai['execute-sql'].post({ query, limit });
+        if (error) {
+          return { success: false, error: error.value ?? 'Failed to execute query' };
         }
+        return data;
       },
     }),
 
@@ -269,16 +248,11 @@ export function createLocalTools() {
         'Retrieve the database schema (table names and columns). Call this before executeSql if you are unsure which tables or columns exist.',
       inputSchema: z.object({}),
       execute: async () => {
-        try {
-          const response = await axiosInstance.get('/api/ai/db-schema');
-          return { success: true, data: response.data };
-        } catch (error) {
-          const { message } = handleApiError(error);
-          return {
-            success: false,
-            error: message ?? 'Failed to retrieve database schema',
-          };
+        const { data, error } = await apiClient.ai['db-schema'].get();
+        if (error) {
+          return { success: false, error: error.value ?? 'Failed to retrieve database schema' };
         }
+        return { success: true, data };
       },
     }),
   };

@@ -28,7 +28,8 @@ describe('decodeHtmlEntities', () => {
     });
 
     it('decodes non-breaking space', () => {
-      expect(decodeHtmlEntities('Hello&nbsp;World')).toBe('Hello World');
+      // &nbsp; decodes to U+00A0 (non-breaking space), not a regular space
+      expect(decodeHtmlEntities('Hello&nbsp;World')).toBe('Hello\u00a0World');
     });
 
     it('decodes multiple entities in one string', () => {
@@ -101,10 +102,12 @@ describe('decodeHtmlEntities', () => {
       expect(decodeHtmlEntities('&amp;&amp;&amp;')).toBe('&&&');
     });
 
-    it('handles case insensitivity for named entities', () => {
+    it('handles HTML5 legacy uppercase named entities', () => {
+      // &AMP; and &GT; are valid legacy HTML5 entities (case-insensitive variants)
       expect(decodeHtmlEntities('&AMP;')).toBe('&');
-      expect(decodeHtmlEntities('&Lt;')).toBe('<');
       expect(decodeHtmlEntities('&GT;')).toBe('>');
+      // &Lt; (capital L) is a distinct HTML5 entity meaning "much less-than" (≪), not <
+      expect(decodeHtmlEntities('&Lt;')).toBe('≪');
     });
   });
 
@@ -137,8 +140,10 @@ describe('decodeHtmlEntities', () => {
   // Boundary and security
   // -------------------------------------------------------------------------
   describe('boundary and security', () => {
-    it('does not match entity-like patterns without semicolon', () => {
-      expect(decodeHtmlEntities('&amptest')).toBe('&amptest');
+    it('decodes legacy entities without semicolon per HTML5 spec', () => {
+      // The he library follows the HTML5 spec which decodes legacy entities
+      // without trailing semicolons (e.g. &amp is decoded as & in HTML5 browsers)
+      expect(decodeHtmlEntities('&amptest')).toBe('&test');
     });
 
     it('handles malformed numeric entities gracefully', () => {

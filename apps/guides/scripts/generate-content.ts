@@ -1,4 +1,5 @@
 import { openai } from '@ai-sdk/openai';
+import { arrayIncludes, objectEntries } from '@packrat/guards';
 import { generateText } from 'ai';
 import chalk from 'chalk';
 import { format } from 'date-fns';
@@ -8,6 +9,9 @@ import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
 import { enhanceGuideContent } from '../lib/enhanceGuideContent';
+
+const JSON_CODE_BLOCK_PATTERN = /```json\s*([\s\S]*?)\s*```/;
+const JSON_ARRAY_PATTERN = /\[\s*\{[\s\S]*\}\s*\]/;
 
 // Types
 type ContentCategory =
@@ -28,6 +32,12 @@ type ContentCategory =
   | 'beginner-resources';
 
 type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
+const DIFFICULTY_LEVELS = [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+  'All Levels',
+] as const satisfies readonly DifficultyLevel[];
 
 interface ContentRequest {
   title: string;
@@ -79,6 +89,9 @@ const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
   'beginner-resources': 'Beginner Resources',
 };
 
+// Valid category keys derived from CATEGORY_DISPLAY_NAMES (stays in sync with ContentCategory).
+const VALID_CONTENT_CATEGORIES = Object.keys(CATEGORY_DISPLAY_NAMES) as readonly ContentCategory[];
+
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -110,13 +123,13 @@ function getRandomAuthor(): string {
 // Extract JSON from text that might contain markdown code blocks
 function extractJsonFromText(text: string): string {
   // Look for JSON content between code blocks
-  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonMatch = text.match(JSON_CODE_BLOCK_PATTERN);
   if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 
   // If no code blocks, try to find JSON array directly
-  const arrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  const arrayMatch = text.match(JSON_ARRAY_PATTERN);
   if (arrayMatch) {
     return arrayMatch[0];
   }
@@ -200,20 +213,17 @@ async function generateTopicIdeas(
     `;
 
     // Add category distribution analysis
-    const categoryDistribution: Record<ContentCategory, number> = {} as Record<
-      ContentCategory,
-      number
-    >;
-    existingContent.forEach((content) => {
-      content.categories.forEach((category) => {
+    const categoryDistribution: Partial<Record<ContentCategory, number>> = {};
+    for (const content of existingContent) {
+      for (const category of content.categories) {
         categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-      });
-    });
+      }
+    }
 
     // Find underrepresented categories
-    const sortedCategories = Object.entries(categoryDistribution)
-      .sort(([, countA], [, countB]) => countA - countB)
-      .map(([category]) => category as ContentCategory);
+    const sortedCategories = objectEntries(categoryDistribution)
+      .sort(([, countA], [, countB]) => (countA ?? 0) - (countB ?? 0))
+      .map(([category]) => category);
 
     if (sortedCategories.length > 0 && !categories) {
       const underrepresentedCategories = sortedCategories.slice(0, 3);
@@ -261,10 +271,10 @@ async function generateTopicIdeas(
       (idea: { title: string; description: string; categories: string[]; difficulty: string }) => {
         // Map display category names back to our internal keys
         const categoryKeys = idea.categories.map((displayName: string) => {
-          const entry = Object.entries(CATEGORY_DISPLAY_NAMES).find(
-            ([_, value]) => value.toLowerCase() === displayName.toLowerCase(),
+          const entry = objectEntries(CATEGORY_DISPLAY_NAMES).find(
+            ([, value]) => value.toLowerCase() === displayName.toLowerCase(),
           );
-          return entry ? (entry[0] as ContentCategory) : 'gear-essentials';
+          return entry ? entry[0] : ('gear-essentials' as const);
         });
 
         return {
@@ -274,7 +284,9 @@ async function generateTopicIdeas(
           categories: categoryKeys,
           author: getRandomAuthor(),
           readingTime: generateReadingTime(),
-          difficulty: idea.difficulty as DifficultyLevel,
+          difficulty: (arrayIncludes(DIFFICULTY_LEVELS, idea.difficulty)
+            ? idea.difficulty
+            : 'All Levels') satisfies DifficultyLevel,
           coverImage: '/placeholder.svg?height=400&width=800',
           slug: createSlug(idea.title),
         };
@@ -477,63 +489,63 @@ function generateContentReport(): void {
 
   // Category distribution
   const categoryDistribution: Record<string, number> = {};
-  existingContent.forEach((content) => {
-    content.categories.forEach((category) => {
+  for (const content of existingContent) {
+    for (const category of content.categories) {
       const displayName = CATEGORY_DISPLAY_NAMES[category];
       categoryDistribution[displayName] = (categoryDistribution[displayName] || 0) + 1;
-    });
-  });
+    }
+  }
 
   console.log(chalk.blue(`\nCategory Distribution:`));
-  Object.entries(categoryDistribution)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .forEach(([category, count]) => {
-      const percentage = ((count / existingContent.length) * 100).toFixed(1);
-      console.log(`${category}: ${count} (${percentage}%)`);
-    });
+  for (const [category, count] of Object.entries(categoryDistribution).sort(
+    ([, countA], [, countB]) => countB - countA,
+  )) {
+    const percentage = ((count / existingContent.length) * 100).toFixed(1);
+    console.log(`${category}: ${count} (${percentage}%)`);
+  }
 
   // Difficulty distribution
   const difficultyDistribution: Record<string, number> = {};
-  existingContent.forEach((content) => {
+  for (const content of existingContent) {
     difficultyDistribution[content.difficulty] =
       (difficultyDistribution[content.difficulty] || 0) + 1;
-  });
+  }
 
   console.log(chalk.blue(`\nDifficulty Distribution:`));
-  Object.entries(difficultyDistribution)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .forEach(([difficulty, count]) => {
-      const percentage = ((count / existingContent.length) * 100).toFixed(1);
-      console.log(`${difficulty}: ${count} (${percentage}%)`);
-    });
+  for (const [difficulty, count] of Object.entries(difficultyDistribution).sort(
+    ([, countA], [, countB]) => countB - countA,
+  )) {
+    const percentage = ((count / existingContent.length) * 100).toFixed(1);
+    console.log(`${difficulty}: ${count} (${percentage}%)`);
+  }
 
   // Author distribution
   const authorDistribution: Record<string, number> = {};
-  existingContent.forEach((content) => {
+  for (const content of existingContent) {
     authorDistribution[content.author] = (authorDistribution[content.author] || 0) + 1;
-  });
+  }
 
   console.log(chalk.blue(`\nAuthor Distribution:`));
-  Object.entries(authorDistribution)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .forEach(([author, count]) => {
-      const percentage = ((count / existingContent.length) * 100).toFixed(1);
-      console.log(`${author}: ${count} (${percentage}%)`);
-    });
+  for (const [author, count] of Object.entries(authorDistribution).sort(
+    ([, countA], [, countB]) => countB - countA,
+  )) {
+    const percentage = ((count / existingContent.length) * 100).toFixed(1);
+    console.log(`${author}: ${count} (${percentage}%)`);
+  }
 }
 
 // Export functions for use in the frontend
 export {
   CATEGORY_DISPLAY_NAMES,
+  type ContentCategory,
+  type ContentMetadata,
+  type ContentRequest,
+  type DifficultyLevel,
   generateContentReport,
   generatePost,
   generatePosts,
   generateTopicIdeas,
   getExistingContent,
-  type ContentCategory,
-  type ContentMetadata,
-  type ContentRequest,
-  type DifficultyLevel,
 };
 
 // Command line interface
@@ -548,7 +560,9 @@ if (require.main === module) {
   }
 
   const count = (args[0] && Number.parseInt(args[0], 10)) || 5;
-  const categoryArgs = args.slice(1) as ContentCategory[];
+  const categoryArgs = args
+    .slice(1)
+    .filter((a): a is ContentCategory => arrayIncludes(VALID_CONTENT_CATEGORIES, a));
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));
   if (categoryArgs.length > 0) {

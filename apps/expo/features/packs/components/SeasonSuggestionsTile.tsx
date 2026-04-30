@@ -1,5 +1,5 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -29,8 +29,9 @@ export function SeasonSuggestionsTile() {
         <View className="px-3">
           <View className="h-6 w-6 items-center justify-center rounded-md bg-orange-500">
             <Icon
+              name="leaf"
+              namingScheme="sfSymbol"
               materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
-              ios={{ name: 'leaf' }}
               size={15}
               color="white"
             />

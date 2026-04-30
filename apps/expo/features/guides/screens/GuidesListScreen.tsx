@@ -1,11 +1,13 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
 import type { Guide } from '../types';
@@ -16,6 +18,7 @@ export const GuidesListScreen = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const {
     data: categories,
@@ -112,31 +115,108 @@ export const GuidesListScreen = () => {
     );
   };
 
+  const renderSearchContent = () => {
+    if (!isSearchMode) {
+      return (
+        <View className="flex-1 items-center justify-center p-4">
+          <Text className="text-muted-foreground">{t('guides.searchGuides')}</Text>
+        </View>
+      );
+    }
+
+    if (isLoading) {
+      return (
+        <View className="flex-1 items-center justify-center p-6">
+          <ActivityIndicator className="text-primary" size="large" />
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={guides}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View className="px-4 pt-4">
+            <GuideCard guide={item} onPress={() => handleGuidePress(item)} />
+          </View>
+        )}
+        ListHeaderComponent={
+          guides.length > 0 ? (
+            <View className="px-4 pt-2">
+              <Text className="text-xs text-muted-foreground">
+                {guides.length} {guides.length === 1 ? t('guides.result') : t('guides.results')}
+              </Text>
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          <View className="flex-1 items-center justify-center p-8">
+            <Text className="text-center text-gray-500 dark:text-gray-400">
+              {t('guides.noGuidesFound', { query: searchQuery })}
+            </Text>
+          </View>
+        }
+        ListFooterComponent={
+          isFetchingNextPageSearch ? (
+            <View className="py-4">
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null
+        }
+        onEndReached={() => {
+          if (hasNextPageSearch && !isFetchingNextPageSearch) {
+            fetchNextPageSearch();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
+      />
+    );
+  };
+
+  const listHeader = () => {
+    if (isSearchMode) return null;
+
+    return (
+      <>
+        <LargeTitleHeaderOverlapFixIOS />
+        <CategoriesFilter
+          data={categories}
+          onFilter={handleCategoryChange}
+          activeFilter={selectedCategory}
+          error={categoriesError}
+          retry={refetchCategories}
+          className="px-4 pb-2"
+        />
+      </>
+    );
+  };
+
   return (
-    <SafeAreaView className="flex-1">
+    <>
       <LargeTitleHeader
         title={t('guides.guides')}
         searchBar={{
-          iosHideWhenScrolling: true,
+          iosHideWhenScrolling: false,
+          ref: asNonNullableRef(searchBarRef),
           onChangeText: handleSearch,
           placeholder: t('guides.searchPlaceholder'),
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {renderSearchContent()}
+            </LargeTitleHeaderSearchContentContainer>
+          ),
         }}
-      />
-
-      <CategoriesFilter
-        data={categories}
-        onFilter={handleCategoryChange}
-        activeFilter={selectedCategory}
-        error={categoriesError}
-        retry={refetchCategories}
-        className="px-4 pb-2"
       />
 
       <FlatList
         data={guides}
         keyExtractor={(item) => item.id}
         renderItem={renderGuide}
+        ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingHorizontal: 16, flexGrow: 1 }}
+        contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
@@ -153,6 +233,6 @@ export const GuidesListScreen = () => {
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
       />
-    </SafeAreaView>
+    </>
   );
 };

@@ -1,5 +1,5 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { seedPackTemplate, seedTestUser } from './utils/db-helpers';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { seedAndLoginTestUser, seedPackTemplate } from './utils/db-helpers';
 import {
   api,
   apiWithAdmin,
@@ -9,133 +9,51 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// Counter for generating unique contentIds in tests (incremented per call to avoid duplicates)
-let mockContentIdCounter = 0;
+// Helper: override the global @cloudflare/containers fetch for a single test
+// by setting a function on globalThis that the global mock (in setup.ts) reads.
+type MockContainerFetch = (req: Request) => Promise<Response>;
+const setMockContainerFetch = (fn: MockContainerFetch | null) => {
+  (
+    globalThis as unknown as { __mockContainerFetch?: MockContainerFetch | null }
+  ).__mockContainerFetch = fn;
+};
 
-// Create a mock fetch function that can be configured per test
-const createMockContainerFetch = (contentId?: string) =>
-  vi.fn((_request: Request) => {
-    // Generate a unique content ID or use provided contentId
-    // Pre-increment ensures each call gets a different ID (safe since tests run sequentially per vitest.config.ts)
-    mockContentIdCounter += 1;
-    const uniqueContentId = contentId ?? `mock-content-${mockContentIdCounter}`;
-
-    return Promise.resolve(
+const containerFetchWithContentId =
+  (contentId: string): MockContainerFetch =>
+  (_req) =>
+    Promise.resolve(
       new Response(
         JSON.stringify({
           success: true,
           data: {
             imageUrls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
             caption: 'Check out my hiking gear!',
-            contentId: uniqueContentId,
+            contentId,
           },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       ),
     );
-  });
 
-// Store the mock to allow reconfiguring per test
-let mockContainerFetch = createMockContainerFetch();
-
-// Mock the @cloudflare/containers module (needs Container class for AppContainer)
-vi.mock('@cloudflare/containers', () => ({
-  Container: class MockContainer {},
-  getContainer: vi.fn(() => ({
-    fetch: (...args: Parameters<typeof mockContainerFetch>) => mockContainerFetch(...args),
-  })),
-}));
-
-// Mock the AI generateObject function
-vi.mock('ai', async () => {
-  const actual = await vi.importActual<typeof import('ai')>('ai');
-  return {
-    ...actual,
-    generateObject: vi.fn(() =>
-      Promise.resolve({
-        object: {
-          templateName: 'Hiking Essentials',
-          templateCategory: 'hiking',
-          templateDescription: 'Essential gear for a day hike',
-          items: [
-            {
-              name: 'Backpack',
-              description: 'Day hiking backpack, 20L capacity',
-              quantity: 1,
-              category: 'Packs',
-              weightGrams: 500,
-              consumable: false,
-              worn: false,
-            },
-            {
-              name: 'Water Bottle',
-              description: 'Reusable water bottle, 1L',
-              quantity: 2,
-              category: 'Hydration',
-              weightGrams: 150,
-              consumable: false,
-              worn: false,
-            },
-          ],
-        },
-      }),
-    ),
-  };
-});
-
-// Mock the catalog service batch vector search
-// Returns items with null IDs because in test environment we don't seed catalog items
-// and the database has foreign key constraints on catalog_item_id references.
-// In production, the service returns actual catalog IDs when matches are found.
-vi.mock('@packrat/api/services/catalogService', () => ({
-  CatalogService: vi.fn().mockImplementation(() => ({
-    batchVectorSearch: vi.fn(() =>
-      Promise.resolve({
-        items: [
-          // First item match (backpack)
-          [
-            {
-              id: null, // No catalog ID in tests to avoid FK constraint
-              name: 'Trail Backpack 20L',
-              description: 'Lightweight day pack',
-              weight: 480,
-              weightUnit: 'g',
-              images: ['https://example.com/backpack.jpg'],
-            },
-          ],
-          // Second item match (water bottle)
-          [
-            {
-              id: null, // No catalog ID in tests to avoid FK constraint
-              name: 'HydroFlask 32oz',
-              description: 'Insulated water bottle',
-              weight: 180,
-              weightUnit: 'g',
-              images: ['https://example.com/bottle.jpg'],
-            },
-          ],
-        ],
-      }),
-    ),
-  })),
-}));
+// CatalogService is mocked globally in setup.ts (returns items with null
+// catalogItemId to avoid FK issues with unseeded catalog_items).
 
 describe('Generate From Online Content Routes', () => {
-  beforeAll(async () => {
-    // Seed both a regular user and an admin user
-    await seedTestUser();
-    await seedTestUser({
+  let testAdmin: Awaited<ReturnType<typeof seedAndLoginTestUser>>;
+
+  beforeEach(async () => {
+    // Re-seed both users before each test (global beforeEach truncates all tables).
+    // Login both: regular user drives apiWithAuth (403 tests), admin drives apiWithAdmin.
+    await seedAndLoginTestUser();
+    testAdmin = await seedAndLoginTestUser({
       email: 'admin@example.com',
       firstName: 'Admin',
       lastName: 'User',
       role: 'ADMIN',
     });
-  });
-
-  beforeEach(() => {
     vi.clearAllMocks();
-    // Reset mock to default (unique contentIds)
-    mockContainerFetch = createMockContainerFetch();
+    // Reset to the global default container fetch (setup.ts).
+    setMockContainerFetch(null);
   });
 
   describe('Authentication', () => {
@@ -189,15 +107,16 @@ describe('Generate From Online Content Routes', () => {
     it('returns 409 for existing template with same contentId', async () => {
       const duplicateContentId = 'duplicate-content-test-123';
 
-      // Seed an existing template with a TikTok content ID
+      // Seed an existing template with a TikTok content ID (owned by admin)
       await seedPackTemplate({
+        userId: testAdmin.id,
         name: 'Existing TikTok Template',
         contentSource: 'tiktok',
         contentId: duplicateContentId,
       });
 
       // Configure mock to return the same contentId as the seeded template
-      mockContainerFetch = createMockContainerFetch(duplicateContentId);
+      setMockContainerFetch(containerFetchWithContentId(duplicateContentId));
 
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',

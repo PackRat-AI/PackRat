@@ -44,17 +44,19 @@ const packageFiles = glob.sync('**/package.json', {
   ignore: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'package.json'],
 });
 
+const RE_VERSION_FIELD = /"version":\s*"[^"]*"/;
+
 // Update all package.json files
-packageFiles.forEach((file) => {
+for (const file of packageFiles) {
   try {
     const content = readFileSync(file, 'utf-8');
-    const updated = content.replace(/"version":\s*"[^"]*"/, `"version": "${newVersion}"`);
+    const updated = content.replace(RE_VERSION_FIELD, `"version": "${newVersion}"`);
     writeFileSync(file, updated);
     console.log(`✅ Updated ${file}`);
   } catch (error) {
     console.error(`❌ Failed to update ${file}:`, error);
   }
-});
+}
 
 // Update app.config.ts
 const appConfigPath = join(process.cwd(), 'apps/expo/app.config.ts');

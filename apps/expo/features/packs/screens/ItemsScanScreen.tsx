@@ -1,10 +1,10 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { assertNonNull } from '@packrat/guards';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';
+import { Icon } from 'expo-app/components/Icon';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -23,6 +23,7 @@ export function ItemsScanScreen() {
   const { colors } = useColorScheme();
   const { packId, ...fileInfo } = useLocalSearchParams();
   const [hasRunInitialScanOnMount, setHasRunInitialScanOnMount] = useState(false);
+  // safe-cast: expo-router query params are untyped strings; fileInfo carries uri/fileName/type
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
@@ -170,7 +171,7 @@ export function ItemsScanScreen() {
 
       <View className="flex-row items-center justify-between bg-card px-4 py-2 border border-border rounded-md">
         <Image
-          source={{ uri: (selectedImage as SelectedImage).uri }}
+          source={{ uri: selectedImage?.uri }}
           className="h-24 w-24 rounded-lg"
           resizeMode="cover"
         />

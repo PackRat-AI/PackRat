@@ -1,77 +1,71 @@
 #!/usr/bin/env bun
 
 /**
- * Configure dependencies for installation
+ * Verify that GitHub Packages auth is available for `bun install`.
  *
- * This script ensures that GitHub packages authentication is properly set up
- * for installing private packages from the GitHub Package Registry.
+ * IMPORTANT: Bun reads bunfig.toml at process startup, BEFORE this preinstall
+ * hook runs. That means we cannot inject PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
+ * into the parent process — the variable must already be exported in the
+ * shell that invokes `bun install`. This script's job is to detect a missing
+ * token early and print the exact command to fix it.
  *
- * It runs automatically before `bun install` via the preinstall hook.
- *
- * Token Usage Pattern:
- * - Local development: GitHub CLI token (from `gh auth token`) → PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
- * - CI/CD: Uses PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN directly from secrets
- * - The token is used by bunfig.toml to authenticate with npm.pkg.github.com
- *
- * Requirements:
- * - Local development: GitHub CLI must be installed and authenticated with `read:packages` scope
- * - CI/CD: PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN environment variable must be set
+ * Expected flow:
+ * - Local dev: `export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token)` then `bun install`
+ * - CI/CD:     PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN set from repo secrets
  */
 
 import { $ } from 'bun';
 
-async function configureDeps() {
-  try {
-    // Check if we're in a CI environment
-    const isCI =
-      process.env.CI === '1' || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const TOKEN_VAR = 'PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN';
 
-    if (isCI) {
-      // In CI, bunfig.toml will use PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
-      if (!process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN) {
-        console.error('❌ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN not found in CI');
-        console.error('Please ensure PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN is set in your CI secrets');
-        process.exit(1);
-      }
-      console.log('✓ Using PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN for CI authentication');
-      return;
-    }
-
-    // For local development, check if PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN is already set
-    if (process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN) {
-      console.log('✓ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN already set in environment');
-      return;
-    }
-
-    // Try to get token from GitHub CLI
-    const ghStatus = await $`gh auth status`.quiet().nothrow();
-
-    if (ghStatus.exitCode === 0) {
-      // Note: gh auth status doesn't show read:packages in the output even when it's granted
-      // The token will work if the user has followed the authentication steps
-
-      // Get the GitHub token from gh CLI and set it as PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
-      const token = await $`gh auth token`.text();
-      process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN = token.trim();
-      console.log('✓ Using GitHub CLI token for authentication');
-    } else {
-      console.error('❌ GitHub CLI not found or not authenticated');
-      console.error('\nTo fix this:');
-      console.error('1. Install GitHub CLI: https://cli.github.com');
-      console.error('2. Authenticate: gh auth login');
-      console.error('3. Add packages scope: gh auth refresh -h github.com -s read:packages');
-      console.error(
-        '\nAlternatively, set PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN environment variable with a personal access token',
-      );
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error('❌ Configuration failed:', error);
-    process.exit(1);
-  }
+function isCI(): boolean {
+  return (
+    process.env.CI === '1' || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+  );
 }
 
-// Only run if this is the main module
+function printLocalFix(): void {
+  console.error(`\n❌ ${TOKEN_VAR} is not exported in your shell.`);
+  console.error('\nBun reads bunfig.toml before the preinstall hook runs, so the token');
+  console.error('must be present in the parent shell. Run one of:\n');
+  console.error('  # Inline');
+  console.error(`  export ${TOKEN_VAR}=$(gh auth token)`);
+  console.error('  bun install\n');
+  console.error('  # One-liner');
+  console.error(`  ${TOKEN_VAR}=$(gh auth token) bun install\n`);
+  console.error('  # Persist — add to ~/.zshrc or ~/.bashrc');
+  console.error(`  export ${TOKEN_VAR}=$(gh auth token 2>/dev/null)\n`);
+  console.error('If gh is not set up yet:');
+  console.error('  gh auth login');
+  console.error('  gh auth refresh -h github.com -s read:packages');
+}
+
+async function configureDeps() {
+  if (process.env[TOKEN_VAR]) {
+    console.log(`✓ ${TOKEN_VAR} is set — bun install will authenticate to GitHub Packages`);
+    return;
+  }
+
+  if (isCI()) {
+    console.error(`❌ ${TOKEN_VAR} not found in CI environment`);
+    console.error(`Set ${TOKEN_VAR} in your CI secrets and expose it to this job.`);
+    process.exit(1);
+  }
+
+  const ghStatus = await $`gh auth status`.quiet().nothrow();
+  if (ghStatus.exitCode !== 0) {
+    console.error('❌ GitHub CLI not found or not authenticated.\n');
+    console.error('1. Install GitHub CLI: https://cli.github.com');
+    console.error('2. Authenticate: gh auth login');
+    console.error('3. Add packages scope: gh auth refresh -h github.com -s read:packages');
+    console.error(`4. Then export ${TOKEN_VAR}=$(gh auth token) and re-run bun install.`);
+    process.exit(1);
+  }
+
+  printLocalFix();
+  process.exit(1);
+}
+
 if (import.meta.main) {
   configureDeps();
 }

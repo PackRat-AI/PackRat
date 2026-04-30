@@ -1,14 +1,16 @@
 import { createDb } from '@packrat/api/db';
+import { hashPassword } from '@packrat/api/utils/auth';
 import { assertDefined } from '@packrat/guards';
 import type { InferInsertModel } from 'drizzle-orm';
-import type { Context } from 'hono';
+
+import * as schema from '../../src/db/schema';
 import {
   catalogItems,
   packItems,
   packs,
   packTemplateItems,
   packTemplates,
-  users,
+  type users,
 } from '../../src/db/schema';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
 import { createTestPack, createTestPackItem } from '../fixtures/pack-fixtures';
@@ -16,6 +18,7 @@ import {
   createTestPackTemplate,
   createTestPackTemplateItem,
 } from '../fixtures/pack-template-fixtures';
+import { setCurrentTestAdmin, setCurrentTestUser } from './test-helpers';
 
 /**
  * Generates a mock embedding vector
@@ -35,28 +38,49 @@ function generateUniqueSku(): string {
 }
 
 /**
- * Seeds a test user into the database
- * @returns The created user with id
+ * Seeds a test user directly via DB insert (deterministic, no password hashing side-effects).
+ * Returns the user with DB-assigned id. Does NOT register as the current JWT
+ * subject — tests that want `apiWithAuth` to authenticate as this user must
+ * also call `loginAs(user)` or use `seedAndLoginTestUser()`.
  */
-export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof users>>) {
-  const db = createDb({} as unknown as Context);
+export async function seedTestUser(
+  overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
+) {
+  const db = createDb();
+  const password = overrides?.password ?? 'TestPassword1!';
+  const passwordHash = await hashPassword(password);
+  const email =
+    overrides?.email ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
-  const userData = {
-    email:
-      overrides?.email ??
-      `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-    emailVerified: overrides?.emailVerified ?? true,
-    passwordHash: overrides?.passwordHash ?? null,
-    firstName: overrides?.firstName ?? 'Test',
-    lastName: overrides?.lastName ?? 'User',
-    role: overrides?.role ?? 'USER',
-    ...overrides,
-  };
-
-  const [user] = await db.insert(users).values(userData).returning();
+  const [user] = await db
+    .insert(schema.users)
+    .values({
+      email,
+      passwordHash,
+      firstName: overrides?.firstName ?? 'Test',
+      lastName: overrides?.lastName ?? 'User',
+      role: overrides?.role ?? 'USER',
+      emailVerified: overrides?.emailVerified ?? true,
+    })
+    .returning();
 
   assertDefined(user);
+  return user;
+}
 
+/**
+ * Seeds a user AND registers them as the current JWT subject so apiWithAuth
+ * (or apiWithAdmin, for role: "ADMIN") authenticates as them. Use in
+ * beforeEach for the "primary" test user.
+ */
+export async function seedAndLoginTestUser(
+  overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
+) {
+  const user = await seedTestUser(overrides);
+  const role = (user.role ?? 'USER') as 'USER' | 'ADMIN';
+  const subject = { id: user.id, role };
+  if (role === 'ADMIN') setCurrentTestAdmin(subject);
+  else setCurrentTestUser(subject);
   return user;
 }
 
@@ -67,7 +91,7 @@ export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof u
 export async function seedCatalogItem(overrides?: Partial<InferInsertModel<typeof catalogItems>>) {
   // Use the mocked database (which is connected in test setup)
   // The createDb function is mocked to return the test database, so we can pass an empty context
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const itemData = createTestCatalogItem({
     ...overrides,
@@ -98,7 +122,7 @@ export async function seedCatalogItems(
 ) {
   // Use the mocked database (which is connected in test setup)
   // The createDb function is mocked to return the test database, so we can pass an empty context
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const items = Array.from({ length: count }, (_, i) => {
     const baseItem = createTestCatalogItem({
@@ -123,9 +147,9 @@ export async function seedCatalogItems(
  * @returns The created pack template with id
  */
 export async function seedPackTemplate(
-  overrides?: Partial<InferInsertModel<typeof packTemplates>>,
+  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: number },
 ) {
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const templateData = createTestPackTemplate(overrides);
 
@@ -143,9 +167,9 @@ export async function seedPackTemplate(
 
 export async function seedPackTemplates(
   count: number,
-  overrides?: Partial<InferInsertModel<typeof packTemplates>>,
+  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: number },
 ) {
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const templates = Array.from({ length: count }, (_, i) => {
     return createTestPackTemplate({
@@ -166,9 +190,9 @@ export async function seedPackTemplates(
 
 export async function seedPackTemplateItem(
   packTemplateId: string,
-  overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
+  overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: number },
 ) {
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const itemData = createTestPackTemplateItem(packTemplateId, overrides);
 
@@ -186,10 +210,13 @@ export async function seedPackTemplateItem(
 
 export async function seedPackTemplateItems(
   packTemplateId: string,
-  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packTemplateItems>> },
+  opts: {
+    count: number;
+    overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: number };
+  },
 ) {
   const { count, overrides } = opts;
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const items = Array.from({ length: count }, (_, i) => {
     return createTestPackTemplateItem(packTemplateId, {
@@ -207,8 +234,10 @@ export async function seedPackTemplateItems(
  * Seeds a pack into the test database
  * @returns The created pack with id
  */
-export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs>>) {
-  const db = createDb({} as unknown as Context);
+export async function seedPack(
+  overrides: Partial<InferInsertModel<typeof packs>> & { userId: number },
+) {
+  const db = createDb();
 
   const packData = createTestPack(overrides);
 
@@ -226,9 +255,9 @@ export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs
 
 export async function seedPacks(
   count: number,
-  overrides?: Partial<InferInsertModel<typeof packs>>,
+  overrides: Partial<InferInsertModel<typeof packs>> & { userId: number },
 ) {
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const packsData = Array.from({ length: count }, (_, i) => {
     return createTestPack({
@@ -249,9 +278,9 @@ export async function seedPacks(
 
 export async function seedPackItem(
   packId: string,
-  overrides?: Partial<InferInsertModel<typeof packItems>>,
+  overrides: Partial<InferInsertModel<typeof packItems>> & { userId: number },
 ) {
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const itemData = createTestPackItem(packId, overrides);
 
@@ -269,10 +298,13 @@ export async function seedPackItem(
 
 export async function seedPackItems(
   packId: string,
-  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packItems>> },
+  opts: {
+    count: number;
+    overrides: Partial<InferInsertModel<typeof packItems>> & { userId: number };
+  },
 ) {
   const { count, overrides } = opts;
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const items = Array.from({ length: count }, (_, i) => {
     return createTestPackItem(packId, {

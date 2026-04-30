@@ -75,7 +75,33 @@ export default function AppLayout() {
         <Stack.Screen name="ai-chat" />
         <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
-        <Stack.Screen name="weather" options={{ headerShown: false }} />
+        <Stack.Screen name="weather/index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="weather/search"
+          options={{
+            title: t('weather.addLocation'),
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="weather/preview"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="weather/[id]"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="weather/geo"
+          options={{
+            headerShown: false,
+          }}
+        />
 
         <Stack.Screen
           name="current-pack"

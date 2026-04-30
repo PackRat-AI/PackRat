@@ -1,3 +1,5 @@
+import { isFunction } from '@packrat/guards';
+
 /**
  * Domain-specific extension mappings for common image hosts
  * This helps us avoid network requests for known domains
@@ -8,6 +10,8 @@ type DomainPattern = {
   pattern: RegExp;
   extension: string | ((url: string) => string);
 };
+
+const CLOUDINARY_EXTENSION_PATTERN = /\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//;
 
 // Update the domainPatterns array to include Cloudinary
 const domainPatterns: DomainPattern[] = [
@@ -30,7 +34,7 @@ const domainPatterns: DomainPattern[] = [
   {
     pattern: /cloudinary\.com\/.*\/image\/upload\/.*\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//,
     extension: (url) => {
-      const match = url.match(/\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//);
+      const match = CLOUDINARY_EXTENSION_PATTERN.exec(url);
       return match && match[2] !== undefined ? match[2].toLowerCase() : 'jpg';
     },
   },
@@ -46,7 +50,7 @@ const domainPatterns: DomainPattern[] = [
 export const getDomainSpecificExtension = (url: string): string | null => {
   for (const { pattern, extension } of domainPatterns) {
     if (pattern.test(url)) {
-      return typeof extension === 'function' ? extension(url) : extension;
+      return isFunction(extension) ? extension(url) : extension;
     }
   }
   return null;

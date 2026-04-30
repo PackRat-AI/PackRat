@@ -1,8 +1,9 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { keyIn } from '@packrat/guards';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
+import { Icon } from 'expo-app/components/Icon';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -139,15 +140,17 @@ export const ChatBubble = React.memo(function ChatBubble({
               <Text key={key}>{part.text}</Text>
             );
 
-          if (isAI && part.type.startsWith('tool-'))
+          if (isAI && part.type.startsWith('tool-')) {
+            // safe-cast: startsWith('tool-') guard confirms this part is a ToolUIPart; ai's union
+            // type is too wide for TypeScript to narrow statically on a string prefix check.
+            const toolPart = part as ToolUIPart;
+            const toolKey = keyIn(toolPart, 'toolCallId') ? toolPart.toolCallId : key;
             return (
               <View key={key} className="my-2">
-                <ToolInvocationRenderer
-                  key={(part as ToolUIPart).toolCallId}
-                  toolInvocation={part as ToolUIPart}
-                />
+                <ToolInvocationRenderer key={toolKey} toolInvocation={toolPart} />
               </View>
             );
+          }
 
           return null;
         })}

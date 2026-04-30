@@ -1,4 +1,4 @@
-import { Button } from 'landing-app/components/ui/button';
+import { Button } from '@packrat/web-ui/components/button';
 import { Check } from 'lucide-react';
 import Link from 'next/link';
 

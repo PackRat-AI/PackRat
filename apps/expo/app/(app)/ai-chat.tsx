@@ -1,10 +1,13 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
+import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import * as Burnt from 'burnt';
+import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
+import { featureFlags } from 'expo-app/config';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
   clearChatMessages,
@@ -32,7 +35,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   ScrollView,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   TouchableOpacity,
@@ -101,14 +103,14 @@ export default function AIChat() {
         id: '1',
         role: 'assistant',
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
+      } satisfies UIMessage,
     ],
     [context],
   );
 
   // Kick off model init check on mount (prepares already-downloaded models)
   React.useEffect(() => {
-    initLocalModel();
+    if (featureFlags.enableLocalAI) initLocalModel();
   }, []);
 
   // Keep a ref for context body values so the transport closure stays fresh
@@ -121,16 +123,18 @@ export default function AIChat() {
   const tools = React.useMemo(() => createLocalTools(), []);
 
   const transport = React.useMemo(() => {
-    if (aiMode === 'local' && isLocalReady) {
+    if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
         return new CustomChatTransport(model, tools);
       }
     }
     return new DefaultChatTransport({
-      fetch: undefined,
+      fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: () => ({
         contextType: contextRef.current.contextType,
         itemId: contextRef.current.itemId,
@@ -198,7 +202,7 @@ export default function AIChat() {
     const messageText = text || input;
 
     // Guard: local mode but model not ready
-    if (aiMode === 'local' && modelStatus !== 'ready') {
+    if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
       Burnt.toast({
         title: t('ai.modelNotReady'),
         preset: 'error',

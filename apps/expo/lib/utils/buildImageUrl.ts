@@ -1,4 +1,4 @@
-import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { clientEnvs } from '@packrat/env/expo-client';
 import type { PackTemplateItem } from 'expo-app/features/pack-templates';
 import type { PackItem } from 'expo-app/features/packs';
 

@@ -1,12 +1,12 @@
 'use client';
 
-import { Button } from 'landing-app/components/ui/button';
+import { Button } from '@packrat/web-ui/components/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from 'landing-app/components/ui/dropdown-menu';
+} from '@packrat/web-ui/components/dropdown-menu';
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 

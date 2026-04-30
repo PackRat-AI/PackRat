@@ -1,7 +1,9 @@
 'use client';
 
-import { Badge } from 'guides-app/components/ui/badge';
-import { Button } from 'guides-app/components/ui/button';
+import { guideEnv } from '@packrat/env/next';
+import { assertEnum } from '@packrat/guards';
+import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import {
   Card,
   CardContent,
@@ -9,29 +11,29 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from 'guides-app/components/ui/card';
-import { Checkbox } from 'guides-app/components/ui/checkbox';
-import { Input } from 'guides-app/components/ui/input';
-import { Label } from 'guides-app/components/ui/label';
+} from '@packrat/web-ui/components/card';
+import { Checkbox } from '@packrat/web-ui/components/checkbox';
+import { Input } from '@packrat/web-ui/components/input';
+import { Label } from '@packrat/web-ui/components/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'guides-app/components/ui/select';
-import { Slider } from 'guides-app/components/ui/slider';
-import { Switch } from 'guides-app/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'guides-app/components/ui/tabs';
-import { Textarea } from 'guides-app/components/ui/textarea';
-import { Toaster } from 'guides-app/components/ui/toaster';
-import { toast } from 'guides-app/components/ui/use-toast';
+} from '@packrat/web-ui/components/select';
+import { Slider } from '@packrat/web-ui/components/slider';
+import { Switch } from '@packrat/web-ui/components/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@packrat/web-ui/components/tabs';
+import { Textarea } from '@packrat/web-ui/components/textarea';
+import { Toaster } from '@packrat/web-ui/components/toaster';
+import { toast } from '@packrat/web-ui/hooks/use-toast';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // This ensures the page only works in development
-const _isDevelopment = process.env.NODE_ENV === 'development';
+const _isDevelopment = guideEnv.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =
@@ -283,18 +285,20 @@ export default function GeneratePage() {
                 <div className="space-y-2">
                   <Label>Categories (select at least one)</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {Object.entries(CATEGORY_DISPLAY_NAMES).map(([key, name]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`category-${key}`}
-                          checked={selectedCategories.includes(key as ContentCategory)}
-                          onCheckedChange={() => handleCategoryToggle(key as ContentCategory)}
-                        />
-                        <Label htmlFor={`category-${key}`} className="text-sm">
-                          {name}
-                        </Label>
-                      </div>
-                    ))}
+                    {(Object.entries(CATEGORY_DISPLAY_NAMES) as [ContentCategory, string][]).map(
+                      ([key, name]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${key}`}
+                            checked={selectedCategories.includes(key)}
+                            onCheckedChange={() => handleCategoryToggle(key)}
+                          />
+                          <Label htmlFor={`category-${key}`} className="text-sm">
+                            {name}
+                          </Label>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -302,7 +306,10 @@ export default function GeneratePage() {
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
+                    onValueChange={(value: string) => {
+                      assertEnum(value, { members: difficulties, name: 'difficulty' });
+                      setDifficulty(value);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select difficulty" />
@@ -406,7 +413,7 @@ export default function GeneratePage() {
                   max={20}
                   step={1}
                   value={[batchCount]}
-                  onValueChange={(value) => {
+                  onValueChange={(value: number[]) => {
                     const count = value[0];
                     assertDefined(count);
                     setBatchCount(count);
@@ -420,18 +427,18 @@ export default function GeneratePage() {
                   Select categories to focus on, or leave empty for a mix
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {Object.entries(CATEGORY_DISPLAY_NAMES).map(([key, name]) => (
-                    <Badge
-                      key={key}
-                      variant={
-                        batchCategories.includes(key as ContentCategory) ? 'default' : 'outline'
-                      }
-                      className="cursor-pointer"
-                      onClick={() => handleBatchCategoryToggle(key as ContentCategory)}
-                    >
-                      {name}
-                    </Badge>
-                  ))}
+                  {(Object.entries(CATEGORY_DISPLAY_NAMES) as [ContentCategory, string][]).map(
+                    ([key, name]) => (
+                      <Badge
+                        key={key}
+                        variant={batchCategories.includes(key) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => handleBatchCategoryToggle(key)}
+                      >
+                        {name}
+                      </Badge>
+                    ),
+                  )}
                 </div>
               </div>
 

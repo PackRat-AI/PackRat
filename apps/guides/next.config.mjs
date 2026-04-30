@@ -10,6 +10,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: ['@packrat/web-ui'],
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,

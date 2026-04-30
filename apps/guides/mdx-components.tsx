@@ -1,11 +1,8 @@
+import type { MDXComponents as MDXComponentsType } from 'mdx/types';
 import Image, { type ImageProps } from 'next/image';
 import Link, { type LinkProps } from 'next/link';
 
-type MDXComponents = {
-  [key: string]: React.ComponentType<React.HTMLAttributes<HTMLElement>>;
-};
-
-export function useMDXComponents(components: MDXComponents): MDXComponents {
+export function useMDXComponents(components: MDXComponentsType): MDXComponentsType {
   return {
     // Use custom components
     img: (props: ImageProps) => (

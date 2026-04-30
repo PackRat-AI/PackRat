@@ -22,7 +22,7 @@ export function computeCategorySummaries(pack: Pack): CategorySummary[] {
     }
   > = {};
 
-  items.forEach((item) => {
+  for (const item of items) {
     const category = item.category?.trim() || 'Other';
     const weight = item.weight;
     const unit = item.weightUnit;
@@ -38,7 +38,7 @@ export function computeCategorySummaries(pack: Pack): CategorySummary[] {
 
     categoryMap[category].weightInGrams += convertedWeight;
     categoryMap[category].items += 1;
-  });
+  }
 
   return Object.entries(categoryMap).map(([name, data]) => {
     const percentage =

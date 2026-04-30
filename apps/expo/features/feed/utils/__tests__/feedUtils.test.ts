@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 // Mock clientEnvs before importing the module under test so that
 // buildPostImageUrl has a deterministic CDN base URL.
-vi.mock('expo-app/env/clientEnvs', () => ({
+vi.mock('@packrat/env/expo-client', () => ({
   clientEnvs: {
     EXPO_PUBLIC_R2_PUBLIC_URL: 'https://cdn.example.com',
   },

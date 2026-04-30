@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.17',
+      version: '2.0.24',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -60,14 +60,13 @@ export default (): ExpoConfig =>
         'expo-localization',
         [
           'llama.rn',
-          // optional fields, below are the default values
           {
-            enableEntitlements: true,
-            entitlementsProfile: 'production',
+            enableEntitlements: false,
             forceCxx20: true,
             enableOpenCLAndHexagon: false,
           },
         ],
+        ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
       ],

@@ -1,14 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { seedAndLoginTestUser } from './utils/db-helpers';
 import {
   api,
   apiWithAuth,
   expectJsonResponse,
   expectUnauthorized,
   httpMethods,
-  TEST_USER,
 } from './utils/test-helpers';
 
 describe('Image Detection Routes', () => {
+  let testUser: Awaited<ReturnType<typeof seedAndLoginTestUser>>;
+
+  beforeEach(async () => {
+    testUser = await seedAndLoginTestUser();
+  });
+
   describe('Authentication', () => {
     it('POST /packs/analyze-image requires auth', async () => {
       const res = await api('/packs/analyze-image', httpMethods.post({}));
@@ -36,7 +42,7 @@ describe('Image Detection Routes', () => {
       const res = await apiWithAuth(
         '/packs/analyze-image',
         httpMethods.post({
-          image: `${TEST_USER.id}-Ly81kadKndZ1pH2miQu8A.jpg`,
+          image: `${testUser.id}-Ly81kadKndZ1pH2miQu8A.jpg`,
         }),
       );
 
@@ -50,7 +56,7 @@ describe('Image Detection Routes', () => {
       const res = await apiWithAuth(
         '/packs/analyze-image',
         httpMethods.post({
-          image: `${TEST_USER.id}-Ly81kadKndZ1pH2miQu8A.jpg`,
+          image: `${testUser.id}-Ly81kadKndZ1pH2miQu8A.jpg`,
           matchLimit: 5,
         }),
       );

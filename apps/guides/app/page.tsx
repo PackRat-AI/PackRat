@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from '@packrat/web-ui/components/button';
 import CategoryFilter from 'guides-app/components/category-filter';
 import FeaturedGuides from 'guides-app/components/featured-guides';
 import GuideCard from 'guides-app/components/guide-card';
-import { Button } from 'guides-app/components/ui/button';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { featuresConfig } from 'guides-app/lib/config';
 import { getAllPosts } from 'guides-app/lib/mdx-static';
@@ -12,7 +12,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 function HomeContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() ?? new URLSearchParams();
   const category = searchParams.get('category');
   const search = searchParams.get('search');
 

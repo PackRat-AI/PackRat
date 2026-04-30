@@ -2,8 +2,7 @@ import { Text } from '@packrat/ui/nativewindui';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store';
 import { PostDetailScreen } from 'expo-app/features/feed';
-import type { Post } from 'expo-app/features/feed/types';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -14,8 +13,9 @@ export default function PostDetailRoute() {
   const { data: post, isLoading } = useQuery({
     queryKey: ['feed', Number(id)],
     queryFn: async () => {
-      const response = await axiosInstance.get<Post>(`/api/feed/${id}`);
-      return response.data;
+      const { data, error } = await apiClient.feed({ postId: id }).get();
+      if (error) throw new Error(`Failed to fetch post: ${error.value}`);
+      return data;
     },
     enabled: !!id,
   });

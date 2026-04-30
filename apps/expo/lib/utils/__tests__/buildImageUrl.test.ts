@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock clientEnvs before importing
-vi.mock('expo-app/env/clientEnvs', () => ({
+vi.mock('@packrat/env/expo-client', () => ({
   clientEnvs: {
     EXPO_PUBLIC_R2_PUBLIC_URL: 'https://cdn.example.com',
   },

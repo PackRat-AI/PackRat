@@ -9,10 +9,11 @@
  */
 
 import { CatalogCacheManager } from '@packrat/analytics/core/catalog-cache';
+import { nodeEnv } from '@packrat/env/node';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const hasCatalogCreds =
-  !!process.env.R2_CATALOG_TOKEN && !!process.env.R2_CATALOG_URI && !!process.env.R2_WAREHOUSE_NAME;
+  !!nodeEnv.R2_CATALOG_TOKEN && !!nodeEnv.R2_CATALOG_URI && !!nodeEnv.R2_WAREHOUSE_NAME;
 
 describe.skipIf(!hasCatalogCreds)('catalog mode integration', () => {
   let cache: CatalogCacheManager;

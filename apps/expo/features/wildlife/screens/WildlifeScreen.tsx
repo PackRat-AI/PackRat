@@ -1,5 +1,5 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -105,6 +105,7 @@ export function WildlifeScreen() {
                 <HistoryItem item={item} onPress={() => handleHistoryItemPress(item)} />
               )}
               contentContainerStyle={{ paddingBottom: 24 }}
+              contentInsetAdjustmentBehavior="automatic"
             />
           </>
         ) : (

@@ -7,13 +7,12 @@
  * which resolves to the Iceberg table via `USE packrat.default`.
  */
 
-import type { DuckDBConnection, DuckDBInstance } from '@duckdb/node-api';
+import type { DuckDBConnection } from '@duckdb/node-api';
 import consola from 'consola';
 import { createCatalogConnection } from './connection';
 import { LocalCacheManager } from './local-cache';
 
 export class CatalogCacheManager extends LocalCacheManager {
-  private catalogInstance: DuckDBInstance | null = null;
   private catalogConn: DuckDBConnection | null = null;
 
   constructor() {
@@ -25,8 +24,7 @@ export class CatalogCacheManager extends LocalCacheManager {
     if (this.catalogConn) return this.catalogConn;
 
     consola.start('Connecting to R2 Data Catalog (Iceberg)...');
-    const { instance, conn } = await createCatalogConnection();
-    this.catalogInstance = instance;
+    const { conn } = await createCatalogConnection();
     this.catalogConn = conn;
     consola.success('Connected to R2 Data Catalog');
 
@@ -35,7 +33,6 @@ export class CatalogCacheManager extends LocalCacheManager {
 
   override async close(): Promise<void> {
     this.catalogConn = null;
-    this.catalogInstance = null;
   }
 
   override getConnection(): DuckDBConnection {

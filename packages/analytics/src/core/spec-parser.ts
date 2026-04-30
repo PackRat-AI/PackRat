@@ -7,6 +7,7 @@
  */
 
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { isString } from '@packrat/guards';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 
@@ -57,8 +58,13 @@ const TEMP_RANGE = /(-?\d+)\s*\/\s*(-?\d+)\s*°?\s*([FC])\b/i;
 const TEMP_SINGLE = /(-?\d+)\s*°?\s*([FC])\b/i;
 const FILL_POWER = /(\d{3,4})\s*[-‑]?\s*(?:fill|fp)\b/i;
 const WATERPROOF = /(\d[\d,]*)\s*(?:k\s*)?mm\b/i;
+const WATERPROOF_K_MULTIPLIER_PATTERN = /(\d[\d,]*)\s*k\s*mm\b/i;
 const SEASON = /([1-4])\s*[-‑]?\s*seasons?\b/i;
 const GENDER = /\b(men'?s?|women'?s?|womens|mens|unisex|kids?|youth|boys?|girls?|junior)\b/i;
+const COMMA_PATTERN = /,/g;
+const MEN_PATTERN = /men/;
+const WOMEN_PATTERN = /women/;
+const YOUTH_PATTERN = /kid|youth|boy|girl|junior/;
 
 const FABRIC_PATTERNS = [
   /\b(gore[-‑]?tex)\b/i,
@@ -134,9 +140,9 @@ export function parseFillPower(text: string): number | null {
 export function parseWaterproofRating(text: string): number | null {
   const match = WATERPROOF.exec(text);
   if (match?.[1] !== undefined) {
-    const raw = Number.parseInt(match[1].replace(/,/g, ''), 10);
+    const raw = Number.parseInt(match[1].replace(COMMA_PATTERN, ''), 10);
     // If "k" or "K" prefix was captured in the regex (e.g., "20k mm"), multiply by 1000
-    const hasKMultiplier = /(\d[\d,]*)\s*k\s*mm\b/i.exec(text);
+    const hasKMultiplier = WATERPROOF_K_MULTIPLIER_PATTERN.exec(text);
     return hasKMultiplier ? raw * 1000 : raw;
   }
   return null;
@@ -149,9 +155,9 @@ export function parseSeasons(text: string): string | null {
 
 function normalizeGender(raw: string): string {
   const lower = raw.toLowerCase();
-  if (/men/.test(lower) && !/women/.test(lower)) return 'men';
-  if (/women/.test(lower)) return 'women';
-  if (/kid|youth|boy|girl|junior/.test(lower)) return 'youth';
+  if (MEN_PATTERN.test(lower) && !WOMEN_PATTERN.test(lower)) return 'men';
+  if (WOMEN_PATTERN.test(lower)) return 'women';
+  if (YOUTH_PATTERN.test(lower)) return 'youth';
   return 'unisex';
 }
 
@@ -230,7 +236,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow));
+      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow)); // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     }
 
     // Create specs table
@@ -254,7 +260,7 @@ export class SpecParser {
           const v = (x: unknown) =>
             x === null || x === undefined
               ? 'NULL'
-              : typeof x === 'string'
+              : isString(x)
                 ? `'${SQLFragments.escapeSql(String(x))}'`
                 : String(x);
           return `(${v(s.site)}, ${v(s.name)}, ${v(s.brand)}, ${v(s.category)}, ${v(s.price)}, ${v(s.product_url)}, ${v(s.weight_grams)}, ${v(s.capacity_liters)}, ${v(s.temp_rating_f)}, ${v(s.fill_power)}, ${v(s.waterproof_rating)}, ${v(s.seasons)}, ${v(s.gender)}, ${v(s.fabric)})`;
@@ -295,7 +301,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 
@@ -350,7 +356,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 }

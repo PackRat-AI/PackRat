@@ -1,327 +1,111 @@
-import { z } from '@hono/zod-openapi';
+import { z } from 'zod';
 
-export const ErrorResponseSchema = z
-  .object({
-    error: z.string().openapi({
-      description: 'Error message',
-    }),
-    code: z.string().optional().openapi({
-      description: 'Error code for programmatic handling',
-    }),
-    existingTemplateId: z.string().optional().openapi({
-      description: 'ID of existing template when there is a conflict (409 errors)',
-    }),
-  })
-  .openapi('ErrorResponse');
+export const ErrorResponseSchema = z.object({
+  error: z.string(),
+  code: z.string().optional(),
+  existingTemplateId: z.string().optional(),
+});
 
-export const PackTemplateSchema = z
-  .object({
-    id: z.string().openapi({ example: 'pt_123456', description: 'Unique template identifier' }),
-    name: z
-      .string()
-      .openapi({ example: 'Weekend Backpacking Template', description: 'Template name' }),
-    description: z.string().nullable().openapi({
-      example: 'Essential gear for a 2-3 day backpacking trip',
-      description: 'Template description',
-    }),
-    category: z.string().openapi({ example: 'Backpacking', description: 'Template category' }),
-    userId: z
-      .number()
-      .openapi({ example: 123, description: 'ID of the user who created this template' }),
-    image: z.string().nullable().openapi({
-      example: 'https://example.com/template-image.jpg',
-      description: 'Template image URL',
-    }),
-    tags: z
-      .array(z.string())
-      .nullable()
-      .openapi({
-        example: ['backpacking', 'weekend', 'hiking'],
-        description: 'Template tags for categorization',
-      }),
-    isAppTemplate: z.boolean().openapi({
-      example: false,
-      description: 'Whether this is an official app template',
-    }),
-    deleted: z.boolean().openapi({
-      example: false,
-      description: 'Whether this template is marked as deleted',
-    }),
-    localCreatedAt: z.string().datetime().openapi({
-      example: '2024-01-01T10:00:00Z',
-      description: 'When the template was created locally',
-    }),
-    localUpdatedAt: z.string().datetime().openapi({
-      example: '2024-01-01T12:00:00Z',
-      description: 'When the template was last updated locally',
-    }),
-    createdAt: z.string().datetime().openapi({
-      example: '2024-01-01T10:00:00Z',
-      description: 'When the template was created on the server',
-    }),
-    updatedAt: z.string().datetime().openapi({
-      example: '2024-01-01T12:00:00Z',
-      description: 'When the template was last updated on the server',
-    }),
-    contentSource: z.string().nullable().openapi({
-      example: 'tiktok',
-      description: 'Source platform where this template was imported from',
-    }),
-    contentId: z.string().nullable().openapi({
-      example: '1234567890',
-      description: 'ID of the content from the source platform',
-    }),
-  })
-  .openapi('PackTemplate');
+export const PackTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  category: z.string(),
+  userId: z.number(),
+  image: z.string().nullable(),
+  tags: z.array(z.string()).nullable(),
+  isAppTemplate: z.boolean(),
+  deleted: z.boolean(),
+  localCreatedAt: z.string().datetime(),
+  localUpdatedAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  contentSource: z.string().nullable(),
+  contentId: z.string().nullable(),
+});
 
-export const PackTemplateItemSchema = z
-  .object({
-    id: z.string().openapi({ example: 'pti_123456', description: 'Unique item identifier' }),
-    name: z.string().openapi({ example: 'Tent - 2 Person', description: 'Item name' }),
-    description: z.string().nullable().openapi({
-      example: 'Lightweight 2-person backpacking tent',
-      description: 'Item description',
-    }),
-    weight: z.number().openapi({ example: 1.2, description: 'Item weight' }),
-    weightUnit: z.string().openapi({ example: 'kg', description: 'Weight unit (g, kg, lb, oz)' }),
-    quantity: z.number().openapi({ example: 1, description: 'Quantity of this item' }),
-    category: z.string().nullable().openapi({
-      example: 'Shelter',
-      description: 'Item category',
-    }),
-    consumable: z.boolean().openapi({
-      example: false,
-      description: 'Whether this item is consumable',
-    }),
-    worn: z.boolean().openapi({
-      example: false,
-      description: 'Whether this item is worn (not carried)',
-    }),
-    image: z.string().nullable().openapi({
-      example: 'https://example.com/tent.jpg',
-      description: 'Item image URL',
-    }),
-    notes: z.string().nullable().openapi({
-      example: 'Great for summer conditions',
-      description: 'Additional notes about the item',
-    }),
-    packTemplateId: z.string().openapi({
-      example: 'pt_123456',
-      description: 'ID of the template this item belongs to',
-    }),
-    catalogItemId: z.number().nullable().openapi({
-      example: 789,
-      description: 'ID of the associated catalog item',
-    }),
-    userId: z.number().openapi({ example: 123, description: 'ID of the user who added this item' }),
-    deleted: z.boolean().openapi({
-      example: false,
-      description: 'Whether this item is marked as deleted',
-    }),
-    createdAt: z.string().datetime().openapi({
-      example: '2024-01-01T10:00:00Z',
-      description: 'When the item was created',
-    }),
-    updatedAt: z.string().datetime().openapi({
-      example: '2024-01-01T12:00:00Z',
-      description: 'When the item was last updated',
-    }),
-  })
-  .openapi('PackTemplateItem');
+export const PackTemplateItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  weight: z.number(),
+  weightUnit: z.string(),
+  quantity: z.number(),
+  category: z.string().nullable(),
+  consumable: z.boolean(),
+  worn: z.boolean(),
+  image: z.string().nullable(),
+  notes: z.string().nullable(),
+  packTemplateId: z.string(),
+  catalogItemId: z.number().nullable(),
+  userId: z.number(),
+  deleted: z.boolean(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
 
 export const PackTemplateWithItemsSchema = PackTemplateSchema.extend({
-  items: z.array(PackTemplateItemSchema).openapi({
-    description: 'List of items in this template',
-  }),
-}).openapi('PackTemplateWithItems');
+  items: z.array(PackTemplateItemSchema),
+});
 
-export const CreatePackTemplateRequestSchema = z
-  .object({
-    id: z.string().openapi({ example: 'pt_123456', description: 'Unique template identifier' }),
-    name: z.string().min(1).max(255).openapi({
-      example: 'Weekend Backpacking Template',
-      description: 'Template name',
-    }),
-    description: z.string().optional().openapi({
-      example: 'Essential gear for a 2-3 day backpacking trip',
-      description: 'Template description',
-    }),
-    category: z.string().min(1).openapi({
-      example: 'Backpacking',
-      description: 'Template category',
-    }),
-    image: z.string().url().optional().openapi({
-      example: 'https://example.com/template-image.jpg',
-      description: 'Template image URL',
-    }),
-    tags: z
-      .array(z.string())
-      .optional()
-      .openapi({
-        example: ['backpacking', 'weekend', 'hiking'],
-        description: 'Template tags for categorization',
-      }),
-    isAppTemplate: z.boolean().optional().openapi({
-      example: false,
-      description: 'Whether this is an official app template (admin only)',
-    }),
-    localCreatedAt: z.string().datetime().openapi({
-      example: '2024-01-01T10:00:00Z',
-      description: 'When the template was created locally',
-    }),
-    localUpdatedAt: z.string().datetime().openapi({
-      example: '2024-01-01T12:00:00Z',
-      description: 'When the template was last updated locally',
-    }),
-  })
-  .openapi('CreatePackTemplateRequest');
+export const CreatePackTemplateRequestSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  category: z.string().min(1),
+  image: z.string().url().optional(),
+  tags: z.array(z.string()).optional(),
+  isAppTemplate: z.boolean().optional(),
+  localCreatedAt: z.string().datetime(),
+  localUpdatedAt: z.string().datetime(),
+});
 
-export const UpdatePackTemplateRequestSchema = z
-  .object({
-    name: z.string().min(1).max(255).optional().openapi({
-      example: 'Weekend Backpacking Template',
-      description: 'Template name',
-    }),
-    description: z.string().nullable().openapi({
-      example: 'Essential gear for a 2-3 day backpacking trip',
-      description: 'Template description',
-    }),
-    category: z.string().min(1).optional().openapi({
-      example: 'Backpacking',
-      description: 'Template category',
-    }),
-    image: z.string().url().nullable().openapi({
-      example: 'https://example.com/template-image.jpg',
-      description: 'Template image URL',
-    }),
-    tags: z
-      .array(z.string())
-      .nullable()
-      .openapi({
-        example: ['backpacking', 'weekend', 'hiking'],
-        description: 'Template tags for categorization',
-      }),
-    isAppTemplate: z.boolean().optional().openapi({
-      example: false,
-      description: 'Whether this is an official app template (admin only)',
-    }),
-    deleted: z.boolean().optional().openapi({
-      example: false,
-      description: 'Whether this template is marked as deleted',
-    }),
-    localUpdatedAt: z.string().datetime().optional().openapi({
-      example: '2024-01-01T12:00:00Z',
-      description: 'When the template was last updated locally',
-    }),
-  })
-  .openapi('UpdatePackTemplateRequest');
+export const UpdatePackTemplateRequestSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().nullable(),
+  category: z.string().min(1).optional(),
+  image: z.string().url().nullable(),
+  tags: z.array(z.string()).nullable(),
+  isAppTemplate: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  localUpdatedAt: z.string().datetime().optional(),
+});
 
-export const CreatePackTemplateItemRequestSchema = z
-  .object({
-    id: z.string().openapi({ example: 'pti_123456', description: 'Unique item identifier' }),
-    name: z.string().min(1).max(255).openapi({
-      example: 'Tent - 2 Person',
-      description: 'Item name',
-    }),
-    description: z.string().optional().openapi({
-      example: 'Lightweight 2-person backpacking tent',
-      description: 'Item description',
-    }),
-    weight: z.number().min(0).openapi({ example: 1.2, description: 'Item weight' }),
-    weightUnit: z.enum(['g', 'kg', 'lb', 'oz']).openapi({
-      example: 'kg',
-      description: 'Weight unit',
-    }),
-    quantity: z.number().int().min(1).optional().default(1).openapi({
-      example: 1,
-      description: 'Quantity of this item',
-    }),
-    category: z.string().optional().openapi({
-      example: 'Shelter',
-      description: 'Item category',
-    }),
-    consumable: z.boolean().optional().default(false).openapi({
-      example: false,
-      description: 'Whether this item is consumable',
-    }),
-    worn: z.boolean().optional().default(false).openapi({
-      example: false,
-      description: 'Whether this item is worn (not carried)',
-    }),
-    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
-    notes: z.string().optional().openapi({
-      example: 'Great for summer conditions',
-      description: 'Additional notes about the item',
-    }),
-  })
-  .openapi('CreatePackTemplateItemRequest');
+export const CreatePackTemplateItemRequestSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  weight: z.number().min(0),
+  weightUnit: z.enum(['g', 'kg', 'lb', 'oz']),
+  quantity: z.number().int().min(1).optional().default(1),
+  category: z.string().optional(),
+  consumable: z.boolean().optional().default(false),
+  worn: z.boolean().optional().default(false),
+  image: z.string().nullish(),
+  notes: z.string().optional(),
+});
 
-export const UpdatePackTemplateItemRequestSchema = z
-  .object({
-    name: z.string().min(1).max(255).optional().openapi({
-      example: 'Tent - 2 Person',
-      description: 'Item name',
-    }),
-    description: z.string().optional().openapi({
-      example: 'Lightweight 2-person backpacking tent',
-      description: 'Item description',
-    }),
-    weight: z.number().min(0).optional().openapi({ example: 1.2, description: 'Item weight' }),
-    weightUnit: z.enum(['g', 'kg', 'lb', 'oz']).optional().openapi({
-      example: 'kg',
-      description: 'Weight unit',
-    }),
-    quantity: z.number().int().min(1).optional().openapi({
-      example: 1,
-      description: 'Quantity of this item',
-    }),
-    category: z.string().optional().openapi({
-      example: 'Shelter',
-      description: 'Item category',
-    }),
-    consumable: z.boolean().optional().openapi({
-      example: false,
-      description: 'Whether this item is consumable',
-    }),
-    worn: z.boolean().optional().openapi({
-      example: false,
-      description: 'Whether this item is worn (not carried)',
-    }),
-    image: z.string().url().optional().openapi({
-      example: 'https://example.com/tent.jpg',
-      description: 'Item image URL',
-    }),
-    notes: z.string().optional().openapi({
-      example: 'Great for summer conditions',
-      description: 'Additional notes about the item',
-    }),
-    deleted: z.boolean().optional().openapi({
-      example: false,
-      description: 'Whether this item is marked as deleted',
-    }),
-  })
-  .openapi('UpdatePackTemplateItemRequest');
+export const UpdatePackTemplateItemRequestSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  weight: z.number().min(0).optional(),
+  weightUnit: z.enum(['g', 'kg', 'lb', 'oz']).optional(),
+  quantity: z.number().int().min(1).optional(),
+  category: z.string().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  image: z.string().url().optional(),
+  notes: z.string().optional(),
+  deleted: z.boolean().optional(),
+});
 
-export const SuccessResponseSchema = z
-  .object({
-    success: z.boolean().openapi({
-      example: true,
-      description: 'Indicates if the operation was successful',
-    }),
-  })
-  .openapi('SuccessResponse');
+export const SuccessResponseSchema = z.object({
+  success: z.boolean(),
+});
 
-export const GenerateFromOnlineContentRequestSchema = z
-  .object({
-    contentUrl: z.string().url().openapi({
-      example: 'https://www.tiktok.com/@user/video/1234567890',
-      description: 'The content URL (supports YouTube and TikTok content)',
-    }),
-    isAppTemplate: z.boolean().optional().default(true).openapi({
-      example: true,
-      description: 'Whether this should be a featured template (admin only)',
-    }),
-  })
-  .openapi('GenerateFromOnlineContentRequest');
+export const GenerateFromOnlineContentRequestSchema = z.object({
+  contentUrl: z.string().url(),
+  isAppTemplate: z.boolean().optional().default(true),
+});
 
 export const GenerateFromOnlineContentResponseSchema = PackTemplateWithItemsSchema;

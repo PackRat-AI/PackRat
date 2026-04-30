@@ -1,5 +1,5 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';

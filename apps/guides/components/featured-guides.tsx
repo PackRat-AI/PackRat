@@ -1,6 +1,6 @@
-import { Badge } from 'guides-app/components/ui/badge';
-import { Button } from 'guides-app/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from 'guides-app/components/ui/card';
+import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
+import { Card, CardContent, CardFooter, CardHeader } from '@packrat/web-ui/components/card';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import type { Post } from 'guides-app/lib/types';
 import { ArrowRight } from 'lucide-react';

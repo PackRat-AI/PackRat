@@ -20,7 +20,8 @@
       "!**/.wrangler",
       "!**/*.gen.ts",
       "!**/vite.config.ts.timestamp-*.mjs",
-      "!**/src/codegen"
+      "!**/src/codegen",
+      "!**/.claude"
     ]
   },
   "formatter": {
@@ -46,7 +47,7 @@
         "noUnusedImports": "error"
       },
       "performance": {
-        "useTopLevelRegex": "warn"
+        "useTopLevelRegex": "error"
       },
       "style": {
         "noNonNullAssertion": "error"
@@ -61,6 +62,8 @@
       "includes": [
         "apps/expo/atoms/atomWith*.ts",
         "apps/expo/features/weather/atoms/locationsAtoms.ts",
+        "apps/expo/lib/api/client.ts",
+        "packages/api/src/index.ts",
         "packages/api/src/routes/admin/index.ts",
         "packages/api/src/services/r2-bucket.ts",
         "packages/api/src/services/etl/processCatalogEtl.ts",
@@ -68,13 +71,19 @@
         "packages/api/test/setup.ts",
         "apps/expo/utils/weight.ts",
         "packages/api/src/utils/weight.ts",
+        "packages/mcp/src/index.ts",
         "scripts/lint/**",
-        ".github/scripts/**"
+        "scripts/format/**",
+        ".github/scripts/**",
+        ".github/skills/**"
       ],
       "linter": {
         "rules": {
           "complexity": {
             "useMaxParams": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
           }
         }
       }
@@ -92,6 +101,12 @@
         "rules": {
           "suspicious": {
             "noExplicitAny": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
+          "complexity": {
+            "noForEach": "off"
           }
         }
       }

@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import {
   formatWeatherData,
   getWeatherBackgroundColors,
@@ -56,7 +56,8 @@ export default function LocationPreviewScreen() {
       const data = await getWeatherData(locationId);
       if (data) {
         const formattedData = formatWeatherData(data);
-        setWeatherData(formattedData);
+        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
+        setWeatherData(formattedData as unknown as WeatherLocation);
 
         // Update gradient colors based on weather condition
         if (formattedData.details) {
@@ -76,7 +77,6 @@ export default function LocationPreviewScreen() {
   };
 
   // Load weather data on initial render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run on initial render hence the empty deps list
   useEffect(() => {
     loadWeatherData();
   }, []);

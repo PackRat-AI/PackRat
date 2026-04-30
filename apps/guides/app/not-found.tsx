@@ -1,4 +1,4 @@
-import { Button } from 'guides-app/components/ui/button';
+import { Button } from '@packrat/web-ui/components/button';
 import Link from 'next/link';
 
 export default function NotFound() {

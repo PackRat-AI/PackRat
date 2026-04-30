@@ -1,3 +1,4 @@
+import { isFunction } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { atom } from 'jotai';
 
@@ -14,7 +15,7 @@ export const atomWithAsyncStorage = <T>(key: string, initialValue: T) => {
   const derivedAtom = atom(
     (get) => get(baseAtom),
     (get, set, update) => {
-      const nextValue = typeof update === 'function' ? update(get(baseAtom)) : update;
+      const nextValue = isFunction(update) ? update(get(baseAtom)) : update;
       set(baseAtom, nextValue);
       AsyncStorage.setItem(key, JSON.stringify(nextValue));
     },

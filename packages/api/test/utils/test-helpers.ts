@@ -1,6 +1,16 @@
-import { sign } from 'hono/jwt';
+import { type KeyLike, SignJWT } from 'jose';
 import { expect } from 'vitest';
-import app from '../../src/index';
+import { app } from '../../src/index';
+
+const secret = new TextEncoder().encode('secret');
+
+async function sign(payload: Record<string, unknown>, _secret: string): Promise<string> {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secret);
+}
 
 // Extend expect with custom matchers
 expect.extend({
@@ -13,21 +23,23 @@ expect.extend({
   },
 });
 
-// Test user data for consistent testing
-export const TEST_USER = {
-  id: 1,
-  email: 'test@example.com',
-  firstName: 'Test',
-  lastName: 'User',
-  role: 'USER' as const,
+type AuthSubject = { id: number; role: 'USER' | 'ADMIN' };
+
+// Current test user for JWT signing. Set by seedTestUser (#2180) — no hardcoded id.
+let currentTestUser: AuthSubject | null = null;
+let currentTestAdmin: AuthSubject | null = null;
+
+export const setCurrentTestUser = (user: AuthSubject) => {
+  currentTestUser = user;
 };
 
-export const TEST_ADMIN = {
-  id: 2,
-  email: 'admin@example.com',
-  firstName: 'Admin',
-  lastName: 'User',
-  role: 'ADMIN' as const,
+export const setCurrentTestAdmin = (user: AuthSubject) => {
+  currentTestAdmin = user;
+};
+
+export const clearCurrentTestUsers = () => {
+  currentTestUser = null;
+  currentTestAdmin = null;
 };
 
 // Helper to create authenticated API requests
@@ -35,10 +47,7 @@ export const api = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api${path}`, init));
 
 // Internal: shared fetch with auth token for a specific user
-const fetchWithUser = async (
-  path: string,
-  opts: { user: typeof TEST_USER | typeof TEST_ADMIN; init?: RequestInit },
-) => {
+const fetchWithUser = async (path: string, opts: { user: AuthSubject; init?: RequestInit }) => {
   const { user, init } = opts;
   const token = await sign({ userId: user.id, role: user.role }, 'secret');
   return app.fetch(
@@ -53,21 +62,24 @@ const fetchWithUser = async (
   );
 };
 
-// Helper to create requests with authentication token (as TEST_USER by default)
-export const apiWithAuth = async (path: string, init?: RequestInit) =>
-  fetchWithUser(path, { user: TEST_USER, init });
+// Synthetic JWT subject for tests that sign a JWT but never touch users in DB
+// (e.g. catalog, guides, upload). Tests that need the user to exist in DB must
+// call seedTestUser() in beforeEach, which sets currentTestUser.
+const SYNTHETIC_USER: AuthSubject = { id: 0, role: 'USER' };
+const SYNTHETIC_ADMIN: AuthSubject = { id: 0, role: 'ADMIN' };
 
-// Helper to create requests authenticated as a specific user
+export const apiWithAuth = async (path: string, init?: RequestInit) =>
+  fetchWithUser(path, { user: currentTestUser ?? SYNTHETIC_USER, init });
+
 export const apiWithAuthAs = async (
   path: string,
-  opts: { user: typeof TEST_USER | typeof TEST_ADMIN; init?: RequestInit },
+  opts: { user: AuthSubject; init?: RequestInit },
 ) => fetchWithUser(path, opts);
 
-// Helper to create admin authenticated requests
 export const apiWithAdmin = async (path: string, init?: RequestInit) =>
-  fetchWithUser(path, { user: TEST_ADMIN, init });
+  fetchWithUser(path, { user: currentTestAdmin ?? SYNTHETIC_ADMIN, init });
 
-// Helper for basic auth (admin routes)
+// Helper for admin routes (basic auth)
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
   const credentials = btoa('admin:admin-password');
   return app.fetch(
@@ -155,3 +167,49 @@ export const apiWithApiKey = (path: string, init?: RequestInit) => {
     }),
   );
 };
+
+// ---------------------------------------------------------------------------
+// CF Access JWT builder — used by cfAccess tests and adminAuthGuard tests.
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a signed RS256 JWT that mimics a Cloudflare Access token.
+ *
+ * @param email      - Value for the `email` claim (default: 'admin@example.com')
+ * @param teamDomain - Issuer / team domain URL
+ * @param aud        - Audience (CF Access Application Audience tag)
+ * @param privateKey - RS256 private key to sign with
+ * @param overrides  - Optional claim overrides applied after defaults
+ */
+export async function makeCFJwt({
+  email = 'admin@example.com',
+  teamDomain,
+  aud,
+  privateKey,
+  overrides = {},
+}: {
+  email?: string;
+  teamDomain: string;
+  aud: string;
+  privateKey: KeyLike;
+  overrides?: Partial<{ iss: string; aud: string; email: string; exp: number }>;
+}): Promise<string> {
+  const payload: Record<string, unknown> = {
+    email,
+    ...('email' in overrides ? { email: overrides.email } : {}),
+  };
+
+  const jwt = new SignJWT(payload)
+    .setProtectedHeader({ alg: 'RS256' })
+    .setIssuedAt()
+    .setIssuer(overrides.iss ?? teamDomain)
+    .setAudience(overrides.aud ?? aud);
+
+  if (overrides.exp !== undefined) {
+    jwt.setExpirationTime(overrides.exp);
+  } else {
+    jwt.setExpirationTime('1h');
+  }
+
+  return jwt.sign(privateKey);
+}

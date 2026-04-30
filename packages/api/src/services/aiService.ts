@@ -2,8 +2,8 @@ import { createPerplexity } from '@ai-sdk/perplexity';
 import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isFunction } from '@packrat/guards';
 import { generateText } from 'ai';
-import type { Context } from 'hono';
 
 interface SearchResult {
   answer: string;
@@ -17,10 +17,10 @@ export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG | null = null;
 
-  constructor(c: Context) {
-    this.env = getEnv(c);
+  constructor() {
+    this.env = getEnv();
     // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
-    if (this.env.AI && typeof this.env.AI.autorag === 'function') {
+    if (this.env.AI && isFunction(this.env.AI.autorag)) {
       this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
     }
   }
@@ -37,8 +37,7 @@ export class AIService {
         prompt: query,
       });
 
-      const { text, sources } = resp;
-      return { answer: text, sources };
+      return { answer: resp.text, sources: resp.sources ?? [] };
     } catch (error) {
       console.error('Search error:', error);
       throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -87,8 +86,10 @@ export class AIService {
    * @param filename
    * @returns
    */
+  private static readonly MDX_EXT_RE = /\.mdx$/;
+
   private filenameToUrl(filename: string): string {
-    const slug = filename.replace(/\.mdx$/, '').trim();
+    const slug = filename.replace(AIService.MDX_EXT_RE, '').trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
     return new URL(`guide/${slug}`, baseUrl).toString();
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
@@ -59,7 +59,7 @@ export default function DeviceMockup({
       <div
         className={cn(
           'relative w-full overflow-hidden rounded-[40px] border-[14px] bg-black transition-transform duration-500',
-          aspectRatio === 'portrait' ? 'aspect-[9/16]' : 'aspect-[16/9]',
+          aspectRatio === 'portrait' ? 'aspect-[9/19.5]' : 'aspect-[16/9]',
           showShadow && 'shadow-2xl shadow-black/20',
           isHovered && 'scale-[1.02]',
         )}
