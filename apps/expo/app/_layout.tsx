@@ -2,18 +2,20 @@ import '../polyfills';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-dev-client';
-import { Stack } from 'expo-router';
+import { type Href, router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
 import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
-import { useRef } from 'react';
+import { useAtomValue } from 'jotai';
+import { useEffect, useRef } from 'react';
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
@@ -34,6 +36,29 @@ export {
 
 export let appAlert: React.RefObject<AlertMethods | null>;
 
+// Watches tokenAtom from OUTSIDE the navigation Stack so that router.replace
+// dispatches directly to the root navigator — not to NativeTabs' inner navigator,
+// which would silently drop the action on iOS because 'auth' isn't a tab route.
+// Rendered inside <Providers> for Jotai context but before <NavThemeProvider><Stack>.
+function SignOutGuard() {
+  const token = useAtomValue(tokenAtom);
+  const wasAuthenticated = useRef(false);
+
+  useEffect(() => {
+    if (token) wasAuthenticated.current = true;
+  }, [token]);
+
+  useEffect(() => {
+    if (!token && wasAuthenticated.current) {
+      wasAuthenticated.current = false;
+      // safe-cast: '/auth' is a valid root route; Expo Router's Href accepts string paths directly.
+      router.replace('/auth' as Href);
+    }
+  }, [token]);
+
+  return null;
+}
+
 function RootLayout() {
   useInitialAndroidBarSync();
 
@@ -43,6 +68,7 @@ function RootLayout() {
 
   return (
     <Providers>
+      <SignOutGuard />
       <StatusBar
         key={`root-status-bar-${isDarkColorScheme ? 'light' : 'dark'}`}
         style={isDarkColorScheme ? 'light' : 'dark'}

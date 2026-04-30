@@ -222,12 +222,9 @@ export function useAuthActions() {
       // onNeedsReauth) have already resolved by this point.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
       setNeedsReauth(false);
-      // Navigate imperatively here (mirroring deleteAccount) rather than from an
-      // AppLayout useEffect — on iOS, NativeTabs swallows effect-based navigation
-      // dispatched after token state clears. Calling router.replace directly from
-      // the signOut execution context is reliable on both iOS and Android.
-      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
-      router.replace('/auth' as Href);
+      // Navigation to /auth is handled by SignOutGuard in app/_layout.tsx.
+      // It watches tokenAtom from outside the navigator tree so router.replace
+      // dispatches directly to the root Stack, bypassing NativeTabs on iOS.
     }
   };
 
