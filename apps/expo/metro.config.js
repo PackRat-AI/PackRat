@@ -16,43 +16,25 @@ config.resolver = {
   unstable_conditionNames: ['require', 'default', 'react-native', 'browser'],
 };
 
+// Native-only packages that need no-op web shims.
+// Add new entries here when a package crashes on web.
+const WEB_STUBS = {
+  'react-native-maps': 'mocks/react-native-maps.ts',
+  'react-native-blob-util': 'mocks/react-native-blob-util.ts',
+  '@react-native-async-storage/async-storage': 'mocks/async-storage.ts',
+  '@react-native-ai/llama': 'mocks/react-native-ai-llama.ts',
+  'llama.rn': 'mocks/react-native-ai-llama.ts',
+  '@react-native-ai/apple': 'mocks/react-native-ai-apple.ts',
+  'expo-sqlite/kv-store': 'mocks/expo-sqlite-kv-store.ts',
+};
+
 const originalResolveRequest = config.resolver?.resolveRequest;
 config.resolver = {
   ...config.resolver,
   // biome-ignore lint/complexity/useMaxParams: Metro resolveRequest requires exactly 3 params
   resolveRequest: (context, moduleName, platform) => {
-    if (platform === 'web' && moduleName === 'react-native-maps') {
-      return { filePath: path.join(__dirname, 'mocks/react-native-maps.ts'), type: 'sourceFile' };
-    }
-    if (
-      platform === 'web' &&
-      (moduleName === '@react-native-ai/llama' || moduleName === 'llama.rn')
-    ) {
-      return {
-        filePath: path.join(__dirname, 'mocks/react-native-ai-llama.ts'),
-        type: 'sourceFile',
-      };
-    }
-    if (platform === 'web' && moduleName === '@react-native-ai/apple') {
-      return {
-        filePath: path.join(__dirname, 'mocks/react-native-ai-apple.ts'),
-        type: 'sourceFile',
-      };
-    }
-    if (platform === 'web' && moduleName === '@react-native-async-storage/async-storage') {
-      return { filePath: path.join(__dirname, 'mocks/async-storage.ts'), type: 'sourceFile' };
-    }
-    if (platform === 'web' && moduleName === 'react-native-blob-util') {
-      return {
-        filePath: path.join(__dirname, 'mocks/react-native-blob-util.ts'),
-        type: 'sourceFile',
-      };
-    }
-    if (platform === 'web' && moduleName === 'expo-sqlite/kv-store') {
-      return {
-        filePath: path.join(__dirname, 'mocks/expo-sqlite-kv-store.ts'),
-        type: 'sourceFile',
-      };
+    if (platform === 'web' && WEB_STUBS[moduleName]) {
+      return { filePath: path.join(__dirname, WEB_STUBS[moduleName]), type: 'sourceFile' };
     }
     if (originalResolveRequest) return originalResolveRequest(context, moduleName, platform);
     return context.resolveRequest(context, moduleName, platform);
