@@ -1,3 +1,5 @@
+import { isFunction } from '@packrat/guards';
+
 type UpdateFn = (prevValue: string | null) => string;
 
 const PREFIX = '__kv__';
@@ -56,7 +58,7 @@ class LocalStorageStorage {
   }
 
   setItemSync(key: string, value: string | UpdateFn): void {
-    const v = typeof value === 'function' ? value(rawGet(key)) : value;
+    const v = isFunction(value) ? value(rawGet(key)) : value;
     rawSet(key, v);
   }
 
