@@ -32,6 +32,7 @@ const WEB_STUBS = {
   '@react-native-community/datetimepicker': 'mocks/datetimepicker.tsx',
   // expo-file-system throws UnavailabilityError on web; stub all ops as no-ops
   'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
+  'expo-updates': 'mocks/expo-updates.ts',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;
