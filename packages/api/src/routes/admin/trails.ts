@@ -1,5 +1,13 @@
 import { createDb, createOsmDb } from '@packrat/api/db';
 import { trailConditionReports, users } from '@packrat/api/db/schema';
+import {
+  AdminErrorResponses,
+  SuccessSchema,
+  TrailConditionsListSchema,
+  TrailGeometrySchema,
+  TrailSearchItemSchema,
+  TrailSearchResultSchema,
+} from '@packrat/api/schemas/admin';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -91,6 +99,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
         limit: z.coerce.number().int().min(1).max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
       }),
+      response: { 200: TrailSearchResultSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Search OSM trails by name' },
     },
   )
@@ -170,6 +179,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ osmId: z.string().regex(/^\d+$/) }),
+      response: { 200: TrailGeometrySchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Get full GeoJSON geometry for an OSM trail' },
     },
   )
@@ -227,6 +237,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ osmId: z.string().regex(/^\d+$/) }),
+      response: { 200: TrailSearchItemSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Get OSM trail metadata by ID' },
     },
   )
@@ -305,6 +316,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
         offset: z.coerce.number().int().min(0).optional().default(0),
         includeDeleted: z.string().optional(),
       }),
+      response: { 200: TrailConditionsListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List all trail condition reports' },
     },
   )
@@ -338,6 +350,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
     },
     {
       params: z.object({ reportId: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Soft-delete a trail condition report' },
     },
   );

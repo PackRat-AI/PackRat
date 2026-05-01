@@ -2,6 +2,16 @@ import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
+import {
+  AdminCatalogListSchema,
+  AdminErrorResponses,
+  AdminPacksListSchema,
+  AdminStatsSchema,
+  AdminUsersListSchema,
+  CatalogUpdateSchema,
+  HardDeleteSuccessSchema,
+  SuccessSchema,
+} from '@packrat/api/schemas/admin';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
@@ -185,6 +195,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       }
     },
     {
+      response: { 200: AdminStatsSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Get admin dashboard statistics' },
     },
   )
@@ -258,6 +269,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         q: z.string().optional(),
         includeDeleted: z.string().optional(),
       }),
+      response: { 200: AdminUsersListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List users' },
     },
   )
@@ -335,6 +347,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         q: z.string().optional(),
         includeDeleted: z.string().optional(),
       }),
+      response: { 200: AdminPacksListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List packs' },
     },
   )
@@ -397,6 +410,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
       }),
+      response: { 200: AdminCatalogListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List catalog items' },
     },
   )
@@ -423,6 +437,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Soft-delete a user (recoverable)' },
     },
   )
@@ -454,6 +469,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       body: z.object({
         reason: z.string().min(1, 'Compliance reason is required'),
       }),
+      response: { 200: HardDeleteSuccessSchema, ...AdminErrorResponses },
       detail: {
         tags: ['Admin'],
         summary: 'Hard-delete a user and all their data (irreversible, for GDPR compliance)',
@@ -483,6 +499,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Restore a soft-deleted user' },
     },
   )
@@ -508,6 +525,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Soft-delete a pack' },
     },
   )
@@ -533,6 +551,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Delete a catalog item' },
     },
   )
@@ -580,6 +599,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         price: z.number().nullable().optional(),
         description: z.string().nullable().optional(),
       }),
+      response: { 200: CatalogUpdateSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Update a catalog item' },
     },
   )

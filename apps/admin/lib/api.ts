@@ -1,6 +1,26 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
+import type {
+  ActiveUsersSchema,
+  ActivityPointSchema,
+  AdminCatalogItemSchema,
+  AdminPackItemSchema,
+  AdminUserItemSchema,
+  BrandRowSchema,
+  BreakdownItemSchema,
+  CatalogOverviewSchema,
+  EmbeddingStatsSchema,
+  EtlJobSchema,
+  EtlResponseSchema,
+  GrowthPointSchema,
+  PriceBucketSchema,
+  TrailConditionReportSchema,
+  TrailGeometrySchema,
+  TrailSearchItemSchema,
+  TrailSearchResultSchema,
+} from '@packrat/api/schemas/admin';
 import { isObject } from '@packrat/guards';
+import type { Static } from '@sinclair/typebox';
 import { clearToken, getAuthHeader } from './auth';
 import { adminEnv } from './env';
 
@@ -35,33 +55,24 @@ function throwOnError(error: { value?: unknown } | null, fallback = 'Admin API e
   throw new Error(msg);
 }
 
+function unwrap<T>(data: T | null | undefined, name: string): T {
+  if (data == null) throw new Error(`Admin API returned no data for ${name}`);
+  return data;
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
-export interface AdminStats {
-  users: number;
-  packs: number;
-  items: number;
-}
+export type AdminStats = { users: number; packs: number; items: number };
 
 export async function getStats(): Promise<AdminStats> {
   const { data, error } = await adminClient.stats.get();
   if (error) throwOnError(error);
-  return data as AdminStats; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'stats');
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export interface AdminUser {
-  id: number;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  role: string | null;
-  emailVerified: boolean | null;
-  createdAt: string | null;
-  lastActiveAt: string | null;
-  deletedAt: string | null;
-}
+export type AdminUser = Static<typeof AdminUserItemSchema>;
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -85,13 +96,13 @@ export async function getUsers({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<AdminUser>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'users');
 }
 
 export async function deleteUser(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).delete();
   if (error) throwOnError(error);
-  return data as unknown as { success: boolean };
+  return unwrap(data, 'deleteUser');
 }
 
 export async function hardDeleteUser(
@@ -100,28 +111,18 @@ export async function hardDeleteUser(
 ): Promise<{ success: boolean; purged: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).hard.delete({ reason });
   if (error) throwOnError(error);
-  return data as unknown as { success: boolean; purged: boolean };
+  return unwrap(data, 'hardDeleteUser');
 }
 
 export async function restoreUser(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).restore.post();
   if (error) throwOnError(error);
-  return data as unknown as { success: boolean };
+  return unwrap(data, 'restoreUser');
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
-export interface AdminPack {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  isPublic: boolean | null;
-  deleted: boolean;
-  deletedAt: string | null;
-  createdAt: string | null;
-  userEmail: string | null;
-}
+export type AdminPack = Static<typeof AdminPackItemSchema>;
 
 export async function getPacks({
   limit = 100,
@@ -138,27 +139,18 @@ export async function getPacks({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<AdminPack>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'packs');
 }
 
 export async function deletePack(id: string): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.packs({ id }).delete();
   if (error) throwOnError(error);
-  return data as unknown as { success: boolean };
+  return unwrap(data, 'deletePack');
 }
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
 
-export interface AdminCatalogItem {
-  id: number;
-  name: string;
-  categories: string[] | null;
-  brand: string | null;
-  price: number | null;
-  weight: number | null;
-  weightUnit: string;
-  createdAt: string | null;
-}
+export type AdminCatalogItem = Static<typeof AdminCatalogItemSchema>;
 
 export interface UpdateCatalogItemInput {
   name?: string;
@@ -183,13 +175,13 @@ export async function getCatalogItems({
     query: { limit, offset, q },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<AdminCatalogItem>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'catalog');
 }
 
 export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.catalog({ id: String(id) }).delete();
   if (error) throwOnError(error);
-  return data as unknown as { success: boolean };
+  return unwrap(data, 'deleteCatalogItem');
 }
 
 export async function updateCatalogItem(
@@ -198,14 +190,15 @@ export async function updateCatalogItem(
 ): Promise<{ id: number; name: string }> {
   const { data, error } = await adminClient.catalog({ id: String(id) }).patch(body);
   if (error) throwOnError(error);
-  return data as unknown as { id: number; name: string };
+  return unwrap(data, 'updateCatalogItem');
 }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
 
-export type GrowthPoint = { period: string; users: number; packs: number; catalogItems: number };
-export type ActivityPoint = { period: string; trips: number; trailReports: number; posts: number };
-export type BreakdownItem = { category: string; count: number };
+export type GrowthPoint = Static<typeof GrowthPointSchema>;
+export type ActivityPoint = Static<typeof ActivityPointSchema>;
+export type BreakdownItem = Static<typeof BreakdownItemSchema>;
+export type ActiveUsers = Static<typeof ActiveUsersSchema>;
 export type AnalyticsPeriod = 'day' | 'week' | 'month';
 
 export async function getPlatformGrowth(
@@ -216,7 +209,7 @@ export async function getPlatformGrowth(
     query: { period, range },
   });
   if (error) throwOnError(error);
-  return data as unknown as GrowthPoint[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'platformGrowth');
 }
 
 export async function getPlatformActivity(
@@ -227,69 +220,28 @@ export async function getPlatformActivity(
     query: { period, range },
   });
   if (error) throwOnError(error);
-  return data as unknown as ActivityPoint[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'platformActivity');
 }
 
 export async function getPlatformBreakdown(): Promise<BreakdownItem[]> {
   const { data, error } = await adminClient.analytics.platform.breakdown.get();
   if (error) throwOnError(error);
-  return data as unknown as BreakdownItem[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'platformBreakdown');
 }
 
 // ─── Analytics — Catalog ─────────────────────────────────────────────────────
 
-export type CatalogOverview = {
-  totalItems: number;
-  totalBrands: number;
-  avgPrice: number | null;
-  minPrice: number | null;
-  maxPrice: number | null;
-  embeddingCoverage: { total: number; withEmbedding: number; pct: number };
-  availability: { status: string | null; count: number }[];
-  addedLast30Days: number;
-};
-
-export type BrandRow = {
-  brand: string;
-  itemCount: number;
-  avgPrice: number | null;
-  minPrice: number | null;
-  maxPrice: number | null;
-  avgRating: number | null;
-};
-
-export type PriceBucket = { bucket: string; count: number };
-
-export type EtlJob = {
-  id: string;
-  status: 'running' | 'completed' | 'failed';
-  source: string;
-  filename: string;
-  scraperRevision: string;
-  startedAt: string;
-  completedAt: string | null;
-  totalProcessed: number | null;
-  totalValid: number | null;
-  totalInvalid: number | null;
-  successRate: number | null;
-};
-
-export type EtlResponse = {
-  jobs: EtlJob[];
-  summary: { totalRuns: number; completed: number; failed: number; totalItemsIngested: number };
-};
-
-export type EmbeddingStats = {
-  total: number;
-  withEmbedding: number;
-  pending: number;
-  coveragePct: number;
-};
+export type CatalogOverview = Static<typeof CatalogOverviewSchema>;
+export type BrandRow = Static<typeof BrandRowSchema>;
+export type PriceBucket = Static<typeof PriceBucketSchema>;
+export type EtlJob = Static<typeof EtlJobSchema>;
+export type EtlResponse = Static<typeof EtlResponseSchema>;
+export type EmbeddingStats = Static<typeof EmbeddingStatsSchema>;
 
 export async function getCatalogOverview(): Promise<CatalogOverview> {
   const { data, error } = await adminClient.analytics.catalog.overview.get();
   if (error) throwOnError(error);
-  return data as unknown as CatalogOverview; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'catalogOverview');
 }
 
 export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
@@ -297,13 +249,13 @@ export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
     query: { limit },
   });
   if (error) throwOnError(error);
-  return data as unknown as BrandRow[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'catalogBrands');
 }
 
 export async function getCatalogPrices(): Promise<PriceBucket[]> {
   const { data, error } = await adminClient.analytics.catalog.prices.get();
   if (error) throwOnError(error);
-  return data as unknown as PriceBucket[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'catalogPrices');
 }
 
 export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
@@ -311,47 +263,21 @@ export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
     query: { limit },
   });
   if (error) throwOnError(error);
-  return data as unknown as EtlResponse; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'catalogEtl');
 }
 
 export async function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   const { data, error } = await adminClient.analytics.catalog.embeddings.get();
   if (error) throwOnError(error);
-  return data as unknown as EmbeddingStats; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'catalogEmbeddings');
 }
 
 // ─── Admin Trails ─────────────────────────────────────────────────────────────
 
-export interface TrailSearchResult {
-  osmId: string;
-  name: string | null;
-  sport: string | null;
-  network: string | null;
-  distance: string | null;
-  difficulty: string | null;
-  description: string | null;
-  bbox: object | null;
-}
-
-export interface TrailGeometry extends TrailSearchResult {
-  geometry: object | null;
-}
-
-export interface TrailConditionReport {
-  id: string;
-  trailName: string;
-  trailRegion: string | null;
-  surface: string;
-  overallCondition: string;
-  hazards: string[];
-  waterCrossings: number;
-  notes: string | null;
-  deleted: boolean;
-  deletedAt: string | null;
-  createdAt: string;
-  userId: number;
-  userEmail: string | null;
-}
+export type TrailSearchResult = Static<typeof TrailSearchItemSchema>;
+export type TrailGeometry = Static<typeof TrailGeometrySchema>;
+export type TrailSearchPage = Static<typeof TrailSearchResultSchema>;
+export type TrailConditionReport = Static<typeof TrailConditionReportSchema>;
 
 export async function searchTrails({
   q,
@@ -363,29 +289,24 @@ export async function searchTrails({
   sport?: string;
   limit?: number;
   offset?: number;
-}): Promise<{ trails: TrailSearchResult[]; hasMore: boolean; offset: number; limit: number }> {
+}): Promise<TrailSearchPage> {
   const { data, error } = await adminClient.trails.search.get({
     query: { q, sport, limit, offset },
   });
   if (error) throwOnError(error);
-  return data as unknown as {
-    trails: TrailSearchResult[];
-    hasMore: boolean;
-    offset: number;
-    limit: number;
-  };
+  return unwrap(data, 'searchTrails');
 }
 
 export async function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
   const { data, error } = await adminClient.trails({ osmId }).geometry.get();
   if (error) throwOnError(error);
-  return data as unknown as TrailGeometry; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'trailGeometry');
 }
 
 export async function getAdminTrail(osmId: string): Promise<TrailSearchResult> {
   const { data, error } = await adminClient.trails({ osmId }).get();
   if (error) throwOnError(error);
-  return data as unknown as TrailSearchResult; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'adminTrail');
 }
 
 export async function getTrailConditions({
@@ -403,11 +324,11 @@ export async function getTrailConditions({
     query: { q, limit, offset, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<TrailConditionReport>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
+  return unwrap(data, 'trailConditions');
 }
 
 export async function deleteTrailCondition(reportId: string): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
   if (error) throwOnError(error);
-  return data as unknown as { success: boolean };
+  return unwrap(data, 'deleteTrailCondition');
 }

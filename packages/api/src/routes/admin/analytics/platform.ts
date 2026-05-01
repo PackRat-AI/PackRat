@@ -7,8 +7,15 @@ import {
   trips,
   users,
 } from '@packrat/api/db/schema';
+import {
+  ActiveUsersSchema,
+  ActivityPointSchema,
+  AdminErrorResponses,
+  BreakdownItemSchema,
+  GrowthPointSchema,
+} from '@packrat/api/schemas/admin';
 import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
 const PeriodSchema = z.object({
@@ -99,6 +106,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     },
     {
       query: PeriodSchema,
+      response: { 200: t.Array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
   )
@@ -175,6 +183,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     },
     {
       query: PeriodSchema,
+      response: { 200: t.Array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
     },
   )
@@ -218,7 +227,10 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'DAU / WAU / MAU based on last_active_at' } },
+    {
+      response: { 200: ActiveUsersSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'DAU / WAU / MAU based on last_active_at' },
+    },
   )
 
   .get(
@@ -246,5 +258,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' } },
+    {
+      response: { 200: t.Array(BreakdownItemSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' },
+    },
   );
