@@ -24,7 +24,7 @@ function loadCachedAuth(): CachedAuth {
 /**
  * Creates a browser context with auth pre-seeded in localStorage:
  *   - access_token / refresh_token  → read by expo-sqlite kv-store stub + tokenAtom
- *   - packrat_user                  → read by user.web.ts to hydrate userStore
+ *   - user                         → read by ObservablePersistLocalStorage to hydrate userStore
  *                                     (isAuthed is computed from userStore !== null)
  *
  * Using storageState guarantees the values are present before ANY page JS runs.
@@ -38,7 +38,7 @@ async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
   ];
 
   if (user) {
-    localStorage.push({ name: 'packrat_user', value: JSON.stringify(user) });
+    localStorage.push({ name: 'user', value: JSON.stringify(user) });
   }
 
   return browser.newContext({
