@@ -1,3 +1,4 @@
+import { isFunction } from '@packrat/guards';
 import type * as React from 'react';
 
 import { cn } from './cn.web';
@@ -23,7 +24,7 @@ export interface LargeTitleHeaderProps {
 }
 
 function resolveView(view: HeaderViewProp | undefined): React.ReactNode {
-  if (typeof view === 'function') return view({ canGoBack: false, tintColor: undefined });
+  if (isFunction(view)) return view({ canGoBack: false, tintColor: undefined });
   return view ?? null;
 }
 
