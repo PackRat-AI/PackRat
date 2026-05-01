@@ -1,9 +1,15 @@
 /**
  * Playwright global setup — runs once before all tests.
  *
- * Registers a fresh E2E test user, fetches the OTP directly from the database,
- * verifies the email, and writes the resulting tokens to a temp file so the
- * authedPage fixture can seed localStorage without hitting auth every test.
+ * Priority order for obtaining auth tokens:
+ *   1. TEST_ACCESS_TOKEN + TEST_REFRESH_TOKEN — used directly (no API call)
+ *   2. TEST_EMAIL + TEST_PASSWORD — logs in against the API (matches the
+ *      iOS/Android Maestro pattern: seed the user, then log in with credentials)
+ *   3. Fallback — registers a fresh ephemeral user, reads the OTP from the DB,
+ *      and verifies email to obtain tokens (useful for local development)
+ *
+ * The resulting tokens are written to .auth-tokens.json so the authedPage
+ * fixture can seed localStorage without hitting auth on every test.
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -17,7 +23,7 @@ const DB_URL =
 export const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
 
 async function setup() {
-  // If tokens are already provided via env, skip registration entirely.
+  // Priority 1: pre-minted tokens provided directly
   if (process.env.TEST_ACCESS_TOKEN && process.env.TEST_REFRESH_TOKEN) {
     const meRes = await fetch(`${API_URL}/api/auth/me`, {
       headers: { Authorization: `Bearer ${process.env.TEST_ACCESS_TOKEN}` },
@@ -35,6 +41,28 @@ async function setup() {
     return;
   }
 
+  // Priority 2: log in with the seeded E2E user (CI path, matches iOS/Android pattern)
+  if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
+    const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: process.env.TEST_EMAIL, password: process.env.TEST_PASSWORD }),
+    });
+    if (!loginRes.ok) {
+      const body = await loginRes.text();
+      throw new Error(`Login failed ${loginRes.status}: ${body}`);
+    }
+    const { accessToken, refreshToken, user } = (await loginRes.json()) as {
+      accessToken: string;
+      refreshToken: string;
+      user: Record<string, unknown>;
+    };
+    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
+    console.log(`[globalSetup] Logged in as ${process.env.TEST_EMAIL}`);
+    return;
+  }
+
+  // Priority 3: register a fresh ephemeral user (local dev fallback)
   const email = `e2e-${Date.now()}@packrat.test`;
   const password = 'E2eTest1!';
 
