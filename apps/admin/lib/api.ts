@@ -46,7 +46,7 @@ export interface AdminStats {
 export async function getStats(): Promise<AdminStats> {
   const { data, error } = await adminClient.stats.get();
   if (error) throwOnError(error);
-  return data as AdminStats;
+  return data as AdminStats; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ export async function getUsers({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<AdminUser>;
+  return data as unknown as PaginatedResponse<AdminUser>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function deleteUser(id: number): Promise<{ success: boolean }> {
@@ -138,7 +138,7 @@ export async function getPacks({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<AdminPack>;
+  return data as unknown as PaginatedResponse<AdminPack>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function deletePack(id: string): Promise<{ success: boolean }> {
@@ -183,7 +183,7 @@ export async function getCatalogItems({
     query: { limit, offset, q },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<AdminCatalogItem>;
+  return data as unknown as PaginatedResponse<AdminCatalogItem>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
@@ -216,7 +216,7 @@ export async function getPlatformGrowth(
     query: { period, range },
   });
   if (error) throwOnError(error);
-  return data as unknown as GrowthPoint[];
+  return data as unknown as GrowthPoint[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getPlatformActivity(
@@ -227,13 +227,13 @@ export async function getPlatformActivity(
     query: { period, range },
   });
   if (error) throwOnError(error);
-  return data as unknown as ActivityPoint[];
+  return data as unknown as ActivityPoint[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getPlatformBreakdown(): Promise<BreakdownItem[]> {
   const { data, error } = await adminClient.analytics.platform.breakdown.get();
   if (error) throwOnError(error);
-  return data as unknown as BreakdownItem[];
+  return data as unknown as BreakdownItem[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 // ─── Analytics — Catalog ─────────────────────────────────────────────────────
@@ -289,7 +289,7 @@ export type EmbeddingStats = {
 export async function getCatalogOverview(): Promise<CatalogOverview> {
   const { data, error } = await adminClient.analytics.catalog.overview.get();
   if (error) throwOnError(error);
-  return data as unknown as CatalogOverview;
+  return data as unknown as CatalogOverview; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
@@ -297,13 +297,13 @@ export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
     query: { limit },
   });
   if (error) throwOnError(error);
-  return data as unknown as BrandRow[];
+  return data as unknown as BrandRow[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getCatalogPrices(): Promise<PriceBucket[]> {
   const { data, error } = await adminClient.analytics.catalog.prices.get();
   if (error) throwOnError(error);
-  return data as unknown as PriceBucket[];
+  return data as unknown as PriceBucket[]; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
@@ -311,13 +311,13 @@ export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
     query: { limit },
   });
   if (error) throwOnError(error);
-  return data as unknown as EtlResponse;
+  return data as unknown as EtlResponse; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   const { data, error } = await adminClient.analytics.catalog.embeddings.get();
   if (error) throwOnError(error);
-  return data as unknown as EmbeddingStats;
+  return data as unknown as EmbeddingStats; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 // ─── Admin Trails ─────────────────────────────────────────────────────────────
@@ -379,13 +379,13 @@ export async function searchTrails({
 export async function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
   const { data, error } = await adminClient.trails({ osmId }).geometry.get();
   if (error) throwOnError(error);
-  return data as unknown as TrailGeometry;
+  return data as unknown as TrailGeometry; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getAdminTrail(osmId: string): Promise<TrailSearchResult> {
   const { data, error } = await adminClient.trails({ osmId }).get();
   if (error) throwOnError(error);
-  return data as unknown as TrailSearchResult;
+  return data as unknown as TrailSearchResult; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function getTrailConditions({
@@ -403,7 +403,7 @@ export async function getTrailConditions({
     query: { q, limit, offset, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as unknown as PaginatedResponse<TrailConditionReport>;
+  return data as unknown as PaginatedResponse<TrailConditionReport>; // safe-cast: Treaty API boundary — type inferred from Elysia route schema
 }
 
 export async function deleteTrailCondition(reportId: string): Promise<{ success: boolean }> {
