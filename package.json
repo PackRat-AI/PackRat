@@ -117,9 +117,6 @@
     "typescript": "~5.9.2",
     "zod": "^3.24.2"
   },
-  "patchedDependencies": {
-    "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
-  },
   "trustedDependencies": [
     "@sentry/cli"
   ]
