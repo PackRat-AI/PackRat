@@ -58,6 +58,8 @@ const ALLOWED: string[] = [
   'packages/osm-import/import.ts',
   // Trails app env shim — parses process.env once at module load
   'apps/trails/lib/env.ts',
+  // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
+  'apps/expo/e2e-web/',
 ];
 
 // Directories to skip entirely
