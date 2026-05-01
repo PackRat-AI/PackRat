@@ -33,6 +33,8 @@ const WEB_STUBS = {
   '@react-native-community/datetimepicker': 'mocks/react-native-community-datetimepicker.tsx',
   // expo-file-system throws UnavailabilityError on web; stub all ops as no-ops
   'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
+  // gorhom bottom sheet is native-only; web uses the nativewindui Sheet shim instead
+  '@gorhom/bottom-sheet': 'mocks/gorhom-bottom-sheet.tsx',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;
@@ -42,6 +44,15 @@ config.resolver = {
   resolveRequest: (context, moduleName, platform) => {
     if (platform === 'web' && WEB_STUBS[moduleName]) {
       return { filePath: path.join(__dirname, WEB_STUBS[moduleName]), type: 'sourceFile' };
+    }
+    // Ensure @radix-ui/* resolves to browser-compatible exports on web
+    if (platform === 'web' && moduleName.startsWith('@radix-ui/')) {
+      const radixContext = {
+        ...context,
+        unstable_conditionNames: ['browser', 'require', 'default'],
+      };
+      if (originalResolveRequest) return originalResolveRequest(radixContext, moduleName, platform);
+      return radixContext.resolveRequest(radixContext, moduleName, platform);
     }
     if (originalResolveRequest) return originalResolveRequest(context, moduleName, platform);
     return context.resolveRequest(context, moduleName, platform);

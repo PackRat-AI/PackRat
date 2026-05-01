@@ -4,5 +4,8 @@
   "private": true,
   "dependencies": {
     "@packrat-ai/nativewindui": "^2.0.5"
+  },
+  "devDependencies": {
+    "@packrat/web-ui": "workspace:*"
   }
 }

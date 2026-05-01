@@ -66,6 +66,14 @@
     "packages/mcp",
     "packages/osm-db",
     "packages/osm-import",
-    "packages/overpass"
+    "packages/overpass",
+    "packages/ui/nativewindui/index.web.tsx",
+    "packages/ui/nativewindui/button.web.tsx",
+    "packages/ui/nativewindui/text.web.tsx",
+    "packages/ui/nativewindui/activity-indicator.web.tsx",
+    "packages/ui/nativewindui/segmented-control.web.tsx",
+    "packages/ui/nativewindui/list.web.tsx",
+    "packages/ui/nativewindui/large-title-header.web.tsx",
+    "packages/ui/nativewindui/sheet.web.tsx"
   ]
 }
