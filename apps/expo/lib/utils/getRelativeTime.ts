@@ -7,7 +7,7 @@ const UNITS: Array<{ key: string; seconds: number }> = [
   { key: 'days', seconds: 86400 },
   { key: 'hours', seconds: 3600 },
   { key: 'minutes', seconds: 60 },
-];
+] as const;
 
 function toDate(value: Date | string | null | undefined): Date | null {
   if (!value) return null;
