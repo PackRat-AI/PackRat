@@ -1,0 +1,73 @@
+/*
+ * Web-only CSS layered on top of global.css.
+ *
+ * global.css provides NativeWind tokens in rgb() space-separated format.
+ * This file adds what shadcn/Radix components expect on web:
+ *   - --radius and --font-sans variables
+ *   - .dark class token variants (global.css only has @media prefers-color-scheme)
+ *   - base border/body defaults for shadcn components
+ *   - color utilities not covered by global.css's @media screen block
+ *
+ * Imported conditionally in _layout.tsx (Platform.OS === 'web' only).
+ */
+
+:root {
+  --radius: 0.5rem;
+  /* System font stack prevents fontfaceobserver from waiting on a missing custom font */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Dark token values keyed on the .dark class that _layout.tsx applies to <html>.
+   Mirrors the @media (prefers-color-scheme: dark) block in global.css so that
+   manual theme toggling and system preference both update the CSS custom properties. */
+.dark {
+  --background: 0 0 0;
+  --foreground: 255 255 255;
+  --card: 21 21 24;
+  --card-foreground: 255 255 255;
+  --popover: 40 40 42;
+  --popover-foreground: 255 255 255;
+  --primary: 3 133 255;
+  --primary-foreground: 255 255 255;
+  --secondary: 100 211 254;
+  --secondary-foreground: 255 255 255;
+  --muted: 70 70 73;
+  --muted-foreground: 142 142 147;
+  --accent: 255 52 95;
+  --accent-foreground: 255 255 255;
+  --destructive: 254 67 54;
+  --destructive-foreground: 255 255 255;
+  --border: 40 40 42;
+  --input: 55 55 57;
+  --ring: 40 40 42;
+}
+
+/* Shadcn base element defaults */
+*,
+::before,
+::after {
+  border-color: rgb(var(--border));
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+}
+
+/* Additional color utilities not covered by global.css's @media screen block */
+.bg-popover {
+  background-color: rgb(var(--popover));
+}
+.bg-input {
+  background-color: rgb(var(--input));
+}
+.border-input {
+  border-color: rgb(var(--input));
+}
+.ring-ring {
+  --tw-ring-color: rgb(var(--ring));
+}
+.text-foreground {
+  color: rgb(var(--foreground));
+}

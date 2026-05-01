@@ -14,6 +14,13 @@ import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/use
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
+
+// Web-only: layer in shadcn token supplements after NativeWind base.
+// Platform.OS is inlined at build time so Metro tree-shakes this from the native bundle.
+if (Platform.OS === 'web') {
+  require('../global.web.css');
+}
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,

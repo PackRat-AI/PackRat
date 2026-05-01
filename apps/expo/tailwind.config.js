@@ -11,6 +11,8 @@ module.exports = {
     './features/**/screens/**/*.{js,jsx,ts,tsx}',
     '../../node_modules/@packrat-ai/nativewindui/**/*.{js,jsx,ts,tsx}',
     '../../packages/ui/nativewindui/*.web.{ts,tsx}',
+    // shadcn/Radix components used by the nativewindui web shims
+    '../../packages/web-ui/src/**/*.{ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
   theme: {
