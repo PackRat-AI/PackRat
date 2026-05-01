@@ -1,9 +1,4 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from './cn.web';
 
 export function ActivityIndicator({
   size = 'small',
@@ -15,6 +10,7 @@ export function ActivityIndicator({
   return (
     <output
       aria-label="Loading"
+      aria-live="polite"
       className={cn(
         'animate-spin rounded-full border-2 border-current border-t-transparent',
         size === 'large' ? 'h-8 w-8' : 'h-4 w-4',

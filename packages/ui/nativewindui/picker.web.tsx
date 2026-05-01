@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@packrat/web-ui';
-import type * as React from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 
 type PickerItemProps = {
   label: string;
@@ -16,22 +16,16 @@ type PickerProps = {
   selectedValue?: string | number;
   onValueChange?: (value: string | number, index: number) => void;
   enabled?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
   testID?: string;
 };
 
-function collectItems(children: React.ReactNode): PickerItemProps[] {
+function collectItems(children: ReactNode): PickerItemProps[] {
   const items: PickerItemProps[] = [];
-  React.Children.forEach(children, (child) => {
-    if (
-      child &&
-      typeof child === 'object' &&
-      'props' in child &&
-      child.props &&
-      typeof (child.props as PickerItemProps).label === 'string'
-    ) {
-      items.push(child.props as PickerItemProps);
+  Children.forEach(children, (child) => {
+    if (isValidElement<PickerItemProps>(child) && child.type === PickerItem) {
+      items.push(child.props);
     }
   });
   return items;

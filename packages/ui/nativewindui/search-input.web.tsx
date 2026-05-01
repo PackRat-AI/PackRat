@@ -1,16 +1,12 @@
-import { type ClassValue, clsx } from 'clsx';
 import { Search } from 'lucide-react';
 import { forwardRef, useEffect } from 'react';
-import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from './cn.web';
 
 type SearchInputProps = {
   value?: string;
   onChangeText?: (text: string) => void;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: () => void;
   onFocus?: () => void;
   placeholder?: string;
@@ -21,12 +17,12 @@ type SearchInputProps = {
   containerClassName?: string;
   iconColor?: string;
   cancelText?: string;
+  onSubmitEditing?: () => void;
   // RN-specific ignored on web
   containerTestID?: string;
   containerAccessibilityLabel?: string;
   iconContainerClassName?: string;
   returnKeyType?: string;
-  onSubmitEditing?: () => void;
   keyboardType?: string;
   autoCapitalize?: string;
 };
@@ -46,6 +42,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       className,
       containerClassName,
       iconColor,
+      onSubmitEditing,
     },
     ref,
   ) => {
@@ -53,7 +50,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       if (autoFocus && ref && 'current' in ref) {
         ref.current?.focus();
       }
-    }, [autoFocus, ref]);
+    }, [autoFocus]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onChangeText?.(e.target.value);
@@ -82,6 +79,9 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           placeholder={placeholder}
           disabled={editable === false}
           data-testid={testID}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSubmitEditing?.();
+          }}
           className={cn(
             'flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground',
             className,

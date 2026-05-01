@@ -67,6 +67,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import type { CSSProperties } from 'react';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   'account-circle': User,
@@ -170,11 +171,11 @@ type IconProps = {
   size?: number;
   color?: string;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 };
 
 export function Icon({ name, size = 24, color, className, style }: IconProps) {
-  const LucideComponent: LucideIcon = ICON_MAP[name] ?? Circle;
+  const LucideComponent = ICON_MAP[name] ?? Circle;
   const props: LucideProps = {
     size,
     className,

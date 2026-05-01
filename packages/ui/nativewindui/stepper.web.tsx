@@ -1,10 +1,6 @@
-import { type ClassValue, clsx } from 'clsx';
 import { Minus, Plus } from 'lucide-react';
-import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from './cn.web';
 
 type StepperButtonProps = {
   onClick?: () => void;

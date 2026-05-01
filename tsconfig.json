@@ -67,6 +67,7 @@
     "packages/osm-db",
     "packages/osm-import",
     "packages/overpass",
-    "packages/ui/nativewindui/*.web.tsx"
+    "packages/ui/nativewindui/*.web.tsx",
+    "packages/ui/nativewindui/*.web.ts"
   ]
 }

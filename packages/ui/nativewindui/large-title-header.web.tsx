@@ -1,10 +1,6 @@
-import { type ClassValue, clsx } from 'clsx';
 import type * as React from 'react';
-import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from './cn.web';
 
 export type LargeTitleSearchBarMethods = Record<string, never>;
 

@@ -1,22 +1,19 @@
-import { type ClassValue, clsx } from 'clsx';
+import type { CSSProperties, ReactNode } from 'react';
 import { forwardRef, useId } from 'react';
-import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from './cn.web';
 
 type TextFieldProps = {
   value?: string;
   onChangeText?: (text: string) => void;
-  onChange?: React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onBlur?: () => void;
   onFocus?: () => void;
   placeholder?: string;
   label?: string;
   errorMessage?: string;
-  leftView?: React.ReactNode;
-  rightView?: React.ReactNode;
+  leftView?: ReactNode;
+  rightView?: ReactNode;
   multiline?: boolean;
   numberOfLines?: number;
   autoFocus?: boolean;
@@ -38,11 +35,10 @@ type TextFieldProps = {
   materialRingColor?: string;
   materialHideActionIcons?: boolean;
   labelClassName?: string;
-  errorMessage?: string;
   inputMode?: string;
   returnKeyType?: string;
   onSubmitEditing?: () => void;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 };
 
 export const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldProps>(
@@ -72,12 +68,16 @@ export const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Text
   ) => {
     const fieldId = useId();
 
+    // secureTextEntry is unsupported with multiline on web (textarea has no password type).
+    const isSecure = secureTextEntry && !multiline;
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       onChangeText?.(e.target.value);
       onChange?.(e);
     };
 
     const shared = {
+      id: fieldId,
       value: value ?? '',
       onChange: handleChange,
       onBlur,
@@ -110,7 +110,6 @@ export const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Text
           {multiline ? (
             <textarea
               {...shared}
-              id={fieldId}
               ref={ref as React.Ref<HTMLTextAreaElement>}
               rows={numberOfLines}
               className={cn(shared.className, 'resize-none')}
@@ -118,9 +117,8 @@ export const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, Text
           ) : (
             <input
               {...shared}
-              id={fieldId}
               ref={ref as React.Ref<HTMLInputElement>}
-              type={secureTextEntry ? 'password' : 'text'}
+              type={isSecure ? 'password' : 'text'}
             />
           )}
           {rightView}

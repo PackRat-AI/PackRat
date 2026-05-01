@@ -1,5 +1,5 @@
 import { Moon, Sun } from 'lucide-react';
-import { useColorScheme } from './index.web';
+import { useColorScheme } from './use-color-scheme.web';
 
 export function ThemeToggle() {
   const { colorScheme, toggleColorScheme } = useColorScheme();

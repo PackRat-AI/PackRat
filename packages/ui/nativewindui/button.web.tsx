@@ -1,4 +1,3 @@
-import type { ButtonProps as ShadcnButtonProps } from '@packrat/web-ui/components/button';
 import { Button as ShadcnButton } from '@packrat/web-ui/components/button';
 import * as React from 'react';
 
@@ -45,7 +44,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       testID,
       androidRootClassName: _androidRootClassName,
       asChild,
-      ...rest
     },
     ref,
   ) => {
@@ -62,7 +60,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled}
         data-testid={testID}
         asChild={asChild}
-        {...(rest as Partial<ShadcnButtonProps>)}
       >
         {children}
       </ShadcnButton>
