@@ -30,9 +30,13 @@ export function KeyboardStickyView({
   return <View {...(props as object)}>{children}</View>;
 }
 
-export function useReanimatedKeyboardAnimation(): { progress: SharedValue<number> } {
+export function useReanimatedKeyboardAnimation(): {
+  height: SharedValue<number>;
+  progress: SharedValue<number>;
+} {
+  const height = useSharedValue(0);
   const progress = useSharedValue(0);
-  return { progress };
+  return { height, progress };
 }
 
 export const KeyboardController = {
