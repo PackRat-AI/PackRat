@@ -8,6 +8,22 @@ appId: ${APP_ID}
     text: "Trips"
 - waitForAnimationToEnd
 
+# iOS: returning to the Trips tab can restore the search bar as first responder,
+# overlaying the screen and suppressing the navigation bar's create-trip-button.
+# Dismiss it if visible.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Cancel"
+          commands:
+            - tapOn:
+                text: "Cancel"
+            - waitForAnimationToEnd
+
 # Tap create trip button
 - tapOn:
     id: "create-trip-button"
@@ -23,5 +39,18 @@ appId: ${APP_ID}
     id: "submit-trip-button"
 
 # Go back
-- back
-- waitForAnimationToEnd
+# iOS: trip/new is a modal (root of its own nav stack) — no system "Back" button.
+# The modal has a Cancel button (testID: cancel-trip-form-button) added for this purpose.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "cancel-trip-form-button"
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd

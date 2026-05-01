@@ -7,7 +7,14 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { PackInStore } from '../types';
 
-const listPacks = async (): Promise<PackInStore[] | null> => {
+let _refreshPacksList: (() => void) | undefined;
+export const refreshPacksList = () => _refreshPacksList?.();
+
+// biome-ignore lint/suspicious/noExplicitAny: crud.js getParams is untyped
+const listPacks = async (getParams: any): Promise<PackInStore[] | null> => {
+  // Force merge mode on every list sync (including initial when lastSync is null),
+  // so obs$.set() is never called and local-only items are never wiped.
+  getParams.mode = 'merge';
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packs: ${error.value}`);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
@@ -27,6 +34,9 @@ const createPack = async (packData: PackInStore): Promise<PackInStore | null> =>
     localUpdatedAt: packData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
+  // Refresh the list after create so the new pack appears immediately without
+  // waiting for the 30-second polling interval.
+  setTimeout(() => refreshPacksList(), 500);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
 };
@@ -73,11 +83,13 @@ syncObservable(
     update: updatePack,
     changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
+      _refreshPacksList = refresh;
       const intervalId = setInterval(() => {
         refresh();
       }, 30000);
 
       return () => {
+        _refreshPacksList = undefined;
         clearInterval(intervalId);
       };
     },

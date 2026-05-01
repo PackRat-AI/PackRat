@@ -221,6 +221,8 @@
     "visibility": "Visibility",
     "deletePack": "Delete pack?",
     "packDeleted": "Pack deleted successfully",
+    "packCreatedSuccess": "Pack created successfully",
+    "packUpdatedSuccess": "Pack updated successfully",
     "createPack": "Create Pack",
     "editPack": "Edit Pack",
     "noPacks": "No packs available",

@@ -23,3 +23,6 @@ export const redirectToAtom = atom<string>('/');
 
 // Re-authentication state
 export const needsReauthAtom = atom(false);
+
+// Set to true by signOut() to trigger root-level navigation; SignOutGuard resets it after navigating.
+export const signOutRequestedAtom = atom(false);

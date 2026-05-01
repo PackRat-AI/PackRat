@@ -1,4 +1,5 @@
 import { WEIGHT_UNITS } from '@packrat/api/types';
+import { isString } from '@packrat/guards';
 import { z } from 'zod';
 
 export const ErrorResponseSchema = z.object({
@@ -110,25 +111,38 @@ export const CatalogItemSchema = z.object({
   ]),
 });
 
+const SortSchema = z.object({
+  field: z.enum([
+    'name',
+    'brand',
+    'category',
+    'price',
+    'ratingValue',
+    'createdAt',
+    'updatedAt',
+    'usage',
+  ]),
+  order: z.enum(['asc', 'desc']),
+});
+
 export const CatalogItemsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
   q: z.string().optional(),
   category: z.string().optional(),
+  // Eden Treaty serializes nested objects as JSON strings in query params.
+  // z.preprocess parses the JSON string before Zod validates the shape.
   sort: z
-    .object({
-      field: z.enum([
-        'name',
-        'brand',
-        'category',
-        'price',
-        'ratingValue',
-        'createdAt',
-        'updatedAt',
-        'usage',
-      ]),
-      order: z.enum(['asc', 'desc']),
-    })
+    .preprocess((val) => {
+      if (isString(val)) {
+        try {
+          return JSON.parse(val);
+        } catch {
+          return undefined;
+        }
+      }
+      return val;
+    }, SortSchema.optional())
     .optional(),
 });
 

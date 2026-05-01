@@ -15,14 +15,44 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
+# iOS: the "Save Password?" Keychain prompt from login can appear late (up to ~2 min
+# after login). Dismiss it here before touching form fields so it doesn't block inputs.
+# If the Keychain prompt appeared while the modal was animating in, it may have closed
+# the modal. Re-tap the create-pack-button if pack-name-input is not yet visible.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Not Now"
+          optional: true
+          label: "Dismiss late iOS Save Password prompt"
+      - waitForAnimationToEnd
+      - runFlow:
+          when:
+            notVisible:
+              id: "pack-name-input"
+          commands:
+            - tapOn:
+                id: "create-pack-button"
+            - waitForAnimationToEnd
+
+# Wait for the modal form to be accessible before tapping the input.
+# extendedWaitUntil is more reliable than bare waitForAnimationToEnd here because
+# the modal slide-from-bottom animation can finish before the form is in XCTest's tree.
+- extendedWaitUntil:
+    visible:
+      id: "pack-name-input"
+    timeout: 15000
+
 # Fill in Pack Name
 - tapOn:
-    text: "Pack Name"
+    id: "pack-name-input"
 - inputText: ${PACK_NAME}
 
 # Fill in Description
 - tapOn:
-    text: "Description"
+    id: "pack-description-input"
 - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
@@ -40,15 +70,61 @@ appId: ${APP_ID}
       id: "submit-pack-button"
     timeout: 15000
 
-# Assert the pack was created - we should see the pack name in the list/details
-# Also confirm we are on the packs list by checking for the create button
+# Assert we are back on the packs list
 - assertVisible:
     id: "create-pack-button"
-- scrollUntilVisible:
-    element:
-      text: ${PACK_NAME}
-    direction: DOWN
-    timeout: 60000
-    speed: 99
-- assertVisible:
-    text: ${PACK_NAME}
+
+# iOS: the "Save Password?" keychain prompt can appear late — after returning
+# from any form with a password field. Dismiss it before scrolling so it
+# doesn't intercept taps or obscure the list.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Not Now"
+          commands:
+            - tapOn:
+                text: "Not Now"
+            - waitForAnimationToEnd
+
+# Verify the new pack is in the list.
+# Android: scrollUntilVisible works correctly. New packs are at the BOTTOM of the oldest-first
+# list, so direction: DOWN (Maestro swipes UP from center) reveals them.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            text: ${PACK_NAME}
+          direction: DOWN
+          timeout: 120000
+          speed: 80
+      - assertVisible:
+          text: ${PACK_NAME}
+
+# iOS: scrollUntilVisible cannot reliably detect FlatList items through the LargeTitleHeader
+# accessibility tree even when the item is visually present. Use the native search bar instead
+# to filter to the new pack, then verify a result row appears.
+# assertVisible by text fails on iOS because Pressable accessible={true} absorbs child Text
+# nodes — the Text is not separately accessible. Check by testID instead.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "Search..."
+      - waitForAnimationToEnd
+      - inputText: ${PACK_NAME}
+      - extendedWaitUntil:
+          visible:
+            id: "pack-search-result"
+          timeout: 30000
+      - tapOn:
+          text: "Trips"
+      - waitForAnimationToEnd

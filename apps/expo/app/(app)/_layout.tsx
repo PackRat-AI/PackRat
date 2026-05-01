@@ -1,7 +1,9 @@
+import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { isLoadingAtom, needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -10,10 +12,12 @@ import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackI
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
+import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack } from 'expo-router';
+import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export {
@@ -23,11 +27,36 @@ export {
 
 export default function AppLayout() {
   const isLoading = useAuthInit();
+  const isAuthedValue = use$(isAuthed);
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
+  const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const insets = useSafeAreaInsets();
+  // Latches true once we dispatch router.replace('/auth') on sign-out.
+  // Keeps the spinner rendered until AppLayout unmounts so that
+  // auth/index.tsx resetting isLoadingAtom=false never causes AppLayout
+  // to re-render its Stack mid-transition. If the Stack re-initialized
+  // while the root navigator was still committing the replace, it would
+  // re-register with React Navigation and override the in-flight navigation,
+  // landing the user back on the Trips/Profile screen instead of auth.
+  const hasNavigatedToAuthRef = useRef(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isLoadingGlobal && !isAuthedValue) {
+      hasNavigatedToAuthRef.current = true;
+      // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
+      router.replace('/auth' as Href);
+    }
+  }, [isLoadingGlobal, isAuthedValue]);
+
+  // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
+  // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
+  // The spinner unmounts NativeTabs so the useEffect above can dispatch to the
+  // root Stack. The !isAuthedValue guard keeps the Stack visible during re-auth
+  // sign-in, where isLoadingAtom is also true but the user is still authed.
+  // hasNavigatedToAuthRef keeps the spinner until AppLayout actually unmounts
+  // after the router.replace('/auth') transition completes.
+  if (isLoading || (isLoadingGlobal && !isAuthedValue) || hasNavigatedToAuthRef.current) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -285,12 +314,23 @@ const getSettingsOptions = (t: TranslationFunction) =>
     headerRight: () => <ThemeToggle />,
   }) as const;
 
-const getTripNewOptions = (t: TranslationFunction) =>
-  ({
-    title: t('trips.createTrip'),
-    presentation: 'modal',
-    animation: 'slide_from_bottom',
-  }) as const;
+const getTripNewOptions = (t: TranslationFunction) => ({
+  title: t('trips.createTrip'),
+  presentation: 'modal' as const,
+  animation: 'slide_from_bottom' as const,
+  headerLeft: () => {
+    const router = useRouter();
+    return (
+      <Pressable
+        testID={TestIds.CancelTripFormButton}
+        onPress={() => router.back()}
+        className="px-2"
+      >
+        <Text className="text-primary">{t('common.cancel')}</Text>
+      </Pressable>
+    );
+  },
+});
 
 const getTripEditOptions = (t: TranslationFunction) =>
   ({
@@ -311,12 +351,23 @@ const CONSENT_MODAL_OPTIONS = {
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const getPackNewOptions = (t: TranslationFunction) =>
-  ({
-    title: t('packs.createPack'),
-    presentation: 'modal',
-    animation: 'fade_from_bottom', // for android
-  }) as const;
+const getPackNewOptions = (t: TranslationFunction) => ({
+  title: t('packs.createPack'),
+  presentation: 'modal' as const,
+  animation: 'fade_from_bottom' as const,
+  headerLeft: () => {
+    const router = useRouter();
+    return (
+      <Pressable
+        testID={TestIds.CancelPackFormButton}
+        onPress={() => router.back()}
+        className="px-2"
+      >
+        <Text className="text-primary">{t('common.cancel')}</Text>
+      </Pressable>
+    );
+  },
+});
 
 const getItemNewOptions = (t: TranslationFunction) =>
   ({

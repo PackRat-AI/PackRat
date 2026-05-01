@@ -18,7 +18,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -64,6 +64,7 @@ export function PackListScreen() {
   const router = useRouter();
   const userPacks = usePacks();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
+
   const [activeFilter, setActiveFilter] = useAtom(activeFilterAtom);
   const { isAuthenticated } = useAuth();
   const { view } = useLocalSearchParams();
@@ -74,6 +75,26 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  // LargeTitleHeader.ios.tsx keeps internal searchValue and isFocused state in local
+  // useStates. clearText() on the native ref does NOT fire onChangeText, so that state
+  // persists across navigation. Incrementing this key on every focus remounts
+  // LargeTitleHeader, resetting its internal state and restoring the navigation bar
+  // buttons that iOS hides whenever UISearchController is active.
+  // cancelSearch() is also called because iOS UIKit auto-restores the UISearchController
+  // first-responder state on tab return, hiding nav bar right buttons even after remount.
+  const [searchHeaderKey, setSearchHeaderKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      searchBarRef.current?.cancelSearch();
+      setSearchHeaderKey((k) => k + 1);
+      setSearchValue('');
+      return () => {
+        searchBarRef.current?.clearText();
+        setSearchValue('');
+      };
+    }, [setSearchValue]),
+  );
 
   const { colors } = useColorScheme();
 
@@ -190,13 +211,12 @@ export function PackListScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeaderOverlapFixIOS>
         <LargeTitleHeader
+          key={searchHeaderKey}
           title={t('navigation.packs')}
           backVisible={false}
           searchBar={{
             ref: asNonNullableRef(searchBarRef),
-            onChangeText(text) {
-              setSearchValue(text);
-            },
+            onChangeText: setSearchValue,
             content: (
               <LargeTitleHeaderSearchContentContainer>
                 {searchValue ? (
