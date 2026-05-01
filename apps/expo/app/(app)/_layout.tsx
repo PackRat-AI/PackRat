@@ -15,7 +15,7 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { type Href, router, Stack, useRouter } from 'expo-router';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue } from 'jotai';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +31,6 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
-  const setIsLoading = useSetAtom(isLoadingAtom);
   const insets = useSafeAreaInsets();
 
   // When sign-out completes (isLoadingAtom=true + isAuthed=false), the spinner
@@ -40,17 +39,15 @@ export default function AppLayout() {
   // hierarchy and cannot intercept the replace. CommonActions.reset was tried
   // previously but failed silently on iOS (UITabBarController timing); expo-router's
   // own router.replace is more reliable cross-platform.
-  // After replacing, reset isLoadingAtom so auth/index.tsx (which also reads
-  // isLoadingAtom) renders its sign-in content instead of its own spinner.
+  // isLoadingAtom is reset by auth/index.tsx on mount (after navigation commits)
+  // rather than here via setTimeout, to avoid re-rendering AppLayout's Stack
+  // mid-transition which can cancel the in-flight navigation on iOS.
   useEffect(() => {
     if (isLoadingGlobal && !isAuthedValue) {
       // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
       router.replace('/auth' as Href);
-      // Small delay lets the navigation commit before the atom change propagates
-      // to auth/index, avoiding a race between the spinner and the route render.
-      setTimeout(() => setIsLoading(false), 50);
     }
-  }, [isLoadingGlobal, isAuthedValue, setIsLoading]);
+  }, [isLoadingGlobal, isAuthedValue]);
 
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
   // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.

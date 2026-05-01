@@ -2,7 +2,11 @@ import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -41,6 +45,15 @@ export default function AuthIndexScreen() {
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
+  const setIsLoading = useSetAtom(isLoadingAtom);
+
+  // Reset sign-out loading state when auth screen mounts. signOut() sets
+  // isLoadingAtom=true (to unmount NativeTabs via AppLayout's spinner) and
+  // intentionally does not reset it, leaving AppLayout to navigate here and
+  // auth/index to clear the flag once navigation has fully committed.
+  React.useEffect(() => {
+    setIsLoading(false);
+  }, [setIsLoading]);
 
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
