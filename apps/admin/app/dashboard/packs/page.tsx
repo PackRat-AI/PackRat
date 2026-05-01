@@ -17,6 +17,7 @@ import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 function TableSkeleton() {
   return (
@@ -41,6 +42,7 @@ function TableSkeleton() {
 
 function PackRow({ pack }: { pack: AdminPack }) {
   const queryClient = useQueryClient();
+  const isDeleted = pack.deleted;
 
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
@@ -50,12 +52,17 @@ function PackRow({ pack }: { pack: AdminPack }) {
   });
 
   return (
-    <TableRow className="hover:bg-muted/20">
+    <TableRow className={`hover:bg-muted/20 ${isDeleted ? 'opacity-50' : ''}`}>
       <TableCell>
         <div>
           <p className="text-sm font-medium">{pack.name}</p>
           {pack.description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{pack.description}</p>
+          )}
+          {isDeleted && (
+            <p className="text-xs text-destructive">
+              Deleted {pack.deletedAt ? formatDate(new Date(pack.deletedAt)) : ''}
+            </p>
           )}
         </div>
       </TableCell>
@@ -80,13 +87,15 @@ function PackRow({ pack }: { pack: AdminPack }) {
         </span>
       </TableCell>
       <TableCell>
-        <DeleteButton
-          label={pack.name}
-          description="The pack will be soft-deleted and hidden from all users."
-          onConfirm={async () => {
-            await handleDelete();
-          }}
-        />
+        {!isDeleted && (
+          <DeleteButton
+            label={pack.name}
+            description="The pack will be soft-deleted and hidden from all users."
+            onConfirm={async () => {
+              await handleDelete();
+            }}
+          />
+        )}
       </TableCell>
     </TableRow>
   );
@@ -95,15 +104,19 @@ function PackRow({ pack }: { pack: AdminPack }) {
 export default function PacksPage() {
   const searchParams = useSearchParams();
   const q = searchParams?.get('q') ?? undefined;
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   const {
-    data: packs = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
     queryKey: queryKeys.admin.packs(q),
-    queryFn: () => getPacks({ q }),
+    queryFn: () => getPacks({ q, includeDeleted }),
   });
+
+  const packs = result?.data ?? [];
+  const total = result?.total ?? 0;
 
   return (
     <div>
@@ -114,7 +127,18 @@ export default function PacksPage() {
         </p>
       </div>
       <div className="space-y-4">
-        <SearchInput placeholder="Search by name, owner, or category…" />
+        <div className="flex items-center gap-4">
+          <SearchInput placeholder="Search by name, owner, or category…" />
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => setIncludeDeleted(e.target.checked)}
+              className="rounded"
+            />
+            Show deleted
+          </label>
+        </div>
         {isError ? (
           <p className="text-sm text-destructive py-4">
             Failed to load packs. Check that the API is reachable.
@@ -159,7 +183,8 @@ export default function PacksPage() {
               </Table>
             </div>
             <p className="text-xs text-muted-foreground">
-              {packs.length.toLocaleString()} pack{packs.length !== 1 ? 's' : ''}
+              {packs.length.toLocaleString()} of {total.toLocaleString()} pack
+              {total !== 1 ? 's' : ''}
               {q ? ` matching "${q}"` : ''}
             </p>
           </>

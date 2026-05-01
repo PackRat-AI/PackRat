@@ -58,24 +58,50 @@ export interface AdminUser {
   role: string | null;
   emailVerified: boolean | null;
   createdAt: string | null;
+  lastActiveAt: string | null;
+  deletedAt: string | null;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export function getUsers({
   limit = 100,
   offset = 0,
   q,
+  includeDeleted = false,
 }: {
   limit?: number;
   offset?: number;
   q?: string;
-} = {}): Promise<AdminUser[]> {
+  includeDeleted?: boolean;
+} = {}): Promise<PaginatedResponse<AdminUser>> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (q) params.set('q', q);
-  return adminFetch<AdminUser[]>(`/users-list?${params}`);
+  if (includeDeleted) params.set('includeDeleted', 'true');
+  return adminFetch<PaginatedResponse<AdminUser>>(`/users-list?${params}`);
 }
 
 export function deleteUser(id: number): Promise<{ success: boolean }> {
   return adminFetch(`/users/${id}`, { method: 'DELETE' });
+}
+
+export function hardDeleteUser(
+  id: number,
+  reason: string,
+): Promise<{ success: boolean; purged: boolean }> {
+  return adminFetch(`/users/${id}/hard`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function restoreUser(id: number): Promise<{ success: boolean }> {
+  return adminFetch(`/users/${id}/restore`, { method: 'POST' });
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -86,6 +112,8 @@ export interface AdminPack {
   description: string | null;
   category: string;
   isPublic: boolean | null;
+  deleted: boolean;
+  deletedAt: string | null;
   createdAt: string | null;
   userEmail: string | null;
 }
@@ -94,14 +122,17 @@ export function getPacks({
   limit = 100,
   offset = 0,
   q,
+  includeDeleted = false,
 }: {
   limit?: number;
   offset?: number;
   q?: string;
-} = {}): Promise<AdminPack[]> {
+  includeDeleted?: boolean;
+} = {}): Promise<PaginatedResponse<AdminPack>> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (q) params.set('q', q);
-  return adminFetch<AdminPack[]>(`/packs-list?${params}`);
+  if (includeDeleted) params.set('includeDeleted', 'true');
+  return adminFetch<PaginatedResponse<AdminPack>>(`/packs-list?${params}`);
 }
 
 export function deletePack(id: string): Promise<{ success: boolean }> {
@@ -139,10 +170,10 @@ export function getCatalogItems({
   limit?: number;
   offset?: number;
   q?: string;
-} = {}): Promise<AdminCatalogItem[]> {
+} = {}): Promise<PaginatedResponse<AdminCatalogItem>> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (q) params.set('q', q);
-  return adminFetch<AdminCatalogItem[]>(`/catalog-list?${params}`);
+  return adminFetch<PaginatedResponse<AdminCatalogItem>>(`/catalog-list?${params}`);
 }
 
 export function deleteCatalogItem(id: number): Promise<{ success: boolean }> {

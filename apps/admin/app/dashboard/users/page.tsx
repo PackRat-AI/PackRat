@@ -13,10 +13,11 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
 import { SearchInput } from 'admin-app/components/search-input';
-import { type AdminUser, deleteUser, getUsers } from 'admin-app/lib/api';
+import { type AdminUser, deleteUser, getUsers, restoreUser } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 function TableSkeleton() {
   return (
@@ -31,6 +32,7 @@ function TableSkeleton() {
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-12" />
           <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-8" />
         </div>
       ))}
@@ -40,6 +42,7 @@ function TableSkeleton() {
 
 function UserRow({ user }: { user: AdminUser }) {
   const queryClient = useQueryClient();
+  const isDeleted = !!user.deletedAt;
 
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteUser(user.id),
@@ -48,8 +51,15 @@ function UserRow({ user }: { user: AdminUser }) {
     },
   });
 
+  const { mutateAsync: handleRestore } = useMutation({
+    mutationFn: () => restoreUser(user.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() });
+    },
+  });
+
   return (
-    <TableRow className="hover:bg-muted/20">
+    <TableRow className={`hover:bg-muted/20 ${isDeleted ? 'opacity-50' : ''}`}>
       <TableCell>
         <div>
           <p className="text-sm font-medium">
@@ -59,6 +69,9 @@ function UserRow({ user }: { user: AdminUser }) {
           </p>
           {(user.firstName || user.lastName) && (
             <p className="text-xs text-muted-foreground">{user.email}</p>
+          )}
+          {isDeleted && (
+            <p className="text-xs text-destructive">Deleted {user.deletedAt ? formatDate(new Date(user.deletedAt)) : ''}</p>
           )}
         </div>
       </TableCell>
@@ -80,13 +93,28 @@ function UserRow({ user }: { user: AdminUser }) {
         </span>
       </TableCell>
       <TableCell>
-        <DeleteButton
-          label={user.email}
-          description="The user account and all associated data will be permanently deleted."
-          onConfirm={async () => {
-            await handleDelete();
-          }}
-        />
+        <span className="text-sm text-muted-foreground">
+          {user.lastActiveAt ? formatDate(new Date(user.lastActiveAt)) : '—'}
+        </span>
+      </TableCell>
+      <TableCell>
+        {isDeleted ? (
+          <button
+            type="button"
+            onClick={() => handleRestore()}
+            className="text-xs text-primary underline underline-offset-2 hover:no-underline"
+          >
+            Restore
+          </button>
+        ) : (
+          <DeleteButton
+            label={user.email}
+            description="The user will be soft-deleted and can be restored later."
+            onConfirm={async () => {
+              await handleDelete();
+            }}
+          />
+        )}
       </TableCell>
     </TableRow>
   );
@@ -95,15 +123,19 @@ function UserRow({ user }: { user: AdminUser }) {
 export default function UsersPage() {
   const searchParams = useSearchParams();
   const q = searchParams?.get('q') ?? undefined;
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   const {
-    data: users = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
     queryKey: queryKeys.admin.users(q),
-    queryFn: () => getUsers({ q }),
+    queryFn: () => getUsers({ q, includeDeleted }),
   });
+
+  const users = result?.data ?? [];
+  const total = result?.total ?? 0;
 
   return (
     <div>
@@ -114,7 +146,18 @@ export default function UsersPage() {
         </p>
       </div>
       <div className="space-y-4">
-        <SearchInput placeholder="Search by email or name…" />
+        <div className="flex items-center gap-4">
+          <SearchInput placeholder="Search by email or name…" />
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => setIncludeDeleted(e.target.checked)}
+              className="rounded"
+            />
+            Show deleted
+          </label>
+        </div>
         {isError ? (
           <p className="text-sm text-destructive py-4">
             Failed to load users. Check that the API is reachable.
@@ -139,13 +182,16 @@ export default function UsersPage() {
                     <TableHead className="font-medium text-xs uppercase tracking-wide">
                       Joined
                     </TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wide">
+                      Last Active
+                    </TableHead>
                     <TableHead className="font-medium text-xs uppercase tracking-wide w-16" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         No users found{q ? ` matching "${q}"` : ''}.
                       </TableCell>
                     </TableRow>
@@ -156,7 +202,7 @@ export default function UsersPage() {
               </Table>
             </div>
             <p className="text-xs text-muted-foreground">
-              {users.length.toLocaleString()} user{users.length !== 1 ? 's' : ''}
+              {users.length.toLocaleString()} of {total.toLocaleString()} user{total !== 1 ? 's' : ''}
               {q ? ` matching "${q}"` : ''}
             </p>
           </>

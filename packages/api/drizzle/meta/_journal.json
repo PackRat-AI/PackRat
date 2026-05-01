@@ -274,6 +274,13 @@
       "when": 1777170392780,
       "tag": "0037_trips_trail_osm_id",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1746403200000,
+      "tag": "0038_soft_deletes_and_last_active",
+      "breakpoints": true
     }
   ]
 }
