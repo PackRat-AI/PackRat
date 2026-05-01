@@ -94,8 +94,8 @@ export const CatalogItemSchema = z.object({
     )
     .nullable()
     .optional(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export const CatalogItemsQuerySchema = z.object({
