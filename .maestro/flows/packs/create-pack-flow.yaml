@@ -17,6 +17,8 @@ appId: ${APP_ID}
 
 # iOS: the "Save Password?" Keychain prompt from login can appear late (up to ~2 min
 # after login). Dismiss it here before touching form fields so it doesn't block inputs.
+# If the Keychain prompt appeared while the modal was animating in, it may have closed
+# the modal. Re-tap the create-pack-button if pack-name-input is not yet visible.
 - runFlow:
     when:
       platform: iOS
@@ -26,6 +28,22 @@ appId: ${APP_ID}
           optional: true
           label: "Dismiss late iOS Save Password prompt"
       - waitForAnimationToEnd
+      - runFlow:
+          when:
+            notVisible:
+              id: "pack-name-input"
+          commands:
+            - tapOn:
+                id: "create-pack-button"
+            - waitForAnimationToEnd
+
+# Wait for the modal form to be accessible before tapping the input.
+# extendedWaitUntil is more reliable than bare waitForAnimationToEnd here because
+# the modal slide-from-bottom animation can finish before the form is in XCTest's tree.
+- extendedWaitUntil:
+    visible:
+      id: "pack-name-input"
+    timeout: 15000
 
 # Fill in Pack Name
 - tapOn:
