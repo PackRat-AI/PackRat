@@ -21,18 +21,33 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-
   const post = getPostBySlug(slug);
 
   if (!post) {
-    return {
-      title: 'Guide Not Found',
-    };
+    return { title: 'Guide Not Found' };
   }
 
+  const siteUrl = 'https://guides.packrat.world';
+
   return {
-    title: `${post.title} | PackRat Guides`,
+    title: post.title,
     description: post.description,
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.description,
+      url: `${siteUrl}/guide/${slug}`,
+      siteName: 'PackRat Guides',
+      publishedTime: post.date,
+      authors: post.author ? [post.author] : ['PackRat Team'],
+      tags: post.categories,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      creator: '@packratai',
+    },
   };
 }
 
