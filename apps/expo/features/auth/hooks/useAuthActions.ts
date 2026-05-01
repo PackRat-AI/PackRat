@@ -19,7 +19,6 @@ import {
   needsReauthAtom,
   redirectToAtom,
   refreshTokenAtom,
-  signOutRequestedAtom,
   tokenAtom,
 } from '../atoms/authAtoms';
 
@@ -49,7 +48,6 @@ export function useAuthActions() {
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
-  const setSignOutRequested = useSetAtom(signOutRequestedAtom);
 
   const clearLocalData = async () => {
     const allKeys = await Storage.getAllKeys();
@@ -218,17 +216,14 @@ export function useAuthActions() {
       setRefreshToken(null);
       await clearLocalData();
       userStore.set(null);
-      setIsLoading(false);
       // Yield to let React process the state changes before navigating.
-      // Any in-flight API requests that race with token clearing (and call
-      // onNeedsReauth) have already resolved by this point.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
       setNeedsReauth(false);
-      // Trigger SignOutGuard in app/_layout.tsx to call router.replace('/auth').
-      // Using a dedicated atom avoids false-positives during login when tokenAtom
-      // transitions null → value. SignOutGuard dispatches from outside the navigator
-      // tree so the action reaches the root Stack, bypassing NativeTabs on iOS.
-      setSignOutRequested(true);
+      // isLoadingAtom remains true (setIsLoading(false) intentionally omitted).
+      // AppLayout shows a spinner when isLoadingAtom=true && !isAuthed, which
+      // unmounts NativeTabs. With NativeTabs gone, router.replace reaches the
+      // root Stack directly instead of being silently dropped by NativeTabs on iOS.
+      router.replace('/auth' as Href);
     }
   };
 

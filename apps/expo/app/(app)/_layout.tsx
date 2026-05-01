@@ -1,7 +1,7 @@
 import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { isLoadingAtom, needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
@@ -14,9 +14,8 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,28 +27,18 @@ export {
 export default function AppLayout() {
   const isLoading = useAuthInit();
   const isAuthedValue = use$(isAuthed);
-  const navigationRef = useNavigationContainerRef();
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
+  const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const insets = useSafeAreaInsets();
-  // Track whether the user was ever authenticated in this session so we only
-  // call resetRoot on sign-out, not on the initial unauthenticated cold start.
-  const wasAuthedRef = useRef(false);
 
-  useEffect(() => {
-    if (isAuthedValue) {
-      wasAuthedRef.current = true;
-    } else if (wasAuthedRef.current && !isLoading) {
-      // User was authenticated and is now signed out. Use resetRoot instead of
-      // router.replace or dispatch(reset) because those route through
-      // BaseNavigationContainer.listeners.focus[0] which terminates at
-      // NativeTabs on iOS, silently dropping the action. resetRoot sets the
-      // root navigation state directly, bypassing the focused-navigator chain.
-      navigationRef.resetRoot({ index: 0, routes: [{ name: 'auth' }] });
-    }
-  }, [isAuthedValue, isLoading, navigationRef]);
-
-  if (isLoading) {
+  // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
+  // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
+  // The spinner unmounts NativeTabs so that router.replace('/auth') in signOut()
+  // reaches the root Stack directly instead of being dropped by NativeTabs.
+  // The !isAuthedValue guard keeps the Stack visible during re-auth sign-in,
+  // where isLoadingAtom is also true but the user is still authenticated.
+  if (isLoading || (isLoadingGlobal && !isAuthedValue)) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
