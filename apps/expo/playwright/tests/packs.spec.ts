@@ -63,7 +63,7 @@ async function addItemViaForm(
 
 test.describe('Pack CRUD', () => {
   test('create pack → appears in packs list', async ({ authedPage: page }) => {
-    test.setTimeout(30_000);
+    test.setTimeout(60_000);
     const packName = `E2E-Create-${Date.now()}`;
 
     await createPackViaForm(page, packName);

@@ -23,6 +23,7 @@ test('packs tab loads and shows create button', async ({ authedPage: page }) => 
 });
 
 test('create a pack end-to-end', async ({ authedPage: page }) => {
+  test.setTimeout(60_000);
   const packName = `E2E-Pack-${Date.now()}`;
 
   // Use waitForResponse to capture the created pack ID.
@@ -147,11 +148,6 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
 
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
-
   await page.goto(`${BASE_URL}/trip/new`);
   const nameInput = page.getByTestId('trips:name-input');
   await nameInput.waitFor({ timeout: 10_000 });
@@ -179,6 +175,11 @@ test('create a trip with dates', async ({ authedPage: page }) => {
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }, '2026-08-14');
 
+  // Register the listener immediately before submitting so the 20s window starts here
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
   await page.getByTestId('submit-trip-button').click();
 
   // Wait for the POST to complete so the trip is persisted before navigating

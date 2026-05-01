@@ -1,0 +1,24 @@
+diff --git a/src/components/LargeTitleHeader/LargeTitleHeader.tsx b/src/components/LargeTitleHeader/LargeTitleHeader.tsx
+index 95c66bb..49b542b 100644
+--- a/src/components/LargeTitleHeader/LargeTitleHeader.tsx
++++ b/src/components/LargeTitleHeader/LargeTitleHeader.tsx
+@@ -162,6 +162,7 @@
+           <View className='flex-row justify-center gap-3 pr-2'>
+             {!!props.searchBar && (
+               <Button
++                testID={props.searchBar.testID}
+                 onPress={() => {
+                   setShowSearchBar(true);
+                   props.searchBar?.onSearchButtonPress?.();
+diff --git a/src/components/LargeTitleHeader/types.ts b/src/components/LargeTitleHeader/types.ts
+index 573a8a8..df2dbec 100644
+--- a/src/components/LargeTitleHeader/types.ts
++++ b/src/components/LargeTitleHeader/types.ts
+@@ -88,6 +88,7 @@
+     onSearchButtonPress?: () => void;
+     placeholder?: string;
+     ref?: React.Ref<LargeTitleSearchBarMethods>;
++    testID?: string;
+     textColor?: string;
+     content?: React.ReactNode;
+   };
