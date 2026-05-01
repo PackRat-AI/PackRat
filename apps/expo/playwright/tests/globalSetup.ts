@@ -29,31 +29,12 @@ export default async function setup() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Capture console errors to help debug failures
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') console.log(`[browser error] ${msg.text()}`);
-  });
-  page.on('pageerror', (err) => console.log(`[page error] ${err.message}`));
-
-  await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle' });
-
-  // Snapshot the page so CI artifacts show what actually rendered
-  await page.screenshot({ path: path.join(REPORT_DIR, 'globalSetup-auth.png'), fullPage: true });
-  console.log('[globalSetup] page URL:', page.url());
-  console.log(
-    '[globalSetup] visible text:',
-    await page
-      .locator('body')
-      .innerText()
-      .catch(() => ''),
-  );
-
-  // Entry screen — choose email sign-in
-  await page.getByTestId('sign-in-email-button').waitFor({ timeout: 30_000 });
-  await page.getByTestId('sign-in-email-button').click();
+  // Navigate directly to the login modal — skips the entry screen click
+  // and ensures all form testIDs are immediately visible in the DOM.
+  await page.goto(`${BASE_URL}/auth/(login)`, { waitUntil: 'networkidle' });
 
   // Login form
-  await page.getByTestId('email-input').waitFor({ timeout: 10_000 });
+  await page.getByTestId('email-input').waitFor({ timeout: 30_000 });
   await page.getByTestId('email-input').fill(email);
   await page.getByTestId('password-input').fill(password);
   await page.getByTestId('continue-button').click();
