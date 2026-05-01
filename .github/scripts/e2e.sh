@@ -20,7 +20,7 @@ else
   END_DATE=$(date -d "+14 days" +"%Y-%m-%d")
   TODAY_DATE=$(date +"%-d %b %Y")
   get_month() { date -d "$1" +"%B"; }
-  get_day()   { date -d "$1" +"%-d"; }
+  get_day()   { date -d "$1" +"%d"; }
   get_year()  { date -d "$1" +"%Y"; }
   get_month_num() { date -d "$1" +"%-m"; }
 fi
