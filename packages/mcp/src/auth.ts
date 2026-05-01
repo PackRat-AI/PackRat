@@ -13,6 +13,7 @@
  *   session:<stateKey>      → JSON { token: string, userId: string }
  */
 
+import { isString } from '@packrat/guards';
 import { z } from 'zod';
 import type { Env, Props } from './types';
 
@@ -99,7 +100,7 @@ function loginPage(state: string, error?: string): string {
 /** FormData.get() returns FormDataEntryValue | null (string | File | null). Extract string only. */
 function getFormString(data: FormData, key: string): string {
   const val = data.get(key);
-  return typeof val === 'string' ? val : '';
+  return isString(val) ? val : '';
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────

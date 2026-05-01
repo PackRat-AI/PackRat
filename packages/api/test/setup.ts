@@ -1,5 +1,5 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
-import { isObject } from '@packrat/guards';
+import { isFunction, isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -128,10 +128,9 @@ vi.mock('@packrat/api/auth', async () => {
     getAuth: vi.fn(async () => ({
       api: {
         getSession: vi.fn(async ({ headers }: { headers: Headers }) => {
-          const authHeader =
-            typeof headers.get === 'function'
-              ? headers.get('authorization')
-              : (headers as unknown as Record<string, string>)?.authorization;
+          const authHeader = isFunction(headers.get)
+            ? headers.get('authorization')
+            : (headers as unknown as Record<string, string>)?.authorization;
           if (!authHeader?.startsWith('Bearer ')) return null;
           const token = authHeader.slice(7).trim();
           if (!token) return null;

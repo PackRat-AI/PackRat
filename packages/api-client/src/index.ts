@@ -113,9 +113,9 @@ export function createApiClient(config: ApiClientConfig) {
             headers.set(entry[0], entry[1]);
           }
         }
-      } else if (existing != null && typeof existing === 'object') {
+      } else if (isObject(existing)) {
         for (const [k, v] of Object.entries(existing)) {
-          if (typeof v === 'string') headers.set(k, v);
+          if (isString(v)) headers.set(k, v);
         }
       }
       headers.set('Authorization', `Bearer ${token}`);
