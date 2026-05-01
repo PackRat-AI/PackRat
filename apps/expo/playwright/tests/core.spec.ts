@@ -33,7 +33,7 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
+      await page.getByTestId('pack-name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -100,7 +100,7 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
+      await page.getByTestId('pack-name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -249,7 +249,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
+      await page.getByTestId('pack-name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
