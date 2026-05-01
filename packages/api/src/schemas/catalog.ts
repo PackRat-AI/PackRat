@@ -52,7 +52,6 @@ export const CatalogItemSchema = z.object({
     .array(
       z.object({
         user_name: z.string().nullable().optional(),
-        userName: z.string().nullable().optional(),
         user_avatar: z.string().nullable().optional(),
         userAvatar: z.string().nullable().optional(),
         context: z.record(z.string(), z.string()).nullable().optional(),
