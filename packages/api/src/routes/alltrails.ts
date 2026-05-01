@@ -103,6 +103,7 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
     return { title, description, image, url: response.url || url };
   },
   {
+    isAuthenticated: true,
     body: z.object({
       url: z.string().url(),
     }),
