@@ -33,7 +33,7 @@ export function TrailMap({ geometry, name: _name }: TrailMapProps) {
     const map = mapRef.current;
     if (!map) return;
 
-    map.eachLayer((layer) => {
+    map.eachLayer((layer: L.Layer) => {
       if (layer instanceof L.GeoJSON) map.removeLayer(layer);
     });
 

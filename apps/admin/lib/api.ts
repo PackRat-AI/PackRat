@@ -250,7 +250,7 @@ export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
 // ─── OSM Trail Viewer ─────────────────────────────────────────────────────────
 
 async function trailsFetch<T>(path: string): Promise<T> {
-  const authHeaders = await buildAuthHeaders();
+  const authHeaders = getAuthHeader();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { 'Content-Type': 'application/json', ...authHeaders },
   });

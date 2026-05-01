@@ -59,6 +59,7 @@
     "packages/api/container_src",
     "packages/mcp",
     "packages/osm-db",
-    "packages/osm-import"
+    "packages/osm-import",
+    "packages/overpass"
   ]
 }
