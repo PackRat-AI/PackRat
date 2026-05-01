@@ -62,7 +62,7 @@ export default function AuthIndexScreen() {
             <Image
               source={LOGO_SOURCE}
               className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
-              style={{ width: 32, height: 32 }}
+              style={Platform.select({ web: { width: 32, height: 32 } })}
               resizeMode="contain"
             />
           </View>
