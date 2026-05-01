@@ -7,8 +7,15 @@ import {
   trips,
   users,
 } from '@packrat/api/db/schema';
-import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import {
+  ActiveUsersSchema,
+  ActivityPointSchema,
+  AdminErrorResponses,
+  BreakdownItemSchema,
+  GrowthPointSchema,
+} from '@packrat/api/schemas/admin';
+import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
 const PeriodSchema = z.object({
@@ -29,6 +36,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     analytics: {
       growth: '/api/admin/analytics/platform/growth',
       activity: '/api/admin/analytics/platform/activity',
+      activeUsers: '/api/admin/analytics/platform/active-users',
       breakdown: '/api/admin/analytics/platform/breakdown',
     },
   }))
@@ -48,7 +56,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
               count: count(),
             })
             .from(users)
-            .where(gte(users.createdAt, startDate))
+            .where(and(isNull(users.deletedAt), gte(users.createdAt, startDate)))
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
@@ -98,6 +106,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     },
     {
       query: PeriodSchema,
+      response: { 200: t.Array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
   )
@@ -174,7 +183,53 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     },
     {
       query: PeriodSchema,
+      response: { 200: t.Array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
+    },
+  )
+
+  .get(
+    '/active-users',
+    async () => {
+      const db = createDb();
+
+      try {
+        const now = new Date();
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        const [dau, wau, mau] = await Promise.all([
+          db
+            .select({ count: count() })
+            .from(users)
+            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, oneDayAgo))),
+          db
+            .select({ count: count() })
+            .from(users)
+            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, sevenDaysAgo))),
+          db
+            .select({ count: count() })
+            .from(users)
+            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, thirtyDaysAgo))),
+        ]);
+
+        return {
+          dau: dau[0]?.count ?? 0,
+          wau: wau[0]?.count ?? 0,
+          mau: mau[0]?.count ?? 0,
+        };
+      } catch (error) {
+        console.error('Analytics active-users error:', error);
+        return status(500, {
+          error: 'Failed to fetch active user counts',
+          code: 'ANALYTICS_ACTIVE_USERS_ERROR',
+        });
+      }
+    },
+    {
+      response: { 200: ActiveUsersSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'DAU / WAU / MAU based on last_active_at' },
     },
   )
 
@@ -203,5 +258,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' } },
+    {
+      response: { 200: t.Array(BreakdownItemSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' },
+    },
   );

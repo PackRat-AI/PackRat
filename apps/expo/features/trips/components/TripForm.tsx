@@ -173,7 +173,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    containerTestID={TestIds.TripNameInput}
+                    containerTestID={testIds.trips.nameInput}
                     containerAccessibilityLabel={t('trips.tripName')}
                     placeholder={t('trips.tripName')}
                     label={Platform.OS === 'ios' ? undefined : t('trips.tripName')}
@@ -201,7 +201,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    containerTestID={TestIds.TripDescriptionInput}
+                    containerTestID={testIds.trips.descriptionInput}
                     containerAccessibilityLabel={t('trips.description')}
                     placeholder={t('trips.description')}
                     label={Platform.OS === 'ios' ? undefined : t('trips.description')}
@@ -316,7 +316,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={TestIds.StartDateRow}
+                      testID={testIds.trips.startDateRow}
                       onPress={() => {
                         Keyboard.dismiss();
                         setShowStartPicker(true);
@@ -362,7 +362,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={TestIds.EndDateRow}
+                      testID={testIds.trips.endDateRow}
                       onPress={() => {
                         Keyboard.dismiss();
                         setShowEndPicker(true);

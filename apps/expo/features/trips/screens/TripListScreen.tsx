@@ -129,7 +129,7 @@ export function TripsListScreen() {
 
         {filteredTrips.map((trip: Trip) => (
           <View className="px-4 pt-4" key={trip.id}>
-            <TripCard trip={trip} onPress={handleTripPress} testID={TestIds.TripSearchResult} />
+            <TripCard trip={trip} onPress={handleTripPress} testID={testIds.trips.searchCard} />
           </View>
         ))}
 
@@ -174,7 +174,7 @@ export function TripsListScreen() {
         contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
-            <TripCard trip={trip} onPress={handleTripPress} testID={TestIds.TripListItem} />
+            <TripCard trip={trip} onPress={handleTripPress} testID={testIds.trips.listCard} />
           </View>
         )}
         ListEmptyComponent={renderEmptyState()}
