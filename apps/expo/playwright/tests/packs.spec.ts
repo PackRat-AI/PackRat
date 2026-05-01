@@ -24,7 +24,7 @@ async function createPackViaForm(
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('packs:name-input').fill(packName);
+      await page.getByTestId('pack-name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -88,7 +88,7 @@ test.describe('Pack CRUD', () => {
     await page.waitForLoadState('networkidle');
     await page.getByTestId('packs:edit').click();
 
-    const nameInput = page.getByTestId('packs:name-input');
+    const nameInput = page.getByTestId('pack-name-input');
     await nameInput.waitFor({ timeout: 10_000 });
     await nameInput.clear();
     await nameInput.fill(updatedName);
