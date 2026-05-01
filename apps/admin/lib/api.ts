@@ -85,13 +85,13 @@ export async function getUsers({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as PaginatedResponse<AdminUser>;
+  return data as unknown as PaginatedResponse<AdminUser>;
 }
 
 export async function deleteUser(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).delete();
   if (error) throwOnError(error);
-  return data as { success: boolean };
+  return data as unknown as { success: boolean };
 }
 
 export async function hardDeleteUser(
@@ -100,13 +100,13 @@ export async function hardDeleteUser(
 ): Promise<{ success: boolean; purged: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).hard.delete({ reason });
   if (error) throwOnError(error);
-  return data as { success: boolean; purged: boolean };
+  return data as unknown as { success: boolean; purged: boolean };
 }
 
 export async function restoreUser(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).restore.post();
   if (error) throwOnError(error);
-  return data as { success: boolean };
+  return data as unknown as { success: boolean };
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -138,13 +138,13 @@ export async function getPacks({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as PaginatedResponse<AdminPack>;
+  return data as unknown as PaginatedResponse<AdminPack>;
 }
 
 export async function deletePack(id: string): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.packs({ id }).delete();
   if (error) throwOnError(error);
-  return data as { success: boolean };
+  return data as unknown as { success: boolean };
 }
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
@@ -183,13 +183,13 @@ export async function getCatalogItems({
     query: { limit, offset, q },
   });
   if (error) throwOnError(error);
-  return data as PaginatedResponse<AdminCatalogItem>;
+  return data as unknown as PaginatedResponse<AdminCatalogItem>;
 }
 
 export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.catalog({ id: String(id) }).delete();
   if (error) throwOnError(error);
-  return data as { success: boolean };
+  return data as unknown as { success: boolean };
 }
 
 export async function updateCatalogItem(
@@ -198,7 +198,7 @@ export async function updateCatalogItem(
 ): Promise<{ id: number; name: string }> {
   const { data, error } = await adminClient.catalog({ id: String(id) }).patch(body);
   if (error) throwOnError(error);
-  return data as { id: number; name: string };
+  return data as unknown as { id: number; name: string };
 }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
@@ -206,29 +206,34 @@ export async function updateCatalogItem(
 export type GrowthPoint = { period: string; users: number; packs: number; catalogItems: number };
 export type ActivityPoint = { period: string; trips: number; trailReports: number; posts: number };
 export type BreakdownItem = { category: string; count: number };
+export type AnalyticsPeriod = 'day' | 'week' | 'month';
 
-type AnalyticsPeriod = 'day' | 'week' | 'month';
-
-export async function getPlatformGrowth(period: string, range = 12): Promise<GrowthPoint[]> {
+export async function getPlatformGrowth(
+  period: AnalyticsPeriod,
+  range = 12,
+): Promise<GrowthPoint[]> {
   const { data, error } = await adminClient.analytics.platform.growth.get({
-    query: { period: period as AnalyticsPeriod, range },
+    query: { period, range },
   });
   if (error) throwOnError(error);
-  return data as GrowthPoint[];
+  return data as unknown as GrowthPoint[];
 }
 
-export async function getPlatformActivity(period: string, range = 12): Promise<ActivityPoint[]> {
+export async function getPlatformActivity(
+  period: AnalyticsPeriod,
+  range = 12,
+): Promise<ActivityPoint[]> {
   const { data, error } = await adminClient.analytics.platform.activity.get({
-    query: { period: period as AnalyticsPeriod, range },
+    query: { period, range },
   });
   if (error) throwOnError(error);
-  return data as ActivityPoint[];
+  return data as unknown as ActivityPoint[];
 }
 
 export async function getPlatformBreakdown(): Promise<BreakdownItem[]> {
   const { data, error } = await adminClient.analytics.platform.breakdown.get();
   if (error) throwOnError(error);
-  return data as BreakdownItem[];
+  return data as unknown as BreakdownItem[];
 }
 
 // ─── Analytics — Catalog ─────────────────────────────────────────────────────
@@ -284,7 +289,7 @@ export type EmbeddingStats = {
 export async function getCatalogOverview(): Promise<CatalogOverview> {
   const { data, error } = await adminClient.analytics.catalog.overview.get();
   if (error) throwOnError(error);
-  return data as CatalogOverview;
+  return data as unknown as CatalogOverview;
 }
 
 export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
@@ -292,13 +297,13 @@ export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
     query: { limit },
   });
   if (error) throwOnError(error);
-  return data as BrandRow[];
+  return data as unknown as BrandRow[];
 }
 
 export async function getCatalogPrices(): Promise<PriceBucket[]> {
   const { data, error } = await adminClient.analytics.catalog.prices.get();
   if (error) throwOnError(error);
-  return data as PriceBucket[];
+  return data as unknown as PriceBucket[];
 }
 
 export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
@@ -306,13 +311,13 @@ export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
     query: { limit },
   });
   if (error) throwOnError(error);
-  return data as EtlResponse;
+  return data as unknown as EtlResponse;
 }
 
 export async function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   const { data, error } = await adminClient.analytics.catalog.embeddings.get();
   if (error) throwOnError(error);
-  return data as EmbeddingStats;
+  return data as unknown as EmbeddingStats;
 }
 
 // ─── Admin Trails ─────────────────────────────────────────────────────────────
@@ -363,19 +368,24 @@ export async function searchTrails({
     query: { q, sport, limit, offset },
   });
   if (error) throwOnError(error);
-  return data as { trails: TrailSearchResult[]; hasMore: boolean; offset: number; limit: number };
+  return data as unknown as {
+    trails: TrailSearchResult[];
+    hasMore: boolean;
+    offset: number;
+    limit: number;
+  };
 }
 
 export async function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
   const { data, error } = await adminClient.trails({ osmId }).geometry.get();
   if (error) throwOnError(error);
-  return data as TrailGeometry;
+  return data as unknown as TrailGeometry;
 }
 
 export async function getAdminTrail(osmId: string): Promise<TrailSearchResult> {
   const { data, error } = await adminClient.trails({ osmId }).get();
   if (error) throwOnError(error);
-  return data as TrailSearchResult;
+  return data as unknown as TrailSearchResult;
 }
 
 export async function getTrailConditions({
@@ -393,11 +403,11 @@ export async function getTrailConditions({
     query: { q, limit, offset, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return data as PaginatedResponse<TrailConditionReport>;
+  return data as unknown as PaginatedResponse<TrailConditionReport>;
 }
 
 export async function deleteTrailCondition(reportId: string): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
   if (error) throwOnError(error);
-  return data as { success: boolean };
+  return data as unknown as { success: boolean };
 }
