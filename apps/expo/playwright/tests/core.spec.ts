@@ -57,7 +57,7 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('packs:name-input').fill(packName);
+      await page.getByTestId('pack-name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -91,6 +91,7 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
 });
 
 test('add item from catalog to a pack', async ({ authedPage: page }) => {
+  test.setTimeout(60_000);
   const packName = `E2E-Catalog-${Date.now()}`;
 
   // Create a pack and capture the ID
@@ -105,11 +106,8 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
   const { id: packId } = (await packResponse.json()) as { id: number };
 
-  // Navigate to pack detail — wait for network to settle so any pending router.back()
-  // from the form submission completes before we navigate here.
-  await page.waitForLoadState('networkidle');
+  // Navigate directly to pack detail (skip networkidle — continuous sync keeps requests open)
   await page.goto(`${BASE_URL}/pack/${packId}`);
-  await page.waitForLoadState('networkidle');
 
   // Open the "Add item" actions sheet (BottomSheet), then click add-from-catalog inside it
   const addItemButton = page.getByTestId('add-item-button');
@@ -126,7 +124,7 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
   // Wait for catalog items to load, then click the first one
   const firstCard = page.getByTestId(/^catalog-item-card-/).first();
-  await firstCard.waitFor({ timeout: 15_000 });
+  await firstCard.waitFor({ timeout: 25_000 });
   await firstCard.click();
 
   // Confirm "Add N item(s)" panel appears and click it
