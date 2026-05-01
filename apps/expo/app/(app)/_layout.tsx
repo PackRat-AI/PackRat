@@ -16,7 +16,7 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { Stack, useRouter } from 'expo-router';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +32,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
+  const setIsLoading = useSetAtom(isLoadingAtom);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -43,6 +44,8 @@ export default function AppLayout() {
   // listeners.focus chain entirely (which NativeTabs intercepts when mounted).
   // The nested state resets auth's sub-navigator to [index], preventing the
   // (login) modal from being restored from retained navigation state.
+  // After dispatching, reset isLoadingAtom so auth/index.tsx (which also reads
+  // isLoadingAtom) renders its sign-in content instead of its own spinner.
   useEffect(() => {
     if (isLoadingGlobal && !isAuthedValue) {
       navigation.dispatch(
@@ -51,8 +54,11 @@ export default function AppLayout() {
           routes: [{ name: 'auth', state: { index: 0, routes: [{ name: 'index' }] } }],
         }),
       );
+      // Small delay lets the navigation commit before the state change propagates
+      // to auth/index, avoiding a race between the spinner and the route render.
+      setTimeout(() => setIsLoading(false), 50);
     }
-  }, [isLoadingGlobal, isAuthedValue, navigation]);
+  }, [isLoadingGlobal, isAuthedValue, navigation, setIsLoading]);
 
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
   // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
