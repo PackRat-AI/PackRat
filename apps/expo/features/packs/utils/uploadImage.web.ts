@@ -7,7 +7,10 @@
 import { userStore } from 'expo-app/features/auth/store';
 import axiosInstance from 'expo-app/lib/api/client';
 
-export const uploadImage = async (fileName: string, blobOrDataUrl: string): Promise<string | undefined> => {
+export const uploadImage = async (
+  fileName: string,
+  blobOrDataUrl: string,
+): Promise<string | undefined> => {
   if (!fileName || fileName.trim() === '') {
     console.warn('Skipping upload: fileName is empty');
     return;

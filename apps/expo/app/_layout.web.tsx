@@ -6,7 +6,6 @@ import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
 import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
-import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
@@ -20,9 +19,7 @@ import { useRef } from 'react';
  * Metro automatically picks this file over _layout.tsx for web builds.
  */
 
-export {
-  ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
 export let appAlert: React.RefObject<AlertMethods | null>;
 
