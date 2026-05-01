@@ -19,10 +19,14 @@ const storage: typeof import('@react-native-async-storage/async-storage').defaul
   mergeItem: (key, value) => {
     if (!isClient) return Promise.resolve();
     const existing = window.localStorage.getItem(key);
-    const merged = existing
-      ? JSON.stringify({ ...JSON.parse(existing), ...JSON.parse(value) })
-      : value;
-    window.localStorage.setItem(key, merged);
+    try {
+      const merged = existing
+        ? JSON.stringify({ ...JSON.parse(existing), ...JSON.parse(value) })
+        : value;
+      window.localStorage.setItem(key, merged);
+    } catch {
+      window.localStorage.setItem(key, value);
+    }
     return Promise.resolve();
   },
   clear: () => {
@@ -52,8 +56,12 @@ const storage: typeof import('@react-native-async-storage/async-storage').defaul
     if (!isClient) return Promise.resolve();
     for (const [k, v] of pairs) {
       const existing = window.localStorage.getItem(k);
-      const merged = existing ? JSON.stringify({ ...JSON.parse(existing), ...JSON.parse(v) }) : v;
-      window.localStorage.setItem(k, merged);
+      try {
+        const merged = existing ? JSON.stringify({ ...JSON.parse(existing), ...JSON.parse(v) }) : v;
+        window.localStorage.setItem(k, merged);
+      } catch {
+        window.localStorage.setItem(k, v);
+      }
     }
     return Promise.resolve();
   },

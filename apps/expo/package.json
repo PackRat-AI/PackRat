@@ -126,7 +126,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "^17.0.4",
-    "react-leaflet": "^4.2.1",
+    "react-leaflet": "^5.0.0",
     "react-native": "0.81.5",
     "react-native-blob-util": "^0.24.5",
     "react-native-css-interop": "^0.2.3",

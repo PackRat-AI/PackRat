@@ -24,7 +24,17 @@ const RNBlobUtil = {
     ls: () => Promise.resolve([]),
   },
   config: () => ({
-    fetch: () => Promise.resolve(null),
+    fetch: () => {
+      // Return a thenable with .progress()/.cancel() so callers like
+      // localModelManager.ts don't throw when chaining those methods.
+      const promise = Promise.resolve(null) as Promise<null> & {
+        progress: (cb: unknown) => unknown;
+        cancel: () => void;
+      };
+      promise.progress = () => promise;
+      promise.cancel = () => {};
+      return promise;
+    },
   }),
 };
 
