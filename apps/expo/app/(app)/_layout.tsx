@@ -102,7 +102,6 @@ export default function AppLayout() {
           options={getCatalogAddToPackItemDetailsOptions(t)}
         />
         <Stack.Screen name="ai-chat" />
-        <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
         <Stack.Screen name="weather/index" options={{ headerShown: false }} />
         <Stack.Screen
@@ -133,7 +132,7 @@ export default function AppLayout() {
         />
 
         <Stack.Screen
-          name="current-pack"
+          name="current-pack/[id]"
           options={{
             headerShown: false,
             presentation: 'modal',
@@ -157,7 +156,7 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen
-          name="weight-analysis"
+          name="weight-analysis/[id]"
           options={{
             headerShown: false,
             presentation: 'modal',
@@ -400,12 +399,6 @@ const getPackEditOptions = (t: TranslationFunction) =>
 const getItemEditOptions = (t: TranslationFunction) =>
   ({
     title: t('common.edit'),
-  }) as const;
-
-const getCatalogListOptions = (t: TranslationFunction) =>
-  ({
-    title: t('catalog.itemsCatalog'),
-    headerLargeTitle: true,
   }) as const;
 
 const getCatalogItemDetailOptions = (t: TranslationFunction) =>

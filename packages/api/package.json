@@ -18,7 +18,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
-    "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "bun run ./migrate.ts",
     "db:seed": "bun run ./src/db/seed.ts",
     "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",

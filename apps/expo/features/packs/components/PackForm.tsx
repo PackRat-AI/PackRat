@@ -17,7 +17,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -159,8 +159,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    containerTestID={TestIds.PackNameInput}
-                    containerAccessibilityLabel={t('packs.packName')}
+                    testID={testIds.packs.nameInput}
                     placeholder={t('packs.packName')}
                     label={Platform.OS === 'ios' ? undefined : t('packs.packName')}
                     value={field.state.value}
@@ -186,8 +185,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <TextField
-                    containerTestID={TestIds.PackDescriptionInput}
-                    containerAccessibilityLabel={t('packs.description')}
+                    testID={testIds.packs.descriptionInput}
                     placeholder={t('packs.description')}
                     label={Platform.OS === 'ios' ? undefined : t('packs.description')}
                     value={field.state.value}
@@ -287,7 +285,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
-              testID={TestIds.SubmitPackButton}
+              testID={testIds.packs.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

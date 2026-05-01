@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
     "esModuleInterop": true,
     "ignoreDeprecations": "5.0",
     "jsx": "react-native",
@@ -58,6 +57,9 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    "packages/mcp"
+    "packages/mcp",
+    "packages/osm-db",
+    "packages/osm-import",
+    "packages/overpass"
   ]
 }

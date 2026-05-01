@@ -9,7 +9,7 @@ import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
 import { Alert, TouchableOpacity, View } from 'react-native';
@@ -136,7 +136,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">
               <TouchableOpacity
-                testID={TestIds.AddManuallyOption}
+                testID={testIds.items.addManuallyOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={() => {
                   ref && !isFunction(ref) && ref.current?.close();
@@ -153,7 +153,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                testID={TestIds.ScanFromPhotoOption}
+                testID={testIds.items.scanPhotoOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromPhoto}
               >
@@ -164,7 +164,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                testID={TestIds.AddFromCatalogOption}
+                testID={testIds.items.addFromCatalogOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromCatalog}
               >

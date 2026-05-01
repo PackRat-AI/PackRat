@@ -4,6 +4,7 @@ import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -109,6 +110,7 @@ export function PackItemCard({
       onPress={() => (isSelectable ? restProps.onSelect(item) : onPress?.(item))}
     >
       <View
+        testID={testIds.items.card(item.id)}
         className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
           isSelectable && restProps.selected
             ? cn(
@@ -128,7 +130,10 @@ export function PackItemCard({
               {item.name}
             </Text>
             {!isSelectable && (
-              <Pressable onPress={handleActionsPress}>
+              <Pressable
+                testID={testIds.items.moreActionsBtn(item.id)}
+                onPress={handleActionsPress}
+              >
                 <Icon name="dots-horizontal" size={20} color={colors.grey2} />
               </Pressable>
             )}

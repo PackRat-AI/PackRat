@@ -1,4 +1,4 @@
-import Storage from 'expo-sqlite/kv-store';
+import kvStorage from 'expo-app/lib/kvStorage';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
@@ -12,23 +12,9 @@ export type User = {
 };
 
 // Token storage atom
-export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
-  getItem: (key) => Storage.getItemSync(key),
-  setItem: (key, value) => {
-    if (value === null) return Storage.removeItemSync(key);
-    return Storage.setItemSync(key, value);
-  },
-  removeItem: (key) => Storage.removeItemSync(key),
-});
+export const tokenAtom = atomWithStorage<string | null>('access_token', null, kvStorage);
 
-export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, {
-  getItem: (key) => Storage.getItemSync(key),
-  setItem: (key, value) => {
-    if (value === null) return Storage.removeItemSync(key);
-    return Storage.setItemSync(key, value);
-  },
-  removeItem: (key) => Storage.removeItemSync(key),
-});
+export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, kvStorage);
 
 // Loading state atom
 export const isLoadingAtom = atom(false);
