@@ -42,22 +42,17 @@ export async function readDirectoryAsync(_uri: string): Promise<string[]> {
   return [];
 }
 
-// biome-ignore lint/complexity/useMaxParams: matches expo-file-system API signature
 export async function downloadAsync(
   _uri: string,
   _fileUri: string,
-  _options?: object,
 ): Promise<{ status: number; uri: string; headers: Record<string, string>; mimeType: string }> {
   return { status: 200, uri: _fileUri, headers: {}, mimeType: '' };
 }
 
-// biome-ignore lint/complexity/useMaxParams: matches expo-file-system API signature
 export async function uploadAsync(
   _url: string,
   _fileUri: string,
-  _options?: object,
 ): Promise<{ status: number; body: string; headers: Record<string, string> }> {
-  console.warn('FileSystem.uploadAsync is not supported on web');
   return { status: 200, body: '', headers: {} };
 }
 

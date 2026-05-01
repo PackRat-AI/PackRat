@@ -66,10 +66,6 @@ export default function InfoScreen() {
             <Image
               source={LOGO_SOURCE}
               className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
-              style={Platform.select({
-                ios: { height: 48, width: 48 },
-                default: { height: 32, width: 32 },
-              })}
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">

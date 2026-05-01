@@ -21,7 +21,6 @@ config.resolver = {
 const WEB_STUBS = {
   'react-native-maps': 'mocks/react-native-maps.tsx',
   'react-native-blob-util': 'mocks/react-native-blob-util.ts',
-  '@react-native-async-storage/async-storage': 'mocks/async-storage.ts',
   '@react-native-ai/llama': 'mocks/react-native-ai-llama.ts',
   'llama.rn': 'mocks/react-native-ai-llama.ts',
   '@react-native-ai/apple': 'mocks/react-native-ai-apple.ts',

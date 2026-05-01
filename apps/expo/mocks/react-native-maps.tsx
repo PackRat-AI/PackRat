@@ -1,9 +1,12 @@
 // Web implementation for react-native-maps using react-leaflet.
-// Leaflet CSS is injected programmatically to avoid Metro CSS import issues.
-import type React from 'react';
-import { View } from 'react-native';
+// This file is only bundled on web via the metro WEB_STUBS resolver.
+// Leaflet CSS is injected once via CDN to avoid needing a Metro CSS import.
 
-// Inject leaflet CSS once via CDN.
+import type { LatLngExpression } from 'leaflet';
+import L, { type Icon } from 'leaflet';
+import type React from 'react';
+import { Marker as LeafletMarker, MapContainer, Popup, TileLayer } from 'react-leaflet';
+
 if (typeof document !== 'undefined') {
   const LEAFLET_CSS_ID = '__leaflet_css__';
   if (!document.getElementById(LEAFLET_CSS_ID)) {
@@ -13,6 +16,13 @@ if (typeof document !== 'undefined') {
     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(link);
   }
+  // Fix default marker icon paths broken by module bundlers.
+  delete (L.Icon.Default.prototype as Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  });
 }
 
 type Region = {
@@ -47,110 +57,38 @@ type MarkerProps = {
   [key: string]: unknown;
 };
 
-// Lazily import react-leaflet to avoid SSR issues.
-let MapContainer: React.ComponentType<object> | null = null;
-let TileLayer: React.ComponentType<object> | null = null;
-let LeafletMarker: React.ComponentType<object> | null = null;
-let Popup: React.ComponentType<object> | null = null;
-let leafletLoaded = false;
-
-function ensureLeaflet() {
-  if (leafletLoaded) return;
-  try {
-    // biome-ignore lint/suspicious/noExplicitAny: dynamic require needed
-    const rl = require('react-leaflet') as any;
-    MapContainer = rl.MapContainer;
-    TileLayer = rl.TileLayer;
-    LeafletMarker = rl.Marker;
-    Popup = rl.Popup;
-    // Fix default marker icons missing in bundlers.
-    // biome-ignore lint/suspicious/noExplicitAny: dynamic require needed
-    const L = require('leaflet') as any;
-    delete L.Icon.Default.prototype._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    });
-    leafletLoaded = true;
-  } catch {
-    // react-leaflet not installed — fall back to placeholder
-  }
-}
-
-function MapFallback({ style }: { style?: object }) {
-  return (
-    <View
-      style={[
-        {
-          backgroundColor: '#d1e8d1',
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-        } as object,
-        style as object,
-      ]}
-    />
-  );
-}
-
 function LeafletMap({ style, initialRegion, region, children, ...props }: MapViewProps) {
-  ensureLeaflet();
-  if (!MapContainer || !TileLayer) return <MapFallback style={style} />;
-
   const r = region ?? initialRegion;
-  const center: [number, number] = r ? [r.latitude, r.longitude] : [20, 0];
+  const center: LatLngExpression = r ? [r.latitude, r.longitude] : [20, 0];
   const zoom = r ? Math.round(10 - Math.log2(r.latitudeDelta + 0.001)) : 5;
 
-  const containerStyle = {
-    flex: 1,
-    height: '100%',
-    ...(style as object),
-  };
-
-  const MC = MapContainer as React.ComponentType<{
-    center: [number, number];
-    zoom: number;
-    style: object;
-    children?: React.ReactNode;
-    [key: string]: unknown;
-  }>;
-  const TL = TileLayer as React.ComponentType<{ url: string; attribution: string }>;
-
   return (
-    <MC center={center} zoom={zoom} style={containerStyle} {...(props as object)}>
-      <TL
+    <MapContainer
+      center={center}
+      zoom={zoom}
+      style={{ flex: 1, height: '100%', ...(style as object) }}
+      {...(props as object)}
+    >
+      <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
       {children}
-    </MC>
+    </MapContainer>
   );
 }
 
 export function Marker({ coordinate, title, children }: MarkerProps) {
-  ensureLeaflet();
-  if (!LeafletMarker) return null;
-
-  const LM = LeafletMarker as React.ComponentType<{
-    position: [number, number];
-    children?: React.ReactNode;
-  }>;
-  const P = Popup as React.ComponentType<{ children?: React.ReactNode }> | null;
-
   return (
-    <LM position={[coordinate.latitude, coordinate.longitude]}>
-      {title && P ? <P>{title}</P> : children}
-    </LM>
+    <LeafletMarker position={[coordinate.latitude, coordinate.longitude]}>
+      {title ? <Popup>{title}</Popup> : children}
+    </LeafletMarker>
   );
 }
 
 export default LeafletMap;
-
-// Named export alias for components that import MapView by name.
 export { LeafletMap as MapView };
 
-// Additional react-native-maps exports used in the codebase.
 export const Callout = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
 export const Circle = () => null;
 export const Polygon = () => null;
