@@ -219,12 +219,10 @@ export function useAuthActions() {
       // Yield to let React process the state changes before navigating.
       await new Promise<void>((resolve) => setTimeout(resolve, 50));
       setNeedsReauth(false);
-      // isLoadingAtom remains true (setIsLoading(false) intentionally omitted).
-      // AppLayout shows a spinner when isLoadingAtom=true && !isAuthed, which
-      // unmounts NativeTabs. With NativeTabs gone, router.replace reaches the
-      // root Stack directly instead of being silently dropped by NativeTabs on iOS.
-      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
-      router.replace('/auth' as Href);
+      // isLoadingAtom intentionally NOT reset here. AppLayout watches
+      // isLoadingAtom=true && !isAuthed, renders a spinner (unmounting NativeTabs),
+      // then fires router.replace('/auth') in a useEffect that runs after the
+      // render commit — guaranteeing listeners.focus[0] is the root Stack.
     }
   };
 

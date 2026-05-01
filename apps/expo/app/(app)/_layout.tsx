@@ -14,8 +14,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack, useRouter } from 'expo-router';
+import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,12 +33,25 @@ export default function AppLayout() {
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const insets = useSafeAreaInsets();
 
+  // When sign-out completes (isLoadingAtom=true + isAuthed=false), the spinner
+  // below unmounts NativeTabs. This useEffect fires AFTER that render commits
+  // (including useLayoutEffect cleanups that remove NativeTabs from the focus
+  // chain). At that point listeners.focus[0] is the root Stack, so
+  // router.replace('/auth') reaches it directly instead of being dropped by
+  // NativeTabs. isLoadingGlobal=false on cold start (atom default) so the
+  // effect never fires spuriously before the user has authenticated once.
+  useEffect(() => {
+    if (isLoadingGlobal && !isAuthedValue) {
+      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
+      router.replace('/auth' as Href);
+    }
+  }, [isLoadingGlobal, isAuthedValue]);
+
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
   // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
-  // The spinner unmounts NativeTabs so that router.replace('/auth') in signOut()
-  // reaches the root Stack directly instead of being dropped by NativeTabs.
-  // The !isAuthedValue guard keeps the Stack visible during re-auth sign-in,
-  // where isLoadingAtom is also true but the user is still authenticated.
+  // The spinner unmounts NativeTabs so the useEffect above can dispatch to the
+  // root Stack. The !isAuthedValue guard keeps the Stack visible during re-auth
+  // sign-in, where isLoadingAtom is also true but the user is still authed.
   if (isLoading || (isLoadingGlobal && !isAuthedValue)) {
     return (
       <View className="flex-1 items-center justify-center">
