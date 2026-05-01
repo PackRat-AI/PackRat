@@ -131,24 +131,47 @@ test('trips tab loads', async ({ authedPage: page }) => {
 });
 
 test('create a trip with dates', async ({ authedPage: page }) => {
+  test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
 
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
+
   await page.goto(`${BASE_URL}/trip/new`);
-  await page.getByRole('textbox', { name: /Trip Name/i }).fill(tripName);
+  const nameInput = page.getByTestId('trips:name-input');
+  await nameInput.waitFor({ timeout: 10_000 });
+  await nameInput.fill(tripName);
 
   // Open start date picker and set via native input
-  await page.getByText('Start DateSelect date').click();
-  await page.locator('input[type="date"]').fill('2026-08-01');
+  await page
+    .getByText(/Start Date/i)
+    .first()
+    .click();
+  const startInput = page.locator('input[type="date"]').first();
+  await startInput.waitFor({ timeout: 5_000 });
+  await startInput.fill('2026-08-01');
 
   // Open end date picker
-  await page.getByText('End DateSelect date').click();
-  await page.locator('input[type="date"]').fill('2026-08-14');
+  await page
+    .getByText(/End Date/i)
+    .first()
+    .click();
+  const endInput = page.locator('input[type="date"]').last();
+  await endInput.waitFor({ timeout: 5_000 });
+  await endInput.fill('2026-08-14');
 
   await page.getByTestId('submit-trip-button').click();
 
+  // Wait for the POST to complete so the trip is persisted before navigating
+  const response = await postPromise;
+  expect(response.ok()).toBeTruthy();
+
   // Navigate to trips list and verify
   await page.goto(`${BASE_URL}/trips`);
-  await expect(page.getByText(tripName)).toBeVisible({ timeout: 10_000 });
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByText(tripName)).toBeVisible({ timeout: 15_000 });
 });
 
 // ─── Catalog ──────────────────────────────────────────────────────────────────
