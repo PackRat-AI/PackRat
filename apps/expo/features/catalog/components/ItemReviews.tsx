@@ -5,7 +5,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, TouchableOpacity, View } from 'react-native';
 import type { CatalogItem } from '../types';
 
 type ItemReviewsProps = {
@@ -54,7 +54,11 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
                 {review.user_avatar ? (
-                  <Image source={{ uri: review.user_avatar }} className="h-8 w-8 rounded-full" />
+                  <Image
+                    source={{ uri: review.user_avatar }}
+                    className="h-8 w-8 rounded-full"
+                    style={Platform.select({ web: { width: 32, height: 32 } })}
+                  />
                 ) : (
                   <View className="h-8 w-8 items-center justify-center rounded-full bg-muted">
                     <Icon name="person-outline" size={16} color="text-muted-foreground" />
