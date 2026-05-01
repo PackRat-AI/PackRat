@@ -4,8 +4,8 @@ import { Compass, type LucideIcon, Map as MapIcon, MountainSnow } from 'lucide-r
 export const siteConfig = {
   name: 'PackRat Guides',
   description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
-  url: 'https://guides.packrat.world',
-  ogImage: 'https://guides.packrat.world/og.jpg',
+  url: 'https://guides.packratai.com',
+  ogImage: 'https://guides.packratai.com/og.jpg',
   links: {
     twitter: 'https://twitter.com/packratguides',
     github: 'https://github.com/packratguides',

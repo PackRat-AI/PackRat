@@ -102,7 +102,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           fontSize: '18px',
         }}
       >
-        guides.packrat.world
+        guides.packratai.com
       </div>
     </div>,
     { ...size },

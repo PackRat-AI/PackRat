@@ -2,20 +2,32 @@
 module.exports = {
   ci: {
     collect: {
-      // After `next build`, Next.js static export outputs to ./out
       staticDistDir: './out',
       numberOfRuns: 3,
-      settings: {
-        formFactor: 'desktop', // desktop profile; run separately with formFactor: 'mobile' for mobile scores
-        screenEmulation: {
-          mobile: false,
-          width: 1350,
-          height: 940,
-          deviceScaleFactor: 1,
-          disabled: false,
+      settings: [
+        {
+          formFactor: 'desktop',
+          screenEmulation: {
+            mobile: false,
+            width: 1350,
+            height: 940,
+            deviceScaleFactor: 1,
+            disabled: false,
+          },
+          throttling: { rttMs: 40, throughputKbps: 10240, cpuSlowdownMultiplier: 1 },
         },
-        throttling: { rttMs: 40, throughputKbps: 10240, cpuSlowdownMultiplier: 1 },
-      },
+        {
+          formFactor: 'mobile',
+          screenEmulation: {
+            mobile: true,
+            width: 390,
+            height: 844,
+            deviceScaleFactor: 3,
+            disabled: false,
+          },
+          throttling: { rttMs: 150, throughputKbps: 1638.4, cpuSlowdownMultiplier: 4 },
+        },
+      ],
     },
     assert: {
       assertions: {
