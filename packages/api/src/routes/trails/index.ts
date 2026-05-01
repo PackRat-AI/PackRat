@@ -353,7 +353,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           return status(422, { error: 'Could not extract trail metadata from page' });
         }
 
-        return { title, description, image, url: response.url };
+        // response.url is empty string in test environments and some CF Worker contexts;
+        // fall back to the validated parsed.href rather than crashing on new URL("").
+        return { title, description, image, url: response.url || parsed.href };
       } catch (error) {
         if (error instanceof Error && error.name === 'TimeoutError') {
           return status(504, { error: 'AllTrails request timed out' });
