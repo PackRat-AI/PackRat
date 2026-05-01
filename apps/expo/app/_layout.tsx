@@ -4,7 +4,7 @@ import '../polyfills';
 // RNW's View validates children in dev mode; FlashList and nativewindui components
 // produce transient "" children during reconciliation that have no visual impact.
 // This suppression is dev-only and does not affect production or non-empty text nodes.
-if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+if (__DEV__ && typeof window !== 'undefined') {
   const _origError = console.error;
   console.error = (...args: unknown[]) => {
     if (
