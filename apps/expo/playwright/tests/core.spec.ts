@@ -39,9 +39,12 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
 
   expect(packResponse.ok()).toBeTruthy();
 
-  // Verify pack appears in the list
+  // Verify pack appears in the list (scope to visible elements only — Expo Router
+  // keeps hidden tab panels in the DOM, so the name may appear in multiple places)
   await page.goto(`${BASE_URL}/packs`);
-  await expect(page.getByText(packName)).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(`:text("${packName}"):visible`).first()).toBeVisible({
+    timeout: 10_000,
+  });
 });
 
 // ─── Pack Detail — add items ─────────────────────────────────────────────────
@@ -144,23 +147,25 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   await nameInput.waitFor({ timeout: 10_000 });
   await nameInput.fill(tripName);
 
-  // Open start date picker and set via native input
-  await page
-    .getByText(/Start Date/i)
-    .first()
-    .click();
-  const startInput = page.locator('input[type="date"]').first();
+  // Open start date picker via testID, then set the date using the native input
+  // setter so React's onChange fires correctly (Playwright fill() doesn't
+  // reliably trigger onChange on input[type="date"] in Chromium).
+  await page.getByTestId('trips:start-date-btn').click();
+  const startInput = page.getByTestId('trips:start-date-input');
   await startInput.waitFor({ timeout: 5_000 });
-  await startInput.fill('2026-08-01');
+  await startInput.evaluate((el: HTMLInputElement, v: string) => {
+    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }, '2026-08-01');
 
-  // Open end date picker
-  await page
-    .getByText(/End Date/i)
-    .first()
-    .click();
-  const endInput = page.locator('input[type="date"]').last();
+  // Open end date picker and set end date
+  await page.getByTestId('trips:end-date-btn').click();
+  const endInput = page.getByTestId('trips:end-date-input');
   await endInput.waitFor({ timeout: 5_000 });
-  await endInput.fill('2026-08-14');
+  await endInput.evaluate((el: HTMLInputElement, v: string) => {
+    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }, '2026-08-14');
 
   await page.getByTestId('submit-trip-button').click();
 
@@ -187,8 +192,8 @@ test('catalog search filters results', async ({ authedPage: page }) => {
   // Wait for initial load
   await page.waitForLoadState('networkidle');
 
-  // The search box is revealed by clicking the search icon
-  await page.getByText('󰍉').first().click();
+  // Click the search button (identified by testID set on LargeTitleHeader's searchBar)
+  await page.getByTestId('catalog:search-btn').click();
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });

@@ -69,7 +69,10 @@ test.describe('Pack CRUD', () => {
     await createPackViaForm(page, packName);
 
     await page.goto(`${BASE_URL}/packs`);
-    await expect(page.getByText(packName)).toBeVisible({ timeout: 10_000 });
+    // Scope to visible elements — Expo Router keeps hidden tab panels in DOM
+    await expect(page.locator(`:text("${packName}"):visible`).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test('edit pack name → updated name appears in detail', async ({ authedPage: page }) => {
@@ -205,9 +208,10 @@ test.describe('Item CRUD within a pack', () => {
     const moreActionsButton = page.getByTestId(`items:more-actions-${itemId}`);
     if (await moreActionsButton.isVisible()) {
       await moreActionsButton.click();
+      // Use exact match so the item name "E2E-DeleteItem-..." doesn't match
       const deleteOption = page
-        .getByText(/delete/i)
-        .or(page.getByRole('menuitem', { name: /delete/i }))
+        .getByText('Delete', { exact: true })
+        .or(page.getByRole('menuitem', { name: 'Delete' }))
         .first();
       await deleteOption.waitFor({ timeout: 5_000 });
       await deleteOption.click();

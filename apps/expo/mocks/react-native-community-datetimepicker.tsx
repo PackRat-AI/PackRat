@@ -10,6 +10,7 @@ type Props = {
   minimumDate?: Date;
   maximumDate?: Date;
   style?: unknown;
+  testID?: string;
 };
 
 function toInputValue(date: Date, mode: Props['mode']): string {
@@ -25,6 +26,7 @@ export default function DateTimePicker({
   onChange,
   minimumDate,
   maximumDate,
+  testID,
 }: Props) {
   const inputType = mode === 'time' ? 'time' : mode === 'datetime' ? 'datetime-local' : 'date';
 
@@ -38,6 +40,7 @@ export default function DateTimePicker({
 
   return (
     <input
+      data-testid={testID}
       type={inputType}
       defaultValue={toInputValue(value, mode)}
       min={minimumDate ? toInputValue(minimumDate, mode) : undefined}

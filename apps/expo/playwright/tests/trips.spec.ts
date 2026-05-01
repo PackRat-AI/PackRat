@@ -12,6 +12,24 @@ import { BASE_URL, expect, test } from './fixtures';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
+ * Set a date on an <input type="date"> rendered by the DateTimePicker mock.
+ * Playwright's fill() does not reliably trigger React's onChange for date
+ * inputs in Chromium, so we use the native HTMLInputElement value setter
+ * (which React's synthetic event system does detect) and dispatch a change event.
+ */
+async function fillDateInput(
+  page: import('@playwright/test').Page,
+  opts: { testId: string; value: string },
+): Promise<void> {
+  const input = page.getByTestId(opts.testId);
+  await input.waitFor({ timeout: 5_000 });
+  await input.evaluate((el: HTMLInputElement, v: string) => {
+    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }, opts.value);
+}
+
+/**
  * Navigate to /trip/new, fill the form, submit, and wait for the POST /api/trips
  * response to be confirmed before returning.  Returns the server-assigned trip id
  * so the caller can navigate directly to the detail / edit routes.
@@ -42,27 +60,17 @@ async function createTrip(
     await page.getByTestId('trips:description-input').fill(opts.description);
   }
 
-  // Set start date by clicking the Pressable to reveal the DateTimePicker, then
-  // filling the underlying <input type="date">.
+  // Set start date: click the Pressable to show the DateTimePicker, then set
+  // the date via the native input setter so React's onChange fires correctly.
   if (opts.startDate) {
-    await page
-      .getByText(/Start Date/i)
-      .first()
-      .click();
-    const startInput = page.locator('input[type="date"]').first();
-    await startInput.waitFor({ timeout: 5_000 });
-    await startInput.fill(opts.startDate);
+    await page.getByTestId('trips:start-date-btn').click();
+    await fillDateInput(page, { testId: 'trips:start-date-input', value: opts.startDate });
   }
 
   // Set end date similarly.
   if (opts.endDate) {
-    await page
-      .getByText(/End Date/i)
-      .first()
-      .click();
-    const endInput = page.locator('input[type="date"]').last();
-    await endInput.waitFor({ timeout: 5_000 });
-    await endInput.fill(opts.endDate);
+    await page.getByTestId('trips:end-date-btn').click();
+    await fillDateInput(page, { testId: 'trips:end-date-input', value: opts.endDate });
   }
 
   // Submit the form
@@ -249,24 +257,21 @@ test.describe('Trip form validation', () => {
     await page.getByTestId('trips:name-input').fill('Validation Test Trip');
 
     // Set start date
-    await page
-      .getByText(/Start Date/i)
-      .first()
-      .click();
-    const startInput = page.locator('input[type="date"]').first();
-    await startInput.waitFor({ timeout: 5_000 });
-    await startInput.fill('2026-08-14');
+    await page.getByTestId('trips:start-date-btn').click();
+    await fillDateInput(page, { testId: 'trips:start-date-input', value: '2026-08-14' });
 
     // Set end date BEFORE start date
-    await page
-      .getByText(/End Date/i)
-      .first()
-      .click();
-    const endInput = page.locator('input[type="date"]').last();
-    await endInput.waitFor({ timeout: 5_000 });
-    await endInput.fill('2026-08-01');
+    await page.getByTestId('trips:end-date-btn').click();
+    await fillDateInput(page, { testId: 'trips:end-date-input', value: '2026-08-01' });
 
-    await page.getByTestId('submit-trip-button').click();
+    // Validation fires onChange — error should appear without needing to click submit.
+    // If button is not disabled, click it to also trigger onSubmit validation.
+    const submitButton = page.getByTestId('submit-trip-button');
+    await submitButton.waitFor({ timeout: 5_000 });
+    const ariaDisabled = await submitButton.getAttribute('aria-disabled');
+    if (ariaDisabled !== 'true') {
+      await submitButton.click();
+    }
 
     // The zod refinement message is "End date must be after start date"
     await expect(
