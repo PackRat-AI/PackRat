@@ -1,9 +1,7 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isString } from '@packrat/guards';
-import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
-  Alert as AlertComponent,
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -32,7 +30,7 @@ import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -246,7 +244,6 @@ function ListFooterComponent() {
   const { signOut } = useAuth();
   const { t } = useTranslation();
 
-  const alertRef = useRef<AlertMethods>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -268,31 +265,13 @@ function ListFooterComponent() {
           disabled={isSigningOut}
           onPress={() => {
             if (hasUnsyncedChanges()) {
-              if (Platform.OS === 'android') {
-                // Use native Alert on Android so the dialog buttons are accessible
-                // to automated testing tools (custom portal-based dialogs are not).
-                Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
-                ]);
-              } else {
-                alertRef.current?.alert({
-                  title: t('profile.syncInProgress'),
-                  message: t('profile.syncMessage'),
-                  materialIcon: { name: 'repeat' },
-                  buttons: [
-                    {
-                      text: t('common.cancel'),
-                      style: 'cancel',
-                    },
-                    {
-                      text: t('auth.logOut'),
-                      style: 'destructive',
-                      onPress: handleSignOut,
-                    },
-                  ],
-                });
-              }
+              // Use native Alert on both platforms so the dialog buttons are
+              // accessible to automated testing tools (custom portal-based
+              // dialogs are not surfaced in XCTest/UIAutomator accessibility trees).
+              Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
+              ]);
               return;
             }
             handleSignOut();
@@ -307,7 +286,6 @@ function ListFooterComponent() {
             <Text className="text-destructive">{t('auth.logOut')}</Text>
           )}
         </Button>
-        <AlertComponent title="" buttons={[]} ref={alertRef} />
       </View>
       <AndroidTabBarInsetFix />
     </>
