@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@packrat/web-ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@packrat/web-ui/components/select';
 import { Children, isValidElement, type ReactNode } from 'react';
 
 type PickerItemProps = {

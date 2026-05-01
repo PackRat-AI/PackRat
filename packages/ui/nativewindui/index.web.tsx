@@ -5,10 +5,11 @@
  *
  * Every named export from @packrat-ai/nativewindui must appear here.
  * Real implementations are backed by @packrat/web-ui (shadcn) or custom shims.
+ * See web-shim-coverage.ts for the compile-time completeness check.
  */
 
-import { Switch } from '@packrat/web-ui';
-import type { ComponentProps, ReactNode } from 'react';
+import { Switch } from '@packrat/web-ui/components/switch';
+import type { ComponentProps } from 'react';
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -35,6 +36,14 @@ export {
 export { ActivityIndicator } from './activity-indicator.web';
 export type { ButtonProps } from './button.web';
 export { Button, buttonTextVariants, buttonVariants } from './button.web';
+export { CardBadge, CardImage, CardSubtitle } from './card-extras.web';
+export {
+  DrawerContentRoot,
+  DrawerContentSection,
+  DrawerContentSectionItem,
+  DrawerContentSectionTitle,
+  getActiveDrawerContentScreen,
+} from './drawer-content.web';
 export { Icon } from './icon.web';
 export type { LargeTitleHeaderProps, LargeTitleSearchBarMethods } from './large-title-header.web';
 export { LargeTitleHeader } from './large-title-header.web';
@@ -62,6 +71,7 @@ export { Stepper } from './stepper.web';
 export { Text, TextClassContext, textVariants } from './text.web';
 export { TextField } from './text-field.web';
 export { ThemeToggle } from './theme-toggle.web';
+export { Toolbar, ToolbarCTA, ToolbarIcon } from './toolbar.web';
 
 // useHeaderSearchBar — noop on web
 export function useHeaderSearchBar() {
@@ -83,22 +93,24 @@ export function Toggle({ value, onValueChange, ...rest }: ToggleProps) {
 }
 
 // ---------------------------------------------------------------------------
-// @packrat/web-ui shadcn components — direct re-exports
+// @packrat/web-ui shadcn components — direct re-exports via deep imports.
+// Using component-level paths because the @packrat/web-ui barrel only
+// exports Button + cn; everything else is in ./components/*.
 // (Switch excluded above; wrapped as Toggle instead)
 // ---------------------------------------------------------------------------
 
+export { Avatar, AvatarFallback, AvatarImage } from '@packrat/web-ui/components/avatar';
+export { Badge } from '@packrat/web-ui/components/badge';
 export {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Badge,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  Checkbox,
+} from '@packrat/web-ui/components/card';
+export { Checkbox } from '@packrat/web-ui/components/checkbox';
+export {
   ContextMenu,
   ContextMenuCheckboxItem,
   ContextMenuContent,
@@ -114,6 +126,8 @@ export {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
+} from '@packrat/web-ui/components/context-menu';
+export {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -129,59 +143,43 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  Progress as ProgressIndicator,
-  Slider,
-} from '@packrat/web-ui';
+} from '@packrat/web-ui/components/dropdown-menu';
+export { Progress as ProgressIndicator } from '@packrat/web-ui/components/progress';
+export { Slider } from '@packrat/web-ui/components/slider';
 
 // ---------------------------------------------------------------------------
-// Pass-through structural components
+// Alert
 // ---------------------------------------------------------------------------
 
-export const DrawerContentRoot = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
-export const DrawerContentSection = ({ children }: { children?: ReactNode }) => (
-  <div>{children}</div>
-);
-export const DrawerContentSectionItem = () => null;
-export const DrawerContentSectionTitle = () => null;
-export const getActiveDrawerContentScreen = () => null;
-
-export const Form = ({ children }: { children?: ReactNode }) => <form>{children}</form>;
-export const FormItem = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
-export const FormSection = ({ children }: { children?: ReactNode }) => (
-  <div className="mb-4">{children}</div>
-);
-
-export const Toolbar = ({ children }: { children?: ReactNode }) => (
-  <div className="flex gap-2">{children}</div>
-);
-export const ToolbarCTA = () => null;
-export const ToolbarIcon = () => null;
-
-// Alert — renders children as a pass-through (button inside still works)
-export const Alert = ({ children }: { children?: ReactNode }) => <>{children}</>;
-// AlertAnchor is a convenience wrapper around Alert; on web it renders nothing
-export const AlertAnchor = (_props: { ref?: unknown }) => null;
-export type AlertMethods = Record<string, never>;
+export { Alert, AlertAnchor, type AlertMethods } from './alert.web';
 
 // ---------------------------------------------------------------------------
-// Stubs for native-only or no web equivalent
+// Form
 // ---------------------------------------------------------------------------
 
-const stub = () => null;
+export { Form, FormItem, FormSection } from './form.web';
 
-// nativewindui-specific Card sub-components with no shadcn equivalent
-export const CardBadge = stub;
-export const CardImage = stub;
-export const CardSubtitle = stub;
-
+// ---------------------------------------------------------------------------
 // AdaptiveSearchHeader — iOS liquid glass, no web equivalent
-export const AdaptiveSearchHeader = stub;
+// ---------------------------------------------------------------------------
+
+export const AdaptiveSearchHeader = () => null;
 export const isLiquidGlassSupported = false;
 
-// DatePicker — complex, keep as stub for now
-export const DatePicker = stub;
+// Type stubs for native-only AdaptiveSearchHeader types
+export type AdaptiveSearchBarMethods = Record<string, never>;
+export type AdaptiveSearchHeaderProps = Record<string, never>;
 
+// ---------------------------------------------------------------------------
+// DatePicker — shadcn Calendar available but no web screens use it yet
+// ---------------------------------------------------------------------------
+
+export const DatePicker = () => null;
+
+// ---------------------------------------------------------------------------
 // ContextMenu / DropdownMenu utils (imperative helper fns from nativewindui)
+// ---------------------------------------------------------------------------
+
 export const createContextSubMenu = <T extends object>(
   subMenu: T,
   items: unknown[],
