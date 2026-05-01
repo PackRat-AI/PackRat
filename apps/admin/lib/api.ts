@@ -1,5 +1,6 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
+import { isObject } from '@packrat/guards';
 import { clearToken, getAuthHeader } from './auth';
 import { adminEnv } from './env';
 
@@ -30,9 +31,7 @@ const adminClient = treaty<App>(API_BASE, {
 function throwOnError(error: { value?: unknown } | null, fallback = 'Admin API error'): never {
   const val = error?.value;
   const msg =
-    typeof val === 'object' && val !== null && 'error' in val
-      ? String((val as { error: unknown }).error)
-      : fallback;
+    isObject(val) && 'error' in val ? String((val as { error: unknown }).error) : fallback;
   throw new Error(msg);
 }
 
