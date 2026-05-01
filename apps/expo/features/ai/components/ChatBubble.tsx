@@ -141,6 +141,8 @@ export const ChatBubble = React.memo(function ChatBubble({
             );
 
           if (isAI && part.type.startsWith('tool-')) {
+            // safe-cast: startsWith('tool-') guard confirms this part is a ToolUIPart; ai's union
+            // type is too wide for TypeScript to narrow statically on a string prefix check.
             const toolPart = part as ToolUIPart;
             const toolKey = keyIn(toolPart, 'toolCallId') ? toolPart.toolCallId : key;
             return (

@@ -24,6 +24,7 @@ export const reportContent = async (
     ...(userComment != null ? { userComment } : {}),
   });
   if (error) throw new Error(`Failed to report content: ${error.value}`);
+  // safe-cast: treaty response shape matches ReportContentResponse as validated by the API schema
   return data as unknown as ReportContentResponse;
 };
 

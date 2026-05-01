@@ -8,7 +8,8 @@
     "./node": "./src/node.ts",
     "./next": "./src/next.ts",
     "./expo-client": "./src/expo-client.ts",
-    "./expo-server": "./src/expo-server.ts"
+    "./expo-server": "./src/expo-server.ts",
+    "./analytics": "./src/analytics.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

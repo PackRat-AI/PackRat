@@ -21,6 +21,7 @@ export function useDuplicatePack() {
         queryFn: async () => {
           const { data, error } = await apiClient.packs({ packId }).get();
           if (error) throw new Error(`Failed to fetch pack: ${error.value}`);
+          // safe-cast: treaty response shape matches Pack as validated by the API schema
           return data as unknown as Pack;
         },
       });

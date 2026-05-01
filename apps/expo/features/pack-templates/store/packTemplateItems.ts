@@ -14,9 +14,12 @@ import type { PackTemplateItem } from '../types';
 const listAllPackTemplateItems = async (): Promise<PackTemplateItem[]> => {
   const { data, error } = await apiClient['pack-templates'].get();
   if (error) throw new Error(`Failed to list PackTemplateItems: ${error.value}`);
-  return PackTemplateWithItemsSchema.array()
-    .parse(data)
-    .flatMap((template) => template.items) as unknown as PackTemplateItem[];
+  return (
+    PackTemplateWithItemsSchema.array()
+      .parse(data)
+      // safe-cast: Zod parse validates the shape; PackTemplateItem extends the Zod-inferred type
+      .flatMap((template) => template.items) as unknown as PackTemplateItem[]
+  );
 };
 
 const createPackTemplateItem = async (item: PackTemplateItem): Promise<PackTemplateItem> => {
@@ -36,6 +39,7 @@ const createPackTemplateItem = async (item: PackTemplateItem): Promise<PackTempl
     notes: item.notes,
   });
   if (error) throw new Error(`Failed to create pack template item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackTemplateItem extends the Zod-inferred type
   return PackTemplateItemSchema.parse(data) as unknown as PackTemplateItem;
 };
 
@@ -63,6 +67,7 @@ const updatePackTemplateItem = async ({
       deleted: data.deleted,
     });
   if (error) throw new Error(`Failed to update pack template item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackTemplateItem extends the Zod-inferred type
   return PackTemplateItemSchema.parse(result) as unknown as PackTemplateItem;
 };
 

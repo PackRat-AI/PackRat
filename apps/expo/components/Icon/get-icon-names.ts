@@ -29,6 +29,8 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
       ];
     if (materialCommunityIcon) {
       return {
+        // safe-cast: caller passes name under sfSymbol naming scheme; SfSymbolName is a string
+        // union from expo-symbols and cannot be checked without a full lookup table.
         sfSymbol: name as SfSymbolName,
         materialIcon: null,
         materialCommunityIcon,
@@ -39,6 +41,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
       SF_SYMBOLS_TO_MATERIAL_ICONS[name as keyof typeof SF_SYMBOLS_TO_MATERIAL_ICONS];
     if (materialIcon) {
       return {
+        // safe-cast: same as above — sfSymbol naming scheme, string is a valid SF Symbol name
         sfSymbol: name as SfSymbolName,
         materialIcon,
         materialCommunityIcon: null,
@@ -47,6 +50,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
 
     // No mapping found for SF Symbol
     return {
+      // safe-cast: same as above — sfSymbol naming scheme, string is a valid SF Symbol name
       sfSymbol: name as SfSymbolName,
       materialIcon: null,
       materialCommunityIcon: null,
@@ -61,8 +65,11 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
     ];
   if (sfSymbolFromCommunity) {
     return {
+      // safe-cast: value comes from MATERIAL_COMMUNITY_ICONS_TO_SF_SYMBOLS lookup table,
+      // which contains valid SF Symbol names; the full union is not statically checkable.
       sfSymbol: sfSymbolFromCommunity as SfSymbolName,
       materialIcon: null,
+      // safe-cast: name is a key of the MaterialCommunityIcons lookup; string checked at call site
       materialCommunityIcon: name as MaterialCommunityIconsProps['name'],
     };
   }
@@ -71,7 +78,9 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
     MATERIAL_ICONS_TO_SF_SYMBOLS[name as keyof typeof MATERIAL_ICONS_TO_SF_SYMBOLS];
   if (sfSymbolFromMaterial) {
     return {
+      // safe-cast: value from MATERIAL_ICONS_TO_SF_SYMBOLS lookup; valid SF Symbol name
       sfSymbol: sfSymbolFromMaterial as SfSymbolName,
+      // safe-cast: name is a key of the MaterialIcons lookup; string checked at call site
       materialIcon: name as MaterialIconsProps['name'],
       materialCommunityIcon: null,
     };
@@ -81,6 +90,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
   return {
     sfSymbol: null,
     materialIcon: null,
+    // safe-cast: no mapping found; assume name is a MaterialCommunityIcons name as fallback
     materialCommunityIcon: name as MaterialCommunityIconsProps['name'],
   };
 }

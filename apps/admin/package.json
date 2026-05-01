@@ -11,6 +11,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "@elysiajs/eden": "catalog:",
+    "@packrat/api-client": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
@@ -43,7 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "@types/react": "~19.1.10",
+    "@types/react": "~19.2.10",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",

@@ -26,6 +26,7 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
   }
   if (!isIdentifyResponse(data))
     throw new Error('Unexpected response from wildlife identify endpoint');
+  // safe-cast: isIdentifyResponse guard confirms data.results is an array; element type guaranteed by API contract
   return data.results as IdentificationResult[];
 }
 

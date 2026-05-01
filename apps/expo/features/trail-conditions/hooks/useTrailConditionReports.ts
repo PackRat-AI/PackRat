@@ -34,6 +34,7 @@ async function readCachedReports(opts: {
 }): Promise<TrailConditionReport[] | undefined> {
   try {
     const raw = await AsyncStorage.getItem(cacheKey(opts.userId, opts.trailName));
+    // safe-cast: JSON.parse returns unknown; data was written as TrailConditionReport[] earlier
     if (raw) return JSON.parse(raw) as TrailConditionReport[];
   } catch {
     // Corrupt or missing cache — ignore
@@ -51,6 +52,7 @@ export const fetchTrailConditionReports = async (
     console.error('Failed to fetch trail condition reports:', error.value);
     throw new Error(`Failed to fetch trail condition reports: ${error.value}`);
   }
+  // safe-cast: treaty response shape matches TrailConditionReport[] as validated by the API schema
   return (data ?? []) as unknown as TrailConditionReport[];
 };
 
@@ -68,6 +70,7 @@ export function useTrailConditionReports(trailName?: string) {
   // Read locally-stored reports (user's own, offline-persisted) as fallback
   const localReports = useSelector(() => {
     const store = trailConditionReportsStore.get();
+    // safe-cast: Legend-State observable record values are typed as TrailConditionReport
     return Object.values(store).filter((r) => !r.deleted) as TrailConditionReport[];
   });
 

@@ -15,6 +15,9 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import { isDate, isFunction, isNumber, isObject, isString } from '@packrat/guards';
 
+// ── ETag normalization ────────────────────────────────────────────────
+const STRIP_DOUBLE_QUOTES = /"/g;
+
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
   contentType?: string;
@@ -274,7 +277,7 @@ export class R2BucketService {
           });
         } else if (body instanceof globalThis.ReadableStream) {
           // Web stream (Cloudflare Workers environment)
-          webStream = body as ReadableStream<Uint8Array>;
+          webStream = body as ReadableStream<Uint8Array>; // safe-cast: body is confirmed to be a Web ReadableStream in the Cloudflare Workers environment
         } else {
           throw new Error('Unsupported stream type');
         }
@@ -319,7 +322,7 @@ export class R2BucketService {
         arrayBuffer: async () => {
           assertStreamNotConsumed();
           // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
-          return (await consumeStream()).buffer as ArrayBuffer;
+          return (await consumeStream()).buffer as ArrayBuffer; // safe-cast: Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer)
         },
         bytes: async () => {
           assertStreamNotConsumed();
@@ -331,14 +334,13 @@ export class R2BucketService {
         },
         json: async <T>() => {
           assertStreamNotConsumed();
-          // caller is responsible for type safety at this boundary
-          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T;
+          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T; // safe-cast: caller-provided generic boundary — R2ObjectBody.json<T>() mirrors the R2 platform API
         },
         blob: async () => {
           assertStreamNotConsumed();
           const data = await consumeStream();
           // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
-          return new globalThis.Blob([data.buffer as ArrayBuffer]);
+          return new globalThis.Blob([data.buffer as ArrayBuffer]); // safe-cast: Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer)
         },
       };
 
@@ -601,6 +603,7 @@ export class R2BucketService {
       if (!isObject(v)) return {};
       const out: Record<string, string> = {};
       // isObject(v) confirms v is a non-null object; cast is safe for entry iteration
+      // safe-cast: isObject(v) guard confirms v is a non-null object; safe for entry iteration
       for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
         if (isString(val)) out[k] = val;
       }
@@ -614,7 +617,7 @@ export class R2BucketService {
       key,
       version: isString(response.VersionId) ? response.VersionId : '',
       size: isNumber(response.ContentLength) ? response.ContentLength : 0,
-      etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
+      etag: isString(response.ETag) ? response.ETag.replace(STRIP_DOUBLE_QUOTES, '') : '',
       httpEtag: isString(response.ETag) ? response.ETag : '',
       checksums: this.createChecksums(response),
       uploaded: toUploaded(response.LastModified),

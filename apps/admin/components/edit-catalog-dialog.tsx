@@ -48,7 +48,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
           .filter(Boolean)
       : null;
     const weightRaw = fd.get('weight')?.toString().trim();
-    const weight = weightRaw ? Number(weightRaw) : null;
+    const weight = weightRaw ? Number(weightRaw) : undefined;
     const weightUnit = fd.get('weightUnit')?.toString().trim() || item.weightUnit;
     const priceRaw = fd.get('price')?.toString().trim();
     const price = priceRaw ? Number(priceRaw) : null;

@@ -5,6 +5,7 @@
  * Every route is Elysia-native so Eden Treaty gets full end-to-end type
  * safety and @elysiajs/openapi generates a complete OpenAPI/Scalar UI.
  */
+
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
 import { AppContainer } from '@packrat/api/containers';
@@ -105,7 +106,7 @@ export default {
       }
       // The queue name check above is the runtime guard; the Worker runtime delivers
       // correctly-typed messages for this queue binding.
-      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env });
+      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: queue name guard above confirms this batch carries CatalogETLMessage payloads
     } else if (
       batch.queue === 'packrat-embeddings-queue' ||
       batch.queue === 'packrat-embeddings-queue-dev'

@@ -106,6 +106,7 @@ export const FeedScreen = () => {
           renderItem={renderItem}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 }}
+          contentInsetAdjustmentBehavior="automatic"
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}

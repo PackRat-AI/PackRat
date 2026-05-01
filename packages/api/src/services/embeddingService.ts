@@ -3,6 +3,9 @@ import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
 import { embed, embedMany } from 'ai';
 
+// ── Embedding text normalization ──────────────────────────────────────
+const NEWLINE = /\n/g;
+
 type GenerateEmbeddingBaseParams = {
   openAiApiKey: string;
   provider: AIProvider;
@@ -28,7 +31,7 @@ export const generateEmbedding = async (
   const aiProvider = createAIProvider(providerConfig);
 
   // OpenAI recommends replacing newlines with spaces for best results
-  const input = value.replace(/\n/g, ' ');
+  const input = value.replace(NEWLINE, ' ');
 
   const { embedding } = await embed({
     model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
@@ -48,7 +51,7 @@ export const generateManyEmbeddings = async (
   const { values, ...providerConfig } = params;
 
   // Filter out empty/whitespace-only strings
-  const cleanValues = values.map((v) => v?.replace(/\n/g, ' ').trim()).filter(Boolean);
+  const cleanValues = values.map((v) => v?.replace(NEWLINE, ' ').trim()).filter(Boolean);
   if (cleanValues.length === 0) {
     return [];
   }

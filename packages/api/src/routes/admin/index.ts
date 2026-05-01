@@ -1,3 +1,4 @@
+import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
@@ -61,31 +62,45 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Accept: Cloudflare Access JWT (prod, cryptographically verified), Bearer JWT
-// (admin SPA session token), or Basic auth (local dev only).
+// Protected routes: Bearer JWT only.
+// The JWT is issued by /token, which already enforced both factors (CF JWT + Basic
+// in prod, Basic-only in local dev). No need to re-check CF or Basic here.
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+  const header = request.headers.get('authorization') ?? '';
 
-  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    // CF Access configured: cryptographic JWT verification only, no fallthrough.
-    const cfIdentity = await verifyCFAccessRequest(request, {
-      teamDomain: CF_ACCESS_TEAM_DOMAIN,
-      aud: CF_ACCESS_AUD,
-    });
-    return cfIdentity !== null;
+  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+
+  // Local dev only: allow Basic auth directly on protected routes as a convenience.
+  // Both CF vars absent AND non-production environment must hold — missing CF vars
+  // alone is not enough so a misconfigured prod cannot fall back to Basic auth.
+  if (
+    env.ENVIRONMENT !== 'production' &&
+    !CF_ACCESS_TEAM_DOMAIN &&
+    !CF_ACCESS_AUD &&
+    header.startsWith('Basic ')
+  ) {
+    return basicAuthGuard(request).authorized;
   }
 
-  // CF Access not configured — local dev fallbacks only.
-  const header = request.headers.get('authorization') ?? '';
-  if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
-  if (header.startsWith('Basic ')) return basicAuthGuard(request).authorized;
   return false;
 }
 
 // ---------------------------------------------------------------------------
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
+  // Scoped CORS: credentials: true lets the admin SPA send its CF Access session
+  // cookie cross-origin so CF Access can inject Cf-Access-Jwt-Assertion.
+  // allowedHeaders must list Authorization explicitly (wildcards + credentials
+  // is rejected by browsers per the CORS spec).
+  .use(
+    cors({
+      origin: 'https://admin.packratai.com',
+      credentials: true,
+      allowedHeaders: ['Authorization', 'Content-Type'],
+    }),
+  )
   // Token exchange — must be registered BEFORE the auth guard so the admin
   // SPA can exchange Basic credentials for a short-lived JWT.
   .post(
@@ -96,6 +111,21 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
         const { success } = await env.TOKEN_RATE_LIMITER.limit({ key: ip });
         if (!success) return status(429, { error: 'Too many requests' });
+      }
+
+      const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+
+      // CF JWT is an optional extra layer: required only when both CF vars are set.
+      // The admin SPA sends credentials: 'include' so the CF Access session cookie
+      // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
+      // Basic credentials are always required and remain the primary gate.
+      if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+        const cfIdentity = await verifyCFAccessRequest(
+          request,
+          CF_ACCESS_TEAM_DOMAIN,
+          CF_ACCESS_AUD,
+        );
+        if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
 
       const header = request.headers.get('authorization') ?? '';
@@ -115,7 +145,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     {
       detail: {
         tags: ['Admin'],
-        summary: 'Exchange Basic credentials for a short-lived admin JWT',
+        summary:
+          'Exchange Basic credentials for a short-lived admin JWT (CF JWT required when CF vars are set)',
       },
     },
   )

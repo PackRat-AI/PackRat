@@ -50,8 +50,7 @@ export const computePackWeights = (
 
   // Calculate weights based on items
   for (const item of pack.items) {
-    const itemWeightInGrams =
-      convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
+    const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
 
     totalWeightGrams += itemWeightInGrams;
 

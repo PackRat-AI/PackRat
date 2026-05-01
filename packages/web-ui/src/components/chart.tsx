@@ -8,6 +8,9 @@ import { cn } from '../lib/utils';
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
 
+// ── Component regex constants ──
+const STRIP_COLONS = /:/g;
+
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode;
@@ -42,7 +45,7 @@ const ChartContainer = React.forwardRef<
   }
 >(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId();
-  const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
+  const chartId = `chart-${id || uniqueId.replace(STRIP_COLONS, '')}`;
 
   return (
     <ChartContext.Provider value={{ config }}>

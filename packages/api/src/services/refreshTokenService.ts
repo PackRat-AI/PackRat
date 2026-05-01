@@ -54,7 +54,7 @@ export async function hashRefreshToken(raw: string): Promise<string> {
 async function tokenMatchClause(raw: string): Promise<SQL> {
   const hashed = await hashRefreshToken(raw);
   if (hashed === raw) return eq(refreshTokens.token, raw);
-  return or(eq(refreshTokens.token, hashed), eq(refreshTokens.token, raw)) as SQL;
+  return or(eq(refreshTokens.token, hashed), eq(refreshTokens.token, raw)) as SQL; // safe-cast: Drizzle sql`` tag returns SQL type — or() returns SQL | undefined but is non-null when given two non-null args
 }
 
 /**
@@ -172,5 +172,5 @@ export async function rotateRefreshToken(
 /** Active-and-unrevoked clause for existing plaintext-style `.where` uses. */
 export async function activeTokenClause(raw: string): Promise<SQL> {
   const match = await tokenMatchClause(raw);
-  return and(match, isNull(refreshTokens.revokedAt)) as SQL;
+  return and(match, isNull(refreshTokens.revokedAt)) as SQL; // safe-cast: Drizzle sql`` tag returns SQL type — and() returns SQL | undefined but is non-null when given two non-null args
 }

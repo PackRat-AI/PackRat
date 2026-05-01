@@ -12,14 +12,12 @@ import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
 import { storeToken } from 'admin-app/lib/auth';
 import { useCFAccessIdentity } from 'admin-app/lib/cfAccess';
+import { adminEnv } from 'admin-app/lib/env';
 import { Package, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
+const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,10 +28,6 @@ export default function LoginPage() {
 
   const { data: cfIdentity, isPending: cfPending } = useCFAccessIdentity();
 
-  useEffect(() => {
-    if (!cfPending && cfIdentity) router.replace('/dashboard');
-  }, [cfPending, cfIdentity, router]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -42,6 +36,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/token`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: `Basic ${btoa(`${username}:${password}`)}`,
         },
@@ -66,9 +61,6 @@ export default function LoginPage() {
       setPending(false);
     }
   }
-
-  // Redirect in progress (behind CF Access) — show nothing while navigating
-  if (!cfPending && cfIdentity) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">

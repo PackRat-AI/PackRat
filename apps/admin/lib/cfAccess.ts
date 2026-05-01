@@ -2,8 +2,9 @@
 //
 // CF Access protects the admin app in production. After authentication, CF sets
 // an HttpOnly cookie (not readable by JS). The identity endpoint at
-// /cdn-cgi/access/get-identity returns the signed JWT assertion we can forward
-// to the API for cryptographic verification.
+// /cdn-cgi/access/get-identity returns identity info (email, etc.) but does NOT
+// include the JWT assertion in the response body. The Cf-Access-Jwt-Assertion
+// header is added automatically by CF Access on requests to protected services.
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from 'admin-app/lib/queryKeys';
@@ -12,7 +13,6 @@ import { z } from 'zod';
 const CFAccessIdentitySchema = z.object({
   email: z.string(),
   name: z.string().optional().default(''),
-  jwt: z.string(),
 });
 
 export type CFAccessIdentityResponse = z.infer<typeof CFAccessIdentitySchema>;
@@ -42,12 +42,6 @@ function fetchIdentity(): Promise<CFAccessIdentityResponse | null> {
 export function getCFAccessIdentity(): Promise<CFAccessIdentityResponse | null> {
   identityPromise ??= fetchIdentity();
   return identityPromise;
-}
-
-/** Returns the CF Access JWT assertion, or null when not behind CF Access. */
-export async function getCFAccessJWT(): Promise<string | null> {
-  const identity = await getCFAccessIdentity();
-  return identity?.jwt ?? null;
 }
 
 /** True when the app is running behind CF Access (identity endpoint responds). */

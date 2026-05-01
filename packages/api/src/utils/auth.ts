@@ -64,7 +64,7 @@ export async function verifyJWT({ token }: { token: string }): Promise<JWTPayloa
     const { payload } = await jwtVerify(token, secretKey(JWT_SECRET), {
       algorithms: ['HS256'],
     });
-    return payload as JWTPayload;
+    return payload as JWTPayload; // safe-cast: jose jwtVerify returns JWTPayload — our JWTPayload type extends the jose type with userId/role fields
   } catch {
     return null;
   }

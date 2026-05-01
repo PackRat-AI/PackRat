@@ -3,6 +3,9 @@ import { err, ok } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
+// ── Tool regex constants ──
+const STRIP_HYPHENS = /-/g;
+
 interface PackDetailResponse {
   items?: Array<{
     name: string;
@@ -84,7 +87,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ name, description, category, is_public, tags }) => {
       try {
-        const id = `p_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const id = `p_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
         const data = await agent.api.post('/packs', {
           id,
@@ -192,7 +195,7 @@ export function registerPackTools(agent: AgentContext): void {
       notes,
     }) => {
       try {
-        const id = `i_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const id = `i_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
         const data = await agent.api.post(`/packs/${pack_id}/items`, {
           id,

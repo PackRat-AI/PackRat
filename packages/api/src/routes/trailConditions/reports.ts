@@ -6,6 +6,11 @@ import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
+// ── LIKE-clause escape patterns ───────────────────────────────────────
+const LIKE_ESCAPE_BACKSLASH = /\\/g;
+const LIKE_ESCAPE_PERCENT = /%/g;
+const LIKE_ESCAPE_UNDERSCORE = /_/g;
+
 const CreateReportRequestSchema = z.object({
   id: z.string().describe('Client-generated report ID'),
   trailName: z.string().min(1),
@@ -57,9 +62,9 @@ export const trailConditionRoutes = new Elysia()
           const normalized = trailName.trim();
           if (normalized.length > 0) {
             const escaped = normalized
-              .replace(/\\/g, '\\\\')
-              .replace(/%/g, '\\%')
-              .replace(/_/g, '\\_');
+              .replace(LIKE_ESCAPE_BACKSLASH, '\\\\')
+              .replace(LIKE_ESCAPE_PERCENT, '\\%')
+              .replace(LIKE_ESCAPE_UNDERSCORE, '\\_');
             conditions.push(ilike(trailConditionReports.trailName, `%${escaped}%`));
           }
         }

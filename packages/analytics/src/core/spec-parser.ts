@@ -236,7 +236,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow));
+      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow)); // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     }
 
     // Create specs table
@@ -301,7 +301,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 
@@ -356,7 +356,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 }

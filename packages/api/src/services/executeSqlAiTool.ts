@@ -1,6 +1,9 @@
 import { sql } from 'drizzle-orm';
 import { createReadOnlyDb } from '../db';
 
+// ── SQL complexity patterns ───────────────────────────────────────────
+const SQL_JOIN_KEYWORD = /\bjoin\b/g;
+
 interface Params {
   query: string;
   limit: number;
@@ -76,7 +79,7 @@ function isReadOnlyQuery(query: string): boolean {
 
 function validateQueryComplexity(query: string): { valid: boolean; error?: string } {
   const normalizedQuery = query.toLowerCase();
-  const joinCount = (normalizedQuery.match(/\bjoin\b/g) || []).length;
+  const joinCount = (normalizedQuery.match(SQL_JOIN_KEYWORD) || []).length;
   if (joinCount > 5) {
     return { valid: false, error: 'Query too complex: maximum 5 joins allowed' };
   }

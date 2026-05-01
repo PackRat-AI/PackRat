@@ -47,9 +47,9 @@ export default function GearInventoryScreen() {
   const itemsByCategory = groupByCategory(items);
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.gearInventory')} />
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
             {t('packs.itemsInInventory', { count: items?.length })}

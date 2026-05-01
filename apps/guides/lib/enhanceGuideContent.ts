@@ -1,4 +1,6 @@
 import { openai } from '@ai-sdk/openai';
+import { treaty } from '@elysiajs/eden';
+import type { App } from '@packrat/api';
 import { guideEnv } from '@packrat/env/next';
 import { generateText, tool } from 'ai';
 import { z } from 'zod';
@@ -50,6 +52,20 @@ export async function enhanceGuideContent(
   if (!apiKey) {
     throw new Error('PACKRAT_API_KEY environment variable is required for content enhancement');
   }
+
+  // safe-cast: Eden Treaty fetcher expects typeof fetch; CF Workers adds preconnect
+  // which is never called by Eden — only the (input, init) signature is used.
+  const catalogFetcher: typeof fetch = Object.assign(
+    (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+      const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
+      return fetch(input, {
+        ...init,
+        headers: { ...existing, 'X-API-KEY': apiKey },
+      });
+    },
+    fetch,
+  );
+  const catalogClient = treaty<App>(apiBaseUrl, { fetcher: catalogFetcher }).api.catalog;
 
   // Track products used for reporting
   const productsUsed: Array<{
@@ -114,26 +130,15 @@ export async function enhanceGuideContent(
                 offset,
               );
 
-              const searchUrl = new URL(`${apiBaseUrl}/api/catalog/vector-search`);
-              searchUrl.searchParams.set('q', query);
-              if (limit !== undefined) searchUrl.searchParams.set('limit', String(limit));
-              if (offset !== undefined) searchUrl.searchParams.set('offset', String(offset));
-
-              const response = await fetch(searchUrl.toString(), {
-                method: 'GET',
-                headers: {
-                  'X-API-KEY': apiKey,
-                  'Content-Type': 'application/json',
-                  Accept: 'application/json',
-                },
+              const { data, error } = await catalogClient['vector-search'].get({
+                query: { q: query, limit, offset },
               });
-              if (!response.ok) {
-                throw new Error(`Catalog search failed: ${response.status} ${response.statusText}`);
+
+              if (error) {
+                throw new Error(`Catalog search failed: ${error.status}`);
               }
 
-              const searchResults = (await response.json()) as {
-                items?: Array<{ name: string; productUrl: string; similarity?: number }>;
-              };
+              const searchResults = data;
 
               // Track products for reporting
               for (const item of searchResults.items ?? []) {

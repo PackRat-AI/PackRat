@@ -38,6 +38,7 @@ export function useImageDetection() {
         matchLimit,
       });
       if (error) throw new Error(`Failed to analyze image: ${error.value}`);
+      // safe-cast: treaty response shape matches AnalyzeImageResponse as validated by the API schema
       return data as unknown as AnalyzeImageResponse;
     },
   });

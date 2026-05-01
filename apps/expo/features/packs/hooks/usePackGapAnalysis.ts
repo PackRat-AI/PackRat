@@ -28,6 +28,7 @@ export const analyzePackGaps = async (
 ): Promise<GapAnalysisResponse> => {
   const { data, error } = await apiClient.packs({ packId })['gap-analysis'].post(context ?? {});
   if (error) throw new Error(`Failed to analyze pack gaps: ${error.value}`);
+  // safe-cast: treaty response shape matches GapAnalysisResponse as validated by the API schema
   return data as unknown as GapAnalysisResponse;
 };
 

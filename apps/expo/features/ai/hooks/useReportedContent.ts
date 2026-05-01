@@ -26,6 +26,7 @@ type ReportedContentCount = {
 export const getReportedContent = async (): Promise<ReportedContentResponse> => {
   const { data, error } = await apiClient.chat.reports.get();
   if (error) throw new Error(`Failed to fetch reported content: ${error.value}`);
+  // safe-cast: treaty response shape matches ReportedContentResponse as validated by the API schema
   return data as unknown as ReportedContentResponse;
 };
 

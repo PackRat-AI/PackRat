@@ -23,6 +23,7 @@ export function ItemsScanScreen() {
   const { colors } = useColorScheme();
   const { packId, ...fileInfo } = useLocalSearchParams();
   const [hasRunInitialScanOnMount, setHasRunInitialScanOnMount] = useState(false);
+  // safe-cast: expo-router query params are untyped strings; fileInfo carries uri/fileName/type
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());

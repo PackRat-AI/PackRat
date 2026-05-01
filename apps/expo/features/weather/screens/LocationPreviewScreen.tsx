@@ -56,6 +56,7 @@ export default function LocationPreviewScreen() {
       const data = await getWeatherData(locationId);
       if (data) {
         const formattedData = formatWeatherData(data);
+        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
         setWeatherData(formattedData as unknown as WeatherLocation);
 
         // Update gradient colors based on weather condition

@@ -22,6 +22,8 @@ export function TripDetailScreen() {
 
   const [showConditionReport, setShowConditionReport] = useState(false);
 
+  // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
+  // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
 

@@ -29,6 +29,7 @@ export const getSimilarCatalogItems = async (
     },
   });
   if (error) throw new Error(`Failed to fetch similar catalog items: ${error.value}`);
+  // safe-cast: treaty response shape matches SimilarItemsResponse as validated by the API schema
   return data as unknown as SimilarItemsResponse;
 };
 
