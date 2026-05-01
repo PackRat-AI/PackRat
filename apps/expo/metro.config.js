@@ -16,7 +16,7 @@ config.resolver = {
   unstable_conditionNames: ['require', 'default', 'react-native', 'browser'],
 };
 
-// Native-only packages that need no-op web shims.
+// Native-only packages that need web shims.
 // Add new entries here when a package crashes on web.
 const WEB_STUBS = {
   'react-native-maps': 'mocks/react-native-maps.ts',
@@ -26,6 +26,11 @@ const WEB_STUBS = {
   'llama.rn': 'mocks/react-native-ai-llama.ts',
   '@react-native-ai/apple': 'mocks/react-native-ai-apple.ts',
   'expo-sqlite/kv-store': 'mocks/expo-sqlite-kv-store.ts',
+  // Keyboard utilities — on web the software keyboard doesn't overlay content
+  'react-native-keyboard-controller': 'mocks/react-native-keyboard-controller.tsx',
+  // Google Sign-In and date picker are native-only; web uses password auth
+  '@react-native-google-signin/google-signin': 'mocks/google-signin.ts',
+  '@react-native-community/datetimepicker': 'mocks/datetimepicker.tsx',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;
