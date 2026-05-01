@@ -7,7 +7,7 @@
     "clean": "bunx rimraf node_modules .next out",
     "dev": "next dev",
     "doctor:react": "bunx react-doctor",
-    "lighthouse": "bunx lhci autorun",
+    "lighthouse": "bun run build && bunx lhci autorun",
     "lint": "next lint",
     "start": "next start"
   },

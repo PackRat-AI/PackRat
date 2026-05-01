@@ -6,8 +6,7 @@ module.exports = {
       staticDistDir: './out',
       numberOfRuns: 3,
       settings: {
-        // Simulate mobile (Lighthouse default) and desktop
-        formFactor: 'desktop',
+        formFactor: 'desktop', // desktop profile; run separately with formFactor: 'mobile' for mobile scores
         screenEmulation: {
           mobile: false,
           width: 1350,

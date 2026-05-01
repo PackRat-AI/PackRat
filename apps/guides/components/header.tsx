@@ -12,14 +12,15 @@ import { getAllCategories } from 'guides-app/lib/categories';
 import { navigationConfig, siteConfig } from 'guides-app/lib/config';
 import { Backpack, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search } from './search';
 import { ThemeToggle } from './theme-toggle';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
 
-  const categories = getAllCategories();
+  // useMemo prevents re-walking all posts on each scroll-triggered re-render
+  const categories = useMemo(() => getAllCategories(), []);
 
   useEffect(() => {
     const handleScroll = () => {

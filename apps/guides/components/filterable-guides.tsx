@@ -40,9 +40,7 @@ function FilterableContent({ allPosts, categories }: Props) {
       <div className="container">
         <h2 className="mb-10 text-3xl font-semibold tracking-tight text-center">{pageTitle}</h2>
 
-        <Suspense>
-          <CategoryFilter categories={categories} />
-        </Suspense>
+        <CategoryFilter categories={categories} />
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPosts.length > 0 ? (

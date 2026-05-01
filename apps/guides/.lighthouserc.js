@@ -5,7 +5,7 @@ module.exports = {
       staticDistDir: './out',
       numberOfRuns: 3,
       settings: {
-        formFactor: 'desktop',
+        formFactor: 'desktop', // desktop profile; run separately with formFactor: 'mobile' for mobile scores
         screenEmulation: {
           mobile: false,
           width: 1350,

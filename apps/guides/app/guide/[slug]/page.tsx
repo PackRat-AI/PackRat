@@ -2,6 +2,7 @@ import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import { format } from 'date-fns';
 import GuideCard from 'guides-app/components/guide-card';
+import { siteConfig } from 'guides-app/lib/config';
 import {
   getAllPosts,
   getMdxContent,
@@ -27,8 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: 'Guide Not Found' };
   }
 
-  const siteUrl = 'https://guides.packrat.world';
-
   return {
     title: post.title,
     description: post.description,
@@ -36,10 +35,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       type: 'article',
       title: post.title,
       description: post.description,
-      url: `${siteUrl}/guide/${slug}`,
+      url: `${siteConfig.url}/guide/${slug}`,
       siteName: 'PackRat Guides',
       publishedTime: post.date,
-      authors: post.author ? [post.author] : ['PackRat Team'],
       tags: post.categories,
     },
     twitter: {

@@ -3,6 +3,7 @@ import Footer from 'guides-app/components/footer';
 import Header from 'guides-app/components/header';
 import { QueryProvider } from 'guides-app/components/providers/query-provider';
 import { ThemeProvider } from 'guides-app/components/theme-provider';
+import { siteConfig } from 'guides-app/lib/config';
 import type { Metadata } from 'next';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
@@ -13,8 +14,6 @@ const fontSans = FontSans({
   variable: '--font-sans',
   weight: ['400', '500', '600', '700'],
 });
-
-const siteUrl = 'https://guides.packrat.world';
 
 export const metadata: Metadata = {
   title: {
@@ -34,11 +33,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'PackRat Team', url: 'https://packrat.world' }],
   creator: 'PackRat Team',
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteConfig.url),
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: siteUrl,
+    url: siteConfig.url,
     siteName: 'PackRat Guides',
     title: 'PackRat Guides | Hiking & Outdoor Adventures',
     description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
