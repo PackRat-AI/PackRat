@@ -90,7 +90,9 @@ jobs:
       - name: Build Expo web app
         working-directory: apps/expo
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          # Use branch-specific API URL: prod for pushes/PRs to main, dev otherwise.
+          # github.ref covers push events; github.base_ref covers pull_request events.
+          EXPO_PUBLIC_API_URL: ${{ (github.ref == 'refs/heads/main' || github.base_ref == 'main') && secrets.EXPO_PUBLIC_API_URL_PROD || secrets.EXPO_PUBLIC_API_URL_DEV }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
           EXPO_PUBLIC_R2_PUBLIC_URL: ${{ env.EXPO_PUBLIC_R2_PUBLIC_URL }}
           EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'placeholder-ios-not-used-on-web' }}
