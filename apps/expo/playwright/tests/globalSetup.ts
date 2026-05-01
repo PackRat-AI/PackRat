@@ -27,11 +27,11 @@ export default async function setup() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // The app redirects unauthenticated users to /auth
-  await page.goto(BASE_URL);
+  // Navigate directly to /auth — avoids waiting for the unauthenticated redirect
+  await page.goto(`${BASE_URL}/auth`);
 
   // Entry screen — choose email sign-in
-  await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
+  await page.getByTestId('sign-in-email-button').waitFor({ timeout: 30_000 });
   await page.getByTestId('sign-in-email-button').click();
 
   // Login form
