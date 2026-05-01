@@ -119,7 +119,9 @@ function CatalogItemsScreen() {
 
         <View className="mb-4 px-4">
           <View className="flex-row items-center justify-between">
-            <Text className="text-muted-foreground">{totalItemsText}</Text>
+            <Text testID={testIds.catalog.totalItemsCount} className="text-muted-foreground">
+              {totalItemsText}
+            </Text>
           </View>
 
           {paginatedItems.length > 0 && (

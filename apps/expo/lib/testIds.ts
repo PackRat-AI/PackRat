@@ -87,6 +87,7 @@ export const testIds = Object.freeze({
   catalog: Object.freeze({
     searchBtn: 'catalog:search-btn',
     searchInput: 'catalog:search-input',
+    totalItemsCount: 'catalog:total-items-count',
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
     item: (id: string | number) => `catalog:item-${id}`,

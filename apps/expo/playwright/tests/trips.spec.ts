@@ -13,9 +13,9 @@ import { BASE_URL, expect, test } from './fixtures';
 
 /**
  * Set a date on an <input type="date"> rendered by the DateTimePicker mock.
- * Playwright's fill() does not reliably trigger React's onChange for date
- * inputs in Chromium, so we use the native HTMLInputElement value setter
- * (which React's synthetic event system does detect) and dispatch a change event.
+ * The mock uses a controlled React input; we use the native HTMLInputElement
+ * value setter (bypasses React's tracker) then dispatch both 'input' and
+ * 'change' events so React's synthetic onChange fires regardless of version.
  */
 async function fillDateInput(
   page: import('@playwright/test').Page,
@@ -25,6 +25,7 @@ async function fillDateInput(
   await input.waitFor({ timeout: 5_000 });
   await input.evaluate((el: HTMLInputElement, v: string) => {
     Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }, opts.value);
 }
