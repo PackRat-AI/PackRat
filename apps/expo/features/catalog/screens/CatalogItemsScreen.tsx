@@ -150,7 +150,6 @@ function CatalogItemsScreen() {
           iosHideWhenScrolling: false,
           onChangeText: setSearchValue,
           ref: asNonNullableRef(searchBarRef),
-          testID: testIds.catalog.searchBtn,
           placeholder: t('catalog.searchPlaceholder'),
           content: (
             <LargeTitleHeaderSearchContentContainer>
