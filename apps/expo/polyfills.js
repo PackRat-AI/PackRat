@@ -1,6 +1,17 @@
 import 'react-native-get-random-values';
 import structuredClone from '@ungap/structured-clone';
-import { Platform } from 'react-native';
+import { BackHandler, Platform } from 'react-native';
+
+// RNW's BackHandler stub logs an error on every addEventListener call.
+// expo-router calls it internally on every screen mount, flooding the console.
+// Patch it to a silent no-op on web so the error never surfaces.
+if (Platform.OS === 'web') {
+  const noop = () => ({ remove: () => {} });
+  BackHandler.addEventListener = noop;
+  // @ts-ignore — removeEventListener exists on the RNW stub but not in the TS types
+  BackHandler.removeEventListener = () => {};
+  BackHandler.exitApp = () => {};
+}
 
 if (Platform.OS !== 'web') {
   const setupPolyfills = async () => {

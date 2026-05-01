@@ -19,11 +19,15 @@ export default async function setup() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Navigate directly to the login modal — skips the entry screen click
-  // and ensures all form testIDs are immediately visible in the DOM.
-  await page.goto(`${BASE_URL}/auth/(login)`, { waitUntil: 'load' });
+  // Start from the auth entry screen, then click through to login
+  await page.goto(`${BASE_URL}/auth`, { waitUntil: 'load' });
 
-  await page.getByTestId('email-input').waitFor({ timeout: 30_000 });
+  // Click the "Sign In" button to open the login modal
+  await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
+  await page.getByTestId('sign-in-email-button').click();
+
+  // Fill login form inside the modal
+  await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
   await page.getByTestId('email-input').fill(email);
   await page.getByTestId('password-input').fill(password);
   await page.getByTestId('continue-button').click();
