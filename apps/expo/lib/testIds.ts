@@ -74,6 +74,10 @@ export const testIds = Object.freeze({
     submitBtn: 'submit-trip-button', // keep Maestro value
     deleteBtn: 'trips:delete',
     editBtn: 'trips:edit',
+    startDateBtn: 'trips:start-date-btn',
+    endDateBtn: 'trips:end-date-btn',
+    startDateInput: 'trips:start-date-input',
+    endDateInput: 'trips:end-date-input',
     listItem: (id: string | number) => `trips:list-item-${id}`,
     startDateInput: 'trips:start-date-input',
     endDateInput: 'trips:end-date-input',
