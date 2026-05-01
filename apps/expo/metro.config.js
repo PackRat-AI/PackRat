@@ -19,7 +19,7 @@ config.resolver = {
 // Native-only packages that need web shims.
 // Add new entries here when a package crashes on web.
 const WEB_STUBS = {
-  'react-native-maps': 'mocks/react-native-maps.ts',
+  'react-native-maps': 'mocks/react-native-maps.tsx',
   'react-native-blob-util': 'mocks/react-native-blob-util.ts',
   '@react-native-async-storage/async-storage': 'mocks/async-storage.ts',
   '@react-native-ai/llama': 'mocks/react-native-ai-llama.ts',
@@ -31,6 +31,8 @@ const WEB_STUBS = {
   // Google Sign-In and date picker are native-only; web uses password auth
   '@react-native-google-signin/google-signin': 'mocks/google-signin.ts',
   '@react-native-community/datetimepicker': 'mocks/datetimepicker.tsx',
+  // expo-file-system throws UnavailabilityError on web; stub all ops as no-ops
+  'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;
