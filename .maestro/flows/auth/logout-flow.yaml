@@ -36,15 +36,28 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes).
-# On Android this is a native Alert.alert() dialog — tap by text with no index needed.
-# On iOS this is a custom AlertComponent dialog — also tap by text.
+# Both platforms use native Alert.alert(). On iOS, the XCTest accessibility tree contains both
+# the profile list "Log Out" button (index 0) and the UIAlertController action (index 1).
+# Using index: 1 targets the dialog action. On Android the alert covers the screen so
+# the list button is not reachable — text match alone works.
 - runFlow:
     when:
       visible:
         text: "Sync in progress"
     commands:
-      - tapOn:
-          text: "Log Out"
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn:
+                text: "Log Out"
+                index: 1
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - tapOn:
+                text: "Log Out"
 
 - waitForAnimationToEnd
 
