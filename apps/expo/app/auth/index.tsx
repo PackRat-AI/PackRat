@@ -5,7 +5,7 @@ import { featureFlags } from 'expo-app/config';
 import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
@@ -127,7 +127,7 @@ export default function AuthIndexScreen() {
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
-              testID={TestIds.SignInEmailButton}
+              testID={testIds.auth.signInEmailBtn}
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >
