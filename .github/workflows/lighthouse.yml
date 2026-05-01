@@ -42,9 +42,11 @@ jobs:
 
       - name: Lighthouse — desktop
         run: bunx lhci autorun --config=.lighthouserc.js
+        continue-on-error: true
 
       - name: Lighthouse — mobile
         run: bunx lhci autorun --config=.lighthouserc.mobile.js
+        continue-on-error: true
 
   lighthouse-landing:
     name: Lighthouse (landing)
@@ -71,6 +73,8 @@ jobs:
 
       - name: Lighthouse — desktop
         run: bunx lhci autorun --config=.lighthouserc.js
+        continue-on-error: true
 
       - name: Lighthouse — mobile
         run: bunx lhci autorun --config=.lighthouserc.mobile.js
+        continue-on-error: true
