@@ -1,5 +1,22 @@
 import '../polyfills';
 
+// Suppress empty-string "Unexpected text node" false positives from RNW on web.
+// RNW's View validates children in dev mode; FlashList and nativewindui components
+// produce transient "" children during reconciliation that have no visual impact.
+// This suppression is dev-only and does not affect production or non-empty text nodes.
+if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+  const _origError = console.error;
+  console.error = (...args: unknown[]) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].startsWith('Unexpected text node: . A text node cannot be a child of a')
+    ) {
+      return;
+    }
+    _origError(...args);
+  };
+}
+
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-app/lib/devClient';
 import { Stack } from 'expo-router';

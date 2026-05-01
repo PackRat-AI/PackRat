@@ -1,116 +1,50 @@
 /**
  * Playwright global setup — runs once before all tests.
  *
- * Priority order for obtaining auth tokens:
- *   1. TEST_ACCESS_TOKEN + TEST_REFRESH_TOKEN — used directly (no API call)
- *   2. TEST_EMAIL + TEST_PASSWORD — logs in against the API (matches the
- *      iOS/Android Maestro pattern: seed the user, then log in with credentials)
- *   3. Fallback — registers a fresh ephemeral user, reads the OTP from the DB,
- *      and verifies email to obtain tokens (useful for local development)
- *
- * The resulting tokens are written to .auth-tokens.json so the authedPage
- * fixture can seed localStorage without hitting auth on every test.
+ * Navigates the login UI with TEST_EMAIL + TEST_PASSWORD (same credentials
+ * used by the Maestro iOS/Android flows), then saves the resulting browser
+ * storage state so every test can start pre-authenticated without re-logging in.
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { neon } from '@neondatabase/serverless';
+import { chromium } from '@playwright/test';
 
-const API_URL = process.env.API_URL ?? 'http://localhost:8787';
-const DB_URL =
-  process.env.NEON_DATABASE_URL ??
-  'postgresql://packrat-neon-db_owner:npg_6YTmFJhaSV8d@ep-billowing-rice-a4p2xhgf-pooler.us-east-1.aws.neon.tech/packrat-neon-db?sslmode=require';
+const DASHBOARD_TAB_RE = /Dashboard/i;
 
-export const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
+export const AUTH_STATE_PATH = path.join(__dirname, '../.auth/state.json');
 
-async function setup() {
-  // Priority 1: pre-minted tokens provided directly
-  if (process.env.TEST_ACCESS_TOKEN && process.env.TEST_REFRESH_TOKEN) {
-    const meRes = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${process.env.TEST_ACCESS_TOKEN}` },
-    });
-    const user = meRes.ok ? ((await meRes.json()) as { user: Record<string, unknown> }).user : null;
-    fs.writeFileSync(
-      TOKENS_FILE,
-      JSON.stringify({
-        accessToken: process.env.TEST_ACCESS_TOKEN,
-        refreshToken: process.env.TEST_REFRESH_TOKEN,
-        user,
-      }),
-    );
-    console.log('[globalSetup] Using tokens from TEST_ACCESS_TOKEN env var');
-    return;
+export default async function setup() {
+  const email = process.env.TEST_EMAIL;
+  const password = process.env.TEST_PASSWORD;
+  if (!email || !password) {
+    throw new Error('TEST_EMAIL and TEST_PASSWORD must be set');
   }
 
-  // Priority 2: log in with the seeded E2E user (CI path, matches iOS/Android pattern)
-  if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
-    const loginRes = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: process.env.TEST_EMAIL, password: process.env.TEST_PASSWORD }),
-    });
-    if (!loginRes.ok) {
-      const body = await loginRes.text();
-      throw new Error(`Login failed ${loginRes.status}: ${body}`);
-    }
-    const { accessToken, refreshToken, user } = (await loginRes.json()) as {
-      accessToken: string;
-      refreshToken: string;
-      user: Record<string, unknown>;
-    };
-    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
-    console.log(`[globalSetup] Logged in as ${process.env.TEST_EMAIL}`);
-    return;
-  }
+  fs.mkdirSync(path.dirname(AUTH_STATE_PATH), { recursive: true });
 
-  // Priority 3: register a fresh ephemeral user (local dev fallback)
-  const email = `e2e-${Date.now()}@packrat.test`;
-  const password = 'E2eTest1!';
+  const browser = await chromium.launch();
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
-  // 1. Register
-  const registerRes = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, firstName: 'E2E', lastName: 'User' }),
-  });
-  if (!registerRes.ok) {
-    const body = await registerRes.text();
-    throw new Error(`Register failed ${registerRes.status}: ${body}`);
-  }
-  console.log(`[globalSetup] Registered ${email}`);
+  // The app redirects unauthenticated users to /auth
+  await page.goto(BASE_URL);
 
-  // 2. Fetch OTP directly from the database
-  const sql = neon(DB_URL);
-  const rows = await sql`
-    SELECT otp.code
-    FROM one_time_passwords otp
-    JOIN users u ON u.id = otp.user_id
-    WHERE u.email = ${email}
-    ORDER BY otp.expires_at DESC
-    LIMIT 1
-  `;
+  // Entry screen — choose email sign-in
+  await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
+  await page.getByTestId('sign-in-email-button').click();
 
-  const code = (rows[0] as { code: string } | undefined)?.code;
-  if (!code) throw new Error(`No OTP found in DB for ${email}`);
-  console.log(`[globalSetup] Got OTP from DB`);
+  // Login form
+  await page.getByTestId('email-input').waitFor({ timeout: 10_000 });
+  await page.getByTestId('email-input').fill(email);
+  await page.getByTestId('password-input').fill(password);
+  await page.getByTestId('continue-button').click();
 
-  // 3. Verify email
-  const verifyRes = await fetch(`${API_URL}/api/auth/verify-email`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code }),
-  });
-  if (!verifyRes.ok) {
-    const body = await verifyRes.text();
-    throw new Error(`Verify failed ${verifyRes.status}: ${body}`);
-  }
-  const { accessToken, refreshToken, user } = (await verifyRes.json()) as {
-    accessToken: string;
-    refreshToken: string;
-    user: Record<string, unknown>;
-  };
-  console.log('[globalSetup] Email verified, tokens obtained');
+  // Wait for dashboard — tab bar confirms successful login
+  await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 30_000 });
 
-  fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
+  await context.storageState({ path: AUTH_STATE_PATH });
+  console.log(`[globalSetup] Logged in as ${email}`);
+
+  await browser.close();
 }
-
-export default setup;
