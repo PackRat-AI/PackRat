@@ -48,7 +48,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs() });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'packs'] });
     },
   });
 
@@ -115,7 +115,7 @@ export default function PacksPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.packs(q),
+    queryKey: [...queryKeys.admin.packs(q), { includeDeleted }],
     queryFn: () => getPacks({ q, includeDeleted }),
   });
 

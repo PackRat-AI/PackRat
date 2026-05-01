@@ -269,7 +269,7 @@ function ConditionRow({ report }: { report: TrailConditionReport }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteTrailCondition(report.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.osm.conditions() });
+      queryClient.invalidateQueries({ queryKey: ['osm', 'conditions'] });
     },
   });
 

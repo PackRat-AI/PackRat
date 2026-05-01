@@ -29,15 +29,25 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
       if (!payload) return status(401, { error: 'Invalid token' });
 
       const uid = Number(payload.userId);
+      if (!Number.isFinite(uid) || uid <= 0) return status(401, { error: 'Unauthorized' });
+
+      const db = createDb();
+
+      // Reject soft-deleted accounts even when their JWT is still valid.
+      const dbUser = await db.query.users.findFirst({
+        columns: { id: true, deletedAt: true },
+        where: eq(users.id, uid),
+      });
+      if (!dbUser || dbUser.deletedAt) return status(401, { error: 'Unauthorized' });
 
       // Fire-and-forget: update last_active_at at most once per 5 min per user
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      createDb()
-        .update(users)
+      db.update(users)
         .set({ lastActiveAt: new Date() })
         .where(
           and(
             eq(users.id, uid),
+            isNull(users.deletedAt),
             or(isNull(users.lastActiveAt), lt(users.lastActiveAt, fiveMinutesAgo)),
           ),
         )

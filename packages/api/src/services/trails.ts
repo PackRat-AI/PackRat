@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const OsmMemberSchema = z.object({
   type: z.string(),
-  ref: z.number(),
+  ref: z.coerce.bigint(),
   role: z.string(),
 });
 

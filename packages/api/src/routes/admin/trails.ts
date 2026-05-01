@@ -143,7 +143,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           difficulty: z.string().nullable(),
           description: z.string().nullable(),
           members: z
-            .array(z.object({ type: z.string(), ref: z.number(), role: z.string() }))
+            .array(z.object({ type: z.string(), ref: z.coerce.bigint(), role: z.string() }))
             .nullable(),
           geojson: z.string().nullable(),
         });

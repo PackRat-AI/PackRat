@@ -48,14 +48,14 @@ function UserRow({ user }: { user: AdminUser }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteUser(user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
   });
 
   const { mutateAsync: handleRestore } = useMutation({
     mutationFn: () => restoreUser(user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
   });
 
@@ -136,7 +136,7 @@ export default function UsersPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.users(q),
+    queryKey: [...queryKeys.admin.users(q), { includeDeleted }],
     queryFn: () => getUsers({ q, includeDeleted }),
   });
 
