@@ -2,6 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Web: NativeWind emits platformSelect() for color classes which browsers can't parse.
+   These overrides use standard rgb(var()) syntax so web gets themed colors. */
+@media screen {
+  .text-foreground {
+    color: rgb(var(--foreground));
+  }
+  .text-muted-foreground {
+    color: rgb(var(--muted-foreground));
+  }
+  .text-card-foreground {
+    color: rgb(var(--card-foreground));
+  }
+  .text-popover-foreground {
+    color: rgb(var(--popover-foreground));
+  }
+  .text-primary-foreground {
+    color: rgb(var(--primary-foreground));
+  }
+  .text-secondary-foreground {
+    color: rgb(var(--secondary-foreground));
+  }
+  .text-accent-foreground {
+    color: rgb(var(--accent-foreground));
+  }
+  .text-destructive-foreground {
+    color: rgb(var(--destructive-foreground));
+  }
+  .bg-background {
+    background-color: rgb(var(--background));
+  }
+  .bg-card {
+    background-color: rgb(var(--card));
+  }
+  .bg-primary {
+    background-color: rgb(var(--primary));
+  }
+  .bg-secondary {
+    background-color: rgb(var(--secondary));
+  }
+  .bg-muted {
+    background-color: rgb(var(--muted));
+  }
+  .bg-accent {
+    background-color: rgb(var(--accent));
+  }
+  .bg-destructive {
+    background-color: rgb(var(--destructive));
+  }
+  .border-border {
+    border-color: rgb(var(--border));
+  }
+}
+
 @layer base {
   :root {
     --background: 242 242 247;

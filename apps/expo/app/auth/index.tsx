@@ -61,7 +61,7 @@ export default function AuthIndexScreen() {
           <View className="items-center">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
           </View>

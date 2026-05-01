@@ -18,6 +18,7 @@ import { Linking, Text as RNText, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
+import { normalizeDescription } from '../lib/normalizeDescription';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -109,7 +110,7 @@ export function CatalogItemDetailScreen() {
           )}
 
           <View className="mb-4">
-            <Text className="mb-2 text-foreground">{item.description}</Text>
+            <Text className="mb-2 text-foreground">{normalizeDescription(item.description)}</Text>
           </View>
 
           <View className="mb-4 flex-row flex-wrap gap-1">
