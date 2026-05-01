@@ -45,7 +45,8 @@ export async function generateJWT({
   payload: Omit<JWTPayload, 'iat' | 'exp'> & { exp?: number };
   expiresIn?: string;
 }): Promise<string> {
-  const { JWT_SECRET } = getEnv();
+  const { BETTER_AUTH_SECRET } = getEnv();
+  const JWT_SECRET = BETTER_AUTH_SECRET;
   const jwt = new SignJWT({ ...payload }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt();
 
   if (isNumber(payload.exp)) {
@@ -60,7 +61,8 @@ export async function generateJWT({
 // Verify a JWT token
 export async function verifyJWT({ token }: { token: string }): Promise<JWTPayload | null> {
   try {
-    const { JWT_SECRET } = getEnv();
+    const { BETTER_AUTH_SECRET } = getEnv();
+    const JWT_SECRET = BETTER_AUTH_SECRET;
     const { payload } = await jwtVerify(token, secretKey(JWT_SECRET), {
       algorithms: ['HS256'],
     });

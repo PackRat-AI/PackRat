@@ -97,7 +97,27 @@ export function createApiClient(config: ApiClientConfig) {
       base: RequestInfo | URL,
     ): [RequestInfo | URL, RequestInit | undefined] => {
       if (!token) return [base, init];
-      const headers = new Headers(init?.headers ?? {});
+      const headers = new Headers();
+      const existing = init?.headers;
+      if (existing instanceof Headers) {
+        existing.forEach((v, k) => {
+          headers.set(k, v);
+        });
+      } else if (Array.isArray(existing)) {
+        for (const entry of existing) {
+          if (
+            Array.isArray(entry) &&
+            typeof entry[0] === 'string' &&
+            typeof entry[1] === 'string'
+          ) {
+            headers.set(entry[0], entry[1]);
+          }
+        }
+      } else if (existing != null && typeof existing === 'object') {
+        for (const [k, v] of Object.entries(existing)) {
+          if (typeof v === 'string') headers.set(k, v);
+        }
+      }
       headers.set('Authorization', `Bearer ${token}`);
       return [base, { ...init, headers }];
     };

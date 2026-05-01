@@ -102,6 +102,8 @@
     "expo-linking": "~55.0.14",
     "expo-localization": "~55.0.13",
     "expo-location": "~55.1.8",
+    "@better-auth/expo": "^1.6.9",
+    "better-auth": "^1.6.9",
     "expo-navigation-bar": "~55.0.12",
     "expo-router": "~55.0.13",
     "expo-secure-store": "~55.0.13",

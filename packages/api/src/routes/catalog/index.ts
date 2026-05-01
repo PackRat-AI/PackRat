@@ -245,6 +245,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
+      if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
+        return status(400, { error: 'name, weight, and weightUnit are required' });
+      }
+      if (data.weight <= 0) {
+        return status(400, { error: 'weight must be a positive number' });
+      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
@@ -311,6 +317,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found' });
+      }
 
       const item = await db.query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),
@@ -347,6 +361,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params, query }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found or has no embedding' });
+      }
       const limit = query.limit ? Number(query.limit) : 5;
       const threshold = query.threshold ? Number(query.threshold) : 0.1;
 
@@ -405,7 +427,18 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params, body }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found' });
+      }
       const data = body;
+      if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
+        return status(400, { error: 'weight must be a positive number' });
+      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
@@ -466,6 +499,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found' });
+      }
 
       const existingItem = await db.query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),

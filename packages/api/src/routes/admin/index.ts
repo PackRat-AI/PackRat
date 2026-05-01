@@ -37,7 +37,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
 
 async function issueAdminJwt(username: string): Promise<string> {
   const env = getEnv();
-  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(username)
@@ -51,7 +51,7 @@ async function issueAdminJwt(username: string): Promise<string> {
 async function verifyAdminJwt(token: string): Promise<boolean> {
   try {
     const env = getEnv();
-    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
     const { payload } = await jwtVerify(token, secret, {
       issuer: ADMIN_JWT_ISSUER,
       audience: ADMIN_JWT_AUDIENCE,
@@ -62,15 +62,25 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Protected routes: Bearer JWT only.
-// The JWT is issued by /token, which already enforced both factors (CF JWT + Basic
-// in prod, Basic-only in local dev). No need to re-check CF or Basic here.
+// Protected routes: Bearer JWT is always accepted.
+// When CF Access is configured, CF JWT is also accepted directly (the CF edge
+// injects Cf-Access-Jwt-Assertion on every request, so the user has already
+// passed the CF Access gate).  Basic auth is accepted only in local dev.
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
   const header = request.headers.get('authorization') ?? '';
 
   if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+
+  // When CF Access is configured, verify the CF JWT injected by the CF edge.
+  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+    const cfIdentity = await verifyCFAccessRequest(request, {
+      teamDomain: CF_ACCESS_TEAM_DOMAIN,
+      aud: CF_ACCESS_AUD,
+    });
+    if (cfIdentity) return true;
+  }
 
   // Local dev only: allow Basic auth directly on protected routes as a convenience.
   // Both CF vars absent AND non-production environment must hold — missing CF vars
@@ -351,8 +361,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .delete(
     '/users/:id',
     async ({ params }) => {
-      const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
         const deleted = await db.delete(users).where(eq(users.id, id)).returning();

@@ -172,6 +172,10 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       try {
         const { image, matchLimit } = body;
 
+        if (!image) {
+          return status(400, { error: 'image is required' });
+        }
+
         if (!image.startsWith(`${user.userId}-`)) {
           return status(403, { error: 'Unauthorized' });
         }

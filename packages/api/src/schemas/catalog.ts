@@ -216,7 +216,7 @@ export const UpdateCatalogItemRequestSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   productUrl: z.string().url().optional(),
   sku: z.string().optional(),
-  weight: z.number().positive().optional(),
+  weight: z.number().optional(),
   weightUnit: z.enum(WEIGHT_UNITS).optional(),
   description: z.string().optional(),
   categories: z.array(z.string()).optional(),

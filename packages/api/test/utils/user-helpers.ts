@@ -13,11 +13,12 @@ export async function createTestUser(
 ) {
   const db = createDb();
 
-  const { password = 'Password123!', ...userData } = overrides;
+  const { password = 'Password123!', id: overrideId, ...userData } = overrides;
 
   const passwordHash = await hashPassword(password);
 
   const finalUserData: InferInsertModel<typeof users> = {
+    id: overrideId ?? crypto.randomUUID(),
     email: `test-${Date.now()}@example.com`,
     firstName: 'Test',
     lastName: 'User',

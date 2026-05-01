@@ -136,7 +136,7 @@ export default function ResetPasswordScreen() {
         setIsLoading(true);
 
         // Call the API to reset the password
-        await resetPassword(params.email, { code: params.code, newPassword: value.password });
+        await resetPassword(params.email, { token: params.code, newPassword: value.password });
 
         // Show success message and navigate to login
         Alert.alert(t('common.success'), t('auth.resetPasswordSuccess'), [

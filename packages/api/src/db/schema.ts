@@ -14,7 +14,6 @@ import {
   text,
   timestamp,
   unique,
-  varchar,
   vector,
 } from 'drizzle-orm/pg-core';
 import type { ValidationError } from '../types/validation';
@@ -23,51 +22,72 @@ const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'pr
 
 // User table
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
+  id: text('id').primaryKey(),
+  name: text('name').notNull().default(''),
   email: text('email').unique().notNull(),
-  emailVerified: boolean('email_verified').default(false),
+  emailVerified: boolean('email_verified').default(false).notNull(),
   passwordHash: text('password_hash'),
   firstName: text('first_name'),
   lastName: text('last_name'),
   avatarUrl: text('avatar_url'),
-  role: text('role').default('USER'), // 'USER', 'ADMIN'
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  role: text('role').default('USER').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// Authentication providers table
-export const authProviders = pgTable('auth_providers', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .references(() => users.id)
-    .notNull(),
-  provider: text('provider').notNull(), // 'email', 'google', 'apple'
-  providerId: text('provider_id'), // ID from the provider
-  createdAt: timestamp('created_at').defaultNow(),
-});
-
-// Refresh tokens table
-export const refreshTokens = pgTable('refresh_tokens', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .references(() => users.id)
-    .notNull(),
+// Better Auth — session table
+export const session = pgTable('session', {
+  id: text('id').primaryKey(),
+  expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  revokedAt: timestamp('revoked_at'),
-  replacedByToken: text('replaced_by_token'),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  userId: text('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
 });
 
-// One-time password table
-export const oneTimePasswords = pgTable('one_time_passwords', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  code: varchar('code', { length: 6 }).notNull(),
+// Better Auth — account table (OAuth + credential provider)
+export const account = pgTable(
+  'account',
+  {
+    id: text('id').primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: timestamp('access_token_expires_at'),
+    refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+  },
+  (t) => [unique('account_provider_account_idx').on(t.providerId, t.accountId)],
+);
+
+// Better Auth — verification table (email/OTP verification tokens)
+export const verification = pgTable('verification', {
+  id: text('id').primaryKey(),
+  identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at'),
+  updatedAt: timestamp('updated_at'),
+});
+
+// Better Auth — jwks table (asymmetric JWT key pairs for jwt() plugin)
+export const jwks = pgTable('jwks', {
+  id: text('id').primaryKey(),
+  publicKey: text('public_key').notNull(),
+  privateKey: text('private_key').notNull(),
+  createdAt: timestamp('created_at').notNull(),
 });
 
 // Packs table
@@ -76,7 +96,7 @@ export const packs = pgTable('packs', {
   name: text('name').notNull(),
   description: text('description'),
   category: text('category').notNull().$type<PackCategory>(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   templateId: text('template_id').references(() => packTemplates.id),
@@ -204,7 +224,7 @@ export const packItems = pgTable(
       .references(() => packs.id, { onDelete: 'cascade' })
       .notNull(),
     catalogItemId: integer('catalog_item_id').references(() => catalogItems.id),
-    userId: integer('user_id')
+    userId: text('user_id')
       .references(() => users.id)
       .notNull(),
     deleted: boolean('deleted').notNull().default(false),
@@ -224,7 +244,7 @@ export const packItems = pgTable(
 
 export const packWeightHistory = pgTable('weight_history', {
   id: text('id').primaryKey(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   packId: text('pack_id')
@@ -241,7 +261,7 @@ export const packTemplates = pgTable('pack_templates', {
   name: text('name').notNull(),
   description: text('description'),
   category: text('category').notNull(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   image: text('image'),
@@ -275,7 +295,7 @@ export const packTemplateItems = pgTable('pack_template_items', {
     .references(() => packTemplates.id, { onDelete: 'cascade' })
     .notNull(),
   catalogItemId: integer('catalog_item_id').references(() => catalogItems.id),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id)
     .notNull(),
   deleted: boolean('deleted').notNull().default(false),
@@ -298,7 +318,7 @@ export const trailConditionReports = pgTable(
     waterCrossingDifficulty: text('water_crossing_difficulty'), // easy | moderate | difficult
     notes: text('notes'),
     photos: jsonb('photos').$type<string[]>().notNull().default([]),
-    userId: integer('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     tripId: text('trip_id').references(() => trips.id, { onDelete: 'set null' }),
@@ -331,7 +351,7 @@ export const trips = pgTable('trips', {
   endDate: timestamp('end_date'),
   location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
   notes: text('notes'),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id)
     .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
@@ -394,7 +414,7 @@ export const tripsRelations = relations(trips, ({ one }) => ({
 // Reported content table
 export const reportedContent = pgTable('reported_content', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id)
     .notNull(),
   userQuery: text('user_query').notNull(),
@@ -403,7 +423,7 @@ export const reportedContent = pgTable('reported_content', {
   userComment: text('user_comment'),
   status: text('status').default('pending').notNull(), // pending, reviewed, dismissed
   reviewed: boolean('reviewed').default(false),
-  reviewedBy: integer('reviewed_by').references(() => users.id),
+  reviewedBy: text('reviewed_by').references(() => users.id),
   reviewedAt: timestamp('reviewed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
@@ -518,14 +538,17 @@ export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one 
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 
-export type AuthProvider = InferSelectModel<typeof authProviders>;
-export type NewAuthProvider = InferInsertModel<typeof authProviders>;
+export type Session = InferSelectModel<typeof session>;
+export type NewSession = InferInsertModel<typeof session>;
 
-export type RefreshToken = InferSelectModel<typeof refreshTokens>;
-export type NewRefreshToken = InferInsertModel<typeof refreshTokens>;
+export type Account = InferSelectModel<typeof account>;
+export type NewAccount = InferInsertModel<typeof account>;
 
-export type OneTimePassword = InferSelectModel<typeof oneTimePasswords>;
-export type NewOneTimePassword = InferInsertModel<typeof oneTimePasswords>;
+export type Verification = InferSelectModel<typeof verification>;
+export type NewVerification = InferInsertModel<typeof verification>;
+
+export type Jwks = InferSelectModel<typeof jwks>;
+export type NewJwks = InferInsertModel<typeof jwks>;
 
 export type Pack = InferSelectModel<typeof packs>;
 export type PackWithItems = Pack & {
@@ -574,7 +597,7 @@ export type PackTemplateWithItems = PackTemplate & {
 // Posts table
 export const posts = pgTable('posts', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   caption: text('caption'),
@@ -591,7 +614,7 @@ export const postLikes = pgTable(
     postId: integer('post_id')
       .references(() => posts.id, { onDelete: 'cascade' })
       .notNull(),
-    userId: integer('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -607,7 +630,7 @@ export const postComments = pgTable('post_comments', {
   postId: integer('post_id')
     .references(() => posts.id, { onDelete: 'cascade' })
     .notNull(),
-  userId: integer('user_id')
+  userId: text('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   content: text('content').notNull(),
@@ -626,7 +649,7 @@ export const commentLikes = pgTable(
     commentId: integer('comment_id')
       .references(() => postComments.id, { onDelete: 'cascade' })
       .notNull(),
-    userId: integer('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

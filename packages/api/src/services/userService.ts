@@ -34,6 +34,7 @@ export class UserService {
     const [user] = await this.db
       .insert(users)
       .values({
+        id: crypto.randomUUID(),
         email: input.email.toLowerCase(),
         passwordHash,
         firstName: input.firstName ?? null,

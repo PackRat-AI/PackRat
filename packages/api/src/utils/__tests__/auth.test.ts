@@ -31,7 +31,7 @@ vi.mock('bcryptjs', () => ({
 
 vi.mock('../env-validation', () => ({
   getEnv: vi.fn(() => ({
-    JWT_SECRET: 'test-secret-that-is-long-enough',
+    BETTER_AUTH_SECRET: 'test-secret-that-is-long-enough',
     PACKRAT_API_KEY: 'test-api-key',
   })),
 }));
