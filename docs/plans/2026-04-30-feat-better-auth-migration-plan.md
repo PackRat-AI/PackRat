@@ -1,7 +1,7 @@
 ---
 title: "feat: Migrate auth to Better Auth with OAuth 2.1 server for MCP"
 type: feat
-status: active
+status: completed
 date: 2026-04-30
 ---
 
