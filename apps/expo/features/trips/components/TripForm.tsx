@@ -321,6 +321,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
                     {showStartPicker && (
                       <DateTimePicker
+                        testID={testIds.trips.startDateInput}
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
@@ -345,6 +346,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
+                      testID={testIds.trips.endDateBtn}
                       onPress={() => setShowEndPicker(true)}
                       testID={testIds.trips.endDateInput}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
@@ -364,6 +366,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
                     {showEndPicker && (
                       <DateTimePicker
+                        testID={testIds.trips.endDateInput}
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
