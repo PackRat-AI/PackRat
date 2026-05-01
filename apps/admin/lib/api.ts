@@ -278,18 +278,9 @@ export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   return adminFetch('/analytics/catalog/embeddings');
 }
 
-// ─── OSM Trail Viewer ─────────────────────────────────────────────────────────
+// ─── Admin Trails ─────────────────────────────────────────────────────────────
 
-async function trailsFetch<T>(path: string): Promise<T> {
-  const authHeaders = getAuthHeader();
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...authHeaders },
-  });
-  if (!res.ok) throw new Error(`Trails API error: ${res.status} ${res.statusText}`);
-  return res.json() as Promise<T>; // safe-cast: fetch returns unknown JSON; caller is responsible for the shape via the generic T
-}
-
-export interface TrailGeometry {
+export interface TrailSearchResult {
   osmId: string;
   name: string | null;
   sport: string | null;
@@ -297,9 +288,70 @@ export interface TrailGeometry {
   distance: string | null;
   difficulty: string | null;
   description: string | null;
+  bbox: object | null;
+}
+
+export interface TrailGeometry extends TrailSearchResult {
   geometry: object | null;
 }
 
+export interface TrailConditionReport {
+  id: string;
+  trailName: string;
+  trailRegion: string | null;
+  surface: string;
+  overallCondition: string;
+  hazards: string[];
+  waterCrossings: number;
+  notes: string | null;
+  deleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+  userId: number;
+  userEmail: string | null;
+}
+
+export function searchTrails({
+  q,
+  sport,
+  limit = 50,
+  offset = 0,
+}: {
+  q: string;
+  sport?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ trails: TrailSearchResult[]; hasMore: boolean; offset: number; limit: number }> {
+  const params = new URLSearchParams({ q, limit: String(limit), offset: String(offset) });
+  if (sport) params.set('sport', sport);
+  return adminFetch(`/trails/search?${params}`);
+}
+
 export function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
-  return trailsFetch<TrailGeometry>(`/trails/${osmId}/geometry`);
+  return adminFetch<TrailGeometry>(`/trails/${osmId}/geometry`);
+}
+
+export function getAdminTrail(osmId: string): Promise<TrailSearchResult> {
+  return adminFetch<TrailSearchResult>(`/trails/${osmId}`);
+}
+
+export function getTrailConditions({
+  q,
+  limit = 50,
+  offset = 0,
+  includeDeleted = false,
+}: {
+  q?: string;
+  limit?: number;
+  offset?: number;
+  includeDeleted?: boolean;
+} = {}): Promise<PaginatedResponse<TrailConditionReport>> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (q) params.set('q', q);
+  if (includeDeleted) params.set('includeDeleted', 'true');
+  return adminFetch(`/trails/conditions?${params}`);
+}
+
+export function deleteTrailCondition(reportId: string): Promise<{ success: boolean }> {
+  return adminFetch(`/trails/conditions/${reportId}`, { method: 'DELETE' });
 }

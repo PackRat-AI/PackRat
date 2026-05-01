@@ -10,6 +10,7 @@ import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
+import { adminTrailsRoutes } from './trails';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
@@ -580,4 +581,5 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       detail: { tags: ['Admin'], summary: 'Update a catalog item' },
     },
   )
-  .use(analyticsRoutes);
+  .use(analyticsRoutes)
+  .use(adminTrailsRoutes);
