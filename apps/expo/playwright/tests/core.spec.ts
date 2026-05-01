@@ -167,6 +167,7 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   await startInput.waitFor({ timeout: 5_000 });
   await startInput.evaluate((el: HTMLInputElement, v: string) => {
     Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }, '2026-08-01');
 
@@ -176,6 +177,7 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   await endInput.waitFor({ timeout: 5_000 });
   await endInput.evaluate((el: HTMLInputElement, v: string) => {
     Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }, '2026-08-14');
 
@@ -195,17 +197,16 @@ test('create a trip with dates', async ({ authedPage: page }) => {
 
 test('catalog tab loads items', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for items to load — at least one item name visible
-  await expect(page.locator('text=/\\d+,?\\d+ items/i').first()).toBeVisible({ timeout: 15_000 });
+  // Wait for the items count element (has testID to avoid matching hidden tab panels)
+  await expect(page.getByTestId('catalog:total-items-count')).toBeVisible({ timeout: 15_000 });
 });
 
 test('catalog search filters results', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for initial load
-  await page.waitForLoadState('networkidle');
-
-  // Click the search button (identified by testID set on LargeTitleHeader's searchBar)
-  await page.getByTestId('catalog:search-btn').click();
+  // Wait for the search button — avoids networkidle which may never settle on a live catalog
+  const searchBtn = page.getByTestId('catalog:search-btn');
+  await searchBtn.waitFor({ timeout: 15_000 });
+  await searchBtn.click();
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });

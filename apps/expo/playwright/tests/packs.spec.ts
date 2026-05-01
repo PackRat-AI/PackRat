@@ -214,11 +214,20 @@ test.describe('Item CRUD within a pack', () => {
         .or(page.getByRole('menuitem', { name: 'Delete' }))
         .first();
       await deleteOption.waitFor({ timeout: 5_000 });
-      await deleteOption.click();
 
-      // NativeWindUI Alert DOM modal appears — click OK to confirm deletion
+      // The action sheet has a 225ms entrance animation during which _onSelect() ignores clicks.
+      // Retry until the NativeWindUI Alert confirmation dialog appears.
       const confirmOk = page.getByText('OK', { exact: true });
-      await confirmOk.waitFor({ state: 'visible', timeout: 5_000 });
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await deleteOption.click();
+        try {
+          await confirmOk.waitFor({ state: 'visible', timeout: 700 });
+          break;
+        } catch {
+          // Animation still in progress — try again
+        }
+      }
+
       await confirmOk.click();
 
       // Item card should be gone

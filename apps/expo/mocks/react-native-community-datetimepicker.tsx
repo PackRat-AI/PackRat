@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import { useState } from 'react';
 
 type DateTimePickerEvent = { type: string; nativeEvent: { timestamp: number } };
 
@@ -29,11 +30,14 @@ export default function DateTimePicker({
   testID,
 }: Props) {
   const inputType = mode === 'time' ? 'time' : mode === 'datetime' ? 'datetime-local' : 'date';
+  // Controlled state so Playwright's native-setter + event dispatch reliably fires React's onChange.
+  const [inputValue, setInputValue] = useState(toInputValue(value, mode));
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!onChange) return;
     const raw = e.target.value;
     if (!raw) return;
+    setInputValue(raw);
     const date = new Date(mode === 'time' ? `1970-01-01T${raw}` : raw);
     onChange({ type: 'set', nativeEvent: { timestamp: date.getTime() } }, date);
   }
@@ -42,7 +46,7 @@ export default function DateTimePicker({
     <input
       data-testid={testID}
       type={inputType}
-      defaultValue={toInputValue(value, mode)}
+      value={inputValue}
       min={minimumDate ? toInputValue(minimumDate, mode) : undefined}
       max={maximumDate ? toInputValue(maximumDate, mode) : undefined}
       onChange={handleChange}
