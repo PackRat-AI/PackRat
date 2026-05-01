@@ -90,6 +90,7 @@ async function request<T>(
   }
 
   const data = await res.json().catch(() => null);
+  // safe-cast: caller is responsible for specifying the correct response type T
   return { data: data as T, status: res.status };
 }
 

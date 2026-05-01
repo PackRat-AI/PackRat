@@ -27,6 +27,7 @@ function redirect(route: string) {
     const parsedRoute: Href = JSON.parse(route);
     return router.dismissTo(parsedRoute);
   } catch {
+    // safe-cast: route is a string path; Href accepts string routes at runtime
     router.dismissTo(route as Href);
   }
 }
@@ -107,6 +108,7 @@ export function useAuthActions() {
         throw new Error(responseData.error || t('auth.registrationFailed'));
       }
     } catch (error) {
+      // safe-cast: catch block error is unknown; AxiosError shape assumed for .message access
       console.error('Registration error:', (error as AxiosError).message);
       throw error;
     } finally {
