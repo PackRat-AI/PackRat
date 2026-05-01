@@ -158,7 +158,12 @@ export default function OneTimePasswordScreen() {
       >
         <View className="flex-1 justify-center gap-3">
           <View className="items-center pb-1">
-            <Image source={LOGO_SOURCE} className="h-10 w-10 rounded-md" resizeMode="contain" />
+            <Image
+              source={LOGO_SOURCE}
+              className="h-10 w-10 rounded-md"
+              resizeMode="contain"
+              style={Platform.select({ web: { width: 40, height: 40 } })}
+            />
           </View>
           <View className="gap-1">
             <Text variant="title1" className="text-center font-semibold">
