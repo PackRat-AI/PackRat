@@ -72,12 +72,28 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install chromium --with-deps
 
+      - name: Normalize web build env vars
+        # R2_PUBLIC_URL must be a valid https:// URL. The secret may be stored
+        # without the protocol prefix; prepend it if needed. iOS client ID is
+        # not used on web but the Zod schema still validates it on native, so
+        # we provide a placeholder so the web build schema parse succeeds.
+        env:
+          R2_URL_RAW: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
+        run: |
+          r2="$R2_URL_RAW"
+          if [[ -n "$r2" ]] && ! [[ "$r2" =~ ^https?:// ]]; then
+            r2="https://$r2"
+          fi
+          [[ -z "$r2" ]] && r2="https://placeholder.r2.cloudflare.com"
+          echo "EXPO_PUBLIC_R2_PUBLIC_URL=$r2" >> "$GITHUB_ENV"
+
       - name: Build Expo web app
         working-directory: apps/expo
         env:
           EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
-          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
+          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ env.EXPO_PUBLIC_R2_PUBLIC_URL }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'placeholder-ios-not-used-on-web' }}
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
         run: bunx expo export -p web --output-dir dist

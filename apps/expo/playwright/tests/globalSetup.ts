@@ -10,7 +10,6 @@ import * as path from 'node:path';
 import { chromium } from '@playwright/test';
 
 const DASHBOARD_TAB_RE = /Dashboard/i;
-const REPORT_DIR = path.join(__dirname, '../../playwright-report');
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
 export const AUTH_STATE_PATH = path.join(__dirname, '../.auth/state.json');
@@ -23,31 +22,14 @@ export default async function setup() {
   }
 
   fs.mkdirSync(path.dirname(AUTH_STATE_PATH), { recursive: true });
-  fs.mkdirSync(REPORT_DIR, { recursive: true });
 
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') console.log(`[browser error] ${msg.text()}`);
-  });
-  page.on('pageerror', (err) => console.log(`[page error] ${err.message}`));
-
   // Navigate directly to the login modal — skips the entry screen click
   // and ensures all form testIDs are immediately visible in the DOM.
   await page.goto(`${BASE_URL}/auth/(login)`, { waitUntil: 'load' });
-
-  console.log('[globalSetup] page URL:', page.url());
-  await page.screenshot({ path: path.join(REPORT_DIR, 'globalSetup-auth.png'), fullPage: true });
-  const testIds = await page.evaluate(() => {
-    const els = document.querySelectorAll('[data-testid]');
-    return Array.from(els).map((el) => ({
-      testId: (el as HTMLElement).dataset.testid,
-      visible: (el as HTMLElement).offsetParent !== null,
-    }));
-  });
-  console.log('[globalSetup] data-testid elements:', JSON.stringify(testIds));
 
   // Login form
   await page.getByTestId('email-input').waitFor({ timeout: 30_000 });
