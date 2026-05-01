@@ -5,17 +5,6 @@ import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-// ── OG meta extraction (AllTrails preview) ───────────────────────────────────
-// Two attribute orderings are valid per the HTML spec: property-then-content and
-// content-then-property. Static top-level regexes avoid dynamic RegExp construction.
-
-const OG_TITLE_A = /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i;
-const OG_TITLE_B = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i;
-const OG_DESC_A = /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i;
-const OG_DESC_B = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i;
-const OG_IMAGE_A = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i;
-const OG_IMAGE_B = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i;
-
 // ── Zod schemas ─────────────────────────────────────────────────────────────
 
 const OsmMemberSchema = z.object({
@@ -102,21 +91,26 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
           ORDER BY
             CASE WHEN name IS NOT NULL THEN 0 ELSE 1 END,
             name
-          LIMIT ${limit} OFFSET ${offset}
+          LIMIT ${limit + 1} OFFSET ${offset}
         `);
 
         const rows = z.array(RouteSearchRowSchema).parse(result.rows);
+        const hasMore = rows.length > limit;
+        const page = rows.slice(0, limit);
 
-        return rows.map((row) => ({
-          osmId: row.osm_id,
-          name: row.name,
-          sport: row.sport,
-          network: row.network,
-          distance: row.distance,
-          difficulty: row.difficulty,
-          description: row.description,
-          bbox: row.bbox ? JSON.parse(row.bbox) : null,
-        }));
+        return {
+          trails: page.map((row) => ({
+            osmId: row.osm_id,
+            name: row.name,
+            sport: row.sport,
+            network: row.network,
+            distance: row.distance,
+            difficulty: row.difficulty,
+            description: row.description,
+            bbox: row.bbox ? JSON.parse(row.bbox) : null,
+          })),
+          hasMore,
+        };
       } catch (error) {
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
@@ -276,100 +270,6 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
       detail: {
         tags: ['Trails'],
         summary: 'Get route metadata by OSM relation ID',
-        security: [{ bearerAuth: [] }],
-      },
-    },
-  )
-
-  /**
-   * POST /api/trails/alltrails-preview
-   *
-   * Fetches an AllTrails URL server-side and extracts OpenGraph metadata.
-   */
-  .post(
-    '/alltrails-preview',
-    async ({ body }) => {
-      const { url } = body;
-
-      let parsed: URL;
-      try {
-        parsed = new URL(url);
-      } catch {
-        return status(400, { error: 'Invalid URL' });
-      }
-
-      const { hostname, protocol } = parsed;
-      if (
-        protocol !== 'https:' ||
-        (hostname !== 'alltrails.com' && !hostname.endsWith('.alltrails.com'))
-      ) {
-        return status(400, { error: 'Only https://alltrails.com URLs are supported' });
-      }
-
-      const AT_UA = 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)';
-
-      try {
-        let response = await fetch(url, {
-          headers: { 'User-Agent': AT_UA, Accept: 'text/html' },
-          redirect: 'manual',
-          signal: AbortSignal.timeout(8000),
-        });
-
-        if (response.status >= 300 && response.status < 400) {
-          const location = response.headers.get('location');
-          if (!location)
-            return status(502, { error: 'AllTrails redirected without Location header' });
-          let redirectUrl: URL;
-          try {
-            redirectUrl = new URL(location, url);
-          } catch {
-            return status(502, { error: 'Invalid redirect URL' });
-          }
-          if (
-            redirectUrl.protocol !== 'https:' ||
-            (redirectUrl.hostname !== 'alltrails.com' &&
-              !redirectUrl.hostname.endsWith('.alltrails.com'))
-          ) {
-            return status(400, { error: 'Redirect target is not alltrails.com' });
-          }
-          response = await fetch(redirectUrl.toString(), {
-            headers: { 'User-Agent': AT_UA, Accept: 'text/html' },
-            redirect: 'error',
-            signal: AbortSignal.timeout(8000),
-          });
-        }
-
-        if (!response.ok) {
-          return status(502, { error: `AllTrails returned ${response.status}` });
-        }
-
-        const html = await response.text();
-
-        const title = (html.match(OG_TITLE_A) ?? html.match(OG_TITLE_B))?.[1] ?? null;
-        const description = (html.match(OG_DESC_A) ?? html.match(OG_DESC_B))?.[1] ?? null;
-        const image = (html.match(OG_IMAGE_A) ?? html.match(OG_IMAGE_B))?.[1] ?? null;
-
-        if (!title) {
-          return status(422, { error: 'Could not extract trail metadata from page' });
-        }
-
-        // response.url is empty string in test environments and some CF Worker contexts;
-        // fall back to the validated parsed.href rather than crashing on new URL("").
-        return { title, description, image, url: response.url || parsed.href };
-      } catch (error) {
-        if (error instanceof Error && error.name === 'TimeoutError') {
-          return status(504, { error: 'AllTrails request timed out' });
-        }
-        console.error('AllTrails preview error:', error);
-        return status(502, { error: 'Failed to fetch AllTrails page' });
-      }
-    },
-    {
-      body: z.object({ url: z.string().url() }),
-      isAuthenticated: true,
-      detail: {
-        tags: ['Trails'],
-        summary: 'Fetch trail card metadata from an AllTrails URL via OG tags',
         security: [{ bearerAuth: [] }],
       },
     },

@@ -9,7 +9,7 @@ export function registerTrailTools(agent: AgentContext): void {
     'search_trails',
     {
       description:
-        'Search outdoor trails and routes from OpenStreetMap. Filter by name, sport type, and/or proximity to a location. Returns lightweight metadata (no geometry) suitable for a search list.',
+        'Search outdoor trails and routes from OpenStreetMap. Filter by name, sport type, and/or proximity to a location. Returns { trails: [...], hasMore: boolean } — use hasMore with offset to paginate.',
       inputSchema: {
         q: z
           .string()
@@ -127,7 +127,7 @@ export function registerTrailTools(agent: AgentContext): void {
     },
     async ({ url }) => {
       try {
-        const data = await agent.api.post('/trails/alltrails-preview', { url });
+        const data = await agent.api.post('/alltrails/preview', { url });
         return ok(data);
       } catch (e) {
         return err(e);
