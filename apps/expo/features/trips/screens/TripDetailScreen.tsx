@@ -28,7 +28,7 @@ export function TripDetailScreen() {
   // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
-  const { deleteTrip } = useDeleteTrip();
+  const deleteTrip = useDeleteTrip();
 
   // Create a stable key for MapView based on location coordinates
   // This forces remount when location changes, fixing iOS initialRegion issue
