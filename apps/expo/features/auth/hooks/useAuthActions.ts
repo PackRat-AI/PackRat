@@ -223,6 +223,7 @@ export function useAuthActions() {
       // AppLayout shows a spinner when isLoadingAtom=true && !isAuthed, which
       // unmounts NativeTabs. With NativeTabs gone, router.replace reaches the
       // root Stack directly instead of being silently dropped by NativeTabs on iOS.
+      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
       router.replace('/auth' as Href);
     }
   };
