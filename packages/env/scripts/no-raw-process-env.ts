@@ -52,6 +52,12 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // Drizzle config files — run as config by the drizzle CLI, not app code
+  'packages/api/drizzle.config.ts',
+  'packages/osm-db/drizzle.config.ts',
+  // OSM infrastructure scripts — standalone Node scripts or pass process.env to child processes
+  'packages/osm-db/migrate.ts',
+  'packages/osm-import/import.ts',
 ];
 
 // Directories to skip entirely
