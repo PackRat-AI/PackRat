@@ -18,6 +18,8 @@ export const GuidesListScreen = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const {
@@ -81,6 +83,11 @@ export const GuidesListScreen = () => {
   const handleSearch = useCallback((text: string) => {
     setSearchQuery(text);
   }, []);
+  const handleRefresh = async () => {
+    setIsManualRefresh(true);
+    await refetch();
+    setIsManualRefresh(false);
+  };
 
   const handleCategoryChange = useCallback((category: string) => {
     setSelectedCategory(category);
@@ -219,8 +226,8 @@ export const GuidesListScreen = () => {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={isManualRefresh}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
         }
