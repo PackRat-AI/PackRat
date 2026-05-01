@@ -1,6 +1,5 @@
 import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { CommonActions, useNavigation } from '@react-navigation/native';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { isLoadingAtom, needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -15,7 +14,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Stack, useRouter } from 'expo-router';
+import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -34,31 +33,24 @@ export default function AppLayout() {
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
 
   // When sign-out completes (isLoadingAtom=true + isAuthed=false), the spinner
-  // below unmounts NativeTabs. Dispatch CommonActions.reset directly to the user's
-  // root Stack navigator. navigation (from useNavigation() in AppLayout) IS the
-  // user's root Stack nav — expo-router's ContextNavigator is one level above via
-  // getParent(), not this object. Direct dispatch bypasses expo-router's
-  // listeners.focus chain entirely (which NativeTabs intercepts when mounted).
-  // The nested state resets auth's sub-navigator to [index], preventing the
-  // (login) modal from being restored from retained navigation state.
-  // After dispatching, reset isLoadingAtom so auth/index.tsx (which also reads
+  // below unmounts NativeTabs. Then router.replace('/auth') fires from useEffect
+  // — AFTER the spinner commits — so NativeTabs is no longer in the navigation
+  // hierarchy and cannot intercept the replace. CommonActions.reset was tried
+  // previously but failed silently on iOS (UITabBarController timing); expo-router's
+  // own router.replace is more reliable cross-platform.
+  // After replacing, reset isLoadingAtom so auth/index.tsx (which also reads
   // isLoadingAtom) renders its sign-in content instead of its own spinner.
   useEffect(() => {
     if (isLoadingGlobal && !isAuthedValue) {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'auth', state: { index: 0, routes: [{ name: 'index' }] } }],
-        }),
-      );
-      // Small delay lets the navigation commit before the state change propagates
+      // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
+      router.replace('/auth' as Href);
+      // Small delay lets the navigation commit before the atom change propagates
       // to auth/index, avoiding a race between the spinner and the route render.
       setTimeout(() => setIsLoading(false), 50);
     }
-  }, [isLoadingGlobal, isAuthedValue, navigation, setIsLoading]);
+  }, [isLoadingGlobal, isAuthedValue, setIsLoading]);
 
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
   // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
