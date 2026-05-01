@@ -1,3 +1,4 @@
+import { isFunction } from '@packrat/guards';
 import { atom } from 'jotai';
 
 /**
@@ -19,8 +20,7 @@ export const atomWithKvStorage = <T>(key: string, initialValue: T) => {
   const derivedAtom = atom(
     (get) => get(baseAtom),
     (get, set, update: T | ((prev: T) => T)) => {
-      const nextValue =
-        typeof update === 'function' ? (update as (prev: T) => T)(get(baseAtom)) : update;
+      const nextValue = isFunction(update) ? (update as (prev: T) => T)(get(baseAtom)) : update;
       set(baseAtom, nextValue);
       try {
         localStorage.setItem(key, JSON.stringify(nextValue));
