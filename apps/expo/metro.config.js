@@ -24,6 +24,8 @@ const WEB_STUBS = {
   '@react-native-ai/llama': 'mocks/react-native-ai-llama.ts',
   'llama.rn': 'mocks/react-native-ai-llama.ts',
   '@react-native-ai/apple': 'mocks/react-native-ai-apple.ts',
+  '@react-native-google-signin/google-signin': 'mocks/react-native-google-signin.ts',
+  'expo-apple-authentication': 'mocks/expo-apple-authentication.ts',
   'expo-sqlite/kv-store': 'mocks/expo-sqlite-kv-store.ts',
   // Keyboard utilities — on web the software keyboard doesn't overlay content
   'react-native-keyboard-controller': 'mocks/react-native-keyboard-controller.tsx',
