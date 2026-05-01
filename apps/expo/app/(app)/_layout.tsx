@@ -14,8 +14,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { Redirect, Stack, useRouter } from 'expo-router';
+import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,9 +28,26 @@ export {
 export default function AppLayout() {
   const isLoading = useAuthInit();
   const isAuthedValue = use$(isAuthed);
+  const navigationRef = useNavigationContainerRef();
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
+  // Track whether the user was ever authenticated in this session so we only
+  // call resetRoot on sign-out, not on the initial unauthenticated cold start.
+  const wasAuthedRef = useRef(false);
+
+  useEffect(() => {
+    if (isAuthedValue) {
+      wasAuthedRef.current = true;
+    } else if (wasAuthedRef.current && !isLoading) {
+      // User was authenticated and is now signed out. Use resetRoot instead of
+      // router.replace or dispatch(reset) because those route through
+      // BaseNavigationContainer.listeners.focus[0] which terminates at
+      // NativeTabs on iOS, silently dropping the action. resetRoot sets the
+      // root navigation state directly, bypassing the focused-navigator chain.
+      navigationRef.resetRoot({ index: 0, routes: [{ name: 'auth' }] });
+    }
+  }, [isAuthedValue, isLoading, navigationRef]);
 
   if (isLoading) {
     return (
@@ -37,13 +55,6 @@ export default function AppLayout() {
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
-  }
-
-  // When isAuthed becomes false (sign-out), return Redirect so React unmounts the
-  // inner Stack and NativeTabs BEFORE the redirect fires. This ensures router.replace
-  // runs outside the NativeTabs focus chain, which otherwise silently drops it on iOS.
-  if (!isAuthedValue) {
-    return <Redirect href="/auth" />;
   }
 
   return (
