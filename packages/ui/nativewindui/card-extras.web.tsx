@@ -1,4 +1,4 @@
-import { isObject } from '@packrat/guards';
+import { isNumber } from '@packrat/guards';
 import { Badge } from '@packrat/web-ui/components/badge';
 import type { ReactNode } from 'react';
 import { cn } from './cn.web';
@@ -35,7 +35,7 @@ type CardImageProps = {
 };
 
 export function CardImage({ source, className, alt = '' }: CardImageProps) {
-  const uri = isObject(source) ? (source as { uri?: string }).uri : undefined;
+  const uri = !isNumber(source) ? source?.uri : undefined;
   if (!uri) return null;
   return (
     <img
