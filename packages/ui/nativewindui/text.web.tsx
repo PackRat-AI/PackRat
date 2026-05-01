@@ -38,9 +38,13 @@ export interface TextProps {
   color?: string;
 }
 
-export function Text({ variant = 'body', className, children, color: _color }: TextProps) {
+export function Text({ variant = 'body', className, children, color }: TextProps) {
   const { el: El, className: variantClass } = VARIANT_MAP[variant] ?? VARIANT_MAP.body;
-  return <El className={cn(variantClass, className)}>{children}</El>;
+  return (
+    <El className={cn(variantClass, className)} style={color ? { color } : undefined}>
+      {children}
+    </El>
+  );
 }
 
 export const TextClassContext = React.createContext<string | undefined>(undefined);

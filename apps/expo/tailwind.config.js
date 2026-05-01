@@ -52,12 +52,20 @@ module.exports = {
           foreground: withOpacity('card-foreground'),
         },
       },
+      borderRadius: {
+        // Map shadcn's --radius CSS var so rounded-lg/md/sm follow the same token
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
       borderWidth: {
         hairline: hairlineWidth(),
       },
     },
   },
-  plugins: [],
+  // tailwindcss-animate provides the animate-* utilities used by shadcn/Radix
+  // components (Sheet, DropdownMenu, Dialog, etc.) for open/close transitions.
+  plugins: [require('tailwindcss-animate')],
 };
 
 function withOpacity(variableName) {
@@ -66,11 +74,15 @@ function withOpacity(variableName) {
       return platformSelect({
         ios: `rgb(var(--${variableName}) / ${opacityValue})`,
         android: `rgb(var(--android-${variableName}) / ${opacityValue})`,
+        // Web: no platformSelect branch would return undefined, breaking all
+        // theme color classes. Use the same RGB var format as iOS.
+        default: `rgb(var(--${variableName}) / ${opacityValue})`,
       });
     }
     return platformSelect({
       ios: `rgb(var(--${variableName}))`,
       android: `rgb(var(--android-${variableName}))`,
+      default: `rgb(var(--${variableName}))`,
     });
   };
 }
