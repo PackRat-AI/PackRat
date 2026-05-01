@@ -8,13 +8,13 @@ import {
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
 import { authClient } from 'expo-app/lib/auth-client';
+import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
 import { t } from 'expo-app/lib/i18n';
+import * as Updates from 'expo-app/lib/updates';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { queryClient } from 'expo-app/providers/TanstackProvider';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
-import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   isLoadingAtom,

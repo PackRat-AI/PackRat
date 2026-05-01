@@ -1,36 +1,25 @@
 import '../polyfills';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
-import 'expo-app/lib/devClient';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
-import { clientEnvs } from '@packrat/env/expo-client';
-import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
-import * as Sentry from '@sentry/react-native';
-import { userStore } from 'expo-app/features/auth/store';
+import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
-Sentry.init({
-  dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
-});
+/**
+ * Web version of the root layout.
+ * Removes native-only imports:
+ *   - expo-dev-client (not needed on web)
+ *   - @sentry/react-native (use @sentry/nextjs / @sentry/browser for web instead)
+ * Metro automatically picks this file over _layout.tsx for web builds.
+ */
 
-const user = userStore.peek();
-if (user) {
-  Sentry.setUser(user);
-}
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
 export let appAlert: React.RefObject<AlertMethods | null>;
 
@@ -40,13 +29,6 @@ function RootLayout() {
   appAlert = useRef<AlertMethods>(null);
 
   const { colorScheme, isDarkColorScheme } = useColorScheme();
-
-  // Sync NativeWind dark mode class to <html> on web (darkMode: 'class' requires it)
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark', isDarkColorScheme);
-    }
-  }, [isDarkColorScheme]);
 
   return (
     <Providers>
@@ -65,9 +47,9 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default RootLayout;
 
 const SCREEN_OPTIONS = {
   headerShown: false,
-  animation: 'ios_from_right', // for android
+  animation: 'ios_from_right',
 } as const;
