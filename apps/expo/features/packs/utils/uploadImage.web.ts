@@ -5,7 +5,7 @@
  * but the binary upload uses fetch instead of expo-file-system.
  */
 import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 export const uploadImage = async (
   fileName: string,
@@ -47,14 +47,11 @@ const getPresignedUrl = async (
   fileName: string,
   contentType: string,
 ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
-  const response = await axiosInstance.get(
-    `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`,
-  );
-  return {
-    url: response.data.url,
-    publicUrl: response.data.publicUrl,
-    objectKey: response.data.objectKey,
-  };
+  const { data, error } = await apiClient.upload.presigned.get({
+    query: { fileName, contentType },
+  });
+  if (error || !data) throw new Error(`Failed to get upload URL: ${error?.value}`);
+  return data;
 };
 
 async function urlToBlob(url: string, type: string): Promise<Blob> {
