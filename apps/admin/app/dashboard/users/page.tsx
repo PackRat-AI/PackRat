@@ -16,6 +16,7 @@ import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminUser, deleteUser, getUsers, restoreUser } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
+import { cn } from 'admin-app/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -59,7 +60,7 @@ function UserRow({ user }: { user: AdminUser }) {
   });
 
   return (
-    <TableRow className={`hover:bg-muted/20 ${isDeleted ? 'opacity-50' : ''}`}>
+    <TableRow className={cn('hover:bg-muted/20', isDeleted && 'opacity-50')}>
       <TableCell>
         <div>
           <p className="text-sm font-medium">
@@ -71,7 +72,9 @@ function UserRow({ user }: { user: AdminUser }) {
             <p className="text-xs text-muted-foreground">{user.email}</p>
           )}
           {isDeleted && (
-            <p className="text-xs text-destructive">Deleted {user.deletedAt ? formatDate(new Date(user.deletedAt)) : ''}</p>
+            <p className="text-xs text-destructive">
+              Deleted {user.deletedAt ? formatDate(new Date(user.deletedAt)) : ''}
+            </p>
           )}
         </div>
       </TableCell>
@@ -82,7 +85,10 @@ function UserRow({ user }: { user: AdminUser }) {
       </TableCell>
       <TableCell>
         <span
-          className={`text-xs font-medium ${user.emailVerified ? 'text-green-500' : 'text-muted-foreground'}`}
+          className={cn(
+            'text-xs font-medium',
+            user.emailVerified ? 'text-green-500' : 'text-muted-foreground',
+          )}
         >
           {user.emailVerified ? 'Yes' : 'No'}
         </span>
@@ -202,7 +208,8 @@ export default function UsersPage() {
               </Table>
             </div>
             <p className="text-xs text-muted-foreground">
-              {users.length.toLocaleString()} of {total.toLocaleString()} user{total !== 1 ? 's' : ''}
+              {users.length.toLocaleString()} of {total.toLocaleString()} user
+              {total !== 1 ? 's' : ''}
               {q ? ` matching "${q}"` : ''}
             </p>
           </>

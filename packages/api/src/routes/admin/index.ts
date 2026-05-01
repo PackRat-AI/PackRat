@@ -203,15 +203,16 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const searchFilter = search
           ? or(
               ilike(users.email, `%${search}%`),
-              sql`${users.firstName} ilike ${'%' + search + '%'}`,
-              sql`${users.lastName} ilike ${'%' + search + '%'}`,
+              sql`${users.firstName} ilike ${`%${search}%`}`,
+              sql`${users.lastName} ilike ${`%${search}%`}`,
             )
           : undefined;
 
         const deletedFilter = includeDeleted ? undefined : isNull(users.deletedAt);
-        const whereClause = searchFilter && deletedFilter
-          ? and(deletedFilter, searchFilter)
-          : (deletedFilter ?? searchFilter);
+        const whereClause =
+          searchFilter && deletedFilter
+            ? and(deletedFilter, searchFilter)
+            : (deletedFilter ?? searchFilter);
 
         const [usersList, [totalRow]] = await Promise.all([
           db
@@ -278,12 +279,13 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               ilike(packs.name, `%${search}%`),
               ilike(packs.description, `%${search}%`),
               ilike(packs.category, `%${search}%`),
-              sql`${users.email} ilike ${'%' + search + '%'}`,
+              sql`${users.email} ilike ${`%${search}%`}`,
             )
           : undefined;
-        const whereClause = deletedFilter && searchFilter
-          ? and(deletedFilter, searchFilter)
-          : (deletedFilter ?? searchFilter);
+        const whereClause =
+          deletedFilter && searchFilter
+            ? and(deletedFilter, searchFilter)
+            : (deletedFilter ?? searchFilter);
 
         const [packsList, [totalRow]] = await Promise.all([
           db
@@ -411,7 +413,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           .update(users)
           .set({ deletedAt: new Date() })
           .where(and(eq(users.id, id), isNull(users.deletedAt)))
-          .returning({ id: users.id });
+          .returning();
         if (!updated.length) return status(404, { error: 'User not found or already deleted' });
         return { success: true as const };
       } catch (error) {
@@ -435,7 +437,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       try {
         // Cascading FKs handle deletion of all related user data.
         // Caller must supply a compliance reason for the audit log.
-        const deleted = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
         if (!deleted.length) return status(404, { error: 'User not found' });
         console.info(`[COMPLIANCE] Hard-deleted user ${id}. Reason: ${body.reason}`);
         return { success: true as const, purged: true as const };
@@ -471,7 +473,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           .update(users)
           .set({ deletedAt: null })
           .where(and(eq(users.id, id), sql`${users.deletedAt} IS NOT NULL`))
-          .returning({ id: users.id });
+          .returning();
         if (!restored.length) return status(404, { error: 'User not found or not deleted' });
         return { success: true as const };
       } catch (error) {

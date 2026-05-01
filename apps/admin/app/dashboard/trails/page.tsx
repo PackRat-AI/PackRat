@@ -24,6 +24,7 @@ import {
 } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
+import { cn } from 'admin-app/lib/utils';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
@@ -124,7 +125,9 @@ function TrailSearchSection({
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="font-medium text-xs uppercase tracking-wide">Name</TableHead>
-                <TableHead className="font-medium text-xs uppercase tracking-wide">OSM ID</TableHead>
+                <TableHead className="font-medium text-xs uppercase tracking-wide">
+                  OSM ID
+                </TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide">Sport</TableHead>
                 <TableHead className="font-medium text-xs uppercase tracking-wide">
                   Distance
@@ -139,14 +142,15 @@ function TrailSearchSection({
               {data.trails.map((trail: TrailSearchResult) => (
                 <TableRow
                   key={trail.osmId}
-                  className={`hover:bg-muted/20 cursor-pointer ${selectedOsmId === trail.osmId ? 'bg-muted/40' : ''}`}
+                  className={cn(
+                    'hover:bg-muted/20 cursor-pointer',
+                    selectedOsmId === trail.osmId && 'bg-muted/40',
+                  )}
                   onClick={() => onSelect(trail.osmId)}
                 >
                   <TableCell>
                     <p className="text-sm font-medium">
-                      {trail.name ?? (
-                        <span className="text-muted-foreground italic">unnamed</span>
-                      )}
+                      {trail.name ?? <span className="text-muted-foreground italic">unnamed</span>}
                     </p>
                   </TableCell>
                   <TableCell>
@@ -165,9 +169,7 @@ function TrailSearchSection({
                     <span className="text-sm text-muted-foreground">{trail.distance ?? '—'}</span>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {trail.difficulty ?? '—'}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{trail.difficulty ?? '—'}</span>
                   </TableCell>
                   <TableCell>
                     <Button
@@ -279,7 +281,7 @@ function ConditionRow({ report }: { report: TrailConditionReport }) {
   };
 
   return (
-    <TableRow className={`hover:bg-muted/20 ${report.deleted ? 'opacity-50' : ''}`}>
+    <TableRow className={cn('hover:bg-muted/20', report.deleted && 'opacity-50')}>
       <TableCell>
         <div>
           <p className="text-sm font-medium">{report.trailName}</p>
@@ -295,7 +297,10 @@ function ConditionRow({ report }: { report: TrailConditionReport }) {
       </TableCell>
       <TableCell>
         <span
-          className={`text-xs font-medium capitalize ${conditionColor[report.overallCondition] ?? 'text-muted-foreground'}`}
+          className={cn(
+            'text-xs font-medium capitalize',
+            conditionColor[report.overallCondition] ?? 'text-muted-foreground',
+          )}
         >
           {report.overallCondition}
         </span>
@@ -442,11 +447,12 @@ export default function TrailsPage() {
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={cn(
+              'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
               activeTab === tab.id
                 ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
           >
             {tab.label}
           </button>

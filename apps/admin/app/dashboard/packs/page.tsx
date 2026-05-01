@@ -16,6 +16,7 @@ import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
+import { cn } from 'admin-app/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -52,7 +53,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
   });
 
   return (
-    <TableRow className={`hover:bg-muted/20 ${isDeleted ? 'opacity-50' : ''}`}>
+    <TableRow className={cn('hover:bg-muted/20', isDeleted && 'opacity-50')}>
       <TableCell>
         <div>
           <p className="text-sm font-medium">{pack.name}</p>
@@ -76,7 +77,10 @@ function PackRow({ pack }: { pack: AdminPack }) {
       </TableCell>
       <TableCell>
         <span
-          className={`text-xs font-medium ${pack.isPublic ? 'text-green-500' : 'text-muted-foreground'}`}
+          className={cn(
+            'text-xs font-medium',
+            pack.isPublic ? 'text-green-500' : 'text-muted-foreground',
+          )}
         >
           {pack.isPublic ? 'Public' : 'Private'}
         </span>

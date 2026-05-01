@@ -1,8 +1,6 @@
-import { createDb } from '@packrat/api/db';
+import { createDb, createOsmDb } from '@packrat/api/db';
 import { trailConditionReports, users } from '@packrat/api/db/schema';
-import { createOsmDb } from '@packrat/api/db';
-import { and, count, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
@@ -135,7 +133,9 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           distance: z.string().nullable(),
           difficulty: z.string().nullable(),
           description: z.string().nullable(),
-          members: z.array(z.object({ type: z.string(), ref: z.number(), role: z.string() })).nullable(),
+          members: z
+            .array(z.object({ type: z.string(), ref: z.number(), role: z.string() }))
+            .nullable(),
           geojson: z.string().nullable(),
         });
 
@@ -328,7 +328,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
               eq(trailConditionReports.deleted, false),
             ),
           )
-          .returning({ id: trailConditionReports.id });
+          .returning();
         if (!updated.length) return status(404, { error: 'Report not found' });
         return { success: true as const };
       } catch (error) {
