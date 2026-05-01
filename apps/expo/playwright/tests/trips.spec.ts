@@ -44,11 +44,6 @@ async function createTrip(
     endDate?: string; // YYYY-MM-DD
   },
 ): Promise<string> {
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
-
   await page.goto(`${BASE_URL}/trip/new`);
 
   // Fill trip name
@@ -73,6 +68,13 @@ async function createTrip(
     await page.getByTestId('trips:end-date-btn').click();
     await fillDateInput(page, { testId: 'trips:end-date-input', value: opts.endDate });
   }
+
+  // Register the listener immediately before submitting so the 20s window starts here,
+  // not before navigation+form-fill which can exceed 20s on slow CI runners.
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
 
   // Submit the form
   await page.getByTestId('submit-trip-button').click();
