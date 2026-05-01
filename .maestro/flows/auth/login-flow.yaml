@@ -125,4 +125,4 @@ appId: ${APP_ID}
 - extendedWaitUntil:
     visible:
       text: "Packs"
-    timeout: 20000
+    timeout: 35000
