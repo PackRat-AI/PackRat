@@ -51,7 +51,7 @@ export function useAuthInit() {
             email: session.user.email,
             firstName: session.user.name?.split(' ')[0] ?? '',
             lastName: session.user.name?.split(' ').slice(1).join(' ') ?? '',
-            role: ((session.user as Record<string, unknown>).role as 'USER' | 'ADMIN') ?? 'USER',
+            role: ((session.user as Record<string, unknown>).role as 'USER' | 'ADMIN') ?? 'USER', // safe-cast: Better Auth client type omits additionalFields; role is present at runtime
             avatarUrl: session.user.image ?? null,
             preferredWeightUnit: 'g',
           });

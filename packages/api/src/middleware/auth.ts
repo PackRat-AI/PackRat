@@ -20,7 +20,7 @@ export type AuthUser = {
 export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
   isAuthenticated: {
     resolve: async ({ request }: { request: Request }) => {
-      const env = getEnv() as ValidatedEnv;
+      const env = getEnv() as ValidatedEnv; // safe-cast: Worker env validated at startup; TS can't narrow the return type
       const auth = await getAuth(env);
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session) return status(401, { error: 'Unauthorized' });
@@ -31,7 +31,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
           role: (session.user as unknown as { role?: string }).role ?? 'USER',
           email: session.user.email,
           name: session.user.name,
-        } as AuthUser,
+        },
       };
     },
   },
@@ -43,7 +43,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
 export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(authPlugin).macro({
   isAdmin: {
     resolve: async ({ request }: { request: Request }) => {
-      const env = getEnv() as ValidatedEnv;
+      const env = getEnv() as ValidatedEnv; // safe-cast: Worker env validated at startup; TS can't narrow the return type
       const auth = await getAuth(env);
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session) return status(401, { error: 'Unauthorized' });
@@ -57,7 +57,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
           role: 'ADMIN' as const,
           email: session.user.email,
           name: session.user.name,
-        } as AuthUser,
+        },
       };
     },
   },

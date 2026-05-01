@@ -91,7 +91,7 @@ function enrichEnv(env: Env): Env {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
-    setWorkerEnv(e as unknown as Record<string, unknown>);
+    setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
     // Route /api/auth/** to Better Auth before Elysia sees it.
     const url = new URL(request.url);
@@ -101,15 +101,15 @@ export default {
       return auth.handler(request);
     }
 
-    return (app.fetch as unknown as CfFetchFn)(request, e, ctx);
+    return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>);
+    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
-      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env });
+      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
     } else if (
       batch.queue === 'packrat-embeddings-queue' ||
       batch.queue === 'packrat-embeddings-queue-dev'

@@ -21,7 +21,7 @@ function redirect(route: string) {
     const parsedRoute: Href = JSON.parse(route);
     return router.dismissTo(parsedRoute);
   } catch {
-    router.dismissTo(route as Href);
+    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
@@ -62,7 +62,7 @@ export function useAuthActions() {
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
       if (error) throw new Error(error.message ?? 'Sign in failed');
-      applySession(data.user as Record<string, unknown>);
+      applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -85,7 +85,7 @@ export function useAuthActions() {
         idToken: { token: idToken },
       });
       if (error) throw new Error(error.message ?? 'Google sign in failed');
-      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>);
+      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       setIsLoading(false);
 
@@ -120,7 +120,7 @@ export function useAuthActions() {
         idToken: { token: credential.identityToken ?? '' },
       });
       if (error) throw new Error(error.message ?? 'Apple sign in failed');
-      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>);
+      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       console.error('Apple sign in error:', error);
       throw error;
@@ -191,7 +191,7 @@ export function useAuthActions() {
 
     const session = await authClient.getSession();
     if (session.data?.user) {
-      applySession(session.data.user as Record<string, unknown>);
+      applySession(session.data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     }
     return data;
   };
