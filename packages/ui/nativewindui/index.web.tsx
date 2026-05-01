@@ -159,6 +159,8 @@ export const ToolbarIcon = () => null;
 
 // Alert — renders children as a pass-through (button inside still works)
 export const Alert = ({ children }: { children?: ReactNode }) => <>{children}</>;
+// AlertAnchor is a convenience wrapper around Alert; on web it renders nothing
+export const AlertAnchor = (_props: { ref?: unknown }) => null;
 export type AlertMethods = Record<string, never>;
 
 // ---------------------------------------------------------------------------
