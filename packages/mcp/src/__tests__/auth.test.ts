@@ -287,7 +287,7 @@ describe('PackRatAuthHandler – /login', () => {
           JSON.stringify({ user: { id: 'user-123' }, session: { token: 'ba-token-abc' } }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
-      ) as typeof fetch;
+      ) as unknown as typeof fetch;
 
     const form = new URLSearchParams({
       email: 'test@example.com',
@@ -333,7 +333,7 @@ describe('PackRatAuthHandler – /login', () => {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
       }),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     const form = new URLSearchParams({
       email: 'bad@example.com',

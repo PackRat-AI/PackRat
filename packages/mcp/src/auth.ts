@@ -14,8 +14,15 @@
  */
 
 import { isString } from '@packrat/guards';
+import { createRegExp, exactly, global as globalFlag } from 'magic-regexp';
 import { z } from 'zod';
 import type { Env, Props } from './types';
+
+// ── HTML-escape regexes (magic-regexp so the pre-push hook is satisfied) ─────
+const AMP_RE = createRegExp(exactly('&'), [globalFlag]);
+const LT_RE = createRegExp(exactly('<'), [globalFlag]);
+const GT_RE = createRegExp(exactly('>'), [globalFlag]);
+const QUOT_RE = createRegExp(exactly('"'), [globalFlag]);
 
 // ── Zod schemas for external data ─────────────────────────────────────────────
 
@@ -52,10 +59,10 @@ function sessionKey(key: string) {
 
 function escapeHtml(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(AMP_RE, '&amp;')
+    .replace(LT_RE, '&lt;')
+    .replace(GT_RE, '&gt;')
+    .replace(QUOT_RE, '&quot;');
 }
 
 function loginPage(state: string, error?: string): string {
@@ -98,7 +105,7 @@ function loginPage(state: string, error?: string): string {
 }
 
 /** FormData.get() returns FormDataEntryValue | null (string | File | null). Extract string only. */
-function getFormString(data: FormData, key: string): string {
+function getFormString(data: { get(name: string): string | File | null }, key: string): string {
   const val = data.get(key);
   return isString(val) ? val : '';
 }

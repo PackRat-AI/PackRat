@@ -109,7 +109,7 @@ const PropsSchema = z.object({
 
 const mcpApiHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const rawCtx = ctx as Record<string, unknown>;
+    const rawCtx = ctx as unknown as Record<string, unknown>;
     const propsResult = PropsSchema.safeParse(rawCtx.props);
     const token = propsResult.success ? propsResult.data.betterAuthToken : '';
 
