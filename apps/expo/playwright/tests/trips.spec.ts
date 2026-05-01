@@ -192,19 +192,11 @@ test.describe('Trip CRUD', () => {
     await page.waitForURL(/\/trip\/[^/]+$/, { timeout: 10_000 });
     await page.waitForLoadState('networkidle');
 
-    // Accept the Alert.alert confirmation dialog automatically
-    page.on('dialog', (dialog) => dialog.accept());
-
-    // Click the delete button in the trip detail header
+    // Click the delete button — triggers Alert.alert → window.confirm on web.
+    // The dialog handler registered above accepts it automatically.
     const deleteButton = page.getByTestId('trips:delete');
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
-
-    // react-native Alert.alert is a no-op on web; the app uses NativeWindUI Alert (DOM modal).
-    // Use exact:true so "E2E-DeleteTrip-..." trip names don't match as false positives.
-    const deleteConfirmBtn = page.getByText('Delete', { exact: true });
-    await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 10_000 });
-    await deleteConfirmBtn.click();
 
     // router.back() SPA-navigates away from the trip detail.
     // Wait for URL to change (either to /trips or /)
