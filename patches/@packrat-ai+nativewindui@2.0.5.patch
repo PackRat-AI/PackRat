@@ -22,32 +22,3 @@ index 573a8a8..df2dbec 100644
      textColor?: string;
      content?: React.ReactNode;
    };
-diff --git a/src/components/Alert/Alert.tsx b/src/components/Alert/Alert.tsx
---- a/src/components/Alert/Alert.tsx
-+++ b/src/components/Alert/Alert.tsx
-@@ -1,4 +1,3 @@
- import * as AlertDialogPrimitive from '@rn-primitives/alert-dialog';
--import { useAugmentedRef } from '@rn-primitives/hooks';
- import * as React from 'react';
- import { type TextInput, View } from 'react-native';
-@@ -47,14 +46,10 @@
-   const { colors } = useColorScheme();
-   const passwordRef = React.useRef<TextInput>(null);
--  const augmentedRef = useAugmentedRef({
--    ref: ref as React.Ref<AlertMethods>,
--    methods: {
--      show: () => {
--        setOpen(true);
--      },
--      alert,
--      prompt: promptAlert,
--    },
--  });
-+  const augmentedRef = React.useRef<View>(null);
-+  React.useImperativeHandle(
-+    ref as React.Ref<AlertMethods>,
-+    () => ({ show: () => setOpen(true), alert, prompt: promptAlert }),
-+    [],
-+  );
-
-   const bottomPaddingStyle = useAnimatedStyle(() => {
