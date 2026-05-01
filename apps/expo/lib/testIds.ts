@@ -7,10 +7,6 @@
  * - Dynamic IDs: factory functions (`testIds.packs.listItem(id)`) so callers
  *   never hand-interpolate strings.
  *
- * `TestIds` is a backward-compat alias that maps the old PascalCase enum keys
- * to the same underlying strings. Maestro flows reference these values via
- * `id:` selectors — keep the string values stable.
- *
  * Usage in components:
  *   import { testIds } from 'expo-app/lib/testIds';
  *   <TextInput testID={testIds.packs.nameInput} />
@@ -32,8 +28,9 @@ export const testIds = Object.freeze({
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
-    nameInput: 'pack-name-input', // keep Maestro value (Maestro: id: "pack-name-input")
-    descriptionInput: 'pack-description-input', // keep Maestro value (Maestro: id: "pack-description-input")
+    nameInput: 'pack-name-input', // keep Maestro value
+    descriptionInput: 'pack-description-input', // keep Maestro value
+    cancelBtn: 'cancel-pack-form-button', // keep Maestro value
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
     editBtn: 'packs:edit',
@@ -67,8 +64,14 @@ export const testIds = Object.freeze({
   // ── Trips ─────────────────────────────────────────────────────────────────
   trips: Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value
-    nameInput: 'trips:name-input',
-    descriptionInput: 'trips:description-input',
+    nameInput: 'trip-name-input', // keep Maestro value
+    descriptionInput: 'trip-description-input', // keep Maestro value
+    startDateRow: 'start-date-row', // keep Maestro value
+    endDateRow: 'end-date-row', // keep Maestro value
+    listCard: 'trip-list-item', // keep Maestro value
+    searchCard: 'trips:search-result',
+    detailName: 'trip-detail-name', // keep Maestro value
+    cancelBtn: 'cancel-trip-form-button', // keep Maestro value
     submitBtn: 'submit-trip-button', // keep Maestro value
     deleteBtn: 'trips:delete',
     editBtn: 'trips:edit',
@@ -81,6 +84,8 @@ export const testIds = Object.freeze({
     searchInput: 'catalog:search-input',
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
+    itemCard: 'catalog-item-card', // keep Maestro value
+    detailContent: 'catalog-detail-content', // keep Maestro value
     item: (id: string | number) => `catalog:item-${id}`,
   }),
 
@@ -108,20 +113,3 @@ export const testIds = Object.freeze({
     location: (id: string | number) => `weather:location-${id}`,
   }),
 });
-
-/** @deprecated Use the namespaced `testIds` object instead. */
-export const TestIds = {
-  PackNameInput: testIds.packs.nameInput,
-  PackDescriptionInput: testIds.packs.descriptionInput,
-  TripNameInput: 'trip-name-input',
-  TripDescriptionInput: 'trip-description-input',
-  StartDateRow: 'start-date-row',
-  EndDateRow: 'end-date-row',
-  TripSearchResult: 'trip-search-result',
-  TripListItem: 'trip-list-item',
-  TripDetailName: 'trip-detail-name',
-  CatalogItemCard: 'catalog-item-card',
-  CatalogDetailContent: 'catalog-detail-content',
-  CancelPackFormButton: 'cancel-pack-form-button',
-  CancelTripFormButton: 'cancel-trip-form-button',
-} as const;

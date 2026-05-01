@@ -12,7 +12,7 @@ import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackI
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
@@ -321,11 +321,7 @@ const getTripNewOptions = (t: TranslationFunction) => ({
   headerLeft: () => {
     const router = useRouter();
     return (
-      <Pressable
-        testID={TestIds.CancelTripFormButton}
-        onPress={() => router.back()}
-        className="px-2"
-      >
+      <Pressable testID={testIds.trips.cancelBtn} onPress={() => router.back()} className="px-2">
         <Text className="text-primary">{t('common.cancel')}</Text>
       </Pressable>
     );
@@ -358,11 +354,7 @@ const getPackNewOptions = (t: TranslationFunction) => ({
   headerLeft: () => {
     const router = useRouter();
     return (
-      <Pressable
-        testID={TestIds.CancelPackFormButton}
-        onPress={() => router.back()}
-        className="px-2"
-      >
+      <Pressable testID={testIds.packs.cancelBtn} onPress={() => router.back()} className="px-2">
         <Text className="text-primary">{t('common.cancel')}</Text>
       </Pressable>
     );

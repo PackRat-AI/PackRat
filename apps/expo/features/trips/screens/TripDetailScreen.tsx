@@ -5,7 +5,7 @@ import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, ScrollView, Share, View } from 'react-native';
@@ -88,7 +88,7 @@ export function TripDetailScreen() {
           {/* Header */}
           <View className="mb-3 flex-row items-start justify-between">
             <Text
-              testID={TestIds.TripDetailName}
+              testID={testIds.trips.detailName}
               className="flex-1 text-3xl font-bold text-foreground"
             >
               {trip.name}
