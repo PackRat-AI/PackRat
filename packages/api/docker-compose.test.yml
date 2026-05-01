@@ -1,6 +1,8 @@
 services:
   postgres-test:
-    image: pgvector/pgvector:pg15
+    build:
+      context: .
+      dockerfile: Dockerfile.test
     environment:
       POSTGRES_DB: packrat_test
       POSTGRES_USER: test_user

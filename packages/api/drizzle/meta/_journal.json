@@ -267,6 +267,13 @@
       "when": 1775883868581,
       "tag": "0036_typical_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1777170392780,
+      "tag": "0037_trips_trail_osm_id",
+      "breakpoints": true
     }
   ]
 }

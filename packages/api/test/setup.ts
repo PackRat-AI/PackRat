@@ -1,4 +1,5 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import { isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -74,9 +75,23 @@ vi.mock('elysia', async (importOriginal) => {
     construct(target, args, newTarget) {
       const instance = Reflect.construct(target, args, newTarget) as {
         config: { aot: boolean };
+        onBeforeHandle: (fn: (ctx: Record<string, unknown>) => void) => unknown;
       };
       // Force dynamic (no-eval) handler path for all instances in workerd.
       instance.config.aot = false;
+      // Fix: in non-AOT mode Elysia wraps Decode output in { value: … } for
+      // query and params but never unwraps them before calling the handler
+      // (unlike body, which does `decoded?.value ?? decoded`).
+      // Unwrap both here before every handler fires.
+      instance.onBeforeHandle((ctx) => {
+        const unwrap = (val: unknown): unknown => {
+          if (isObject(val) && 'value' in val && Object.keys(val).length === 1)
+            return (val as { value: unknown }).value;
+          return val;
+        };
+        ctx.query = unwrap(ctx.query);
+        ctx.params = unwrap(ctx.params);
+      });
       return instance;
     },
   });
@@ -518,6 +533,7 @@ vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
+  createOsmDb: vi.fn(() => testDb),
 }));
 
 vi.mock('youtube-transcript', () => ({
@@ -599,6 +615,34 @@ beforeAll(async () => {
     console.error('❌ Failed to connect to test database:', error);
     throw error;
   }
+
+  // Create OSM tables in the test DB so trails tests can seed them.
+  // createOsmDb() is mocked to return testDb, so both table families live here.
+  await testPool.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
+  await testPool.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+  await testPool.query(`
+    CREATE TABLE IF NOT EXISTS osm_ways (
+      osm_id   bigint PRIMARY KEY,
+      name     text,
+      sport    text,
+      surface  text,
+      difficulty text,
+      geometry geometry(LineString,4326)
+    )
+  `);
+  await testPool.query(`
+    CREATE TABLE IF NOT EXISTS osm_routes (
+      osm_id      bigint PRIMARY KEY,
+      name        text,
+      sport       text,
+      network     text,
+      distance    text,
+      difficulty  text,
+      description text,
+      members     jsonb,
+      geometry    geometry(MultiLineString,4326)
+    )
+  `);
 });
 
 beforeEach(async () => {
@@ -630,6 +674,8 @@ beforeEach(async () => {
     'posts',
     'trips',
     'users',
+    'osm_ways',
+    'osm_routes',
   ];
 
   const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
