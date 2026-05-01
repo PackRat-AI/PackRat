@@ -1,7 +1,9 @@
+import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { needsReauthAtom, signOutRequestedAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -12,10 +14,8 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { CommonActions } from '@react-navigation/native';
-import { Stack, useNavigationContainerRef, useRouter } from 'expo-router';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { useEffect } from 'react';
+import { Redirect, Stack, useRouter } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,30 +24,9 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-// useNavigationContainerRef() is the absolute root of the navigation tree — bypasses
-// NativeTabs on iOS, which silently drops router.replace() and navigate() actions.
-// CommonActions.reset resets the root Stack to show only 'auth', unmounting (app).
-function SignOutNavigator() {
-  const navigationRef = useNavigationContainerRef();
-  const signOutRequested = useAtomValue(signOutRequestedAtom);
-  const setSignOutRequested = useSetAtom(signOutRequestedAtom);
-
-  useEffect(() => {
-    if (!signOutRequested) return;
-    setSignOutRequested(false);
-    navigationRef.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'auth' }],
-      }),
-    );
-  }, [navigationRef, signOutRequested, setSignOutRequested]);
-
-  return null;
-}
-
 export default function AppLayout() {
   const isLoading = useAuthInit();
+  const isAuthedValue = use$(isAuthed);
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const insets = useSafeAreaInsets();
@@ -60,9 +39,15 @@ export default function AppLayout() {
     );
   }
 
+  // When isAuthed becomes false (sign-out), return Redirect so React unmounts the
+  // inner Stack and NativeTabs BEFORE the redirect fires. This ensures router.replace
+  // runs outside the NativeTabs focus chain, which otherwise silently drops it on iOS.
+  if (!isAuthedValue) {
+    return <Redirect href="/auth" />;
+  }
+
   return (
     <>
-      <SignOutNavigator />
       {needsReauth && (
         <View className="z-50" style={{ marginTop: insets.top, marginBottom: -(insets.top + 10) }}>
           <SyncBanner title={t('auth.syncPaused')} isReAuthentication />
