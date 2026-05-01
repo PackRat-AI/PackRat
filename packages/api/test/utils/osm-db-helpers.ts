@@ -12,9 +12,11 @@ import {
   type OsmWayOpts,
 } from '../fixtures/trail-fixtures';
 
+const SINGLE_QUOTE_RE = /'/g;
+
 function quoted(s: string | null | undefined): string {
   if (s == null) return 'NULL';
-  return `'${s.replace(/'/g, "''")}'`;
+  return `'${s.replace(SINGLE_QUOTE_RE, "''")}'`;
 }
 
 /**
@@ -34,7 +36,7 @@ export async function seedOsmWay(opts: OsmWayOpts): Promise<number> {
       ${quoted(opts.sport)},
       ${quoted(opts.surface)},
       ${quoted(opts.difficulty)},
-      ST_SetSRID(ST_GeomFromText('${wkt.replace(/'/g, "''")}'), 4326)
+      ST_SetSRID(ST_GeomFromText('${wkt.replace(SINGLE_QUOTE_RE, "''")}'), 4326)
     )
     ON CONFLICT (osm_id) DO UPDATE SET
       name     = EXCLUDED.name,
@@ -58,11 +60,13 @@ export async function seedOsmWay(opts: OsmWayOpts): Promise<number> {
 export async function seedOsmRoute(opts: OsmRouteOpts): Promise<number> {
   const db = createOsmDb();
   const members: OsmMember[] = opts.members ?? [];
-  const membersJson = JSON.stringify(members).replace(/'/g, "''");
+  const membersJson = JSON.stringify(members).replace(SINGLE_QUOTE_RE, "''");
 
   const wkt = opts.geometryWkt !== undefined ? opts.geometryWkt : DEFAULT_ROUTE_WKT;
   const geometrySql =
-    wkt != null ? `ST_SetSRID(ST_GeomFromText('${wkt.replace(/'/g, "''")}'), 4326)` : 'NULL';
+    wkt != null
+      ? `ST_SetSRID(ST_GeomFromText('${wkt.replace(SINGLE_QUOTE_RE, "''")}'), 4326)`
+      : 'NULL';
 
   await db.execute(
     sql.raw(`

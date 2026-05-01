@@ -42,10 +42,11 @@ const REGEX_PATTERN =
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.wrangler']);
 
 // Files explicitly allowed to use raw regex.
-// alltrails.ts: builds regex from a dynamic `property` argument — can't be a static constant.
+// alltrails.ts / trails/index.ts: build regex from a dynamic `property` argument — can't be static constants.
 const EXCLUDED_FILES = new Set([
   'packages/analytics/src/core/enrichment.ts',
   'packages/api/src/routes/alltrails.ts',
+  'packages/api/src/routes/trails/index.ts',
 ]);
 
 function isTargetFile(name: string): boolean {
