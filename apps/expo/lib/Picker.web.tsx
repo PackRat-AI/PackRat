@@ -19,9 +19,8 @@ function PickerItem(_props: ItemProps) {
 function Picker({ selectedValue, onValueChange, children }: PickerProps) {
   const options: ItemProps[] = [];
   React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child) && child.type === PickerItem) {
-      // safe-cast: child.type === PickerItem guard above ensures props match ItemProps
-      options.push(child.props as ItemProps);
+    if (React.isValidElement<ItemProps>(child) && child.type === PickerItem) {
+      options.push(child.props);
     }
   });
 
