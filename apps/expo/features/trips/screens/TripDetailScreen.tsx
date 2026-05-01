@@ -1,12 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import type { AlertMethods } from '@packrat/ui/nativewindui';
-import {
-  ActivityIndicator,
-  Alert as AlertComponent,
-  Button,
-  Card,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
@@ -14,8 +7,8 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
-import { Modal, ScrollView, Share, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Modal, ScrollView, Share, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -30,7 +23,6 @@ export function TripDetailScreen() {
   const { t } = useTranslation();
 
   const [showConditionReport, setShowConditionReport] = useState(false);
-  const alertRef = useRef<AlertMethods>(null);
 
   // safe-cast: trip may be undefined before the store is hydrated; the guard at line ~38 handles
   // the undefined case and returns early, ensuring trip is non-null at render time below.
@@ -75,24 +67,6 @@ export function TripDetailScreen() {
     } catch {
       // ignore
     }
-  };
-
-  const handleDeleteTrip = () => {
-    alertRef.current?.alert({
-      title: t('trips.deleteTrip'),
-      message: t('trips.deleteTripConfirmation'),
-      buttons: [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            await deleteTrip(id as string);
-            router.back();
-          },
-        },
-      ],
-    });
   };
 
   const handleWeatherPress = () => {
@@ -141,7 +115,19 @@ export function TripDetailScreen() {
               variant="plain"
               size="icon"
               testID={testIds.trips.deleteBtn}
-              onPress={handleDeleteTrip}
+              onPress={() =>
+                Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirmation'), [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  {
+                    text: t('common.delete'),
+                    style: 'destructive',
+                    onPress: async () => {
+                      await deleteTrip(id as string);
+                      router.back();
+                    },
+                  },
+                ])
+              }
             >
               <Icon
                 materialIcon={{ type: 'MaterialCommunityIcons', name: 'trash-can-outline' }}
@@ -317,7 +303,6 @@ export function TripDetailScreen() {
           />
         </View>
       </Modal>
-      <AlertComponent title="" buttons={[]} ref={alertRef} />
     </SafeAreaView>
   );
 }
