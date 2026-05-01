@@ -33,8 +33,8 @@ END_TAPS=$(( ($(get_year "$END_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$
 
 if [ "$PLATFORM" = "ios" ]; then
   maestro test --config .maestro/config.yaml "$@" \
-    -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
-    -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
+    -e TEST_EMAIL="${TEST_EMAIL" \
+    -e TEST_PASSWORD="${TEST_PASSWORD}" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
     -e PACK_NAME="${PACK_NAME:-E2E-Pack-$UNIQUE_ID}" \
     -e APP_ID="${APP_ID:-com.andrewbierman.packrat.preview}" \
@@ -50,8 +50,8 @@ if [ "$PLATFORM" = "ios" ]; then
     .maestro/master-flow.yaml
 else
   maestro test --config .maestro/config-android.yaml "$@" \
-    -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
-    -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
+    -e TEST_EMAIL="${TEST_EMAIL" \
+    -e TEST_PASSWORD="${TEST_PASSWORD}" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
     -e PACK_NAME="${PACK_NAME:-E2E-Pack-$UNIQUE_ID}" \
     -e APP_ID="${APP_ID:-com.packratai.mobile.preview}" \
