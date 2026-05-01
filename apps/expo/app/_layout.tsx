@@ -1,10 +1,5 @@
 import '../polyfills';
 
-// Suppress empty-string "Unexpected text node" false positives from RNW on web.
-// RNW's View validates children in dev mode; FlashList and nativewindui components
-// produce transient "" children during reconciliation that have no visual impact.
-// This suppression is dev-only and does not affect production or non-empty text nodes.
-
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-app/lib/devClient';
 import { Stack } from 'expo-router';
