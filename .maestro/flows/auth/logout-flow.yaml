@@ -36,28 +36,19 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes).
-# Both platforms use native Alert.alert(). On iOS, the XCTest accessibility tree contains both
-# the profile list "Log Out" button (index 0) and the UIAlertController action (index 1).
-# Using index: 1 targets the dialog action. On Android the alert covers the screen so
-# the list button is not reachable — text match alone works.
+# Both platforms use native Alert.alert(). In XCTest, the UIAlertController action occupies
+# index 0 for text "Log Out" (foreground alert window elements appear first); the profile
+# list button is at index 1. Maestro log from run 25218877925 confirmed index:1 was tapping
+# resource-id=sign-out-button (y=706, the list button) — wrong element. No index (=0) targets
+# the alert action. waitForAnimationToEnd ensures the native alert is fully presented before tap.
 - runFlow:
     when:
       visible:
         text: "Sync in progress"
     commands:
-      - runFlow:
-          when:
-            platform: iOS
-          commands:
-            - tapOn:
-                text: "Log Out"
-                index: 1
-      - runFlow:
-          when:
-            platform: Android
-          commands:
-            - tapOn:
-                text: "Log Out"
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "Log Out"
 
 - waitForAnimationToEnd
 
