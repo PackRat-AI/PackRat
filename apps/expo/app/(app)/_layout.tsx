@@ -16,7 +16,7 @@ import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
 import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,18 +32,18 @@ export default function AppLayout() {
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const insets = useSafeAreaInsets();
+  // Latches true once we dispatch router.replace('/auth') on sign-out.
+  // Keeps the spinner rendered until AppLayout unmounts so that
+  // auth/index.tsx resetting isLoadingAtom=false never causes AppLayout
+  // to re-render its Stack mid-transition. If the Stack re-initialized
+  // while the root navigator was still committing the replace, it would
+  // re-register with React Navigation and override the in-flight navigation,
+  // landing the user back on the Trips/Profile screen instead of auth.
+  const hasNavigatedToAuthRef = useRef(false);
 
-  // When sign-out completes (isLoadingAtom=true + isAuthed=false), the spinner
-  // below unmounts NativeTabs. Then router.replace('/auth') fires from useEffect
-  // — AFTER the spinner commits — so NativeTabs is no longer in the navigation
-  // hierarchy and cannot intercept the replace. CommonActions.reset was tried
-  // previously but failed silently on iOS (UITabBarController timing); expo-router's
-  // own router.replace is more reliable cross-platform.
-  // isLoadingAtom is reset by auth/index.tsx on mount (after navigation commits)
-  // rather than here via setTimeout, to avoid re-rendering AppLayout's Stack
-  // mid-transition which can cancel the in-flight navigation on iOS.
   useEffect(() => {
     if (isLoadingGlobal && !isAuthedValue) {
+      hasNavigatedToAuthRef.current = true;
       // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
       router.replace('/auth' as Href);
     }
@@ -54,7 +54,9 @@ export default function AppLayout() {
   // The spinner unmounts NativeTabs so the useEffect above can dispatch to the
   // root Stack. The !isAuthedValue guard keeps the Stack visible during re-auth
   // sign-in, where isLoadingAtom is also true but the user is still authed.
-  if (isLoading || (isLoadingGlobal && !isAuthedValue)) {
+  // hasNavigatedToAuthRef keeps the spinner until AppLayout actually unmounts
+  // after the router.replace('/auth') transition completes.
+  if (isLoading || (isLoadingGlobal && !isAuthedValue) || hasNavigatedToAuthRef.current) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
