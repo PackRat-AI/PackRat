@@ -92,7 +92,7 @@ export class ImageCacheManager {
    * Clear all cached images
    */
   public async clearCache(): Promise<void> {
-    if (typeof globalThis.document !== 'undefined') return;
+    if ('document' in globalThis) return;
     const dirInfo = await FileSystem.getInfoAsync(this.cacheDirectory);
     if (dirInfo.exists) {
       await FileSystem.deleteAsync(this.cacheDirectory);
