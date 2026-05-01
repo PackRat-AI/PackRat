@@ -94,6 +94,7 @@ function Profile() {
     {
       id: 'name',
       title: t('common.name'),
+      testID: testIds.profile.nameEditBtn,
       onPress: () => router.push('/(app)/(tabs)/profile/name'),
       ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
     },
@@ -143,11 +144,10 @@ function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
   if (isString(info.item)) {
     return <ListSectionHeader {...info} />;
   }
-  const testID = info.item.id === 'name' ? testIds.profile.nameEditBtn : undefined;
   return (
     <ListItem
       titleClassName="text-lg"
-      testID={testID}
+      testID={info.item.testID}
       onPress={info.item.onPress}
       rightView={
         <View className="flex-1 flex-row items-center gap-0.5 px-2">
@@ -333,4 +333,5 @@ type DataItem =
       value?: string;
       subTitle?: string;
       onPress?: () => void;
+      testID?: string;
     };
