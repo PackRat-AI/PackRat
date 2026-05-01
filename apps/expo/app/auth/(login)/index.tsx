@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
@@ -119,7 +119,7 @@ export default function LoginScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
-                        testID={TestIds.EmailInput}
+                        testID={testIds.auth.emailInput}
                         accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Email',
@@ -151,7 +151,7 @@ export default function LoginScreen() {
                   <form.Field name="password">
                     {(field) => (
                       <TextField
-                        testID={TestIds.PasswordInput}
+                        testID={testIds.auth.passwordInput}
                         accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Password',
@@ -204,7 +204,7 @@ export default function LoginScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
-                  testID={TestIds.ContinueButton}
+                  testID={testIds.auth.continueBtn}
                   accessible={true}
                   size="lg"
                   disabled={!canSubmit || loading}
@@ -232,7 +232,7 @@ export default function LoginScreen() {
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, _isSubmitting]) => (
                   <Button
-                    testID={TestIds.ContinueButton}
+                    testID={testIds.auth.continueBtn}
                     accessible={true}
                     disabled={!canSubmit || loading}
                     onPress={() => {
