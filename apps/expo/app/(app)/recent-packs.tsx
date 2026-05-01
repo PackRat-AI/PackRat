@@ -6,6 +6,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Image, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function RecentPackCard({ pack }: { pack: Pack }) {
   const { colors } = useColorScheme();
@@ -58,7 +59,7 @@ export default function RecentPacksScreen() {
   const { t } = useTranslation();
 
   return (
-    <View className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.recentPacks')} />
       {recentPacks.length ? (
         <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
@@ -81,6 +82,6 @@ export default function RecentPacksScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

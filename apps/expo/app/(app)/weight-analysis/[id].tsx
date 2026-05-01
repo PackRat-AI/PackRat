@@ -47,7 +47,7 @@ export default function WeightAnalysisScreen() {
   const preferredWeightUnit = userStore.preferredWeightUnit.peek() ?? 'g';
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.weightAnalysis')} />
       <ScrollView
         className="flex-1"

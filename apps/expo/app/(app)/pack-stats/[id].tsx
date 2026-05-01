@@ -7,6 +7,7 @@ import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
@@ -30,7 +31,7 @@ export default function PackStatsScreen() {
   }));
 
   return (
-    <View className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.packStats')} />
       {weightHistory || CATEGORY_DISTRIBUTION ? (
         <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
@@ -157,6 +158,6 @@ export default function PackStatsScreen() {
           <Text>{t('packs.noStatsAvailable')}</Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

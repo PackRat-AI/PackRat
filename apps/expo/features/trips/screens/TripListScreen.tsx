@@ -9,6 +9,7 @@ import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
 import type { Trip } from '../types';
@@ -148,7 +149,7 @@ export function TripsListScreen() {
   };
 
   return (
-    <>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
@@ -180,6 +181,6 @@ export function TripsListScreen() {
         ListFooterComponent={<AndroidTabBarInsetFix />}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </>
+    </SafeAreaView>
   );
 }

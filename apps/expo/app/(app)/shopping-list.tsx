@@ -8,6 +8,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Mock data for shopping list
 const SHOPPING_LIST = [
@@ -168,7 +169,7 @@ export default function ShoppingListScreen() {
   });
 
   return (
-    <>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('shopping.shoppingList')} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
@@ -251,6 +252,6 @@ export default function ShoppingListScreen() {
           <Text variant="body">• Compare prices across multiple retailers before purchasing</Text>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
