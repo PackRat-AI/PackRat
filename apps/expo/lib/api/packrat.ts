@@ -6,6 +6,7 @@ import {
   refreshTokenAtom,
   tokenAtom,
 } from 'expo-app/features/auth/atoms/authAtoms';
+import { isAuthed } from 'expo-app/features/auth/store';
 import Storage from 'expo-sqlite/kv-store';
 
 /**
@@ -28,13 +29,28 @@ export const apiClient = createApiClient({
     getAccessToken: () => Storage.getItem('access_token'),
     getRefreshToken: () => Storage.getItem('refresh_token'),
     onAccessTokenRefreshed: async (accessToken) => {
-      await store.set(tokenAtom, accessToken);
+      // Guard against re-setting the token after sign-out has cleared it.
+      // Without this, a token refresh in-flight during sign-out can call
+      // store.set(tokenAtom, accessToken) AFTER setToken(null), keeping the
+      // app authenticated and leaving NativeTabs mounted on iOS.
+      if (isAuthed.peek()) {
+        await store.set(tokenAtom, accessToken);
+      }
     },
     onRefreshTokenRefreshed: async (refreshToken) => {
-      await store.set(refreshTokenAtom, refreshToken);
+      if (isAuthed.peek()) {
+        await store.set(refreshTokenAtom, refreshToken);
+      }
     },
     onNeedsReauth: () => {
-      store.set(needsReauthAtom, true);
+      // Only signal re-auth when the user is still authenticated. An
+      // in-flight request may resolve after sign-out clears the tokens;
+      // without this guard, the race would set needsReauthAtom = true
+      // AFTER signOut has already reset it to false, showing "Resume
+      // Sync" on the auth screen instead of the normal sign-in copy.
+      if (isAuthed.peek()) {
+        store.set(needsReauthAtom, true);
+      }
     },
   },
 });

@@ -32,8 +32,8 @@ export const testIds = Object.freeze({
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
-    nameInput: 'packs:name-input',
-    descriptionInput: 'packs:description-input',
+    nameInput: 'pack-name-input', // keep Maestro value (Maestro: id: "pack-name-input")
+    descriptionInput: 'pack-description-input', // keep Maestro value (Maestro: id: "pack-description-input")
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
     editBtn: 'packs:edit',
@@ -108,3 +108,20 @@ export const testIds = Object.freeze({
     location: (id: string | number) => `weather:location-${id}`,
   }),
 });
+
+/** @deprecated Use the namespaced `testIds` object instead. */
+export const TestIds = {
+  PackNameInput: testIds.packs.nameInput,
+  PackDescriptionInput: testIds.packs.descriptionInput,
+  TripNameInput: 'trip-name-input',
+  TripDescriptionInput: 'trip-description-input',
+  StartDateRow: 'start-date-row',
+  EndDateRow: 'end-date-row',
+  TripSearchResult: 'trip-search-result',
+  TripListItem: 'trip-list-item',
+  TripDetailName: 'trip-detail-name',
+  CatalogItemCard: 'catalog-item-card',
+  CatalogDetailContent: 'catalog-detail-content',
+  CancelPackFormButton: 'cancel-pack-form-button',
+  CancelTripFormButton: 'cancel-trip-form-button',
+} as const;

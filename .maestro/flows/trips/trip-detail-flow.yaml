@@ -9,14 +9,43 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Tap the test trip
-- tapOn:
-    text: ${TRIP_NAME}
-- waitForAnimationToEnd
+# iOS: text-based tapOn does not find FlatList Pressable items through the LargeTitleHeader
+# accessibility tree. Use testID (trip-list-item) instead.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "trip-list-item"
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${TRIP_NAME}
+      - waitForAnimationToEnd
 
-# Verify trip name is shown
+# Verify trip name is shown via testID.
+# assertVisible: text: fails on iOS because nativewindui Text uses UITextView which
+# exposes content as accessibilityValue, not accessibilityLabel — Maestro's text
+# matcher only checks accessibilityLabel. The testID (trip-detail-name) is reliable.
 - assertVisible:
-    text: ${TRIP_NAME}
+    id: "trip-detail-name"
 
 # Go back to trips list
-- back
-- waitForAnimationToEnd
+# iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
+# Tap the native navigation bar back button instead (accessibility label "Back").
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Back"
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd

@@ -8,6 +8,7 @@ import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/Larg
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -34,6 +35,8 @@ function CatalogItemsScreen() {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
@@ -59,7 +62,6 @@ function CatalogItemsScreen() {
   } = useCatalogItemsInfinite({
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
-    sort: { field: 'createdAt', order: 'desc' },
   });
 
   const {
@@ -88,6 +90,11 @@ function CatalogItemsScreen() {
 
   const handleItemPress = (item: CatalogItem) => {
     router.push({ pathname: '/catalog/[id]', params: { id: item.id } });
+  };
+  const handleRefresh = async () => {
+    setIsManualRefresh(true);
+    await refetch();
+    setIsManualRefresh(false);
   };
 
   const loadMore = () => {
@@ -211,15 +218,18 @@ function CatalogItemsScreen() {
       />
 
       <FlatList
-        key={activeFilter}
         data={paginatedItems}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
+          <CatalogItemCard
+            item={item}
+            onPress={() => handleItemPress(item)}
+            testID={TestIds.CatalogItemCard}
+          />
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}
         ListHeaderComponent={listHeader}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={handleRefresh} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         contentContainerStyle={{ flexGrow: 1, padding: 16 }}

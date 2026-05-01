@@ -18,15 +18,16 @@ import { CatalogItemImage } from './CatalogItemImage';
 type CatalogItemCardProps = {
   item: CatalogItem;
   onPress: () => void;
+  testID?: string;
 };
 
-export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
+export function CatalogItemCard({ item, onPress, testID }: CatalogItemCardProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
   return (
     <TouchableWithoutFeedback onPress={onPress} className="mb-3">
-      <Card className="overflow-hidden">
+      <Card testID={testID} className="overflow-hidden">
         <View>
           <CatalogItemImage
             imageUrl={item.images?.[0]}

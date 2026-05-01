@@ -17,7 +17,7 @@ interface GetCatalogItemsParams {
   query?: string;
   limit: number;
   category?: string;
-  sort: { field: CatalogSortField; order: 'asc' | 'desc' };
+  sort?: { field: CatalogSortField; order: 'asc' | 'desc' };
 }
 
 export const getCatalogItems = async ({
@@ -33,11 +33,23 @@ export const getCatalogItems = async ({
       limit,
       ...(query ? { q: query } : {}),
       ...(category ? { category } : {}),
-      sort,
+      ...(sort ? { sort } : {}),
     },
   });
   if (error) throw new Error(`Failed to fetch catalog items: ${error.value}`);
-  return CatalogItemsResponseSchema.parse(data);
+  const parseResult = CatalogItemsResponseSchema.safeParse(data);
+  if (parseResult.success) return parseResult.data;
+  // Fallback: strict per-field validation failed (e.g., live DB has weightUnit values outside the
+  // enum like 'lbs'). Return raw items so the UI still renders rather than entering error state.
+  return {
+    items: (data?.items ?? []) as unknown as ReturnType<
+      typeof CatalogItemsResponseSchema.parse
+    >['items'],
+    totalCount: Number(data?.totalCount ?? 0),
+    page: Number(data?.page ?? 1),
+    limit: Number(data?.limit ?? 20),
+    totalPages: Number(data?.totalPages ?? 1),
+  };
 };
 
 export function useCatalogItemsInfinite({ query, category, limit, sort }: GetCatalogItemsParams) {

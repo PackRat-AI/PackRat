@@ -5,7 +5,7 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { userStore } from 'expo-app/features/auth/store';
+import { isAuthed, userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
@@ -13,7 +13,6 @@ import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
-import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   isLoadingAtom,
@@ -71,6 +70,7 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
+      isAuthed.set(true);
 
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -103,6 +103,7 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
+      isAuthed.set(true);
 
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -151,6 +152,7 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
       userStore.set(data.user as unknown as User);
+      isAuthed.set(true);
 
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -206,11 +208,21 @@ export function useAuthActions() {
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
+      // Set isAuthed = false FIRST so the onAccessTokenRefreshed / onRefreshTokenRefreshed
+      // guards in packrat.ts see the sign-out state before any in-flight refresh completes
+      // and tries to re-set tokenAtom back to a non-null value.
+      isAuthed.set(false);
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();
+      userStore.set(null);
+      // Yield to let React process the state changes before navigating.
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
       setNeedsReauth(false);
-      setIsLoading(false);
+      // isLoadingAtom intentionally NOT reset here. AppLayout watches
+      // isLoadingAtom=true && !isAuthed, renders a spinner (unmounting NativeTabs),
+      // then fires router.replace('/auth') in a useEffect that runs after the
+      // render commit — guaranteeing listeners.focus[0] is the root Stack.
     }
   };
 
@@ -259,6 +271,7 @@ export function useAuthActions() {
         await setRefreshToken(data.refreshToken);
         // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
         userStore.set(data.user as unknown as User);
+        isAuthed.set(true);
         redirect(redirectTo);
       }
 
@@ -293,12 +306,15 @@ export function useAuthActions() {
       setToken(null);
       setRefreshToken(null);
       await clearLocalData();
-      await Updates.reloadAsync();
+      userStore.set(null);
+      isAuthed.set(false);
+      await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
+      router.replace('/auth' as Href);
     } catch (error) {
       console.error('Delete account error:', error);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
