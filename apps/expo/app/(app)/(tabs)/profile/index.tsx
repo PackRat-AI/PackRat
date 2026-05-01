@@ -143,9 +143,11 @@ function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
   if (isString(info.item)) {
     return <ListSectionHeader {...info} />;
   }
+  const testID = info.item.id === 'name' ? testIds.profile.nameEditBtn : undefined;
   return (
     <ListItem
       titleClassName="text-lg"
+      testID={testID}
       onPress={info.item.onPress}
       rightView={
         <View className="flex-1 flex-row items-center gap-0.5 px-2">
