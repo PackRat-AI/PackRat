@@ -11,6 +11,16 @@ if (Platform.OS === 'web') {
   // removeEventListener exists on the RNW stub but was removed from RN typings
   (BackHandler as unknown as { removeEventListener: () => void }).removeEventListener = () => {};
   BackHandler.exitApp = () => {};
+
+  // In dev mode RNW's View child validator fires for transient empty-string nodes
+  // produced by FlashList and nativewindui during reconciliation. No visual impact.
+  if (__DEV__) {
+    const _origError = console.error.bind(console);
+    console.error = (...args: unknown[]) => {
+      if (typeof args[0] === 'string' && args[0].includes('Unexpected text node')) return;
+      _origError(...args);
+    };
+  }
 }
 
 if (Platform.OS !== 'web') {
