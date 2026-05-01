@@ -105,9 +105,21 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
   const { id: packId } = (await packResponse.json()) as { id: number };
 
-  // Navigate to pack detail and open "Add from Catalog" sheet
+  // Navigate to pack detail — wait for network to settle so any pending router.back()
+  // from the form submission completes before we navigate here.
+  await page.waitForLoadState('networkidle');
   await page.goto(`${BASE_URL}/pack/${packId}`);
-  await page.getByTestId('add-from-catalog-option').last().click();
+  await page.waitForLoadState('networkidle');
+
+  // Open the "Add item" actions sheet (BottomSheet), then click add-from-catalog inside it
+  const addItemButton = page.getByTestId('add-item-button');
+  await addItemButton.waitFor({ timeout: 10_000 });
+  await addItemButton.click();
+
+  // add-from-catalog-option is rendered inside the BottomSheet only after it's presented
+  const addFromCatalogBtn = page.getByTestId('add-from-catalog-option');
+  await addFromCatalogBtn.waitFor({ state: 'visible', timeout: 10_000 });
+  await addFromCatalogBtn.click();
 
   // Dialog with catalog items should appear
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });

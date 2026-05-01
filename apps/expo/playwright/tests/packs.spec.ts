@@ -216,6 +216,11 @@ test.describe('Item CRUD within a pack', () => {
       await deleteOption.waitFor({ timeout: 5_000 });
       await deleteOption.click();
 
+      // NativeWindUI Alert DOM modal appears — click OK to confirm deletion
+      const confirmOk = page.getByText('OK', { exact: true });
+      await confirmOk.waitFor({ state: 'visible', timeout: 5_000 });
+      await confirmOk.click();
+
       // Item card should be gone
       await expect(page.getByTestId(`items:card-${itemId}`)).not.toBeVisible({ timeout: 10_000 });
     } else {
