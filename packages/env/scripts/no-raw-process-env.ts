@@ -53,13 +53,13 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
+  'apps/expo/playwright/',
   // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)
   // to Bun.spawn via { ...process.env, ... }. App-level vars (IMPORT_MODE etc.) use nodeEnv.
   'packages/osm-import/import.ts',
   // Trails app env shim — parses process.env once at module load
   'apps/trails/lib/env.ts',
-  // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
-  'apps/expo/e2e-web/',
 ];
 
 // Directories to skip entirely
