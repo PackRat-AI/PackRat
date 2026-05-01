@@ -4,7 +4,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -43,7 +43,7 @@ function CreateTripIconButton() {
   return (
     <Link href="/trip/new" asChild>
       <Pressable
-        testID={TestIds.CreateTripButton}
+        testID={testIds.trips.createBtn}
         accessibilityLabel={t('trips.createNewTrip')}
         className="mx-2"
       >

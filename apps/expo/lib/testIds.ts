@@ -1,54 +1,112 @@
 /**
- * Stable testID identifiers used by Maestro E2E flows.
+ * Centralized test-ID registry — single source of truth for every `testID`
+ * used in components, Playwright web specs, and Maestro iOS flows.
  *
- * On iOS these map to `accessibilityIdentifier` (set via React Native `testID`).
- * On Android they map to the `resource-id` content descriptor.
+ * `testIds` is the primary API, organised by domain.
+ * - Static IDs: plain string values.
+ * - Dynamic IDs: factory functions (`testIds.packs.listItem(id)`) so callers
+ *   never hand-interpolate strings.
  *
- * Keep the string values in sync with the `id:` selectors in `.maestro/flows/`.
+ * `TestIds` is a backward-compat alias that maps the old PascalCase enum keys
+ * to the same underlying strings. Maestro flows reference these values via
+ * `id:` selectors — keep the string values stable.
+ *
+ * Usage in components:
+ *   import { testIds } from 'expo-app/lib/testIds';
+ *   <TextInput testID={testIds.packs.nameInput} />
+ *
+ * Usage in Playwright specs:
+ *   import { testIds } from '../../../lib/testIds';
+ *   page.getByTestId(testIds.packs.nameInput)
  */
-export enum TestIds {
-  // Auth screens
-  SignInEmailButton = 'sign-in-email-button',
-  EmailInput = 'email-input',
-  PasswordInput = 'password-input',
-  ContinueButton = 'continue-button',
+export const testIds = Object.freeze({
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  auth: Object.freeze({
+    signInEmailBtn: 'sign-in-email-button', // keep Maestro value
+    emailInput: 'email-input',
+    passwordInput: 'password-input',
+    continueBtn: 'continue-button',
+    signOutBtn: 'sign-out-button', // keep Maestro value
+  }),
 
-  //Dashboard
-  DashboardTilePackratAI = 'dashboard-tile-packrat-ai',
+  // ── Packs ─────────────────────────────────────────────────────────────────
+  packs: Object.freeze({
+    createBtn: 'create-pack-button', // keep Maestro value
+    nameInput: 'packs:name-input',
+    descriptionInput: 'packs:description-input',
+    submitBtn: 'submit-pack-button', // keep Maestro value
+    deleteBtn: 'packs:delete',
+    editBtn: 'packs:edit',
+    addItemBtn: 'add-item-button', // keep Maestro value
+    askAIBtn: 'ask-ai-button', // keep Maestro value
+    moreActionsBtn: 'pack-more-actions', // keep Maestro value
+    listItem: (id: string | number) => `packs:list-item-${id}`,
+  }),
 
-  // Trips
-  CreateTripButton = 'create-trip-button',
-  SubmitTripButton = 'submit-trip-button',
+  // ── Pack items ────────────────────────────────────────────────────────────
+  items: Object.freeze({
+    addManuallyOption: 'add-manually-option', // keep Maestro value
+    scanPhotoOption: 'scan-from-photo-option', // keep Maestro value
+    addFromCatalogOption: 'add-from-catalog-option', // keep Maestro value
+    nameInput: 'items:name-input',
+    descriptionInput: 'items:description-input',
+    weightInput: 'items:weight-input',
+    weightUnitControl: 'items:weight-unit',
+    quantityInput: 'items:quantity-input',
+    categoryInput: 'items:category-input',
+    submitBtn: 'items:submit',
+    deleteBtn: 'items:delete',
+    editBtn: 'items:edit',
+    moreActionsBtn: (id: string | number) => `items:more-actions-${id}`,
+    card: (id: string | number) => `items:card-${id}`,
+    catalogCard: (id: string | number) => `catalog-item-card-${id}`, // keep existing value
+    catalogConfirmAddBtn: 'items:catalog-confirm-add',
+    catalogClearBtn: 'items:catalog-clear',
+  }),
 
-  //Trip List rows
-  TripRow = 'trip-row-',
+  // ── Trips ─────────────────────────────────────────────────────────────────
+  trips: Object.freeze({
+    createBtn: 'create-trip-button', // keep Maestro value
+    nameInput: 'trips:name-input',
+    descriptionInput: 'trips:description-input',
+    submitBtn: 'submit-trip-button', // keep Maestro value
+    deleteBtn: 'trips:delete',
+    editBtn: 'trips:edit',
+    listItem: (id: string | number) => `trips:list-item-${id}`,
+    startDateInput: 'trips:start-date-input',
+    endDateInput: 'trips:end-date-input',
+  }),
 
-  // Trip form
-  StartDateInput = 'start-date-input',
-  EndDateInput = 'end-date-input',
+  // ── Catalog ───────────────────────────────────────────────────────────────
+  catalog: Object.freeze({
+    searchBtn: 'catalog:search-btn',
+    searchInput: 'catalog:search-input',
+    addToPackBtn: 'add-to-pack-button', // keep Maestro value
+    viewRetailerBtn: 'view-retailer-button', // keep Maestro value
+    item: (id: string | number) => `catalog:item-${id}`,
+  }),
 
-  // Packs
-  CreatePackButton = 'create-pack-button',
-  SubmitPackButton = 'submit-pack-button',
+  // ── Profile ───────────────────────────────────────────────────────────────
+  profile: Object.freeze({
+    signOutBtn: 'sign-out-button', // keep Maestro value
+    firstNameInput: 'profile:first-name-input',
+    lastNameInput: 'profile:last-name-input',
+    usernameInput: 'profile:username-input',
+    saveBtn: 'profile:save',
+    nameEditBtn: 'profile:name-edit',
+  }),
 
-  // Packs list rows
-  PackRow = 'pack-row-',
+  // ── Settings ──────────────────────────────────────────────────────────────
+  settings: Object.freeze({
+    aiModelsSection: 'settings:ai-models',
+    dangerZone: 'settings:danger-zone',
+    deleteAccountBtn: 'settings:delete-account',
+  }),
 
-  // Pack detail
-  AskAIButton = 'ask-ai-button',
-  AddItemButton = 'add-item-button',
-  PackMoreActions = 'pack-more-actions',
-
-  // Add item modal
-  AddManuallyOption = 'add-manually-option',
-  ScanFromPhotoOption = 'scan-from-photo-option',
-  AddFromCatalogOption = 'add-from-catalog-option',
-
-  // Profile
-  SignOutButton = 'sign-out-button',
-
-  // Catalog item detail
-  CatalogItem = 'catalog-item',
-  AddToPackButton = 'add-to-pack-button',
-  ViewRetailerButton = 'view-retailer-button',
-}
+  // ── Weather ───────────────────────────────────────────────────────────────
+  weather: Object.freeze({
+    searchInput: 'weather:search-input',
+    addLocationBtn: 'weather:add-location',
+    location: (id: string | number) => `weather:location-${id}`,
+  }),
+});

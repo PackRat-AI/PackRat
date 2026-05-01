@@ -1,10 +1,12 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { store } from 'expo-app/atoms/store';
 import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import { tokenAtom } from '../atoms/authAtoms';
 import { isAuthed } from '../store';
 
 export function useAuthInit() {
@@ -37,7 +39,12 @@ export function useAuthInit() {
 
         // If user has session or hasSkippedLogin before, continue to app
         if (accessToken || hasSkippedLogin === 'true') {
-          if (accessToken) isAuthed.set(true);
+          if (accessToken) {
+            isAuthed.set(true);
+            // Hydrate tokenAtom so components (e.g. AI chat) get the correct
+            // token without relying on the sync SQLite read (unavailable on web).
+            store.set(tokenAtom, accessToken);
+          }
           setIsLoading(false);
           return;
         } else {

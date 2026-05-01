@@ -1,5 +1,4 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import {
@@ -8,7 +7,7 @@ import {
 } from '@packrat/api/schemas/packTemplates';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
-import Storage from 'expo-sqlite/kv-store';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { PackTemplateItem } from '../types';
 
 const listAllPackTemplateItems = async (): Promise<PackTemplateItem[]> => {
@@ -84,7 +83,7 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'packTemplateItems',
     },

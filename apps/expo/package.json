@@ -30,7 +30,7 @@
     "format": "biome format --write",
     "ios": "APP_VARIANT=development expo run:ios",
     "lint": "biome check --write",
-    "start": "APP_VARIANT=development expo start",
+    "start": "APP_VARIANT=development EXPO_UNSTABLE_WEB_MODAL=1 expo start",
     "submit:android": "eas submit --platform android",
     "submit:ios": "eas submit --platform ios",
     "test": "vitest run",
@@ -38,7 +38,7 @@
     "update:development": "APP_VARIANT=development eas update --branch development --environment development",
     "update:preview": "APP_VARIANT=preview eas update --branch preview --environment preview",
     "update:production": "eas update --branch production --environment production",
-    "web": "expo start --web"
+    "web": "EXPO_UNSTABLE_WEB_MODAL=1 expo start --web"
   },
   "eslintConfig": {
     "extends": "universe/native",
@@ -117,6 +117,7 @@
     "i": "^0.3.7",
     "i18next": "^25.8.18",
     "jotai": "^2.12.2",
+    "leaflet": "^1.9.4",
     "llama.rn": "0.10.1",
     "nanoid": "^5.1.9",
     "nativewind": "^4.2.3",
@@ -124,6 +125,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "^17.0.4",
+    "react-leaflet": "^5.0.0",
     "react-native": "0.83.6",
     "react-native-blob-util": "^0.24.5",
     "react-native-css-interop": "^0.2.3",
@@ -149,6 +151,7 @@
     "@babel/core": "^7.20.0",
     "@biomejs/biome": "2.4.6",
     "@types/he": "^1.2.3",
+    "@types/leaflet": "^1.9.21",
     "@types/react": "~19.2.10",
     "@types/ungap__structured-clone": "^1.2.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",

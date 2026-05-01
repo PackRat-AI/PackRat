@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
@@ -94,7 +94,7 @@ export default function LoginScreen() {
           <View className="items-center pb-1">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
@@ -113,11 +113,11 @@ export default function LoginScreen() {
             <Form className="gap-2">
               <FormSection className="ios:bg-background">
                 <FormItem>
-                  <View testID={TestIds.EmailInput}>
+                  <View testID={testIds.auth.emailInput}>
                     <form.Field name="email">
                       {(field) => (
                         <TextField
-                          testID={TestIds.EmailInput}
+                          testID={testIds.auth.emailInput}
                           placeholder={Platform.select({
                             ios: 'Email',
                             default: '',
@@ -149,7 +149,8 @@ export default function LoginScreen() {
                   <form.Field name="password">
                     {(field) => (
                       <TextField
-                        testID={TestIds.PasswordInput}
+                        testID={testIds.auth.passwordInput}
+                        accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Password',
                           default: '',
@@ -200,7 +201,8 @@ export default function LoginScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
-                  testID={TestIds.ContinueButton}
+                  testID={testIds.auth.continueBtn}
+                  accessible={true}
                   size="lg"
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}
@@ -227,7 +229,8 @@ export default function LoginScreen() {
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, _isSubmitting]) => (
                   <Button
-                    testID={TestIds.ContinueButton}
+                    testID={testIds.auth.continueBtn}
+                    accessible={true}
                     disabled={!canSubmit || loading}
                     onPress={() => {
                       if (focusedTextField === 'email') {
