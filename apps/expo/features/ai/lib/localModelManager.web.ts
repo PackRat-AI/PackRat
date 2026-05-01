@@ -4,12 +4,22 @@
  * Metro automatically picks this file over localModelManager.ts for web builds.
  */
 
-export const localModelManager = {
-  loadModel: async () => undefined,
-  unloadModel: async () => undefined,
-  generateText: async () => '',
-  isModelLoaded: () => false,
-  getModelPath: () => null,
-  downloadModel: async () => undefined,
-  cancelDownload: () => undefined,
-};
+export function isAppleIntelligenceAvailable(): boolean {
+  return false;
+}
+
+export function getLocalModel(): null {
+  return null;
+}
+
+export async function isLlamaModelDownloaded(): Promise<boolean> {
+  return false;
+}
+
+export async function initLocalModel(): Promise<void> {}
+
+export async function downloadLocalModel(): Promise<void> {}
+
+export async function cancelLocalModelDownload(): Promise<void> {}
+
+export async function deleteLocalModel(): Promise<void> {}

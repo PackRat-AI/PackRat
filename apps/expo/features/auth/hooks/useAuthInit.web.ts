@@ -11,32 +11,24 @@ export function useAuthInit() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        setIsLoading(true);
+    const hasSkippedLogin = localStorage.getItem('skipped_login');
+    const accessToken = localStorage.getItem('access_token');
 
-        const hasSkippedLogin = localStorage.getItem('skipped_login');
-        const accessToken = localStorage.getItem('access_token');
+    if (accessToken || hasSkippedLogin === 'true') {
+      setIsLoading(false);
+      return;
+    }
 
-        if (accessToken || hasSkippedLogin === 'true') {
-          setIsLoading(false);
-          return;
-        }
+    setIsLoading(false);
 
-        router.replace({
-          pathname: '/auth',
-          params: { showSkipLoginBtn: 'true', redirectTo: '/' },
-        });
-      } catch (error) {
-        console.error('Failed to load user session:', error);
-        router.replace('/auth');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Defer past React's commit phase so NavigationContainer is ready.
+    // On web, effects can fire before expo-router's navigationRef.isReady()
+    // returns true (especially in Strict Mode's double-mount).
+    const timer = setTimeout(() => {
+      router.replace({ pathname: '/auth', params: { showSkipLoginBtn: 'true', redirectTo: '/' } });
+    }, 0);
 
-    initializeAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => clearTimeout(timer);
   }, []);
 
   return isLoading;

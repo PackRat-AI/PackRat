@@ -34,6 +34,10 @@ const WEB_STUBS = {
   'expo-file-system/legacy': 'mocks/expo-file-system-legacy.ts',
   'expo-updates': 'mocks/expo-updates.ts',
   'expo-dev-client': 'mocks/expo-dev-client.ts',
+  'react-native-keyboard-controller': 'mocks/react-native-keyboard-controller.tsx',
+  '@gorhom/bottom-sheet': 'mocks/gorhom-bottom-sheet.tsx',
+  '@react-native-community/datetimepicker': 'mocks/react-native-community-datetimepicker.tsx',
+  '@react-native-picker/picker': 'mocks/react-native-picker.tsx',
 };
 
 const originalResolveRequest = config.resolver?.resolveRequest;

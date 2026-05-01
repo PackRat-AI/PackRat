@@ -170,6 +170,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.trips.nameInput}
                     placeholder={t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}

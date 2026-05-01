@@ -35,6 +35,8 @@
     "submit:ios": "eas submit --platform ios",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:web": "playwright test --config e2e-web/playwright.config.ts",
+    "test:web:ui": "playwright test --config e2e-web/playwright.config.ts --ui",
     "update:development": "APP_VARIANT=development eas update --branch development --environment development",
     "update:preview": "APP_VARIANT=preview eas update --branch preview --environment preview",
     "update:production": "eas update --branch production --environment production",

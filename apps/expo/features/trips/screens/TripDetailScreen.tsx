@@ -5,12 +5,14 @@ import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Modal, ScrollView, Share, View } from 'react-native';
+import { Alert, Modal, ScrollView, Share, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
+import { useDeleteTrip } from '../hooks';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
 
@@ -26,6 +28,7 @@ export function TripDetailScreen() {
   // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
+  const { deleteTrip } = useDeleteTrip();
 
   // Create a stable key for MapView based on location coordinates
   // This forces remount when location changes, fixing iOS initialRegion issue
@@ -66,6 +69,20 @@ export function TripDetailScreen() {
     }
   };
 
+  const handleDeleteTrip = () => {
+    Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          await deleteTrip(id as string);
+          router.back();
+        },
+      },
+    ]);
+  };
+
   const handleWeatherPress = () => {
     if (!trip.location) return;
 
@@ -91,6 +108,32 @@ export function TripDetailScreen() {
               <Icon
                 materialIcon={{ type: 'MaterialIcons', name: 'share' }}
                 ios={{ name: 'square.and.arrow.up' }}
+                size={22}
+                color={colors.grey2}
+              />
+            </Button>
+            <Button
+              variant="plain"
+              size="icon"
+              testID={testIds.trips.editBtn}
+              onPress={() => router.push(`/trip/${id}/edit`)}
+            >
+              <Icon
+                materialIcon={{ type: 'MaterialCommunityIcons', name: 'pencil-box-outline' }}
+                ios={{ name: 'pencil' }}
+                size={22}
+                color={colors.grey2}
+              />
+            </Button>
+            <Button
+              variant="plain"
+              size="icon"
+              testID={testIds.trips.deleteBtn}
+              onPress={handleDeleteTrip}
+            >
+              <Icon
+                materialIcon={{ type: 'MaterialCommunityIcons', name: 'trash-can-outline' }}
+                ios={{ name: 'trash' }}
                 size={22}
                 color={colors.grey2}
               />

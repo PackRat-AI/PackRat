@@ -17,8 +17,19 @@ export const API_URL = clientEnvs.EXPO_PUBLIC_API_URL;
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
+function readLocalToken(key: string): string | null {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  // atomWithStorage JSON-serializes values; read back either format safely.
+  try {
+    return JSON.parse(raw) ?? null;
+  } catch {
+    return raw;
+  }
+}
+
 async function getToken(): Promise<string | null> {
-  return localStorage.getItem('access_token');
+  return readLocalToken('access_token');
 }
 
 async function refreshTokens(): Promise<string | null> {
@@ -26,7 +37,7 @@ async function refreshTokens(): Promise<string | null> {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = readLocalToken('refresh_token');
       const res = await fetch(`${API_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

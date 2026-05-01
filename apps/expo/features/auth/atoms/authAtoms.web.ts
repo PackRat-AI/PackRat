@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import { atomWithStorage } from 'jotai/utils';
+import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 
 /**
  * Web version of auth atoms.
@@ -15,9 +15,35 @@ export type User = {
   emailVerified: boolean;
 };
 
-export const tokenAtom = atomWithStorage<string | null>('access_token', null);
+// atomWithStorage JSON-encodes values, but some code paths (token refresh in client.web.ts)
+// write the raw JWT directly to localStorage. This custom storage reads both formats.
+const baseStorage = createJSONStorage<string | null>(() => localStorage);
+const resilientTokenStorage = {
+  ...baseStorage,
+  getItem(key: string, initialValue: string | null): string | null {
+    const raw = localStorage.getItem(key);
+    if (!raw) return initialValue;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  },
+};
 
-export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null);
+export const tokenAtom = atomWithStorage<string | null>(
+  'access_token',
+  null,
+  resilientTokenStorage,
+  { getOnInit: true },
+);
+
+export const refreshTokenAtom = atomWithStorage<string | null>(
+  'refresh_token',
+  null,
+  resilientTokenStorage,
+  { getOnInit: true },
+);
 
 export const isLoadingAtom = atom(false);
 
