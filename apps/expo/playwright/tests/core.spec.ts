@@ -201,10 +201,8 @@ test('catalog tab loads items', async ({ authedPage: page }) => {
 
 test('catalog search filters results', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for the search button — avoids networkidle which may never settle on a live catalog
-  const searchBtn = page.getByTestId('catalog:search-btn');
-  await searchBtn.waitFor({ timeout: 15_000 });
-  await searchBtn.click();
+  // Wait for catalog to load — avoids networkidle which may never settle on a live catalog
+  await page.getByTestId('catalog:total-items-count').waitFor({ timeout: 15_000 });
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });
