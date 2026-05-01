@@ -2,31 +2,27 @@ import { isFunction } from '@packrat/guards';
 
 type UpdateFn = (prevValue: string | null) => string;
 
-const PREFIX = '__kv__';
-
 const isClient = typeof window !== 'undefined';
 const memFallback = new Map<string, string>();
 
 const rawGet = (key: string): string | null =>
-  isClient ? window.localStorage.getItem(PREFIX + key) : (memFallback.get(key) ?? null);
+  isClient ? window.localStorage.getItem(key) : (memFallback.get(key) ?? null);
 
 const rawSet = (key: string, value: string): void => {
-  if (isClient) window.localStorage.setItem(PREFIX + key, value);
+  if (isClient) window.localStorage.setItem(key, value);
   else memFallback.set(key, value);
 };
 
 const rawRemove = (key: string): boolean => {
   const had = rawGet(key) !== null;
-  if (isClient) window.localStorage.removeItem(PREFIX + key);
+  if (isClient) window.localStorage.removeItem(key);
   else memFallback.delete(key);
   return had;
 };
 
 const rawKeys = (): string[] => {
   if (!isClient) return Array.from(memFallback.keys());
-  return Object.keys(window.localStorage)
-    .filter((k) => k.startsWith(PREFIX))
-    .map((k) => k.slice(PREFIX.length));
+  return Object.keys(window.localStorage);
 };
 
 const deepMerge = (
