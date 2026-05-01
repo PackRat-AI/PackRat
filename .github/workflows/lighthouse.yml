@@ -25,19 +25,26 @@ jobs:
         working-directory: apps/guides
     steps:
       - uses: actions/checkout@v6
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
           cache: true
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
         working-directory: .
+
       - name: Build
         run: bun run build
-      - name: Run Lighthouse CI
-        run: bunx lhci autorun
+
+      - name: Lighthouse — desktop
+        run: bunx lhci autorun --config=.lighthouserc.js
+
+      - name: Lighthouse — mobile
+        run: bunx lhci autorun --config=.lighthouserc.mobile.js
 
   lighthouse-landing:
     name: Lighthouse (landing)
@@ -47,16 +54,23 @@ jobs:
         working-directory: apps/landing
     steps:
       - uses: actions/checkout@v6
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
           cache: true
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
         working-directory: .
+
       - name: Build
         run: bun run build
-      - name: Run Lighthouse CI
-        run: bunx lhci autorun
+
+      - name: Lighthouse — desktop
+        run: bunx lhci autorun --config=.lighthouserc.js
+
+      - name: Lighthouse — mobile
+        run: bunx lhci autorun --config=.lighthouserc.mobile.js

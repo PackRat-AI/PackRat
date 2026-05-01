@@ -4,30 +4,17 @@ module.exports = {
     collect: {
       staticDistDir: './out',
       numberOfRuns: 3,
-      settings: [
-        {
-          formFactor: 'desktop',
-          screenEmulation: {
-            mobile: false,
-            width: 1350,
-            height: 940,
-            deviceScaleFactor: 1,
-            disabled: false,
-          },
-          throttling: { rttMs: 40, throughputKbps: 10240, cpuSlowdownMultiplier: 1 },
+      settings: {
+        formFactor: 'desktop',
+        screenEmulation: {
+          mobile: false,
+          width: 1350,
+          height: 940,
+          deviceScaleFactor: 1,
+          disabled: false,
         },
-        {
-          formFactor: 'mobile',
-          screenEmulation: {
-            mobile: true,
-            width: 390,
-            height: 844,
-            deviceScaleFactor: 3,
-            disabled: false,
-          },
-          throttling: { rttMs: 150, throughputKbps: 1638.4, cpuSlowdownMultiplier: 4 },
-        },
-      ],
+        throttling: { rttMs: 40, throughputKbps: 10240, cpuSlowdownMultiplier: 1 },
+      },
     },
     assert: {
       assertions: {
@@ -35,12 +22,10 @@ module.exports = {
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:best-practices': ['error', { minScore: 0.9 }],
         'categories:seo': ['error', { minScore: 0.9 }],
-        // Core Web Vitals
         'first-contentful-paint': ['error', { maxNumericValue: 2000 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
         'total-blocking-time': ['error', { maxNumericValue: 300 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-        // OG / SEO specifics
         'meta-description': 'error',
         'document-title': 'error',
         'html-has-lang': 'error',
