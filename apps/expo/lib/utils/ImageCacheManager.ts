@@ -1,5 +1,4 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { Platform } from 'react-native';
 import { IMAGES_DIR } from '../constants';
 
 export class ImageCacheManager {
@@ -93,7 +92,7 @@ export class ImageCacheManager {
    * Clear all cached images
    */
   public async clearCache(): Promise<void> {
-    if (Platform.OS === 'web') return;
+    if (typeof globalThis.document !== 'undefined') return;
     const dirInfo = await FileSystem.getInfoAsync(this.cacheDirectory);
     if (dirInfo.exists) {
       await FileSystem.deleteAsync(this.cacheDirectory);
