@@ -44,6 +44,8 @@ export const nodeEnvSchema = z.object({
   OSM_DATABASE_URL_LOCAL: z.string().url().optional(),
   // osm2pgsql node cache in MB — increase for continent-scale imports (e.g. 6000).
   OSM_CACHE_MB: z.string().regex(/^\d+$/).optional(),
+  // Import mode: 'create' drops and recreates tables; 'append' applies incremental diffs.
+  IMPORT_MODE: z.enum(['create', 'append']).default('create'),
 
   // ── R2 / S3 credentials (packages/analytics/scripts/smoke-test.ts) ─
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
@@ -85,6 +87,10 @@ export const nodeEnv = nodeEnvSchema.parse({
   PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN,
   NEON_DATABASE_URL: process.env.NEON_DATABASE_URL,
   NEON_DATABASE_URL_READONLY: process.env.NEON_DATABASE_URL_READONLY,
+  OSM_DATABASE_URL: process.env.OSM_DATABASE_URL,
+  OSM_DATABASE_URL_LOCAL: process.env.OSM_DATABASE_URL_LOCAL,
+  OSM_CACHE_MB: process.env.OSM_CACHE_MB,
+  IMPORT_MODE: process.env.IMPORT_MODE,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
   R2_ENDPOINT_URL: process.env.R2_ENDPOINT_URL,

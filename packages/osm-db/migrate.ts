@@ -1,6 +1,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { nodeEnv } from '@packrat/env/node';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { migrate } from 'drizzle-orm/neon-http/migrator';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
@@ -28,7 +29,7 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 async function runMigrations() {
-  const url = process.env.OSM_DATABASE_URL_LOCAL;
+  const url = nodeEnv.OSM_DATABASE_URL_LOCAL;
   if (!url) throw new Error('OSM_DATABASE_URL_LOCAL is required');
 
   console.log('Running OSM DB migrations...');

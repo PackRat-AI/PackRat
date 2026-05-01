@@ -1,3 +1,4 @@
+import { nodeEnv } from '@packrat/env/node';
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
@@ -9,7 +10,7 @@ export default defineConfig({
   tablesFilter: ['!osm_ways', '!osm_routes'],
   dbCredentials: {
     url:
-      process.env.NEON_DATABASE_URL ??
+      nodeEnv.NEON_DATABASE_URL ??
       (() => {
         throw new Error('NEON_DATABASE_URL is not set');
       })(),

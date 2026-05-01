@@ -52,11 +52,8 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
-  // Drizzle config files — run as config by the drizzle CLI, not app code
-  'packages/api/drizzle.config.ts',
-  'packages/osm-db/drizzle.config.ts',
-  // OSM infrastructure scripts — standalone Node scripts or pass process.env to child processes
-  'packages/osm-db/migrate.ts',
+  // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)
+  // to Bun.spawn via { ...process.env, ... }. App-level vars (IMPORT_MODE etc.) use nodeEnv.
   'packages/osm-import/import.ts',
 ];
 

@@ -5,6 +5,17 @@ import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
+// ── OG meta extraction (AllTrails preview) ───────────────────────────────────
+// Two attribute orderings are valid per the HTML spec: property-then-content and
+// content-then-property. Static top-level regexes avoid dynamic RegExp construction.
+
+const OG_TITLE_A = /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i;
+const OG_TITLE_B = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i;
+const OG_DESC_A = /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i;
+const OG_DESC_B = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i;
+const OG_IMAGE_A = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i;
+const OG_IMAGE_B = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i;
+
 // ── Zod schemas ─────────────────────────────────────────────────────────────
 
 const OsmMemberSchema = z.object({
@@ -334,26 +345,9 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
 
         const html = await response.text();
 
-        const extract = (property: string): string | null => {
-          const match =
-            html.match(
-              new RegExp(
-                `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
-                'i',
-              ),
-            ) ??
-            html.match(
-              new RegExp(
-                `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
-                'i',
-              ),
-            );
-          return match?.[1] ?? null;
-        };
-
-        const title = extract('og:title');
-        const description = extract('og:description');
-        const image = extract('og:image');
+        const title = (html.match(OG_TITLE_A) ?? html.match(OG_TITLE_B))?.[1] ?? null;
+        const description = (html.match(OG_DESC_A) ?? html.match(OG_DESC_B))?.[1] ?? null;
+        const image = (html.match(OG_IMAGE_A) ?? html.match(OG_IMAGE_B))?.[1] ?? null;
 
         if (!title) {
           return status(422, { error: 'Could not extract trail metadata from page' });

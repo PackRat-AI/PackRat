@@ -38,7 +38,7 @@ if (!DB_URL) {
 }
 
 const LUA_CONFIG = join(__dirname, 'routes.lua');
-const IMPORT_MODE = process.env.IMPORT_MODE ?? 'create';
+const IMPORT_MODE = nodeEnv.IMPORT_MODE;
 // Node cache in MB. Default (800) is fine for small extracts; use 4000-8000 for
 // continent-scale imports to avoid extreme disk I/O during the way-processing pass.
 const CACHE_MB = nodeEnv.OSM_CACHE_MB ?? '800';
