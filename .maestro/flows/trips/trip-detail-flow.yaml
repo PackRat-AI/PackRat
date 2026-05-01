@@ -10,7 +10,7 @@ appId: ${APP_ID}
 
 # Tap the test trip
 - tapOn:
-    id: "trip-row-${TRIP_NAME}"
+    id: "trips:list-item-${TRIP_NAME}"
 - waitForAnimationToEnd
 
 # Verify trip name is shown

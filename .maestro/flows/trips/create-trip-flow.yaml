@@ -49,7 +49,7 @@ appId: ${APP_ID}
 
 # --- Start Date ---
 - tapOn:
-    id: "start-date-input"
+    id: "trips:start-date-input"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -80,7 +80,7 @@ appId: ${APP_ID}
 
 # --- End Date ---
 - tapOn:
-    id: "end-date-input"
+    id: "trips:end-date-input"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -127,10 +127,10 @@ appId: ${APP_ID}
     id: "create-trip-button"
 - scrollUntilVisible:
     element:
-      id: "trip-row-${TRIP_NAME}"
+      id: "trips:list-item-${TRIP_NAME}"
     direction: DOWN
     timeout: 60000
     speed: 99
 - assertVisible:
-      id: "trip-row-${TRIP_NAME}"
+      id: "trips:list-item-${TRIP_NAME}"
 

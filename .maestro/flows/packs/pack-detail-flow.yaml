@@ -10,7 +10,7 @@ appId: ${APP_ID}
 
 # Tap the test pack
 - tapOn:
-    id: "pack-row-${PACK_NAME}"
+    id: "packs:list-item-${PACK_NAME}"
 - waitForAnimationToEnd
 
 # Assert pack detail elements via testIDs

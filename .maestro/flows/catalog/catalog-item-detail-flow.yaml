@@ -10,7 +10,7 @@ appId: ${APP_ID}
     text: ".*items.*"
 # Tap first visible item using index
 - tapOn:
-    id: "catalog-item"
+    id: "catalog:item-.*"
     index: 0
 - waitForAnimationToEnd
 # Scroll down to find action buttons
