@@ -103,7 +103,7 @@ jobs:
         run: bun test:web
 
       - name: Upload Playwright report on failure
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
