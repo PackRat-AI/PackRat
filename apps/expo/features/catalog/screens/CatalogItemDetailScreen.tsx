@@ -8,7 +8,7 @@ import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
+import { TestIds, testIds } from 'expo-app/lib/testIds';
 import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
