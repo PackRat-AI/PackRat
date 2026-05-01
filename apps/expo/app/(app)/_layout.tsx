@@ -36,16 +36,16 @@ export default function AppLayout() {
   const navigation = useNavigation();
 
   // When sign-out completes (isLoadingAtom=true + isAuthed=false), the spinner
-  // below unmounts NativeTabs. Dispatch CommonActions.reset directly to the root
-  // Stack navigator (bypassing expo-router's listeners.focus chain, which NativeTabs
-  // intercepts when mounted). getParent() gives the root Stack when useNavigation()
-  // returns the inner Stack; ?? navigation handles the reverse. The nested state
-  // resets auth's sub-navigator to [index], preventing (login) modal restoration
-  // from retained navigation state.
+  // below unmounts NativeTabs. Dispatch CommonActions.reset directly to the user's
+  // root Stack navigator. navigation (from useNavigation() in AppLayout) IS the
+  // user's root Stack nav — expo-router's ContextNavigator is one level above via
+  // getParent(), not this object. Direct dispatch bypasses expo-router's
+  // listeners.focus chain entirely (which NativeTabs intercepts when mounted).
+  // The nested state resets auth's sub-navigator to [index], preventing the
+  // (login) modal from being restored from retained navigation state.
   useEffect(() => {
     if (isLoadingGlobal && !isAuthedValue) {
-      const rootNav = navigation.getParent() ?? navigation;
-      rootNav.dispatch(
+      navigation.dispatch(
         CommonActions.reset({
           index: 0,
           routes: [{ name: 'auth', state: { index: 0, routes: [{ name: 'index' }] } }],
