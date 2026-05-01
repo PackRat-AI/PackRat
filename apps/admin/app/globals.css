@@ -1,5 +1,4 @@
 @import "../../../packages/web-ui/src/styles/globals.css";
-@import "leaflet/dist/leaflet.css";
 
 @layer base {
   :root {
