@@ -94,11 +94,11 @@ function enrichEnv(env: Env): Env {
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
     const e = enrichEnv(env);
-    setWorkerEnv(e as unknown as Record<string, unknown>);
-    return (app.fetch as unknown as CfFetchFn)(request, e, ctx);
+    setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: Cloudflare Worker entry point — env is a plain bindings object at runtime
+    return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch matches the CfFetchFn signature at runtime; unknown intermediate required for variance
   },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>);
+    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: Cloudflare Worker entry point — env is a plain bindings object at runtime
 
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {

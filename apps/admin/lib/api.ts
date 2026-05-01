@@ -255,7 +255,7 @@ async function trailsFetch<T>(path: string): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...authHeaders },
   });
   if (!res.ok) throw new Error(`Trails API error: ${res.status} ${res.statusText}`);
-  return res.json() as Promise<T>;
+  return res.json() as Promise<T>; // safe-cast: fetch returns unknown JSON; caller is responsible for the shape via the generic T
 }
 
 export interface TrailGeometry {
