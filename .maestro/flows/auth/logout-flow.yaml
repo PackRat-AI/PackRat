@@ -36,11 +36,12 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes).
-# Both platforms use native Alert.alert(). In XCTest, the UIAlertController action occupies
-# index 0 for text "Log Out" (foreground alert window elements appear first); the profile
-# list button is at index 1. Maestro log from run 25218877925 confirmed index:1 was tapping
-# resource-id=sign-out-button (y=706, the list button) — wrong element. No index (=0) targets
-# the alert action. waitForAnimationToEnd ensures the native alert is fully presented before tap.
+# Both platforms use native Alert.alert(). With snapshotKeyHonorModalViews:false the main-window
+# elements appear first in the snapshot tree, so tapOn:text:"Log Out" (any index) hits the
+# profile list button (resource-id=sign-out-button, y=706) instead of the alert action.
+# Fix: use rightOf:text:"Cancel" to uniquely identify the dialog "Log Out" — "Cancel" only
+# exists inside the dialog, so this selector picks the adjacent alert action button.
+# waitForAnimationToEnd ensures the native alert is fully settled before we interact.
 - runFlow:
     when:
       visible:
@@ -49,6 +50,8 @@ appId: ${APP_ID}
       - waitForAnimationToEnd
       - tapOn:
           text: "Log Out"
+          rightOf:
+            text: "Cancel"
 
 - waitForAnimationToEnd
 
