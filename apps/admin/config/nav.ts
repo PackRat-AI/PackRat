@@ -4,6 +4,7 @@ import {
   BarChart2,
   LayoutDashboard,
   type LucideIcon,
+  Map as MapIcon,
   Package,
   Users,
 } from 'lucide-react';
@@ -35,6 +36,11 @@ export const navItems: NavItem[] = [
     title: 'Catalog',
     href: '/dashboard/catalog',
     icon: Package,
+  },
+  {
+    title: 'Trail Viewer',
+    href: '/dashboard/trails',
+    icon: MapIcon,
   },
   {
     title: 'Platform Analytics',

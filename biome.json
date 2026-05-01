@@ -16,6 +16,7 @@
       "!**/ios",
       "!**/android",
       "!**/public",
+      "!**/coverage",
       "!**/.next",
       "!**/.wrangler",
       "!**/*.gen.ts",

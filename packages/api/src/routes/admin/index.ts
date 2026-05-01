@@ -120,11 +120,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
       // Basic credentials are always required and remain the primary gate.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(
-          request,
-          CF_ACCESS_TEAM_DOMAIN,
-          CF_ACCESS_AUD,
-        );
+        const cfIdentity = await verifyCFAccessRequest(request, {
+          teamDomain: CF_ACCESS_TEAM_DOMAIN,
+          aud: CF_ACCESS_AUD,
+        });
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
 

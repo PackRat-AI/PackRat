@@ -121,18 +121,19 @@ function makeRequest(headers: Record<string, string> = {}): Request {
 // Tests
 // ---------------------------------------------------------------------------
 describe('verifyCFAccessRequest', () => {
+  const opts = { teamDomain: TEAM_DOMAIN, aud: AUD };
+
   it('returns { email } for a valid RS256 JWT with correct iss + aud', async () => {
     const token = await makeCFJwt({ privateKey });
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toEqual({ email: 'admin@example.com' });
   });
 
   it('returns null when the cf-access-jwt-assertion header is absent', async () => {
-    const result = await verifyCFAccessRequest(makeRequest(), TEAM_DOMAIN, AUD);
+    const result = await verifyCFAccessRequest(makeRequest(), opts);
     expect(result).toBeNull();
   });
 
@@ -140,8 +141,7 @@ describe('verifyCFAccessRequest', () => {
     const token = await makeCFJwt({ privateKey, aud: 'wrong-audience' });
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toBeNull();
   });
@@ -150,8 +150,7 @@ describe('verifyCFAccessRequest', () => {
     const token = await makeCFJwt({ privateKey, iss: 'https://attacker.cloudflareaccess.com' });
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toBeNull();
   });
@@ -160,8 +159,7 @@ describe('verifyCFAccessRequest', () => {
     const token = await makeCFJwt({ privateKey: untrustedPrivateKey });
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toBeNull();
   });
@@ -170,8 +168,7 @@ describe('verifyCFAccessRequest', () => {
     const token = await makeCFJwt({ privateKey, omitEmail: true });
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toBeNull();
   });
@@ -180,8 +177,7 @@ describe('verifyCFAccessRequest', () => {
     const token = await makeCFJwt({ privateKey, email: '' });
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toBeNull();
   });
@@ -191,8 +187,7 @@ describe('verifyCFAccessRequest', () => {
     // cryptographically verified JWT in cf-access-jwt-assertion.
     const result = await verifyCFAccessRequest(
       makeRequest({ 'cf-access-authenticated-user-email': 'admin@example.com' }),
-      TEAM_DOMAIN,
-      AUD,
+      opts,
     );
     expect(result).toBeNull();
   });

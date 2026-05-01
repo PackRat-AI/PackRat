@@ -24,6 +24,11 @@ export const queryKeys = {
     breakdown: ['platform', 'breakdown'] as const,
   },
 
+  /** OSM trail viewer queries. */
+  osm: {
+    trail: (osmId: string) => ['osm', 'trail', osmId] as const,
+  },
+
   /** Catalog analytics queries. */
   catalogAnalytics: {
     overview: ['catalog', 'overview'] as const,

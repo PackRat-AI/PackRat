@@ -66,6 +66,7 @@ export default (): ExpoConfig =>
             enableOpenCLAndHexagon: false,
           },
         ],
+        ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
       ],
