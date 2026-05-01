@@ -8,7 +8,8 @@ import { BackHandler, Platform } from 'react-native';
 if (Platform.OS === 'web') {
   const noop = () => ({ remove: () => {} });
   BackHandler.addEventListener = noop;
-  BackHandler.removeEventListener = () => {};
+  // removeEventListener exists on the RNW stub but was removed from RN typings
+  (BackHandler as unknown as { removeEventListener: () => void }).removeEventListener = () => {};
   BackHandler.exitApp = () => {};
 }
 
