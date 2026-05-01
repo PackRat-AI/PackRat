@@ -67,20 +67,22 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
   await page.getByTestId('items:name-input').fill('Test Tent');
   await page.getByTestId('items:weight-input').fill('1200');
 
-  // Submit — createPackItem syncs to API and updates local store
-  await Promise.all([
-    page
-      .waitForResponse(
-        (r) =>
-          r.url().includes('/api/packs') &&
-          r.url().includes('/items') &&
-          r.request().method() === 'POST',
-      )
-      .catch(() => null), // API call may be deferred by syncedCrud
-    page.getByTestId('items:submit').click(),
-  ]);
+  // Register listener BEFORE clicking — syncedCrud initiates the POST shortly after form submit.
+  // We must await the response BEFORE page.goto() because a full navigation aborts in-flight requests.
+  const itemPostPromise = page.waitForResponse(
+    (r) =>
+      r.url().includes('/api/packs') &&
+      r.url().includes('/items') &&
+      r.request().method() === 'POST',
+    { timeout: 15_000 },
+  );
 
-  // Navigate to pack detail — item should be visible (local store or API)
+  await page.getByTestId('items:submit').click();
+
+  // Wait for the item to land in the DB before navigating away
+  await itemPostPromise;
+
+  // Now safe: item is persisted, page.goto() won't abort anything critical
   await page.goto(`${BASE_URL}/pack/${packId}`);
   await expect(page.getByText('Test Tent')).toBeVisible({ timeout: 15_000 });
 });
