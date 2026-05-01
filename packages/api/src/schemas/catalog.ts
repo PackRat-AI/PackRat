@@ -53,7 +53,6 @@ export const CatalogItemSchema = z.object({
       z.object({
         user_name: z.string().nullable().optional(),
         user_avatar: z.string().nullable().optional(),
-        userAvatar: z.string().nullable().optional(),
         context: z.record(z.string(), z.string()).nullable().optional(),
         recommends: z.boolean().nullable().optional(),
         rating: z.number(),
