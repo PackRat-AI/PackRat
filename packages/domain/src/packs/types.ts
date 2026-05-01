@@ -1,6 +1,6 @@
-import type { CatalogItem } from 'expo-app/features/catalog/types';
-import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
-import type { PackCategory, WeightUnit } from 'expo-app/types';
+import type { PackCategory, WeightUnit } from '@packrat/api/types';
+import type { CatalogItem } from '../catalog/types';
+import type { PackTemplateItem } from '../pack-templates/types';
 
 export type { PackCategory, WeightUnit };
 

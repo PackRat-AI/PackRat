@@ -1,4 +1,4 @@
-import type { Pack } from 'expo-app/features/packs/types';
+import type { Pack } from '../packs/types';
 
 export type TripStatus = 'planned' | 'ongoing' | 'completed' | 'cancelled';
 

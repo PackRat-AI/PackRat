@@ -1,4 +1,6 @@
-export type WeightUnit = 'g' | 'kg' | 'oz' | 'lb';
+import type { WeightUnit } from '@packrat/api/types';
+
+export type { WeightUnit };
 
 export interface PackWeightHistoryEntry {
   id: string;
