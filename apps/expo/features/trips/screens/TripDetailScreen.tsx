@@ -153,7 +153,7 @@ export function TripDetailScreen() {
           </View>
 
           {/* Dates */}
-          <View className="mb-6">
+          <View className="mb-6" testID={testIds.trips.datesSection}>
             <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.dates')}</Text>
             <View className="rounded-xl bg-card border border-border">
               <View className="p-3 flex-row justify-between">
