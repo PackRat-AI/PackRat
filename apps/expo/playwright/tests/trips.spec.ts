@@ -330,6 +330,6 @@ test.describe('Trips list', () => {
     // (kept in DOM by Expo Router for tab history). Check the detail-specific "Dates" section
     // instead — it only renders on the trip detail page, not on list cards.
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Dates').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('trips:dates-section')).toBeVisible({ timeout: 15_000 });
   });
 });
