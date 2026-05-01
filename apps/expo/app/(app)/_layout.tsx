@@ -1,5 +1,6 @@
 import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { isLoadingAtom, needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -14,7 +15,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { TestIds } from 'expo-app/lib/testIds';
 import 'expo-dev-client';
-import { type Href, router, Stack, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -32,20 +33,26 @@ export default function AppLayout() {
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   // When sign-out completes (isLoadingAtom=true + isAuthed=false), the spinner
-  // below unmounts NativeTabs. This useEffect fires AFTER that render commits
-  // (including useLayoutEffect cleanups that remove NativeTabs from the focus
-  // chain). At that point listeners.focus[0] is the root Stack, so
-  // router.replace('/auth') reaches it directly instead of being dropped by
-  // NativeTabs. isLoadingGlobal=false on cold start (atom default) so the
-  // effect never fires spuriously before the user has authenticated once.
+  // below unmounts NativeTabs. Dispatch CommonActions.reset directly to the root
+  // Stack navigator (bypassing expo-router's listeners.focus chain, which NativeTabs
+  // intercepts when mounted). getParent() gives the root Stack when useNavigation()
+  // returns the inner Stack; ?? navigation handles the reverse. The nested state
+  // resets auth's sub-navigator to [index], preventing (login) modal restoration
+  // from retained navigation state.
   useEffect(() => {
     if (isLoadingGlobal && !isAuthedValue) {
-      // safe-cast: '/auth' is a compile-time string literal; Expo Router's Href accepts string paths directly.
-      router.replace('/auth' as Href);
+      const rootNav = navigation.getParent() ?? navigation;
+      rootNav.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'auth', state: { index: 0, routes: [{ name: 'index' }] } }],
+        }),
+      );
     }
-  }, [isLoadingGlobal, isAuthedValue]);
+  }, [isLoadingGlobal, isAuthedValue, navigation]);
 
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
   // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
