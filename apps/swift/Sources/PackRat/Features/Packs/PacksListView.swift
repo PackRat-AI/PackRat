@@ -7,6 +7,12 @@ struct PacksListView: View {
     @State private var showingCreateSheet = false
     @State private var needsRefresh = false
     @Environment(\.modelContext) private var modelContext
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+    #else
+    private var isCompact: Bool { false }
+    #endif
 
     var body: some View {
         Group {
@@ -53,33 +59,36 @@ struct PacksListView: View {
         }
     }
 
-    private var packList: some View {
-        List(viewModel.filteredPacks, selection: $selectedId) { pack in
-            NavigationLink(value: pack.id) {
+    @ViewBuilder
+    private func packRow(_ pack: Pack) -> some View {
+        if isCompact {
+            NavigationLink {
+                PackDetailView(pack: pack, viewModel: viewModel)
+            } label: {
                 PackRowView(pack: pack)
             }
-            .tag(pack.id)
-            .contextMenu {
-                #if os(macOS)
-                OpenWindowButton(id: "pack", value: pack.id, label: "Open in New Window")
-                Divider()
-                #endif
-                Button("Delete", systemImage: "trash", role: .destructive) {
-                    Task { try? await viewModel.deletePack(pack.id) }
-                }
-            }
-            // Infinite scroll: trigger load when last item appears
-            .task {
-                if pack.id == viewModel.filteredPacks.last?.id {
-                    await viewModel.loadMore()
-                }
-            }
+        } else {
+            PackRowView(pack: pack)
         }
-        // Push-navigation destination for iPhone NavigationStack
-        .navigationDestination(for: String.self) { id in
-            if let pack = viewModel.packs.first(where: { $0.id == id }) {
-                PackDetailView(pack: pack, viewModel: viewModel)
-            }
+    }
+
+    private var packList: some View {
+        List(viewModel.filteredPacks, selection: $selectedId) { pack in
+            packRow(pack)
+                .contextMenu {
+                    #if os(macOS)
+                    OpenWindowButton(id: "pack", value: pack.id, label: "Open in New Window")
+                    Divider()
+                    #endif
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        Task { try? await viewModel.deletePack(pack.id) }
+                    }
+                }
+                .task {
+                    if pack.id == viewModel.filteredPacks.last?.id {
+                        await viewModel.loadMore()
+                    }
+                }
         }
     }
 }

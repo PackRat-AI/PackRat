@@ -7,6 +7,12 @@ struct TripsListView: View {
     @State private var showingCreateSheet = false
     @State private var needsRefresh = false
     @Environment(\.modelContext) private var modelContext
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+    #else
+    private var isCompact: Bool { false }
+    #endif
 
     var body: some View {
         Group {
@@ -64,16 +70,20 @@ struct TripsListView: View {
                 }
             }
         }
-        .navigationDestination(for: String.self) { id in
-            if let trip = viewModel.trips.first(where: { $0.id == id }) {
-                TripDetailView(trip: trip, viewModel: viewModel)
-            }
-        }
     }
 
+    @ViewBuilder
     private func tripRow(_ trip: Trip) -> some View {
-        NavigationLink(value: trip.id) {
-            TripRowView(trip: trip)
+        Group {
+            if isCompact {
+                NavigationLink {
+                    TripDetailView(trip: trip, viewModel: viewModel)
+                } label: {
+                    TripRowView(trip: trip)
+                }
+            } else {
+                TripRowView(trip: trip)
+            }
         }
         .tag(trip.id)
         .task {

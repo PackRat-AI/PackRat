@@ -6,6 +6,12 @@ struct TrailConditionsListView: View {
     @Bindable var viewModel: TrailConditionsViewModel
     @Binding var selectedId: String?
     @State private var showingSubmitSheet = false
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+    #else
+    private var isCompact: Bool { false }
+    #endif
 
     var body: some View {
         Group {
@@ -39,22 +45,30 @@ struct TrailConditionsListView: View {
         }
     }
 
-    private var reportList: some View {
-        List(viewModel.filteredReports, selection: $selectedId) { report in
-            NavigationLink(value: report.id) {
+    @ViewBuilder
+    private func reportRow(_ report: TrailConditionReport) -> some View {
+        Group {
+            if isCompact {
+                NavigationLink {
+                    TrailConditionDetailView(report: report)
+                } label: {
+                    TrailReportRow(report: report)
+                }
+            } else {
                 TrailReportRow(report: report)
             }
-            .tag(report.id)
-            .contextMenu {
-                Button("Delete", systemImage: "trash", role: .destructive) {
-                    Task { try? await viewModel.deleteReport(report.id) }
-                }
+        }
+        .tag(report.id)
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                Task { try? await viewModel.deleteReport(report.id) }
             }
         }
-        .navigationDestination(for: String.self) { id in
-            if let report = viewModel.reports.first(where: { $0.id == id }) {
-                TrailConditionDetailView(report: report)
-            }
+    }
+
+    private var reportList: some View {
+        List(viewModel.filteredReports, selection: $selectedId) { report in
+            reportRow(report)
         }
     }
 }

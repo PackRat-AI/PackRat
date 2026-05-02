@@ -130,11 +130,36 @@ struct AppNavigation: View {
     @ViewBuilder
     private var detailColumn: some View {
         switch appState.navItem {
-        case .packs:           placeholder("Select a Pack", symbol: "backpack")
-        case .trips:           placeholder("Select a Trip", symbol: "map")
-        case .templates:       placeholder("Select a Template", symbol: "doc.on.doc")
-        case .trailConditions: placeholder("Select a Report", symbol: "figure.hiking")
-        default:               Color.clear
+        case .packs:
+            if let id = appState.selectedPackId,
+               let pack = appState.packsVM.packs.first(where: { $0.id == id }) {
+                PackDetailView(pack: pack, viewModel: appState.packsVM)
+            } else {
+                placeholder("Select a Pack", symbol: "backpack")
+            }
+        case .trips:
+            if let id = appState.selectedTripId,
+               let trip = appState.tripsVM.trips.first(where: { $0.id == id }) {
+                TripDetailView(trip: trip, viewModel: appState.tripsVM)
+            } else {
+                placeholder("Select a Trip", symbol: "map")
+            }
+        case .templates:
+            if let id = appState.selectedTemplateId,
+               let t = appState.templatesVM.templates.first(where: { $0.id == id }) {
+                PackTemplateDetailView(template: t, viewModel: appState.templatesVM, packsVM: appState.packsVM)
+            } else {
+                placeholder("Select a Template", symbol: "doc.on.doc")
+            }
+        case .trailConditions:
+            if let id = appState.selectedReportId,
+               let report = appState.trailConditionsVM.reports.first(where: { $0.id == id }) {
+                TrailConditionDetailView(report: report)
+            } else {
+                placeholder("Select a Report", symbol: "figure.hiking")
+            }
+        default:
+            Color.clear
         }
     }
 

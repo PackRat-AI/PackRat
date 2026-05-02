@@ -6,6 +6,12 @@ struct PackTemplatesListView: View {
     @Bindable var viewModel: PackTemplatesViewModel
     @Binding var selectedId: String?
     var packsVM: PacksViewModel = PacksViewModel()
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+    #else
+    private var isCompact: Bool { false }
+    #endif
 
     var body: some View {
         Group {
@@ -51,16 +57,20 @@ struct PackTemplatesListView: View {
                 }
             }
         }
-        .navigationDestination(for: String.self) { id in
-            if let t = viewModel.templates.first(where: { $0.id == id }) {
-                PackTemplateDetailView(template: t, viewModel: viewModel, packsVM: packsVM)
-            }
-        }
     }
 
+    @ViewBuilder
     private func templateRow(_ template: PackTemplate) -> some View {
-        NavigationLink(value: template.id) {
-            TemplateRowView(template: template)
+        Group {
+            if isCompact {
+                NavigationLink {
+                    PackTemplateDetailView(template: template, viewModel: viewModel, packsVM: packsVM)
+                } label: {
+                    TemplateRowView(template: template)
+                }
+            } else {
+                TemplateRowView(template: template)
+            }
         }
         .tag(template.id)
     }
