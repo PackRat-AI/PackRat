@@ -1,0 +1,1265 @@
+openapi: "3.1.0"
+info:
+  title: PackRat API
+  version: "1.0.0"
+  description: Outdoor adventure planning platform API
+servers:
+  - url: https://api.packrat.world
+    description: Production
+  - url: http://localhost:8787
+    description: Local development
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Enums ──────────────────────────────────────────────────────────────────
+    WeightUnit:
+      type: string
+      enum: [g, oz, kg, lb]
+
+    PackCategory:
+      type: string
+      enum: [hiking, backpacking, camping, climbing, winter, desert, custom, "water sports", skiing]
+
+    # ── Pack / PackItem ────────────────────────────────────────────────────────
+    PackItem:
+      type: object
+      required: [id, name, weight, weightUnit, quantity, consumable, worn, deleted]
+      properties:
+        id:
+          type: string
+        packId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        weight:
+          type: number
+          format: double
+        weightUnit:
+          $ref: "#/components/schemas/WeightUnit"
+        quantity:
+          type: integer
+          minimum: 1
+        category:
+          type: string
+          nullable: true
+        consumable:
+          type: boolean
+        worn:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        catalogItemId:
+          type: integer
+          nullable: true
+        userId:
+          type: integer
+        deleted:
+          type: boolean
+        isAIGenerated:
+          type: boolean
+        templateItemId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Pack:
+      type: object
+      required: [id, name, isPublic, deleted]
+      properties:
+        id:
+          type: string
+        userId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          $ref: "#/components/schemas/PackCategory"
+          nullable: true
+        isPublic:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+        templateId:
+          type: string
+          nullable: true
+        deleted:
+          type: boolean
+        isAIGenerated:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackItem"
+        totalWeight:
+          type: number
+          format: double
+        baseWeight:
+          type: number
+          format: double
+        wornWeight:
+          type: number
+          format: double
+        consumableWeight:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePackRequest:
+      type: object
+      required: [id, name, localCreatedAt, localUpdatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        category:
+          type: string
+        isPublic:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        localCreatedAt:
+          type: string
+          format: date-time
+        localUpdatedAt:
+          type: string
+          format: date-time
+
+    UpdatePackRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        category:
+          type: string
+        isPublic:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        deleted:
+          type: boolean
+        localUpdatedAt:
+          type: string
+          format: date-time
+
+    CreatePackItemRequest:
+      type: object
+      required: [id, name, weight, weightUnit]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        weight:
+          type: number
+          format: double
+        weightUnit:
+          $ref: "#/components/schemas/WeightUnit"
+        quantity:
+          type: integer
+          minimum: 1
+        category:
+          type: string
+        consumable:
+          type: boolean
+        worn:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        catalogItemId:
+          type: integer
+          nullable: true
+
+    UpdatePackItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        weight:
+          type: number
+          format: double
+        weightUnit:
+          $ref: "#/components/schemas/WeightUnit"
+        quantity:
+          type: integer
+          minimum: 1
+        category:
+          type: string
+        consumable:
+          type: boolean
+        worn:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+
+    # ── Trip ───────────────────────────────────────────────────────────────────
+    TripLocation:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        name:
+          type: string
+
+    Trip:
+      type: object
+      required: [id, name, deleted]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        location:
+          $ref: "#/components/schemas/TripLocation"
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        userId:
+          type: integer
+        packId:
+          type: string
+          nullable: true
+        deleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTripRequest:
+      type: object
+      required: [id, name, localCreatedAt, localUpdatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        location:
+          $ref: "#/components/schemas/TripLocation"
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        packId:
+          type: string
+          nullable: true
+        localCreatedAt:
+          type: string
+          format: date-time
+        localUpdatedAt:
+          type: string
+          format: date-time
+
+    UpdateTripRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        location:
+          $ref: "#/components/schemas/TripLocation"
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        packId:
+          type: string
+          nullable: true
+        localUpdatedAt:
+          type: string
+          format: date-time
+
+    # ── User ───────────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        emailVerified:
+          type: boolean
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          nullable: true
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        avatarUrl:
+          type: string
+          nullable: true
+
+    # ── Auth ───────────────────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    # ── Feed ───────────────────────────────────────────────────────────────────
+    PostAuthor:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+
+    Post:
+      type: object
+      required: [id, userId, images, createdAt, updatedAt, likeCount, commentCount, likedByMe]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        caption:
+          type: string
+          nullable: true
+        images:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        author:
+          $ref: "#/components/schemas/PostAuthor"
+        likeCount:
+          type: integer
+        commentCount:
+          type: integer
+        likedByMe:
+          type: boolean
+
+    FeedResponse:
+      type: object
+      required: [items, page, limit, total, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    Comment:
+      type: object
+      required: [id, postId, userId, content, createdAt, updatedAt, likeCount, likedByMe]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        userId:
+          type: integer
+        content:
+          type: string
+        parentCommentId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        author:
+          $ref: "#/components/schemas/PostAuthor"
+        likeCount:
+          type: integer
+        likedByMe:
+          type: boolean
+
+    CreatePostRequest:
+      type: object
+      required: [images]
+      properties:
+        caption:
+          type: string
+          maxLength: 2000
+        images:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 10
+
+    CreateCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        parentCommentId:
+          type: integer
+
+    CommentsResponse:
+      type: object
+      required: [items, page, limit, total, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    LikeToggleResponse:
+      type: object
+      required: [liked, likeCount]
+      properties:
+        liked:
+          type: boolean
+        likeCount:
+          type: integer
+
+    # ── Catalog ────────────────────────────────────────────────────────────────
+    CatalogItem:
+      type: object
+      required: [id, name, productUrl, sku, weight, weightUnit]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        productUrl:
+          type: string
+        sku:
+          type: string
+        weight:
+          type: number
+          format: double
+        weightUnit:
+          $ref: "#/components/schemas/WeightUnit"
+        description:
+          type: string
+          nullable: true
+        categories:
+          type: array
+          items:
+            type: string
+          nullable: true
+        images:
+          type: array
+          items:
+            type: string
+          nullable: true
+        brand:
+          type: string
+          nullable: true
+        model:
+          type: string
+          nullable: true
+        ratingValue:
+          type: number
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        size:
+          type: string
+          nullable: true
+        price:
+          type: number
+          nullable: true
+        availability:
+          type: string
+          enum: [in_stock, out_of_stock, preorder]
+          nullable: true
+        seller:
+          type: string
+          nullable: true
+        reviewCount:
+          type: integer
+          nullable: true
+
+    CatalogSearchResponse:
+      type: object
+      required: [items, page, limit, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogItem"
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    # ── Trail Conditions ───────────────────────────────────────────────────────
+    TrailConditionReport:
+      type: object
+      required: [id, trailName, surface, overallCondition, hazards, waterCrossings, photos, deleted]
+      properties:
+        id:
+          type: string
+        trailName:
+          type: string
+        trailRegion:
+          type: string
+          nullable: true
+        surface:
+          type: string
+          enum: [paved, gravel, dirt, rocky, snow, mud]
+        overallCondition:
+          type: string
+          enum: [excellent, good, fair, poor]
+        hazards:
+          type: array
+          items:
+            type: string
+        waterCrossings:
+          type: integer
+        waterCrossingDifficulty:
+          type: string
+          enum: [easy, moderate, difficult]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+        userId:
+          type: integer
+        tripId:
+          type: string
+          nullable: true
+        deleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Shared ─────────────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ── Auth ────────────────────────────────────────────────────────────────────
+  /api/auth/login:
+    post:
+      operationId: login
+      summary: Login with email and password
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/register:
+    post:
+      operationId: register
+      summary: Create a new account
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /api/auth/logout:
+    post:
+      operationId: logout
+      summary: Invalidate current session
+      tags: [Authentication]
+      responses:
+        "200":
+          description: Logged out
+
+  /api/auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token
+      tags: [Authentication]
+      security: []
+      responses:
+        "200":
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  # ── User ─────────────────────────────────────────────────────────────────────
+  /api/user/profile:
+    get:
+      operationId: getProfile
+      summary: Get current user profile
+      tags: [Users]
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    put:
+      operationId: updateProfile
+      summary: Update current user profile
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Packs ────────────────────────────────────────────────────────────────────
+  /api/packs:
+    get:
+      operationId: listPacks
+      summary: List user packs
+      tags: [Packs]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+        - name: includePublic
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+      responses:
+        "200":
+          description: Pack list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pack"
+    post:
+      operationId: createPack
+      summary: Create a new pack
+      tags: [Packs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackRequest"
+      responses:
+        "201":
+          description: Created pack
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pack"
+
+  /api/packs/{packId}:
+    parameters:
+      - name: packId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getPack
+      summary: Get a pack by ID
+      tags: [Packs]
+      responses:
+        "200":
+          description: Pack details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pack"
+    put:
+      operationId: updatePack
+      summary: Update a pack
+      tags: [Packs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePackRequest"
+      responses:
+        "200":
+          description: Updated pack
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pack"
+    delete:
+      operationId: deletePack
+      summary: Delete a pack
+      tags: [Packs]
+      responses:
+        "204":
+          description: Deleted
+
+  /api/packs/{packId}/items:
+    parameters:
+      - name: packId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: addPackItem
+      summary: Add item to pack
+      tags: [Pack Items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackItemRequest"
+      responses:
+        "201":
+          description: Created item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackItem"
+
+  /api/packs/{packId}/items/{itemId}:
+    parameters:
+      - name: packId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updatePackItem
+      summary: Update a pack item
+      tags: [Pack Items]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePackItemRequest"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackItem"
+    delete:
+      operationId: deletePackItem
+      summary: Delete a pack item
+      tags: [Pack Items]
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Trips ─────────────────────────────────────────────────────────────────────
+  /api/trips:
+    get:
+      operationId: listTrips
+      summary: List user trips
+      tags: [Trips]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Trip list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+    post:
+      operationId: createTrip
+      summary: Create a trip
+      tags: [Trips]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripRequest"
+      responses:
+        "201":
+          description: Created trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+
+  /api/trips/{tripId}:
+    parameters:
+      - name: tripId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getTrip
+      summary: Get a trip by ID
+      tags: [Trips]
+      responses:
+        "200":
+          description: Trip details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    put:
+      operationId: updateTrip
+      summary: Update a trip
+      tags: [Trips]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTripRequest"
+      responses:
+        "200":
+          description: Updated trip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+    delete:
+      operationId: deleteTrip
+      summary: Delete a trip
+      tags: [Trips]
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Feed ──────────────────────────────────────────────────────────────────────
+  /api/feed:
+    get:
+      operationId: getFeed
+      summary: Get social feed
+      tags: [Feed]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedResponse"
+    post:
+      operationId: createPost
+      summary: Create a post
+      tags: [Feed]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /api/feed/{postId}/comments:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getComments
+      summary: Get post comments
+      tags: [Feed]
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentsResponse"
+    post:
+      operationId: addComment
+      summary: Add a comment
+      tags: [Feed]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /api/feed/{postId}/like:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: likePost
+      summary: Like a post
+      tags: [Feed]
+      responses:
+        "200":
+          description: Like status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeToggleResponse"
+    delete:
+      operationId: unlikePost
+      summary: Unlike a post
+      tags: [Feed]
+      responses:
+        "200":
+          description: Like status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeToggleResponse"
+
+  # ── Catalog ───────────────────────────────────────────────────────────────────
+  /api/catalog/search:
+    get:
+      operationId: searchCatalog
+      summary: Search gear catalog
+      tags: [Catalog]
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogSearchResponse"
+
+  /api/catalog/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getCatalogItem
+      summary: Get catalog item detail
+      tags: [Catalog]
+      security: []
+      responses:
+        "200":
+          description: Catalog item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogItem"
+
+  # ── Trail Conditions ──────────────────────────────────────────────────────────
+  /api/trail-conditions:
+    get:
+      operationId: listTrailConditions
+      summary: List trail condition reports
+      tags: [Trail Conditions]
+      responses:
+        "200":
+          description: Reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrailConditionReport"
+    post:
+      operationId: createTrailConditionReport
+      summary: Submit a trail condition report
+      tags: [Trail Conditions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrailConditionReport"
+      responses:
+        "201":
+          description: Created report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrailConditionReport"
