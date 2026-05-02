@@ -9,4 +9,4 @@ export type {
   PackWeightHistoryEntry,
   Weight,
   WeightUnit,
-} from '@packrat/domain/packs';
+} from '@packrat/app/packs';

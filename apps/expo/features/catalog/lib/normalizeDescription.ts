@@ -1,1 +1,1 @@
-export { normalizeDescription } from '@packrat/domain/catalog';
+export { normalizeDescription } from '@packrat/app/catalog';

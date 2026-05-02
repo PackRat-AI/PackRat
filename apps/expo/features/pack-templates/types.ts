@@ -5,4 +5,4 @@ export type {
   PackTemplateItem,
   PackTemplateItemInput,
   WeightUnit,
-} from '@packrat/domain/pack-templates';
+} from '@packrat/app/pack-templates';

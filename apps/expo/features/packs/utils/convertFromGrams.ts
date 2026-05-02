@@ -1,1 +1,1 @@
-export { convertFromGrams } from '@packrat/domain/packs';
+export { convertFromGrams } from '@packrat/app/packs';

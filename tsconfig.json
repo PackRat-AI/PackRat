@@ -36,8 +36,8 @@
       "@packrat/analytics/*": ["./packages/analytics/src/*"],
       "@packrat/cli": ["./packages/cli/src"],
       "@packrat/cli/*": ["./packages/cli/src/*"],
-      "@packrat/domain": ["./packages/domain/src/index.ts"],
-      "@packrat/domain/*": ["./packages/domain/src/*"],
+      "@packrat/app": ["./packages/app/src/index.ts"],
+      "@packrat/app/*": ["./packages/app/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
       "nativewindui/*": ["./apps/expo/components/ui/*"]

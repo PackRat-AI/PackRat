@@ -1,1 +1,1 @@
-export { computePackWeights } from '@packrat/domain/packs';
+export { computePackWeights } from '@packrat/app/packs';

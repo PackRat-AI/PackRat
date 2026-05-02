@@ -1,1 +1,1 @@
-export type { PackItemInput } from '@packrat/domain/packs';
+export type { PackItemInput } from '@packrat/app/packs';

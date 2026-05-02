@@ -6,4 +6,4 @@ export type {
   CatalogItemWithPackItemFields,
   CatalogItemWithQuantity,
   PaginatedCatalogItemsResponse,
-} from '@packrat/domain/catalog';
+} from '@packrat/app/catalog';

@@ -1,1 +1,1 @@
-export type { Trip, TripInput, TripInStore, TripStatus } from '@packrat/domain/trips';
+export type { Trip, TripInput, TripInStore, TripStatus } from '@packrat/app/trips';
