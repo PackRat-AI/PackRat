@@ -6,6 +6,7 @@ import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/co
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
+import type { Href } from 'expo-router';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, Share, View } from 'react-native';
@@ -119,7 +120,11 @@ export function TripDetailScreen() {
                 if (Platform.OS === 'web') {
                   if (window.confirm(t('trips.deleteTripConfirmation'))) {
                     await deleteTrip(id as string);
-                    router.back();
+                    if (router.canGoBack()) {
+                      router.back();
+                    } else {
+                      router.replace('/trips' as Href);
+                    }
                   }
                 } else {
                   Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirmation'), [
