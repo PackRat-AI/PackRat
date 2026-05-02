@@ -1,7 +1,6 @@
 import Foundation
 import OpenAPIRuntime
 import OpenAPIURLSession
-import PackRatAPIClient
 
 // Configures the generated OpenAPI client with live auth headers.
 // Usage:  let client = PackRatGeneratedClient.shared
