@@ -85,6 +85,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
         session: schema.session,
         account: schema.account,
         verification: schema.verification,
+        jwks: schema.jwks,
       },
     }),
 
