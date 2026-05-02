@@ -92,7 +92,23 @@ actor APIClient {
         as _: T.Type,
         isRetry: Bool
     ) async throws -> T {
+        #if DEBUG
+        let method = request.httpMethod ?? "?"
+        let url = request.url?.absoluteString ?? "?"
+        if let body = request.httpBody, let bodyStr = String(data: body, encoding: .utf8) {
+            print("→ \(method) \(url)\n  body: \(bodyStr)")
+        } else {
+            print("→ \(method) \(url)")
+        }
+        #endif
+
         let (data, response) = try await session.data(for: request)
+
+        #if DEBUG
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let raw = String(data: data, encoding: .utf8) ?? "<binary>"
+        print("← \(status) \(url)\n  body: \(raw)")
+        #endif
 
         if let http = response as? HTTPURLResponse,
            http.statusCode == 401,
@@ -189,6 +205,10 @@ actor APIClient {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
+            #if DEBUG
+            let raw = String(data: data, encoding: .utf8) ?? "<binary>"
+            print("✗ decode \(T.self) failed: \(error)\n  raw: \(raw)")
+            #endif
             throw PackRatError.decodingError(error)
         }
     }
