@@ -5,21 +5,21 @@ struct PackWeightChart: View {
     let pack: Pack
 
     private var categoryData: [CategoryWeight] {
-        let items = pack.activeItems
-        let groups = Dictionary(grouping: items, by: { $0.category ?? "Other" })
-        return groups.map { key, items in
-            let total = items.reduce(0.0) { $0 + (($1.weight ?? 0) * Double($1.effectiveQuantity)) }
-            return CategoryWeight(category: key.capitalized, grams: total)
+        let groups = Dictionary(grouping: pack.activeItems, by: { $0.category ?? "Other" })
+        return groups.compactMap { key, items -> CategoryWeight? in
+            let grams = items.reduce(0.0) { $0 + $1.weightInGrams * Double($1.effectiveQuantity) }
+            guard grams > 0 else { return nil }
+            return CategoryWeight(category: key.capitalized, grams: grams)
         }
-        .filter { $0.grams > 0 }
         .sorted { $0.grams > $1.grams }
     }
 
     private var totalGrams: Double {
-        pack.totalWeight ?? categoryData.reduce(0) { $0 + $1.grams }
+        // Prefer server-computed totalWeight (already in grams)
+        if let t = pack.totalWeight, t > 0 { return t }
+        return categoryData.reduce(0) { $0 + $1.grams }
     }
 
-    // body uses implicit @ViewBuilder — the if block is the clean guard pattern
     var body: some View {
         if !categoryData.isEmpty {
             chartContent
@@ -27,51 +27,33 @@ struct PackWeightChart: View {
     }
 
     private var chartContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Weight Breakdown")
                 .font(.headline)
                 .padding(.horizontal)
 
-            HStack(alignment: .top, spacing: 24) {
-                donutChart
-                    .frame(width: 160, height: 160)
+            // Donut + legend side by side
+            GeometryReader { geo in
+                HStack(alignment: .center, spacing: 16) {
+                    donutChart
+                        .frame(width: min(geo.size.width * 0.42, 160),
+                               height: min(geo.size.width * 0.42, 160))
 
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(categoryData.prefix(6)) { item in
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(item.color)
-                                .frame(width: 8, height: 8)
-                            Text(item.category)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text(formattedGrams(item.grams))
-                                .font(.caption.monospacedDigit())
-                        }
-                    }
-                    if totalGrams > 0 {
-                        Divider()
-                        HStack {
-                            Text("Total")
-                                .font(.caption.bold())
-                            Spacer()
-                            Text(formattedGrams(totalGrams))
-                                .font(.caption.monospacedDigit().bold())
-                        }
-                    }
+                    legend
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity)
             }
+            .frame(height: min(UIScreen.main.bounds.width * 0.42, 160))
             .padding(.horizontal)
 
             if categoryData.count > 1 {
-                categoryBarChart
-                    .frame(height: 120)
+                Divider().padding(.horizontal)
+                barChart
+                    .frame(height: CGFloat(categoryData.prefix(6).count) * 28 + 16)
                     .padding(.horizontal)
             }
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal)
     }
@@ -80,7 +62,7 @@ struct PackWeightChart: View {
         Chart(categoryData) { item in
             SectorMark(
                 angle: .value("Weight", item.grams),
-                innerRadius: .ratio(0.55),
+                innerRadius: .ratio(0.54),
                 angularInset: 1.5
             )
             .foregroundStyle(item.color)
@@ -90,29 +72,57 @@ struct PackWeightChart: View {
         .overlay {
             VStack(spacing: 2) {
                 Text(formattedGrams(totalGrams))
-                    .font(.callout.monospacedDigit().bold())
+                    .font(.caption.monospacedDigit().bold())
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
                 Text("total")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            .padding(4)
         }
     }
 
-    private var categoryBarChart: some View {
-        Chart(categoryData) { item in
+    private var legend: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(categoryData.prefix(6)) { item in
+                HStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(item.color)
+                        .frame(width: 10, height: 10)
+                    Text(item.category)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(item.percentage(of: totalGrams))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+    }
+
+    private var barChart: some View {
+        Chart(categoryData.prefix(6)) { item in
             BarMark(
                 x: .value("Weight", item.grams),
                 y: .value("Category", item.category)
             )
             .foregroundStyle(item.color)
-            .cornerRadius(4)
-            .annotation(position: .trailing) {
-                Text(formattedGrams(item.grams))
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
+            .cornerRadius(3)
+        }
+        .chartXAxis {
+            AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                AxisGridLine()
+                AxisValueLabel {
+                    if let g = value.as(Double.self) {
+                        Text(formattedGrams(g))
+                            .font(.caption2)
+                    }
+                }
             }
         }
-        .chartXAxis(.hidden)
         .chartYAxis {
             AxisMarks { _ in
                 AxisValueLabel().font(.caption)
@@ -121,7 +131,7 @@ struct PackWeightChart: View {
     }
 
     private func formattedGrams(_ g: Double) -> String {
-        if g >= 1000 { return String(format: "%.2f kg", g / 1000) }
+        if g >= 1_000 { return String(format: "%.2f kg", g / 1_000) }
         return String(format: "%.0f g", g)
     }
 }
@@ -136,7 +146,11 @@ private struct CategoryWeight: Identifiable {
     static let palette: [Color] = [.blue, .green, .orange, .purple, .pink, .teal, .indigo, .cyan]
 
     var color: Color {
-        let idx = abs(category.hashValue) % Self.palette.count
-        return Self.palette[idx]
+        Self.palette[abs(category.hashValue) % Self.palette.count]
+    }
+
+    func percentage(of total: Double) -> String {
+        guard total > 0 else { return "" }
+        return String(format: "%.0f%%", grams / total * 100)
     }
 }

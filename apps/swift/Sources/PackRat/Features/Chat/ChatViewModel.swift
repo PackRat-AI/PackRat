@@ -41,15 +41,13 @@ final class ChatViewModel {
                 // Snapshot messages excluding the empty placeholder
                 let history = Array(messages.dropLast())
                 for try await chunk in await service.sendMessage(messages: history) {
-                    // Vercel AI SDK UI Message Stream: 0:"text delta" lines
-                    if chunk.hasPrefix("0:") {
-                        let jsonStr = String(chunk.dropFirst(2))
-                        if let data = jsonStr.data(using: .utf8),
-                           let text = try? JSONDecoder().decode(String.self, from: data) {
-                            appendToPlaceholder(id: placeholderId, text: text)
-                        }
+                    // Vercel AI SDK v6 UI Message Stream: typed JSON chunks
+                    if let data = chunk.data(using: .utf8),
+                       let parsed = try? JSONDecoder().decode(UIStreamChunk.self, from: data),
+                       parsed.type == "text-delta",
+                       let delta = parsed.delta {
+                        appendToPlaceholder(id: placeholderId, text: delta)
                     }
-                    // e:, d:, f:, 1:, 2: are events/tool calls — skip
                 }
             } catch is CancellationError {
                 // User cancelled — leave the partial response in place
@@ -79,4 +77,9 @@ final class ChatViewModel {
         guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
         messages[idx].content += text
     }
+}
+
+private struct UIStreamChunk: Decodable {
+    let type: String
+    let delta: String?
 }

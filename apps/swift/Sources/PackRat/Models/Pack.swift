@@ -18,6 +18,16 @@ extension PackItem {
         return String(format: "%.0f %@", weight, weightUnit.rawValue)
     }
     var effectiveQuantity: Int { quantity }
+
+    /// Weight normalized to grams, for consistent chart calculations.
+    var weightInGrams: Double {
+        switch weightUnit {
+        case .g:  return weight
+        case .kg: return weight * 1_000
+        case .oz: return weight * 28.3495
+        case .lb: return weight * 453.592
+        }
+    }
 }
 
 extension PackCategory {
