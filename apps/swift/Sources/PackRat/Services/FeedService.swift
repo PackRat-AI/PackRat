@@ -8,7 +8,15 @@ final class FeedService: Sendable {
 
     func listPosts(page: Int = 1, limit: Int = 20) async throws -> [Post] {
         let endpoint = Endpoint(.get, "/api/feed", query: ["page": "\(page)", "limit": "\(limit)"])
-        return try await api.send(endpoint)
+        let response: FeedResponse = try await api.send(endpoint)
+        return response.items
+    }
+
+    func getComments(postId: Int, page: Int = 1, limit: Int = 50) async throws -> [Comment] {
+        let endpoint = Endpoint(.get, "/api/feed/\(postId)/comments",
+                                query: ["page": "\(page)", "limit": "\(limit)"])
+        let response: CommentsResponse = try await api.send(endpoint)
+        return response.items
     }
 
     func createPost(caption: String?, images: [String] = []) async throws -> Post {
@@ -32,7 +40,7 @@ final class FeedService: Sendable {
         try await api.sendDiscarding(endpoint)
     }
 
-    func addComment(to postId: Int, content: String) async throws -> PostComment {
+    func addComment(to postId: Int, content: String) async throws -> Comment {
         let body = CreateCommentRequest(content: content)
         let endpoint = Endpoint(.post, "/api/feed/\(postId)/comments", body: body)
         return try await api.send(endpoint)

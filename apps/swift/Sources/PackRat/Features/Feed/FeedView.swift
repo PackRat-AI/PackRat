@@ -68,8 +68,8 @@ struct PostCard: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
             }
-            if let images = post.images, !images.isEmpty {
-                imageGrid(images)
+            if !post.images.isEmpty {
+                imageGrid(post.images)
             }
             actionBar
         }
@@ -83,11 +83,11 @@ struct PostCard: View {
         HStack(spacing: 10) {
             AvatarView(
                 url: nil,
-                fallbackText: post.user?.displayName ?? "?",
+                fallbackText: post.author?.displayName ?? "?",
                 size: 38
             )
             VStack(alignment: .leading, spacing: 1) {
-                Text(post.user?.displayName ?? "Unknown")
+                Text(post.author?.displayName ?? "Unknown")
                     .font(.callout.bold())
                 Text(post.timeAgo)
                     .font(.caption)

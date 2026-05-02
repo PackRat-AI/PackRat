@@ -64,8 +64,12 @@ final class FeedViewModel {
         posts.insert(post, at: 0)
     }
 
-    func addComment(to postId: Int, content: String) async throws -> PostComment {
+    func addComment(to postId: Int, content: String) async throws -> Comment {
         try await service.addComment(to: postId, content: content)
+    }
+
+    func loadComments(for postId: Int) async throws -> [Comment] {
+        try await service.getComments(postId: postId)
     }
 
     // Optimistic like toggle

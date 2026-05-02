@@ -7,7 +7,8 @@ struct PostCommentsView: View {
     @Environment(AuthManager.self) private var authManager
 
     @State private var newComment = ""
-    @State private var comments: [PostComment] = []
+    @State private var comments: [Comment] = []
+    @State private var isLoading = false
     @State private var isPosting = false
 
     var body: some View {
@@ -28,15 +29,19 @@ struct PostCommentsView: View {
             }
         }
         .frame(minWidth: 360, minHeight: 400)
-        .onAppear {
-            comments = post.comments ?? []
+        .task {
+            isLoading = true
+            defer { isLoading = false }
+            comments = (try? await viewModel.loadComments(for: post.id)) ?? []
         }
     }
 
     private var commentList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
-                if comments.isEmpty {
+                if isLoading {
+                    ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
+                } else if comments.isEmpty {
                     ContentUnavailableView("No comments yet", systemImage: "bubble.right")
                         .padding(.top, 40)
                 } else {
@@ -90,27 +95,22 @@ struct PostCommentsView: View {
 }
 
 private struct CommentRow: View {
-    let comment: PostComment
+    let comment: Comment
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             AvatarView(
-                url: comment.user?.avatarUrl,
-                fallbackText: comment.user?.displayName.prefix(2).uppercased() ?? "?",
+                url: nil,
+                fallbackText: comment.author?.displayName.prefix(2).uppercased() ?? "?",
                 size: 30
             )
             VStack(alignment: .leading, spacing: 2) {
-                Text(comment.user?.displayName ?? "Unknown")
+                Text(comment.author?.displayName ?? "Unknown")
                     .font(.caption.bold())
-                if let content = comment.content {
-                    Text(content).font(.callout)
-                }
-                if let created = comment.createdAt,
-                   let date = ISO8601DateFormatter().date(from: created) {
-                    Text(date.formatted(.relative(presentation: .named)))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+                Text(comment.content).font(.callout)
+                Text(comment.timeAgo)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
     }
