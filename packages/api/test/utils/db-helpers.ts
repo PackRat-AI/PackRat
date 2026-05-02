@@ -52,14 +52,18 @@ export async function seedTestUser(
   const email =
     overrides?.email ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
+  const firstName = overrides?.firstName ?? 'Test';
+  const lastName = overrides?.lastName ?? 'User';
+
   const [user] = await db
     .insert(schema.users)
     .values({
       id: overrides?.id ?? crypto.randomUUID(),
       email,
       passwordHash,
-      firstName: overrides?.firstName ?? 'Test',
-      lastName: overrides?.lastName ?? 'User',
+      name: overrides?.name ?? `${firstName} ${lastName}`,
+      firstName,
+      lastName,
       role: overrides?.role ?? 'USER',
       emailVerified: overrides?.emailVerified ?? true,
     })
