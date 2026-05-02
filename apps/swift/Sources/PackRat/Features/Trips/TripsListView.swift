@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct TripsListView: View {
-    let viewModel: TripsViewModel
+    @Bindable var viewModel: TripsViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
     @Environment(\.modelContext) private var modelContext
@@ -82,7 +82,7 @@ struct TripsListView: View {
             OpenWindowButton(id: "trip", value: trip.id, label: "Open in New Window")
             Divider()
             #endif
-            Button("Delete", role: .destructive, systemImage: "trash") {
+            Button("Delete", systemImage: "trash", role: .destructive) {
                 Task { try? await viewModel.deleteTrip(trip.id) }
             }
         }

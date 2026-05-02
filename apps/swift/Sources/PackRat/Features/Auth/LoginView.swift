@@ -89,7 +89,7 @@ struct LoginView: View {
 }
 
 @ViewBuilder
-private func authContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+func authContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
     #if os(macOS)
     content()
         .padding(40)

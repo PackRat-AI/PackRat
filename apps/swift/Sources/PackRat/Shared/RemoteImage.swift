@@ -2,14 +2,14 @@ import SwiftUI
 import NukeUI
 
 /// Drop-in async image loader backed by Nuke with fade-in and placeholder.
-struct RemoteImage: View {
+struct RemoteImage<Placeholder: View>: View {
     let url: String?
     var contentMode: ContentMode = .fill
     var cornerRadius: CGFloat = 0
-    @ViewBuilder var placeholder: () -> some View
+    var placeholder: () -> Placeholder
 
     init(url: String?, contentMode: ContentMode = .fill, cornerRadius: CGFloat = 0,
-         @ViewBuilder placeholder: @escaping () -> some View = { defaultPlaceholder }) {
+         @ViewBuilder placeholder: @escaping () -> Placeholder) {
         self.url = url
         self.contentMode = contentMode
         self.cornerRadius = cornerRadius

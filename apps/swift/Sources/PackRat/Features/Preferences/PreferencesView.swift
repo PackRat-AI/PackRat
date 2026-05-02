@@ -5,7 +5,7 @@ import SwiftUI
 final class AppPreferences: ObservableObject {
     static let shared = AppPreferences()
 
-    @AppStorage("defaultWeightUnit") var defaultWeightUnit: WeightUnit = .grams
+    @AppStorage("defaultAppWeightUnit") var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") var preferMetric: Bool = true
     @AppStorage("temperatureUnit") var temperatureUnit: TemperatureUnit = .fahrenheit
     @AppStorage("accentColorName") var accentColorName: String = "blue"
@@ -22,7 +22,7 @@ final class AppPreferences: ObservableObject {
 // MARK: - Settings / Preferences window (Cmd+,)
 
 struct PreferencesView: View {
-    @AppStorage("defaultWeightUnit") private var defaultWeightUnit: WeightUnit = .grams
+    @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") private var preferMetric: Bool = true
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
     @AppStorage("apiBaseURL") private var apiBaseURL: String = "https://staging-api.packrat.world"
@@ -57,8 +57,8 @@ struct PreferencesView: View {
     private var unitsTab: some View {
         Form {
             Section("Weight") {
-                Picker("Default weight unit", selection: $defaultWeightUnit) {
-                    ForEach(WeightUnit.allCases, id: \.self) { unit in
+                Picker("Default weight unit", selection: $defaultAppWeightUnit) {
+                    ForEach(AppWeightUnit.allCases, id: \.self) { unit in
                         Text(unit.rawValue).tag(unit)
                     }
                 }
@@ -88,7 +88,7 @@ struct PreferencesView: View {
     }
 
     private func resetDefaults() {
-        defaultWeightUnit = .grams
+        defaultAppWeightUnit = .grams
         preferMetric = true
         temperatureUnit = .fahrenheit
         apiBaseURL = "https://staging-api.packrat.world"

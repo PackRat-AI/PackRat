@@ -1,4 +1,7 @@
 import Foundation
+#if os(iOS)
+import UIKit
+#endif
 
 final class UploadService: Sendable {
     static let shared = UploadService()
@@ -49,7 +52,6 @@ final class UploadService: Sendable {
     #endif
 
     #if os(iOS)
-    import UIKit
     func uploadUIImage(_ image: UIImage, quality: CGFloat = 0.85) async throws -> String {
         guard let data = image.jpegData(compressionQuality: quality) else {
             throw PackRatError.unknown

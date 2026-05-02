@@ -6,11 +6,11 @@ final class ChatService: Sendable {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    func sendMessage(messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
+    func sendMessage(messages: [ChatMessage]) async -> AsyncThrowingStream<String, Error> {
         let body = ChatRequest(
             messages: messages.map { ChatMessageRequest(role: $0.role.rawValue, content: $0.content) }
         )
         let endpoint = Endpoint(.post, "/api/chat", body: body)
-        return api.stream(endpoint)
+        return await api.stream(endpoint)
     }
 }

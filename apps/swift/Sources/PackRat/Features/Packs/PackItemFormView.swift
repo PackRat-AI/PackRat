@@ -41,7 +41,7 @@ struct PackItemFormView: View {
                             .keyboardType(.decimalPad)
                             #endif
                         Picker("Unit", selection: $weightUnit) {
-                            ForEach(WeightUnit.allCases, id: \.rawValue) { u in
+                            ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
                                 Text(u.label).tag(u.rawValue)
                             }
                         }

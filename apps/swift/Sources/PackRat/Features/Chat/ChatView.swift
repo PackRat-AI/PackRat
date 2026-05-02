@@ -2,7 +2,7 @@ import SwiftUI
 import MarkdownUI
 
 struct ChatView: View {
-    let viewModel: ChatViewModel
+    @Bindable var viewModel: ChatViewModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -64,7 +64,7 @@ struct ChatView: View {
                     Button(action: viewModel.sendMessage) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.title3)
-                            .foregroundStyle(viewModel.canSend ? .tint : .secondary)
+                            .foregroundStyle(viewModel.canSend ? Color.accentColor : Color.secondary)
                     }
                     .buttonStyle(.plain)
                     .disabled(!viewModel.canSend)

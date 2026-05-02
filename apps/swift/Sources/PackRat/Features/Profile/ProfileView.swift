@@ -194,7 +194,7 @@ struct ProfileView: View {
         isUploadingAvatar = true
         defer { isUploadingAvatar = false }
         do {
-            let avatarUrl = try await UploadService.shared.uploadImage(from: url, purpose: "avatar")
+            let avatarUrl = try await UploadService.shared.uploadImage(at: url)
             struct AvatarBody: Encodable { let avatarUrl: String }
             let endpoint = Endpoint(.put, "/api/user/profile", body: AvatarBody(avatarUrl: avatarUrl))
             try await APIClient.shared.sendDiscarding(endpoint)

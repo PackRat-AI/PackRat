@@ -112,8 +112,8 @@ enum PackCategory: String, CaseIterable {
     }
 }
 
-enum WeightUnit: String, CaseIterable {
-    case g, kg, oz, lb
+enum AppWeightUnit: String, CaseIterable {
+    case grams = "g", kg, oz, lb
 
     var label: String { rawValue }
 }

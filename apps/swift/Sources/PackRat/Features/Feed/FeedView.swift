@@ -96,7 +96,7 @@ struct PostCard: View {
             Spacer()
             if post.userId == authManager.currentUser?.id {
                 Menu {
-                    Button("Delete", role: .destructive, systemImage: "trash") {
+                    Button("Delete", systemImage: "trash", role: .destructive) {
                         Task { await viewModel.deletePost(post.id) }
                     }
                 } label: {

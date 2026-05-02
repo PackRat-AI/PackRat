@@ -40,7 +40,7 @@ final class ChatViewModel {
             do {
                 // Snapshot messages excluding the empty placeholder
                 let history = Array(messages.dropLast())
-                for try await chunk in service.sendMessage(messages: history) {
+                for try await chunk in await service.sendMessage(messages: history) {
                     if let decoded = try? JSONDecoder().decode(ChatStreamChunk.self, from: Data(chunk.utf8)),
                        let delta = decoded.delta?.content
                     {

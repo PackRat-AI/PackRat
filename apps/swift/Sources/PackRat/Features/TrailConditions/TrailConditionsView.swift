@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - List Column
 
 struct TrailConditionsListView: View {
-    let viewModel: TrailConditionsViewModel
+    @Bindable var viewModel: TrailConditionsViewModel
     @Binding var selectedId: String?
     @State private var showingSubmitSheet = false
 
@@ -46,7 +46,7 @@ struct TrailConditionsListView: View {
             }
             .tag(report.id)
             .contextMenu {
-                Button("Delete", role: .destructive, systemImage: "trash") {
+                Button("Delete", systemImage: "trash", role: .destructive) {
                     Task { try? await viewModel.deleteReport(report.id) }
                 }
             }
