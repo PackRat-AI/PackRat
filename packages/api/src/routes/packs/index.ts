@@ -50,6 +50,18 @@ const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
   id: z.string(),
 });
 
+// Strip the embedding vector from pack items before sending — it's only needed
+// for similarity search, not for display.
+const stripItemEmbedding = <T extends { embedding?: unknown }>({ embedding: _, ...rest }: T) =>
+  rest as Omit<T, 'embedding'>;
+
+const stripPackEmbeddings = <T extends { items?: Array<{ embedding?: unknown }> | null }>(
+  pack: T,
+) => ({
+  ...pack,
+  items: pack.items?.map(stripItemEmbedding) ?? [],
+});
+
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
   .use(adminAuthPlugin)
@@ -72,7 +84,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return computePacksWeights(result);
+      return computePacksWeights(result).map(stripPackEmbeddings);
     },
     {
       query: z.object({
@@ -230,7 +242,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!pack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(pack);
+        return stripPackEmbeddings(computePackWeights(pack));
       } catch (error) {
         console.error('Error fetching pack:', error);
         return status(500, { error: 'Failed to fetch pack' });
@@ -275,7 +287,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return stripPackEmbeddings(computePackWeights(updatedPack));
       } catch (error) {
         console.error('Error updating pack:', error);
         return status(500, { error: 'Failed to update pack' });
@@ -577,7 +589,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         with: { catalogItem: true },
       });
 
-      return items.map((item) => ({
+      return items.map(({ embedding: _, ...item }) => ({
         ...item,
         consumable: item.consumable ?? false,
         worn: item.worn ?? false,
@@ -677,7 +689,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!isOwner && !isPublic) return status(403, { error: 'Unauthorized' });
 
-      return item;
+      const { embedding: _, ...itemWithoutEmbedding } = item;
+      return itemWithoutEmbedding;
     },
     {
       params: z.object({ itemId: z.string() }),
@@ -763,8 +776,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-      updatedItem.embedding = null;
-      return updatedItem;
+      const { embedding: _, ...itemWithoutEmbedding } = updatedItem;
+      return itemWithoutEmbedding;
     },
     {
       params: z.object({ itemId: z.string() }),

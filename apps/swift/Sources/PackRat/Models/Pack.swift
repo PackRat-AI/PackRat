@@ -21,6 +21,27 @@ extension PackItem {
 }
 
 extension PackCategory {
+    init(from decoder: any Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .custom
+    }
+}
+
+extension WeightUnit {
+    init(from decoder: any Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        // Map legacy values to canonical units
+        switch raw.lowercased() {
+        case "lbs": self = .lb
+        case "grams": self = .g
+        case "kilograms", "kgs": self = .kg
+        case "ounces", "ozs": self = .oz
+        default: self = Self(rawValue: raw) ?? .g
+        }
+    }
+}
+
+extension PackCategory {
     var label: String {
         switch self {
         case .waterSports: return "Water Sports"

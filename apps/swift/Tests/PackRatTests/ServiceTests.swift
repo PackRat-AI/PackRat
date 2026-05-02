@@ -30,7 +30,6 @@ struct CreatePackItemRequestTests {
         let data = try JSONEncoder().encode(req)
         let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         #expect(dict["name"] as? String == "Rain Jacket")
-        // nil values should not be present (standard Swift Encodable omits nil optionals)
         #expect(dict["weight"] == nil)
         #expect(dict["weightUnit"] == nil)
     }
@@ -72,10 +71,11 @@ struct PackDecodingTests {
     private let packJSON = """
     {
         "id": "pack-1",
-        "userId": "user-1",
+        "userId": 1,
         "name": "Three-Season Hiking",
         "category": "hiking",
         "isPublic": true,
+        "deleted": false,
         "baseWeight": 3200.5,
         "totalWeight": 5100.0,
         "items": [
@@ -86,7 +86,10 @@ struct PackDecodingTests {
                 "weight": 900,
                 "weightUnit": "g",
                 "quantity": 1,
-                "category": "sleep"
+                "category": "sleep",
+                "consumable": false,
+                "worn": false,
+                "deleted": false
             }
         ]
     }
@@ -103,6 +106,45 @@ struct PackDecodingTests {
         #expect(pack.baseWeight == 3200.5)
         #expect(pack.items?.count == 1)
         #expect(pack.items?.first?.name == "Sleeping Bag")
+    }
+
+    @Test("unknown category falls back to .custom")
+    func unknownCategoryFallback() throws {
+        let json = """
+        {
+            "id": "pack-2",
+            "userId": 1,
+            "name": "Old Pack",
+            "category": "travel",
+            "isPublic": false,
+            "deleted": false
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let pack = try decoder.decode(Pack.self, from: json)
+        #expect(pack.category == .custom)
+    }
+
+    @Test("unknown weightUnit falls back to .g")
+    func unknownWeightUnitFallback() throws {
+        let json = """
+        {
+            "id": "item-1",
+            "packId": "pack-1",
+            "name": "Old Tent",
+            "weight": 900,
+            "weightUnit": "lbs",
+            "quantity": 1,
+            "consumable": false,
+            "worn": false,
+            "deleted": false
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let item = try decoder.decode(PackItem.self, from: json)
+        #expect(item.weightUnit == .lb)
     }
 }
 
@@ -149,11 +191,12 @@ struct TrailConditionDecodingTests {
     @Test("conditionSymbol maps correctly")
     func conditionSymbols() {
         func report(_ condition: String) -> TrailConditionReport {
-            TrailConditionReport(id: "1", userId: nil, trailName: "Test", trailRegion: nil,
-                                 surface: nil, overallCondition: condition, hazards: nil,
-                                 waterCrossings: nil, waterCrossingDifficulty: nil, notes: nil,
-                                 photos: nil, tripId: nil, deleted: false, createdAt: nil,
-                                 updatedAt: nil, user: nil)
+            TrailConditionReport(id: "1", trailName: "Test", trailRegion: nil,
+                                 surface: "dirt", overallCondition: condition,
+                                 hazards: [], waterCrossings: 0,
+                                 waterCrossingDifficulty: nil, notes: nil,
+                                 photos: [], userId: nil, tripId: nil,
+                                 deleted: false, createdAt: nil, updatedAt: nil)
         }
         #expect(report("excellent").conditionSymbol == "checkmark.circle.fill")
         #expect(report("good").conditionSymbol == "checkmark.circle")

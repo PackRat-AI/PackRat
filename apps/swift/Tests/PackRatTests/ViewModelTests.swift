@@ -5,21 +5,23 @@ import Foundation
 // MARK: - Helpers
 
 private func mockPack(id: String = "p1", name: String = "Test Pack", items: [PackItem] = []) -> Pack {
-    Pack(id: id, userId: "u1", name: name, description: nil, category: "hiking",
-         isPublic: false, image: nil, tags: nil, items: items, deleted: false,
-         baseWeight: nil, totalWeight: nil, wornWeight: nil, consumableWeight: nil,
-         createdAt: nil, updatedAt: nil)
+    Pack(id: id, userId: 1, name: name, description: nil, category: .hiking,
+         isPublic: false, image: nil, tags: nil, templateId: nil, deleted: false,
+         isAIGenerated: nil, items: items, totalWeight: nil, baseWeight: nil,
+         wornWeight: nil, consumableWeight: nil, createdAt: nil, updatedAt: nil)
 }
 
 private func mockItem(id: String = "i1", packId: String = "p1") -> PackItem {
-    PackItem(id: id, packId: packId, name: "Test Item", weight: 200, weightUnit: "g",
-             quantity: 1, category: "shelter", consumable: false, worn: false,
-             image: nil, notes: nil, catalogItemId: nil, deleted: false)
+    PackItem(id: id, packId: packId, name: "Test Item", description: nil,
+             weight: 200, weightUnit: .g, quantity: 1, category: "shelter",
+             consumable: false, worn: false, image: nil, notes: nil,
+             catalogItemId: nil, userId: nil, deleted: false,
+             isAIGenerated: nil, templateItemId: nil, createdAt: nil, updatedAt: nil)
 }
 
 private func mockTrip(id: String = "t1", name: String = "Test Trip", startDate: String? = nil) -> Trip {
-    Trip(id: id, userId: "u1", name: name, description: nil, startDate: startDate,
-         endDate: nil, location: nil, notes: nil, packId: nil, pack: nil,
+    Trip(id: id, name: name, description: nil, notes: nil, location: nil,
+         startDate: startDate, endDate: nil, userId: 1, packId: nil,
          deleted: false, createdAt: nil, updatedAt: nil)
 }
 
@@ -49,9 +51,10 @@ struct PacksViewModelTests {
         let vm = PacksViewModel()
         vm.packs = [
             Pack(id: "1", userId: nil, name: "Pack A", description: "For alpine routes",
-                 category: nil, isPublic: nil, image: nil, tags: nil, items: nil,
-                 deleted: false, baseWeight: nil, totalWeight: nil, wornWeight: nil,
-                 consumableWeight: nil, createdAt: nil, updatedAt: nil),
+                 category: nil, isPublic: false, image: nil, tags: nil, templateId: nil,
+                 deleted: false, isAIGenerated: nil, items: nil, totalWeight: nil,
+                 baseWeight: nil, wornWeight: nil, consumableWeight: nil,
+                 createdAt: nil, updatedAt: nil),
             mockPack(id: "2"),
         ]
         vm.searchText = "alpine"
@@ -62,7 +65,6 @@ struct PacksViewModelTests {
     @MainActor func deletePackRemovesLocally() async throws {
         let vm = PacksViewModel()
         vm.packs = [mockPack(id: "1"), mockPack(id: "2")]
-        // Directly test the local removal logic (bypasses network)
         vm.packs.removeAll { $0.id == "1" }
         #expect(vm.packs.count == 1)
         #expect(vm.packs.first?.id == "2")
@@ -105,10 +107,10 @@ struct TripsViewModelTests {
     @Test("filteredTrips searches by location name")
     @MainActor func filtersByLocation() {
         let vm = TripsViewModel()
-        let tripWithLoc = Trip(id: "1", userId: nil, name: "PCT", description: nil,
-                               startDate: nil, endDate: nil,
+        let tripWithLoc = Trip(id: "1", name: "PCT", description: nil, notes: nil,
                                location: TripLocation(latitude: 37.0, longitude: -119.0, name: "Yosemite"),
-                               notes: nil, packId: nil, pack: nil, deleted: false, createdAt: nil, updatedAt: nil)
+                               startDate: nil, endDate: nil, userId: nil, packId: nil,
+                               deleted: false, createdAt: nil, updatedAt: nil)
         vm.trips = [tripWithLoc, mockTrip(id: "2")]
         vm.searchText = "yosemite"
         #expect(vm.filteredTrips.count == 1)
@@ -127,7 +129,6 @@ struct WeatherViewModelTests {
         vm.searchText = ""
         vm.onSearchTextChanged()
         #expect(vm.searchResults.isEmpty)
-        #expect(vm.hasSearched == false || true)   // hasSearched not reset, results cleared
     }
 
     @Test("searchText below 2 chars does not search")
@@ -135,7 +136,6 @@ struct WeatherViewModelTests {
         let vm = WeatherViewModel()
         vm.searchText = "D"
         vm.onSearchTextChanged()
-        // No search task kicked off — results remain empty
         #expect(vm.searchResults.isEmpty)
     }
 }
@@ -147,10 +147,12 @@ struct CatalogViewModelTests {
     @Test("onSearchTextChanged clears items when text empty")
     @MainActor func clearsOnEmpty() {
         let vm = CatalogViewModel()
-        vm.items = [CatalogItem(id: 1, name: "Tent", brand: nil, model: nil, weight: nil,
-                                weightUnit: nil, description: nil, price: nil, currency: nil,
-                                productUrl: nil, images: nil, categories: nil,
-                                availability: nil, ratingValue: nil, reviewCount: nil, sku: nil)]
+        vm.items = [CatalogItem(id: 1, name: "Tent", productUrl: "https://example.com",
+                                sku: "TEST-001", weight: 1200, weightUnit: .g,
+                                description: nil, categories: nil, images: nil,
+                                brand: nil, model: nil, ratingValue: nil,
+                                color: nil, size: nil, price: nil,
+                                availability: "in_stock", seller: nil, reviewCount: nil)]
         vm.searchText = ""
         vm.onSearchTextChanged()
         #expect(vm.items.isEmpty)
@@ -212,8 +214,7 @@ struct FeedViewModelTests {
     @Test("deletePost removes from local array")
     @MainActor func deleteRemovesLocally() async {
         let vm = FeedViewModel()
-        // Simulate posts in state
-        vm.posts.removeAll { $0.id == "p1" }  // no-op on empty
+        vm.posts.removeAll { $0.id == 1 }  // no-op on empty
         #expect(vm.posts.isEmpty)
     }
 }
@@ -229,7 +230,7 @@ struct PackTemplatesViewModelTests {
             PackTemplate(id: "1", userId: nil, name: "Official", description: nil,
                          category: nil, image: nil, tags: nil, isAppTemplate: true,
                          contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
-            PackTemplate(id: "2", userId: "u1", name: "Mine", description: nil,
+            PackTemplate(id: "2", userId: 2, name: "Mine", description: nil,
                          category: nil, image: nil, tags: nil, isAppTemplate: false,
                          contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
         ]
@@ -246,16 +247,18 @@ struct TrailConditionsViewModelTests {
     @MainActor func filtersByTrailName() {
         let vm = TrailConditionsViewModel()
         vm.reports = [
-            TrailConditionReport(id: "1", userId: nil, trailName: "Half Dome Trail",
+            TrailConditionReport(id: "1", trailName: "Half Dome Trail",
                                  trailRegion: "Yosemite", surface: "rocky",
-                                 overallCondition: "good", hazards: nil, waterCrossings: nil,
-                                 waterCrossingDifficulty: nil, notes: nil, photos: nil,
-                                 tripId: nil, deleted: false, createdAt: nil, updatedAt: nil, user: nil),
-            TrailConditionReport(id: "2", userId: nil, trailName: "John Muir Trail",
+                                 overallCondition: "good", hazards: [], waterCrossings: 0,
+                                 waterCrossingDifficulty: nil, notes: nil, photos: [],
+                                 userId: nil, tripId: nil, deleted: false,
+                                 createdAt: nil, updatedAt: nil),
+            TrailConditionReport(id: "2", trailName: "John Muir Trail",
                                  trailRegion: nil, surface: "dirt",
-                                 overallCondition: "excellent", hazards: nil, waterCrossings: nil,
-                                 waterCrossingDifficulty: nil, notes: nil, photos: nil,
-                                 tripId: nil, deleted: false, createdAt: nil, updatedAt: nil, user: nil),
+                                 overallCondition: "excellent", hazards: [], waterCrossings: 0,
+                                 waterCrossingDifficulty: nil, notes: nil, photos: [],
+                                 userId: nil, tripId: nil, deleted: false,
+                                 createdAt: nil, updatedAt: nil),
         ]
         vm.searchText = "dome"
         #expect(vm.filteredReports.count == 1)
