@@ -7,6 +7,7 @@ struct TripDetailView: View {
 
     @State private var showingEditSheet = false
     @State private var mapPosition: MapCameraPosition = .automatic
+    @Environment(AppState.self) private var appState
 
     private var coordinate: CLLocationCoordinate2D? {
         guard let lat = trip.location?.latitude, let lon = trip.location?.longitude,
@@ -45,22 +46,7 @@ struct TripDetailView: View {
                     }
                 }
 
-                if let pack = trip.pack {
-                    labeledSection("Pack") {
-                        HStack {
-                            Image(systemName: "backpack").foregroundStyle(.tint)
-                            Text(pack.name).font(.callout.bold())
-                            Spacer()
-                            if let total = pack.totalWeight {
-                                Text(pack.formattedWeight(total))
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(14)
-                        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 10))
-                    }
-                }
+                packSection
             }
             .padding(.vertical)
         }
@@ -82,6 +68,55 @@ struct TripDetailView: View {
                     center: coord,
                     span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
                 ))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var packSection: some View {
+        let linkedPack = trip.pack ?? appState.packsVM.packs.first(where: { $0.id == trip.packId })
+        labeledSection("Pack") {
+            if let pack = linkedPack {
+                HStack(spacing: 12) {
+                    Image(systemName: "backpack")
+                        .font(.title3)
+                        .foregroundStyle(.tint)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(pack.name).font(.callout.bold())
+                        Text("\(pack.itemCount) items")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if let total = pack.totalWeight {
+                        Text(pack.formattedWeight(total))
+                            .font(.callout.monospacedDigit().bold())
+                            .foregroundStyle(.tint)
+                    }
+                    // Navigate to this pack
+                    Button {
+                        appState.navItem = .packs
+                        appState.selectedPackId = pack.id
+                    } label: {
+                        Label("View Pack", systemImage: "arrow.right.circle")
+                            .labelStyle(.iconOnly)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Go to pack")
+                }
+                .padding(14)
+                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 10))
+            } else {
+                Button {
+                    showingEditSheet = true
+                } label: {
+                    Label("Link a Pack to this trip", systemImage: "plus.circle")
+                        .font(.callout)
+                        .foregroundStyle(.tint)
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 4)
             }
         }
     }
