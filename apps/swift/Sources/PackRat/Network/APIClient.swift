@@ -23,7 +23,7 @@ actor APIClient {
     static let environments: [String: String] = [
         "local":      "http://localhost:8787",
         "staging":    "https://staging-api.packrat.app",
-        "production": "https://api.packrat.app",
+        "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 
     private var baseURL: URL {
@@ -36,10 +36,10 @@ actor APIClient {
            let urlString = Self.environments[env],
            let url = URL(string: urlString) { return url }
         // 3. Compile-time fallback
-        #if DEBUG
+#if DEBUG
         return URL(string: "http://localhost:8787")!
         #else
-        return URL(string: "https://api.packrat.app")!
+        return URL(string: "https://packrat-api.orange-frost-d665.workers.dev")!
         #endif
     }
 
