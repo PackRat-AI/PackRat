@@ -15,6 +15,7 @@ import { tokenAtom } from '@packrat/app/auth/atoms/authAtoms';
 import { AiChatHeader } from '@packrat/app/components/ai-chatHeader';
 import { Icon } from '@packrat/app/components/Icon';
 import { TextInput } from '@packrat/app/components/TextInput';
+import { featureFlags } from '@packrat/app/config';
 import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import {
@@ -28,7 +29,6 @@ import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
-import { featureFlags } from 'expo-app/config';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';

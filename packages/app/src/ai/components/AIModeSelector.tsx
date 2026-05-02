@@ -1,9 +1,9 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Icon } from '@packrat/app/components/Icon';
+import { featureFlags } from '@packrat/app/config';
 import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
-import { featureFlags } from 'expo-app/config';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import { TouchableOpacity } from 'react-native';

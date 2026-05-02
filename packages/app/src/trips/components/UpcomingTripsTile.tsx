@@ -1,10 +1,10 @@
 import { Icon } from '@packrat/app/components/Icon';
+import { featureFlags } from '@packrat/app/config';
 import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { parseLocalDate } from '@packrat/app/lib/utils/dateUtils';
 import { useTrips } from '@packrat/app/trips/hooks';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { featureFlags } from 'expo-app/config';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';

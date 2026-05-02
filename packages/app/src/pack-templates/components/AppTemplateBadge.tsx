@@ -2,7 +2,7 @@ import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Text } from '@packrat/ui/nativewindui';
 import { Image, View } from 'react-native';
 
-const LOGO_SOURCE = require('expo-app/assets/adaptive-icon.png');
+const LOGO_SOURCE = require('@packrat/app/assets/adaptive-icon.png');
 
 export function AppTemplateBadge() {
   const { t } = useTranslation();

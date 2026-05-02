@@ -1,3 +1,4 @@
+import { featureFlags } from '@packrat/app/config';
 import { cn } from '@packrat/app/lib/cn';
 import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { TranslationFunction } from '@packrat/app/lib/i18n/types';
@@ -5,7 +6,6 @@ import { useDetailedPacks } from '@packrat/app/packs/hooks/useDetailedPacks';
 import { useTrips } from '@packrat/app/trips/hooks';
 import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
-import { featureFlags } from 'expo-app/config';
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';

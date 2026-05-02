@@ -1,5 +1,5 @@
+import { featureFlags } from '@packrat/app/config';
 import { CreateTripScreen } from '@packrat/app/trips/screens/CreateTripScreen';
-import { featureFlags } from 'expo-app/config';
 import { Redirect } from 'expo-router';
 
 export default function TripNewScreen() {

@@ -1,5 +1,5 @@
+import { featureFlags } from '@packrat/app/config';
 import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
-import { featureFlags } from 'expo-app/config';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function TabLayout() {

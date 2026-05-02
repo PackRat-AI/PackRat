@@ -1,5 +1,5 @@
+import { featureFlags } from '@packrat/app/config';
 import { WildlifeScreen } from '@packrat/app/wildlife/screens/WildlifeScreen';
-import { featureFlags } from 'expo-app/config';
 import { Redirect } from 'expo-router';
 
 export default function WildlifeRoute() {

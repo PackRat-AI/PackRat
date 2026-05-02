@@ -6,6 +6,7 @@ import { AIPacksTile } from '@packrat/app/ai-packs/components/AIPacksTile';
 import { AndroidTabBarInsetFix } from '@packrat/app/components/AndroidTabBarInsetFix';
 import { Icon } from '@packrat/app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from '@packrat/app/components/LargeTitleHeaderSearchContentContainer';
+import { appConfig, featureFlags } from '@packrat/app/config';
 import { FeedTile } from '@packrat/app/feed/components/FeedTile';
 import { GuidesTile } from '@packrat/app/guides/components/GuidesTile';
 import { cn } from '@packrat/app/lib/cn';
@@ -34,7 +35,6 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
-import { appConfig, featureFlags } from 'expo-app/config';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
