@@ -20,15 +20,14 @@ final class TripService: Sendable {
         notes: String? = nil,
         packId: String? = nil
     ) async throws -> Trip {
-        let formatter = ISO8601DateFormatter()
-        let now = formatter.string(from: Date())
+        let now = Date.iso8601Now()
         let body = CreateTripRequest(
             id: UUID().uuidString.lowercased(),
             name: name,
             description: description,
             location: location,
-            startDate: startDate.map { formatter.string(from: $0) },
-            endDate: endDate.map { formatter.string(from: $0) },
+            startDate: startDate.map { $0.iso8601String() },
+            endDate: endDate.map { $0.iso8601String() },
             notes: notes,
             packId: packId,
             localCreatedAt: now,
@@ -48,16 +47,15 @@ final class TripService: Sendable {
         notes: String? = nil,
         packId: String? = nil
     ) async throws -> Trip {
-        let formatter = ISO8601DateFormatter()
         let body = UpdateTripRequest(
             name: name,
             description: description,
             location: location,
-            startDate: startDate.map { formatter.string(from: $0) },
-            endDate: endDate.map { formatter.string(from: $0) },
+            startDate: startDate.map { $0.iso8601String() },
+            endDate: endDate.map { $0.iso8601String() },
             notes: notes,
             packId: packId,
-            localUpdatedAt: formatter.string(from: Date())
+            localUpdatedAt: Date.iso8601Now()
         )
         let endpoint = Endpoint(.put, "/api/trips/\(tripId)", body: body)
         return try await api.send(endpoint)

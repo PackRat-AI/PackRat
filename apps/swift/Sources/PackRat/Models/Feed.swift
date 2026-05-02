@@ -4,12 +4,7 @@ import Foundation
 
 extension Post {
     var primaryImage: String? { images.first }
-
-    var timeAgo: String {
-        guard let date = ISO8601DateFormatter().date(from: createdAt)
-        else { return "" }
-        return date.formatted(.relative(presentation: .named))
-    }
+    var timeAgo: String { createdAt.timeAgo }
 }
 
 extension PostAuthor {
@@ -20,11 +15,7 @@ extension PostAuthor {
 }
 
 extension Comment {
-    var timeAgo: String {
-        guard let date = ISO8601DateFormatter().date(from: createdAt)
-        else { return "" }
-        return date.formatted(.relative(presentation: .named))
-    }
+    var timeAgo: String { createdAt.timeAgo }
 }
 
 // MARK: - Request Bodies

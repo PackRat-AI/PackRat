@@ -17,7 +17,7 @@ final class PackTemplateService: Sendable {
     }
 
     func createTemplate(name: String, description: String? = nil, category: String? = nil) async throws -> PackTemplate {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = Date.iso8601Now()
         let body = CreateTemplateRequest(
             id: UUID().uuidString.lowercased(),
             name: name, description: description, category: category,

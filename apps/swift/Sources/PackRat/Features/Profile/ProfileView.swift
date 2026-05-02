@@ -34,8 +34,7 @@ struct ProfileView: View {
                                 .foregroundStyle(.secondary)
                         }
                         LabeledContent("Member Since") {
-                            if let created = authManager.currentUser?.createdAt,
-                               let date = ISO8601DateFormatter().date(from: created) {
+                            if let date = authManager.currentUser?.createdAt?.toDate() {
                                 Text(date.formatted(date: .abbreviated, time: .omitted))
                                     .foregroundStyle(.secondary)
                             }

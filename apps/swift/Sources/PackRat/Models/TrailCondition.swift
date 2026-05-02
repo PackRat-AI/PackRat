@@ -23,12 +23,7 @@ extension TrailConditionReport {
         }
     }
 
-    var timeAgo: String {
-        guard let str = createdAt,
-              let date = ISO8601DateFormatter().date(from: str)
-        else { return "" }
-        return date.formatted(.relative(presentation: .named))
-    }
+    var timeAgo: String { createdAt?.timeAgo ?? "" }
 }
 
 // MARK: - UI Enums (display logic, not API-facing)

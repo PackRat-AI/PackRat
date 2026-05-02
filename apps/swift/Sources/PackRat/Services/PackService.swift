@@ -15,7 +15,7 @@ final class PackService: Sendable {
     }
 
     func createPack(name: String, description: String? = nil, category: String? = nil, isPublic: Bool = false) async throws -> Pack {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = Date.iso8601Now()
         let body = CreatePackRequest(
             id: UUID().uuidString.lowercased(),
             name: name,
@@ -35,7 +35,7 @@ final class PackService: Sendable {
             description: description,
             category: category,
             isPublic: isPublic,
-            localUpdatedAt: ISO8601DateFormatter().string(from: Date())
+            localUpdatedAt: Date.iso8601Now()
         )
         let endpoint = Endpoint(.put, "/api/packs/\(packId)", body: body)
         return try await api.send(endpoint)

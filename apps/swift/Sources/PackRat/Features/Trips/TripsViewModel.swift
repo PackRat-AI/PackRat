@@ -30,24 +30,15 @@ final class TripsViewModel {
     }
 
     var upcomingTrips: [Trip] {
-        trips.filter { trip in
-            guard let dateStr = trip.startDate,
-                  let date = ISO8601DateFormatter().date(from: dateStr)
-            else { return false }
-            return date >= Calendar.current.startOfDay(for: Date())
-        }.sorted {
-            guard let a = $0.startDate, let b = $1.startDate else { return false }
-            return a < b
-        }
+        let today = Calendar.current.startOfDay(for: Date())
+        return trips
+            .filter { ($0.startDate?.toDate() ?? .distantPast) >= today }
+            .sorted { ($0.startDate ?? "") < ($1.startDate ?? "") }
     }
 
     var pastTrips: [Trip] {
-        trips.filter { trip in
-            guard let dateStr = trip.startDate,
-                  let date = ISO8601DateFormatter().date(from: dateStr)
-            else { return true }
-            return date < Calendar.current.startOfDay(for: Date())
-        }
+        let today = Calendar.current.startOfDay(for: Date())
+        return trips.filter { ($0.startDate?.toDate() ?? .distantPast) < today }
     }
 
     func load(context: ModelContext? = nil) async {

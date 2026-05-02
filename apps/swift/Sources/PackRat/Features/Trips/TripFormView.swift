@@ -109,9 +109,8 @@ struct TripFormView: View {
         notes = trip.notes ?? ""
         locationName = trip.location?.name ?? ""
         selectedPackId = trip.packId
-        let fmt = ISO8601DateFormatter()
-        if let s = trip.startDate, let d = fmt.date(from: s) { startDate = d; hasDates = true }
-        if let e = trip.endDate, let d = fmt.date(from: e) { endDate = d }
+        if let s = trip.startDate, let d = s.toDate() { startDate = d; hasDates = true }
+        if let e = trip.endDate, let d = e.toDate() { endDate = d }
     }
 
     private func submit() {

@@ -4,15 +4,8 @@ import Foundation
 
 extension Trip {
     var dateRange: String {
-        let parts = [formattedDate(startDate), formattedDate(endDate)].compactMap { $0 }
+        let parts = [startDate, endDate].compactMap { $0?.toDate()?.formatted(date: .abbreviated, time: .omitted) }
         return parts.joined(separator: " – ")
-    }
-
-    private func formattedDate(_ isoString: String?) -> String? {
-        guard let str = isoString,
-              let date = ISO8601DateFormatter().date(from: str)
-        else { return nil }
-        return date.formatted(date: .abbreviated, time: .omitted)
     }
 }
 

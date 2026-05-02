@@ -22,7 +22,7 @@ final class TrailConditionsService: Sendable {
         hazards: [String],
         notes: String?
     ) async throws -> TrailConditionReport {
-        let now = ISO8601DateFormatter().string(from: Date())
+        let now = Date.iso8601Now()
         let body = CreateTrailConditionRequest(
             id: UUID().uuidString.lowercased(),
             trailName: trailName,
