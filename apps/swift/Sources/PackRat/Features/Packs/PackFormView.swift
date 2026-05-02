@@ -76,8 +76,8 @@ struct PackFormView: View {
         guard let pack = existingPack else { return }
         name = pack.name
         description = pack.description ?? ""
-        category = pack.category ?? ""
-        isPublic = pack.isPublic ?? false
+        category = pack.category?.rawValue ?? ""
+        isPublic = pack.isPublic
     }
 
     private func submit() {

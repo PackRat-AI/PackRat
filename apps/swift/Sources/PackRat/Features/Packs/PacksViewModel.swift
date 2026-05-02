@@ -177,9 +177,11 @@ final class PacksViewModel {
             id: pack.id, userId: pack.userId, name: pack.name,
             description: pack.description, category: pack.category,
             isPublic: pack.isPublic, image: pack.image, tags: pack.tags,
-            items: items, deleted: pack.deleted,
-            baseWeight: pack.baseWeight, totalWeight: pack.totalWeight,
-            wornWeight: pack.wornWeight, consumableWeight: pack.consumableWeight,
+            templateId: pack.templateId, deleted: pack.deleted,
+            isAIGenerated: pack.isAIGenerated,
+            items: items, totalWeight: pack.totalWeight,
+            baseWeight: pack.baseWeight, wornWeight: pack.wornWeight,
+            consumableWeight: pack.consumableWeight,
             createdAt: pack.createdAt, updatedAt: pack.updatedAt
         )
     }

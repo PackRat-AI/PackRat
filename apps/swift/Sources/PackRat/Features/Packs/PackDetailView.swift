@@ -142,11 +142,11 @@ struct PackDetailView: View {
                         itemId, in: pack.id,
                         name: item.name,
                         weight: item.weight,
-                        weightUnit: item.weightUnit,
+                        weightUnit: item.weightUnit.rawValue,
                         quantity: item.effectiveQuantity,
                         category: category == "Uncategorized" ? nil : category,
-                        consumable: item.consumable ?? false,
-                        worn: item.worn ?? false,
+                        consumable: item.consumable,
+                        worn: item.worn,
                         notes: item.notes
                     )
                 } catch {

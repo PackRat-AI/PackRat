@@ -21,8 +21,8 @@ final class CachedPack {
         self.id = pack.id
         self.name = pack.name
         self.packDescription = pack.description
-        self.category = pack.category
-        self.isPublic = pack.isPublic ?? false
+        self.category = pack.category?.rawValue
+        self.isPublic = pack.isPublic
         self.baseWeight = pack.baseWeight
         self.totalWeight = pack.totalWeight
         self.wornWeight = pack.wornWeight

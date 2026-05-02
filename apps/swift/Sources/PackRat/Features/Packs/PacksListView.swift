@@ -99,7 +99,7 @@ private struct PackRowView: View {
             }
             HStack(spacing: 8) {
                 if let cat = pack.category {
-                    Label(cat.capitalized, systemImage: PackCategory(rawValue: cat)?.symbol ?? "backpack")
+                    Label(cat.label, systemImage: cat.symbol)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

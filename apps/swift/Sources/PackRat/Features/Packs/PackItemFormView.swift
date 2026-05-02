@@ -111,12 +111,12 @@ struct PackItemFormView: View {
     private func prefill() {
         guard let item = existingItem else { return }
         name = item.name
-        weightText = item.weight.map { String(format: "%.0f", $0) } ?? ""
-        weightUnit = item.weightUnit ?? "g"
-        quantityText = item.quantity.map(String.init) ?? "1"
+        weightText = item.weight > 0 ? String(format: "%.0f", item.weight) : ""
+        weightUnit = item.weightUnit.rawValue
+        quantityText = String(item.quantity)
         category = item.category ?? ""
-        consumable = item.consumable ?? false
-        worn = item.worn ?? false
+        consumable = item.consumable
+        worn = item.worn
         notes = item.notes ?? ""
     }
 

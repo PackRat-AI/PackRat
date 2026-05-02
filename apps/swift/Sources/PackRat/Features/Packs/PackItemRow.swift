@@ -23,17 +23,17 @@ struct PackItemRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    if let qty = item.quantity, qty > 1 {
-                        Label("×\(qty)", systemImage: "number")
+                    if item.quantity > 1 {
+                        Label("×\(item.quantity)", systemImage: "number")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    if item.worn == true {
+                    if item.worn {
                         Label("Worn", systemImage: "person.fill")
                             .font(.caption)
                             .foregroundStyle(.orange)
                     }
-                    if item.consumable == true {
+                    if item.consumable {
                         Label("Consumable", systemImage: "flame")
                             .font(.caption)
                             .foregroundStyle(.purple)
