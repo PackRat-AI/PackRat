@@ -45,6 +45,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .worktrees/
 
 # Xcode (apps/swift)
+apps/swift/xcconfig/*.local.xcconfig
 apps/swift/PackRat.xcodeproj/
 apps/swift/*.xcworkspace/xcuserdata/
 apps/swift/DerivedData/

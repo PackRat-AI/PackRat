@@ -9,7 +9,7 @@ final class AppPreferences: ObservableObject {
     @AppStorage("preferMetric") var preferMetric: Bool = true
     @AppStorage("temperatureUnit") var temperatureUnit: TemperatureUnit = .fahrenheit
     @AppStorage("accentColorName") var accentColorName: String = "blue"
-    @AppStorage("apiBaseURL") var apiBaseURL: String = "https://staging-api.packrat.world"
+    @AppStorage("apiBaseURL") var apiBaseURL: String = ""
 
     enum TemperatureUnit: String, CaseIterable {
         case fahrenheit = "°F"
@@ -25,7 +25,7 @@ struct PreferencesView: View {
     @AppStorage("defaultAppWeightUnit") private var defaultAppWeightUnit: AppWeightUnit = .grams
     @AppStorage("preferMetric") private var preferMetric: Bool = true
     @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
-    @AppStorage("apiBaseURL") private var apiBaseURL: String = "https://staging-api.packrat.world"
+    @AppStorage("apiBaseURL") private var apiBaseURL: String = ""
 
     var body: some View {
         TabView {
@@ -68,12 +68,36 @@ struct PreferencesView: View {
         .formStyle(.grouped)
     }
 
+    private static let presets: [(String, String)] = [
+        ("Local", "http://localhost:8787"),
+        ("Staging", "https://staging-api.packrat.app"),
+        ("Production", "https://api.packrat.app"),
+    ]
+
+    private var effectiveURL: String {
+        if !apiBaseURL.isEmpty { return apiBaseURL }
+        return Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String
+            ?? "https://api.packrat.app"
+    }
+
     private var advancedTab: some View {
         Form {
-            Section("API") {
-                TextField("Base URL", text: $apiBaseURL)
+            Section("API Server") {
+                HStack {
+                    ForEach(Self.presets, id: \.0) { label, url in
+                        Button(label) { apiBaseURL = url == effectiveURL ? "" : url }
+                            .buttonStyle(.bordered)
+                            .tint(effectiveURL == url ? .accentColor : nil)
+                    }
+                }
+                TextField("Custom URL (overrides build default)", text: $apiBaseURL)
                     .textFieldStyle(.roundedBorder)
-                Text("Restart required to apply URL changes.")
+                LabeledContent("Effective") {
+                    Text(effectiveURL)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                Text("Empty = use build default from xcconfig. Changes apply immediately.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -91,6 +115,6 @@ struct PreferencesView: View {
         defaultAppWeightUnit = .grams
         preferMetric = true
         temperatureUnit = .fahrenheit
-        apiBaseURL = "https://staging-api.packrat.world"
+        apiBaseURL = ""
     }
 }

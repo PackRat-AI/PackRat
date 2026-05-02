@@ -3,7 +3,6 @@ import Foundation
 actor APIClient {
     static let shared = APIClient()
 
-    let baseURL: URL
     private let session: URLSession
     private var refreshTask: Task<Tokens, Error>?
 
@@ -12,23 +11,24 @@ actor APIClient {
         let refreshToken: String
     }
 
-    enum Environment {
-        case production, staging, local
-
-        var url: URL {
-            switch self {
-            case .production: URL(string: "https://api.packrat.app")!
-            case .staging:    URL(string: "https://staging-api.packrat.app")!
-            case .local:      URL(string: "http://localhost:8787")!
-            }
-        }
-    }
-
-    init(environment: Environment = .production) {
-        self.baseURL = environment.url
+    init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         self.session = URLSession(configuration: config)
+    }
+
+    // Reads base URL from (in priority order):
+    // 1. UserDefaults "apiBaseURL" — set via Preferences at runtime
+    // 2. Info.plist "API_BASE_URL" — injected from xcconfig at build time
+    // 3. Hardcoded production fallback
+    private var baseURL: URL {
+        if let override = UserDefaults.standard.string(forKey: "apiBaseURL"),
+           !override.isEmpty,
+           let url = URL(string: override) { return url }
+        if let bundleValue = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
+           !bundleValue.isEmpty,
+           let url = URL(string: bundleValue) { return url }
+        return URL(string: "https://api.packrat.app")!
     }
 
     // MARK: - Public

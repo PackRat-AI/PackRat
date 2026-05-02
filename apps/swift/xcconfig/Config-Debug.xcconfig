@@ -1,0 +1,5 @@
+// Debug build defaults.
+// To override locally, create xcconfig/Config-Debug.local.xcconfig (gitignored).
+#include? "Config-Debug.local.xcconfig"
+
+API_BASE_URL = http://localhost:8787

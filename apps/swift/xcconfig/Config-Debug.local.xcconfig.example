@@ -1,0 +1,3 @@
+// Copy this file to Config-Debug.local.xcconfig (gitignored) to override debug defaults.
+// Example: point at staging instead of local
+// API_BASE_URL = https://staging-api.packrat.app
