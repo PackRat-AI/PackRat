@@ -195,12 +195,10 @@ test.describe('Trip CRUD', () => {
     // Accept window.confirm dialogs before triggering delete
     page.on('dialog', (dialog) => dialog.accept());
 
-    // Register PUT listener scoped to this trip's ID before clicking.
-    // syncedCrud fires PUT /api/trips/:id with { deleted: true } (fieldDeleted soft-delete).
+    // Register DELETE listener scoped to this trip's ID before clicking.
+    // useDeleteTrip calls DELETE /api/trips/:id directly and awaits it before router.back().
     const deletePromise = page.waitForResponse(
-      (r) =>
-        r.url().includes(`/api/trips/${tripId}`) &&
-        (r.request().method() === 'PUT' || r.request().method() === 'PATCH'),
+      (r) => r.url().includes(`/api/trips/${tripId}`) && r.request().method() === 'DELETE',
       { timeout: 20_000 },
     );
 
@@ -209,17 +207,17 @@ test.describe('Trip CRUD', () => {
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // Wait for the server to confirm the soft-delete PUT (deleted:true persisted in DB).
-    // Must happen before page.goto so the subsequent GET list won't include the trip.
+    // Wait for the server to confirm the hard-delete.
+    // useDeleteTrip awaits this before calling router.back(), so the URL change
+    // happens after this resolves — but we still confirm ok() for diagnostics.
     const deleteResponse = await deletePromise;
     expect(deleteResponse.ok()).toBeTruthy();
 
-    // router.back() SPA-navigates away from the trip detail.
+    // router.back() SPA-navigates away from the trip detail to /trips.
+    // Do NOT use page.goto here — the persist plugin would reload with the old
+    // deleted:false state and mode:'merge' wouldn't clean it up.
+    // Instead, stay in the SPA context where the store already has deleted:true.
     await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
-
-    // Full reload so the list fetches fresh from the API — the server now
-    // filters deleted=true trips, so the trip must not appear.
-    await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
     await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
   });
