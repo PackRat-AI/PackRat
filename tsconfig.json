@@ -58,6 +58,7 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
+    "packages/api/scripts",
     "packages/mcp"
   ]
 }

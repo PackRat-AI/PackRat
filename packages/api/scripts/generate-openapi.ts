@@ -5,15 +5,13 @@
  * (the human-readable canonical copy).
  *
  * Run from the repo root:
- *   cd packages/api && bun scripts/generate-openapi.ts
+ *   bun generate:openapi
  *
  * Requires the API package dependencies to be installed. No Cloudflare
  * Worker runtime or live server needed — Elysia builds the OpenAPI spec
  * entirely from route metadata at definition time.
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
 import { cors } from '@elysiajs/cors';
 import { routes } from '@packrat/api/routes';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
@@ -30,27 +28,26 @@ const specApp = new Elysia()
 const response = await specApp.handle(new Request('http://localhost/doc'));
 
 if (!response.ok) {
-  console.error(`❌ Spec fetch failed: ${response.status} ${response.statusText}`);
-  process.exit(1);
+  throw new Error(`Spec fetch failed: ${response.status} ${response.statusText}`);
 }
 
 const spec = await response.json();
 const json = JSON.stringify(spec, null, 2);
 
-// Write to both locations
+const repoRoot = new URL('../../..', import.meta.url).pathname;
+
 const destinations = [
-  resolve(import.meta.dir, '../../../apps/macos/openapi.yaml'),
-  resolve(import.meta.dir, '../../../apps/macos/Sources/PackRatAPIClient/openapi.yaml'),
+  `${repoRoot}apps/macos/openapi.yaml`,
+  `${repoRoot}apps/macos/Sources/PackRatAPIClient/openapi.yaml`,
 ];
 
 for (const dest of destinations) {
-  mkdirSync(dirname(dest), { recursive: true });
-  // swift-openapi-generator accepts both JSON and YAML; we keep the .yaml
-  // extension but write JSON for simplicity (valid YAML superset).
-  writeFileSync(dest, json, 'utf-8');
+  await Bun.write(dest, json);
   console.log(`✅ Written → ${dest}`);
 }
 
-const paths = Object.keys(spec.paths ?? {}).length;
-const schemas = Object.keys(spec.components?.schemas ?? {}).length;
+const paths = Object.keys((spec as { paths?: Record<string, unknown> }).paths ?? {}).length;
+const schemas = Object.keys(
+  (spec as { components?: { schemas?: Record<string, unknown> } }).components?.schemas ?? {},
+).length;
 console.log(`   Paths: ${paths}  |  Schemas: ${schemas}`);
