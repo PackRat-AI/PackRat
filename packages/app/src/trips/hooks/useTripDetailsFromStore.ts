@@ -1,6 +1,6 @@
 import { use$ } from '@legendapp/state/react';
+import { obs } from '@packrat/app/lib/store';
 import { tripsStore } from '@packrat/app/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
 
 /**
  * Retrieves a trip from the store.

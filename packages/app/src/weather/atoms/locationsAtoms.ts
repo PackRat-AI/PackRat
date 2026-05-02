@@ -1,4 +1,4 @@
-import { asyncStorage } from 'expo-app/utils/storage';
+import { asyncStorage } from '@packrat/app/utils/storage';
 import { atom } from 'jotai';
 import { atomWithStorage, loadable } from 'jotai/utils';
 import type { WeatherLocation } from '../types';

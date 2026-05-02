@@ -1,8 +1,8 @@
 import { useUser } from '@packrat/app/auth/hooks/useUser';
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { useAuthenticatedQueryToolkit } from '@packrat/app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { User } from '@packrat/app/profile';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 type ReportedContentResponse = {
   reportedItems: Array<{

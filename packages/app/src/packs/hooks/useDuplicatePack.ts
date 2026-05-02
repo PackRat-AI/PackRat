@@ -1,6 +1,6 @@
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import type { Pack, PackInput } from '@packrat/app/packs';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
 import { useCallback } from 'react';
 import { useCreatePackFromPack } from './useCreatePackFromPack';
 

@@ -1,7 +1,7 @@
+import { Icon } from '@packrat/app/components/Icon';
 import type { Post } from '@packrat/app/feed';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {

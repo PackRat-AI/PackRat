@@ -1,7 +1,7 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { cn } from '@packrat/app/lib/cn';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
 import { WeatherIcon } from './WeatherIcon';
 

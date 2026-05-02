@@ -1,5 +1,5 @@
+import { Icon } from '@packrat/app/components/Icon';
 import type { Pack } from '@packrat/app/packs';
-import { Icon } from 'expo-app/components/Icon';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
 type SearchResultsProps = {

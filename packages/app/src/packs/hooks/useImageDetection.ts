@@ -1,6 +1,6 @@
 import type { CatalogItem } from '@packrat/app/catalog';
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
 import { uploadImage } from '../utils';
 import type { SelectedImage } from './useImagePicker';
 

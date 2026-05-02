@@ -1,8 +1,8 @@
 import { userStore } from '@packrat/app/auth/store';
 import { PostDetailScreen } from '@packrat/app/feed/screens/PostDetailScreen';
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import { Text } from '@packrat/ui/nativewindui';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 

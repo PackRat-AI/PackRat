@@ -1,7 +1,7 @@
+import { store } from '@packrat/app/atoms/store';
 import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { store } from 'expo-app/atoms/store';
 import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { useEffect, useState } from 'react';

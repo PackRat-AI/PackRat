@@ -1,5 +1,8 @@
 import { PackCategorySchema } from '@packrat/api/types';
 import { useUser } from '@packrat/app/auth/hooks/useUser';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { PackTemplate } from '@packrat/app/pack-templates';
 import { fromZod } from '@packrat/guards';
 import {
@@ -12,9 +15,6 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,

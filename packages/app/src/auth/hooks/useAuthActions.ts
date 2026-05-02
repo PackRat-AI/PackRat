@@ -1,4 +1,7 @@
 import { isAuthed, userStore } from '@packrat/app/auth/store';
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { t } from '@packrat/app/lib/i18n';
+import ImageCacheManager from '@packrat/app/lib/utils/ImageCacheManager';
 import type { User } from '@packrat/app/profile';
 import { isObject } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,9 +10,6 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { t } from 'expo-app/lib/i18n';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';

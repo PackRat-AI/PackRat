@@ -1,6 +1,6 @@
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import type { PackInput, PackItemInput } from '@packrat/app/packs';
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
 
 export interface SeasonSuggestionsRequest {
   location: string;

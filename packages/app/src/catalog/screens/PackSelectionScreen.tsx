@@ -1,9 +1,9 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { SearchInput } from '@packrat/app/components/SearchInput';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { useDetailedPacks } from '@packrat/app/packs/hooks/useDetailedPacks';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { SearchInput } from 'expo-app/components/SearchInput';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';

@@ -1,6 +1,6 @@
+import { obs } from '@packrat/app/lib/store';
 import type { Trip } from '@packrat/app/trips';
 import { tripsStore } from '@packrat/app/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 
 export function useUpdateTrip() {

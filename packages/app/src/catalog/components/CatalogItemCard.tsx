@@ -1,5 +1,8 @@
 import type { CatalogItem } from '@packrat/app/catalog';
 import { normalizeDescription } from '@packrat/app/catalog';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import {
   Card,
   CardContent,
@@ -9,9 +12,6 @@ import {
   CardTitle,
   Text,
 } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import { CatalogItemImage } from './CatalogItemImage';
 

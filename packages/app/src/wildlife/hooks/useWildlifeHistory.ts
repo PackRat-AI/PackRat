@@ -1,5 +1,5 @@
+import ImageCacheManager from '@packrat/app/lib/utils/ImageCacheManager';
 import type { IdentificationResult, WildlifeIdentification } from '@packrat/app/wildlife';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useAtom } from 'jotai';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';

@@ -1,8 +1,8 @@
 import type { CatalogItem } from '@packrat/app/catalog';
 import { useVectorSearch } from '@packrat/app/catalog/hooks/useVectorSearch';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { View } from 'react-native';
 import type { GapAnalysisItem } from '../hooks';

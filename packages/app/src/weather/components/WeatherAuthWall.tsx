@@ -1,6 +1,6 @@
+import { Icon, type MaterialIconName } from '@packrat/app/components/Icon';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { Image, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

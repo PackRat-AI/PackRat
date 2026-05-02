@@ -1,5 +1,5 @@
+import { obs } from '@packrat/app/lib/store';
 import { getPackItems, packItemsStore, packsStore } from '@packrat/app/packs/store';
-import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 
 export function useDeletePack() {

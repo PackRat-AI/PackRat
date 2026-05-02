@@ -1,7 +1,7 @@
+import { WeightBadge } from '@packrat/app/components/initial/WeightBadge';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { PackTemplate, PackTemplateInStore } from '@packrat/app/pack-templates';
 import { Text } from '@packrat/ui/nativewindui';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { isArray } from 'radash';
 import { useMemo } from 'react';

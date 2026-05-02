@@ -61,7 +61,7 @@
   "overrides": [
     {
       "includes": [
-        "apps/expo/atoms/atomWith*.ts",
+        "packages/app/src/atoms/atomWith*.ts",
         "packages/app/src/weather/atoms/locationsAtoms.ts",
         "apps/expo/lib/api/client.ts",
         "packages/api/src/index.ts",
@@ -70,7 +70,7 @@
         "packages/api/src/services/etl/processCatalogEtl.ts",
         "packages/api/test/guides.test.ts",
         "packages/api/test/setup.ts",
-        "apps/expo/utils/weight.ts",
+        "packages/app/src/utils/weight.ts",
         "packages/api/src/utils/weight.ts",
         "packages/mcp/src/index.ts",
         "scripts/lint/**",

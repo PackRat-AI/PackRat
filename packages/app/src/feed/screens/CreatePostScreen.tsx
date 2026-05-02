@@ -1,9 +1,9 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { TextInput } from '@packrat/app/components/TextInput';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { uploadImage } from '@packrat/app/packs/utils/uploadImage';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { TextInput } from 'expo-app/components/TextInput';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid';
 import { useCallback, useState } from 'react';

@@ -1,6 +1,6 @@
+import { obs } from '@packrat/app/lib/store';
 import type { TripInput, TripInStore } from '@packrat/app/trips';
 import { tripsStore } from '@packrat/app/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 

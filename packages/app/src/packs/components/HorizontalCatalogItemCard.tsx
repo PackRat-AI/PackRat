@@ -1,8 +1,8 @@
 import type { CatalogItem } from '@packrat/app/catalog';
 import { CatalogItemImage } from '@packrat/app/catalog/components/CatalogItemImage';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { TouchableWithoutFeedback, View } from 'react-native';
 
 type HorizontalCatalogItemCardProps = {

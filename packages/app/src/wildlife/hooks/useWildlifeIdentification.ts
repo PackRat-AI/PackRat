@@ -1,10 +1,10 @@
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import type { SelectedImage } from '@packrat/app/packs/hooks/useImagePicker';
 import { uploadImage } from '@packrat/app/packs/utils';
 import type { IdentificationResult } from '@packrat/app/wildlife';
 import { identifyFromDescription } from '@packrat/app/wildlife';
 import { isObject, zodGuard } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
 const isIdentifyResponse = zodGuard(z.object({ results: z.array(z.unknown()) }));

@@ -1,5 +1,5 @@
+import { obs } from '@packrat/app/lib/store';
 import { tripsStore } from '@packrat/app/trips/store/trips';
-import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 
 export function useDeleteTrip() {

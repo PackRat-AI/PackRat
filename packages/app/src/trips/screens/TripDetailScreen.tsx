@@ -1,12 +1,12 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import { SubmitConditionReportForm } from '@packrat/app/trail-conditions/components/SubmitConditionReportForm';
 import type { Trip } from '@packrat/app/trips';
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Modal, ScrollView, Share, View } from 'react-native';

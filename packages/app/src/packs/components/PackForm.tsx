@@ -1,4 +1,8 @@
 import { PackCategorySchema } from '@packrat/api/types';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import { useCreatePackFromTemplate } from '@packrat/app/pack-templates/hooks/useCreatePackFromTemplate';
 import { getTemplateItems, packTemplatesStore } from '@packrat/app/pack-templates/store';
 import type { Pack } from '@packrat/app/packs';
@@ -15,10 +19,6 @@ import {
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {

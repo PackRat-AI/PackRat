@@ -10,11 +10,11 @@
  * through authenticated API endpoints.
  */
 
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import { getPackItems, packItemsStore } from '@packrat/app/packs/store/packItems';
 import { packsStore } from '@packrat/app/packs/store/packs';
 import { getWeatherData, searchLocations } from '@packrat/app/weather/lib/weatherService';
 import { tool } from 'ai';
-import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
 export function createLocalTools() {

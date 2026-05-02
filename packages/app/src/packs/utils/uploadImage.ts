@@ -1,5 +1,5 @@
 import { userStore } from '@packrat/app/auth/store';
-import { apiClient } from 'expo-app/lib/api/packrat';
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import * as FileSystem from 'expo-file-system/legacy';
 
 export const uploadImage = async (fileName: string, uri: string): Promise<string | undefined> => {

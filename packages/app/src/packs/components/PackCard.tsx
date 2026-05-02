@@ -1,10 +1,10 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Icon } from '@packrat/app/components/Icon';
+import { WeightBadge } from '@packrat/app/components/initial/WeightBadge';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import type { Pack, PackInStore } from '@packrat/app/packs';
 import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

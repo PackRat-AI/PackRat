@@ -1,3 +1,6 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { cn } from '@packrat/app/lib/cn';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { assertDefined } from '@packrat/guards';
 import {
   AdaptiveSearchHeader,
@@ -16,9 +19,6 @@ import {
   ToolbarCTA,
 } from '@packrat/ui/nativewindui';
 import { Portal } from '@rn-primitives/portal';
-import { Icon } from 'expo-app/components/Icon';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';

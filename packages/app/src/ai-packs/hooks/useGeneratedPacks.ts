@@ -1,10 +1,10 @@
 import { use$ } from '@legendapp/state/react';
 import type { GenerationRequest } from '@packrat/app/ai-packs';
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { obs } from '@packrat/app/lib/store';
 import type { Pack } from '@packrat/app/packs';
 import { packsStore } from '@packrat/app/packs/store';
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { obs } from 'expo-app/lib/store';
 
 const generatePacks = async (request: GenerationRequest): Promise<Pack[]> => {
   const { data, error } = await apiClient.packs['generate-packs'].post(request);

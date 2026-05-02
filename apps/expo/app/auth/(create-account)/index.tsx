@@ -1,8 +1,8 @@
 'use client';
 
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';

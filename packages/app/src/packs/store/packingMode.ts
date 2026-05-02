@@ -1,6 +1,6 @@
 import { observable } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
-import { persistPlugin } from 'expo-app/lib/persist-plugin';
+import { persistPlugin } from '@packrat/app/lib/persist-plugin';
 
 export const packingModeStore = observable<Record<string, Record<string, boolean>>>({});
 

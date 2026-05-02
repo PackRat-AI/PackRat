@@ -1,11 +1,11 @@
 'use client';
 
+import { Icon } from '@packrat/app/components/Icon';
+import { cn } from '@packrat/app/lib/cn';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import type { TranslationKeys } from '@packrat/app/lib/i18n/types';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

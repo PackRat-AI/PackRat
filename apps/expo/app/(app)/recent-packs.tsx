@@ -1,10 +1,10 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { getRelativeTime } from '@packrat/app/lib/utils/getRelativeTime';
 import type { Pack } from '@packrat/app/packs';
 import { useRecentPacks } from '@packrat/app/packs/hooks/useRecentPacks';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Image, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

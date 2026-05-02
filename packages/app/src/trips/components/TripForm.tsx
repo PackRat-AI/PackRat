@@ -1,3 +1,7 @@
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import { usePacks } from '@packrat/app/packs/hooks/usePacks';
 import type { Trip } from '@packrat/app/trips';
 import { assertDefined, isString } from '@packrat/guards';
@@ -6,10 +10,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Modal, Platform, Pressable, Text, View } from 'react-native';

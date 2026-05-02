@@ -1,12 +1,12 @@
+import { searchValueAtom } from '@packrat/app/atoms/itemListAtoms';
 import type { CatalogItem } from '@packrat/app/catalog';
+import { CategoriesFilter } from '@packrat/app/components/CategoriesFilter';
+import { Icon } from '@packrat/app/components/Icon';
+import { SearchInput } from '@packrat/app/components/SearchInput';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { HorizontalCatalogItemCard } from '@packrat/app/packs/components/HorizontalCatalogItemCard';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
-import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { Icon } from 'expo-app/components/Icon';
-import { SearchInput } from 'expo-app/components/SearchInput';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtom } from 'jotai';
 import { useCallback, useMemo, useState } from 'react';
 import {

@@ -1,4 +1,4 @@
-import type { MaterialIconName } from 'expo-app/components/Icon';
+import type { MaterialIconName } from '@packrat/app/components/Icon';
 
 export interface WeatherApiForecastResponse {
   location: Location;

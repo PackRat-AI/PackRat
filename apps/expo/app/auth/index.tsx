@@ -1,11 +1,11 @@
 import { isLoadingAtom, needsReauthAtom, redirectToAtom } from '@packrat/app/auth/atoms/authAtoms';
 import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';

@@ -3,9 +3,9 @@ import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { TripSchema } from '@packrat/api/schemas/trips';
 import { isAuthed } from '@packrat/app/auth/store';
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { persistPlugin } from '@packrat/app/lib/persist-plugin';
 import type { TripInStore } from '@packrat/app/trips';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { persistPlugin } from 'expo-app/lib/persist-plugin';
 
 let _refreshTripsList: (() => void) | undefined;
 export const refreshTripsList = () => _refreshTripsList?.();

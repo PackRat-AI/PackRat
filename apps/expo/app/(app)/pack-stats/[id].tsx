@@ -1,10 +1,10 @@
 import { userStore } from '@packrat/app/auth/store';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { usePackDetailsFromStore } from '@packrat/app/packs/hooks/usePackDetailsFromStore';
 import { usePackWeightHistory } from '@packrat/app/packs/hooks/usePackWeightHistory';
 import { computeCategorySummaries } from '@packrat/app/packs/utils';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { featureFlags } from 'expo-app/config';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

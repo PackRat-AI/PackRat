@@ -1,6 +1,6 @@
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { CreatePackItemForm } from '@packrat/app/packs/screens/CreatePackItemForm';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import { NotFoundScreen } from '@packrat/app/screens/NotFoundScreen';
 import { useLocalSearchParams } from 'expo-router';
 import { usePackItemDetailsFromStore } from '../hooks';
 

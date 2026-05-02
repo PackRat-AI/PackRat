@@ -3,8 +3,8 @@ import {
   type WeatherAPIForecastResponse,
   WeatherAPIForecastResponseSchema,
 } from '@packrat/api/schemas/weather';
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import { assertDefined } from '@packrat/guards';
-import { apiClient } from 'expo-app/lib/api/packrat';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**

@@ -1,9 +1,9 @@
 import { CatalogItemImage } from '@packrat/app/catalog/components/CatalogItemImage';
+import { Icon } from '@packrat/app/components/Icon';
+import { buildImageUrl } from '@packrat/app/lib/utils/buildImageUrl';
 import type { PackItem } from '@packrat/app/packs';
 import { isRemoteUrl } from '@packrat/guards';
 import { useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
 import { CachedImage } from './CachedImage';

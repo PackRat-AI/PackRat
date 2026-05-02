@@ -1,3 +1,5 @@
+import { cn } from '@packrat/app/lib/cn';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import {
   Avatar,
   AvatarFallback,
@@ -5,8 +7,6 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

@@ -1,6 +1,6 @@
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { IdentificationResult } from '@packrat/app/wildlife';
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 
 interface SpeciesCardProps {

@@ -1,4 +1,12 @@
 import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { AndroidTabBarInsetFix } from '@packrat/app/components/AndroidTabBarInsetFix';
+import { Icon } from '@packrat/app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from '@packrat/app/components/LargeTitleHeaderOverlapFixIOS';
+import { LargeTitleHeaderSearchContentContainer } from '@packrat/app/components/LargeTitleHeaderSearchContentContainer';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
+import { asNonNullableRef } from '@packrat/app/lib/utils/asNonNullableRef';
 import type { Pack, PackCategory, PackInStore } from '@packrat/app/packs';
 import { PackCard } from '@packrat/app/packs/components/PackCard';
 import { SearchResults } from '@packrat/app/packs/components/SearchResults';
@@ -11,14 +19,6 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
-import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
-import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';

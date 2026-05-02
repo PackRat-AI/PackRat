@@ -1,5 +1,5 @@
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { PackListScreen } from '@packrat/app/packs/screens/PackListScreen';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 

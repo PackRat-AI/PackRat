@@ -1,16 +1,16 @@
 import { WeightUnitSchema } from '@packrat/api/types';
 import type { CatalogItem } from '@packrat/app/catalog';
+import { Icon } from '@packrat/app/components/Icon';
+import { TextInput } from '@packrat/app/components/TextInput';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { useCreatePackItem } from '@packrat/app/packs/hooks/useCreatePackItem';
 import { usePackDetailsFromStore } from '@packrat/app/packs/hooks/usePackDetailsFromStore';
+import { ErrorScreen } from '@packrat/app/screens/ErrorScreen';
 import { assertDefined, fromZod } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
-import { Icon } from 'expo-app/components/Icon';
-import { TextInput } from 'expo-app/components/TextInput';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {

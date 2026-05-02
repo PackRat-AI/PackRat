@@ -1,5 +1,5 @@
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import { Platform } from 'react-native';
 

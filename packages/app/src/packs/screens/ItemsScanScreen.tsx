@@ -1,14 +1,14 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '@packrat/app/catalog';
+import { ErrorState } from '@packrat/app/components/ErrorState';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { type SelectedImage, useImagePicker } from '@packrat/app/packs/hooks/useImagePicker';
 import { assertNonNull } from '@packrat/guards';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
-import { ErrorState } from 'expo-app/components/ErrorState';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';

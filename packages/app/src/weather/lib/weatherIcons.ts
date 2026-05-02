@@ -1,4 +1,4 @@
-import type { MaterialIconName } from 'expo-app/components/Icon';
+import type { MaterialIconName } from '@packrat/app/components/Icon';
 
 /**
  * Maps weather condition codes to available icons

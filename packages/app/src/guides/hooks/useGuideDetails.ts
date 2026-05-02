@@ -1,5 +1,5 @@
+import { apiClient } from '@packrat/app/lib/api/packrat';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
 
 export const useGuideDetails = (id: string) => {
   return useQuery({

@@ -1,5 +1,5 @@
+import { obs } from '@packrat/app/lib/store';
 import type { PackTemplate } from '@packrat/app/pack-templates';
-import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 import { packTemplatesStore } from '../store/packTemplates';
 

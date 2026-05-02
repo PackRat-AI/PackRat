@@ -3,8 +3,14 @@
 import { AIChatTile } from '@packrat/app/ai/components/AIChatTile';
 import { ReportedContentTile } from '@packrat/app/ai/components/ReportedContentTile';
 import { AIPacksTile } from '@packrat/app/ai-packs/components/AIPacksTile';
+import { AndroidTabBarInsetFix } from '@packrat/app/components/AndroidTabBarInsetFix';
+import { Icon } from '@packrat/app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from '@packrat/app/components/LargeTitleHeaderSearchContentContainer';
 import { FeedTile } from '@packrat/app/feed/components/FeedTile';
 import { GuidesTile } from '@packrat/app/guides/components/GuidesTile';
+import { cn } from '@packrat/app/lib/cn';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { asNonNullableRef } from '@packrat/app/lib/utils/asNonNullableRef';
 import { PackTemplatesTile } from '@packrat/app/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from '@packrat/app/packs/components/CurrentPackTile';
 import { GearInventoryTile } from '@packrat/app/packs/components/GearInventoryTile';
@@ -28,13 +34,7 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
-import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
-import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { appConfig, featureFlags } from 'expo-app/config';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 

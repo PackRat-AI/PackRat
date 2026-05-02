@@ -1,6 +1,6 @@
 import { use$ } from '@legendapp/state/react';
+import { obs } from '@packrat/app/lib/store';
 import { computePackTemplateWeights } from '@packrat/app/pack-templates';
-import { obs } from 'expo-app/lib/store';
 import { getTemplateItems } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
 

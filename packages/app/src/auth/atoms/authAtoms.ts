@@ -1,4 +1,4 @@
-import kvStorage from 'expo-app/lib/kvStorage';
+import kvStorage from '@packrat/app/lib/kvStorage';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 

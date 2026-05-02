@@ -1,5 +1,5 @@
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Image, View } from 'react-native';
 
 const LOGO_SOURCE = require('expo-app/assets/adaptive-icon.png');

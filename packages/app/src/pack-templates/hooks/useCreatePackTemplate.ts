@@ -1,5 +1,5 @@
+import { obs } from '@packrat/app/lib/store';
 import type { PackTemplateInput, PackTemplateInStore } from '@packrat/app/pack-templates';
-import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 import { packTemplatesStore } from '../store/packTemplates';

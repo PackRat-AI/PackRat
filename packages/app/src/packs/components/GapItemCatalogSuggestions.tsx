@@ -1,8 +1,8 @@
 import type { CatalogItem } from '@packrat/app/catalog';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';

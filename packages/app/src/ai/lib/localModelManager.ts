@@ -9,9 +9,9 @@
  */
 
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from '@packrat/app/ai';
+import { store } from '@packrat/app/atoms/store';
 import { isString } from '@packrat/guards';
 import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
-import { store } from 'expo-app/atoms/store';
 import { Platform } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
 import {

@@ -1,5 +1,5 @@
 import { useUser } from '@packrat/app/auth/hooks/useUser';
-import { obs } from 'expo-app/lib/store';
+import { obs } from '@packrat/app/lib/store';
 import { packTemplatesStore } from '../store';
 
 export function useWritePermissionCheck(id: string) {

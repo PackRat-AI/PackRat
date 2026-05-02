@@ -1,9 +1,9 @@
 import { CatalogItemImage } from '@packrat/app/catalog/components/CatalogItemImage';
+import { Icon } from '@packrat/app/components/Icon';
+import { buildImageUrl } from '@packrat/app/lib/utils/buildImageUrl';
 import type { PackTemplateItem } from '@packrat/app/pack-templates';
 import { CachedImage } from '@packrat/app/packs/components/CachedImage';
 import { useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { type ImageProps, View } from 'react-native';
 
 interface PackTemplateItemImageProps extends Omit<ImageProps, 'source'> {

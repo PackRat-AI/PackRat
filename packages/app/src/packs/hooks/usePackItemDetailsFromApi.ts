@@ -1,8 +1,8 @@
 import { PackItemSchema } from '@packrat/api/schemas/packs';
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { useAuthenticatedQueryToolkit } from '@packrat/app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { PackItem } from '@packrat/app/packs';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 export async function fetchPackItemById(id: string) {
   const { data, error } = await apiClient.packs.items({ itemId: id }).get();

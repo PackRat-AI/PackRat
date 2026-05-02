@@ -1,7 +1,7 @@
 import type { ToolInvocation } from '@packrat/app/ai';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { Pack } from '@packrat/app/packs';
 import { PackCard } from '@packrat/app/packs/components/PackCard';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ToolCard } from './ToolCard';
 
 type PackDetailsToolOutput =

@@ -1,6 +1,6 @@
 import { type SimilarItem, useSimilarCatalogItems } from '@packrat/app/catalog/hooks';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import type React from 'react';
 import { FlatList, Pressable, View } from 'react-native';

@@ -1,11 +1,11 @@
+import { CategoriesFilter } from '@packrat/app/components/CategoriesFilter';
+import { LargeTitleHeaderOverlapFixIOS } from '@packrat/app/components/LargeTitleHeaderOverlapFixIOS';
+import { LargeTitleHeaderSearchContentContainer } from '@packrat/app/components/LargeTitleHeaderSearchContentContainer';
 import type { Guide } from '@packrat/app/guides';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { asNonNullableRef } from '@packrat/app/lib/utils/asNonNullableRef';
 import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
-import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';

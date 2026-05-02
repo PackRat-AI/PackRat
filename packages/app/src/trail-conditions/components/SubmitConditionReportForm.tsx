@@ -1,11 +1,11 @@
+import { TextInput } from '@packrat/app/components/TextInput';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type {
   OverallCondition,
   TrailSurface,
   WaterCrossingDifficulty,
 } from '@packrat/app/trail-conditions';
 import { Text } from '@packrat/ui/nativewindui';
-import { TextInput } from 'expo-app/components/TextInput';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSubmitTrailConditionReport } from '../hooks/useSubmitTrailConditionReport';

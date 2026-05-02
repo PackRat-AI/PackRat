@@ -1,8 +1,8 @@
-import type { CatalogItem } from '@packrat/app/catalog';
 import {
   buildUpdatedRecentlyUsed,
   recentlyUsedCatalogItemsAtom,
-} from 'expo-app/atoms/recentlyUsedCatalogItemsAtom';
+} from '@packrat/app/atoms/recentlyUsedCatalogItemsAtom';
+import type { CatalogItem } from '@packrat/app/catalog';
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
 

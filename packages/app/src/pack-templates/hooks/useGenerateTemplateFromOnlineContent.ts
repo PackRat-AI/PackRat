@@ -1,9 +1,9 @@
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { obs } from '@packrat/app/lib/store';
+import { isWeightUnit } from '@packrat/app/lib/utils/itemCalculations';
 import type { PackTemplateInStore, PackTemplateItem } from '@packrat/app/pack-templates';
 import { isObject } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { obs } from 'expo-app/lib/store';
-import { isWeightUnit } from 'expo-app/lib/utils/itemCalculations';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
 

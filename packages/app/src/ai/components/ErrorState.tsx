@@ -1,7 +1,7 @@
 import { EvilIcons, Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { Card, CardContent, Text } from '@packrat/ui/nativewindui';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 
 interface ErrorStateProps {

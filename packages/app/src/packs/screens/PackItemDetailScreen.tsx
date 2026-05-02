@@ -1,10 +1,8 @@
 import { isAuthed } from '@packrat/app/auth/store';
-import { isDefined } from '@packrat/guards';
-import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { Chip } from 'expo-app/components/initial/Chip';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Icon } from '@packrat/app/components/Icon';
+import { Chip } from '@packrat/app/components/initial/Chip';
+import { WeightBadge } from '@packrat/app/components/initial/WeightBadge';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
   getNotes,
@@ -13,7 +11,9 @@ import {
   isConsumable,
   isWorn,
   shouldShowQuantity,
-} from 'expo-app/lib/utils/itemCalculations';
+} from '@packrat/app/lib/utils/itemCalculations';
+import { isDefined } from '@packrat/guards';
+import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

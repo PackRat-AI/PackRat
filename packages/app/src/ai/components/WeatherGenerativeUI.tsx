@@ -1,8 +1,8 @@
 import type { ToolInvocation } from '@packrat/app/ai';
+import { Icon } from '@packrat/app/components/Icon';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { getWeatherIconByCondition } from '@packrat/app/weather/lib/weatherIcons';
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { View } from 'react-native';
 import { ToolCard } from './ToolCard';
 

@@ -1,9 +1,9 @@
 import { needsReauthAtom } from '@packrat/app/auth/atoms/authAtoms';
 import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';

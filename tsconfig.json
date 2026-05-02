@@ -40,7 +40,7 @@
       "@packrat/app/*": ["./packages/app/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
-      "nativewindui/*": ["./apps/expo/components/ui/*"]
+      "nativewindui/*": ["./packages/app/src/components/ui/*"]
     }
   },
   "include": [

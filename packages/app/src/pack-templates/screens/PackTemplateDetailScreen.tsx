@@ -1,10 +1,10 @@
 import { useUser } from '@packrat/app/auth/hooks/useUser';
+import { Chip } from '@packrat/app/components/initial/Chip';
+import { WeightBadge } from '@packrat/app/components/initial/WeightBadge';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { PackTemplateItem } from '@packrat/app/pack-templates';
+import { NotFoundScreen } from '@packrat/app/screens/NotFoundScreen';
 import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
-import { Chip } from 'expo-app/components/initial/Chip';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';

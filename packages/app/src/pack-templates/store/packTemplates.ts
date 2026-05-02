@@ -6,9 +6,9 @@ import {
   PackTemplateWithItemsSchema,
 } from '@packrat/api/schemas/packTemplates';
 import { isAuthed } from '@packrat/app/auth/store';
+import { apiClient } from '@packrat/app/lib/api/packrat';
+import { persistPlugin } from '@packrat/app/lib/persist-plugin';
 import type { PackTemplate, PackTemplateInStore } from '@packrat/app/pack-templates';
-import { apiClient } from 'expo-app/lib/api/packrat';
-import { persistPlugin } from 'expo-app/lib/persist-plugin';
 
 const listPackTemplates = async (): Promise<PackTemplateInStore[] | null> => {
   const { data, error } = await apiClient['pack-templates'].get();

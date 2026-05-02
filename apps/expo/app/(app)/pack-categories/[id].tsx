@@ -1,10 +1,10 @@
 import { userStore } from '@packrat/app/auth/store';
+import { Icon, type MaterialIconName } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import { usePackDetailsFromStore } from '@packrat/app/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from '@packrat/app/packs/utils';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 

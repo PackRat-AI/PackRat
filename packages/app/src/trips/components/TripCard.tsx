@@ -1,10 +1,10 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Icon } from '@packrat/app/components/Icon';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { formatLocalDate } from '@packrat/app/lib/utils/dateUtils';
 import type { Trip } from '@packrat/app/trips';
 import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { formatLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
