@@ -123,6 +123,7 @@ export function TripDetailScreen() {
                     if (router.canGoBack()) {
                       router.back();
                     } else {
+                      // safe-cast: '/trips' is a compile-time string literal recognised by expo-router
                       router.replace('/trips' as Href);
                     }
                   }
