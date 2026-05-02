@@ -1,8 +1,8 @@
 import { WeightUnitSchema } from '@packrat/api/types';
+import type { CatalogItemWithPackItemFields } from '@packrat/app/catalog';
 import { fromZod } from '@packrat/guards';
 import { useState } from 'react';
 import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
-import type { CatalogItemWithPackItemFields } from '../../catalog/types';
 import { useCreatePackItem } from './useCreatePackItem';
 
 export function useBulkAddCatalogItems() {

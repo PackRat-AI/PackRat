@@ -1,4 +1,5 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import type { Pack, PackCategory, PackItem } from '@packrat/app/packs';
 import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
@@ -26,7 +27,6 @@ import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import { packingModeStore } from '../store/packingMode';
-import type { Pack, PackCategory, PackItem } from '../types';
 
 export function PackDetailScreen() {
   const { t } = useTranslation();

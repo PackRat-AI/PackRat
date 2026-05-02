@@ -1,3 +1,4 @@
+import type { PackTemplateItem } from '@packrat/app/pack-templates';
 import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -12,7 +13,6 @@ import AddPackTemplateItemActions from '../components/AddPackTemplateItemActions
 import { AppTemplateBadge } from '../components/AppTemplateBadge';
 import { PackTemplateItemCard } from '../components/PackTemplateItemCard';
 import { usePackTemplateDetails } from '../hooks';
-import type { PackTemplateItem } from '../types';
 
 export function PackTemplateDetailScreen() {
   const router = useRouter();

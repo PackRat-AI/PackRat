@@ -1,6 +1,7 @@
 // CreatePackTemplateItemForm.tsx
 
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { PackTemplateItem } from '@packrat/app/pack-templates';
 import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
@@ -18,7 +19,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
-import type { PackTemplateItem } from '../types';
 
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),

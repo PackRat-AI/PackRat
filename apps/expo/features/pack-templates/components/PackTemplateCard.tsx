@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { PackTemplate } from '@packrat/app/pack-templates';
 import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { appAlert } from 'expo-app/app/_layout';
@@ -11,7 +12,6 @@ import { Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
 import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
-import type { PackTemplate } from '../types';
 import { AppTemplateBadge } from './AppTemplateBadge';
 
 type PackTemplateCard = {

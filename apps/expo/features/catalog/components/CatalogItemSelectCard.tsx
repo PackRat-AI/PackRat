@@ -1,3 +1,4 @@
+import type { CatalogItem } from '@packrat/app/catalog';
 import {
   Card,
   CardContent,
@@ -11,7 +12,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { TouchableWithoutFeedback, View } from 'react-native';
-import type { CatalogItem } from '../types';
 import { CatalogItemImage } from './CatalogItemImage';
 
 type CatalogItemSelectCardProps = {

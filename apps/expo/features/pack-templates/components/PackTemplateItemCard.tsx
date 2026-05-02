@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { PackTemplateItem } from '@packrat/app/pack-templates';
 import { Text } from '@packrat/ui/nativewindui';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
@@ -10,7 +11,6 @@ import { useRouter } from 'expo-router';
 import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplateItem } from '../hooks';
-import type { PackTemplateItem } from '../types';
 import { PackTemplateItemImage } from './PackTemplateItemImage';
 
 type PackTemplateItemCardProps = {

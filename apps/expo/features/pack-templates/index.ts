@@ -1,2 +1,2 @@
+export * from '@packrat/app/pack-templates';
 export * from './hooks';
-export * from './types';

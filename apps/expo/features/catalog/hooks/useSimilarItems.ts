@@ -1,7 +1,7 @@
+import type { CatalogItem } from '@packrat/app/catalog';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { CatalogItem } from '../types';
 
 export interface SimilarItem extends Omit<CatalogItem, 'embedding'> {
   similarity: number;

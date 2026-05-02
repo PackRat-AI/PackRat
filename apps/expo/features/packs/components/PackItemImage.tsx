@@ -1,3 +1,4 @@
+import type { PackItem } from '@packrat/app/packs';
 import { isRemoteUrl } from '@packrat/guards';
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
@@ -5,7 +6,6 @@ import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogIt
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
-import type { PackItem } from '../types';
 import { CachedImage } from './CachedImage';
 
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {

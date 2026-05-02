@@ -5,10 +5,10 @@ import {
   PackTemplateSchema,
   PackTemplateWithItemsSchema,
 } from '@packrat/api/schemas/packTemplates';
+import type { PackTemplate, PackTemplateInStore } from '@packrat/app/pack-templates';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
-import type { PackTemplate, PackTemplateInStore } from '../types';
 
 const listPackTemplates = async (): Promise<PackTemplateInStore[] | null> => {
   const { data, error } = await apiClient['pack-templates'].get();

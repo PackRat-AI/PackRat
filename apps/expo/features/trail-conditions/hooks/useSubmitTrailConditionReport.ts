@@ -1,10 +1,13 @@
+import type {
+  TrailConditionReportInput,
+  TrailConditionReportInStore,
+} from '@packrat/app/trail-conditions';
 import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   trailConditionReportsStore,
   trailConditionReportsSyncState,
 } from '../store/trailConditionReports';
-import type { TrailConditionReportInput, TrailConditionReportInStore } from '../types';
 
 interface SubmitOptions {
   onSuccess?: (id: string) => void;

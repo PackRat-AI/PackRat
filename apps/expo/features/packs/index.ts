@@ -1,2 +1,2 @@
+export * from '@packrat/app/packs';
 export * from './hooks';
-export * from './types';

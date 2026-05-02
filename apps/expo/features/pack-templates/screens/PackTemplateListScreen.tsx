@@ -1,11 +1,12 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { PackTemplate } from '@packrat/app/pack-templates';
+import type { PackCategory } from '@packrat/app/packs';
 import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
@@ -26,7 +27,6 @@ import { PackTemplateCard } from '../components/PackTemplateCard';
 import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
-import type { PackTemplate } from '../types';
 
 type FilterOption = {
   label: string;

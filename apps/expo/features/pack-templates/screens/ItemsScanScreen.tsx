@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { CatalogItem, CatalogItemWithPackItemFields } from '@packrat/app/catalog';
 import { assertNonNull } from '@packrat/guards';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
@@ -14,7 +15,6 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { useBulkAddCatalogItems } from '../hooks';
 
 export function ItemsScanScreen() {

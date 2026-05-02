@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { PackItem } from '@packrat/app/packs';
 import { assertDefined } from '@packrat/guards';
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
@@ -13,7 +14,6 @@ import {
   usePackItemDetailsFromStore,
   usePackItemOwnershipCheck,
 } from '../hooks';
-import type { PackItem } from '../types';
 import { PackItemImage } from './PackItemImage';
 
 type Base = {

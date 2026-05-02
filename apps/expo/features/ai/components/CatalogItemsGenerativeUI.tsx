@@ -1,10 +1,10 @@
+import type { ToolInvocation } from '@packrat/app/ai';
+import type { CatalogItem } from '@packrat/app/catalog';
 import { Text } from '@packrat/ui/nativewindui';
 import { CatalogItemCard } from 'expo-app/features/catalog/components';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Dimensions, ScrollView, View } from 'react-native';
-import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
 type CatalogItemsToolOutput =

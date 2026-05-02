@@ -1,7 +1,7 @@
 import { use$ } from '@legendapp/state/react';
+import type { PackWeightHistoryEntry } from '@packrat/app/packs';
 import { assertDefined } from '@packrat/guards';
 import { packWeigthHistoryStore } from '../store/packWeightHistory';
-import type { PackWeightHistoryEntry } from '../types';
 
 export type PackMonthlyAverage = {
   month: string;

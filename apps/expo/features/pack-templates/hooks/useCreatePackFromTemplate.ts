@@ -1,8 +1,8 @@
 // hooks/useCreatePackFromTemplate.ts
 
+import type { PackInput } from '@packrat/app/packs';
 import { getTemplateItems } from 'expo-app/features/pack-templates/store';
 import { useCreatePack, useCreatePackItem } from 'expo-app/features/packs';
-import type { PackInput } from 'expo-app/features/packs/types';
 import { useCallback } from 'react';
 
 export function useCreatePackFromTemplate() {

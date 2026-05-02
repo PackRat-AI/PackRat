@@ -1,4 +1,5 @@
 import { useSelector } from '@legendapp/state/react';
+import type { TrailConditionReport } from '@packrat/app/trail-conditions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from 'expo-app/features/auth/store/user';
@@ -6,7 +7,6 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import { useEffect, useRef, useState } from 'react';
 import { trailConditionReportsStore } from '../store/trailConditionReports';
-import type { TrailConditionReport } from '../types';
 
 const CACHE_KEY_PREFIX = 'trail_condition_reports_cache';
 

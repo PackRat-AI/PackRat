@@ -1,3 +1,4 @@
+import type { Trip } from '@packrat/app/trips';
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -12,7 +13,6 @@ import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
-import type { Trip } from '../types';
 
 function TrailConditionsBanner() {
   const { colors } = useColorScheme();

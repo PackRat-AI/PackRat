@@ -1,6 +1,6 @@
 import { use$ } from '@legendapp/state/react';
+import type { Pack } from '@packrat/app/packs';
 import { getPackItems, packsStore } from 'expo-app/features/packs/store';
-import type { Pack } from '../types';
 import { computePackWeights } from '../utils';
 
 export function useDetailedPacks(): Pack[] {

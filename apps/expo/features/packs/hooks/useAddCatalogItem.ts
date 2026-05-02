@@ -1,10 +1,10 @@
 import { WeightUnitSchema } from '@packrat/api/types';
+import type { CatalogItem } from '@packrat/app/catalog';
+import type { PackItem } from '@packrat/app/packs';
 import { fromZod } from '@packrat/guards';
 import * as Burnt from 'burnt';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useState } from 'react';
-import type { PackItem } from '../types';
 import { useCreatePackItem } from './useCreatePackItem';
 
 export function useAddCatalogItem() {

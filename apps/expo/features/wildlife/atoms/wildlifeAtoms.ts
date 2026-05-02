@@ -1,6 +1,6 @@
+import type { WildlifeIdentification } from '@packrat/app/wildlife';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { atomWithStorage, createJSONStorage, loadable } from 'jotai/utils';
-import type { WildlifeIdentification } from '../types';
 
 // createJSONStorage handles JSON.parse/stringify internally; pass AsyncStorage directly.
 const wildlifeStorage = createJSONStorage<WildlifeIdentification[]>(() => AsyncStorage);

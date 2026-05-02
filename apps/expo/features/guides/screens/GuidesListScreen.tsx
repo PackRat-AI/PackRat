@@ -1,3 +1,4 @@
+import type { Guide } from '@packrat/app/guides';
 import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
@@ -10,7 +11,6 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
-import type { Guide } from '../types';
 
 export const GuidesListScreen = () => {
   const router = useRouter();

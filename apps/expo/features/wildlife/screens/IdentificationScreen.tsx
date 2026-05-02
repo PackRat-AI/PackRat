@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { IdentificationResult } from '@packrat/app/wildlife';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
@@ -12,7 +13,6 @@ import { Image, ScrollView, View } from 'react-native';
 import { SpeciesCard } from '../components/SpeciesCard';
 import { useWildlifeHistory } from '../hooks/useWildlifeHistory';
 import { useWildlifeIdentification } from '../hooks/useWildlifeIdentification';
-import type { IdentificationResult } from '../types';
 
 export function IdentificationScreen() {
   const { t } = useTranslation();

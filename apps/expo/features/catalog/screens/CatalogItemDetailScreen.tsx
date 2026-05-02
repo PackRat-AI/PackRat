@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { normalizeDescription } from '@packrat/app/catalog';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
@@ -18,7 +19,6 @@ import { Linking, Text as RNText, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
-import { normalizeDescription } from '../lib/normalizeDescription';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();

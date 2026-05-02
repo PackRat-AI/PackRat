@@ -1,7 +1,7 @@
+import type { OverallCondition } from '@packrat/app/trail-conditions';
 import { Text } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { View } from 'react-native';
-import type { OverallCondition } from '../types';
 
 interface ConditionBadgeProps {
   condition: OverallCondition | string;

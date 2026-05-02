@@ -1,6 +1,6 @@
+import type { Pack } from '@packrat/app/packs';
 import { Icon } from 'expo-app/components/Icon';
 import { FlatList, Pressable, Text, View } from 'react-native';
-import type { Pack } from '../types';
 
 type SearchResultsProps = {
   results: Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>[];

@@ -1,6 +1,0 @@
-export type {
-  IdentificationResult,
-  SpeciesCategory,
-  SpeciesEntry,
-  WildlifeIdentification,
-} from '@packrat/app/wildlife';

@@ -6,3 +6,4 @@ export type {
   PackTemplateItemInput,
   WeightUnit,
 } from './types';
+export { computePackTemplateWeights } from './utils/computePacktemplateWeight';

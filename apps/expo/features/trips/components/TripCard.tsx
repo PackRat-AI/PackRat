@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { Trip } from '@packrat/app/trips';
 import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -9,7 +10,6 @@ import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
-import type { Trip } from '../types';
 
 interface TripCardProps {
   trip: Trip;

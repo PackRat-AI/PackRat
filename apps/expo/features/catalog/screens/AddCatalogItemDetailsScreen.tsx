@@ -1,4 +1,5 @@
 import { WeightUnitSchema } from '@packrat/api/types';
+import type { CatalogItem } from '@packrat/app/catalog';
 import { assertDefined, fromZod } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +25,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
-import type { CatalogItem } from '../types';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();

@@ -1,6 +1,6 @@
+import type { Pack, PackItem } from '@packrat/app/packs';
+import { computePackWeights } from '@packrat/app/packs';
 import { describe, expect, it } from 'vitest';
-import type { Pack, PackItem } from '../../types';
-import { computePackWeights } from '../computePackWeights';
 
 describe('computePackWeights', () => {
   describe('basic weight calculations', () => {

@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { Pack, PackInStore } from '@packrat/app/packs';
 import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
@@ -9,7 +10,6 @@ import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePack, useDuplicatePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
-import type { Pack, PackInStore } from '../types';
 
 type PackCardProps = {
   pack: Pack | PackInStore;

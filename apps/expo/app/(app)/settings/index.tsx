@@ -1,3 +1,4 @@
+import { LLAMA_MODEL_SIZE } from '@packrat/app/ai';
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -7,7 +8,6 @@ import {
   localModelProgressAtom,
   localModelStatusAtom,
 } from 'expo-app/features/ai/atoms/aiModeAtoms';
-import { LLAMA_MODEL_SIZE } from 'expo-app/features/ai/lib/constants';
 import {
   cancelLocalModelDownload,
   deleteLocalModel,

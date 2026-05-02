@@ -1,7 +1,7 @@
+import type { Pack } from '@packrat/app/packs';
 import { packsStore } from 'expo-app/features/packs/store';
 import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
-import type { Pack } from '../types';
 
 export function useUpdatePack() {
   const updatePack = useCallback((pack: Pack) => {

@@ -1,8 +1,7 @@
 import { use$ } from '@legendapp/state/react';
-
+import { computePackWeights } from '@packrat/app/packs';
 import { getPackItems, packsStore } from 'expo-app/features/packs/store';
 import { obs } from 'expo-app/lib/store';
-import { computePackWeights } from '../utils/computePackWeights';
 
 /**
  * Retrieves pack from store.

@@ -1,3 +1,4 @@
+import type { Comment, Post } from '@packrat/app/feed';
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
@@ -24,7 +25,6 @@ import {
   useToggleCommentLike,
   useTogglePostLike,
 } from '../hooks';
-import type { Comment, Post } from '../types';
 import { buildPostImageUrl } from '../utils';
 
 interface PostDetailScreenProps {

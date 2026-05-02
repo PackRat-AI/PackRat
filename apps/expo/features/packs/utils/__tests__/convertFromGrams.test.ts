@@ -1,5 +1,5 @@
+import { convertFromGrams } from '@packrat/app/packs';
 import { describe, expect, it } from 'vitest';
-import { convertFromGrams } from '../convertFromGrams';
 
 describe('convertFromGrams', () => {
   // -------------------------------------------------------------------------

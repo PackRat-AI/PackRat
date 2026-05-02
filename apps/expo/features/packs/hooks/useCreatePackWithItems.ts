@@ -1,5 +1,5 @@
+import type { PackInput, PackItemInput } from '@packrat/app/packs';
 import { useCallback } from 'react';
-import type { PackInput, PackItemInput } from '../types';
 import { useCreatePack } from './useCreatePack';
 import { useCreatePackItem } from './useCreatePackItem';
 

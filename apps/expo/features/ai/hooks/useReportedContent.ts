@@ -1,6 +1,6 @@
+import type { User } from '@packrat/app/profile';
 import { useQuery } from '@tanstack/react-query';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 

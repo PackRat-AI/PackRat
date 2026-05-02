@@ -1,3 +1,4 @@
+import type { CatalogItem } from '@packrat/app/catalog';
 import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
@@ -27,7 +28,6 @@ import { CatalogItemCard } from '../components/CatalogItemCard';
 import { useCatalogItemsInfinite } from '../hooks';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { useVectorSearch } from '../hooks/useVectorSearch';
-import type { CatalogItem } from '../types';
 
 function CatalogItemsScreen() {
   const router = useRouter();

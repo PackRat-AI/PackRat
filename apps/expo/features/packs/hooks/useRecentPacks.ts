@@ -1,6 +1,6 @@
 import { use$ } from '@legendapp/state/react';
+import { computePackWeights } from '@packrat/app/packs';
 import { getPackItems } from '../store';
-import { computePackWeights } from '../utils/computePackWeights';
 import { usePacks } from './usePacks';
 
 export function useRecentPacks() {

@@ -1,3 +1,5 @@
+import type { CatalogItem } from '@packrat/app/catalog';
+import { normalizeDescription } from '@packrat/app/catalog';
 import {
   Card,
   CardContent,
@@ -11,8 +13,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TouchableWithoutFeedback, View } from 'react-native';
-import { normalizeDescription } from '../lib/normalizeDescription';
-import type { CatalogItem } from '../types';
 import { CatalogItemImage } from './CatalogItemImage';
 
 type CatalogItemCardProps = {

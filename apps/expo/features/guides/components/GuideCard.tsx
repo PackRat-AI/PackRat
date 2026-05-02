@@ -1,7 +1,7 @@
+import type { Guide } from '@packrat/app/guides';
 import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TouchableOpacity, View } from 'react-native';
-import type { Guide } from '../types';
 
 interface GuideCardProps {
   guide: Guide;

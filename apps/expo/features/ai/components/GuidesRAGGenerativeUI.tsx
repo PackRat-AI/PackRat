@@ -1,3 +1,4 @@
+import type { ToolInvocation } from '@packrat/app/ai';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
 interface GuideSearchResult {

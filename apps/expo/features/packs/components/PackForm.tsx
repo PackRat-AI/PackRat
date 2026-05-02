@@ -1,4 +1,5 @@
 import { PackCategorySchema } from '@packrat/api/types';
+import type { Pack } from '@packrat/app/packs';
 import { fromZod } from '@packrat/guards';
 import {
   Button,
@@ -31,7 +32,6 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
-import type { Pack } from '../types';
 
 // Define Zod schema
 const packFormSchema = z.object({

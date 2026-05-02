@@ -1,3 +1,4 @@
+import type { Pack, PackCategory, PackInStore } from '@packrat/app/packs';
 import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
@@ -33,7 +34,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAllPacks } from '../hooks/useAllPacks';
 import { usePacks } from '../hooks/usePacks';
-import type { Pack, PackCategory, PackInStore } from '../types';
 
 type FilterOption = {
   label: string;

@@ -1,7 +1,7 @@
 import { use$ } from '@legendapp/state/react';
+import type { WeightUnit } from '@packrat/app/pack-templates';
 import { convertFromGrams, convertToGrams } from 'expo-app/features/packs/utils';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
-import type { WeightUnit } from '../types';
 
 export type PackTemplateSummary = {
   itemCount: number;

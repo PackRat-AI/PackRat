@@ -1,4 +1,5 @@
 import { PackCategorySchema } from '@packrat/api/types';
+import type { PackTemplate } from '@packrat/app/pack-templates';
 import { fromZod } from '@packrat/guards';
 import {
   Button,
@@ -27,7 +28,6 @@ import {
 import { z } from 'zod';
 import { useCreatePackTemplate } from '../hooks/useCreatePackTemplate';
 import { useUpdatePackTemplate } from '../hooks/useUpdatePacktemplate';
-import type { PackTemplate } from '../types';
 
 export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
   const router = useRouter();

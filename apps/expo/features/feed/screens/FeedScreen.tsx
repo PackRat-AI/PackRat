@@ -1,3 +1,4 @@
+import type { Post } from '@packrat/app/feed';
 import { ActivityIndicator, Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
@@ -8,7 +9,6 @@ import { useCallback } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 import { PostCard } from '../components/PostCard';
 import { useDeletePost, useFeed, useTogglePostLike } from '../hooks';
-import type { Post } from '../types';
 
 export const FeedScreen = () => {
   const { t } = useTranslation();

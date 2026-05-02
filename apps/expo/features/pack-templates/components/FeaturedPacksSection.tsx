@@ -1,3 +1,4 @@
+import type { PackTemplate, PackTemplateInStore } from '@packrat/app/pack-templates';
 import { Text } from '@packrat/ui/nativewindui';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -7,7 +8,6 @@ import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { usePackTemplates } from '../hooks';
 import { usePackTemplateSummaries } from '../hooks/usePackTemplateSummary';
-import type { PackTemplate, PackTemplateInStore } from '../types';
 
 type FeaturedPackCardProps = {
   template: PackTemplateInStore;

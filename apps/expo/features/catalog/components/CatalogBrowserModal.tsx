@@ -1,3 +1,4 @@
+import type { CatalogItem } from '@packrat/app/catalog';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
@@ -24,7 +25,6 @@ import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { usePopularCatalogItems } from '../hooks/usePopularCatalogItems';
 import { useRecentlyUsedCatalogItems } from '../hooks/useRecentlyUsedCatalogItems';
 import { useVectorSearch } from '../hooks/useVectorSearch';
-import type { CatalogItem } from '../types';
 
 type CatalogBrowserModalProps = {
   visible: boolean;

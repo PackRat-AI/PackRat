@@ -1,3 +1,4 @@
+import type { Trip } from '@packrat/app/trips';
 import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -17,7 +18,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
-import type { Trip } from '../types';
 
 const tripFormSchema = z
   .object({

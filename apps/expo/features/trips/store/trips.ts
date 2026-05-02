@@ -2,10 +2,10 @@ import { observable, syncState } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { TripSchema } from '@packrat/api/schemas/trips';
+import type { TripInStore } from '@packrat/app/trips';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
-import type { TripInStore } from '../types';
 
 let _refreshTripsList: (() => void) | undefined;
 export const refreshTripsList = () => _refreshTripsList?.();

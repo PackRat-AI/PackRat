@@ -1,3 +1,4 @@
+import type { Trip } from '@packrat/app/trips';
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
@@ -13,7 +14,6 @@ import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
-import type { Trip } from '../types';
 
 export function TripDetailScreen() {
   const router = useRouter();

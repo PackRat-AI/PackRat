@@ -1,10 +1,14 @@
+import type {
+  OverallCondition,
+  TrailSurface,
+  WaterCrossingDifficulty,
+} from '@packrat/app/trail-conditions';
 import { Text } from '@packrat/ui/nativewindui';
 import { TextInput } from 'expo-app/components/TextInput';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSubmitTrailConditionReport } from '../hooks/useSubmitTrailConditionReport';
-import type { OverallCondition, TrailSurface, WaterCrossingDifficulty } from '../types';
 
 const SURFACE_OPTIONS: TrailSurface[] = ['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud'];
 const CONDITION_OPTIONS: OverallCondition[] = ['excellent', 'good', 'fair', 'poor'];

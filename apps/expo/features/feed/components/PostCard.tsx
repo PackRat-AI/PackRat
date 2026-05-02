@@ -1,3 +1,4 @@
+import type { Post } from '@packrat/app/feed';
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type { Post } from '../types';
 import { buildPostImageUrl, formatAuthorName, formatRelativeDate } from '../utils';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;

@@ -1,3 +1,4 @@
+import type { User } from '@packrat/app/profile';
 import { isObject } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -6,7 +7,6 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { isAuthed, userStore } from 'expo-app/features/auth/store';
-import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';

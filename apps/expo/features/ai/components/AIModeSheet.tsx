@@ -1,5 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { LLAMA_MODEL_SIZE } from '@packrat/app/ai';
 import { isFunction } from '@packrat/guards';
 import { Sheet, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
@@ -16,7 +17,6 @@ import {
   localModelProgressAtom,
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
-import { LLAMA_MODEL_SIZE } from '../lib/constants';
 import {
   cancelLocalModelDownload,
   downloadLocalModel,

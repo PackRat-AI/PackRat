@@ -3,7 +3,11 @@
   "compilerOptions": {
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@packrat/app": ["./src/index.ts"],
+      "@packrat/app/*": ["./src/*/index.ts"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

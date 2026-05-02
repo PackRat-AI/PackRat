@@ -8,6 +8,7 @@
  * from any component, even while the bottom sheet is closed.
  */
 
+import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from '@packrat/app/ai';
 import { isString } from '@packrat/guards';
 import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
 import { store } from 'expo-app/atoms/store';
@@ -19,8 +20,6 @@ import {
   localModelProgressAtom,
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
-
-import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
 import { createLocalTools } from './tools';
 
 const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';

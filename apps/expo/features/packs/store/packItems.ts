@@ -2,12 +2,12 @@ import { observable, syncState } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { PackItemSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import type { PackItem } from '@packrat/app/packs';
 import { isRemoteUrl } from '@packrat/guards';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import type { PackItem } from '../types';
 import { uploadImage } from '../utils';
 
 const listAllPackItems = async (): Promise<PackItem[] | null> => {

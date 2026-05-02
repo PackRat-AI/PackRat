@@ -14,7 +14,7 @@ vi.mock('expo-app/lib/utils/getRelativeTime', () => ({
   getRelativeTime: (input: string | Date) => `relative(${String(input)})`,
 }));
 
-import type { Comment, Post } from '../../types';
+import type { Comment, Post } from '@packrat/app/feed';
 import { buildPostImageUrl, formatAuthorName, formatRelativeDate } from '../index';
 
 const basePost: Post = {

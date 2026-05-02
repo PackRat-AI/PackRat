@@ -1,10 +1,10 @@
+import type { PackTemplateItem } from '@packrat/app/pack-templates';
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { type ImageProps, View } from 'react-native';
-import type { PackTemplateItem } from '../types';
 
 interface PackTemplateItemImageProps extends Omit<ImageProps, 'source'> {
   item: PackTemplateItem;

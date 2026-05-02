@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { PackItem } from '@packrat/app/packs';
 import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
@@ -16,7 +17,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImagePicker } from '../hooks/useImagePicker';
-import type { PackItem } from '../types';
 
 // Define Zod schema
 const itemFormSchema = z.object({

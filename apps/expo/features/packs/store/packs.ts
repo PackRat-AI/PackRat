@@ -2,10 +2,10 @@ import { observable, syncState } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import type { PackInStore } from '@packrat/app/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
-import type { PackInStore } from '../types';
 
 let _refreshPacksList: (() => void) | undefined;
 export const refreshPacksList = () => _refreshPacksList?.();

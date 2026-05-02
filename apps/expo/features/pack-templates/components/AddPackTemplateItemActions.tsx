@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import type { CatalogItem } from '@packrat/app/catalog';
 import { isFunction, nullToUndefined } from '@packrat/guards';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
@@ -9,7 +10,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useImagePicker } from 'expo-app/features/packs';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';

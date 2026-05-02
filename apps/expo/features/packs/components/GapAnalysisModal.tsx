@@ -1,10 +1,10 @@
+import type { Pack, PackCategory } from '@packrat/app/packs';
 import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisResponse } from '../hooks/usePackGapAnalysis';
-import type { Pack, PackCategory } from '../types';
 import { GapSuggestion } from './GapSuggestion';
 
 interface GapAnalysisModalProps {

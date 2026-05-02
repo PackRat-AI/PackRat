@@ -1,7 +1,7 @@
+import type { CatalogItem } from '@packrat/app/catalog';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useVectorSearch } from 'expo-app/features/catalog/hooks/useVectorSearch';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { View } from 'react-native';

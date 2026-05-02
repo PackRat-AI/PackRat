@@ -1,11 +1,11 @@
 // useCreatePackTemplateItem.ts
 
+import type { PackTemplateItem, PackTemplateItemInput } from '@packrat/app/pack-templates';
 import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback } from 'react';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
-import type { PackTemplateItem, PackTemplateItemInput } from '../types';
 
 export function useCreatePackTemplateItem() {
   const createPackTemplateItem = useCallback(

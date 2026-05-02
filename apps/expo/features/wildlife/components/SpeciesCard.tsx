@@ -1,7 +1,7 @@
+import type { IdentificationResult } from '@packrat/app/wildlife';
 import { Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
-import type { IdentificationResult } from '../types';
 
 interface SpeciesCardProps {
   result: IdentificationResult;
