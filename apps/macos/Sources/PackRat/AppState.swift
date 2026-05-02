@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 @Observable
+@MainActor
 final class AppState {
     // Feature ViewModels — stable references that persist across nav changes
     let packsVM = PacksViewModel()

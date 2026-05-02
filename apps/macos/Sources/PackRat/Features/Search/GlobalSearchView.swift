@@ -153,7 +153,6 @@ private struct SearchResultRow: View {
         }
         .buttonStyle(.plain)
         .background(.clear)
-        .hoverEffect()
     }
 }
 

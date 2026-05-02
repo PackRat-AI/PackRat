@@ -5,7 +5,6 @@ struct CatalogView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        @Bindable var state = appState
         let vm = appState.catalogVM
         ScrollView {
             VStack(spacing: 16) {

@@ -19,18 +19,15 @@ struct PackWeightChart: View {
         pack.totalWeight ?? categoryData.reduce(0) { $0 + $1.grams }
     }
 
-    private var weightBreakdown: [(label: String, value: Double?, color: Color)] {
-        [
-            ("Base", pack.baseWeight, .blue),
-            ("Worn", pack.wornWeight, .orange),
-            ("Consumable", pack.consumableWeight, .green),
-        ]
+    // body uses implicit @ViewBuilder — the if block is the clean guard pattern
+    var body: some View {
+        if !categoryData.isEmpty {
+            chartContent
+        }
     }
 
-    var body: some View {
+    private var chartContent: some View {
         VStack(alignment: .leading, spacing: 20) {
-            if categoryData.isEmpty { return AnyView(EmptyView()) }
-
             Text("Weight Breakdown")
                 .font(.headline)
                 .padding(.horizontal)

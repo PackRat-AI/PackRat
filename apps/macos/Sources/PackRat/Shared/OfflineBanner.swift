@@ -1,10 +1,9 @@
 import SwiftUI
 
+// Reads directly in body so @Observable tracking picks up isConnected changes
 struct OfflineBanner: View {
-    @State private var monitor = NetworkMonitor.shared
-
     var body: some View {
-        if !monitor.isConnected {
+        if !NetworkMonitor.shared.isConnected {
             HStack(spacing: 8) {
                 Image(systemName: "wifi.slash")
                     .font(.callout)
@@ -18,16 +17,5 @@ struct OfflineBanner: View {
             .background(.orange.gradient)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
-    }
-}
-
-// Convenience modifier to attach the banner below the toolbar
-extension View {
-    func offlineBanner() -> some View {
-        VStack(spacing: 0) {
-            OfflineBanner()
-            self
-        }
-        .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
     }
 }
