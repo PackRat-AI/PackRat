@@ -1,15 +1,8 @@
 import Foundation
 
-struct User: Codable, Identifiable, Sendable {
-    let id: Int
-    let email: String
-    let firstName: String?
-    let lastName: String?
-    let avatarUrl: String?
-    let role: String?
-    let emailVerified: Bool?
-    let createdAt: String?
+// MARK: - User extensions (struct defined in Generated.swift)
 
+extension User {
     var displayName: String {
         let parts = [firstName, lastName].compactMap { $0?.nilIfEmpty }
         return parts.isEmpty ? email : parts.joined(separator: " ")
@@ -22,6 +15,8 @@ struct User: Codable, Identifiable, Sendable {
 
     var isAdmin: Bool { role == "ADMIN" }
 }
+
+// MARK: - Request Bodies
 
 struct UpdateProfileRequest: Encodable {
     let firstName: String?

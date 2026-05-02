@@ -1,20 +1,8 @@
 import Foundation
 
-struct Trip: Codable, Identifiable, Sendable {
-    let id: String
-    let userId: String?
-    let name: String
-    let description: String?
-    let startDate: String?
-    let endDate: String?
-    let location: TripLocation?
-    let notes: String?
-    let packId: String?
-    let pack: Pack?
-    let deleted: Bool?
-    let createdAt: String?
-    let updatedAt: String?
+// MARK: - Trip extensions (structs defined in Generated.swift)
 
+extension Trip {
     var dateRange: String {
         let parts = [formattedDate(startDate), formattedDate(endDate)].compactMap { $0 }
         return parts.joined(separator: " – ")
@@ -26,12 +14,6 @@ struct Trip: Codable, Identifiable, Sendable {
         else { return nil }
         return date.formatted(date: .abbreviated, time: .omitted)
     }
-}
-
-struct TripLocation: Codable, Sendable {
-    let latitude: Double?
-    let longitude: Double?
-    let name: String?
 }
 
 // MARK: - Request Bodies

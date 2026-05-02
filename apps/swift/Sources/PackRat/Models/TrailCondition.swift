@@ -1,23 +1,8 @@
 import Foundation
 
-struct TrailConditionReport: Codable, Identifiable, Sendable {
-    let id: String
-    let userId: String?
-    let trailName: String
-    let trailRegion: String?
-    let surface: String?
-    let overallCondition: String?
-    let hazards: [String]?
-    let waterCrossings: Int?
-    let waterCrossingDifficulty: String?
-    let notes: String?
-    let photos: [String]?
-    let tripId: String?
-    let deleted: Bool?
-    let createdAt: String?
-    let updatedAt: String?
-    let user: PostUser?
+// MARK: - TrailConditionReport extensions (struct defined in Generated.swift)
 
+extension TrailConditionReport {
     var conditionColor: String {
         switch overallCondition {
         case "excellent": return "green"
@@ -46,6 +31,8 @@ struct TrailConditionReport: Codable, Identifiable, Sendable {
     }
 }
 
+// MARK: - UI Enums (display logic, not API-facing)
+
 enum TrailSurface: String, CaseIterable {
     case paved, gravel, dirt, rocky, snow, mud
     var label: String { rawValue.capitalized }
@@ -65,6 +52,8 @@ enum TrailConditionLevel: String, CaseIterable {
     case excellent, good, fair, poor
     var label: String { rawValue.capitalized }
 }
+
+// MARK: - Request Body
 
 struct CreateTrailConditionRequest: Encodable {
     let id: String

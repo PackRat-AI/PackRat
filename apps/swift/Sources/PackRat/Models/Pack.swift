@@ -1,24 +1,9 @@
 import Foundation
 
-struct Pack: Codable, Identifiable, Sendable {
-    let id: String
-    let userId: String?
-    let name: String
-    let description: String?
-    let category: String?
-    let isPublic: Bool?
-    let image: String?
-    let tags: [String]?
-    let items: [PackItem]?
-    let deleted: Bool?
-    let baseWeight: Double?
-    let totalWeight: Double?
-    let wornWeight: Double?
-    let consumableWeight: Double?
-    let createdAt: String?
-    let updatedAt: String?
+// MARK: - Pack extensions (struct defined in Generated.swift)
 
-    var activeItems: [PackItem] { (items ?? []).filter { !($0.deleted ?? false) } }
+extension Pack {
+    var activeItems: [PackItem] { (items ?? []).filter { !$0.deleted } }
     var itemCount: Int { activeItems.count }
 
     func formattedWeight(_ grams: Double?) -> String {
@@ -27,27 +12,43 @@ struct Pack: Codable, Identifiable, Sendable {
     }
 }
 
-struct PackItem: Codable, Identifiable, Sendable {
-    let id: String
-    let packId: String?
-    let name: String
-    let weight: Double?
-    let weightUnit: String?
-    let quantity: Int?
-    let category: String?
-    let consumable: Bool?
-    let worn: Bool?
-    let image: String?
-    let notes: String?
-    let catalogItemId: Int?
-    let deleted: Bool?
-
+extension PackItem {
     var displayWeight: String {
-        guard let w = weight, let u = weightUnit, w > 0 else { return "" }
-        return String(format: "%.0f %@", w, u)
+        guard weight > 0 else { return "" }
+        return String(format: "%.0f %@", weight, weightUnit.rawValue)
     }
+    var effectiveQuantity: Int { quantity }
+}
 
-    var effectiveQuantity: Int { quantity ?? 1 }
+extension PackCategory {
+    var label: String {
+        switch self {
+        case .waterSports: return "Water Sports"
+        default: return rawValue.capitalized
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .hiking:      return "figure.hiking"
+        case .backpacking: return "backpack"
+        case .camping:     return "tent"
+        case .climbing:    return "mountain.2"
+        case .winter:      return "snowflake"
+        case .desert:      return "sun.max.trianglebadge.exclamationmark"
+        case .custom:      return "star"
+        case .waterSports: return "figure.pool.swim"
+        case .skiing:      return "figure.skiing.downhill"
+        }
+    }
+}
+
+// MARK: - UI weight unit (separate from WeightUnit in Generated.swift)
+// Used only for user preference storage — the API-facing enum is WeightUnit.
+
+enum AppWeightUnit: String, CaseIterable {
+    case grams = "g", kg, oz, lb
+
+    var label: String { rawValue }
 }
 
 // MARK: - Request Bodies
@@ -91,29 +92,4 @@ struct UpdatePackItemRequest: Encodable {
     let consumable: Bool?
     let worn: Bool?
     let notes: String?
-}
-
-// MARK: - Categories
-
-enum PackCategory: String, CaseIterable {
-    case hiking, camping, climbing, skiing, cycling, travel, other
-
-    var label: String { rawValue.capitalized }
-    var symbol: String {
-        switch self {
-        case .hiking:   "figure.hiking"
-        case .camping:  "tent"
-        case .climbing: "mountain.2"
-        case .skiing:   "figure.skiing.downhill"
-        case .cycling:  "bicycle"
-        case .travel:   "airplane"
-        case .other:    "backpack"
-        }
-    }
-}
-
-enum AppWeightUnit: String, CaseIterable {
-    case grams = "g", kg, oz, lb
-
-    var label: String { rawValue }
 }

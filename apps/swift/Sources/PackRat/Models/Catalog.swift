@@ -1,58 +1,44 @@
 import Foundation
 
-struct CatalogItem: Codable, Identifiable, Sendable {
-    let id: Int
-    let name: String?
-    let brand: String?
-    let model: String?
-    let weight: Double?
-    let weightUnit: String?
-    let description: String?
-    let price: Double?
-    let currency: String?
-    let productUrl: String?
-    let images: [String]?
-    let categories: [String]?
-    let availability: String?
-    let ratingValue: Double?
-    let reviewCount: Int?
-    let sku: String?
+// MARK: - CatalogItem extensions (struct defined in Generated.swift)
 
+extension CatalogItem {
     var primaryImage: String? { images?.first }
-    var displayName: String { name ?? "Unknown Item" }
+    var displayName: String { name }
     var displayBrand: String? { brand?.nilIfEmpty }
 
     var displayWeight: String {
-        guard let w = weight, let u = weightUnit, w > 0 else { return "" }
-        return String(format: "%.0f %@", w, u)
+        guard weight > 0 else { return "" }
+        return String(format: "%.0f %@", weight, weightUnit.rawValue)
     }
 
     var displayPrice: String? {
         guard let p = price, p > 0 else { return nil }
-        let symbol = currency == "USD" ? "$" : (currency ?? "")
-        return String(format: "%@%.2f", symbol, p)
+        return String(format: "$%.2f", p)
     }
 
     var isInStock: Bool { availability != "out_of_stock" }
 }
 
+// MARK: - Search response with flexible decoding
+// The search endpoint may return {items, page, limit, total} or a plain array.
+
 struct CatalogSearchResponse: Codable, Sendable {
-    let items: [CatalogItem]?
+    let items: [CatalogItem]
     let total: Int?
     let page: Int?
     let limit: Int?
 
-    // Elysia may return array directly
     init(from decoder: Decoder) throws {
         if let container = try? decoder.container(keyedBy: CodingKeys.self) {
-            items = try container.decodeIfPresent([CatalogItem].self, forKey: .items)
-            total = try container.decodeIfPresent(Int.self, forKey: .total)
-            page = try container.decodeIfPresent(Int.self, forKey: .page)
-            limit = try container.decodeIfPresent(Int.self, forKey: .limit)
+            items = (try? container.decode([CatalogItem].self, forKey: .items)) ?? []
+            total = try? container.decodeIfPresent(Int.self, forKey: .total)
+            page  = try? container.decodeIfPresent(Int.self, forKey: .page)
+            limit = try? container.decodeIfPresent(Int.self, forKey: .limit)
         } else if let arr = try? [CatalogItem](from: decoder) {
             items = arr; total = arr.count; page = nil; limit = nil
         } else {
-            items = nil; total = nil; page = nil; limit = nil
+            items = []; total = nil; page = nil; limit = nil
         }
     }
 }

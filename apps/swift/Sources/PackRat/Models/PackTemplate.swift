@@ -2,7 +2,7 @@ import Foundation
 
 struct PackTemplate: Codable, Identifiable, Sendable {
     let id: String
-    let userId: String?
+    let userId: Int?
     let name: String
     let description: String?
     let category: String?
