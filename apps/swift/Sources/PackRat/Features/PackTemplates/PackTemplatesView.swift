@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: - List Column (shown in content pane of 3-column nav)
 
@@ -135,8 +136,18 @@ struct PackTemplateDetailView: View {
                     Spacer()
                     Text("\(template.itemCount) items")
                         .font(.callout.bold())
+                    if template.totalWeightGrams > 0 {
+                        Text("·").foregroundStyle(.secondary)
+                        Text(template.formattedTotalWeight())
+                            .font(.callout.bold().monospacedDigit())
+                            .foregroundStyle(.tint)
+                    }
                 }
                 .padding(.horizontal)
+
+                if template.totalWeightGrams > 0 {
+                    TemplateWeightChart(template: template)
+                }
 
                 if let error = applyError {
                     InlineErrorView(message: error).padding(.horizontal)
@@ -286,5 +297,80 @@ private struct ApplyTemplateSheet: View {
         #if os(macOS)
         .frame(minWidth: 340, minHeight: 280)
         #endif
+    }
+}
+
+// MARK: - Template Weight Chart
+
+private struct TemplateWeightChart: View {
+    let template: PackTemplate
+
+    private struct CategoryWeight: Identifiable {
+        let id = UUID()
+        let category: String
+        let grams: Double
+        static let palette: [Color] = [.blue, .green, .orange, .purple, .pink, .teal]
+        var color: Color { Self.palette[abs(category.hashValue) % Self.palette.count] }
+    }
+
+    private var categoryData: [CategoryWeight] {
+        let groups = Dictionary(grouping: template.items ?? [], by: { $0.category ?? "Other" })
+        return groups.compactMap { key, items -> CategoryWeight? in
+            let g = items.reduce(0.0) { $0 + $1.weightInGrams }
+            guard g > 0 else { return nil }
+            return CategoryWeight(category: key.capitalized, grams: g)
+        }.sorted { $0.grams > $1.grams }
+    }
+
+    private var total: Double { template.totalWeightGrams }
+
+    var body: some View {
+        if !categoryData.isEmpty {
+            HStack(alignment: .center, spacing: 16) {
+                Chart(categoryData) { item in
+                    SectorMark(angle: .value("Weight", item.grams),
+                               innerRadius: .ratio(0.54),
+                               angularInset: 1.5)
+                    .foregroundStyle(item.color)
+                    .cornerRadius(3)
+                }
+                .chartLegend(.hidden)
+                .overlay {
+                    VStack(spacing: 2) {
+                        Text(template.formattedTotalWeight())
+                            .font(.caption2.monospacedDigit().bold())
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                        Text("total")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(4)
+                }
+                .frame(width: 100, height: 100)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(categoryData.prefix(5)) { item in
+                        HStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(item.color)
+                                .frame(width: 10, height: 10)
+                            Text(item.category)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Text(total > 0 ? String(format: "%.0f%%", item.grams / total * 100) : "")
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(16)
+            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
+            .padding(.horizontal)
+        }
     }
 }

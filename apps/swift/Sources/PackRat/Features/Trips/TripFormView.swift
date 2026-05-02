@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 struct TripFormView: View {
     let viewModel: TripsViewModel
@@ -15,6 +16,8 @@ struct TripFormView: View {
     @State private var endDate: Date = Date().addingTimeInterval(86400 * 3)
     @State private var hasDates = false
     @State private var locationName = ""
+    @State private var locationLat: Double = 0
+    @State private var locationLon: Double = 0
     @State private var selectedPackId: String? = nil
     @State private var isLoading = false
     @State private var error: String?
@@ -40,6 +43,18 @@ struct TripFormView: View {
 
                 Section("Location") {
                     TextField("Location name (optional)", text: $locationName)
+                        .onChange(of: locationName) { _, new in
+                            // Reset coords when name changes; submit will re-geocode
+                            if locationLat != 0 || locationLon != 0 {
+                                locationLat = 0; locationLon = 0
+                            }
+                        }
+                    if locationLat != 0 || locationLon != 0 {
+                        Label(String(format: "%.4f, %.4f", locationLat, locationLon),
+                              systemImage: "mappin.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.tint)
+                    }
                 }
 
                 Section("Dates") {
@@ -108,19 +123,35 @@ struct TripFormView: View {
         description = trip.description ?? ""
         notes = trip.notes ?? ""
         locationName = trip.location?.name ?? ""
+        locationLat = trip.location?.latitude ?? 0
+        locationLon = trip.location?.longitude ?? 0
         selectedPackId = trip.packId
         if let s = trip.startDate, let d = s.toDate() { startDate = d; hasDates = true }
         if let e = trip.endDate, let d = e.toDate() { endDate = d }
+    }
+
+    private func geocode(_ name: String) async -> (Double, Double) {
+        let geocoder = CLGeocoder()
+        guard let place = try? await geocoder.geocodeAddressString(name).first,
+              let loc = place.location else { return (0, 0) }
+        return (loc.coordinate.latitude, loc.coordinate.longitude)
     }
 
     private func submit() {
         guard isValid, !isLoading else { return }
         isLoading = true
         error = nil
-        let location = locationName.isEmpty ? nil : TripLocationBody(latitude: 0, longitude: 0, name: locationName)
         Task {
             defer { isLoading = false }
             do {
+                // Geocode location if name provided but no coords yet
+                if !locationName.isEmpty && locationLat == 0 && locationLon == 0 {
+                    let (lat, lon) = await geocode(locationName)
+                    locationLat = lat; locationLon = lon
+                }
+                let location = locationName.isEmpty ? nil : TripLocationBody(
+                    latitude: locationLat, longitude: locationLon, name: locationName
+                )
                 if let trip = existingTrip {
                     try await viewModel.updateTrip(
                         trip.id,

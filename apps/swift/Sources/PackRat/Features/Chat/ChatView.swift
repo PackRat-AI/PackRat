@@ -181,7 +181,7 @@ struct MessageBubble: View {
             TypingIndicator()
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         } else if isUser {
             Text(message.content)
                 .textSelection(.enabled)
@@ -195,7 +195,7 @@ struct MessageBubble: View {
                 .textSelection(.enabled)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 

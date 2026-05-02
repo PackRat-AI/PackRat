@@ -174,7 +174,7 @@ struct PackDetailView: View {
     }
 
     private var weightSummary: some View {
-        HStack(spacing: 16) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
             weightCard("Total", value: pack.totalWeight, color: .blue)
             weightCard("Base", value: pack.baseWeight, color: .green)
             weightCard("Worn", value: pack.wornWeight, color: .orange)

@@ -29,6 +29,29 @@ struct PackTemplateItem: Codable, Identifiable, Sendable {
     let consumable: Bool?
     let worn: Bool?
     let notes: String?
+
+    var weightInGrams: Double {
+        guard let w = weight, let u = weightUnit else { return 0 }
+        let qty = Double(quantity ?? 1)
+        switch u.lowercased() {
+        case "kg", "kilograms", "kgs": return w * 1_000 * qty
+        case "oz", "ounces", "ozs":   return w * 28.3495 * qty
+        case "lb", "lbs":             return w * 453.592 * qty
+        default:                       return w * qty
+        }
+    }
+}
+
+extension PackTemplate {
+    var totalWeightGrams: Double {
+        (items ?? []).reduce(0) { $0 + $1.weightInGrams }
+    }
+
+    func formattedTotalWeight() -> String {
+        let g = totalWeightGrams
+        guard g > 0 else { return "No weight data" }
+        return g >= 1000 ? String(format: "%.2f kg", g / 1000) : String(format: "%.0f g", g)
+    }
 }
 
 struct CreateTemplateRequest: Encodable {
