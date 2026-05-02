@@ -82,7 +82,7 @@ struct AppNavigation: View {
                 .frame(width: 0, height: 0)
                 .hidden()
         }
-        .focusedSceneValue(\.globalSearchAction, { showingSearch = true })
+        .focusedSceneValue(\.globalSearchAction, $showingSearch)
     }
 
     private var sidebar: some View {

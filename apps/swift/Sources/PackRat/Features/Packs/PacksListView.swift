@@ -5,6 +5,7 @@ struct PacksListView: View {
     @Bindable var viewModel: PacksViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
+    @State private var needsRefresh = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -45,8 +46,11 @@ struct PacksListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
         }
-        .focusedSceneValue(\.newPackAction, { showingCreateSheet = true })
-        .focusedSceneValue(\.refreshAction, { Task { await viewModel.load(context: modelContext) } })
+        .focusedSceneValue(\.newPackAction, $showingCreateSheet)
+        .focusedSceneValue(\.refreshAction, $needsRefresh)
+        .onChange(of: needsRefresh) { _, new in
+            if new { Task { await viewModel.load(context: modelContext) }; needsRefresh = false }
+        }
     }
 
     private var packList: some View {

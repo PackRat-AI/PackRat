@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import Collections
 
 struct PackDetailView: View {
     let pack: Pack
@@ -10,6 +11,7 @@ struct PackDetailView: View {
     @State private var editingItem: PackItem?
     @State private var error: String?
     @State private var dropTargetCategory: String?
+    @State private var triggerShare = false
 
     private var items: [PackItem] { pack.activeItems }
 
@@ -31,8 +33,8 @@ struct PackDetailView: View {
                 }
 
                 LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
-                    let groups = Dictionary(grouping: items, by: { $0.category ?? "Uncategorized" })
-                    ForEach(groups.keys.sorted(), id: \.self) { category in
+                    let groups = OrderedDictionary(grouping: items, by: { $0.category ?? "Uncategorized" })
+                    ForEach(groups.keys.elements, id: \.self) { category in
                         Section {
                             ForEach(groups[category] ?? []) { item in
                                 PackItemRow(item: item) {
@@ -101,17 +103,19 @@ struct PackDetailView: View {
         .sheet(item: $editingItem) { item in
             PackItemFormView(packId: pack.id, viewModel: viewModel, existingItem: item)
         }
-        .focusedSceneValue(\.sharePackAction, {
-            if pack.isPublic == true, let url = packShareURL {
+        .focusedSceneValue(\.sharePackAction, $triggerShare)
+        .onChange(of: triggerShare) { _, new in
+            if new, pack.isPublic == true, let url = packShareURL {
                 #if os(macOS)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.absoluteString, forType: .string)
                 #endif
+                triggerShare = false
             }
-        })
+        }
     }
 
-    private func categoryHeader(_ category: String, groups: [String: [PackItem]]) -> some View {
+    private func categoryHeader(_ category: String, groups: OrderedDictionary<String, [PackItem]>) -> some View {
         let isTarget = dropTargetCategory == category
         return HStack {
             Text(category.capitalized)

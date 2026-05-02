@@ -3,43 +3,43 @@ import SwiftUI
 struct PackRatCommands: Commands {
     let authManager: AuthManager
 
-    // Focused values let commands reach into the active view's handlers
-    @FocusedValue(\.newPackAction) private var newPack
-    @FocusedValue(\.newTripAction) private var newTrip
-    @FocusedValue(\.refreshAction) private var refresh
-    @FocusedValue(\.sharePackAction) private var sharePack
-    @FocusedValue(\.globalSearchAction) private var globalSearch
+    // Bool bindings avoid recreating function closures on every render,
+    // which caused "FocusedValue update tried to update multiple times per frame."
+    @FocusedBinding(\.newPackAction) private var showingNewPack: Bool?
+    @FocusedBinding(\.newTripAction) private var showingNewTrip: Bool?
+    @FocusedBinding(\.refreshAction) private var needsRefresh: Bool?
+    @FocusedBinding(\.sharePackAction) private var triggerShare: Bool?
+    @FocusedBinding(\.globalSearchAction) private var showingSearch: Bool?
 
     var body: some Commands {
-        // Replace default File menu
         CommandGroup(replacing: .newItem) {
-            Button("New Pack") { newPack?() }
+            Button("New Pack") { showingNewPack = true }
                 .keyboardShortcut("n", modifiers: .command)
-                .disabled(newPack == nil)
+                .disabled(showingNewPack == nil)
 
-            Button("New Trip") { newTrip?() }
+            Button("New Trip") { showingNewTrip = true }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
-                .disabled(newTrip == nil)
+                .disabled(showingNewTrip == nil)
         }
 
         CommandGroup(before: .toolbar) {
-            Button("Search…") { globalSearch?() }
+            Button("Search…") { showingSearch = true }
                 .keyboardShortcut("f", modifiers: .command)
         }
 
         CommandGroup(replacing: .saveItem) {
-            Button("Refresh") { Task { refresh?() } }
+            Button("Refresh") { needsRefresh = true }
                 .keyboardShortcut("r", modifiers: .command)
-                .disabled(refresh == nil)
+                .disabled(needsRefresh == nil)
 
-            Button("Share Pack…") { sharePack?() }
+            Button("Share Pack…") { triggerShare = true }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
-                .disabled(sharePack == nil)
+                .disabled(triggerShare == nil)
         }
 
         CommandGroup(after: .appInfo) {
             Divider()
-            Button("Sign Out") {
+            Button("Sign Out", role: .destructive) {
                 Task { try? await authManager.logout() }
             }
             .disabled(!authManager.isAuthenticated)
@@ -48,45 +48,33 @@ struct PackRatCommands: Commands {
 }
 
 // MARK: - Focused Value Keys
+// @FocusedBinding requires Value = Binding<T> so SwiftUI compares the wrapped
+// Bool (not the Binding reference) — prevents per-frame update spurious triggers.
 
-private struct NewPackActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-private struct NewTripActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-private struct RefreshActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-private struct SharePackActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-private struct GlobalSearchActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
+private struct NewPackActionKey: FocusedValueKey { typealias Value = Binding<Bool> }
+private struct NewTripActionKey: FocusedValueKey { typealias Value = Binding<Bool> }
+private struct RefreshActionKey: FocusedValueKey { typealias Value = Binding<Bool> }
+private struct SharePackActionKey: FocusedValueKey { typealias Value = Binding<Bool> }
+private struct GlobalSearchActionKey: FocusedValueKey { typealias Value = Binding<Bool> }
 
 extension FocusedValues {
-    var newPackAction: (() -> Void)? {
+    var newPackAction: Binding<Bool>? {
         get { self[NewPackActionKey.self] }
         set { self[NewPackActionKey.self] = newValue }
     }
-    var newTripAction: (() -> Void)? {
+    var newTripAction: Binding<Bool>? {
         get { self[NewTripActionKey.self] }
         set { self[NewTripActionKey.self] = newValue }
     }
-    var refreshAction: (() -> Void)? {
+    var refreshAction: Binding<Bool>? {
         get { self[RefreshActionKey.self] }
         set { self[RefreshActionKey.self] = newValue }
     }
-    var sharePackAction: (() -> Void)? {
+    var sharePackAction: Binding<Bool>? {
         get { self[SharePackActionKey.self] }
         set { self[SharePackActionKey.self] = newValue }
     }
-    var globalSearchAction: (() -> Void)? {
+    var globalSearchAction: Binding<Bool>? {
         get { self[GlobalSearchActionKey.self] }
         set { self[GlobalSearchActionKey.self] = newValue }
     }

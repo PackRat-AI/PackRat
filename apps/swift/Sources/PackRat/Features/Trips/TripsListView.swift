@@ -5,6 +5,7 @@ struct TripsListView: View {
     @Bindable var viewModel: TripsViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
+    @State private var needsRefresh = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -38,8 +39,11 @@ struct TripsListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             TripFormView(viewModel: viewModel)
         }
-        .focusedSceneValue(\.newTripAction, { showingCreateSheet = true })
-        .focusedSceneValue(\.refreshAction, { Task { await viewModel.load(context: modelContext) } })
+        .focusedSceneValue(\.newTripAction, $showingCreateSheet)
+        .focusedSceneValue(\.refreshAction, $needsRefresh)
+        .onChange(of: needsRefresh) { _, new in
+            if new { Task { await viewModel.load(context: modelContext) }; needsRefresh = false }
+        }
     }
 
     @ViewBuilder
