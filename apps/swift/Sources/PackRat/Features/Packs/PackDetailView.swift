@@ -81,24 +81,28 @@ struct PackDetailView: View {
                 }
                 .keyboardShortcut("i", modifiers: .command)
 
-                Button("Gap Analysis", systemImage: "sparkles.magnifyingglass") {
-                    showingGapAnalysis = true
-                }
-                .disabled(items.isEmpty)
-                .help("AI gear gap analysis")
-
-                if pack.isPublic == true, let shareURL = packShareURL {
-                    ShareLink(item: shareURL, subject: Text(pack.name),
-                              message: Text("Check out my pack on PackRat")) {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                Menu {
+                    Button("Gap Analysis", systemImage: "sparkles.magnifyingglass") {
+                        showingGapAnalysis = true
                     }
-                    .keyboardShortcut("s", modifiers: [.command, .shift])
-                }
+                    .disabled(items.isEmpty)
 
-                Button("Edit", systemImage: "pencil") {
-                    showingEditSheet = true
+                    if pack.isPublic == true, let shareURL = packShareURL {
+                        ShareLink(item: shareURL, subject: Text(pack.name),
+                                  message: Text("Check out my pack on PackRat")) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    }
+
+                    Divider()
+
+                    Button("Edit Pack", systemImage: "pencil") {
+                        showingEditSheet = true
+                    }
+                    .keyboardShortcut("e", modifiers: .command)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
-                .keyboardShortcut("e", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingEditSheet) {

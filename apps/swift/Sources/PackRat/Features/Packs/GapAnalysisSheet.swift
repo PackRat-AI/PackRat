@@ -141,7 +141,12 @@ struct GapAnalysisSheet: View {
                 duration: durationInt
             )
         } catch {
-            self.error = error.localizedDescription
+            let msg = error.localizedDescription
+            if msg.contains("500") || msg.contains("Internal Server Error") {
+                self.error = "AI analysis is temporarily unavailable on the server. Please try again later."
+            } else {
+                self.error = msg
+            }
         }
     }
 }
