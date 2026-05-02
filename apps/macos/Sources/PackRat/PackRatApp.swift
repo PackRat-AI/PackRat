@@ -12,9 +12,11 @@ struct PackRatApp: App {
         #if os(macOS)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: true))
+        .defaultSize(width: 1100, height: 720)
         .commands {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(after: .appInfo) {
+                Divider()
                 Button("Sign Out") {
                     Task { try? await authManager.logout() }
                 }

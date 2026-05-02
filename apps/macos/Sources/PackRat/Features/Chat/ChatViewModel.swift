@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 final class ChatViewModel {
     var messages: [ChatMessage] = []
@@ -34,32 +35,37 @@ final class ChatViewModel {
         let placeholderId = placeholder.id
 
         isStreaming = true
-        streamingTask = Task {
+        streamingTask = Task { @MainActor in
             defer { isStreaming = false }
             do {
-                for try await chunk in service.sendMessage(messages: messages.dropLast()) {
+                // Snapshot messages excluding the empty placeholder
+                let history = Array(messages.dropLast())
+                for try await chunk in service.sendMessage(messages: history) {
                     if let decoded = try? JSONDecoder().decode(ChatStreamChunk.self, from: Data(chunk.utf8)),
                        let delta = decoded.delta?.content
                     {
-                        appendToLastMessage(id: placeholderId, text: delta)
+                        appendToPlaceholder(id: placeholderId, text: delta)
                     } else if !chunk.hasPrefix("{") {
-                        // Plain text delta
-                        appendToLastMessage(id: placeholderId, text: chunk)
+                        appendToPlaceholder(id: placeholderId, text: chunk)
                     }
                 }
+            } catch is CancellationError {
+                // User cancelled — leave the partial response in place
             } catch {
                 self.error = error.localizedDescription
-                removeMessage(id: placeholderId)
+                messages.removeAll { $0.id == placeholderId }
             }
         }
     }
 
     func cancelStreaming() {
         streamingTask?.cancel()
+        streamingTask = nil
         isStreaming = false
     }
 
     func clearHistory() {
+        cancelStreaming()
         messages.removeAll()
         messages.append(ChatMessage(
             role: .assistant,
@@ -67,22 +73,8 @@ final class ChatViewModel {
         ))
     }
 
-    @MainActor
-    private func appendToLastMessage(id: UUID, text: String) {
-        if let idx = messages.firstIndex(where: { $0.id == id }) {
-            messages[idx].content += text
-        }
-    }
-
-    @MainActor
-    private func removeMessage(id: UUID) {
-        messages.removeAll { $0.id == id }
-    }
-}
-
-private extension Array {
-    func dropLast() -> [Element] {
-        guard count > 1 else { return self }
-        return Array(self.prefix(self.count - 1))
+    private func appendToPlaceholder(id: UUID, text: String) {
+        guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
+        messages[idx].content += text
     }
 }

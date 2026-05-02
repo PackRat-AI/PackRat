@@ -1,45 +1,22 @@
 import SwiftUI
 
 struct PacksListView: View {
-    @State private var viewModel = PacksViewModel()
-    @State private var selectedPackId: String?
+    let viewModel: PacksViewModel
+    @Binding var selectedId: String?
     @State private var showingCreateSheet = false
 
     var body: some View {
-        NavigationSplitView {
-            sidebarContent
-        } detail: {
-            if let id = selectedPackId, let pack = viewModel.packs.first(where: { $0.id == id }) {
-                PackDetailView(pack: pack, viewModel: viewModel)
-            } else {
-                EmptyStateView(
-                    "Select a Pack",
-                    subtitle: "Choose a pack from the list or create a new one",
-                    systemImage: "backpack",
-                    actionLabel: "New Pack",
-                    action: { showingCreateSheet = true }
-                )
-            }
-        }
-        .task { await viewModel.load() }
-        .sheet(isPresented: $showingCreateSheet) {
-            PackFormView(viewModel: viewModel)
-        }
-    }
-
-    private var sidebarContent: some View {
         Group {
             if viewModel.isLoading && viewModel.packs.isEmpty {
-                ProgressView("Loading packs...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.error {
+                ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error = viewModel.error, viewModel.packs.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
             } else if viewModel.filteredPacks.isEmpty && !viewModel.searchText.isEmpty {
                 ContentUnavailableView.search(text: viewModel.searchText)
             } else if viewModel.packs.isEmpty {
                 EmptyStateView(
                     "No Packs Yet",
-                    subtitle: "Create your first pack to get started",
+                    subtitle: "Create your first pack to start tracking gear weight",
                     systemImage: "backpack",
                     actionLabel: "New Pack",
                     action: { showingCreateSheet = true }
@@ -52,28 +29,38 @@ struct PacksListView: View {
         .searchable(text: $viewModel.searchText, prompt: "Search packs")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("New Pack", systemImage: "plus") {
-                    showingCreateSheet = true
-                }
+                Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
             }
-            ToolbarItem(placement: .automatic) {
-                if viewModel.isLoading {
+            if viewModel.isLoading {
+                ToolbarItem(placement: .automatic) {
                     ProgressView().controlSize(.small)
                 }
             }
         }
+        .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
+        .sheet(isPresented: $showingCreateSheet) {
+            PackFormView(viewModel: viewModel)
+        }
     }
 
     private var packList: some View {
-        List(viewModel.filteredPacks, selection: $selectedPackId) { pack in
-            PackRowView(pack: pack)
-                .tag(pack.id)
-                .contextMenu {
-                    Button("Delete", role: .destructive, systemImage: "trash") {
-                        Task { try? await viewModel.deletePack(pack.id) }
-                    }
+        List(viewModel.filteredPacks, selection: $selectedId) { pack in
+            NavigationLink(value: pack.id) {
+                PackRowView(pack: pack)
+            }
+            .tag(pack.id)
+            .contextMenu {
+                Button("Delete", role: .destructive, systemImage: "trash") {
+                    Task { try? await viewModel.deletePack(pack.id) }
                 }
+            }
+        }
+        // Push-navigation destination for iPhone NavigationStack
+        .navigationDestination(for: String.self) { id in
+            if let pack = viewModel.packs.first(where: { $0.id == id }) {
+                PackDetailView(pack: pack, viewModel: viewModel)
+            }
         }
     }
 }
@@ -84,14 +71,13 @@ private struct PackRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(pack.name)
-                    .font(.headline)
+                Text(pack.name).font(.headline)
                 Spacer()
                 if let total = pack.totalWeight, total > 0 {
                     Text(pack.formattedWeight(total))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 2)
                         .background(.fill.tertiary, in: Capsule())
                 }
@@ -105,6 +91,9 @@ private struct PackRowView: View {
                 Text("\(pack.itemCount) item\(pack.itemCount == 1 ? "" : "s")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if pack.isPublic == true {
+                    Image(systemName: "globe").font(.caption2).foregroundStyle(.tint)
+                }
             }
         }
         .padding(.vertical, 2)

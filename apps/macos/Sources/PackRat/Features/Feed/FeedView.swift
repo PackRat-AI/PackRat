@@ -1,7 +1,8 @@
 import SwiftUI
+import NukeUI
 
 struct FeedView: View {
-    @State private var viewModel = FeedViewModel()
+    let viewModel: FeedViewModel
 
     var body: some View {
         ScrollView {
@@ -9,8 +10,7 @@ struct FeedView: View {
                 if viewModel.isLoading && viewModel.posts.isEmpty {
                     ProgressView("Loading feed…").padding(.top, 40)
                 } else if let error = viewModel.error {
-                    ErrorView(error, retry: { await viewModel.load(refresh: true) })
-                        .padding(.top, 20)
+                    ErrorView(error, retry: { await viewModel.load(refresh: true) }).padding(.top, 20)
                 } else if viewModel.posts.isEmpty {
                     EmptyStateView(
                         "Nothing here yet",
@@ -20,88 +20,112 @@ struct FeedView: View {
                     .padding(.top, 20)
                 } else {
                     ForEach(viewModel.posts) { post in
-                        PostCard(post: post, onLike: {
-                            Task { await viewModel.likePost(post.id) }
-                        }, onDelete: {
-                            Task { await viewModel.deletePost(post.id) }
-                        })
-                        .padding(.horizontal)
+                        PostCard(post: post, viewModel: viewModel)
+                            .padding(.horizontal)
                     }
-
                     if !viewModel.posts.isEmpty {
-                        Button("Load More") {
-                            Task { await viewModel.loadMore() }
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.tint)
-                        .padding(.bottom)
+                        Button("Load More") { Task { await viewModel.loadMore() } }
+                            .buttonStyle(.plain).foregroundStyle(.tint).padding(.bottom)
+                            .disabled(viewModel.isLoading)
                     }
                 }
             }
             .padding(.vertical)
         }
         .navigationTitle("Community Feed")
-        .task { await viewModel.load() }
+        .task { if viewModel.posts.isEmpty { await viewModel.load() } }
         .refreshable { await viewModel.load(refresh: true) }
     }
 }
 
 struct PostCard: View {
     let post: Post
-    let onLike: () -> Void
-    let onDelete: () -> Void
+    let viewModel: FeedViewModel
     @Environment(AuthManager.self) private var authManager
+    @State private var isLiked = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(.tint.opacity(0.1))
-                    .frame(width: 36, height: 36)
-                    .overlay {
-                        Text(post.user?.displayName.prefix(1).uppercased() ?? "?")
-                            .font(.callout.bold())
-                            .foregroundStyle(.tint)
-                    }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(post.user?.displayName ?? "Unknown")
-                        .font(.callout.bold())
-                    Text(post.timeAgo)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if post.userId == authManager.currentUser?.id {
-                    Menu {
-                        Button("Delete", role: .destructive, systemImage: "trash", action: onDelete)
-                    } label: {
-                        Image(systemName: "ellipsis").foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            // Caption
+        VStack(alignment: .leading, spacing: 0) {
+            header
             if let caption = post.caption, !caption.isEmpty {
-                Text(caption).font(.body)
+                Text(caption)
+                    .font(.body)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
             }
+            if let images = post.images, !images.isEmpty {
+                imageGrid(images)
+            }
+            actionBar
+        }
+        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
 
-            // Actions
-            HStack(spacing: 16) {
-                Button(action: onLike) {
-                    Label("\(post.likeCount)", systemImage: "heart")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-
-                Label("\(post.commentCount)", systemImage: "bubble.right")
-                    .font(.callout)
+    private var header: some View {
+        HStack(spacing: 10) {
+            AvatarView(
+                url: nil,
+                fallbackText: post.user?.displayName ?? "?",
+                size: 38
+            )
+            VStack(alignment: .leading, spacing: 1) {
+                Text(post.user?.displayName ?? "Unknown")
+                    .font(.callout.bold())
+                Text(post.timeAgo)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Spacer()
+            if post.userId == authManager.currentUser?.id {
+                Menu {
+                    Button("Delete", role: .destructive, systemImage: "trash") {
+                        Task { await viewModel.deletePost(post.id) }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding()
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+        .padding(14)
+    }
+
+    @ViewBuilder
+    private func imageGrid(_ images: [String]) -> some View {
+        let cols = min(images.count, 3)
+        let layout = Array(repeating: GridItem(.flexible(), spacing: 2), count: cols)
+        LazyVGrid(columns: layout, spacing: 2) {
+            ForEach(images.prefix(cols), id: \.self) { url in
+                RemoteImage(url: url, contentMode: .fill) {
+                    Rectangle().fill(.fill.secondary)
+                }
+                .frame(height: 180)
+                .clipped()
+            }
+        }
+    }
+
+    private var actionBar: some View {
+        HStack(spacing: 20) {
+            Button {
+                isLiked.toggle()
+                Task {
+                    if isLiked { await viewModel.likePost(post.id) }
+                    else { await viewModel.unlikePost(post.id) }
+                }
+            } label: {
+                Label("\(post.likeCount + (isLiked ? 1 : 0))", systemImage: isLiked ? "heart.fill" : "heart")
+                    .font(.callout)
+                    .foregroundStyle(isLiked ? .red : .secondary)
+            }
+            .buttonStyle(.plain)
+            .animation(.spring(response: 0.3), value: isLiked)
+
+            Label("\(post.commentCount)", systemImage: "bubble.right")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 }
