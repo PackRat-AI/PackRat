@@ -13,6 +13,10 @@ struct PackDetailView: View {
 
     private var items: [PackItem] { pack.activeItems }
 
+    private var packShareURL: URL? {
+        URL(string: "https://packrat.world/packs/\(pack.id)")
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -73,6 +77,15 @@ struct PackDetailView: View {
                     showingAddItemSheet = true
                 }
                 .keyboardShortcut("i", modifiers: .command)
+
+                if pack.isPublic == true, let shareURL = packShareURL {
+                    ShareLink(item: shareURL, subject: Text(pack.name),
+                              message: Text("Check out my pack on PackRat")) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    .keyboardShortcut("s", modifiers: [.command, .shift])
+                }
+
                 Button("Edit", systemImage: "pencil") {
                     showingEditSheet = true
                 }
@@ -88,6 +101,14 @@ struct PackDetailView: View {
         .sheet(item: $editingItem) { item in
             PackItemFormView(packId: pack.id, viewModel: viewModel, existingItem: item)
         }
+        .focusedSceneValue(\.sharePackAction, {
+            if pack.isPublic == true, let url = packShareURL {
+                #if os(macOS)
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                #endif
+            }
+        })
     }
 
     private func categoryHeader(_ category: String, groups: [String: [PackItem]]) -> some View {
