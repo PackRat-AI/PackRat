@@ -73,6 +73,10 @@ struct TripsListView: View {
         }
         .tag(trip.id)
         .contextMenu {
+            #if os(macOS)
+            OpenWindowButton(id: "trip", value: trip.id, label: "Open in New Window")
+            Divider()
+            #endif
             Button("Delete", role: .destructive, systemImage: "trash") {
                 Task { try? await viewModel.deleteTrip(trip.id) }
             }

@@ -56,6 +56,10 @@ struct PacksListView: View {
             }
             .tag(pack.id)
             .contextMenu {
+                #if os(macOS)
+                OpenWindowButton(id: "pack", value: pack.id, label: "Open in New Window")
+                Divider()
+                #endif
                 Button("Delete", role: .destructive, systemImage: "trash") {
                     Task { try? await viewModel.deletePack(pack.id) }
                 }

@@ -24,6 +24,24 @@ struct PackRatApp: App {
         Settings {
             PreferencesView()
         }
+
+        WindowGroup("Pack", id: "pack", for: String.self) { $packId in
+            if let id = packId {
+                PackWindowView(packId: id)
+                    .environment(authManager)
+            }
+        }
+        .modelContainer(PersistenceController.shared.container)
+        .defaultSize(width: 800, height: 600)
+
+        WindowGroup("Trip", id: "trip", for: String.self) { $tripId in
+            if let id = tripId {
+                TripWindowView(tripId: id)
+                    .environment(authManager)
+            }
+        }
+        .modelContainer(PersistenceController.shared.container)
+        .defaultSize(width: 800, height: 600)
         #endif
     }
 }
