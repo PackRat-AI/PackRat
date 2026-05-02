@@ -43,7 +43,7 @@ final class FeedViewModel {
         await load()
     }
 
-    func likePost(_ postId: String) async {
+    func likePost(_ postId: Int) async {
         do {
             try await service.likePost(postId)
         } catch {
@@ -51,7 +51,7 @@ final class FeedViewModel {
         }
     }
 
-    func unlikePost(_ postId: String) async {
+    func unlikePost(_ postId: Int) async {
         do {
             try await service.unlikePost(postId)
         } catch {
@@ -64,7 +64,7 @@ final class FeedViewModel {
         posts.insert(post, at: 0)
     }
 
-    func addComment(to postId: String, content: String) async throws -> PostComment {
+    func addComment(to postId: Int, content: String) async throws -> PostComment {
         try await service.addComment(to: postId, content: content)
     }
 
@@ -77,7 +77,7 @@ final class FeedViewModel {
         }
     }
 
-    func deletePost(_ postId: String) async {
+    func deletePost(_ postId: Int) async {
         do {
             try await service.deletePost(postId)
             posts.removeAll { $0.id == postId }

@@ -1,8 +1,8 @@
 import Foundation
 
 struct Post: Codable, Identifiable, Sendable {
-    let id: String
-    let userId: String?
+    let id: Int          // serial
+    let userId: Int      // integer → users.id
     let caption: String?
     let images: [String]?
     let createdAt: String?
@@ -24,7 +24,7 @@ struct Post: Codable, Identifiable, Sendable {
 }
 
 struct PostUser: Codable, Sendable {
-    let id: String?
+    let id: Int?         // serial → users.id
     let firstName: String?
     let lastName: String?
     let avatarUrl: String?
@@ -36,15 +36,15 @@ struct PostUser: Codable, Sendable {
 }
 
 struct PostLike: Codable, Identifiable, Sendable {
-    let id: Int
-    let postId: String?
-    let userId: String?
+    let id: Int          // serial
+    let postId: Int?     // integer → posts.id
+    let userId: Int?     // integer → users.id
 }
 
 struct PostComment: Codable, Identifiable, Sendable {
-    let id: String
-    let postId: String?
-    let userId: String?
+    let id: Int          // serial
+    let postId: Int?     // integer → posts.id
+    let userId: Int?     // integer → users.id
     let content: String?
     let createdAt: String?
     let user: PostUser?

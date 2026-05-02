@@ -17,22 +17,22 @@ final class FeedService: Sendable {
         return try await api.send(endpoint)
     }
 
-    func deletePost(_ postId: String) async throws {
+    func deletePost(_ postId: Int) async throws {
         let endpoint = Endpoint(.delete, "/api/feed/\(postId)")
         try await api.sendDiscarding(endpoint)
     }
 
-    func likePost(_ postId: String) async throws {
+    func likePost(_ postId: Int) async throws {
         let endpoint = Endpoint(.post, "/api/feed/\(postId)/like")
         try await api.sendDiscarding(endpoint)
     }
 
-    func unlikePost(_ postId: String) async throws {
+    func unlikePost(_ postId: Int) async throws {
         let endpoint = Endpoint(.delete, "/api/feed/\(postId)/like")
         try await api.sendDiscarding(endpoint)
     }
 
-    func addComment(to postId: String, content: String) async throws -> PostComment {
+    func addComment(to postId: Int, content: String) async throws -> PostComment {
         let body = CreateCommentRequest(content: content)
         let endpoint = Endpoint(.post, "/api/feed/\(postId)/comments", body: body)
         return try await api.send(endpoint)
