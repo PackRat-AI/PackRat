@@ -7,6 +7,9 @@ let package = Package(
         .macOS(.v14),
         .iOS(.v17),
     ],
+    products: [
+        .library(name: "PackRatAPIClient", targets: ["PackRatAPIClient"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.3.0"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.5.0"),
