@@ -2,12 +2,7 @@
 
 language: en-US
 
-# Keep feedback concise — style is already enforced by Biome.
-tone_instructions: >
-  Be concise and direct. Focus on correctness, security, and maintainability.
-  Avoid flagging style issues that are already enforced by Biome (indentation,
-  quotes, import order, etc.). When something is genuinely wrong, be clear about
-  why and suggest a fix.
+tone_instructions: "Be concise. Focus on correctness, security, and maintainability. Skip style issues enforced by Biome (indentation, quotes, import order). When something is wrong, say why and suggest a fix."
 
 early_access: false
 
