@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct PackDetailView: View {
     let pack: Pack
@@ -16,6 +17,8 @@ struct PackDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 weightSummary
                     .padding(.horizontal)
+
+                PackWeightChart(pack: pack)
 
                 if let error {
                     InlineErrorView(message: error)
