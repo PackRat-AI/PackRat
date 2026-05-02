@@ -17,6 +17,9 @@ final class PacksViewModel {
         self.service = service
     }
 
+    var currentPage = 1
+    var hasMore = true
+
     var filteredPacks: [Pack] {
         guard !searchText.isEmpty else { return packs }
         return packs.filter {
@@ -43,14 +46,32 @@ final class PacksViewModel {
         defer { isLoading = false }
 
         do {
-            let fresh = try await service.listPacks()
+            let fresh = try await service.listPacks(page: 1)
             packs = fresh
+            currentPage = 1
+            hasMore = !fresh.isEmpty
             if let context {
                 writeCachePacks(fresh, context: context)
             }
         } catch {
             if packs.isEmpty { self.error = error.localizedDescription }
         }
+    }
+
+    func loadMore() async {
+        guard hasMore, !isLoading else { return }
+        let nextPage = currentPage + 1
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let more = try await service.listPacks(page: nextPage)
+            if more.isEmpty {
+                hasMore = false
+            } else {
+                packs.append(contentsOf: more)
+                currentPage = nextPage
+            }
+        } catch { }
     }
 
     private func writeCachePacks(_ freshPacks: [Pack], context: ModelContext) {

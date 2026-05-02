@@ -64,6 +64,12 @@ struct PacksListView: View {
                     Task { try? await viewModel.deletePack(pack.id) }
                 }
             }
+            // Infinite scroll: trigger load when last item appears
+            .task {
+                if pack.id == viewModel.filteredPacks.last?.id {
+                    await viewModel.loadMore()
+                }
+            }
         }
         // Push-navigation destination for iPhone NavigationStack
         .navigationDestination(for: String.self) { id in

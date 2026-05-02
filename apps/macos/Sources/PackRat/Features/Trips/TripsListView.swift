@@ -72,6 +72,11 @@ struct TripsListView: View {
             TripRowView(trip: trip)
         }
         .tag(trip.id)
+        .task {
+            if trip.id == viewModel.trips.last?.id {
+                await viewModel.loadMore()
+            }
+        }
         .contextMenu {
             #if os(macOS)
             OpenWindowButton(id: "trip", value: trip.id, label: "Open in New Window")

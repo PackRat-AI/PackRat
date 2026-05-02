@@ -6,8 +6,11 @@ final class PackService: Sendable {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    func listPacks(includePublic: Bool = false) async throws -> [Pack] {
-        let endpoint = Endpoint(.get, "/api/packs", query: ["includePublic": includePublic ? "1" : "0"])
+    func listPacks(page: Int = 1, limit: Int = 30, includePublic: Bool = false) async throws -> [Pack] {
+        let endpoint = Endpoint(.get, "/api/packs", query: [
+            "page": "\(page)", "limit": "\(limit)",
+            "includePublic": includePublic ? "1" : "0",
+        ])
         return try await api.send(endpoint)
     }
 

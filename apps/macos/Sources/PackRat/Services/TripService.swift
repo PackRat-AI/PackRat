@@ -6,8 +6,8 @@ final class TripService: Sendable {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    func listTrips() async throws -> [Trip] {
-        let endpoint = Endpoint(.get, "/api/trips")
+    func listTrips(page: Int = 1, limit: Int = 30) async throws -> [Trip] {
+        let endpoint = Endpoint(.get, "/api/trips", query: ["page": "\(page)", "limit": "\(limit)"])
         return try await api.send(endpoint)
     }
 

@@ -17,6 +17,9 @@ final class TripsViewModel {
         self.service = service
     }
 
+    var currentPage = 1
+    var hasMore = true
+
     var filteredTrips: [Trip] {
         guard !searchText.isEmpty else { return trips }
         return trips.filter {
@@ -64,14 +67,32 @@ final class TripsViewModel {
         defer { isLoading = false }
 
         do {
-            let fresh = try await service.listTrips()
+            let fresh = try await service.listTrips(page: 1)
             trips = fresh
+            currentPage = 1
+            hasMore = !fresh.isEmpty
             if let context {
                 writeCacheTrips(fresh, context: context)
             }
         } catch {
             if trips.isEmpty { self.error = error.localizedDescription }
         }
+    }
+
+    func loadMore() async {
+        guard hasMore, !isLoading else { return }
+        let nextPage = currentPage + 1
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let more = try await service.listTrips(page: nextPage)
+            if more.isEmpty {
+                hasMore = false
+            } else {
+                trips.append(contentsOf: more)
+                currentPage = nextPage
+            }
+        } catch { }
     }
 
     private func writeCacheTrips(_ freshTrips: [Trip], context: ModelContext) {
