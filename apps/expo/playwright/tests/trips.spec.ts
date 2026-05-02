@@ -192,8 +192,10 @@ test.describe('Trip CRUD', () => {
     await page.waitForURL(/\/trip\/[^/]+$/, { timeout: 10_000 });
     await page.waitForLoadState('networkidle');
 
-    // Click the delete button — triggers Alert.alert → window.confirm on web.
-    // The dialog handler registered above accepts it automatically.
+    // Accept window.confirm dialogs before triggering delete
+    page.on('dialog', (dialog) => dialog.accept());
+
+    // Click the delete button — window.confirm on web, accepted by the handler above.
     const deleteButton = page.getByTestId('trips:delete');
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
