@@ -94,10 +94,16 @@ export function PackItemCard({
             });
             break;
           case destructiveButtonIndex:
-            Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
-            ]);
+            if (Platform.OS === 'web') {
+              if (window.confirm('Are you sure you want to delete this item?')) {
+                deleteItem(item.id);
+              }
+            } else {
+              Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
+              ]);
+            }
             break;
         }
       },

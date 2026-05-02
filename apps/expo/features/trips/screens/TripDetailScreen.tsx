@@ -8,7 +8,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, ScrollView, Share, View } from 'react-native';
+import { Alert, Modal, Platform, ScrollView, Share, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -115,19 +115,26 @@ export function TripDetailScreen() {
               variant="plain"
               size="icon"
               testID={testIds.trips.deleteBtn}
-              onPress={() =>
-                Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirmation'), [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  {
-                    text: t('common.delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                      await deleteTrip(id as string);
-                      router.back();
+              onPress={async () => {
+                if (Platform.OS === 'web') {
+                  if (window.confirm(t('trips.deleteTripConfirmation'))) {
+                    await deleteTrip(id as string);
+                    router.back();
+                  }
+                } else {
+                  Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirmation'), [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    {
+                      text: t('common.delete'),
+                      style: 'destructive',
+                      onPress: async () => {
+                        await deleteTrip(id as string);
+                        router.back();
+                      },
                     },
-                  },
-                ])
-              }
+                  ]);
+                }
+              }}
             >
               <Icon
                 materialIcon={{ type: 'MaterialCommunityIcons', name: 'trash-can-outline' }}
