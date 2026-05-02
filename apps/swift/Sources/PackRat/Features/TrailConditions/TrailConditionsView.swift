@@ -123,17 +123,17 @@ struct TrailConditionDetailView: View {
                 }
                 .padding(.horizontal)
 
-                if let surface = report.surface {
+                if !report.surface.isEmpty {
                     labeledSection("Surface") {
-                        Label(surface.capitalized, systemImage: TrailSurface(rawValue: surface)?.symbol ?? "road.lanes")
+                        Label(report.surface.capitalized, systemImage: TrailSurface(rawValue: report.surface)?.symbol ?? "road.lanes")
                             .font(.callout)
                     }
                 }
 
-                if let crossings = report.waterCrossings, crossings > 0 {
+                if report.waterCrossings > 0 {
                     labeledSection("Water Crossings") {
                         HStack {
-                            Text("\(crossings) crossing\(crossings == 1 ? "" : "s")")
+                            Text("\(report.waterCrossings) crossing\(report.waterCrossings == 1 ? "" : "s")")
                             if let diff = report.waterCrossingDifficulty {
                                 Text("· \(diff.capitalized)").foregroundStyle(.secondary)
                             }
@@ -142,9 +142,9 @@ struct TrailConditionDetailView: View {
                     }
                 }
 
-                if let hazards = report.hazards, !hazards.isEmpty {
+                if !report.hazards.isEmpty {
                     labeledSection("Hazards") {
-                        FlowLayout(hazards) { hazard in
+                        FlowLayout(report.hazards) { hazard in
                             Text(hazard.capitalized)
                                 .font(.caption)
                                 .padding(.horizontal, 10).padding(.vertical, 4)

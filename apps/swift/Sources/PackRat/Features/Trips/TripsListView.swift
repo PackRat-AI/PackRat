@@ -111,8 +111,8 @@ private struct TripRowView: View {
                     Label(trip.dateRange, systemImage: "calendar")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                if let packName = trip.pack?.name {
-                    Label(packName, systemImage: "backpack")
+                if trip.packId != nil {
+                    Label("Pack linked", systemImage: "backpack")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

@@ -74,7 +74,7 @@ struct TripDetailView: View {
 
     @ViewBuilder
     private var packSection: some View {
-        let linkedPack = trip.pack ?? appState.packsVM.packs.first(where: { $0.id == trip.packId })
+        let linkedPack = appState.packsVM.packs.first(where: { $0.id == trip.packId })
         labeledSection("Pack") {
             if let pack = linkedPack {
                 HStack(spacing: 12) {

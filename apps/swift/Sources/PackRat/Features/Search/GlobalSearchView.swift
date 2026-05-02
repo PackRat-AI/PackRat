@@ -181,7 +181,7 @@ enum SearchResult: Identifiable {
 
     var subtitle: String? {
         switch self {
-        case .pack(let p): return p.category?.capitalized
+        case .pack(let p): return p.category?.label
         case .trip(let t): return t.location?.name
         case .trailCondition(let r): return r.trailRegion
         }

@@ -219,7 +219,7 @@ struct AddCatalogItemToPackSheet: View {
                 to: packId,
                 name: item.displayName,
                 weight: item.weight,
-                weightUnit: item.weightUnit,
+                weightUnit: item.weightUnit.rawValue,
                 quantity: quantity,
                 category: item.categories?.first,
                 consumable: false,
