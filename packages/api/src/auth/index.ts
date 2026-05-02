@@ -8,13 +8,31 @@
  */
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
+import { verifyPassword } from '@better-auth/utils/password';
 import { neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
+import * as bcrypt from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { importPKCS8, SignJWT } from 'jose';
+
+// Matches bcrypt hashes ($2a$, $2b$, $2y$) left over from pre-migration auth.
+const BCRYPT_HASH_RE = /^\$2[aby]\$/;
+
+async function verifyPasswordCompat({
+  hash,
+  password,
+}: {
+  hash: string;
+  password: string;
+}): Promise<boolean> {
+  if (BCRYPT_HASH_RE.test(hash)) {
+    return bcrypt.compare(password, hash);
+  }
+  return verifyPassword(hash, password);
+}
 
 // ─── Apple client-secret generation ──────────────────────────────────────────
 // Apple requires a JWT as the OAuth2 client secret.  It is valid for up to
@@ -105,6 +123,9 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       autoSignIn: true,
       minPasswordLength: 8,
       requireEmailVerification: false,
+      password: {
+        verify: verifyPasswordCompat,
+      },
     },
 
     emailVerification: {
