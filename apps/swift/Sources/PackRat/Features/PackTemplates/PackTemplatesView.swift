@@ -176,7 +176,7 @@ struct PackTemplateDetailView: View {
                     }
                 }
             }
-            .padding(.vertical)
+            .padding(.bottom)
         }
         .navigationTitle(template.name)
         .toolbar {

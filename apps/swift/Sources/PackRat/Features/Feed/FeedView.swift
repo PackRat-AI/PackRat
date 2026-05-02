@@ -33,7 +33,7 @@ struct FeedView: View {
                     }
                 }
             }
-            .padding(.vertical)
+            .padding(.bottom)
         }
         .navigationTitle("Community Feed")
         .toolbar {

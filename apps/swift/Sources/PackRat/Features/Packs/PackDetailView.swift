@@ -68,7 +68,7 @@ struct PackDetailView: View {
                     }
                 }
             }
-            .padding(.vertical)
+            .padding(.bottom)
         }
         .navigationTitle(pack.name)
         #if os(iOS)

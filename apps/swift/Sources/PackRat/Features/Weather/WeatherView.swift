@@ -27,7 +27,8 @@ struct WeatherView: View {
                     .padding(.top, 20)
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.bottom)
         }
         .navigationTitle("Weather")
         .refreshable { await viewModel.refresh() }

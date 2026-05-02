@@ -44,7 +44,7 @@ struct ChatView: View {
                     }
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 16)
+                .padding(.bottom, 16)
             }
             .onChange(of: viewModel.messages.count) {
                 withAnimation(.spring(duration: 0.3)) {
@@ -75,7 +75,7 @@ struct ChatView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 12)
+        .padding(.top, 4)
         .padding(.bottom, 8)
     }
 

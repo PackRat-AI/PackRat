@@ -178,7 +178,7 @@ struct TrailConditionDetailView: View {
                     }
                 }
             }
-            .padding(.vertical)
+            .padding(.bottom)
         }
         .navigationTitle(report.trailName)
         #if os(iOS)

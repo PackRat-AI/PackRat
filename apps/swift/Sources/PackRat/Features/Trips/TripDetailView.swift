@@ -49,7 +49,7 @@ struct TripDetailView: View {
 
                 packSection
             }
-            .padding(.vertical)
+            .padding(.bottom)
         }
         .navigationTitle(trip.name)
         #if os(iOS)

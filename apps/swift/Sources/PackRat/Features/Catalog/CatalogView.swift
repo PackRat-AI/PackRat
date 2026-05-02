@@ -27,7 +27,7 @@ struct CatalogView: View {
                     itemGrid(vm: vm)
                 }
             }
-            .padding(.vertical)
+            .padding(.bottom)
         }
         .navigationTitle("Gear Catalog")
     }
