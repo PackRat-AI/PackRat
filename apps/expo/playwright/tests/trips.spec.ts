@@ -195,10 +195,12 @@ test.describe('Trip CRUD', () => {
     // Accept window.confirm dialogs before triggering delete
     page.on('dialog', (dialog) => dialog.accept());
 
-    // Register DELETE listener before clicking so the 20s window starts here.
-    // syncedCrud fires DELETE /api/trips/:id when fieldDeleted is set to true.
+    // Register PUT listener before clicking so the 20s window starts here.
+    // syncedCrud fires PUT /api/trips/:id with { deleted: true } (fieldDeleted soft-delete).
     const deletePromise = page.waitForResponse(
-      (r) => r.url().includes('/api/trips') && r.request().method() === 'DELETE',
+      (r) =>
+        r.url().includes('/api/trips') &&
+        (r.request().method() === 'PUT' || r.request().method() === 'PATCH'),
       { timeout: 20_000 },
     );
 
@@ -207,9 +209,7 @@ test.describe('Trip CRUD', () => {
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // Wait for the server to confirm the DELETE before asserting the list.
-    // This also ensures the trip is gone from the DB so any subsequent list
-    // re-fetch won't return it.
+    // Wait for the server to confirm the soft-delete PUT before asserting the list.
     await deletePromise;
 
     // router.back() SPA-navigates away from the trip detail to /trips.
