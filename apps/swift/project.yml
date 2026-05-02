@@ -24,11 +24,11 @@ packages:
   OpenAPIRuntime:
     url: https://github.com/apple/swift-openapi-runtime
     from: "1.5.0"
-  PackRat:
-    # Local Package.swift — provides the PackRatAPIClient target with the
-    # swift-openapi-generator build plugin. Nuke and MarkdownUI are declared
-    # above as remote packages so they live in the Xcode project's package graph.
-    path: "."
+  PackRatAPIClient:
+    # Isolated sub-package so the build plugin runs in its own directory,
+    # separate from the Xcode project root. Avoids Xcode treating the project
+    # root as a Swift package.
+    path: "PackRatAPIClient"
 
 targets:
   PackRat-iOS:
@@ -65,7 +65,7 @@ targets:
         product: MarkdownUI
       - package: OpenAPIRuntime
         product: OpenAPIRuntime
-      - package: PackRat
+      - package: PackRatAPIClient
         product: PackRatAPIClient
     settings:
       base:
@@ -103,7 +103,7 @@ targets:
         product: MarkdownUI
       - package: OpenAPIRuntime
         product: OpenAPIRuntime
-      - package: PackRat
+      - package: PackRatAPIClient
         product: PackRatAPIClient
     settings:
       base:

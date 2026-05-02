@@ -50,3 +50,6 @@ apps/swift/*.xcworkspace/xcuserdata/
 apps/swift/DerivedData/
 apps/swift/.build/
 apps/swift/.swiftpm/
+apps/swift/Package.resolved
+apps/swift/PackRatAPIClient/.build/
+apps/swift/PackRatAPIClient/.swiftpm/

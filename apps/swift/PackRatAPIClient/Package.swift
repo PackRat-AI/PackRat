@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "PackRat",
+    name: "PackRatAPIClient",
     platforms: [
         .macOS(.v14),
         .iOS(.v17),
@@ -13,9 +13,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.0.0"),
     ],
     targets: [
-        // Generated OpenAPI client — isolated target so the build plugin only
-        // runs against openapi.yaml and doesn't slow down the main compile.
-        // Nuke and MarkdownUI are declared in project.yml (Xcode targets) instead.
         .target(
             name: "PackRatAPIClient",
             dependencies: [
