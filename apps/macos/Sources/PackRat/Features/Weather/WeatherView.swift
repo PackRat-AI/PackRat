@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WeatherView: View {
-    @State private var viewModel = WeatherViewModel()
+    let viewModel: WeatherViewModel
 
     var body: some View {
         ScrollView {

@@ -98,7 +98,7 @@ struct AppNavigation: View {
         case .trailConditions:
             TrailConditionsListView(viewModel: appState.trailConditionsVM, selectedId: $state.selectedReportId)
         case .weather:
-            WeatherView().environment(appState)
+            WeatherView(viewModel: appState.weatherVM)
         case .catalog:
             CatalogView().environment(appState)
         case .chat:
@@ -172,7 +172,7 @@ struct AppNavigation: View {
         case .trips:           TripsListView(viewModel: appState.tripsVM, selectedId: $state.selectedTripId)
         case .templates:       PackTemplatesListView(viewModel: appState.templatesVM, selectedId: $state.selectedTemplateId)
         case .trailConditions: TrailConditionsListView(viewModel: appState.trailConditionsVM, selectedId: $state.selectedReportId)
-        case .weather:         WeatherView().environment(appState)
+        case .weather:         WeatherView(viewModel: appState.weatherVM)
         case .catalog:         CatalogView().environment(appState)
         case .chat:            ChatView(viewModel: appState.chatVM)
         case .feed:            FeedView(viewModel: appState.feedVM)
