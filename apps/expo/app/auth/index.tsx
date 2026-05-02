@@ -1,22 +1,18 @@
+import { isLoadingAtom, needsReauthAtom, redirectToAtom } from '@packrat/app/auth/atoms/authAtoms';
+import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { featureFlags } from '@packrat/app/config';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { featureFlags } from 'expo-app/config';
-import {
-  isLoadingAtom,
-  needsReauthAtom,
-  redirectToAtom,
-} from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('@packrat/app/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',

@@ -1,5 +1,5 @@
-import { featureFlags } from 'expo-app/config';
-import { TripDetailScreen } from 'expo-app/features/trips/screens/TripDetailScreen';
+import { featureFlags } from '@packrat/app/config';
+import { TripDetailScreen } from '@packrat/app/trips/screens/TripDetailScreen';
 import { Redirect } from 'expo-router';
 
 export default function TripDetailScreenRoute() {

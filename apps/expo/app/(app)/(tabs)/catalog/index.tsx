@@ -1,4 +1,4 @@
-import CatalogItemsScreen from 'expo-app/features/catalog/screens/CatalogItemsScreen';
+import CatalogItemsScreen from '@packrat/app/catalog/screens/CatalogItemsScreen';
 
 export default function CatalogItemsPage() {
   return <CatalogItemsScreen />;

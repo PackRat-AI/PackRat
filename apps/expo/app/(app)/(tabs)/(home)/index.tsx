@@ -1,5 +1,32 @@
 'use client';
 
+import { AIChatTile } from '@packrat/app/ai/components/AIChatTile';
+import { ReportedContentTile } from '@packrat/app/ai/components/ReportedContentTile';
+import { AIPacksTile } from '@packrat/app/ai-packs/components/AIPacksTile';
+import { AndroidTabBarInsetFix } from '@packrat/app/components/AndroidTabBarInsetFix';
+import { Icon } from '@packrat/app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from '@packrat/app/components/LargeTitleHeaderSearchContentContainer';
+import { appConfig, featureFlags } from '@packrat/app/config';
+import { FeedTile } from '@packrat/app/feed/components/FeedTile';
+import { GuidesTile } from '@packrat/app/guides/components/GuidesTile';
+import { cn } from '@packrat/app/lib/cn';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { asNonNullableRef } from '@packrat/app/lib/utils/asNonNullableRef';
+import { PackTemplatesTile } from '@packrat/app/pack-templates/components/PackTemplatesTile';
+import { CurrentPackTile } from '@packrat/app/packs/components/CurrentPackTile';
+import { GearInventoryTile } from '@packrat/app/packs/components/GearInventoryTile';
+import { PackCategoriesTile } from '@packrat/app/packs/components/PackCategoriesTile';
+import { PackStatsTile } from '@packrat/app/packs/components/PackStatsTile';
+import { RecentPacksTile } from '@packrat/app/packs/components/RecentPacksTile';
+import { SeasonSuggestionsTile } from '@packrat/app/packs/components/SeasonSuggestionsTile';
+import { SharedPacksTile } from '@packrat/app/packs/components/SharedPacksTile';
+import { ShoppingListTile } from '@packrat/app/packs/components/ShoppingListTile';
+import { WeightAnalysisTile } from '@packrat/app/packs/components/WeightAnalysisTile';
+import { TrailConditionsTile } from '@packrat/app/trips/components/TrailConditionsTile';
+import { UpcomingTripsTile } from '@packrat/app/trips/components/UpcomingTripsTile';
+import { WeatherAlertsTile } from '@packrat/app/weather/components/WeatherAlertsTile';
+import { WeatherTile } from '@packrat/app/weather/components/WeatherTile';
+import { WildlifeTile } from '@packrat/app/wildlife/components/WildlifeTile';
 import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
@@ -8,33 +35,6 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
-import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
-import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import { appConfig, featureFlags } from 'expo-app/config';
-import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
-import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
-import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
-import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
-import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
-import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
-import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
-import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
-import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
-import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
-import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
-import { SeasonSuggestionsTile } from 'expo-app/features/packs/components/SeasonSuggestionsTile';
-import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
-import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
-import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
-import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
-import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
-import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
-import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
-import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 

@@ -1,3 +1,11 @@
+import { userStore } from '@packrat/app/auth/store';
+import { cn } from '@packrat/app/lib/cn';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { getRelativeTime } from '@packrat/app/lib/utils/getRelativeTime';
+import { usePackDetailsFromStore } from '@packrat/app/packs/hooks/usePackDetailsFromStore';
+import { type CategorySummary, computeCategorySummaries } from '@packrat/app/packs/utils';
+import type { PackItem } from '@packrat/app/types';
 import {
   Avatar,
   AvatarFallback,
@@ -5,14 +13,6 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
-import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
-import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { ScrollView, View } from 'react-native';

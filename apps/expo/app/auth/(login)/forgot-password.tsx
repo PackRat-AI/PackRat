@@ -1,3 +1,6 @@
+import { needsReauthAtom } from '@packrat/app/auth/atoms/authAtoms';
+import { useAuthActions } from '@packrat/app/auth/hooks/useAuthActions';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
@@ -9,9 +12,6 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
@@ -20,7 +20,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('@packrat/app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for email validation
 const emailSchema = z.object({

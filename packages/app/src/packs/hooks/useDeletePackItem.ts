@@ -1,0 +1,14 @@
+import { obs } from '@packrat/app/lib/store';
+import { packItemsStore } from '@packrat/app/packs/store';
+import { useCallback } from 'react';
+
+export function useDeletePackItem() {
+  const deletePackItem = useCallback((id: string) => {
+    // Soft delete by setting deleted flag
+    obs(packItemsStore, id).deleted.set(true);
+
+    return Promise.resolve({ id });
+  }, []);
+
+  return deletePackItem;
+}

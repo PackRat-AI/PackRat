@@ -1,9 +1,9 @@
+import { needsReauthAtom } from '@packrat/app/auth/atoms/authAtoms';
+import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('@packrat/app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({

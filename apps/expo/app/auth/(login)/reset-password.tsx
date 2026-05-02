@@ -1,3 +1,7 @@
+import { useAuthActions } from '@packrat/app/auth/hooks/useAuthActions';
+import { Icon } from '@packrat/app/components/Icon';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import type { TranslationKeys } from '@packrat/app/lib/i18n/types';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
@@ -10,10 +14,6 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
-import { Icon } from 'expo-app/components/Icon';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -25,7 +25,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('@packrat/app/assets/packrat-app-icon-gradient.png');
 
 const RE_HAS_UPPERCASE = /[A-Z]/;
 const RE_HAS_LOWERCASE = /[a-z]/;

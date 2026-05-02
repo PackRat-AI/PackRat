@@ -6,13 +6,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
+import { userStore } from '@packrat/app/auth/store';
+import { registerAppAlert } from '@packrat/app/lib/appAlert';
+import { useColorScheme, useInitialAndroidBarSync } from '@packrat/app/lib/hooks/useColorScheme';
+import { Providers } from '@packrat/app/providers';
+import { NAV_THEME } from '@packrat/app/theme';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
-import { userStore } from 'expo-app/features/auth/store';
-import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
-import { Providers } from 'expo-app/providers';
-import { NAV_THEME } from 'expo-app/theme';
 import { useEffect, useRef } from 'react';
 
 Sentry.init({
@@ -32,12 +33,11 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-export let appAlert: React.RefObject<AlertMethods | null>;
-
 function RootLayout() {
   useInitialAndroidBarSync();
 
-  appAlert = useRef<AlertMethods>(null);
+  const alertRef = useRef<AlertMethods>(null);
+  registerAppAlert(alertRef);
 
   const { colorScheme, isDarkColorScheme } = useColorScheme();
 
@@ -59,7 +59,7 @@ function RootLayout() {
           <Stack.Screen name="(app)" />
           <Stack.Screen name="auth" />
         </Stack>
-        <Alert title="" buttons={[]} ref={appAlert} />
+        <Alert title="" buttons={[]} ref={alertRef} />
       </NavThemeProvider>
     </Providers>
   );

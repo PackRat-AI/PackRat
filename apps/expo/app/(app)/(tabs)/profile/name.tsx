@@ -1,9 +1,9 @@
+import { useUser } from '@packrat/app/auth/hooks/useUser';
+import { cn } from '@packrat/app/lib/cn';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { testIds } from '@packrat/app/lib/testIds';
+import { useUpdateProfile } from '@packrat/app/profile/hooks/useUpdateProfile';
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
-import { cn } from 'expo-app/lib/cn';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Alert, Platform, View } from 'react-native';

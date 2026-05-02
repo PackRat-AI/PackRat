@@ -1,11 +1,11 @@
+import { useAuthActions } from '@packrat/app/auth/hooks/useAuthActions';
+import { useColorScheme } from '@packrat/app/lib/hooks/useColorScheme';
+import { useKeyboardHideBlur } from '@packrat/app/lib/hooks/useKeyboardHideBlur';
+import { useTranslation } from '@packrat/app/lib/hooks/useTranslation';
+import { asNonNullableRef } from '@packrat/app/lib/utils/asNonNullableRef';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import {
@@ -24,7 +24,7 @@ import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboa
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('@packrat/app/assets/packrat-app-icon-gradient.png');
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
 const NUM_OF_CODE_CHARACTERS = 5;

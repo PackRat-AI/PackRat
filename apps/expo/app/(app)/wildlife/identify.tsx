@@ -1,5 +1,5 @@
-import { featureFlags } from 'expo-app/config';
-import { IdentificationScreen } from 'expo-app/features/wildlife/screens/IdentificationScreen';
+import { featureFlags } from '@packrat/app/config';
+import { IdentificationScreen } from '@packrat/app/wildlife/screens/IdentificationScreen';
 import { Redirect } from 'expo-router';
 
 export default function IdentifyRoute() {
