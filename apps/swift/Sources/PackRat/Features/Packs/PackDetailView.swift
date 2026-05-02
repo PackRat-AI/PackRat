@@ -8,6 +8,7 @@ struct PackDetailView: View {
 
     @State private var showingEditSheet = false
     @State private var showingAddItemSheet = false
+    @State private var showingGapAnalysis = false
     @State private var editingItem: PackItem?
     @State private var error: String?
     @State private var dropTargetCategory: String?
@@ -80,6 +81,12 @@ struct PackDetailView: View {
                 }
                 .keyboardShortcut("i", modifiers: .command)
 
+                Button("Gap Analysis", systemImage: "sparkles.magnifyingglass") {
+                    showingGapAnalysis = true
+                }
+                .disabled(items.isEmpty)
+                .help("AI gear gap analysis")
+
                 if pack.isPublic == true, let shareURL = packShareURL {
                     ShareLink(item: shareURL, subject: Text(pack.name),
                               message: Text("Check out my pack on PackRat")) {
@@ -102,6 +109,9 @@ struct PackDetailView: View {
         }
         .sheet(item: $editingItem) { item in
             PackItemFormView(packId: pack.id, viewModel: viewModel, existingItem: item)
+        }
+        .sheet(isPresented: $showingGapAnalysis) {
+            GapAnalysisSheet(pack: pack, service: viewModel.service)
         }
         .focusedSceneValue(\.sharePackAction, $triggerShare)
         .onChange(of: triggerShare) { _, new in

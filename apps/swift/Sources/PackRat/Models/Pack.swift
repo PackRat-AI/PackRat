@@ -82,6 +82,30 @@ enum AppWeightUnit: String, CaseIterable {
     var label: String { rawValue }
 }
 
+// MARK: - Gap Analysis
+
+struct GapAnalysisResult: Decodable, Sendable {
+    let gaps: [GapSuggestion]
+    let summary: String?
+}
+
+struct GapSuggestion: Decodable, Identifiable, Sendable {
+    var id: UUID { UUID() }
+    let suggestion: String
+    let reason: String
+    let consumable: Bool
+    let worn: Bool
+    let priority: String?
+
+    var priorityColor: String {
+        switch priority {
+        case "must-have": return "red"
+        case "nice-to-have": return "orange"
+        default: return "secondary"
+        }
+    }
+}
+
 // MARK: - Request Bodies
 
 struct CreatePackRequest: Encodable {

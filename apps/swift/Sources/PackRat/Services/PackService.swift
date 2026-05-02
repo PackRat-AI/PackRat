@@ -81,4 +81,20 @@ final class PackService: Sendable {
         let endpoint = Endpoint(.delete, "/api/packs/\(packId)/items/\(itemId)")
         try await api.sendDiscarding(endpoint)
     }
+
+    func analyzeGaps(
+        packId: String,
+        destination: String? = nil,
+        tripType: String? = nil,
+        duration: Int? = nil
+    ) async throws -> GapAnalysisResult {
+        struct Body: Encodable {
+            let destination: String?
+            let tripType: String?
+            let duration: Int?
+        }
+        let endpoint = Endpoint(.post, "/api/packs/\(packId)/gap-analysis",
+                                body: Body(destination: destination, tripType: tripType, duration: duration))
+        return try await api.send(endpoint)
+    }
 }

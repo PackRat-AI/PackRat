@@ -11,7 +11,7 @@ final class PacksViewModel {
     var error: String?
     var searchText = ""
 
-    private let service: PackService
+    let service: PackService
 
     init(service: PackService = .shared) {
         self.service = service
