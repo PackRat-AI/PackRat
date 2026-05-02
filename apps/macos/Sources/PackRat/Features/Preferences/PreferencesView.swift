@@ -1,0 +1,96 @@
+import SwiftUI
+
+// MARK: - App-wide user preferences stored in UserDefaults
+
+final class AppPreferences: ObservableObject {
+    static let shared = AppPreferences()
+
+    @AppStorage("defaultWeightUnit") var defaultWeightUnit: WeightUnit = .grams
+    @AppStorage("preferMetric") var preferMetric: Bool = true
+    @AppStorage("temperatureUnit") var temperatureUnit: TemperatureUnit = .fahrenheit
+    @AppStorage("accentColorName") var accentColorName: String = "blue"
+    @AppStorage("apiBaseURL") var apiBaseURL: String = "https://staging-api.packrat.world"
+
+    enum TemperatureUnit: String, CaseIterable {
+        case fahrenheit = "°F"
+        case celsius = "°C"
+
+        var label: String { rawValue }
+    }
+}
+
+// MARK: - Settings / Preferences window (Cmd+,)
+
+struct PreferencesView: View {
+    @AppStorage("defaultWeightUnit") private var defaultWeightUnit: WeightUnit = .grams
+    @AppStorage("preferMetric") private var preferMetric: Bool = true
+    @AppStorage("temperatureUnit") private var temperatureUnit: AppPreferences.TemperatureUnit = .fahrenheit
+    @AppStorage("apiBaseURL") private var apiBaseURL: String = "https://staging-api.packrat.world"
+
+    var body: some View {
+        TabView {
+            generalTab
+                .tabItem { Label("General", systemImage: "gearshape") }
+            unitsTab
+                .tabItem { Label("Units", systemImage: "scalemass") }
+            advancedTab
+                .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
+        }
+        .padding(20)
+        .frame(width: 460, height: 280)
+    }
+
+    private var generalTab: some View {
+        Form {
+            Section("Temperature") {
+                Picker("Display temperature in", selection: $temperatureUnit) {
+                    ForEach(AppPreferences.TemperatureUnit.allCases, id: \.self) { unit in
+                        Text(unit.label).tag(unit)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var unitsTab: some View {
+        Form {
+            Section("Weight") {
+                Picker("Default weight unit", selection: $defaultWeightUnit) {
+                    ForEach(WeightUnit.allCases, id: \.self) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                }
+                Toggle("Prefer metric display", isOn: $preferMetric)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var advancedTab: some View {
+        Form {
+            Section("API") {
+                TextField("Base URL", text: $apiBaseURL)
+                    .textFieldStyle(.roundedBorder)
+                Text("Restart required to apply URL changes.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Button("Reset All Preferences", role: .destructive) {
+                    resetDefaults()
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func resetDefaults() {
+        defaultWeightUnit = .grams
+        preferMetric = true
+        temperatureUnit = .fahrenheit
+        apiBaseURL = "https://staging-api.packrat.world"
+    }
+}
