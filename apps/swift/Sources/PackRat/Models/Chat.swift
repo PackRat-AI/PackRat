@@ -15,19 +15,32 @@ struct ChatMessage: Identifiable, Sendable {
     }
 }
 
+// Vercel AI SDK UIMessage format expected by the chat API
 struct ChatRequest: Encodable {
-    let messages: [ChatMessageRequest]
+    let messages: [ChatUIMessage]
+    let date: String
+
+    init(messages: [ChatMessage]) {
+        self.messages = messages.map { ChatUIMessage(from: $0) }
+        self.date = ISO8601DateFormatter().string(from: Date())
+    }
 }
 
-struct ChatMessageRequest: Encodable {
+struct ChatUIMessage: Encodable {
+    let id: String
     let role: String
     let content: String
+    let parts: [ChatUITextPart]
+
+    init(from msg: ChatMessage) {
+        self.id = msg.id.uuidString
+        self.role = msg.role.rawValue
+        self.content = msg.content
+        self.parts = [ChatUITextPart(text: msg.content)]
+    }
 }
 
-struct ChatStreamChunk: Decodable {
-    let delta: ChatDelta?
-
-    struct ChatDelta: Decodable {
-        let content: String?
-    }
+struct ChatUITextPart: Encodable {
+    let type = "text"
+    let text: String
 }

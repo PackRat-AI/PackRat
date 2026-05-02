@@ -70,10 +70,15 @@ actor APIClient {
                         return
                     }
                     for try await line in bytes.lines {
-                        if line.hasPrefix("data: ") {
-                            let payload = String(line.dropFirst(6))
+                        let trimmed = line.trimmingCharacters(in: .whitespaces)
+                        guard !trimmed.isEmpty else { continue }
+                        if trimmed.hasPrefix("data: ") {
+                            let payload = String(trimmed.dropFirst(6))
                             if payload == "[DONE]" { break }
                             continuation.yield(payload)
+                        } else {
+                            // Vercel AI SDK UI Message Stream (plain lines, no SSE wrapper)
+                            continuation.yield(trimmed)
                         }
                     }
                     continuation.finish()
