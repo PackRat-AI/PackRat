@@ -8,6 +8,7 @@ final class FeedViewModel {
     var isRefreshing = false
     var error: String?
     var currentPage = 1
+    var hasMore = true
 
     private let service: FeedService
 
@@ -19,6 +20,7 @@ final class FeedViewModel {
         if refresh {
             isRefreshing = true
             currentPage = 1
+            hasMore = true
         } else {
             isLoading = true
         }
@@ -26,19 +28,20 @@ final class FeedViewModel {
         defer { isLoading = false; isRefreshing = false }
 
         do {
-            let newPosts = try await service.listPosts(page: currentPage)
+            let response = try await service.listPostsResponse(page: currentPage)
             if refresh || currentPage == 1 {
-                posts = newPosts
+                posts = response.items
             } else {
-                posts.append(contentsOf: newPosts)
+                posts.append(contentsOf: response.items)
             }
+            hasMore = currentPage < response.totalPages
         } catch {
             self.error = error.localizedDescription
         }
     }
 
     func loadMore() async {
-        guard !isLoading else { return }
+        guard hasMore, !isLoading else { return }
         currentPage += 1
         await load()
     }

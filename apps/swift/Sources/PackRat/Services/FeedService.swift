@@ -6,10 +6,13 @@ final class FeedService: Sendable {
 
     init(api: APIClient = .shared) { self.api = api }
 
-    func listPosts(page: Int = 1, limit: Int = 20) async throws -> [Post] {
+    func listPostsResponse(page: Int = 1, limit: Int = 20) async throws -> FeedResponse {
         let endpoint = Endpoint(.get, "/api/feed", query: ["page": "\(page)", "limit": "\(limit)"])
-        let response: FeedResponse = try await api.send(endpoint)
-        return response.items
+        return try await api.send(endpoint)
+    }
+
+    func listPosts(page: Int = 1, limit: Int = 20) async throws -> [Post] {
+        try await listPostsResponse(page: page, limit: limit).items
     }
 
     func getComments(postId: Int, page: Int = 1, limit: Int = 50) async throws -> [Comment] {

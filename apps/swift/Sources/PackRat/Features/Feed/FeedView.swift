@@ -26,7 +26,7 @@ struct FeedView: View {
                         PostCard(post: post, viewModel: viewModel)
                             .padding(.horizontal)
                     }
-                    if !viewModel.posts.isEmpty {
+                    if viewModel.hasMore {
                         ProgressView()
                             .padding(.bottom)
                             .task { await viewModel.loadMore() }
