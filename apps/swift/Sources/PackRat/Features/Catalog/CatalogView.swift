@@ -157,7 +157,6 @@ struct AddCatalogItemToPackSheet: View {
 
     @State private var selectedPackId: String?
     @State private var quantity = 1
-    @State private var isAdding = false
     @State private var error: String?
     @State private var success = false
 
@@ -176,9 +175,9 @@ struct AddCatalogItemToPackSheet: View {
 
                 Section("Add to") {
                     Picker("Pack", selection: $selectedPackId) {
-                        Text("Select a pack…").tag(String?.none)
+                        Text("Select a pack…").tag(nil as String?)
                         ForEach(packsViewModel.packs) { pack in
-                            Text(pack.name).tag(Optional(pack.id))
+                            Text(pack.name).tag(pack.id as String?)
                         }
                     }
                     Stepper("Quantity: \(quantity)", value: $quantity, in: 1...99)
@@ -202,10 +201,10 @@ struct AddCatalogItemToPackSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    AsyncButton("Add", isLoading: isAdding) {
+                    AsyncButton("Add") {
                         await addToPack()
                     }
-                    .disabled(selectedPackId == nil || isAdding)
+                    .disabled(selectedPackId == nil)
                 }
             }
         }
@@ -214,9 +213,7 @@ struct AddCatalogItemToPackSheet: View {
 
     private func addToPack() async {
         guard let packId = selectedPackId else { return }
-        isAdding = true
         error = nil
-        defer { isAdding = false }
         do {
             try await packsViewModel.addItem(
                 to: packId,

@@ -125,10 +125,10 @@ struct PackDetailView: View {
         .padding(.horizontal)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(isTarget ? Color.accentColor.opacity(0.12) : Color(NSColor.windowBackgroundColor))
+        .background(isTarget ? Color.accentColor.opacity(0.12) : Color.clear)
         .overlay(alignment: .bottom) {
             if isTarget {
-                Rectangle().fill(.accentColor).frame(height: 2)
+                Rectangle().fill(Color.accentColor).frame(height: 2)
             }
         }
         // Drop target: dragged item IDs get re-categorized here

@@ -1,4 +1,5 @@
 import Foundation
+import HTTPTypes
 import OpenAPIRuntime
 import OpenAPIURLSession
 
@@ -10,7 +11,7 @@ extension Client {
         let transport = URLSessionTransport()
         let middleware = AuthMiddleware(token: token)
         return Client(
-            serverURL: baseURL ?? Servers.Server1.url(),
+            serverURL: baseURL ?? (try! Servers.Server1.url()),
             transport: transport,
             middlewares: [middleware]
         )

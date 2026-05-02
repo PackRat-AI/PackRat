@@ -156,7 +156,9 @@ struct TripDetailView: View {
         }
         .mapStyle(.standard(elevation: .realistic))
         .mapControls {
+            #if os(macOS)
             MapZoomStepper()
+            #endif
             MapCompass()
         }
     }

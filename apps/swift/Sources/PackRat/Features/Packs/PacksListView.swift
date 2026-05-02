@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct PacksListView: View {
-    let viewModel: PacksViewModel
+    @Bindable var viewModel: PacksViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
     @Environment(\.modelContext) private var modelContext
@@ -60,7 +60,7 @@ struct PacksListView: View {
                 OpenWindowButton(id: "pack", value: pack.id, label: "Open in New Window")
                 Divider()
                 #endif
-                Button("Delete", role: .destructive, systemImage: "trash") {
+                Button("Delete", systemImage: "trash", role: .destructive) {
                     Task { try? await viewModel.deletePack(pack.id) }
                 }
             }

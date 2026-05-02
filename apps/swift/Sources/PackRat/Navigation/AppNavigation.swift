@@ -87,9 +87,12 @@ struct AppNavigation: View {
 
     private var sidebar: some View {
         @Bindable var state = appState
-
-        return List(NavItem.allCases, selection: $state.navItem) { item in
-            Label(item.label, systemImage: item.symbol).tag(item)
+        let optionalNavItem = Binding<NavItem?>(
+            get: { state.navItem },
+            set: { state.navItem = $0 ?? .packs }
+        )
+        return List(NavItem.allCases, selection: optionalNavItem) { item in
+            Label(item.label, systemImage: item.symbol).tag(item as NavItem?)
         }
         .navigationTitle("PackRat")
         #if os(macOS)

@@ -6,10 +6,9 @@ struct ComposePostView: View {
     @Environment(AuthManager.self) private var authManager
 
     @State private var caption = ""
-    @State private var isPosting = false
     @State private var error: String?
 
-    private var canPost: Bool { !caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isPosting }
+    private var canPost: Bool { !caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var body: some View {
         NavigationStack {
@@ -61,7 +60,7 @@ struct ComposePostView: View {
                         .keyboardShortcut(.escape, modifiers: [])
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    AsyncButton("Post", isLoading: isPosting) {
+                    AsyncButton("Post") {
                         await post()
                     }
                     .disabled(!canPost)
@@ -73,9 +72,7 @@ struct ComposePostView: View {
     }
 
     private func post() async {
-        isPosting = true
         error = nil
-        defer { isPosting = false }
         do {
             let trimmed = caption.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return }

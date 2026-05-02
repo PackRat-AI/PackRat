@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - List Column (shown in content pane of 3-column nav)
 
 struct PackTemplatesListView: View {
-    let viewModel: PackTemplatesViewModel
+    @Bindable var viewModel: PackTemplatesViewModel
     @Binding var selectedId: String?
 
     var body: some View {
@@ -42,7 +42,7 @@ struct PackTemplatesListView: View {
                     ForEach(viewModel.myTemplates) { t in
                         templateRow(t)
                             .contextMenu {
-                                Button("Delete", role: .destructive, systemImage: "trash") {
+                                Button("Delete", systemImage: "trash", role: .destructive) {
                                     Task { try? await viewModel.deleteTemplate(t.id) }
                                 }
                             }
@@ -254,7 +254,7 @@ private struct ApplyTemplateSheet: View {
                     }
                 }
             }
-            .navigationTitle("Apply "\(template.name)"")
+            .navigationTitle("Apply \"\(template.name)\"")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
