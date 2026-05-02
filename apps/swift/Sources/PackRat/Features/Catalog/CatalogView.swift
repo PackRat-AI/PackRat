@@ -79,8 +79,20 @@ struct CatalogItemRow: View {
     let item: CatalogItem
     let packsViewModel: PacksViewModel
     @State private var showingAddToPack = false
+    @State private var showingDetail = false
 
     var body: some View {
+        Button { showingDetail = true } label: { rowContent }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingDetail) {
+                CatalogItemDetailView(item: item, packsViewModel: packsViewModel)
+            }
+            .sheet(isPresented: $showingAddToPack) {
+                AddCatalogItemToPackSheet(item: item, packsViewModel: packsViewModel)
+            }
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 12) {
             RemoteImage(url: item.primaryImage, contentMode: .fill, cornerRadius: 8) {
                 RoundedRectangle(cornerRadius: 8)
@@ -142,9 +154,6 @@ struct CatalogItemRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .sheet(isPresented: $showingAddToPack) {
-            AddCatalogItemToPackSheet(item: item, packsViewModel: packsViewModel)
-        }
     }
 }
 

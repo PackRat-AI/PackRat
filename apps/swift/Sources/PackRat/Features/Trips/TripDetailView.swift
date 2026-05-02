@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import CoreLocation
 
 struct TripDetailView: View {
     let trip: Trip
@@ -161,6 +162,28 @@ struct TripDetailView: View {
             #endif
             MapCompass()
         }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                openInMaps(coord: coord)
+            } label: {
+                Label("Open in Maps", systemImage: "map.fill")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(10)
+        }
+    }
+
+    private func openInMaps(coord: CLLocationCoordinate2D) {
+        let placemark = MKPlacemark(coordinate: coord)
+        let item = MKMapItem(placemark: placemark)
+        item.name = trip.location?.name ?? trip.name
+        item.openInMaps(launchOptions: [
+            MKLaunchOptionsMapTypeKey: MKMapType.standard.rawValue
+        ])
     }
 
     private func labeledSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
