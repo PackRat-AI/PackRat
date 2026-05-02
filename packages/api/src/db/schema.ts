@@ -23,31 +23,40 @@ const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'pr
 // User table
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
-  name: text('name').notNull().default(''),
+  name: text('name').notNull(),
   email: text('email').unique().notNull(),
   emailVerified: boolean('email_verified').default(false).notNull(),
-  passwordHash: text('password_hash'),
+  image: text('image'),
+  role: text('role').default('USER').notNull(),
+  banned: boolean('banned').default(false),
+  banReason: text('ban_reason'),
+  banExpires: timestamp('ban_expires'),
   firstName: text('first_name'),
   lastName: text('last_name'),
   avatarUrl: text('avatar_url'),
-  role: text('role').default('USER').notNull(),
+  passwordHash: text('password_hash'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // Better Auth — session table
-export const session = pgTable('session', {
-  id: text('id').primaryKey(),
-  expiresAt: timestamp('expires_at').notNull(),
-  token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  userId: text('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-});
+export const session = pgTable(
+  'session',
+  {
+    id: text('id').primaryKey(),
+    expiresAt: timestamp('expires_at').notNull(),
+    token: text('token').notNull().unique(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    impersonatedBy: text('impersonated_by'),
+  },
+  (table) => [index('session_userId_idx').on(table.userId)],
+);
 
 // Better Auth — account table (OAuth + credential provider)
 export const account = pgTable(
@@ -66,21 +75,28 @@ export const account = pgTable(
     refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
     scope: text('scope'),
     password: text('password'),
-    createdAt: timestamp('created_at').notNull(),
-    updatedAt: timestamp('updated_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (t) => [unique('account_provider_account_idx').on(t.providerId, t.accountId)],
+  (t) => [
+    unique('account_provider_account_idx').on(t.providerId, t.accountId),
+    index('account_userId_idx').on(t.userId),
+  ],
 );
 
 // Better Auth — verification table (email/OTP verification tokens)
-export const verification = pgTable('verification', {
-  id: text('id').primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at'),
-  updatedAt: timestamp('updated_at'),
-});
+export const verification = pgTable(
+  'verification',
+  {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [index('verification_identifier_idx').on(table.identifier)],
+);
 
 // Better Auth — jwks table (asymmetric JWT key pairs for jwt() plugin)
 export const jwks = pgTable('jwks', {

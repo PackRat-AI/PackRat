@@ -1,6 +1,6 @@
 {
-  "id": "osm_trails_poc",
-  "prevId": "fa3d18d1-67a7-488a-aba5-5b18295e80f2",
+  "id": "a08154b1-28c9-4757-a8e3-26a98182d7e2",
+  "prevId": "52580680-191b-458b-86f6-96d255a92062",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1676,8 +1676,7 @@
           "name": "trail_osm_id",
           "type": "bigint",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         }
       },
       "indexes": {},
