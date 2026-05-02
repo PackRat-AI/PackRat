@@ -209,13 +209,16 @@ test.describe('Trip CRUD', () => {
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // Wait for the server to confirm the soft-delete PUT before asserting the list.
+    // Wait for the server to confirm the soft-delete PUT (deleted:true persisted in DB).
+    // Must happen before page.goto so the subsequent GET list won't include the trip.
     await deletePromise;
 
-    // router.back() SPA-navigates away from the trip detail to /trips.
-    // Stay in the SPA context — a full page.goto() would re-hydrate from the
-    // API and potentially return the trip before the list cache is invalidated.
+    // router.back() SPA-navigates away from the trip detail.
     await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
+
+    // Full reload so the list fetches fresh from the API — the server now
+    // filters deleted=true trips, so the trip must not appear.
+    await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
     await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
   });
