@@ -8,6 +8,7 @@ struct PackRatCommands: Commands {
     @FocusedValue(\.newTripAction) private var newTrip
     @FocusedValue(\.refreshAction) private var refresh
     @FocusedValue(\.sharePackAction) private var sharePack
+    @FocusedValue(\.globalSearchAction) private var globalSearch
 
     var body: some Commands {
         // Replace default File menu
@@ -19,6 +20,11 @@ struct PackRatCommands: Commands {
             Button("New Trip") { newTrip?() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(newTrip == nil)
+        }
+
+        CommandGroup(before: .toolbar) {
+            Button("Search…") { globalSearch?() }
+                .keyboardShortcut("f", modifiers: .command)
         }
 
         CommandGroup(replacing: .saveItem) {
@@ -59,6 +65,10 @@ private struct SharePackActionKey: FocusedValueKey {
     typealias Value = () -> Void
 }
 
+private struct GlobalSearchActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
 extension FocusedValues {
     var newPackAction: (() -> Void)? {
         get { self[NewPackActionKey.self] }
@@ -75,5 +85,9 @@ extension FocusedValues {
     var sharePackAction: (() -> Void)? {
         get { self[SharePackActionKey.self] }
         set { self[SharePackActionKey.self] = newValue }
+    }
+    var globalSearchAction: (() -> Void)? {
+        get { self[GlobalSearchActionKey.self] }
+        set { self[GlobalSearchActionKey.self] = newValue }
     }
 }

@@ -34,6 +34,7 @@ enum NavItem: String, CaseIterable, Identifiable {
 struct AppNavigation: View {
     @Environment(AuthManager.self) private var authManager
     @State private var appState = AppState()
+    @State private var showingSearch = false
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -71,6 +72,17 @@ struct AppNavigation: View {
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)
         #endif
+        .sheet(isPresented: $showingSearch) {
+            GlobalSearchView()
+                .environment(appState)
+        }
+        .background {
+            Button("") { showingSearch.toggle() }
+                .keyboardShortcut("f", modifiers: .command)
+                .frame(width: 0, height: 0)
+                .hidden()
+        }
+        .focusedSceneValue(\.globalSearchAction, { showingSearch = true })
     }
 
     private var sidebar: some View {
