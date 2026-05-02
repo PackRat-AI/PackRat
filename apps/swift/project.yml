@@ -34,6 +34,15 @@ packages:
   HTTPTypes:
     url: https://github.com/apple/swift-http-types
     from: "1.0.0"
+  Algorithms:
+    url: https://github.com/apple/swift-algorithms
+    from: "1.2.0"
+  Collections:
+    url: https://github.com/apple/swift-collections
+    from: "1.1.0"
+  Defaults:
+    url: https://github.com/sindresorhus/Defaults
+    from: "9.0.0"
 
 targets:
   PackRat-iOS:
@@ -77,6 +86,12 @@ targets:
         product: OpenAPIURLSession
       - package: HTTPTypes
         product: HTTPTypes
+      - package: Algorithms
+        product: Algorithms
+      - package: Collections
+        product: Collections
+      - package: Defaults
+        product: Defaults
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -121,6 +136,12 @@ targets:
         product: OpenAPIURLSession
       - package: HTTPTypes
         product: HTTPTypes
+      - package: Algorithms
+        product: Algorithms
+      - package: Collections
+        product: Collections
+      - package: Defaults
+        product: Defaults
     settings:
       base:
         SWIFT_VERSION: "5.9"
