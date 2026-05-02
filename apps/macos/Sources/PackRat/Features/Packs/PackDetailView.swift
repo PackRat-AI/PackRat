@@ -77,9 +77,11 @@ struct PackDetailView: View {
                 Button("Add Item", systemImage: "plus") {
                     showingAddItemSheet = true
                 }
+                .keyboardShortcut("i", modifiers: .command)
                 Button("Edit", systemImage: "pencil") {
                     showingEditSheet = true
                 }
+                .keyboardShortcut("e", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingEditSheet) {

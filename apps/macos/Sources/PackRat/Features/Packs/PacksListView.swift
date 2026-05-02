@@ -32,6 +32,7 @@ struct PacksListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
+                    .keyboardShortcut("n", modifiers: .command)
             }
             if viewModel.isLoading {
                 ToolbarItem(placement: .automatic) {
@@ -44,6 +45,8 @@ struct PacksListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
         }
+        .focusedSceneValue(\.newPackAction, { showingCreateSheet = true })
+        .focusedSceneValue(\.refreshAction, { Task { await viewModel.load(context: modelContext) } })
     }
 
     private var packList: some View {

@@ -30,6 +30,7 @@ struct TripsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
             }
         }
         .task { await viewModel.load(context: modelContext) }
@@ -37,6 +38,8 @@ struct TripsListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             TripFormView(viewModel: viewModel)
         }
+        .focusedSceneValue(\.newTripAction, { showingCreateSheet = true })
+        .focusedSceneValue(\.refreshAction, { Task { await viewModel.load(context: modelContext) } })
     }
 
     @ViewBuilder
