@@ -59,6 +59,24 @@ final class FeedViewModel {
         }
     }
 
+    func createPost(caption: String) async throws {
+        let post = try await service.createPost(caption: caption)
+        posts.insert(post, at: 0)
+    }
+
+    func addComment(to postId: String, content: String) async throws -> PostComment {
+        try await service.addComment(to: postId, content: content)
+    }
+
+    // Optimistic like toggle
+    func toggleLike(post: Post, isLiked: Bool) async {
+        if isLiked {
+            try? await service.likePost(post.id)
+        } else {
+            try? await service.unlikePost(post.id)
+        }
+    }
+
     func deletePost(_ postId: String) async {
         do {
             try await service.deletePost(postId)
