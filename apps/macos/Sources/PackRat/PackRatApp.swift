@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct PackRatApp: App {
@@ -9,19 +10,19 @@ struct PackRatApp: App {
             AuthGateView()
                 .environment(authManager)
         }
+        .modelContainer(PersistenceController.shared.container)
         #if os(macOS)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: true))
         .defaultSize(width: 1100, height: 720)
         .commands {
-            CommandGroup(replacing: .newItem) {}
-            CommandGroup(after: .appInfo) {
-                Divider()
-                Button("Sign Out") {
-                    Task { try? await authManager.logout() }
-                }
-                .disabled(!authManager.isAuthenticated)
-            }
+            PackRatCommands(authManager: authManager)
+        }
+        #endif
+
+        #if os(macOS)
+        Settings {
+            PreferencesView()
         }
         #endif
     }

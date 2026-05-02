@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct TripsListView: View {
     let viewModel: TripsViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         Group {
@@ -30,8 +32,8 @@ struct TripsListView: View {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
             }
         }
-        .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
+        .task { await viewModel.load(context: modelContext) }
+        .refreshable { await viewModel.load(context: modelContext) }
         .sheet(isPresented: $showingCreateSheet) {
             TripFormView(viewModel: viewModel)
         }

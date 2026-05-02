@@ -1,10 +1,13 @@
 import Foundation
 import Observation
+import SwiftData
 
 @Observable
+@MainActor
 final class TripsViewModel {
     var trips: [Trip] = []
     var isLoading = false
+    var isCacheLoaded = false
     var error: String?
     var searchText = ""
 
@@ -44,30 +47,66 @@ final class TripsViewModel {
         }
     }
 
-    func load() async {
-        isLoading = true
+    func load(context: ModelContext? = nil) async {
+        if let context, !isCacheLoaded {
+            let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(
+                sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
+            ))) ?? []
+            let cachedTrips = cached.compactMap { $0.toTrip() }
+            if !cachedTrips.isEmpty {
+                trips = cachedTrips
+                isCacheLoaded = true
+            }
+        }
+
+        isLoading = trips.isEmpty
         error = nil
         defer { isLoading = false }
+
         do {
-            trips = try await service.listTrips()
+            let fresh = try await service.listTrips()
+            trips = fresh
+            if let context {
+                writeCacheTrips(fresh, context: context)
+            }
         } catch {
-            self.error = error.localizedDescription
+            if trips.isEmpty { self.error = error.localizedDescription }
         }
     }
 
-    func createTrip(name: String, description: String?, startDate: Date?, endDate: Date?, location: TripLocationBody?, notes: String?, packId: String?) async throws {
+    private func writeCacheTrips(_ freshTrips: [Trip], context: ModelContext) {
+        let existing = (try? context.fetch(FetchDescriptor<CachedTrip>())) ?? []
+        let existingMap = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        for trip in freshTrips {
+            if let cached = existingMap[trip.id] {
+                cached.name = trip.name
+                cached.startDate = trip.startDate
+                cached.jsonData = try? JSONEncoder().encode(trip)
+                cached.cachedAt = Date()
+            } else {
+                context.insert(CachedTrip(from: trip))
+            }
+        }
+        let freshIds = Set(freshTrips.map(\.id))
+        for cached in existing where !freshIds.contains(cached.id) {
+            context.delete(cached)
+        }
+        try? context.save()
+    }
+
+    func createTrip(name: String, description: String?, startDate: Date?, endDate: Date?,
+                    location: TripLocationBody?, notes: String?, packId: String?) async throws {
         let trip = try await service.createTrip(
-            name: name, description: description,
-            startDate: startDate, endDate: endDate,
+            name: name, description: description, startDate: startDate, endDate: endDate,
             location: location, notes: notes, packId: packId
         )
         trips.insert(trip, at: 0)
     }
 
-    func updateTrip(_ tripId: String, name: String, description: String?, startDate: Date?, endDate: Date?, location: TripLocationBody?, notes: String?, packId: String?) async throws {
+    func updateTrip(_ tripId: String, name: String, description: String?, startDate: Date?,
+                    endDate: Date?, location: TripLocationBody?, notes: String?, packId: String?) async throws {
         let updated = try await service.updateTrip(
-            tripId, name: name, description: description,
-            startDate: startDate, endDate: endDate,
+            tripId, name: name, description: description, startDate: startDate, endDate: endDate,
             location: location, notes: notes, packId: packId
         )
         if let idx = trips.firstIndex(where: { $0.id == tripId }) {
@@ -75,8 +114,15 @@ final class TripsViewModel {
         }
     }
 
+    // Optimistic delete
     func deleteTrip(_ tripId: String) async throws {
-        try await service.deleteTrip(tripId)
-        trips.removeAll { $0.id == tripId }
+        guard let idx = trips.firstIndex(where: { $0.id == tripId }) else { return }
+        let removed = trips.remove(at: idx)
+        do {
+            try await service.deleteTrip(tripId)
+        } catch {
+            trips.insert(removed, at: idx)
+            throw error
+        }
     }
 }

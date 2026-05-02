@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct PacksListView: View {
     let viewModel: PacksViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         Group {
@@ -37,8 +39,8 @@ struct PacksListView: View {
                 }
             }
         }
-        .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
+        .task { await viewModel.load(context: modelContext) }
+        .refreshable { await viewModel.load(context: modelContext) }
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
         }
