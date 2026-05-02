@@ -9,6 +9,7 @@ struct PackDetailView: View {
     @State private var showingAddItemSheet = false
     @State private var editingItem: PackItem?
     @State private var error: String?
+    @State private var dropTargetCategory: String?
 
     private var items: [PackItem] { pack.activeItems }
 
@@ -44,13 +45,7 @@ struct PackDetailView: View {
                                 Divider().padding(.leading)
                             }
                         } header: {
-                            Text(category.capitalized)
-                                .font(.caption.uppercaseSmallCaps())
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
-                                .padding(.vertical, 6)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.background)
+                            categoryHeader(category, groups: groups)
                         }
                     }
 
@@ -92,6 +87,54 @@ struct PackDetailView: View {
         }
         .sheet(item: $editingItem) { item in
             PackItemFormView(packId: pack.id, viewModel: viewModel, existingItem: item)
+        }
+    }
+
+    private func categoryHeader(_ category: String, groups: [String: [PackItem]]) -> some View {
+        let isTarget = dropTargetCategory == category
+        return HStack {
+            Text(category.capitalized)
+                .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text("\(groups[category]?.count ?? 0) items")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isTarget ? Color.accentColor.opacity(0.12) : Color(NSColor.windowBackgroundColor))
+        .overlay(alignment: .bottom) {
+            if isTarget {
+                Rectangle().fill(.accentColor).frame(height: 2)
+            }
+        }
+        // Drop target: dragged item IDs get re-categorized here
+        .dropDestination(for: String.self) { itemIds, _ in
+            guard let itemId = itemIds.first,
+                  let item = items.first(where: { $0.id == itemId }),
+                  item.category != category else { return false }
+            Task {
+                do {
+                    try await viewModel.updateItem(
+                        itemId, in: pack.id,
+                        name: item.name,
+                        weight: item.weight,
+                        weightUnit: item.weightUnit,
+                        quantity: item.effectiveQuantity,
+                        category: category == "Uncategorized" ? nil : category,
+                        consumable: item.consumable ?? false,
+                        worn: item.worn ?? false,
+                        notes: item.notes
+                    )
+                } catch {
+                    self.error = error.localizedDescription
+                }
+            }
+            return true
+        } isTargeted: { targeted in
+            dropTargetCategory = targeted ? category : nil
         }
     }
 

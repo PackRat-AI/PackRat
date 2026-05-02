@@ -1,4 +1,10 @@
 import SwiftUI
+import UniformTypeIdentifiers
+
+// UTType for drag-and-drop of pack items within the app
+extension UTType {
+    static let packItem = UTType(exportedAs: "world.packrat.packitem")
+}
 
 struct PackItemRow: View {
     let item: PackItem
@@ -61,6 +67,12 @@ struct PackItemRow: View {
             Button("Edit", systemImage: "pencil", action: onEdit)
             Divider()
             Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+        }
+        .draggable(item.id) {
+            // Drag preview
+            Label(item.name, systemImage: "archivebox")
+                .padding(8)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         }
     }
 }
