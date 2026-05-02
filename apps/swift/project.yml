@@ -61,6 +61,8 @@ targets:
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
         ITSAppUsesNonExemptEncryption: false
         API_BASE_URL: $(API_BASE_URL)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - com.andrewbierman.packrat
@@ -106,6 +108,8 @@ targets:
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
         API_BASE_URL: $(API_BASE_URL)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
     dependencies:
       - package: Nuke
         product: NukeUI
