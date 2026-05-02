@@ -43,3 +43,10 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Git worktrees
 .worktrees/
+
+# Xcode (apps/swift)
+apps/swift/PackRat.xcodeproj/
+apps/swift/*.xcworkspace/xcuserdata/
+apps/swift/DerivedData/
+apps/swift/.build/
+apps/swift/.swiftpm/

@@ -6,11 +6,12 @@ Outdoor adventure planning platform — helps users plan trips, manage packing l
 
 ## Architecture
 
-Bun workspace monorepo with three apps and two packages:
+Bun workspace monorepo with four apps and two packages:
 
 | Workspace | Stack | Purpose |
 |---|---|---|
 | `apps/expo` | React Native 0.81 / Expo 54 / Expo Router 6 | Mobile app (iOS + Android) |
+| `apps/swift` | Swift/SwiftUI 5.9 / Xcode 16 / XcodeGen | Native iOS + macOS app (App Store) |
 | `apps/guides` | Next.js 15 / React 19 / Radix UI / Shadcn | Content/guides site |
 | `apps/landing` | Next.js 15 / React 19 / Framer Motion | Marketing site |
 | `packages/api` | Elysia on Cloudflare Workers / Drizzle ORM / Neon PostgreSQL | Backend API |
@@ -34,6 +35,7 @@ bun expo              # Start Expo dev server
 bun ios               # iOS simulator
 bun android           # Android emulator
 bun api               # API dev server (wrangler)
+bun swift             # Regenerate PackRat.xcodeproj from apps/swift/project.yml
 cd apps/guides && bun dev   # Guides dev server
 cd apps/landing && bun dev  # Landing dev server
 

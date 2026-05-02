@@ -5,7 +5,7 @@ final class KeychainService: Sendable {
     static let shared = KeychainService()
     private init() {}
 
-    private let service = "com.packrat.app"
+    private let service = "com.andrewbierman.packrat"
 
     enum Key: String {
         case accessToken = "access_token"

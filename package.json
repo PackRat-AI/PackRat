@@ -32,6 +32,7 @@
     "preinstall": "bun run configure:deps",
     "postinstall": "bun run lefthook && bun run env",
     "ios": "cd apps/expo && bun ios",
+    "swift": "cd apps/swift && xcodegen generate",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
     "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts",
