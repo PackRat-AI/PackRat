@@ -12,12 +12,12 @@
  * entirely from route metadata at definition time.
  */
 
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { cors } from '@elysiajs/cors';
 import { routes } from '@packrat/api/routes';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { Elysia } from 'elysia';
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
 
 // Bare Elysia app — no CloudflareAdapter so handle() works in plain Bun/Node.
 // Route handlers are never called; only schema metadata is read for spec generation.
