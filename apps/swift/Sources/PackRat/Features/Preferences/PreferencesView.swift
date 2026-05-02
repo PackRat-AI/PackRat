@@ -79,7 +79,7 @@ struct PreferencesView: View {
         Form {
             Section("API Server") {
                 HStack {
-                    ForEach(["local", "staging", "production"], id: \.self) { env in
+                    ForEach(["local", "dev", "production"], id: \.self) { env in
                         if let url = APIClient.environments[env] {
                             Button(env.capitalized) {
                                 apiBaseURL = url == apiBaseURL ? "" : url

@@ -22,7 +22,7 @@ actor APIClient {
     // and map that to a URL here. UserDefaults lets you override at runtime via Preferences.
     static let environments: [String: String] = [
         "local":      "http://localhost:8787",
-        "staging":    "https://staging-api.packrat.app",
+        "dev":        "https://packrat-api-dev.orange-frost-d665.workers.dev",
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 
