@@ -19,6 +19,7 @@ final class TripsViewModel {
 
     var currentPage = 1
     var hasMore = true
+    private let pageSize = 30
 
     var filteredTrips: [Trip] {
         guard !searchText.isEmpty else { return trips }
@@ -58,10 +59,10 @@ final class TripsViewModel {
         defer { isLoading = false }
 
         do {
-            let fresh = try await service.listTrips(page: 1)
+            let fresh = try await service.listTrips(page: 1, limit: pageSize)
             trips = fresh
             currentPage = 1
-            hasMore = !fresh.isEmpty
+            hasMore = fresh.count == pageSize
             if let context {
                 writeCacheTrips(fresh, context: context)
             }
@@ -76,13 +77,10 @@ final class TripsViewModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            let more = try await service.listTrips(page: nextPage)
-            if more.isEmpty {
-                hasMore = false
-            } else {
-                trips.append(contentsOf: more)
-                currentPage = nextPage
-            }
+            let more = try await service.listTrips(page: nextPage, limit: pageSize)
+            trips.append(contentsOf: more)
+            currentPage = nextPage
+            hasMore = more.count == pageSize
         } catch { }
     }
 

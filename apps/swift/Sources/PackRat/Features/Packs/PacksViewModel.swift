@@ -19,6 +19,7 @@ final class PacksViewModel {
 
     var currentPage = 1
     var hasMore = true
+    private let pageSize = 30
 
     var filteredPacks: [Pack] {
         guard !searchText.isEmpty else { return packs }
@@ -46,10 +47,10 @@ final class PacksViewModel {
         defer { isLoading = false }
 
         do {
-            let fresh = try await service.listPacks(page: 1)
+            let fresh = try await service.listPacks(page: 1, limit: pageSize)
             packs = fresh
             currentPage = 1
-            hasMore = !fresh.isEmpty
+            hasMore = fresh.count == pageSize
             if let context {
                 writeCachePacks(fresh, context: context)
             }
@@ -64,13 +65,10 @@ final class PacksViewModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            let more = try await service.listPacks(page: nextPage)
-            if more.isEmpty {
-                hasMore = false
-            } else {
-                packs.append(contentsOf: more)
-                currentPage = nextPage
-            }
+            let more = try await service.listPacks(page: nextPage, limit: pageSize)
+            packs.append(contentsOf: more)
+            currentPage = nextPage
+            hasMore = more.count == pageSize
         } catch { }
     }
 

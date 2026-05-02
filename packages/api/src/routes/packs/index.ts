@@ -71,14 +71,18 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/',
     async ({ query, user }) => {
       const includePublic = Number(query.includePublic ?? 0) === 1;
+      const limit = query.limit ?? 30;
+      const page = query.page ?? 1;
       const db = createDb();
 
       const where = includePublic
         ? and(or(eq(packs.userId, user.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
-        : eq(packs.userId, user.userId);
+        : and(eq(packs.userId, user.userId), eq(packs.deleted, false));
 
       const result = await db.query.packs.findMany({
         where,
+        limit,
+        offset: (page - 1) * limit,
         with: {
           items: includePublic ? { where: eq(packItems.deleted, false) } : true,
         },
@@ -89,6 +93,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     {
       query: z.object({
         includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+        page: z.coerce.number().int().min(1).optional().default(1),
+        limit: z.coerce.number().int().min(1).max(100).optional().default(30),
       }),
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },
