@@ -56,13 +56,17 @@ struct AppNavigation: View {
     private var splitLayout: some View {
         @Bindable var state = appState
 
-        return NavigationSplitView {
-            sidebar
-        } content: {
-            contentColumn
-        } detail: {
-            detailColumn
+        return VStack(spacing: 0) {
+            OfflineBanner()
+            NavigationSplitView {
+                sidebar
+            } content: {
+                contentColumn
+            } detail: {
+                detailColumn
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
         .environment(appState)
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)
