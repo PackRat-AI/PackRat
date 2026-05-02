@@ -30,6 +30,11 @@ const createTrip = async (tripData: TripInStore) => {
   return TripSchema.parse(data);
 };
 
+const deleteTripFromServer = async (trip: TripInStore) => {
+  const { error } = await apiClient.trips({ tripId: trip.id }).delete();
+  if (error) throw new Error(`Failed to delete trip: ${error.value}`);
+};
+
 const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
   const { data: result, error } = await apiClient.trips({ tripId: String(id) }).put({
     ...(data.name !== undefined ? { name: data.name } : {}),
@@ -71,6 +76,7 @@ syncObservable(
     list: listTrips,
     create: createTrip,
     update: updateTrip,
+    delete: deleteTripFromServer,
     changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {

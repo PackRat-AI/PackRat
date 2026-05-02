@@ -195,18 +195,27 @@ test.describe('Trip CRUD', () => {
     // Accept window.confirm dialogs before triggering delete
     page.on('dialog', (dialog) => dialog.accept());
 
+    // Register DELETE listener before clicking so the 20s window starts here.
+    // syncedCrud fires DELETE /api/trips/:id when fieldDeleted is set to true.
+    const deletePromise = page.waitForResponse(
+      (r) => r.url().includes('/api/trips') && r.request().method() === 'DELETE',
+      { timeout: 20_000 },
+    );
+
     // Click the delete button — window.confirm on web, accepted by the handler above.
     const deleteButton = page.getByTestId('trips:delete');
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // router.back() SPA-navigates away from the trip detail.
-    // Wait for URL to change (either to /trips or /)
-    await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
-    await page.waitForLoadState('networkidle');
+    // Wait for the server to confirm the DELETE before asserting the list.
+    // This also ensures the trip is gone from the DB so any subsequent list
+    // re-fetch won't return it.
+    await deletePromise;
 
-    // Navigate to trips list to confirm trip is gone
-    await page.goto(`${BASE_URL}/trips`);
+    // router.back() SPA-navigates away from the trip detail to /trips.
+    // Stay in the SPA context — a full page.goto() would re-hydrate from the
+    // API and potentially return the trip before the list cache is invalidated.
+    await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
     await page.waitForLoadState('networkidle');
     await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
   });
