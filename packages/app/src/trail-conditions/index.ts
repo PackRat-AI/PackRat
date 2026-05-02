@@ -5,4 +5,4 @@ export type {
   TrailConditionReportInStore,
   TrailSurface,
   WaterCrossingDifficulty,
-} from '@packrat/app/trail-conditions';
+} from './types';

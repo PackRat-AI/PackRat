@@ -5,4 +5,4 @@ export type {
   LikeToggleResponse,
   Post,
   PostAuthor,
-} from '@packrat/app/feed';
+} from './types';

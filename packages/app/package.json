@@ -5,14 +5,22 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./ai": "./src/ai/index.ts",
+    "./ai-packs": "./src/ai-packs/index.ts",
     "./catalog": "./src/catalog/index.ts",
+    "./feed": "./src/feed/index.ts",
+    "./guides": "./src/guides/index.ts",
     "./pack-templates": "./src/pack-templates/index.ts",
     "./packs": "./src/packs/index.ts",
-    "./trips": "./src/trips/index.ts"
+    "./profile": "./src/profile/index.ts",
+    "./trail-conditions": "./src/trail-conditions/index.ts",
+    "./trips": "./src/trips/index.ts",
+    "./wildlife": "./src/wildlife/index.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@packrat/api": "workspace:*"
+    "@packrat/api": "workspace:*",
+    "ai": "catalog:"
   }
 }

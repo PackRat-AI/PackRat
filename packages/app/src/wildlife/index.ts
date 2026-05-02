@@ -3,4 +3,4 @@ export type {
   SpeciesCategory,
   SpeciesEntry,
   WildlifeIdentification,
-} from '@packrat/app/wildlife';
+} from './types';

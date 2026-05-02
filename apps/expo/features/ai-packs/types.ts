@@ -1,3 +1,1 @@
-export interface GenerationRequest {
-  count: number;
-}
+export type { GenerationRequest } from '@packrat/app/ai-packs';
