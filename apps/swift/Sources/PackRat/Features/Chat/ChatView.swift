@@ -4,9 +4,16 @@ import MarkdownUI
 struct ChatView: View {
     @Bindable var viewModel: ChatViewModel
 
+    private var showSuggestions: Bool {
+        viewModel.messages.count <= 1 && !viewModel.isStreaming
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             messageList
+            if showSuggestions {
+                suggestionsBar
+            }
             Divider()
             inputBar
         }
@@ -19,10 +26,15 @@ struct ChatView: View {
         }
     }
 
+    // MARK: - Message List
+
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 16) {
+                LazyVStack(spacing: 12) {
+                    if viewModel.messages.count <= 1 {
+                        welcomeHeader
+                    }
                     ForEach(viewModel.messages) { message in
                         MessageBubble(message: message)
                             .id(message.id)
@@ -31,7 +43,8 @@ struct ChatView: View {
                         InlineErrorView(message: error).padding(.horizontal)
                     }
                 }
-                .padding()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 16)
             }
             .onChange(of: viewModel.messages.count) {
                 withAnimation(.spring(duration: 0.3)) {
@@ -44,18 +57,78 @@ struct ChatView: View {
         }
     }
 
+    private var welcomeHeader: some View {
+        VStack(spacing: 10) {
+            Circle()
+                .fill(Color.accentColor.opacity(0.12))
+                .frame(width: 60, height: 60)
+                .overlay {
+                    Image(systemName: "backpack.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.accentColor)
+                }
+            Text("PackRat AI")
+                .font(.title3.bold())
+            Text("Ask me anything about gear, trips, or packing strategy")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+    }
+
+    // MARK: - Suggestions
+
+    private static let suggestions: [(String, String)] = [
+        ("Ultralight tips", "What are the best ultralight backpacking tips for cutting pack weight?"),
+        ("3-day hike gear", "What gear should I pack for a 3-day summer hiking trip?"),
+        ("Layering advice", "Explain the layering system for outdoor clothing."),
+        ("Rain prep", "How should I prepare my pack for a rainy backcountry trip?"),
+        ("Essential first aid", "What first aid items are must-haves in every pack?"),
+        ("Food planning", "How much food should I pack per day for a backpacking trip?"),
+    ]
+
+    private var suggestionsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Self.suggestions, id: \.0) { label, prompt in
+                    Button {
+                        viewModel.inputText = prompt
+                        viewModel.sendMessage()
+                    } label: {
+                        Text(label)
+                            .font(.caption.bold())
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Color.accentColor.opacity(0.1), in: Capsule())
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .background(.background.secondary)
+    }
+
+    // MARK: - Input Bar
+
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            TextField("Ask about gear, trips, or packing…", text: $viewModel.inputText, axis: .vertical)
+            TextField("Ask about gear, trips, packing…", text: $viewModel.inputText, axis: .vertical)
                 .textFieldStyle(.plain)
-                .lineLimit(1...6)
+                .lineLimit(1...5)
                 .padding(.vertical, 8)
+                .onSubmit { viewModel.sendMessage() }
 
             Group {
                 if viewModel.isStreaming {
                     Button(action: viewModel.cancelStreaming) {
                         Image(systemName: "stop.circle.fill")
-                            .font(.title3)
+                            .font(.title2)
                             .foregroundStyle(.red)
                             .symbolEffect(.pulse)
                     }
@@ -63,7 +136,7 @@ struct ChatView: View {
                 } else {
                     Button(action: viewModel.sendMessage) {
                         Image(systemName: "arrow.up.circle.fill")
-                            .font(.title3)
+                            .font(.title2)
                             .foregroundStyle(viewModel.canSend ? Color.accentColor : Color.secondary)
                     }
                     .buttonStyle(.plain)
@@ -73,8 +146,8 @@ struct ChatView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.background.secondary)
+        .padding(.vertical, 10)
+        .background(.background)
     }
 }
 
@@ -85,72 +158,89 @@ struct MessageBubble: View {
     private var isUser: Bool { message.role == .user }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            if isUser { Spacer(minLength: 60) }
-            if !isUser { avatar }
-
-            VStack(alignment: isUser ? .trailing : .leading, spacing: 2) {
-                if message.content.isEmpty && !isUser {
-                    typingIndicator
-                } else if isUser {
-                    Text(message.content)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.tint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .foregroundStyle(.white)
-                } else {
-                    Markdown(message.content)
-                        .markdownTheme(.gitHub)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
+        HStack(alignment: .bottom, spacing: 8) {
+            if isUser {
+                Spacer(minLength: 48)
+                bubbleContent
+                userAvatar
+            } else {
+                aiAvatar
+                bubbleContent
+                Spacer(minLength: 48)
             }
-            .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: isUser ? .trailing : .leading).combined(with: .opacity),
+            removal: .opacity
+        ))
+    }
 
-            if isUser { userAvatar }
-            if !isUser { Spacer(minLength: 60) }
+    @ViewBuilder
+    private var bubbleContent: some View {
+        if message.content.isEmpty && !isUser {
+            TypingIndicator()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else if isUser {
+            Text(message.content)
+                .textSelection(.enabled)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .foregroundStyle(.white)
+        } else {
+            Markdown(message.content)
+                .markdownTheme(.gitHub)
+                .textSelection(.enabled)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 
-    private var avatar: some View {
+    private var aiAvatar: some View {
         Circle()
-            .fill(.tint.opacity(0.12))
-            .frame(width: 30, height: 30)
+            .fill(Color.accentColor.opacity(0.12))
+            .frame(width: 28, height: 28)
             .overlay {
                 Image(systemName: "backpack.fill")
-                    .font(.caption.bold())
-                    .foregroundStyle(.tint)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
             }
     }
 
     private var userAvatar: some View {
         Circle()
-            .fill(.tint.opacity(0.12))
-            .frame(width: 30, height: 30)
+            .fill(.fill.secondary)
+            .frame(width: 28, height: 28)
             .overlay {
                 Image(systemName: "person.fill")
                     .font(.caption)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.secondary)
             }
     }
+}
 
-    private var typingIndicator: some View {
-        HStack(spacing: 4) {
+// MARK: - Typing Indicator
+
+struct TypingIndicator: View {
+    @State private var phase = 0
+
+    var body: some View {
+        HStack(spacing: 5) {
             ForEach(0..<3, id: \.self) { i in
                 Circle()
-                    .fill(.secondary)
+                    .fill(Color.secondary.opacity(phase == i ? 1 : 0.3))
                     .frame(width: 7, height: 7)
-                    .scaleEffect(1.0)
-                    .animation(
-                        .easeInOut(duration: 0.5).repeatForever().delay(Double(i) * 0.15),
-                        value: true
-                    )
+                    .scaleEffect(phase == i ? 1.2 : 0.9)
+                    .animation(.easeInOut(duration: 0.35), value: phase)
             }
         }
-        .padding(12)
-        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .onAppear {
+            Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { _ in
+                phase = (phase + 1) % 3
+            }
+        }
     }
 }

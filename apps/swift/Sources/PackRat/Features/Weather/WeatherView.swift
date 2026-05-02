@@ -8,16 +8,20 @@ struct WeatherView: View {
             VStack(spacing: 20) {
                 searchBar
 
+                if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
+                    savedLocationsSection
+                }
+
                 if viewModel.isLoadingForecast {
                     ProgressView("Loading forecast...").padding(.top, 40)
                 } else if let error = viewModel.forecastError {
                     ErrorView(error, retry: { await viewModel.refresh() }).padding(.top, 20)
                 } else if let forecast = viewModel.forecast {
                     forecastContent(forecast)
-                } else {
+                } else if viewModel.savedLocations.isEmpty {
                     EmptyStateView(
-                        "Search for a Location",
-                        subtitle: "Enter a city, region, or ZIP code to get the weather forecast",
+                        "No Saved Locations",
+                        subtitle: "Search for a city or ZIP code and save it to track the weather",
                         systemImage: "cloud.sun"
                     )
                     .padding(.top, 20)
@@ -29,6 +33,8 @@ struct WeatherView: View {
         .refreshable { await viewModel.refresh() }
     }
 
+    // MARK: - Search
+
     private var searchBar: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -38,6 +44,11 @@ struct WeatherView: View {
                     .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
                 if viewModel.isSearching {
                     ProgressView().controlSize(.small)
+                } else if !viewModel.searchText.isEmpty {
+                    Button { viewModel.searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(10)
@@ -48,6 +59,7 @@ struct WeatherView: View {
                     ForEach(viewModel.searchResults) { location in
                         Button {
                             Task { await viewModel.selectLocation(location) }
+                            viewModel.saveLocation(location)
                         } label: {
                             HStack {
                                 VStack(alignment: .leading) {
@@ -59,9 +71,10 @@ struct WeatherView: View {
                                     }
                                 }
                                 Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                Image(systemName: viewModel.savedLocations.contains(where: { $0.id == location.id })
+                                      ? "checkmark.circle.fill"
+                                      : "plus.circle")
+                                    .foregroundStyle(viewModel.savedLocations.contains(where: { $0.id == location.id }) ? Color.green : Color.accentColor)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
@@ -80,14 +93,61 @@ struct WeatherView: View {
         }
     }
 
+    // MARK: - Saved Locations
+
+    private var savedLocationsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Saved Locations")
+                .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(viewModel.savedLocations) { location in
+                        savedLocationChip(location)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func savedLocationChip(_ location: WeatherLocation) -> some View {
+        let isActive = viewModel.selectedLocation?.id == location.id
+        return Button {
+            Task { await viewModel.selectLocation(location) }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "mappin")
+                    .font(.caption2)
+                Text(location.name)
+                    .font(.caption.bold())
+                Button {
+                    viewModel.removeLocation(location)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption2)
+                        .foregroundStyle(isActive ? .white.opacity(0.7) : .secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(isActive ? Color.accentColor : Color.accentColor.opacity(0.1),
+                        in: Capsule())
+            .foregroundStyle(isActive ? Color.white : Color.accentColor)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Forecast Content
+
     @ViewBuilder
     private func forecastContent(_ data: WeatherForecastResponse) -> some View {
-        // Current conditions
         if let current = data.current, let location = data.location {
             currentWeatherCard(current: current, location: location)
         }
 
-        // Forecast days
         if let days = data.forecast?.forecastday, !days.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("10-Day Forecast")
