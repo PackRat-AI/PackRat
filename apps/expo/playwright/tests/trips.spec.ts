@@ -182,14 +182,13 @@ test.describe('Trip CRUD', () => {
     });
     // tripId is used below to scope the DELETE response listener to this specific trip
 
-    // Navigate to trips list first to build SPA history (list → detail → list via back)
+    // Put /trips in browser history so router.back() returns there after deletion.
     await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText(tripName)).toBeVisible({ timeout: 15_000 });
 
-    // SPA-navigate to trip detail by clicking the list item
-    await page.getByText(tripName).first().click();
-    await page.waitForURL(/\/trip\/[^/]+$/, { timeout: 10_000 });
+    // Navigate directly to the trip detail (avoids relying on FlatList rendering
+    // the new trip, which may be off-screen when the list has many accumulated entries).
+    await page.goto(`${BASE_URL}/trip/${tripId}`);
     await page.waitForLoadState('networkidle');
 
     // Accept window.confirm dialogs before triggering delete
