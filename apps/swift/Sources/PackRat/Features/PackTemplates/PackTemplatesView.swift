@@ -5,6 +5,7 @@ import SwiftUI
 struct PackTemplatesListView: View {
     @Bindable var viewModel: PackTemplatesViewModel
     @Binding var selectedId: String?
+    var packsVM: PacksViewModel = PacksViewModel()
 
     var body: some View {
         Group {
@@ -52,10 +53,7 @@ struct PackTemplatesListView: View {
         }
         .navigationDestination(for: String.self) { id in
             if let t = viewModel.templates.first(where: { $0.id == id }) {
-                PackTemplateDetailView(
-                    template: t, viewModel: viewModel,
-                    packsVM: PacksViewModel()
-                )
+                PackTemplateDetailView(template: t, viewModel: viewModel, packsVM: packsVM)
             }
         }
     }
