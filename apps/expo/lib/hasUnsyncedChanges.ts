@@ -1,12 +1,12 @@
 import type { Observable, ObservableSyncState } from '@legendapp/state';
-import { userSyncState } from 'expo-app/features/auth/store';
+import { userSyncState } from '@packrat/app/auth/store';
 import {
   packTemplateItemsSyncState,
   packTemplatesSyncState,
-} from 'expo-app/features/pack-templates/store';
-import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
-import { packWeigthHistorySyncState } from 'expo-app/features/packs/store/packWeightHistory';
-import { tripsSyncState } from 'expo-app/features/trips/store/trips';
+} from '@packrat/app/pack-templates/store';
+import { packItemsSyncState, packsSyncState } from '@packrat/app/packs/store';
+import { packWeigthHistorySyncState } from '@packrat/app/packs/store/packWeightHistory';
+import { tripsSyncState } from '@packrat/app/trips/store/trips';
 
 const hasPendingChanges = (syncState: Observable<ObservableSyncState>): boolean =>
   Object.keys(syncState.getPendingChanges() || {}).length !== 0;

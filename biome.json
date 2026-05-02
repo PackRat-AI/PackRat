@@ -62,7 +62,7 @@
     {
       "includes": [
         "apps/expo/atoms/atomWith*.ts",
-        "apps/expo/features/weather/atoms/locationsAtoms.ts",
+        "packages/app/src/weather/atoms/locationsAtoms.ts",
         "apps/expo/lib/api/client.ts",
         "packages/api/src/index.ts",
         "packages/api/src/routes/admin/index.ts",

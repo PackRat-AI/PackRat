@@ -1,21 +1,21 @@
 import { LLAMA_MODEL_SIZE } from '@packrat/app/ai';
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
-import * as Burnt from 'burnt';
-import { appAlert } from 'expo-app/app/_layout';
-import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import {
   localModelFileAvailableAtom,
   localModelProgressAtom,
   localModelStatusAtom,
-} from 'expo-app/features/ai/atoms/aiModeAtoms';
+} from '@packrat/app/ai/atoms/aiModeAtoms';
 import {
   cancelLocalModelDownload,
   deleteLocalModel,
   downloadLocalModel,
   isAppleIntelligenceAvailable,
-} from 'expo-app/features/ai/lib/localModelManager';
-import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+} from '@packrat/app/ai/lib/localModelManager';
+import { DeleteAccountButton } from '@packrat/app/auth/components/DeleteAccountButton';
+import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import * as Burnt from 'burnt';
+import { appAlert } from 'expo-app/app/_layout';
+import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';

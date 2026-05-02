@@ -1,4 +1,19 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
+import { aiModeAtom, localModelStatusAtom } from '@packrat/app/ai/atoms/aiModeAtoms';
+import {
+  clearChatMessages,
+  loadChatMessages,
+  saveChatMessages,
+} from '@packrat/app/ai/atoms/chatStorageAtoms';
+import { ChatBubble } from '@packrat/app/ai/components/ChatBubble';
+import { ErrorState } from '@packrat/app/ai/components/ErrorState';
+import { LocationContext } from '@packrat/app/ai/components/LocationContext';
+import { CustomChatTransport } from '@packrat/app/ai/lib/CustomChatTransport';
+import { getLocalModel, initLocalModel } from '@packrat/app/ai/lib/localModelManager';
+import { createLocalTools } from '@packrat/app/ai/lib/tools';
+import { tokenAtom } from '@packrat/app/auth/atoms/authAtoms';
+import { useActiveLocation } from '@packrat/app/weather/hooks';
+import type { WeatherLocation } from '@packrat/app/weather/types';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
@@ -8,21 +23,6 @@ import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
 import { featureFlags } from 'expo-app/config';
-import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
-import {
-  clearChatMessages,
-  loadChatMessages,
-  saveChatMessages,
-} from 'expo-app/features/ai/atoms/chatStorageAtoms';
-import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
-import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
-import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
-import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
-import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
-import { createLocalTools } from 'expo-app/features/ai/lib/tools';
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useActiveLocation } from 'expo-app/features/weather/hooks';
-import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';

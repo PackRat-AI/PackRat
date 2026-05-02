@@ -1,4 +1,4 @@
-import { GuideDetailScreen } from 'expo-app/features/guides/screens/GuideDetailScreen';
+import { GuideDetailScreen } from '@packrat/app/guides/screens/GuideDetailScreen';
 
 export default function GuideDetailRoute() {
   return <GuideDetailScreen />;

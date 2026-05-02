@@ -1,6 +1,6 @@
+import { useUser } from '@packrat/app/auth/hooks/useUser';
+import { useUpdateProfile } from '@packrat/app/profile/hooks/useUpdateProfile';
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';

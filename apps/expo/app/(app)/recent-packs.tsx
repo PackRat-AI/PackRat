@@ -1,7 +1,7 @@
+import type { Pack } from '@packrat/app/packs';
+import { useRecentPacks } from '@packrat/app/packs/hooks/useRecentPacks';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
-import type { Pack } from 'expo-app/features/packs';
-import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';

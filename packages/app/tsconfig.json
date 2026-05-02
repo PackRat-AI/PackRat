@@ -6,9 +6,9 @@
     "noEmit": true,
     "paths": {
       "@packrat/app": ["./src/index.ts"],
-      "@packrat/app/*": ["./src/*/index.ts"]
+      "@packrat/app/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

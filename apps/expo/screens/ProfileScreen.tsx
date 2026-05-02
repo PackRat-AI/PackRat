@@ -1,9 +1,9 @@
+import type { Pack } from '@packrat/app/packs';
+import { PackCard } from '@packrat/app/packs/components/PackCard';
+import { usePacks } from '@packrat/app/packs/hooks/usePacks';
+import { getPackItems } from '@packrat/app/packs/store';
 import { Icon } from 'expo-app/components/Icon';
 import { UserAvatar } from 'expo-app/components/initial/UserAvatar';
-import type { Pack } from 'expo-app/features/packs';
-import { PackCard } from 'expo-app/features/packs/components/PackCard';
-import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
-import { getPackItems } from 'expo-app/features/packs/store';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

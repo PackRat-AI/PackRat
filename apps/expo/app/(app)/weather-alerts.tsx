@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useWeatherAlerts } from '@packrat/app/weather/hooks/useWeatherAlert';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { useWeatherAlerts } from 'expo-app/features/weather/hooks/useWeatherAlert';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

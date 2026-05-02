@@ -1,4 +1,4 @@
-import { LocationPreviewScreen } from 'expo-app/features/weather/screens';
+import { LocationPreviewScreen } from '@packrat/app/weather/screens';
 
 export default function LocationPreviewIndexScreen() {
   return <LocationPreviewScreen />;

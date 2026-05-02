@@ -14,8 +14,8 @@ vi.mock('jotai/utils', () => ({
   createJSONStorage: vi.fn((storageFunction) => storageFunction()),
 }));
 
+import type { WeatherLocation } from '@packrat/app/weather/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { asyncStorage } from '../storage';
 
 describe('storage', () => {

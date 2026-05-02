@@ -1,4 +1,4 @@
-import { ItemsScanScreen } from 'expo-app/features/packs/screens/ItemsScanScreen';
+import { ItemsScanScreen } from '@packrat/app/packs/screens/ItemsScanScreen';
 
 export default function PackNewFromImageScreen() {
   return <ItemsScanScreen />;

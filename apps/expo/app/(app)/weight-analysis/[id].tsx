@@ -1,8 +1,8 @@
 'use client';
 
+import { userStore } from '@packrat/app/auth/store';
+import { usePackWeightAnalysis } from '@packrat/app/packs/hooks/usePackWeightAnalysis';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';

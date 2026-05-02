@@ -1,3 +1,10 @@
+import { withAuthWall } from '@packrat/app/auth/hocs';
+import { useAuth } from '@packrat/app/auth/hooks/useAuth';
+import { useUser } from '@packrat/app/auth/hooks/useUser';
+import { useImagePicker } from '@packrat/app/packs/hooks/useImagePicker';
+import { uploadImage } from '@packrat/app/packs/utils/uploadImage';
+import { ProfileAuthWall } from '@packrat/app/profile/components';
+import { useUpdateProfile } from '@packrat/app/profile/hooks/useUpdateProfile';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isString } from '@packrat/guards';
 import {
@@ -15,13 +22,6 @@ import {
 } from '@packrat/ui/nativewindui';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
-import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
-import { ProfileAuthWall } from 'expo-app/features/profile/components';
-import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

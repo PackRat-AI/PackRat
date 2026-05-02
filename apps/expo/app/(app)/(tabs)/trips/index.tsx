@@ -1,5 +1,5 @@
+import { TripsListScreen } from '@packrat/app/trips/screens/TripListScreen';
 import { featureFlags } from 'expo-app/config';
-import { TripsListScreen } from 'expo-app/features/trips/screens/TripListScreen';
 import { Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 

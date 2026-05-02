@@ -1,4 +1,4 @@
-import { CreatePostScreen } from 'expo-app/features/feed';
+import { CreatePostScreen } from '@packrat/app/feed/screens/CreatePostScreen';
 import { useRouter } from 'expo-router';
 
 export default function CreatePostRoute() {

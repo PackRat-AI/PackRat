@@ -1,0 +1,86 @@
+import { observable, syncState } from '@legendapp/state';
+import { syncObservable } from '@legendapp/state/sync';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { PackWeightHistoryResponseSchema } from '@packrat/api/schemas/packs';
+import { isAuthed } from '@packrat/app/auth/store';
+import type { PackWeightHistoryEntry } from '@packrat/app/packs';
+import { apiClient } from 'expo-app/lib/api/packrat';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
+import { obs } from 'expo-app/lib/store';
+import { nanoid } from 'nanoid';
+import { computePackWeights } from '../utils';
+import { packItemsStore } from './packItems';
+import { packsStore } from './packs';
+
+const listPackWeightHistories = async () => {
+  const { data, error } = await apiClient.packs['weight-history'].get();
+  if (error) throw new Error(`Failed to list packWeightHistories: ${error.value}`);
+  return PackWeightHistoryResponseSchema.array().parse(data);
+};
+
+const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHistoryEntry) => {
+  const endpoint = apiClient.packs({ packId: String(packWeightHistoryEntry.packId) })[
+    'weight-history'
+  ];
+  const { data, error } = await endpoint.post({
+    id: packWeightHistoryEntry.id,
+    weight: packWeightHistoryEntry.weight,
+    localCreatedAt: packWeightHistoryEntry.localCreatedAt ?? new Date().toISOString(),
+  });
+  if (error) throw new Error(`Failed to create packWeightHistoryEntry: ${error.value}`);
+  return PackWeightHistoryResponseSchema.array().parse(data)[0] ?? null;
+};
+
+export const packWeigthHistoryStore = observable<Record<string, PackWeightHistoryEntry>>({});
+
+syncObservable(
+  packWeigthHistoryStore,
+  syncedCrud({
+    fieldCreatedAt: 'createdAt',
+    mode: 'merge',
+    persist: {
+      plugin: persistPlugin,
+      retrySync: true,
+      name: 'packWeigthHistory',
+    },
+    waitFor: isAuthed,
+    waitForSet: isAuthed,
+    retry: {
+      infinite: true,
+      backoff: 'exponential',
+      maxDelay: 30000,
+    },
+    list: listPackWeightHistories,
+    create: createPackWeightHistoryEntry,
+    changesSince: 'last-sync',
+    subscribe: ({ refresh }) => {
+      const intervalId = setInterval(() => {
+        refresh();
+      }, 30000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    },
+  }),
+);
+
+export function recordPackWeight(packId: string) {
+  const pack = obs(packsStore, packId).peek();
+  const packItems = Object.values(packItemsStore.peek()).filter(
+    (item) => item.packId === packId && !item.deleted,
+  );
+  const { totalWeight } = computePackWeights({ ...pack, items: packItems });
+  const id = nanoid();
+
+  obs(packWeigthHistoryStore, id).set({
+    id,
+    packId,
+    weight: totalWeight,
+    localCreatedAt: new Date().toISOString(),
+  });
+}
+
+export const packWeigthHistorySyncState = syncState(packWeigthHistoryStore);
+
+export type PackWeigthHistoryStore = typeof packWeigthHistoryStore;

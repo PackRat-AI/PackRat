@@ -1,0 +1,104 @@
+import { observable, syncState } from '@legendapp/state';
+import { syncObservable } from '@legendapp/state/sync';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { TripSchema } from '@packrat/api/schemas/trips';
+import { isAuthed } from '@packrat/app/auth/store';
+import type { TripInStore } from '@packrat/app/trips';
+import { apiClient } from 'expo-app/lib/api/packrat';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
+
+let _refreshTripsList: (() => void) | undefined;
+export const refreshTripsList = () => _refreshTripsList?.();
+
+// biome-ignore lint/suspicious/noExplicitAny: crud.js getParams is untyped
+const listTrips = async (getParams: any) => {
+  // Force merge mode on every list sync (including initial when lastSync is null),
+  // so obs$.set() is never called and local-only items are never wiped.
+  getParams.mode = 'merge';
+  const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
+  if (error) throw new Error(`Failed to list trips: ${error.value}`);
+  return TripSchema.array().parse(data);
+};
+
+const createTrip = async (tripData: TripInStore) => {
+  if (!tripData.location) {
+    throw new Error('Trip location is required before sync');
+  }
+  const { data, error } = await apiClient.trips.post({
+    id: tripData.id,
+    name: tripData.name,
+    location: tripData.location,
+    description: tripData.description ?? null,
+    notes: tripData.notes ?? null,
+    packId: tripData.packId ?? null,
+    startDate: tripData.startDate ?? null,
+    endDate: tripData.endDate ?? null,
+    localCreatedAt: tripData.localCreatedAt ?? new Date().toISOString(),
+    localUpdatedAt: tripData.localUpdatedAt ?? new Date().toISOString(),
+  });
+  if (error) throw new Error(`Failed to create trip: ${error.value}`);
+  // Refresh the list after create so the new trip appears immediately without
+  // waiting for the 30-second polling interval.
+  setTimeout(() => refreshTripsList(), 500);
+  return TripSchema.parse(data);
+};
+
+const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
+  const { data: result, error } = await apiClient.trips({ tripId: String(id) }).put({
+    ...(data.name !== undefined ? { name: data.name } : {}),
+    ...(data.location !== undefined ? { location: data.location } : {}),
+    ...(data.description !== undefined ? { description: data.description ?? null } : {}),
+    ...(data.notes !== undefined ? { notes: data.notes ?? null } : {}),
+    ...(data.packId !== undefined ? { packId: data.packId ?? null } : {}),
+    ...(data.startDate !== undefined ? { startDate: data.startDate ?? null } : {}),
+    ...(data.endDate !== undefined ? { endDate: data.endDate ?? null } : {}),
+    ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+  });
+  if (error) throw new Error(`Failed to update trip: ${error.value}`);
+  return TripSchema.parse(result);
+};
+
+// Observable trips store
+export const tripsStore = observable<Record<string, TripInStore>>({});
+
+// Sync trips store with backend
+syncObservable(
+  tripsStore,
+  syncedCrud({
+    fieldUpdatedAt: 'updatedAt',
+    fieldCreatedAt: 'createdAt',
+    fieldDeleted: 'deleted',
+    mode: 'merge',
+    persist: {
+      plugin: persistPlugin,
+      retrySync: true,
+      name: 'trips',
+    },
+    waitFor: isAuthed,
+    waitForSet: isAuthed,
+    retry: {
+      infinite: true,
+      backoff: 'exponential',
+      maxDelay: 30000,
+    },
+    list: listTrips,
+    create: createTrip,
+    update: updateTrip,
+    changesSince: 'last-sync',
+    subscribe: ({ refresh }) => {
+      _refreshTripsList = refresh;
+      const intervalId = setInterval(() => {
+        refresh();
+      }, 30000);
+      return () => {
+        _refreshTripsList = undefined;
+        clearInterval(intervalId);
+      };
+    },
+  }),
+);
+
+// Sync state export
+export const tripsSyncState = syncState(tripsStore);
+
+export type TripsStore = typeof tripsStore;
