@@ -60,7 +60,7 @@ targets:
           UIApplicationSupportsMultipleScenes: true
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
         ITSAppUsesNonExemptEncryption: false
-        API_BASE_URL: $(API_BASE_URL)
+        PACKRAT_ENV: $(PACKRAT_ENV)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
@@ -107,7 +107,7 @@ targets:
         CFBundleVersion: "1"
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
-        API_BASE_URL: $(API_BASE_URL)
+        PACKRAT_ENV: $(PACKRAT_ENV)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     dependencies:

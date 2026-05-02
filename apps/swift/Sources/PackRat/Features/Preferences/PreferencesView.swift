@@ -68,26 +68,25 @@ struct PreferencesView: View {
         .formStyle(.grouped)
     }
 
-    private static let presets: [(String, String)] = [
-        ("Local", "http://localhost:8787"),
-        ("Staging", "https://staging-api.packrat.app"),
-        ("Production", "https://api.packrat.app"),
-    ]
-
     private var effectiveURL: String {
         if !apiBaseURL.isEmpty { return apiBaseURL }
-        return Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String
-            ?? "https://api.packrat.app"
+        if let env = Bundle.main.object(forInfoDictionaryKey: "PACKRAT_ENV") as? String,
+           let url = APIClient.environments[env] { return url }
+        return "http://localhost:8787"
     }
 
     private var advancedTab: some View {
         Form {
             Section("API Server") {
                 HStack {
-                    ForEach(Self.presets, id: \.0) { label, url in
-                        Button(label) { apiBaseURL = url == effectiveURL ? "" : url }
+                    ForEach(["local", "staging", "production"], id: \.self) { env in
+                        if let url = APIClient.environments[env] {
+                            Button(env.capitalized) {
+                                apiBaseURL = url == apiBaseURL ? "" : url
+                            }
                             .buttonStyle(.bordered)
                             .tint(effectiveURL == url ? .accentColor : nil)
+                        }
                     }
                 }
                 TextField("Custom URL (overrides build default)", text: $apiBaseURL)
@@ -97,7 +96,7 @@ struct PreferencesView: View {
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                 }
-                Text("Empty = use build default from xcconfig. Changes apply immediately.")
+                Text("Empty = use build-time default (PACKRAT_ENV from xcconfig). Changes apply immediately.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

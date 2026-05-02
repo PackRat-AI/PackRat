@@ -17,18 +17,30 @@ actor APIClient {
         self.session = URLSession(configuration: config)
     }
 
-    // Reads base URL from (in priority order):
-    // 1. UserDefaults "apiBaseURL" — set via Preferences at runtime
-    // 2. Info.plist "API_BASE_URL" — injected from xcconfig at build time
-    // 3. Hardcoded production fallback
+    // xcconfig files treat // as a comment, so full URLs can't be stored there.
+    // We store an environment name (PACKRAT_ENV) in xcconfig → Info.plist instead,
+    // and map that to a URL here. UserDefaults lets you override at runtime via Preferences.
+    static let environments: [String: String] = [
+        "local":      "http://localhost:8787",
+        "staging":    "https://staging-api.packrat.app",
+        "production": "https://api.packrat.app",
+    ]
+
     private var baseURL: URL {
+        // 1. Runtime override from Preferences (full URL string)
         if let override = UserDefaults.standard.string(forKey: "apiBaseURL"),
            !override.isEmpty,
            let url = URL(string: override) { return url }
-        if let bundleValue = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
-           !bundleValue.isEmpty,
-           let url = URL(string: bundleValue) { return url }
+        // 2. Build-time environment from xcconfig → Info.plist
+        if let env = Bundle.main.object(forInfoDictionaryKey: "PACKRAT_ENV") as? String,
+           let urlString = Self.environments[env],
+           let url = URL(string: urlString) { return url }
+        // 3. Compile-time fallback
+        #if DEBUG
+        return URL(string: "http://localhost:8787")!
+        #else
         return URL(string: "https://api.packrat.app")!
+        #endif
     }
 
     // MARK: - Public
