@@ -8,6 +8,7 @@
  */
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
+import { expo } from '@better-auth/expo';
 import { verifyPassword } from '@better-auth/utils/password';
 import { neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
@@ -163,6 +164,11 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
 
       // Admin: role-based user management endpoints.
       admin(),
+
+      // Expo: promotes the expo-origin header → Origin so the CSRF check
+      // passes for requests from the native app (which can't send a browser
+      // Origin header).
+      expo(),
     ],
 
     rateLimit: {
@@ -172,7 +178,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL],
+    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
   });
 
   authCache.set(env as object, auth);
