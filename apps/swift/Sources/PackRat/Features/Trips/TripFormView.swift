@@ -21,6 +21,7 @@ struct TripFormView: View {
     @State private var selectedPackId: String? = nil
     @State private var isLoading = false
     @State private var error: String?
+    @State private var showingLocationSearch = false
 
     private var isEditing: Bool { existingTrip != nil }
     private var isValid: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -42,18 +43,33 @@ struct TripFormView: View {
                 }
 
                 Section("Location") {
-                    TextField("Location name (optional)", text: $locationName)
-                        .onChange(of: locationName) { _, new in
-                            // Reset coords when name changes; submit will re-geocode
-                            if locationLat != 0 || locationLon != 0 {
-                                locationLat = 0; locationLon = 0
+                    Button {
+                        showingLocationSearch = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .foregroundStyle(locationName.isEmpty ? Color.secondary : Color.red)
+                            Text(locationName.isEmpty ? "Search for a location…" : locationName)
+                                .foregroundStyle(locationName.isEmpty ? Color.secondary : Color.primary)
+                            Spacer()
+                            if !locationName.isEmpty {
+                                Button {
+                                    locationName = ""; locationLat = 0; locationLon = 0
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
                             }
                         }
+                    }
+                    .buttonStyle(.plain)
                     if locationLat != 0 || locationLon != 0 {
                         Label(String(format: "%.4f, %.4f", locationLat, locationLon),
-                              systemImage: "mappin.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.tint)
+                              systemImage: "location.fill")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -111,6 +127,13 @@ struct TripFormView: View {
                 }
             }
             .onAppear { prefill() }
+            .sheet(isPresented: $showingLocationSearch) {
+                LocationSearchView { result in
+                    locationName = result.name
+                    locationLat = result.latitude
+                    locationLon = result.longitude
+                }
+            }
         }
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 420)
