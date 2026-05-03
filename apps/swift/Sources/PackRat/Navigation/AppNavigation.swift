@@ -1,25 +1,42 @@
 import SwiftUI
 
 enum NavItem: String, CaseIterable, Identifiable {
-    case packs, trips, templates, weather, catalog, chat, trailConditions, feed
+    // Order matters: first 4 appear in iPhone tab bar, rest in "More"
+    case home, packs, trips, weather, chat
+    case catalog, templates, trailConditions, feed
+    case guides, gearInventory, wildlife
 
     var id: String { rawValue }
     var label: String {
         switch self {
+        case .home:          return "Home"
+        case .packs:         return "Packs"
+        case .trips:         return "Trips"
+        case .weather:       return "Weather"
+        case .chat:          return "Assistant"
+        case .catalog:       return "Catalog"
+        case .templates:     return "Templates"
         case .trailConditions: return "Trail Conditions"
-        default: return rawValue.capitalized
+        case .feed:          return "Feed"
+        case .guides:        return "Guides"
+        case .gearInventory: return "Gear Inventory"
+        case .wildlife:      return "Wildlife"
         }
     }
     var symbol: String {
         switch self {
-        case .packs:           return "backpack"
-        case .trips:           return "map"
-        case .templates:       return "doc.on.doc"
-        case .weather:         return "cloud.sun"
-        case .catalog:         return "magnifyingglass"
-        case .chat:            return "bubble.left.and.bubble.right"
+        case .home:          return "house"
+        case .packs:         return "backpack"
+        case .trips:         return "map"
+        case .weather:       return "cloud.sun"
+        case .chat:          return "bubble.left.and.sparkles"
+        case .catalog:       return "magnifyingglass"
+        case .templates:     return "doc.on.doc"
         case .trailConditions: return "figure.hiking"
-        case .feed:            return "newspaper"
+        case .feed:          return "newspaper"
+        case .guides:        return "book"
+        case .gearInventory: return "shippingbox"
+        case .wildlife:      return "pawprint"
         }
     }
 
@@ -89,7 +106,7 @@ struct AppNavigation: View {
         @Bindable var state = appState
         let optionalNavItem = Binding<NavItem?>(
             get: { state.navItem },
-            set: { state.navItem = $0 ?? .packs }
+            set: { state.navItem = $0 ?? .home }
         )
         return List(NavItem.allCases, selection: optionalNavItem) { item in
             Label(item.label, systemImage: item.symbol).tag(item as NavItem?)
@@ -108,6 +125,8 @@ struct AppNavigation: View {
         @Bindable var state = appState
 
         switch appState.navItem {
+        case .home:
+            HomeView().environment(appState)
         case .packs:
             PacksListView(viewModel: appState.packsVM, selectedId: $state.selectedPackId)
         case .trips:
@@ -124,6 +143,12 @@ struct AppNavigation: View {
             ChatView(viewModel: appState.chatVM)
         case .feed:
             FeedView(viewModel: appState.feedVM)
+        case .guides:
+            GuidesView()
+        case .gearInventory:
+            GearInventoryView().environment(appState)
+        case .wildlife:
+            WildlifeView()
         }
     }
 
@@ -187,6 +212,7 @@ struct AppNavigation: View {
     private func phoneContentView(_ item: NavItem) -> some View {
         @Bindable var state = appState
         switch item {
+        case .home:            HomeView().environment(appState)
         case .packs:           PacksListView(viewModel: appState.packsVM, selectedId: $state.selectedPackId)
         case .trips:           TripsListView(viewModel: appState.tripsVM, selectedId: $state.selectedTripId)
         case .templates:       PackTemplatesListView(viewModel: appState.templatesVM, selectedId: $state.selectedTemplateId, packsVM: appState.packsVM)
@@ -195,6 +221,9 @@ struct AppNavigation: View {
         case .catalog:         CatalogView().environment(appState)
         case .chat:            ChatView(viewModel: appState.chatVM)
         case .feed:            FeedView(viewModel: appState.feedVM)
+        case .guides:          GuidesView()
+        case .gearInventory:   GearInventoryView().environment(appState)
+        case .wildlife:        WildlifeView()
         }
     }
     #endif

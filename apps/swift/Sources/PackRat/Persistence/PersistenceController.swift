@@ -8,7 +8,7 @@ final class PersistenceController {
     let container: ModelContainer
 
     private init() {
-        let schema = Schema([CachedPack.self, CachedTrip.self])
+        let schema = Schema([CachedPack.self, CachedTrip.self, ShoppingItem.self])
         let config = ModelConfiguration("PackRat", schema: schema)
         do {
             container = try ModelContainer(for: schema, configurations: config)

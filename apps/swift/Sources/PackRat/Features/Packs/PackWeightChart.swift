@@ -43,7 +43,7 @@ struct PackWeightChart: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .frame(height: min(UIScreen.main.bounds.width * 0.42, 160))
+            .frame(height: 160)
             .padding(.horizontal)
 
             if categoryData.count > 1 {

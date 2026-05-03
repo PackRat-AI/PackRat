@@ -21,5 +21,5 @@ final class AppState {
     var selectedReportId: String?
 
     // Active nav item
-    var navItem: NavItem = .packs
+    var navItem: NavItem = .home
 }
