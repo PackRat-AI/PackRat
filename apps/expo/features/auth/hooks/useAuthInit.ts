@@ -85,6 +85,7 @@ export function useAuthInit() {
               return;
             }
             if (session?.user) {
+              // safe-cast: widening Better Auth User to Record<string, unknown> for runtime additional-field access
               applySessionUser(session.user as Record<string, unknown>);
             } else {
               // Server confirmed the session is gone
@@ -109,6 +110,7 @@ export function useAuthInit() {
           .catch((err) => ({ data: null, error: err as unknown }));
 
         if (!error && session?.user) {
+          // safe-cast: widening Better Auth User to Record<string, unknown> for runtime additional-field access
           applySessionUser(session.user as Record<string, unknown>);
           return;
         }
