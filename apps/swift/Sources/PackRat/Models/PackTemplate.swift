@@ -58,7 +58,37 @@ struct CreateTemplateRequest: Encodable {
     let id: String
     let name: String
     let description: String?
-    let category: String?
+    let category: String
     let localCreatedAt: String
     let localUpdatedAt: String
+}
+
+struct UpdateTemplateRequest: Encodable {
+    let name: String?
+    let description: String?
+    let category: String?
+    let localUpdatedAt: String
+}
+
+struct CreateTemplateItemRequest: Encodable {
+    let id: String
+    let name: String
+    let weight: Double
+    let weightUnit: String
+    let quantity: Int
+    let category: String?
+    let consumable: Bool
+    let worn: Bool
+    let notes: String?
+}
+
+struct UpdateTemplateItemRequest: Encodable {
+    let name: String?
+    let weight: Double?
+    let weightUnit: String?
+    let quantity: Int?
+    let category: String?
+    let consumable: Bool?
+    let worn: Bool?
+    let notes: String?
 }

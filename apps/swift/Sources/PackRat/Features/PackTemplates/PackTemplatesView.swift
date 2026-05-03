@@ -7,6 +7,7 @@ struct PackTemplatesListView: View {
     @Bindable var viewModel: PackTemplatesViewModel
     @Binding var selectedId: String?
     var packsVM: PacksViewModel = PacksViewModel()
+    @State private var showingNewTemplate = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private var isCompact: Bool { horizontalSizeClass == .compact }
@@ -34,6 +35,18 @@ struct PackTemplatesListView: View {
         .searchable(text: $viewModel.searchText, prompt: "Search templates")
         .task { if viewModel.templates.isEmpty { await viewModel.load() } }
         .refreshable { await viewModel.load() }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("New Template", systemImage: "plus") {
+                    showingNewTemplate = true
+                }
+            }
+        }
+        .sheet(isPresented: $showingNewTemplate) {
+            PackTemplateFormView(viewModel: viewModel) { saved in
+                selectedId = saved.id
+            }
+        }
     }
 
     private var templateList: some View {
@@ -114,14 +127,21 @@ struct PackTemplateDetailView: View {
     let packsVM: PacksViewModel
 
     @State private var showingApplySheet = false
+    @State private var showingEditTemplate = false
+    @State private var showingAddItem = false
+    @State private var editingItem: PackTemplateItem?
     @State private var applyError: String?
     @State private var applySuccess = false
+
+    // Reactive: reads from viewModel so updates propagate live
+    private var currentTemplate: PackTemplate {
+        viewModel.templates.first { $0.id == template.id } ?? template
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Header info
-                if let desc = template.description {
+                if let desc = currentTemplate.description {
                     Text(desc)
                         .font(.body)
                         .foregroundStyle(.secondary)
@@ -129,24 +149,24 @@ struct PackTemplateDetailView: View {
                 }
 
                 HStack(spacing: 10) {
-                    if let cat = template.category {
+                    if let cat = currentTemplate.category {
                         Label(cat.capitalized, systemImage: PackCategory(rawValue: cat)?.symbol ?? "backpack")
                             .font(.callout)
                     }
                     Spacer()
-                    Text("\(template.itemCount) items")
+                    Text("\(currentTemplate.itemCount) items")
                         .font(.callout.bold())
-                    if template.totalWeightGrams > 0 {
+                    if currentTemplate.totalWeightGrams > 0 {
                         Text("·").foregroundStyle(.secondary)
-                        Text(template.formattedTotalWeight())
+                        Text(currentTemplate.formattedTotalWeight())
                             .font(.callout.bold().monospacedDigit())
                             .foregroundStyle(.tint)
                     }
                 }
                 .padding(.horizontal)
 
-                if template.totalWeightGrams > 0 {
-                    TemplateWeightChart(template: template)
+                if currentTemplate.totalWeightGrams > 0 {
+                    TemplateWeightChart(template: currentTemplate)
                 }
 
                 if let error = applyError {
@@ -158,54 +178,28 @@ struct PackTemplateDetailView: View {
                         .padding(.horizontal)
                 }
 
-                // Items list
-                if let items = template.items, !items.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Gear List")
-                            .font(.caption.uppercaseSmallCaps())
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal)
-                            .padding(.bottom, 6)
-
-                        let groups = Dictionary(grouping: items, by: { $0.category ?? "Other" })
-                        ForEach(groups.keys.sorted(), id: \.self) { cat in
-                            Section {
-                                ForEach(groups[cat] ?? []) { item in
-                                    TemplateItemRow(item: item)
-                                    Divider().padding(.leading)
-                                }
-                            } header: {
-                                Text(cat.capitalized)
-                                    .font(.caption.uppercaseSmallCaps())
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 4)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(.background)
-                            }
-                        }
+                if let items = currentTemplate.items, !items.isEmpty {
+                    itemsSection(items)
+                } else if !currentTemplate.isOfficial {
+                    Button("Add first item", systemImage: "plus.circle") {
+                        showingAddItem = true
                     }
+                    .padding(.horizontal)
                 }
             }
             .padding(.bottom)
         }
-        .navigationTitle(template.name)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Apply to Pack", systemImage: "plus.square.on.square") {
-                    showingApplySheet = true
-                }
-            }
-        }
+        .navigationTitle(currentTemplate.name)
+        .toolbar { toolbarContent }
         .sheet(isPresented: $showingApplySheet) {
             ApplyTemplateSheet(
-                template: template,
+                template: currentTemplate,
                 packs: packsVM.packs,
                 onApply: { packId in
                     applyError = nil
                     applySuccess = false
                     do {
-                        try await viewModel.applyTemplate(template.id, toPack: packId)
+                        try await viewModel.applyTemplate(currentTemplate.id, toPack: packId)
                         applySuccess = true
                     } catch {
                         applyError = error.localizedDescription
@@ -213,7 +207,80 @@ struct PackTemplateDetailView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingEditTemplate) {
+            PackTemplateFormView(viewModel: viewModel, existingTemplate: currentTemplate)
+        }
+        .sheet(isPresented: $showingAddItem) {
+            PackTemplateItemFormView(viewModel: viewModel, templateId: currentTemplate.id)
+        }
+        .sheet(item: $editingItem) { item in
+            PackTemplateItemFormView(viewModel: viewModel, templateId: currentTemplate.id, existingItem: item)
+        }
         .task { if packsVM.packs.isEmpty { await packsVM.load() } }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if !currentTemplate.isOfficial {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Add Item", systemImage: "plus") {
+                    showingAddItem = true
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Edit", systemImage: "pencil") {
+                    showingEditTemplate = true
+                }
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Button("Apply to Pack", systemImage: "plus.square.on.square") {
+                showingApplySheet = true
+            }
+        }
+    }
+
+    private func itemsSection(_ items: [PackTemplateItem]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Gear List")
+                .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+                .padding(.bottom, 6)
+
+            let groups = Dictionary(grouping: items, by: { $0.category ?? "Other" })
+            ForEach(groups.keys.sorted(), id: \.self) { cat in
+                Section {
+                    ForEach(groups[cat] ?? []) { item in
+                        templateItemRow(item)
+                        Divider().padding(.leading)
+                    }
+                } header: {
+                    Text(cat.capitalized)
+                        .font(.caption.uppercaseSmallCaps())
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                        .padding(.vertical, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.background)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func templateItemRow(_ item: PackTemplateItem) -> some View {
+        TemplateItemRow(item: item)
+            .contextMenu {
+                if !currentTemplate.isOfficial {
+                    Button("Edit", systemImage: "pencil") {
+                        editingItem = item
+                    }
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        Task { try? await viewModel.deleteItem(inTemplate: currentTemplate.id, itemId: item.id) }
+                    }
+                }
+            }
     }
 }
 

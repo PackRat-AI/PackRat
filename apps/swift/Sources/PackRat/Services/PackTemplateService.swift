@@ -16,7 +16,7 @@ final class PackTemplateService: Sendable {
         return try await api.send(endpoint)
     }
 
-    func createTemplate(name: String, description: String? = nil, category: String? = nil) async throws -> PackTemplate {
+    func createTemplate(name: String, description: String? = nil, category: String = "custom") async throws -> PackTemplate {
         let now = Date.iso8601Now()
         let body = CreateTemplateRequest(
             id: UUID().uuidString.lowercased(),
@@ -25,6 +25,41 @@ final class PackTemplateService: Sendable {
         )
         let endpoint = Endpoint(.post, "/api/pack-templates", body: body)
         return try await api.send(endpoint)
+    }
+
+    func updateTemplate(_ id: String, name: String, description: String?, category: String) async throws -> PackTemplate {
+        let body = UpdateTemplateRequest(
+            name: name, description: description, category: category,
+            localUpdatedAt: Date.iso8601Now()
+        )
+        let endpoint = Endpoint(.put, "/api/pack-templates/\(id)", body: body)
+        return try await api.send(endpoint)
+    }
+
+    func addItem(toTemplate templateId: String, name: String, weight: Double, weightUnit: String,
+                 quantity: Int, category: String?, consumable: Bool, worn: Bool, notes: String?) async throws -> PackTemplateItem {
+        let body = CreateTemplateItemRequest(
+            id: UUID().uuidString.lowercased(),
+            name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
+            category: category, consumable: consumable, worn: worn, notes: notes
+        )
+        let endpoint = Endpoint(.post, "/api/pack-templates/\(templateId)/items", body: body)
+        return try await api.send(endpoint)
+    }
+
+    func updateItem(_ itemId: String, name: String, weight: Double, weightUnit: String,
+                    quantity: Int, category: String?, consumable: Bool, worn: Bool, notes: String?) async throws -> PackTemplateItem {
+        let body = UpdateTemplateItemRequest(
+            name: name, weight: weight, weightUnit: weightUnit, quantity: quantity,
+            category: category, consumable: consumable, worn: worn, notes: notes
+        )
+        let endpoint = Endpoint(.patch, "/api/pack-templates/items/\(itemId)", body: body)
+        return try await api.send(endpoint)
+    }
+
+    func deleteItem(_ itemId: String) async throws {
+        let endpoint = Endpoint(.delete, "/api/pack-templates/items/\(itemId)")
+        try await api.sendDiscarding(endpoint)
     }
 
     func deleteTemplate(_ id: String) async throws {
