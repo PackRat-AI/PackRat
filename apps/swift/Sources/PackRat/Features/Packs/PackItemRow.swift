@@ -10,6 +10,7 @@ struct PackItemRow: View {
     let item: PackItem
     let onEdit: () -> Void
     let onDelete: () -> Void
+    var onDetail: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -43,17 +44,24 @@ struct PackItemRow: View {
 
             Spacer()
 
-            if let notes = item.notes, !notes.isEmpty {
-                Image(systemName: "note.text")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-                    .help(notes)
+            HStack(spacing: 8) {
+                if let notes = item.notes, !notes.isEmpty {
+                    Image(systemName: "note.text")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                        .help(notes)
+                }
+                if onDetail != nil {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
-        .onTapGesture(perform: onEdit)
+        .onTapGesture { onDetail?() ?? onEdit() }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive, action: onDelete) {
                 Label("Delete", systemImage: "trash")
@@ -64,12 +72,14 @@ struct PackItemRow: View {
             .tint(.blue)
         }
         .contextMenu {
+            if onDetail != nil {
+                Button("View Details", systemImage: "info.circle", action: { onDetail?() })
+            }
             Button("Edit", systemImage: "pencil", action: onEdit)
             Divider()
             Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
         }
         .draggable(item.id) {
-            // Drag preview
             Label(item.name, systemImage: "archivebox")
                 .padding(8)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))

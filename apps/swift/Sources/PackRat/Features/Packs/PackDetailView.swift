@@ -10,6 +10,7 @@ struct PackDetailView: View {
     @State private var showingAddItemSheet = false
     @State private var showingGapAnalysis = false
     @State private var editingItem: PackItem?
+    @State private var detailItem: PackItem?
     @State private var error: String?
     @State private var dropTargetCategory: String?
     @State private var triggerShare = false
@@ -48,6 +49,8 @@ struct PackDetailView: View {
                                             self.error = error.localizedDescription
                                         }
                                     }
+                                } onDetail: {
+                                    detailItem = item
                                 }
                                 Divider().padding(.leading)
                             }
@@ -113,6 +116,9 @@ struct PackDetailView: View {
         }
         .sheet(item: $editingItem) { item in
             PackItemFormView(packId: pack.id, viewModel: viewModel, existingItem: item)
+        }
+        .sheet(item: $detailItem) { item in
+            PackItemDetailView(item: item, packId: pack.id, viewModel: viewModel)
         }
         .sheet(isPresented: $showingGapAnalysis) {
             GapAnalysisSheet(pack: pack, service: viewModel.service)
