@@ -1,7 +1,8 @@
+import { when } from '@legendapp/state';
 import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { userStore } from 'expo-app/features/auth/store';
+import { userStore, userSyncState } from 'expo-app/features/auth/store';
 import { authClient } from 'expo-app/lib/auth-client';
 import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
@@ -21,6 +22,27 @@ async function runVersionGateMigration() {
   await AsyncStorage.setItem(AUTH_VERSION_KEY, CURRENT_AUTH_VERSION);
 }
 
+function applySessionUser(sessionUser: Record<string, unknown>) {
+  userStore.set({
+    id: String(sessionUser.id ?? ''),
+    email: String(sessionUser.email ?? ''),
+    firstName: String(sessionUser.name ?? '').split(' ')[0] ?? '',
+    lastName:
+      String(sessionUser.name ?? '')
+        .split(' ')
+        .slice(1)
+        .join(' ') ?? '',
+    role: (sessionUser.role as 'USER' | 'ADMIN') ?? 'USER', // safe-cast: Better Auth client type omits additionalFields; role is present at runtime
+    avatarUrl: (sessionUser.image as string | null) ?? null,
+    preferredWeightUnit: 'g',
+  });
+}
+
+function isDefinitiveAuthFailure(error: unknown): boolean {
+  const status = (error as { status?: number })?.status;
+  return status === 401 || status === 403;
+}
+
 export function useAuthInit() {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,29 +60,56 @@ export function useAuthInit() {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      try {
-        setIsLoading(true);
-        await runVersionGateMigration();
+      await runVersionGateMigration();
 
-        const hasSkippedLogin = await AsyncStorage.getItem('skipped_login');
-        const { data: session } = await authClient.getSession();
+      // Wait for SQLite persist to hydrate userStore before reading cached user
+      await when(userSyncState.isPersistLoaded);
 
-        if (session?.user) {
-          userStore.set({
-            id: session.user.id,
-            email: session.user.email,
-            firstName: session.user.name?.split(' ')[0] ?? '',
-            lastName: session.user.name?.split(' ').slice(1).join(' ') ?? '',
-            role: ((session.user as Record<string, unknown>).role as 'USER' | 'ADMIN') ?? 'USER', // safe-cast: Better Auth client type omits additionalFields; role is present at runtime
-            avatarUrl: session.user.image ?? null,
-            preferredWeightUnit: 'g',
+      const cachedUser = userStore.get();
+      const hasSkippedLogin = await AsyncStorage.getItem('skipped_login');
+
+      if (cachedUser || hasSkippedLogin === 'true') {
+        // Unblock UI immediately — the app is offline-first
+        setIsLoading(false);
+
+        // Refresh session in the background; only sign out on a definitive auth
+        // rejection (401/403), never on network failures (user may be offline)
+        authClient
+          .getSession()
+          .then(({ data: session, error }) => {
+            if (error) {
+              if (isDefinitiveAuthFailure(error)) {
+                userStore.set(null);
+                router.replace('/auth');
+              }
+              return;
+            }
+            if (session?.user) {
+              applySessionUser(session.user as Record<string, unknown>);
+            } else {
+              // Server confirmed the session is gone
+              userStore.set(null);
+              router.replace('/auth');
+            }
+          })
+          .catch((error) => {
+            if (isDefinitiveAuthFailure(error)) {
+              userStore.set(null);
+              router.replace('/auth');
+            }
+            // Network/transient error — keep cached user silently
           });
-          setIsLoading(false);
-          return;
-        }
+        return;
+      }
 
-        if (hasSkippedLogin === 'true') {
-          setIsLoading(false);
+      // No cached user — must reach the server to establish a session
+      try {
+        const { data: session, error } = await authClient
+          .getSession()
+          .catch((err) => ({ data: null, error: err as unknown }));
+
+        if (!error && session?.user) {
+          applySessionUser(session.user as Record<string, unknown>);
           return;
         }
 
@@ -69,7 +118,7 @@ export function useAuthInit() {
           params: { showSkipLoginBtn: 'true', redirectTo: '/' },
         });
       } catch (error) {
-        console.error('Failed to load user session:', error);
+        console.error('Failed to initialize auth:', error);
         router.replace('/auth');
       } finally {
         setIsLoading(false);
