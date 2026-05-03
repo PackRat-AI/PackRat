@@ -1,14 +1,20 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
-import Storage from 'expo-sqlite/kv-store';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { PackInStore } from '../types';
 
-const listPacks = async (): Promise<PackInStore[] | null> => {
+let _refreshPacksList: (() => void) | undefined;
+export const refreshPacksList = () => _refreshPacksList?.();
+
+// biome-ignore lint/suspicious/noExplicitAny: crud.js getParams is untyped
+const listPacks = async (getParams: any): Promise<PackInStore[] | null> => {
+  // Force merge mode on every list sync (including initial when lastSync is null),
+  // so obs$.set() is never called and local-only items are never wiped.
+  getParams.mode = 'merge';
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list packs: ${error.value}`);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
@@ -28,6 +34,9 @@ const createPack = async (packData: PackInStore): Promise<PackInStore | null> =>
     localUpdatedAt: packData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
+  // Refresh the list after create so the new pack appears immediately without
+  // waiting for the 30-second polling interval.
+  setTimeout(() => refreshPacksList(), 500);
   // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
   return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
 };
@@ -58,7 +67,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'packs',
     },
@@ -74,11 +83,13 @@ syncObservable(
     update: updatePack,
     changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
+      _refreshPacksList = refresh;
       const intervalId = setInterval(() => {
         refresh();
       }, 30000);
 
       return () => {
+        _refreshPacksList = undefined;
         clearInterval(intervalId);
       };
     },

@@ -8,10 +8,30 @@ appId: ${APP_ID}
     text: "Packs"
 - waitForAnimationToEnd
 
-# Tap the test pack
-- tapOn:
-    text: ${PACK_NAME}
-- waitForAnimationToEnd
+# Tap the test pack.
+# iOS: PackListScreen clears the search bar on blur, so search is not active when this
+# flow starts. Re-activate search to filter to the pack, then tap the result row via
+# testID to avoid hitting the UITextField (which contains the same text).
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Search..."
+      - eraseText: 100  # clear any text left from a previous flow before typing
+      - inputText: ${PACK_NAME}
+      - tapOn:
+          id: "pack-search-result"
+      - waitForAnimationToEnd
+
+# Android: search is not active; tap the pack card in the list.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${PACK_NAME}
+      - waitForAnimationToEnd
 
 # Assert pack detail elements via testIDs
 - assertVisible:
@@ -26,5 +46,18 @@ appId: ${APP_ID}
     text: ${PACK_NAME}
 
 # Go back to packs list
-- back
-- waitForAnimationToEnd
+# iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
+# Tap the native navigation bar back button instead (accessibility label "Back").
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Back"
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - waitForAnimationToEnd

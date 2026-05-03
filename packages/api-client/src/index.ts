@@ -147,7 +147,13 @@ export function createApiClient(config: ApiClientConfig) {
   // Treaty only uses the callable form of `fetch`; the globalThis.fetch type
   // includes a `preconnect` method our wrapper doesn't need. Cast through
   // unknown to bridge the two shapes without pulling preconnect into scope.
-  return treaty<App>(config.baseUrl, { fetcher: authFetcher as unknown as typeof fetch }).api;
+  // parseDate:false disables Eden Treaty's JSON reviver that silently converts
+  // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
+  // this, every Zod z.string().datetime() field in API response schemas fails.
+  return treaty<App>(config.baseUrl, {
+    fetcher: authFetcher as unknown as typeof fetch,
+    parseDate: false,
+  }).api;
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

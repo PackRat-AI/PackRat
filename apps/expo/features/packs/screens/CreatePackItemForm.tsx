@@ -5,6 +5,7 @@ import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
@@ -226,6 +227,7 @@ export const CreatePackItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.items.nameInput}
                   placeholder={t('packs.itemName')}
                   autoFocus
                   value={field.state.value}
@@ -296,6 +298,7 @@ export const CreatePackItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.items.weightInput}
                   placeholder={t('packs.weight')}
                   value={weightText}
                   onBlur={field.handleBlur}
@@ -472,6 +475,7 @@ export const CreatePackItemForm = ({
       <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
           <Pressable
+            testID={testIds.items.submitBtn}
             onPress={form.handleSubmit}
             disabled={!canSubmit || isSubmitting}
             className={`mt-6 rounded-lg px-4 py-3.5 ${

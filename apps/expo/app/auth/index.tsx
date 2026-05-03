@@ -2,10 +2,14 @@ import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
@@ -41,6 +45,15 @@ export default function AuthIndexScreen() {
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
+  const setIsLoading = useSetAtom(isLoadingAtom);
+
+  // Reset sign-out loading state when auth screen mounts. signOut() sets
+  // isLoadingAtom=true (to unmount NativeTabs via AppLayout's spinner) and
+  // intentionally does not reset it, leaving AppLayout to navigate here and
+  // auth/index to clear the flag once navigation has fully committed.
+  React.useEffect(() => {
+    setIsLoading(false);
+  }, [setIsLoading]);
 
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
@@ -61,7 +74,7 @@ export default function AuthIndexScreen() {
           <View className="items-center">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
           </View>
@@ -127,7 +140,7 @@ export default function AuthIndexScreen() {
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
-              testID={TestIds.SignInEmailButton}
+              testID={testIds.auth.signInEmailBtn}
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >

@@ -112,13 +112,16 @@ export default function CatalogPage() {
   const q = searchParams?.get('q') ?? undefined;
 
   const {
-    data: items = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
     queryKey: queryKeys.admin.catalog(q),
     queryFn: () => getCatalogItems({ q }),
   });
+
+  const items = result?.data ?? [];
+  const total = result?.total ?? 0;
 
   return (
     <div>
@@ -174,7 +177,8 @@ export default function CatalogPage() {
               </Table>
             </div>
             <p className="text-xs text-muted-foreground">
-              {items.length.toLocaleString()} item{items.length !== 1 ? 's' : ''}
+              {items.length.toLocaleString()} of {total.toLocaleString()} item
+              {total !== 1 ? 's' : ''}
               {q ? ` matching "${q}"` : ''}
             </p>
           </>
