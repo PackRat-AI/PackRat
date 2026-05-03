@@ -2,6 +2,11 @@ import SwiftUI
 
 struct WeatherView: View {
     @Bindable var viewModel: WeatherViewModel
+    @State private var showingAlerts = false
+
+    private var activeAlerts: [WeatherAlert] {
+        viewModel.forecast?.alerts?.alert ?? []
+    }
 
     var body: some View {
         ScrollView {
@@ -32,6 +37,20 @@ struct WeatherView: View {
         }
         .navigationTitle("Weather")
         .refreshable { await viewModel.refresh() }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingAlerts = true
+                } label: {
+                    Label("Alerts", systemImage: activeAlerts.isEmpty ? "bell" : "bell.badge.fill")
+                        .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
+                }
+                .disabled(viewModel.forecast == nil)
+            }
+        }
+        .sheet(isPresented: $showingAlerts) {
+            WeatherAlertsView(alerts: activeAlerts)
+        }
     }
 
     // MARK: - Search

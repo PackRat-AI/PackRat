@@ -17,6 +17,33 @@ struct WeatherForecastResponse: Codable, Sendable {
     let location: WeatherResponseLocation?
     let current: WeatherCurrent?
     let forecast: WeatherForecast?
+    let alerts: WeatherAlertsWrapper?
+}
+
+struct WeatherAlertsWrapper: Codable, Sendable {
+    let alert: [WeatherAlert]?
+}
+
+struct WeatherAlert: Codable, Identifiable, Sendable {
+    var id: String { headline ?? UUID().uuidString }
+    let headline: String?
+    let event: String?
+    let severity: String?
+    let urgency: String?
+    let areas: String?
+    let effective: String?
+    let expires: String?
+    let desc: String?
+    let instruction: String?
+
+    var severityColor: String {
+        switch severity?.lowercased() {
+        case "extreme":  return "red"
+        case "severe":   return "orange"
+        case "moderate": return "yellow"
+        default:         return "blue"
+        }
+    }
 }
 
 struct WeatherResponseLocation: Codable, Sendable {
