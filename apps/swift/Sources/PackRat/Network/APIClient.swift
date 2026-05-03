@@ -26,22 +26,21 @@ actor APIClient {
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
 
-    private var baseURL: URL {
-        // 1. Runtime override from Preferences (full URL string)
+    static var resolvedBaseURL: URL {
         if let override = UserDefaults.standard.string(forKey: "apiBaseURL"),
            !override.isEmpty,
            let url = URL(string: override) { return url }
-        // 2. Build-time environment from xcconfig → Info.plist
         if let env = Bundle.main.object(forInfoDictionaryKey: "PACKRAT_ENV") as? String,
            let urlString = Self.environments[env],
            let url = URL(string: urlString) { return url }
-        // 3. Compile-time fallback
-#if DEBUG
+        #if DEBUG
         return URL(string: "http://localhost:8787")!
         #else
         return URL(string: "https://packrat-api.orange-frost-d665.workers.dev")!
         #endif
     }
+
+    private var baseURL: URL { Self.resolvedBaseURL }
 
     // MARK: - Public
 

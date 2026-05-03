@@ -19,23 +19,8 @@ struct WildlifeIdentification: Identifiable {
 final class WildlifeService: Sendable {
     static let shared = WildlifeService()
 
-    private var baseURLString: String {
-        if let override = UserDefaults.standard.string(forKey: "apiBaseURL"), !override.isEmpty {
-            return override
-        }
-        if let env = Bundle.main.object(forInfoDictionaryKey: "PACKRAT_ENV") as? String,
-           let url = APIClient.environments[env] { return url }
-        #if DEBUG
-        return "http://localhost:8787"
-        #else
-        return "https://packrat-api.orange-frost-d665.workers.dev"
-        #endif
-    }
-
     func identify(imageData: Data) async throws -> WildlifeIdentification {
-        guard let url = URL(string: "\(baseURLString)/api/wildlife/identify") else {
-            throw PackRatError.unknown
-        }
+        let url = APIClient.resolvedBaseURL.appendingPathComponent("/api/wildlife/identify")
         let boundary = UUID().uuidString
         var body = Data()
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
