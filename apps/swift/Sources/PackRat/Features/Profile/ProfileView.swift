@@ -1,5 +1,6 @@
 import SwiftUI
 import NukeUI
+import UserNotifications
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
@@ -9,8 +10,12 @@ struct ProfileView: View {
     @State private var saveError: String?
     @State private var saveSuccess = false
     @State private var showingSignOutAlert = false
+    @State private var showingDeleteAccountAlert = false
     @State private var showingAvatarPicker = false
     @State private var isUploadingAvatar = false
+    @State private var isDeletingAccount = false
+    @State private var notificationsEnabled = false
+    @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
         ScrollView {
@@ -68,10 +73,39 @@ struct ProfileView: View {
                         .disabled(isSaving || !hasChanges)
                     }
 
+                    Section("Notifications") {
+                        if notificationAuthStatus == .denied {
+                            HStack {
+                                Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
+                                Text("Notifications are blocked in Settings")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                #if os(iOS)
+                                Button("Open Settings") {
+                                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                                .font(.callout)
+                                #endif
+                            }
+                        } else {
+                            Toggle("Push Notifications", isOn: $notificationsEnabled)
+                                .onChange(of: notificationsEnabled) { _, enabled in
+                                    Task { await toggleNotifications(enabled) }
+                                }
+                        }
+                    }
+
                     Section {
                         Button("Sign Out", role: .destructive) {
                             showingSignOutAlert = true
                         }
+                        Button("Delete Account", role: .destructive) {
+                            showingDeleteAccountAlert = true
+                        }
+                        .disabled(isDeletingAccount)
                     }
                 }
                 .formStyle(.grouped)
@@ -82,7 +116,10 @@ struct ProfileView: View {
             .padding()
         }
         .navigationTitle("Profile")
-        .onAppear { prefill() }
+        .onAppear {
+            prefill()
+            Task { await refreshNotificationStatus() }
+        }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await authManager.logout() }
@@ -90,6 +127,14 @@ struct ProfileView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to sign out?")
+        }
+        .alert("Delete Account", isPresented: $showingDeleteAccountAlert) {
+            Button("Delete Account", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete your account and all your data, including packs, trips, and templates. This action cannot be undone.")
         }
     }
 
@@ -185,6 +230,36 @@ struct ProfileView: View {
             } catch {
                 saveError = error.localizedDescription
             }
+        }
+    }
+
+    private func refreshNotificationStatus() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        notificationAuthStatus = settings.authorizationStatus
+        notificationsEnabled = settings.authorizationStatus == .authorized
+    }
+
+    private func toggleNotifications(_ enable: Bool) async {
+        let center = UNUserNotificationCenter.current()
+        if enable {
+            let status = await center.notificationSettings().authorizationStatus
+            if status == .notDetermined {
+                _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+            }
+        }
+        await refreshNotificationStatus()
+    }
+
+    private func deleteAccount() async {
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+        do {
+            let endpoint = Endpoint(.delete, "/api/auth")
+            try await APIClient.shared.sendDiscarding(endpoint)
+            try? await authManager.logout()
+        } catch {
+            saveError = error.localizedDescription
         }
     }
 
