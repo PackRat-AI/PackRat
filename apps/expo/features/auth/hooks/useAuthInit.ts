@@ -72,6 +72,9 @@ export function useAuthInit() {
         // Unblock UI immediately — the app is offline-first
         setIsLoading(false);
 
+        // Guests have no session to refresh; skip the check entirely
+        if (!cachedUser) return;
+
         // Refresh session in the background; only sign out on a definitive auth
         // rejection (401/403), never on network failures (user may be offline)
         authClient
