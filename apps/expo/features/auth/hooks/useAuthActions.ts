@@ -9,12 +9,18 @@ import type { User } from 'expo-app/features/profile/types';
 import { authClient } from 'expo-app/lib/auth-client';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { queryClient } from 'expo-app/providers/TanstackProvider';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { isLoadingAtom, needsReauthAtom, redirectToAtom } from '../atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+  suppressSignOutNavAtom,
+} from '../atoms/authAtoms';
 
 function redirect(route: string) {
   try {
@@ -43,8 +49,10 @@ export function useAuthActions() {
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
+  const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
   const clearLocalData = async () => {
+    queryClient.clear();
     const allKeys = await Storage.getAllKeys();
     await Promise.all(allKeys.map((key) => Storage.removeItem(key)));
     await AsyncStorage.clear();
@@ -154,6 +162,9 @@ export function useAuthActions() {
   };
 
   const signOut = async () => {
+    // Suppress AppLayout's auto-navigation to /auth so the profile screen can
+    // show a post-sign-out prompt and handle navigation itself.
+    setSuppressSignOutNav(true);
     setIsLoading(true);
     try {
       const isSignedIn = await GoogleSignin.hasPreviousSignIn();
@@ -165,7 +176,10 @@ export function useAuthActions() {
       userStore.set(null);
       await clearLocalData();
       setNeedsReauth(false);
-      setIsLoading(false);
+      // isLoadingAtom intentionally left true — the caller (profile/handleSignOut)
+      // shows a post-sign-out Alert and is responsible for clearing it and
+      // navigating (either to '/' for guest mode or to /auth via releasing
+      // suppressSignOutNav while isLoadingAtom is still true).
     }
   };
 

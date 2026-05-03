@@ -1,7 +1,11 @@
 import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { isLoadingAtom, needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  suppressSignOutNavAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
@@ -31,6 +35,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
+  const suppressSignOutNav = useAtomValue(suppressSignOutNavAtom);
   const insets = useSafeAreaInsets();
   // Latches true once we dispatch router.replace('/auth') on sign-out.
   // Keeps the spinner rendered until AppLayout unmounts so that
@@ -42,12 +47,21 @@ export default function AppLayout() {
   const hasNavigatedToAuthRef = useRef(false);
 
   useEffect(() => {
-    if (isLoadingGlobal && !isAuthedValue) {
+    // suppressSignOutNav is true while profile/handleSignOut is showing the
+    // post-sign-out prompt; skip auto-navigation until the user picks an option.
+    if (isLoadingGlobal && !isAuthedValue && !suppressSignOutNav) {
       hasNavigatedToAuthRef.current = true;
       // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
       router.replace('/auth' as Href);
     }
-  }, [isLoadingGlobal, isAuthedValue]);
+  }, [isLoadingGlobal, isAuthedValue, suppressSignOutNav]);
+
+  // If the user has re-authenticated while AppLayout stayed mounted (Expo Router
+  // keeps the (app) screen in the stack during the auth transition), clear the
+  // sign-out latch so the spinner doesn't stay on indefinitely.
+  if (isAuthedValue && hasNavigatedToAuthRef.current) {
+    hasNavigatedToAuthRef.current = false;
+  }
 
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
   // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
