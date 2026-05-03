@@ -177,7 +177,7 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private var bubbleContent: some View {
-        if message.content.isEmpty && !isUser {
+        if message.content.isEmpty && message.toolInvocations.isEmpty && !isUser {
             TypingIndicator()
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
@@ -190,12 +190,22 @@ struct MessageBubble: View {
                 .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .foregroundStyle(.white)
         } else {
-            Markdown(message.content)
-                .markdownTheme(.gitHub)
-                .textSelection(.enabled)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            VStack(alignment: .leading, spacing: 8) {
+                if !message.toolInvocations.isEmpty {
+                    ToolInvocationsView(invocations: message.toolInvocations)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 10)
+                }
+                if !message.content.isEmpty {
+                    Markdown(message.content)
+                        .markdownTheme(.gitHub)
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, message.toolInvocations.isEmpty ? 10 : 0)
+                        .padding(.bottom, message.toolInvocations.isEmpty ? 0 : 10)
+                }
+            }
+            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 
