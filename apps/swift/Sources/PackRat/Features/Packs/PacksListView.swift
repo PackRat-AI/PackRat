@@ -5,6 +5,7 @@ struct PacksListView: View {
     @Bindable var viewModel: PacksViewModel
     @Binding var selectedId: String?
     @State private var showingCreateSheet = false
+    @State private var showingRecentPacks = false
     @State private var needsRefresh = false
     @State private var isExplore = false
     @State private var selectedCategory: PackCategory? = nil
@@ -71,6 +72,11 @@ struct PacksListView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Recent", systemImage: "clock") {
+                    showingRecentPacks = true
+                }
+            }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             categoryFilterBar
@@ -86,6 +92,9 @@ struct PacksListView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             PackFormView(viewModel: viewModel)
+        }
+        .navigationDestination(isPresented: $showingRecentPacks) {
+            RecentPacksView(packs: viewModel.packs)
         }
         .focusedSceneValue(\.newPackAction, $showingCreateSheet)
         .focusedSceneValue(\.refreshAction, $needsRefresh)
