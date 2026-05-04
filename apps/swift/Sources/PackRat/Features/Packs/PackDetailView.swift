@@ -9,6 +9,7 @@ struct PackDetailView: View {
     @State private var showingEditSheet = false
     @State private var showingAddItemSheet = false
     @State private var showingGapAnalysis = false
+    @State private var showingWeightAnalysis = false
     @State private var editingItem: PackItem?
     @State private var detailItem: PackItem?
     @State private var error: String?
@@ -85,6 +86,11 @@ struct PackDetailView: View {
                 .keyboardShortcut("i", modifiers: .command)
 
                 Menu {
+                    Button("Weight Analysis", systemImage: "chart.bar.fill") {
+                        showingWeightAnalysis = true
+                    }
+                    .disabled(items.isEmpty)
+
                     Button("Gap Analysis", systemImage: "sparkles.magnifyingglass") {
                         showingGapAnalysis = true
                     }
@@ -122,6 +128,9 @@ struct PackDetailView: View {
         }
         .sheet(isPresented: $showingGapAnalysis) {
             GapAnalysisSheet(pack: pack, service: viewModel.service)
+        }
+        .navigationDestination(isPresented: $showingWeightAnalysis) {
+            PackWeightAnalysisView(pack: pack)
         }
         .focusedSceneValue(\.sharePackAction, $triggerShare)
         .onChange(of: triggerShare) { _, new in
