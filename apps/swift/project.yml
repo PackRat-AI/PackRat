@@ -164,15 +164,29 @@ targets:
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
 
+  PackRatUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - Tests/PackRatUITests
+    dependencies:
+      - target: PackRat-iOS
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   PackRat-iOS:
     build:
       targets:
         PackRat-iOS: all
         PackRatTests: [test]
+        PackRatUITests: [test]
     test:
       targets:
         - PackRatTests
+        - PackRatUITests
     run:
       config: Debug
     archive:
