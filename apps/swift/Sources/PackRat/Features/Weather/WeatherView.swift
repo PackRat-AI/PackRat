@@ -3,6 +3,7 @@ import SwiftUI
 struct WeatherView: View {
     @Bindable var viewModel: WeatherViewModel
     @State private var showingAlerts = false
+    @State private var showingAlertPreferences = false
 
     private var activeAlerts: [WeatherAlert] {
         viewModel.forecast?.alerts?.alert ?? []
@@ -17,12 +18,12 @@ struct WeatherView: View {
                     savedLocationsSection
                 }
 
-                if viewModel.isLoadingForecast {
+                if let forecast = viewModel.forecast {
+                    forecastContent(forecast)
+                } else if viewModel.isLoadingForecast {
                     ProgressView("Loading forecast...").padding(.top, 40)
                 } else if let error = viewModel.forecastError {
                     ErrorView(error, retry: { await viewModel.refresh() }).padding(.top, 20)
-                } else if let forecast = viewModel.forecast {
-                    forecastContent(forecast)
                 } else if viewModel.savedLocations.isEmpty {
                     EmptyStateView(
                         "No Saved Locations",
@@ -46,6 +47,18 @@ struct WeatherView: View {
                         .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
                 }
                 .disabled(viewModel.forecast == nil)
+            }
+            if viewModel.isLoadingForecast && viewModel.forecast != nil {
+                ToolbarItem(placement: .secondaryAction) {
+                    ProgressView().controlSize(.small)
+                }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                NavigationLink {
+                    WeatherAlertPreferencesView()
+                } label: {
+                    Label("Alert Preferences", systemImage: "slider.horizontal.3")
+                }
             }
         }
         .sheet(isPresented: $showingAlerts) {
