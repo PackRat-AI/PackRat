@@ -100,6 +100,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7WV9JYCW55
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
+        PRODUCT_MODULE_NAME: PackRat
 
   PackRat-macOS:
     type: application
@@ -161,3 +162,26 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  PackRat-iOS:
+    build:
+      targets:
+        PackRat-iOS: all
+        PackRatTests: [test]
+    test:
+      targets:
+        - PackRatTests
+    run:
+      config: Debug
+    archive:
+      config: Release
+  PackRat-macOS:
+    build:
+      targets:
+        PackRat-macOS: all
+    run:
+      config: Debug
+    archive:
+      config: Release
