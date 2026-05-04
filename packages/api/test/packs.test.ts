@@ -54,7 +54,6 @@ vi.mock('@packrat/api/services/packService', async () => {
             localCreatedAt: new Date(),
             localUpdatedAt: new Date(),
             deleted: false,
-            deletedAt: null,
           });
         }
         return mockPacks;

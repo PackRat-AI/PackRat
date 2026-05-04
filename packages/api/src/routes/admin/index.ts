@@ -184,8 +184,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       try {
         const [userCount] = await db
           .select({ count: count() })
-          .from(users)
-          .where(isNull(users.deletedAt));
+          .from(users);
         const [packCount] = await db
           .select({ count: count() })
           .from(packs)
@@ -229,11 +228,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             )
           : undefined;
 
-        const deletedFilter = includeDeleted ? undefined : isNull(users.deletedAt);
-        const whereClause =
-          searchFilter && deletedFilter
-            ? and(deletedFilter, searchFilter)
-            : (deletedFilter ?? searchFilter);
+        const whereClause = searchFilter;
 
         const [usersList, [totalRow]] = await Promise.all([
           db
@@ -245,8 +240,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               role: users.role,
               emailVerified: users.emailVerified,
               createdAt: users.createdAt,
-              lastActiveAt: users.lastActiveAt,
-              deletedAt: users.deletedAt,
             })
             .from(users)
             .where(whereClause)
@@ -318,7 +311,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               category: packs.category,
               isPublic: packs.isPublic,
               deleted: packs.deleted,
-              deletedAt: packs.deletedAt,
               createdAt: packs.createdAt,
               userEmail: users.email,
             })
@@ -433,15 +425,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       if (!id) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
-        const updated = await db
-          .update(users)
-          .set({ deletedAt: new Date() })
-          .where(and(eq(users.id, id), isNull(users.deletedAt)))
-          .returning();
-        if (!updated.length) return status(404, { error: 'User not found or already deleted' });
-        return { success: true as const };
+        // Soft delete not supported for users in Better Auth - use hard delete or ban instead
+        return status(400, { error: 'Soft delete not supported for users. Use hard delete endpoint or ban user.' });
       } catch (error) {
-        console.error('Error soft-deleting user:', error);
+        console.error('Error deleting user:', error);
         return status(500, { error: 'Failed to delete user' });
       }
     },
@@ -492,16 +479,12 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     '/users/:id/restore',
     async ({ params }) => {
       const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
-        const restored = await db
-          .update(users)
-          .set({ deletedAt: null })
-          .where(and(eq(users.id, id), sql`${users.deletedAt} IS NOT NULL`))
-          .returning();
-        if (!restored.length) return status(404, { error: 'User not found or not deleted' });
-        return { success: true as const };
+        // Soft delete not supported for users in Better Auth
+        return status(400, { error: 'Soft delete not supported for users in Better Auth' });
       } catch (error) {
         console.error('Error restoring user:', error);
         return status(500, { error: 'Failed to restore user' });
@@ -523,7 +506,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const now = new Date();
         const updated = await db
           .update(packs)
-          .set({ deleted: true, deletedAt: now })
+          .set({ deleted: true })
           .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
           .returning();
         if (!updated.length) return status(404, { error: 'Pack not found' });

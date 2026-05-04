@@ -19,6 +19,7 @@ export async function createTestUser(
 
   const finalUserData: InferInsertModel<typeof users> = {
     id: overrideId ?? crypto.randomUUID(),
+    name: 'Test User',
     email: `test-${Date.now()}@example.com`,
     firstName: 'Test',
     lastName: 'User',

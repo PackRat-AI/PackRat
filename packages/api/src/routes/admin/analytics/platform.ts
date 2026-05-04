@@ -56,7 +56,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
               count: count(),
             })
             .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.createdAt, startDate)))
+            .where(gte(users.createdAt, startDate))
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
@@ -199,25 +199,17 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+        // Note: Better Auth users don't have lastActiveAt field - tracking requires separate implementation
         const [dau, wau, mau] = await Promise.all([
-          db
-            .select({ count: count() })
-            .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, oneDayAgo))),
-          db
-            .select({ count: count() })
-            .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, sevenDaysAgo))),
-          db
-            .select({ count: count() })
-            .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, thirtyDaysAgo))),
+          db.select({ count: sql<number>`0` }),
+          db.select({ count: sql<number>`0` }),
+          db.select({ count: sql<number>`0` }),
         ]);
 
         return {
-          dau: dau[0]?.count ?? 0,
-          wau: wau[0]?.count ?? 0,
-          mau: mau[0]?.count ?? 0,
+          dau: 0, // Requires lastActiveAt tracking
+          wau: 0, // Requires lastActiveAt tracking
+          mau: 0, // Requires lastActiveAt tracking
         };
       } catch (error) {
         console.error('Analytics active-users error:', error);

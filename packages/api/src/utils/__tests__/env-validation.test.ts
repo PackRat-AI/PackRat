@@ -171,7 +171,7 @@ describe('env-validation', () => {
     });
 
     it('throws on missing required variable', () => {
-      const invalid = makeRawEnv({ JWT_SECRET: undefined });
+      const invalid = makeRawEnv({ BETTER_AUTH_SECRET: undefined });
       expect(() => validateCloudflareApiEnv(invalid)).toThrow();
     });
   });
