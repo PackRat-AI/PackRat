@@ -268,6 +268,132 @@ struct EnumDecodingTests {
     private struct WrappedUnit: Decodable { let unit: WeightUnit }
 }
 
+// MARK: - WeatherAlert
+
+@Suite("WeatherAlert model")
+struct WeatherAlertTests {
+    private func makeAlert(severity: String?) -> WeatherAlert {
+        WeatherAlert(headline: nil, event: nil, severity: severity,
+                     urgency: nil, areas: nil, effective: nil, expires: nil,
+                     desc: nil, instruction: nil)
+    }
+
+    @Test("extreme severity maps to red")
+    func extremeIsRed() {
+        #expect(makeAlert(severity: "Extreme").severityColor == "red")
+    }
+
+    @Test("severe severity maps to orange")
+    func severeIsOrange() {
+        #expect(makeAlert(severity: "Severe").severityColor == "orange")
+    }
+
+    @Test("moderate severity maps to yellow")
+    func moderateIsYellow() {
+        #expect(makeAlert(severity: "Moderate").severityColor == "yellow")
+    }
+
+    @Test("nil or unknown severity maps to blue")
+    func nilIsBlue() {
+        #expect(makeAlert(severity: nil).severityColor == "blue")
+        #expect(makeAlert(severity: "Minor").severityColor == "blue")
+    }
+
+    @Test("severity matching is case-insensitive")
+    func caseInsensitive() {
+        #expect(makeAlert(severity: "EXTREME").severityColor == "red")
+        #expect(makeAlert(severity: "severe").severityColor == "orange")
+    }
+}
+
+// MARK: - PackTemplateItem
+
+@Suite("PackTemplateItem model")
+struct PackTemplateItemTests {
+    private func makeItem(weight: Double?, unit: String?, quantity: Int? = 1) -> PackTemplateItem {
+        PackTemplateItem(id: "1", packTemplateId: nil, name: "Item",
+                         weight: weight, weightUnit: unit, quantity: quantity,
+                         category: nil, consumable: nil, worn: nil, notes: nil)
+    }
+
+    @Test("weightInGrams is 0 when no weight")
+    func noWeight() {
+        #expect(makeItem(weight: nil, unit: nil).weightInGrams == 0)
+    }
+
+    @Test("weightInGrams uses grams directly")
+    func gramsUnit() {
+        #expect(makeItem(weight: 500, unit: "g").weightInGrams == 500)
+    }
+
+    @Test("weightInGrams converts kg to g")
+    func kgUnit() {
+        #expect(makeItem(weight: 2, unit: "kg").weightInGrams == 2000)
+    }
+
+    @Test("weightInGrams converts oz to g")
+    func ozUnit() {
+        let result = makeItem(weight: 1, unit: "oz").weightInGrams
+        #expect(abs(result - 28.3495) < 0.001)
+    }
+
+    @Test("weightInGrams converts lb to g")
+    func lbUnit() {
+        let result = makeItem(weight: 1, unit: "lb").weightInGrams
+        #expect(abs(result - 453.592) < 0.001)
+    }
+
+    @Test("weightInGrams multiplies by quantity")
+    func quantityMultiplier() {
+        #expect(makeItem(weight: 10, unit: "g", quantity: 8).weightInGrams == 80)
+    }
+
+    @Test("quantity defaults to 1 when nil")
+    func nilQuantityDefaultsToOne() {
+        #expect(makeItem(weight: 100, unit: "g", quantity: nil).weightInGrams == 100)
+    }
+}
+
+// MARK: - PackTemplate totals
+
+@Suite("PackTemplate totals")
+struct PackTemplateTotalsTests {
+    private func makeItem(weight: Double, unit: String, quantity: Int = 1) -> PackTemplateItem {
+        PackTemplateItem(id: UUID().uuidString, packTemplateId: "t1", name: "Item",
+                         weight: weight, weightUnit: unit, quantity: quantity,
+                         category: nil, consumable: nil, worn: nil, notes: nil)
+    }
+
+    private func makeTemplate(items: [PackTemplateItem]) -> PackTemplate {
+        PackTemplate(id: "1", userId: nil, name: "T", description: nil,
+                     category: nil, image: nil, tags: nil, isAppTemplate: false,
+                     contentSource: nil, items: items, createdAt: nil, updatedAt: nil)
+    }
+
+    @Test("formattedTotalWeight returns 'No weight data' for empty items")
+    func emptyItems() {
+        #expect(makeTemplate(items: []).formattedTotalWeight() == "No weight data")
+    }
+
+    @Test("formattedTotalWeight shows grams when under 1000g")
+    func showsGrams() {
+        let t = makeTemplate(items: [makeItem(weight: 800, unit: "g")])
+        #expect(t.formattedTotalWeight() == "800 g")
+    }
+
+    @Test("formattedTotalWeight shows kg when 1000g or more")
+    func showsKg() {
+        let t = makeTemplate(items: [makeItem(weight: 1.5, unit: "kg")])
+        #expect(t.formattedTotalWeight() == "1.50 kg")
+    }
+
+    @Test("totalWeightGrams sums all items")
+    func sumsItems() {
+        let t = makeTemplate(items: [makeItem(weight: 300, unit: "g"), makeItem(weight: 200, unit: "g")])
+        #expect(t.totalWeightGrams == 500)
+    }
+}
+
 // MARK: - PackRatError
 
 @Suite("PackRatError")

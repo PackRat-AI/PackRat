@@ -237,6 +237,53 @@ struct PackTemplatesViewModelTests {
         #expect(vm.officialTemplates.count == 1)
         #expect(vm.myTemplates.count == 1)
     }
+
+    @Test("filteredTemplates searches by category")
+    @MainActor func filtersByCategory() {
+        let vm = PackTemplatesViewModel()
+        vm.templates = [
+            PackTemplate(id: "1", userId: nil, name: "Hiking Setup", description: nil,
+                         category: "backpacking", image: nil, tags: nil, isAppTemplate: false,
+                         contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
+            PackTemplate(id: "2", userId: nil, name: "Beach Trip", description: nil,
+                         category: "summer", image: nil, tags: nil, isAppTemplate: false,
+                         contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
+        ]
+        vm.searchText = "backpacking"
+        #expect(vm.filteredTemplates.count == 1)
+        #expect(vm.filteredTemplates.first?.id == "1")
+    }
+
+    @Test("filteredTemplates searches by description")
+    @MainActor func filtersByDescription() {
+        let vm = PackTemplatesViewModel()
+        vm.templates = [
+            PackTemplate(id: "1", userId: nil, name: "Template A", description: "Lightweight alpine kit",
+                         category: nil, image: nil, tags: nil, isAppTemplate: false,
+                         contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
+            PackTemplate(id: "2", userId: nil, name: "Template B", description: nil,
+                         category: nil, image: nil, tags: nil, isAppTemplate: false,
+                         contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
+        ]
+        vm.searchText = "alpine"
+        #expect(vm.filteredTemplates.count == 1)
+        #expect(vm.filteredTemplates.first?.id == "1")
+    }
+
+    @Test("filteredTemplates returns all when search is empty")
+    @MainActor func returnsAllWhenEmpty() {
+        let vm = PackTemplatesViewModel()
+        vm.templates = [
+            PackTemplate(id: "1", userId: nil, name: "A", description: nil, category: nil,
+                         image: nil, tags: nil, isAppTemplate: false, contentSource: nil,
+                         items: nil, createdAt: nil, updatedAt: nil),
+            PackTemplate(id: "2", userId: nil, name: "B", description: nil, category: nil,
+                         image: nil, tags: nil, isAppTemplate: false, contentSource: nil,
+                         items: nil, createdAt: nil, updatedAt: nil),
+        ]
+        vm.searchText = ""
+        #expect(vm.filteredTemplates.count == 2)
+    }
 }
 
 // MARK: - TrailConditionsViewModel

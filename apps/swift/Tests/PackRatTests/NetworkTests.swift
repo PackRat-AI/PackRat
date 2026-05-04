@@ -48,7 +48,7 @@ struct EndpointTests {
 
     @Test("POST endpoint encodes body to JSON")
     func postEndpointEncodesBody() throws {
-        struct Body: Encodable { let name: String }
+        struct Body: Codable { let name: String }
         let ep = Endpoint(.post, "/api/packs", body: Body(name: "Test Pack"))
         #expect(ep.method == .post)
         let data = try #require(ep.bodyData)

@@ -64,6 +64,90 @@ struct CreateTripRequestTests {
     }
 }
 
+// MARK: - Template request encoding
+
+@Suite("UpdateTemplateRequest encoding")
+struct UpdateTemplateRequestTests {
+    @Test("encodes provided fields")
+    func encodesFields() throws {
+        let req = UpdateTemplateRequest(name: "New Name", description: "Desc",
+                                        category: "hiking", localUpdatedAt: "2025-01-01T00:00:00Z")
+        let data = try JSONEncoder().encode(req)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["name"] as? String == "New Name")
+        #expect(dict["category"] as? String == "hiking")
+        #expect(dict["localUpdatedAt"] as? String == "2025-01-01T00:00:00Z")
+    }
+
+    @Test("nil fields are omitted from output")
+    func nilFieldsOmitted() throws {
+        let req = UpdateTemplateRequest(name: nil, description: nil,
+                                        category: nil, localUpdatedAt: "2025-01-01T00:00:00Z")
+        let data = try JSONEncoder().encode(req)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["name"] == nil)
+        #expect(dict["description"] == nil)
+        #expect(dict["category"] == nil)
+    }
+}
+
+@Suite("CreateTemplateItemRequest encoding")
+struct CreateTemplateItemRequestTests {
+    @Test("encodes all required fields")
+    func encodesRequired() throws {
+        let req = CreateTemplateItemRequest(id: "item-1", name: "Tent", weight: 1200,
+                                            weightUnit: "g", quantity: 1, category: "shelter",
+                                            consumable: false, worn: false, notes: nil)
+        let data = try JSONEncoder().encode(req)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["id"] as? String == "item-1")
+        #expect(dict["name"] as? String == "Tent")
+        #expect(dict["weight"] as? Double == 1200)
+        #expect(dict["weightUnit"] as? String == "g")
+        #expect(dict["quantity"] as? Int == 1)
+        #expect(dict["consumable"] as? Bool == false)
+        #expect(dict["worn"] as? Bool == false)
+    }
+
+    @Test("notes and category omitted when nil")
+    func optionalFieldsOmitted() throws {
+        let req = CreateTemplateItemRequest(id: "i1", name: "Pad", weight: 400,
+                                            weightUnit: "g", quantity: 1, category: nil,
+                                            consumable: true, worn: false, notes: nil)
+        let data = try JSONEncoder().encode(req)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["notes"] == nil)
+        #expect(dict["category"] == nil)
+        #expect(dict["consumable"] as? Bool == true)
+    }
+}
+
+@Suite("UpdateTemplateItemRequest encoding")
+struct UpdateTemplateItemRequestTests {
+    @Test("all nil fields produce empty object")
+    func allNilProducesEmpty() throws {
+        let req = UpdateTemplateItemRequest(name: nil, weight: nil, weightUnit: nil,
+                                            quantity: nil, category: nil,
+                                            consumable: nil, worn: nil, notes: nil)
+        let data = try JSONEncoder().encode(req)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict.isEmpty)
+    }
+
+    @Test("partial update encodes only set fields")
+    func partialEncoding() throws {
+        let req = UpdateTemplateItemRequest(name: "Updated Tent", weight: 900,
+                                            weightUnit: "g", quantity: nil,
+                                            category: nil, consumable: nil, worn: nil, notes: nil)
+        let data = try JSONEncoder().encode(req)
+        let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        #expect(dict["name"] as? String == "Updated Tent")
+        #expect(dict["weight"] as? Double == 900)
+        #expect(dict["quantity"] == nil)
+        #expect(dict["category"] == nil)
+    }
+}
+
 // MARK: - Decodable model round-trips
 
 @Suite("Pack JSON decoding")
@@ -183,6 +267,66 @@ struct WeatherForecastDecodingTests {
         #expect(resp.forecast?.forecastday?.count == 1)
         #expect(resp.forecast?.forecastday?.first?.day?.maxtempF == 82.0)
         #expect(resp.forecast?.forecastday?.first?.day?.dailyChanceOfRain == 10)
+    }
+}
+
+@Suite("WeatherForecastResponse with alerts")
+struct WeatherForecastAlertsTests {
+    private let alertJSON = """
+    {
+        "location": { "id": 1, "name": "Miami", "region": "Florida", "country": "USA", "lat": 25.77, "lon": -80.19 },
+        "current": {
+            "temp_f": 85.0,
+            "temp_c": 29.4,
+            "humidity": 80,
+            "wind_mph": 15.0,
+            "condition": { "text": "Partly Cloudy", "code": 1003 }
+        },
+        "forecast": { "forecastday": [] },
+        "alerts": {
+            "alert": [
+                {
+                    "headline": "Hurricane Warning",
+                    "event": "Hurricane",
+                    "severity": "Extreme",
+                    "urgency": "Immediate",
+                    "areas": "Miami-Dade County",
+                    "effective": "2025-09-01T12:00:00+00:00",
+                    "expires": "2025-09-02T12:00:00+00:00",
+                    "desc": "A major hurricane is approaching",
+                    "instruction": "Evacuate immediately"
+                }
+            ]
+        }
+    }
+    """.data(using: .utf8)!
+
+    @Test("decodes alerts array from forecast response")
+    func decodesAlerts() throws {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let resp = try decoder.decode(WeatherForecastResponse.self, from: alertJSON)
+        let alerts = resp.alerts?.alert
+        #expect(alerts?.count == 1)
+        #expect(alerts?.first?.headline == "Hurricane Warning")
+        #expect(alerts?.first?.severity == "Extreme")
+        #expect(alerts?.first?.severityColor == "red")
+        #expect(alerts?.first?.areas == "Miami-Dade County")
+    }
+
+    @Test("missing alerts field decodes as nil")
+    func missingAlertsDecodeNil() throws {
+        let noAlertsJSON = """
+        {
+            "location": { "id": 1, "name": "Denver", "region": "Colorado", "country": "USA", "lat": 39.74, "lon": -104.98 },
+            "current": { "temp_f": 72.0, "temp_c": 22.2, "humidity": 35, "wind_mph": 8.5, "condition": { "text": "Sunny", "code": 1000 } },
+            "forecast": { "forecastday": [] }
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let resp = try decoder.decode(WeatherForecastResponse.self, from: noAlertsJSON)
+        #expect(resp.alerts == nil)
     }
 }
 
