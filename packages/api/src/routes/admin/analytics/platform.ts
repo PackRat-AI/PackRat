@@ -14,7 +14,7 @@ import {
   BreakdownItemSchema,
   GrowthPointSchema,
 } from '@packrat/api/schemas/admin';
-import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
@@ -191,21 +191,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
   .get(
     '/active-users',
     async () => {
-      const db = createDb();
-
       try {
-        const now = new Date();
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
         // Note: Better Auth users don't have lastActiveAt field - tracking requires separate implementation
-        const [dau, wau, mau] = await Promise.all([
-          db.select({ count: sql<number>`0` }),
-          db.select({ count: sql<number>`0` }),
-          db.select({ count: sql<number>`0` }),
-        ]);
-
         return {
           dau: 0, // Requires lastActiveAt tracking
           wau: 0, // Requires lastActiveAt tracking

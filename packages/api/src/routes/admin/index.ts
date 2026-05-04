@@ -15,7 +15,7 @@ import {
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
-import { and, count, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -182,9 +182,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async () => {
       const db = createDb();
       try {
-        const [userCount] = await db
-          .select({ count: count() })
-          .from(users);
+        const [userCount] = await db.select({ count: count() }).from(users);
         const [packCount] = await db
           .select({ count: count() })
           .from(packs)
@@ -218,7 +216,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const includeDeleted = query.includeDeleted === 'true';
 
         const searchFilter = search
           ? or(
@@ -423,14 +420,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async ({ params }) => {
       const id = params.id;
       if (!id) return status(400, { error: 'Invalid user id' });
-      const db = createDb();
-      try {
-        // Soft delete not supported for users in Better Auth - use hard delete or ban instead
-        return status(400, { error: 'Soft delete not supported for users. Use hard delete endpoint or ban user.' });
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        return status(500, { error: 'Failed to delete user' });
-      }
+      // Soft delete not supported for users in Better Auth - use hard delete or ban instead
+      return status(400, {
+        error: 'Soft delete not supported for users. Use hard delete endpoint or ban user.',
+      });
     },
     {
       params: z.object({ id: z.string() }),
@@ -478,17 +471,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .post(
     '/users/:id/restore',
     async ({ params }) => {
-      const id = Number(params.id);
       const id = params.id;
       if (!id) return status(400, { error: 'Invalid user id' });
-      const db = createDb();
-      try {
-        // Soft delete not supported for users in Better Auth
-        return status(400, { error: 'Soft delete not supported for users in Better Auth' });
-      } catch (error) {
-        console.error('Error restoring user:', error);
-        return status(500, { error: 'Failed to restore user' });
-      }
+      // Soft delete not supported for users in Better Auth
+      return status(400, { error: 'Soft delete not supported for users in Better Auth' });
     },
     {
       params: z.object({ id: z.string() }),
@@ -503,7 +489,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async ({ params }) => {
       const db = createDb();
       try {
-        const now = new Date();
         const updated = await db
           .update(packs)
           .set({ deleted: true })
