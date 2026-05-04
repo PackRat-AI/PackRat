@@ -1,11 +1,11 @@
 /**
  * Generates openapi.yaml for the PackRat API and writes it to
- * apps/macos/Sources/PackRatAPIClient/openapi.yaml (consumed by the Swift
- * openapi-generator SPM build plugin) and apps/macos/openapi.yaml
+ * apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/openapi.yaml (consumed
+ * by the Swift openapi-generator SPM build plugin) and apps/swift/openapi.yaml
  * (the human-readable canonical copy).
  *
  * Run from the repo root:
- *   cd packages/api && bun scripts/generate-openapi.ts
+ *   bun generate:openapi
  *
  * Requires the API package dependencies to be installed. No Cloudflare
  * Worker runtime or live server needed — Elysia builds the OpenAPI spec
@@ -39,8 +39,11 @@ const json = JSON.stringify(spec, null, 2);
 
 // Write to both locations
 const destinations = [
-  resolve(import.meta.dir, '../../../apps/macos/openapi.yaml'),
-  resolve(import.meta.dir, '../../../apps/macos/Sources/PackRatAPIClient/openapi.yaml'),
+  resolve(import.meta.dir, '../../../apps/swift/openapi.yaml'),
+  resolve(
+    import.meta.dir,
+    '../../../apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/openapi.yaml',
+  ),
 ];
 
 for (const dest of destinations) {

@@ -715,6 +715,83 @@ components:
           type: string
           format: date-time
 
+    # ── Season Suggestions ─────────────────────────────────────────────────────
+    SeasonSuggestionItem:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        weight:
+          type: number
+          format: double
+          nullable: true
+        weightUnit:
+          type: string
+          nullable: true
+        quantity:
+          type: integer
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        consumable:
+          type: boolean
+          nullable: true
+        worn:
+          type: boolean
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        catalogItemId:
+          type: integer
+          nullable: true
+
+    SeasonSuggestion:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+        items:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/SeasonSuggestionItem"
+
+    SeasonSuggestionsResponse:
+      type: object
+      required: [suggestions, totalInventoryItems, location, season]
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeasonSuggestion"
+        totalInventoryItems:
+          type: integer
+        location:
+          type: string
+        season:
+          type: string
+
     # ── Shared ─────────────────────────────────────────────────────────────────
     ErrorResponse:
       type: object

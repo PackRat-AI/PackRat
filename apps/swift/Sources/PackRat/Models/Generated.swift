@@ -190,3 +190,32 @@ struct TrailConditionReport: Codable, Identifiable, Sendable {
     let createdAt: String?
     let updatedAt: String?
 }
+
+struct SeasonSuggestionItem: Codable, Sendable {
+    let name: String
+    let description: String?
+    let weight: Double?
+    let weightUnit: String?
+    let quantity: Int?
+    let category: String?
+    let consumable: Bool?
+    let worn: Bool?
+    let image: String?
+    let notes: String?
+    let catalogItemId: Int?
+}
+
+struct SeasonSuggestion: Codable, Sendable {
+    let name: String
+    let description: String?
+    let category: String?
+    let tags: [String]?
+    let items: [SeasonSuggestionItem]?
+}
+
+struct SeasonSuggestionsResponse: Codable, Sendable {
+    let suggestions: [SeasonSuggestion]
+    let totalInventoryItems: Int
+    let location: String
+    let season: String
+}

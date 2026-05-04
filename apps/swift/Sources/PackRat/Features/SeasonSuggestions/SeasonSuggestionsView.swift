@@ -1,24 +1,5 @@
 import SwiftUI
 
-// MARK: - Models
-
-struct SeasonSuggestion: Codable, Identifiable {
-    let id: String
-    let item: String
-    let reason: String
-    let category: String?
-    let priority: String?
-}
-
-struct SeasonSuggestionsResponse: Codable {
-    let suggestions: [SeasonSuggestion]?
-    let location: String?
-    let season: String?
-    let data: [SeasonSuggestion]?
-
-    var items: [SeasonSuggestion] { suggestions ?? data ?? [] }
-}
-
 // MARK: - Service
 
 final class SeasonSuggestionsService: Sendable {
@@ -61,7 +42,7 @@ final class SeasonSuggestionsViewModel {
             let formatter = ISO8601DateFormatter()
             let dateStr = formatter.string(from: Date())
             let response = try await service.getSuggestions(location: location, date: dateStr)
-            suggestions = response.items
+            suggestions = response.suggestions
             detectedSeason = response.season
             detectedLocation = response.location
             hasLoaded = true
@@ -188,7 +169,7 @@ struct SeasonSuggestionsView: View {
                 }
             }
 
-            Section("\(viewModel.suggestions.count) suggestions") {
+            Section("\(viewModel.suggestions.count) pack suggestion\(viewModel.suggestions.count == 1 ? "" : "s")") {
                 ForEach(viewModel.suggestions) { suggestion in
                     SeasonSuggestionRow(suggestion: suggestion)
                 }
@@ -224,41 +205,83 @@ struct SeasonSuggestionsView: View {
 
 private struct SeasonSuggestionRow: View {
     let suggestion: SeasonSuggestion
-
-    private var priorityColor: Color {
-        switch suggestion.priority {
-        case "essential", "must-have": return .red
-        case "recommended": return .orange
-        default: return .secondary
-        }
-    }
+    @State private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(suggestion.item)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(suggestion.name)
                         .font(.body.bold())
-                    Text(suggestion.reason)
+                    if let desc = suggestion.description {
+                        Text(desc)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(expanded ? nil : 2)
+                    }
+                }
+                Spacer()
+                Button {
+                    withAnimation { expanded.toggle() }
+                } label: {
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
-                if let priority = suggestion.priority {
-                    Text(priority.capitalized)
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 8)
+                .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 8) {
+                if let cat = suggestion.category {
+                    Label(cat, systemImage: "tag")
+                        .font(.caption2)
+                        .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(priorityColor.opacity(0.12), in: Capsule())
-                        .foregroundStyle(priorityColor)
+                        .background(Color.accentColor.opacity(0.08), in: Capsule())
+                        .foregroundStyle(.tint)
+                }
+                if let count = suggestion.items?.count, count > 0 {
+                    Label("\(count) items", systemImage: "archivebox")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
-            if let cat = suggestion.category {
-                Label(cat.capitalized, systemImage: "tag")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+
+            if expanded, let items = suggestion.items, !items.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(items) { item in
+                        HStack(alignment: .top, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.name)
+                                    .font(.caption.bold())
+                                if let notes = item.notes {
+                                    Text(notes)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 1) {
+                                if !item.displayWeight.isEmpty {
+                                    Text(item.displayWeight)
+                                        .font(.caption2.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+                                }
+                                if item.worn == true {
+                                    Text("worn")
+                                        .font(.caption2)
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.top, 2)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
