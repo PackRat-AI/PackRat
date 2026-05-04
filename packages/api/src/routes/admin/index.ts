@@ -250,8 +250,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           data: usersList.map((u) => ({
             ...u,
             createdAt: u.createdAt?.toISOString() ?? null,
-            lastActiveAt: u.lastActiveAt?.toISOString() ?? null,
-            deletedAt: u.deletedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -328,7 +326,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           data: packsList.map((p) => ({
             ...p,
             createdAt: p.createdAt?.toISOString() ?? null,
-            deletedAt: p.deletedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -436,8 +433,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .delete(
     '/users/:id/hard',
     async ({ params, body }) => {
-      const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
         // Cascading FKs handle deletion of all related user data.

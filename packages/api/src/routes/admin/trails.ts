@@ -297,7 +297,6 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           data: reports.map((r) => ({
             ...r,
             createdAt: r.createdAt.toISOString(),
-            deletedAt: r.deletedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
