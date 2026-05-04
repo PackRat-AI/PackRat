@@ -31,7 +31,6 @@ export const GuidesListScreen = () => {
   const {
     data: guidesData,
     isLoading: isLoadingGuides,
-    isRefetching: isRefetchingGuides,
     refetch: refetchGuides,
     fetchNextPage: fetchNextPageGuides,
     hasNextPage: hasNextPageGuides,
@@ -46,7 +45,6 @@ export const GuidesListScreen = () => {
   const {
     data: searchData,
     isLoading: isSearching,
-    isRefetching: isRefetchingSearch,
     refetch: refetchSearch,
     fetchNextPage: fetchNextPageSearch,
     hasNextPage: hasNextPageSearch,
@@ -62,7 +60,6 @@ export const GuidesListScreen = () => {
   const isSearchMode = searchQuery.length > 0;
   const data = isSearchMode ? searchData : guidesData;
   const isLoading = isSearchMode ? isSearching : isLoadingGuides;
-  const isRefetching = isSearchMode ? isRefetchingSearch : isRefetchingGuides;
   const refetch = isSearchMode ? refetchSearch : refetchGuides;
   const fetchNextPage = isSearchMode ? fetchNextPageSearch : fetchNextPageGuides;
   const hasNextPage = isSearchMode ? hasNextPageSearch : hasNextPageGuides;

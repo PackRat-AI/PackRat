@@ -34,7 +34,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
               {pack.totalWeight ?? 0} g
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt, t as any)}
+              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt, t)}
             </Text>
           </View>
         </View>
@@ -45,7 +45,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
           </View>
           <Text variant="caption1" className="text-muted-foreground">
             {t('packs.lastUpdated', {
-              time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t as any),
+              time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
             })}
           </Text>
         </View>

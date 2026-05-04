@@ -53,7 +53,6 @@ function CatalogItemsScreen() {
   const {
     data: paginatedData,
     isLoading: isPaginatedLoading,
-    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
