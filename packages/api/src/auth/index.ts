@@ -42,21 +42,31 @@ async function verifyPasswordCompat({
 // Returns null when Apple credentials are not configured (e.g., in tests).
 async function generateAppleClientSecret(env: ValidatedEnv): Promise<string | null> {
   if (!env.APPLE_PRIVATE_KEY) return null;
-  const privateKey = await importPKCS8(env.APPLE_PRIVATE_KEY, 'ES256');
-  const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({})
-    .setProtectedHeader({ alg: 'ES256', kid: env.APPLE_KEY_ID })
-    .setIssuer(env.APPLE_TEAM_ID)
-    .setSubject(env.APPLE_CLIENT_ID)
-    .setAudience('https://appleid.apple.com')
-    .setIssuedAt(now)
-    .setExpirationTime(now + 60 * 60 * 24 * 180) // 180 days
-    .sign(privateKey);
+  try {
+    const privateKey = await importPKCS8(env.APPLE_PRIVATE_KEY, 'ES256');
+    const now = Math.floor(Date.now() / 1000);
+    return await new SignJWT({})
+      .setProtectedHeader({ alg: 'ES256', kid: env.APPLE_KEY_ID })
+      .setIssuer(env.APPLE_TEAM_ID)
+      .setSubject(env.APPLE_CLIENT_ID)
+      .setAudience('https://appleid.apple.com')
+      .setIssuedAt(now)
+      .setExpirationTime(now + 60 * 60 * 24 * 180) // 180 days
+      .sign(privateKey);
+  } catch (err) {
+    // Malformed or placeholder key — log so the issue is visible, then fall
+    // through so the provider is still registered for the native id-token flow
+    // (which verifies against Apple's public JWKS and does not use this secret).
+    console.warn(
+      '[auth] Apple client-secret generation failed; web OAuth flow will be unavailable:',
+      err,
+    );
+    return null;
+  }
 }
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
-// biome-ignore lint/suspicious/noExplicitAny: same reason for the cache map value
 const authCache = new WeakMap<object, any>();
 
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
@@ -64,7 +74,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
   const cached = authCache.get(env as object);
   if (cached) return cached;
 
-  const appleClientSecret = await generateAppleClientSecret(env).catch(() => null);
+  const appleClientSecret = await generateAppleClientSecret(env);
 
   // Use the HTTP Neon driver — no long-lived connections inside a Worker.
   const db = drizzle(neon(env.NEON_DATABASE_URL), { schema });
@@ -142,12 +152,23 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
         clientId: env.GOOGLE_CLIENT_ID ?? '',
         clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
       },
-      ...(appleClientSecret && env.APPLE_CLIENT_ID
+      // Always register Apple when clientId is present so the native id-token
+      // flow works even without a valid client-secret JWT (the id-token path
+      // verifies against Apple's public JWKS; the secret is only used for the
+      // web OAuth redirect flow).
+      // audience covers all EAS build variants — Apple puts the bundle ID in
+      // the `aud` claim, which differs per variant (.dev, .preview, base).
+      ...(env.APPLE_CLIENT_ID
         ? {
             apple: {
               clientId: env.APPLE_CLIENT_ID,
-              clientSecret: appleClientSecret,
+              clientSecret: appleClientSecret ?? 'native-id-token-only',
               appBundleIdentifier: env.APPLE_CLIENT_ID,
+              audience: [
+                env.APPLE_CLIENT_ID,
+                `${env.APPLE_CLIENT_ID}.dev`,
+                `${env.APPLE_CLIENT_ID}.preview`,
+              ],
             },
           }
         : {}),
