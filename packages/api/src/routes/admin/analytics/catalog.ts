@@ -1,7 +1,15 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs } from '@packrat/api/db/schema';
+import {
+  AdminErrorResponses,
+  BrandRowSchema,
+  CatalogOverviewSchema,
+  EmbeddingStatsSchema,
+  EtlResponseSchema,
+  PriceBucketSchema,
+} from '@packrat/api/schemas/admin';
 import { and, avg, count, desc, gt, isNotNull, max, min, sql } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
@@ -75,7 +83,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Catalog data lake overview' } },
+    {
+      response: { 200: CatalogOverviewSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Catalog data lake overview' },
+    },
   )
 
   .get(
@@ -117,6 +128,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(100).optional().default(25),
       }),
+      response: { 200: t.Array(BrandRowSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top gear brands' },
     },
   )
@@ -152,7 +164,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Price distribution' } },
+    {
+      response: { 200: t.Array(PriceBucketSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Price distribution' },
+    },
   )
 
   .get(
@@ -209,6 +224,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(200).optional().default(50),
       }),
+      response: { 200: EtlResponseSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'ETL pipeline history' },
     },
   )
@@ -241,5 +257,8 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Embedding coverage' } },
+    {
+      response: { 200: EmbeddingStatsSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Embedding coverage' },
+    },
   );

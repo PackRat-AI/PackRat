@@ -2,14 +2,25 @@ import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
+import {
+  AdminCatalogListSchema,
+  AdminErrorResponses,
+  AdminPacksListSchema,
+  AdminStatsSchema,
+  AdminUsersListSchema,
+  CatalogUpdateSchema,
+  HardDeleteSuccessSchema,
+  SuccessSchema,
+} from '@packrat/api/schemas/admin';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
+import { adminTrailsRoutes } from './trails';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
@@ -161,7 +172,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async () => {
       const db = createDb();
       try {
-        const [userCount] = await db.select({ count: count() }).from(users);
+        const [userCount] = await db
+          .select({ count: count() })
+          .from(users)
+          .where(isNull(users.deletedAt));
         const [packCount] = await db
           .select({ count: count() })
           .from(packs)
@@ -181,6 +195,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       }
     },
     {
+      response: { 200: AdminStatsSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Get admin dashboard statistics' },
     },
   )
@@ -194,34 +209,54 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const usersList = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            role: users.role,
-            emailVerified: users.emailVerified,
-            createdAt: users.createdAt,
-          })
-          .from(users)
-          .where(
-            search
-              ? or(
-                  ilike(users.email, `%${search}%`),
-                  ilike(users.firstName, `%${search}%`),
-                  ilike(users.lastName, `%${search}%`),
-                )
-              : undefined,
-          )
-          .orderBy(desc(users.createdAt))
-          .limit(limit)
-          .offset(offset);
+        const includeDeleted = query.includeDeleted === 'true';
 
-        return usersList.map((u) => ({
-          ...u,
-          createdAt: u.createdAt?.toISOString() || null,
-        }));
+        const searchFilter = search
+          ? or(
+              ilike(users.email, `%${search}%`),
+              sql`${users.firstName} ilike ${`%${search}%`}`,
+              sql`${users.lastName} ilike ${`%${search}%`}`,
+            )
+          : undefined;
+
+        const deletedFilter = includeDeleted ? undefined : isNull(users.deletedAt);
+        const whereClause =
+          searchFilter && deletedFilter
+            ? and(deletedFilter, searchFilter)
+            : (deletedFilter ?? searchFilter);
+
+        const [usersList, [totalRow]] = await Promise.all([
+          db
+            .select({
+              id: users.id,
+              email: users.email,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              role: users.role,
+              emailVerified: users.emailVerified,
+              createdAt: users.createdAt,
+              lastActiveAt: users.lastActiveAt,
+              deletedAt: users.deletedAt,
+            })
+            .from(users)
+            .where(whereClause)
+            .orderBy(desc(users.createdAt))
+            .limit(limit)
+            .offset(offset),
+          db.select({ count: count() }).from(users).where(whereClause),
+        ]);
+
+        return {
+          data: usersList.map((u) => ({
+            ...u,
+            createdAt: u.createdAt?.toISOString() ?? null,
+            lastActiveAt: u.lastActiveAt?.toISOString() ?? null,
+            deletedAt: u.deletedAt?.toISOString() ?? null,
+          })),
+          total: totalRow?.count ?? 0,
+          limit,
+          offset,
+        };
       } catch (error) {
         console.error('Error fetching users:', error);
         return status(500, { error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' });
@@ -232,7 +267,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
+        includeDeleted: z.string().optional(),
       }),
+      response: { 200: AdminUsersListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List users' },
     },
   )
@@ -246,39 +283,58 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const packsList = await db
-          .select({
-            id: packs.id,
-            name: packs.name,
-            description: packs.description,
-            category: packs.category,
-            isPublic: packs.isPublic,
-            createdAt: packs.createdAt,
-            userEmail: users.email,
-          })
-          .from(packs)
-          .leftJoin(users, eq(packs.userId, users.id))
-          .where(
-            and(
-              eq(packs.deleted, false),
-              search
-                ? or(
-                    ilike(packs.name, `%${search}%`),
-                    ilike(packs.description, `%${search}%`),
-                    ilike(packs.category, `%${search}%`),
-                    ilike(users.email, `%${search}%`),
-                  )
-                : undefined,
-            ),
-          )
-          .orderBy(desc(packs.createdAt))
-          .limit(limit)
-          .offset(offset);
+        const includeDeleted = query.includeDeleted === 'true';
 
-        return packsList.map((p) => ({
-          ...p,
-          createdAt: p.createdAt?.toISOString() || null,
-        }));
+        const deletedFilter = includeDeleted ? undefined : eq(packs.deleted, false);
+        const searchFilter = search
+          ? or(
+              ilike(packs.name, `%${search}%`),
+              ilike(packs.description, `%${search}%`),
+              ilike(packs.category, `%${search}%`),
+              sql`${users.email} ilike ${`%${search}%`}`,
+            )
+          : undefined;
+        const whereClause =
+          deletedFilter && searchFilter
+            ? and(deletedFilter, searchFilter)
+            : (deletedFilter ?? searchFilter);
+
+        const [packsList, [totalRow]] = await Promise.all([
+          db
+            .select({
+              id: packs.id,
+              name: packs.name,
+              description: packs.description,
+              category: packs.category,
+              isPublic: packs.isPublic,
+              deleted: packs.deleted,
+              deletedAt: packs.deletedAt,
+              createdAt: packs.createdAt,
+              userEmail: users.email,
+            })
+            .from(packs)
+            .leftJoin(users, eq(packs.userId, users.id))
+            .where(whereClause)
+            .orderBy(desc(packs.createdAt))
+            .limit(limit)
+            .offset(offset),
+          db
+            .select({ count: count() })
+            .from(packs)
+            .leftJoin(users, eq(packs.userId, users.id))
+            .where(whereClause),
+        ]);
+
+        return {
+          data: packsList.map((p) => ({
+            ...p,
+            createdAt: p.createdAt?.toISOString() ?? null,
+            deletedAt: p.deletedAt?.toISOString() ?? null,
+          })),
+          total: totalRow?.count ?? 0,
+          limit,
+          offset,
+        };
       } catch (error) {
         console.error('Error fetching packs:', error);
         return status(500, { error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' });
@@ -289,7 +345,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
+        includeDeleted: z.string().optional(),
       }),
+      response: { 200: AdminPacksListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List packs' },
     },
   )
@@ -303,35 +361,44 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 25);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const itemsList = await db
-          .select({
-            id: catalogItems.id,
-            name: catalogItems.name,
-            categories: catalogItems.categories,
-            brand: catalogItems.brand,
-            price: catalogItems.price,
-            weight: catalogItems.weight,
-            weightUnit: catalogItems.weightUnit,
-            createdAt: catalogItems.createdAt,
-          })
-          .from(catalogItems)
-          .where(
-            search
-              ? or(
-                  ilike(catalogItems.name, `%${search}%`),
-                  ilike(catalogItems.brand, `%${search}%`),
-                  ilike(catalogItems.description, `%${search}%`),
-                )
-              : undefined,
-          )
-          .orderBy(desc(catalogItems.id))
-          .limit(limit)
-          .offset(offset);
 
-        return itemsList.map((it) => ({
-          ...it,
-          createdAt: it.createdAt?.toISOString() || null,
-        }));
+        const whereClause = search
+          ? or(
+              ilike(catalogItems.name, `%${search}%`),
+              ilike(catalogItems.brand, `%${search}%`),
+              ilike(catalogItems.description, `%${search}%`),
+            )
+          : undefined;
+
+        const [itemsList, [totalRow]] = await Promise.all([
+          db
+            .select({
+              id: catalogItems.id,
+              name: catalogItems.name,
+              categories: catalogItems.categories,
+              brand: catalogItems.brand,
+              price: catalogItems.price,
+              weight: catalogItems.weight,
+              weightUnit: catalogItems.weightUnit,
+              createdAt: catalogItems.createdAt,
+            })
+            .from(catalogItems)
+            .where(whereClause)
+            .orderBy(desc(catalogItems.id))
+            .limit(limit)
+            .offset(offset),
+          db.select({ count: count() }).from(catalogItems).where(whereClause),
+        ]);
+
+        return {
+          data: itemsList.map((it) => ({
+            ...it,
+            createdAt: it.createdAt?.toISOString() ?? null,
+          })),
+          total: totalRow?.count ?? 0,
+          limit,
+          offset,
+        };
       } catch (error) {
         console.error('Error fetching catalog items:', error);
         return status(500, { error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' });
@@ -343,11 +410,12 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
       }),
+      response: { 200: AdminCatalogListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List catalog items' },
     },
   )
 
-  // Delete a user
+  // Soft-delete a user
   .delete(
     '/users/:id',
     async ({ params }) => {
@@ -355,20 +423,84 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
-        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
-        if (!deleted.length) return status(404, { error: 'User not found' });
+        const updated = await db
+          .update(users)
+          .set({ deletedAt: new Date() })
+          .where(and(eq(users.id, id), isNull(users.deletedAt)))
+          .returning();
+        if (!updated.length) return status(404, { error: 'User not found or already deleted' });
         return { success: true as const };
       } catch (error) {
-        if ((error as { code?: string })?.code === '23503') {
-          return status(409, { error: 'Cannot delete: user has dependent data' });
-        }
-        console.error('Error deleting user:', error);
+        console.error('Error soft-deleting user:', error);
         return status(500, { error: 'Failed to delete user' });
       }
     },
     {
       params: z.object({ id: z.string() }),
-      detail: { tags: ['Admin'], summary: 'Delete a user' },
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Soft-delete a user (recoverable)' },
+    },
+  )
+
+  // Hard-delete a user for compliance (GDPR / right to erasure)
+  .delete(
+    '/users/:id/hard',
+    async ({ params, body }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const db = createDb();
+      try {
+        // Cascading FKs handle deletion of all related user data.
+        // Caller must supply a compliance reason for the audit log.
+        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
+        if (!deleted.length) return status(404, { error: 'User not found' });
+        console.info(`[COMPLIANCE] Hard-deleted user ${id}. Reason: ${body.reason}`);
+        return { success: true as const, purged: true as const };
+      } catch (error) {
+        if ((error as { code?: string })?.code === '23503') {
+          return status(409, { error: 'Cannot delete: user has dependent data without cascade' });
+        }
+        console.error('Error hard-deleting user:', error);
+        return status(500, { error: 'Failed to hard-delete user' });
+      }
+    },
+    {
+      params: z.object({ id: z.string() }),
+      body: z.object({
+        reason: z.string().min(1, 'Compliance reason is required'),
+      }),
+      response: { 200: HardDeleteSuccessSchema, ...AdminErrorResponses },
+      detail: {
+        tags: ['Admin'],
+        summary: 'Hard-delete a user and all their data (irreversible, for GDPR compliance)',
+      },
+    },
+  )
+
+  // Restore a soft-deleted user
+  .post(
+    '/users/:id/restore',
+    async ({ params }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const db = createDb();
+      try {
+        const restored = await db
+          .update(users)
+          .set({ deletedAt: null })
+          .where(and(eq(users.id, id), sql`${users.deletedAt} IS NOT NULL`))
+          .returning();
+        if (!restored.length) return status(404, { error: 'User not found or not deleted' });
+        return { success: true as const };
+      } catch (error) {
+        console.error('Error restoring user:', error);
+        return status(500, { error: 'Failed to restore user' });
+      }
+    },
+    {
+      params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Restore a soft-deleted user' },
     },
   )
 
@@ -378,9 +510,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async ({ params }) => {
       const db = createDb();
       try {
+        const now = new Date();
         const updated = await db
           .update(packs)
-          .set({ deleted: true })
+          .set({ deleted: true, deletedAt: now })
           .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
           .returning();
         if (!updated.length) return status(404, { error: 'Pack not found' });
@@ -392,6 +525,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Soft-delete a pack' },
     },
   )
@@ -417,6 +551,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Delete a catalog item' },
     },
   )
@@ -464,7 +599,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         price: z.number().nullable().optional(),
         description: z.string().nullable().optional(),
       }),
+      response: { 200: CatalogUpdateSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Update a catalog item' },
     },
   )
-  .use(analyticsRoutes);
+  .use(analyticsRoutes)
+  .use(adminTrailsRoutes);

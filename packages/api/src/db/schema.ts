@@ -33,6 +33,8 @@ export const users = pgTable('users', {
   role: text('role').default('USER'), // 'USER', 'ADMIN'
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+  lastActiveAt: timestamp('last_active_at'),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // Authentication providers table
@@ -85,6 +87,7 @@ export const packs = pgTable('packs', {
   image: text('image'),
   tags: jsonb('tags').$type<string[]>(),
   deleted: boolean('deleted').notNull().default(false),
+  deletedAt: timestamp('deleted_at'),
   isAIGenerated: boolean('is_ai_generated').notNull().default(false),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
@@ -208,6 +211,7 @@ export const packItems = pgTable(
       .references(() => users.id)
       .notNull(),
     deleted: boolean('deleted').notNull().default(false),
+    deletedAt: timestamp('deleted_at'),
     isAIGenerated: boolean('is_ai_generated').notNull().default(false),
     templateItemId: text('template_item_id').references(() => packTemplateItems.id),
     embedding: vector('embedding', { dimensions: 1536 }),
@@ -248,6 +252,7 @@ export const packTemplates = pgTable('pack_templates', {
   tags: jsonb('tags').$type<string[]>(),
   isAppTemplate: boolean('is_app_template').notNull().default(false),
   deleted: boolean('deleted').notNull().default(false),
+  deletedAt: timestamp('deleted_at'),
   contentSource: text('content_source'),
   contentId: text('content_id'),
 
@@ -279,6 +284,7 @@ export const packTemplateItems = pgTable('pack_template_items', {
     .references(() => users.id)
     .notNull(),
   deleted: boolean('deleted').notNull().default(false),
+  deletedAt: timestamp('deleted_at'),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -303,6 +309,7 @@ export const trailConditionReports = pgTable(
       .notNull(),
     tripId: text('trip_id').references(() => trips.id, { onDelete: 'set null' }),
     deleted: boolean('deleted').notNull().default(false),
+    deletedAt: timestamp('deleted_at'),
     localCreatedAt: timestamp('local_created_at').notNull(),
     localUpdatedAt: timestamp('local_updated_at').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -339,6 +346,7 @@ export const trips = pgTable('trips', {
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   deleted: boolean('deleted').notNull().default(false),
+  deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -581,6 +589,7 @@ export const posts = pgTable('posts', {
   images: jsonb('images').$type<string[]>().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // Post likes table
@@ -616,6 +625,7 @@ export const postComments = pgTable('post_comments', {
   }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // Comment likes table

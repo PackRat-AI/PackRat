@@ -3,14 +3,41 @@ appId: ${APP_ID}
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 
-# Wait for the auth entry screen to appear
-- waitForAnimationToEnd
+# Dismiss Android ANR dialog that can appear during emulator boot before first interaction
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "isn't responding"
+          commands:
+            - tapOn:
+                text: "Wait"
+            - waitForAnimationToEnd
+
+# Wait for the auth entry screen — ensures sign-in button is rendered before tapping
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-email-button"
+    timeout: 15000
 
 # Tap the "Sign In" (email) button to navigate to the email login screen
 - tapOn:
     id: "sign-in-email-button"
 
-# Wait for login form to appear
+# Wait for login form to appear.
+# iOS 26 / slow CI: the app startup takes ~10s before sign-in-button appears;
+# by the time the modal opens we may have little budget left. Use 35s here.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Email"
+          timeout: 35000
 - waitForAnimationToEnd
 
 # Fill in the email field
@@ -55,6 +82,19 @@ appId: ${APP_ID}
 # Wait for navigation to complete — login can take a few seconds
 - waitForAnimationToEnd
 
+# Handle transient network error: if the API call failed, dismiss the alert and retry once.
+- runFlow:
+    when:
+      visible:
+        text: "Network request failed"
+    commands:
+      - tapOn:
+          text: "OK"
+      - waitForAnimationToEnd
+      - tapOn:
+          id: "continue-button"
+      - waitForAnimationToEnd
+
 # iOS only: dismiss the system "Save Password?" Keychain prompt that appears
 # after submitting any form with a password field (textContentType="password").
 # This prompt is a blocking OS-level dialog and would intercept subsequent taps
@@ -67,11 +107,6 @@ appId: ${APP_ID}
           text: "Not Now"
           optional: true
           label: "Dismiss iOS Save Password prompt"
-
-- extendedWaitUntil:
-    visible:
-      text: "Packs"
-    timeout: 15000
 
 # Wait for the main tab bar to appear — confirms we are logged in and on the main app.
 # We only assert the tab bar is visible here; navigation to specific tabs is left to

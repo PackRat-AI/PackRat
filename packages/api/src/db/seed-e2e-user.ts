@@ -68,7 +68,7 @@ async function seedE2EUser() {
     if (existingUser) {
       await db
         .update(schema.users)
-        .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
+        .set({ passwordHash, emailVerified: true, deletedAt: null, updatedAt: new Date() })
         .where(eq(schema.users.id, existingUser.id));
       console.log(`E2E user refreshed: ${normalizedEmail} (id=${existingUser.id})`);
     } else {

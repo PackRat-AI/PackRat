@@ -52,20 +52,24 @@ export default function DashboardPage() {
     queryFn: getStats,
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const { data: usersResult, isLoading: usersLoading } = useQuery({
     queryKey: queryKeys.admin.users(5),
     queryFn: () => getUsers({ limit: 5 }),
   });
 
-  const { data: packs = [], isLoading: packsLoading } = useQuery({
+  const { data: packsResult, isLoading: packsLoading } = useQuery({
     queryKey: queryKeys.admin.packs(5),
     queryFn: () => getPacks({ limit: 5 }),
   });
 
-  const { data: catalog = [], isLoading: catalogLoading } = useQuery({
+  const { data: catalogResult, isLoading: catalogLoading } = useQuery({
     queryKey: queryKeys.admin.catalog(5),
     queryFn: () => getCatalogItems({ limit: 5 }),
   });
+
+  const users = usersResult?.data ?? [];
+  const packs = packsResult?.data ?? [];
+  const catalog = catalogResult?.data ?? [];
 
   const isLoading = statsLoading || usersLoading || packsLoading || catalogLoading;
   const isError = !isLoading && !stats;

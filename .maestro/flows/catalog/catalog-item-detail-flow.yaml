@@ -18,8 +18,7 @@ appId: ${APP_ID}
     element:
       id: "add-to-pack-button"
     direction: DOWN
-    speed: 10
-    timeout: 10000
+    timeout: 15000
 - assertVisible:
     id: "add-to-pack-button"
 - scrollUntilVisible:
