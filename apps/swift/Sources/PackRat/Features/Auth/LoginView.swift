@@ -23,11 +23,13 @@ struct LoginView: View {
                         .autocapitalization(.none)
                         #endif
                         .autocorrectionDisabled()
+                        .accessibilityIdentifier("login_email")
 
                     SecureField("Password", text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                         .onSubmit { submit() }
+                        .accessibilityIdentifier("login_password")
                 }
 
                 if let error {
@@ -49,6 +51,7 @@ struct LoginView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(isLoading || email.isEmpty || password.isEmpty)
+                .accessibilityIdentifier("login_submit")
 
                 Divider()
 
