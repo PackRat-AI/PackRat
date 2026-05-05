@@ -19,55 +19,31 @@ final class PackTests: AppUITestCase {
         let packName = uniqueName("E2E Pack")
         createdPackName = packName
 
-        goToTab("Packs")
-
-        let newPackButton = app.buttons["New Pack"]
-        waitFor(newPackButton)
-        newPackButton.tap()
-
-        // Pack form sheet appears
-        let nameField = app.textFields["Pack Name"]
-        waitFor(nameField, message: "Pack Name field must appear in form")
-        nameField.tap()
-        nameField.typeText(packName)
-
-        app.buttons["Create"].tap()
+        createPack(named: packName)
 
         // Pack should appear in the list
-        let packCell = app.staticTexts[packName]
         XCTAssertTrue(
-            packCell.waitForExistence(timeout: 15),
+            app.staticTexts[packName].waitForExistence(timeout: 5),
             "Created pack '\(packName)' must appear in the list"
         )
     }
 
     func testCreatePackWithCategory() throws {
+        // The createPack helper already picks Hiking as the category.
         let packName = uniqueName("E2E Hiking Pack")
         createdPackName = packName
 
-        goToTab("Packs")
-        waitFor(app.buttons["New Pack"]).tap()
-
-        let nameField = app.textFields["Pack Name"]
-        waitFor(nameField)
-        nameField.tap()
-        nameField.typeText(packName)
-
-        // Pick a category
-        let categoryPicker = app.pickers["Category"]
-        if categoryPicker.waitForExistence(timeout: 3) {
-            categoryPicker.tap()
-        } else {
-            // Inline picker in Form — look for "Hiking" option
-            let hikingOption = app.buttons["Hiking"].firstMatch
-            if hikingOption.waitForExistence(timeout: 3) { hikingOption.tap() }
-        }
-
-        app.buttons["Create"].tap()
+        createPack(named: packName)
 
         XCTAssertTrue(
-            app.staticTexts[packName].waitForExistence(timeout: 15),
+            app.staticTexts[packName].waitForExistence(timeout: 5),
             "Pack with category must appear in list"
+        )
+
+        // Hiking badge should be visible on the row
+        XCTAssertTrue(
+            app.staticTexts["Hiking"].firstMatch.exists,
+            "Hiking category label must appear on the pack row"
         )
     }
 
@@ -99,9 +75,9 @@ final class PackTests: AppUITestCase {
         createPack(named: packName)
         openPack(named: packName)
 
-        // Tap "Add Item" in toolbar
-        let addButton = app.buttons["Add Item"]
-        waitFor(addButton, message: "Add Item toolbar button must be visible")
+        // Two "Add Item" buttons can exist: toolbar + empty-state CTA. Use first.
+        let addButton = app.buttons["Add Item"].firstMatch
+        waitFor(addButton, message: "Add Item button must be visible")
         addButton.tap()
 
         // Item form sheet
@@ -159,16 +135,18 @@ final class PackTests: AppUITestCase {
         createPack(named: originalName)
         openPack(named: originalName)
 
-        // Open the ••• menu
-        let menuButton = app.buttons["More"]
-            .firstMatch
-        if !menuButton.waitForExistence(timeout: 3) {
-            app.buttons.matching(NSPredicate(format: "label CONTAINS 'ellipsis'")).firstMatch.tap()
-        } else {
-            menuButton.tap()
-        }
+        // Open the ••• overflow menu in the nav bar.
+        // Scope to navigationBars so we don't catch the bottom tab bar's "More" tab.
+        let navBar = app.navigationBars.firstMatch
+        let menuButton = navBar.buttons.matching(
+            NSPredicate(format: "label == 'More' OR label CONTAINS 'ellipsis'")
+        ).firstMatch
+        waitFor(menuButton, timeout: 5)
+        menuButton.tap()
 
-        app.buttons["Edit Pack"].tap()
+        let editButton = app.buttons["Edit Pack"]
+        waitFor(editButton, timeout: 3)
+        editButton.tap()
 
         let nameField = app.textFields["Pack Name"]
         waitFor(nameField)
@@ -212,8 +190,19 @@ final class PackTests: AppUITestCase {
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)
-        app.buttons["Create"].tap()
 
+        // Pick a category — the API rejects pack creation with no category
+        // (DB column is NOT NULL). Open the picker, choose Hiking.
+        let categoryButton = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Category' OR label == 'None'")
+        ).firstMatch
+        if categoryButton.waitForExistence(timeout: 3) {
+            categoryButton.tap()
+            let hiking = app.buttons["Hiking"].firstMatch
+            if hiking.waitForExistence(timeout: 3) { hiking.tap() }
+        }
+
+        app.buttons["Create"].tap()
         waitFor(app.staticTexts[name], timeout: 15)
     }
 
@@ -225,7 +214,8 @@ final class PackTests: AppUITestCase {
     }
 
     private func addItem(named name: String) {
-        waitFor(app.buttons["Add Item"]).tap()
+        // Two "Add Item" buttons can exist: toolbar + empty-state CTA. Use first.
+        waitFor(app.buttons["Add Item"].firstMatch).tap()
         let nameField = app.textFields["Name"]
         waitFor(nameField)
         nameField.tap()

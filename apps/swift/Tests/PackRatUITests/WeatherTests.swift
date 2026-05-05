@@ -88,17 +88,19 @@ final class WeatherTests: AppUITestCase {
         let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
         waitFor(results.firstMatch, timeout: 10)
 
-        // Clear the search
-        let clearButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'xmark' OR label == 'Clear'")
-        ).firstMatch
-        waitFor(clearButton, timeout: 5)
-        clearButton.tap()
+        // Clear via the field's native value-clearing rather than hunting for
+        // the xmark.circle.fill button (which has no stable identifier).
+        searchField.tap()
+        searchField.clearAndTypeText("")
 
-        // Results should disappear
+        // The location-result dropdown rows show "City, Region, Country" with
+        // commas. After clearing search, those should not be visible.
+        let dropdownResult = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS '\(testCityFull)' AND label CONTAINS ','")
+        ).firstMatch
         XCTAssertFalse(
-            app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'")).firstMatch
-                .waitForExistence(timeout: 3)
+            dropdownResult.waitForExistence(timeout: 3),
+            "Search results dropdown should disappear after clearing"
         )
     }
 

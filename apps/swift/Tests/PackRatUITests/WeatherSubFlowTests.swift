@@ -7,9 +7,7 @@ final class WeatherSubFlowTests: AppUITestCase {
         goToTab("Weather")
 
         // The Alert Preferences icon is the slider control in the toolbar
-        let prefsButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Preferences' OR label CONTAINS[c] 'slider'")
-        ).firstMatch
+        let prefsButton = app.navigationBars.firstMatch.buttons["Alert Preferences"]
         guard prefsButton.waitForExistence(timeout: 8) else {
             XCTFail("Alert Preferences button must be in Weather toolbar")
             return
@@ -24,9 +22,7 @@ final class WeatherSubFlowTests: AppUITestCase {
 
     func testAlertPreferencesShowsToggles() {
         goToTab("Weather")
-        let prefsButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Preferences' OR label CONTAINS[c] 'slider'")
-        ).firstMatch
+        let prefsButton = app.navigationBars.firstMatch.buttons["Alert Preferences"]
         guard prefsButton.waitForExistence(timeout: 8) else { return }
         prefsButton.tap()
 
@@ -48,9 +44,7 @@ final class WeatherSubFlowTests: AppUITestCase {
 
     func testToggleAlertPreference() {
         goToTab("Weather")
-        let prefsButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Preferences' OR label CONTAINS[c] 'slider'")
-        ).firstMatch
+        let prefsButton = app.navigationBars.firstMatch.buttons["Alert Preferences"]
         guard prefsButton.waitForExistence(timeout: 8) else { return }
         prefsButton.tap()
 

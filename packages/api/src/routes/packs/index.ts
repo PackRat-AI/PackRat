@@ -122,7 +122,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           userId: user.userId,
           name: data.name,
           description: data.description,
-          category: data.category,
+          // category column is NOT NULL — default to 'custom' when callers omit it.
+          category: data.category ?? 'custom',
           isPublic: data.isPublic,
           image: data.image,
           tags: data.tags,

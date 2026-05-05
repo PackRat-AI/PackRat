@@ -55,10 +55,30 @@ class AppUITestCase: XCTestCase {
 
     // MARK: - Navigation helpers
 
+    /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
+    /// the rest behind a "More" overflow tab — this helper handles both cases.
     func goToTab(_ label: String) {
-        let button = app.tabBars.buttons[label]
-        XCTAssertTrue(button.waitForExistence(timeout: 5), "Tab '\(label)' not found")
-        button.tap()
+        let direct = app.tabBars.buttons[label]
+        if direct.exists {
+            direct.tap()
+            return
+        }
+
+        let moreButton = app.tabBars.buttons["More"]
+        if moreButton.waitForExistence(timeout: 3) {
+            moreButton.tap()
+            let cell = app.tables.staticTexts[label]
+            if cell.waitForExistence(timeout: 3) {
+                cell.tap()
+                return
+            }
+        }
+
+        XCTAssertTrue(
+            direct.waitForExistence(timeout: 5),
+            "Tab '\(label)' not found in tab bar or More overflow"
+        )
+        direct.tap()
     }
 
     // MARK: - Wait helpers
@@ -75,6 +95,24 @@ class AppUITestCase: XCTestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
         XCTAssertEqual(result, .completed, "\(element.description) should have disappeared")
+    }
+
+    /// Attaches a screenshot + accessibility tree dump on failure for triage.
+    override func tearDown() {
+        if let testRun, testRun.totalFailureCount > 0 {
+            let screenshot = XCUIScreen.main.screenshot()
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "Failure-\(name)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+
+            let dump = app?.debugDescription ?? "no app"
+            let textAttachment = XCTAttachment(string: dump)
+            textAttachment.name = "Hierarchy-\(name)"
+            textAttachment.lifetime = .keepAlways
+            add(textAttachment)
+        }
+        super.tearDown()
     }
 
     // MARK: - Unique test data
