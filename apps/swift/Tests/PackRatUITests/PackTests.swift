@@ -214,14 +214,22 @@ final class PackTests: AppUITestCase {
     }
 
     private func addItem(named name: String) {
-        // Two "Add Item" buttons can exist: toolbar + empty-state CTA. Use first.
-        waitFor(app.buttons["Add Item"].firstMatch).tap()
+        // Prefer the nav bar's Add Item to avoid clashing with the empty-state CTA.
+        let toolbarAdd = app.navigationBars.firstMatch.buttons["Add Item"]
+        let addButton = toolbarAdd.exists ? toolbarAdd : app.buttons["Add Item"].firstMatch
+        waitFor(addButton).tap()
+
         let nameField = app.textFields["Name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)
         app.buttons["Add"].tap()
-        waitFor(app.staticTexts[name], timeout: 10)
+
+        // Wait for the form to dismiss (Add Item button visible again on detail).
+        waitFor(toolbarAdd.exists ? toolbarAdd : app.buttons["Add Item"].firstMatch, timeout: 10)
+        // The new item row's button label combines name + weight; match by contains.
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(name)'")).firstMatch
+        waitFor(row, timeout: 10, message: "Item '\(name)' must appear in pack detail")
     }
 
     private func cleanupPack(named name: String) {

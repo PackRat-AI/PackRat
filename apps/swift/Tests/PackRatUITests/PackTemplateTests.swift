@@ -99,9 +99,12 @@ final class PackTemplateTests: AppUITestCase {
         nameField.typeText(name)
         app.buttons["Save"].tap()
 
+        // Wait for form to dismiss (New Template button visible again).
+        waitFor(app.buttons["New Template"], timeout: 15)
+
         // The user's account has many official templates above the "Mine"
-        // section; scroll the list down so the newly-created template is in
-        // the rendered viewport before asserting.
+        // section; scroll the list down so the newly-created template enters
+        // the rendered viewport (SwiftUI List is lazy).
         let target = app.staticTexts[name]
         let list = app.collectionViews.firstMatch
         for _ in 0..<8 {

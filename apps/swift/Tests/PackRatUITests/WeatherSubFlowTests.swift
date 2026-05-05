@@ -72,6 +72,13 @@ final class WeatherSubFlowTests: AppUITestCase {
         guard prefsButton.waitForExistence(timeout: 8) else { return }
         prefsButton.tap()
 
+        // Ensure master toggle is on — alert-type toggles are .disabled when off,
+        // so a stale UserDefaults value from a prior run could leave them inert.
+        let master = app.switches["Weather Notifications"]
+        if master.waitForExistence(timeout: 5), master.value as? String == "0" {
+            master.tap()
+        }
+
         // High Winds defaults to off — toggle it on
         let highWinds = app.switches["High Winds"]
         guard highWinds.waitForExistence(timeout: 5) else { return }

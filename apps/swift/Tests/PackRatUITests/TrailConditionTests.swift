@@ -52,11 +52,31 @@ final class TrailConditionTests: AppUITestCase {
             regionField.typeText("Test Region")
         }
 
+        // Pick a surface (the API requires it; the Swift form picker allows
+        // "Not specified" which submits null and gets rejected with 400).
+        let surfacePicker = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Surface' OR label CONTAINS 'specified'")
+        ).firstMatch
+        if surfacePicker.waitForExistence(timeout: 3) {
+            surfacePicker.tap()
+            let dirt = app.buttons["Dirt"].firstMatch
+            if dirt.waitForExistence(timeout: 3) { dirt.tap() }
+        }
+
         app.buttons["Submit"].tap()
 
-        // Report should appear in list
+        // Wait for form to dismiss before scrolling/asserting.
+        waitFor(app.buttons["Submit Report"].firstMatch, timeout: 20)
+
+        // List may have many reports; scroll if needed.
+        let target = app.staticTexts[trailName]
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<8 {
+            if target.exists { break }
+            list.swipeUp()
+        }
         XCTAssertTrue(
-            app.staticTexts[trailName].waitForExistence(timeout: 20),
+            target.waitForExistence(timeout: 5),
             "Submitted report '\(trailName)' must appear in list"
         )
     }

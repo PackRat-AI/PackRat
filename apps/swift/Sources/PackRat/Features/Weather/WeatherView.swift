@@ -82,6 +82,7 @@ struct WeatherView: View {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("weather_search_clear")
                 }
             }
             .padding(10)
