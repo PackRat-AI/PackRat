@@ -98,7 +98,17 @@ final class PackTemplateTests: AppUITestCase {
         nameField.tap()
         nameField.typeText(name)
         app.buttons["Save"].tap()
-        waitFor(app.staticTexts[name], timeout: 15)
+
+        // The user's account has many official templates above the "Mine"
+        // section; scroll the list down so the newly-created template is in
+        // the rendered viewport before asserting.
+        let target = app.staticTexts[name]
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<8 {
+            if target.exists { break }
+            list.swipeUp()
+        }
+        waitFor(target, timeout: 5)
     }
 
     private func cleanupTemplate(named name: String) {

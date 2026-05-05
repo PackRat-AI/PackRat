@@ -7,7 +7,15 @@ final class WeatherSubFlowTests: AppUITestCase {
         goToTab("Weather")
 
         // The Alert Preferences icon is the slider control in the toolbar
-        let prefsButton = app.navigationBars.firstMatch.buttons["Alert Preferences"]
+        // Alert Preferences is in .secondaryAction placement, so it collapses
+        // into the nav-bar overflow menu on iPhone. Open the menu first if needed.
+        let prefsButton = app.buttons["Alert Preferences"]
+        if !prefsButton.waitForExistence(timeout: 2) {
+            let overflow = app.navigationBars.firstMatch.buttons.matching(
+                NSPredicate(format: "label == 'More' OR label CONTAINS 'ellipsis'")
+            ).firstMatch
+            if overflow.waitForExistence(timeout: 5) { overflow.tap() }
+        }
         guard prefsButton.waitForExistence(timeout: 8) else {
             XCTFail("Alert Preferences button must be in Weather toolbar")
             return
@@ -22,7 +30,15 @@ final class WeatherSubFlowTests: AppUITestCase {
 
     func testAlertPreferencesShowsToggles() {
         goToTab("Weather")
-        let prefsButton = app.navigationBars.firstMatch.buttons["Alert Preferences"]
+        // Alert Preferences is in .secondaryAction placement, so it collapses
+        // into the nav-bar overflow menu on iPhone. Open the menu first if needed.
+        let prefsButton = app.buttons["Alert Preferences"]
+        if !prefsButton.waitForExistence(timeout: 2) {
+            let overflow = app.navigationBars.firstMatch.buttons.matching(
+                NSPredicate(format: "label == 'More' OR label CONTAINS 'ellipsis'")
+            ).firstMatch
+            if overflow.waitForExistence(timeout: 5) { overflow.tap() }
+        }
         guard prefsButton.waitForExistence(timeout: 8) else { return }
         prefsButton.tap()
 
@@ -44,7 +60,15 @@ final class WeatherSubFlowTests: AppUITestCase {
 
     func testToggleAlertPreference() {
         goToTab("Weather")
-        let prefsButton = app.navigationBars.firstMatch.buttons["Alert Preferences"]
+        // Alert Preferences is in .secondaryAction placement, so it collapses
+        // into the nav-bar overflow menu on iPhone. Open the menu first if needed.
+        let prefsButton = app.buttons["Alert Preferences"]
+        if !prefsButton.waitForExistence(timeout: 2) {
+            let overflow = app.navigationBars.firstMatch.buttons.matching(
+                NSPredicate(format: "label == 'More' OR label CONTAINS 'ellipsis'")
+            ).firstMatch
+            if overflow.waitForExistence(timeout: 5) { overflow.tap() }
+        }
         guard prefsButton.waitForExistence(timeout: 8) else { return }
         prefsButton.tap()
 

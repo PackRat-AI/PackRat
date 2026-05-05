@@ -48,7 +48,8 @@ final class PackTemplatesViewModel {
 
     func createTemplate(name: String, description: String?, category: String) async throws -> PackTemplate {
         let t = try await service.createTemplate(name: name, description: description, category: category)
-        templates.append(t)
+        // Insert at top of "Mine" section so the newest template is immediately visible.
+        templates.insert(t, at: 0)
         return t
     }
 

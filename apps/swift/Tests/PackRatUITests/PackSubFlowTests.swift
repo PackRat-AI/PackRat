@@ -15,8 +15,17 @@ final class PackSubFlowTests: AppUITestCase {
     func testRecentPacksReachableFromPacksToolbar() {
         goToTab("Packs")
 
+        // "Recent" is in .secondaryAction placement, which collapses into the
+        // nav-bar overflow menu on iPhone. Open the menu first if needed.
         let recentButton = app.buttons["Recent"]
-        waitFor(recentButton, message: "'Recent' toolbar button must be present")
+        if !recentButton.waitForExistence(timeout: 2) {
+            let overflow = app.navigationBars.firstMatch.buttons.matching(
+                NSPredicate(format: "label == 'More' OR label CONTAINS 'ellipsis'")
+            ).firstMatch
+            waitFor(overflow, timeout: 5)
+            overflow.tap()
+        }
+        waitFor(recentButton, timeout: 5, message: "'Recent' button must be reachable")
         recentButton.tap()
 
         XCTAssertTrue(
@@ -35,7 +44,8 @@ final class PackSubFlowTests: AppUITestCase {
         cell.tap()
 
         // Toolbar ••• menu, then Weight Analysis
-        let menuButton = app.buttons.matching(
+        // Scope to the nav bar so we don't grab the bottom tab-bar's "More".
+        let menuButton = app.navigationBars.firstMatch.buttons.matching(
             NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")
         ).firstMatch
         guard menuButton.waitForExistence(timeout: 5) else {
@@ -67,7 +77,8 @@ final class PackSubFlowTests: AppUITestCase {
         let cell = waitFor(app.staticTexts[packName])
         cell.tap()
 
-        let menuButton = app.buttons.matching(
+        // Scope to the nav bar so we don't grab the bottom tab-bar's "More".
+        let menuButton = app.navigationBars.firstMatch.buttons.matching(
             NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")
         ).firstMatch
         guard menuButton.waitForExistence(timeout: 5) else { return }

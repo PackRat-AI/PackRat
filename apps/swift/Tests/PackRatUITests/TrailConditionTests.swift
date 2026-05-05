@@ -21,7 +21,7 @@ final class TrailConditionTests: AppUITestCase {
 
     func testSubmitReportButtonOpensForm() {
         goToTab("Trail Conditions")
-        let submitButton = app.buttons["Submit Report"]
+        let submitButton = app.buttons["Submit Report"].firstMatch
         waitFor(submitButton)
         submitButton.tap()
 
@@ -38,7 +38,7 @@ final class TrailConditionTests: AppUITestCase {
         createdReportTrail = trailName
 
         goToTab("Trail Conditions")
-        waitFor(app.buttons["Submit Report"]).tap()
+        waitFor(app.buttons["Submit Report"].firstMatch).tap()
 
         let nameField = app.textFields["Trail Name"]
         waitFor(nameField)
@@ -63,7 +63,7 @@ final class TrailConditionTests: AppUITestCase {
 
     func testReportFormHasHazardToggles() {
         goToTab("Trail Conditions")
-        waitFor(app.buttons["Submit Report"]).tap()
+        waitFor(app.buttons["Submit Report"].firstMatch).tap()
 
         // Hazard section toggles
         let hazardLabels = ["Downed trees", "Muddy sections", "Ice"]
@@ -78,7 +78,7 @@ final class TrailConditionTests: AppUITestCase {
 
     func testReportFormSubmitDisabledWithoutTrailName() {
         goToTab("Trail Conditions")
-        waitFor(app.buttons["Submit Report"]).tap()
+        waitFor(app.buttons["Submit Report"].firstMatch).tap()
 
         let submit = app.buttons["Submit"]
         waitFor(submit)
