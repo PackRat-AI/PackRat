@@ -53,6 +53,8 @@ const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
 // Strip the embedding vector from pack items before sending — it's only needed
 // for similarity search, not for display.
 const stripItemEmbedding = <T extends { embedding?: unknown }>({ embedding: _, ...rest }: T) =>
+  // safe-cast: rest spread of a generic constrained to { embedding?: unknown }
+  // produces Omit<T, 'embedding'> at runtime; TS can't infer that.
   rest as Omit<T, 'embedding'>;
 
 const stripPackEmbeddings = <T extends { items?: Array<{ embedding?: unknown }> | null }>(
