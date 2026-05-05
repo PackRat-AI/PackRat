@@ -7,6 +7,8 @@ final class AuthTests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments.append("--disable-animations")
+        // Force logged-out state so the login screen is reachable.
+        app.launchArguments.append("--reset-auth")
         app.launch()
     }
 

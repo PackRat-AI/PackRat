@@ -12,6 +12,11 @@ final class AuthManager {
 
     init(apiClient: APIClient = .shared) {
         self.apiClient = apiClient
+        // Honor --reset-auth from XCUITest launch arguments so each test run
+        // starts at the login screen.
+        if ProcessInfo.processInfo.arguments.contains("--reset-auth") {
+            KeychainService.shared.clearTokens()
+        }
         loadStoredUser()
     }
 
