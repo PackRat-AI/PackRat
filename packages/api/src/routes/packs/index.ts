@@ -645,8 +645,9 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
           description: data.description,
-          weight: data.weight,
-          weightUnit: data.weightUnit,
+          // weight + weightUnit are NOT NULL in DB; default when caller omits.
+          weight: data.weight ?? 0,
+          weightUnit: data.weightUnit ?? 'g',
           quantity: data.quantity || 1,
           category: data.category,
           consumable: data.consumable || false,

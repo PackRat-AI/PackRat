@@ -33,22 +33,19 @@ final class PackTemplateTests: AppUITestCase {
     }
 
     func testCreateTemplate() {
+        // The createTemplate helper waits for form dismiss then filters via
+        // the search field so the new template is visible despite the user's
+        // many official templates above the "Mine" section.
         let name = uniqueName("E2E Template")
         createdTemplateName = name
 
-        goToTab("Templates")
-        waitFor(app.buttons["New Template"]).tap()
+        createTemplate(named: name)
 
-        let nameField = app.textFields["Name"]
-        waitFor(nameField)
-        nameField.tap()
-        nameField.typeText(name)
-
-        app.buttons["Save"].tap()
-
-        // Template should appear in "Mine" section
+        let row = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH '\(name)'")
+        ).firstMatch
         XCTAssertTrue(
-            app.staticTexts[name].waitForExistence(timeout: 15),
+            row.waitForExistence(timeout: 5),
             "Created template '\(name)' should appear in list"
         )
     }
@@ -99,22 +96,36 @@ final class PackTemplateTests: AppUITestCase {
         nameField.typeText(name)
         app.buttons["Save"].tap()
 
-        // Wait for form to dismiss (New Template button visible again).
-        waitFor(app.buttons["New Template"], timeout: 15)
+        // Wait for the form to actually dismiss. The Name textfield uniquely
+        // belongs to the form, so its absence is a reliable signal.
+        waitForAbsence(nameField, timeout: 15)
 
-        // The user's account has many official templates above the "Mine"
-        // section; scroll the list down so the newly-created template enters
-        // the rendered viewport (SwiftUI List is lazy).
-        let target = app.staticTexts[name]
-        let list = app.collectionViews.firstMatch
-        for _ in 0..<8 {
-            if target.exists { break }
-            list.swipeUp()
+        // Use the search field to filter — much more reliable than scrolling
+        // past the user's many official templates.
+        let searchField = app.searchFields["Search templates"]
+        if searchField.waitForExistence(timeout: 5) {
+            searchField.tap()
+            searchField.typeText(name)
         }
-        waitFor(target, timeout: 5)
+
+        // Match the row's combined label (e.g. "E2E Template ..., 0 items, Custom")
+        // rather than the inner static text — SwiftUI lazy lists may not surface
+        // the inner static text in XCUI's query until the cell is interacted with.
+        let row = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH '\(name)'")
+        ).firstMatch
+        waitFor(row, timeout: 5)
     }
 
     private func cleanupTemplate(named name: String) {
+        // Tab navigation may be impossible if the search field is focused or
+        // a sheet is open; wrap so cleanup never crashes the test report.
+        if !app.tabBars.firstMatch.exists {
+            // Try to dismiss anything modal first.
+            let cancel = app.buttons["Cancel"]
+            if cancel.exists { cancel.tap() }
+        }
+        guard app.tabBars.firstMatch.waitForExistence(timeout: 3) else { return }
         goToTab("Templates")
         let cell = app.cells.containing(.staticText, identifier: name).firstMatch
         guard cell.waitForExistence(timeout: 5) else { return }

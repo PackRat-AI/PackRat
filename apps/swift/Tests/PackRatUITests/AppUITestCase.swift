@@ -58,6 +58,14 @@ class AppUITestCase: XCTestCase {
     /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
     /// the rest behind a "More" overflow tab — this helper handles both cases.
     func goToTab(_ label: String) {
+        // Dismiss any active keyboard / search focus that could obstruct
+        // tab bar interaction.
+        if app.keyboards.firstMatch.exists {
+            app.buttons["Cancel"].tapIfExists()
+            let close = app.buttons["Close"]
+            if close.exists { close.tap() }
+        }
+
         let direct = app.tabBars.buttons[label]
         if direct.exists {
             direct.tap()
@@ -67,9 +75,16 @@ class AppUITestCase: XCTestCase {
         let moreButton = app.tabBars.buttons["More"]
         if moreButton.waitForExistence(timeout: 3) {
             moreButton.tap()
-            let cell = app.tables.staticTexts[label]
+            // The More list is a CollectionView (iOS 16+), but the cell's
+            // static text is queryable directly from app.staticTexts.
+            let cell = app.collectionViews.staticTexts[label]
             if cell.waitForExistence(timeout: 3) {
                 cell.tap()
+                return
+            }
+            let fallback = app.staticTexts[label]
+            if fallback.waitForExistence(timeout: 2) {
+                fallback.tap()
                 return
             }
         }

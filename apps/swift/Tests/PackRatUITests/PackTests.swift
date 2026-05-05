@@ -223,13 +223,30 @@ final class PackTests: AppUITestCase {
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)
+
+        // The DB requires non-null weight + weightUnit. Set a small weight so
+        // the API doesn't reject the insert with a 500.
+        let weightField = app.textFields["item_weight"]
+        if weightField.waitForExistence(timeout: 3) {
+            weightField.tap()
+            weightField.typeText("100")
+        }
+
         app.buttons["Add"].tap()
 
-        // Wait for the form to dismiss (Add Item button visible again on detail).
+        // Wait for the form to dismiss (Add Item visible again).
         waitFor(toolbarAdd.exists ? toolbarAdd : app.buttons["Add Item"].firstMatch, timeout: 10)
-        // The new item row's button label combines name + weight; match by contains.
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(name)'")).firstMatch
-        waitFor(row, timeout: 10, message: "Item '\(name)' must appear in pack detail")
+
+        // Scroll the detail view if the new item is offscreen.
+        // Stay within the content area (avoid bottom 15% which is the tab bar).
+        let target = app.staticTexts[name]
+        for _ in 0..<6 {
+            if target.exists { break }
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        waitFor(target, timeout: 10, message: "Item '\(name)' must appear in pack detail")
     }
 
     private func cleanupPack(named name: String) {

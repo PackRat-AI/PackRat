@@ -77,20 +77,30 @@ final class WeatherSubFlowTests: AppUITestCase {
         let master = app.switches["Weather Notifications"]
         if master.waitForExistence(timeout: 5), master.value as? String == "0" {
             master.tap()
+            // Give SwiftUI a beat to propagate the .disabled change.
+            _ = master.waitForExistence(timeout: 1)
         }
 
         // High Winds defaults to off — toggle it on
         let highWinds = app.switches["High Winds"]
         guard highWinds.waitForExistence(timeout: 5) else { return }
+        XCTAssertTrue(
+            highWinds.isEnabled,
+            "High Winds toggle must be enabled — Weather Notifications must be on"
+        )
+
         let initialValue = highWinds.value as? String
 
-        highWinds.tap()
+        // SwiftUI Toggles in iOS 26 sometimes ignore .tap() on the switch
+        // element. Tap the row's center coordinate instead, which reliably
+        // hits the toggle's full hit area.
+        highWinds.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
 
         // Value should flip
         let newValue = highWinds.value as? String
         XCTAssertNotEqual(initialValue, newValue, "Toggle value should change after tap")
 
         // Restore for idempotency
-        highWinds.tap()
+        highWinds.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
     }
 }
