@@ -123,6 +123,7 @@ struct ChatView: View {
                 .lineLimit(1...5)
                 .padding(.vertical, 8)
                 .onSubmit { viewModel.sendMessage() }
+                .accessibilityIdentifier("chat_input")
 
             Group {
                 if viewModel.isStreaming {
@@ -133,6 +134,7 @@ struct ChatView: View {
                             .symbolEffect(.pulse)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("chat_cancel")
                 } else {
                     Button(action: viewModel.sendMessage) {
                         Image(systemName: "arrow.up.circle.fill")
@@ -142,6 +144,7 @@ struct ChatView: View {
                     .buttonStyle(.plain)
                     .disabled(!viewModel.canSend)
                     .keyboardShortcut(.return, modifiers: .command)
+                    .accessibilityIdentifier("chat_send")
                 }
             }
         }

@@ -40,6 +40,7 @@ struct PackItemFormView: View {
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
+                            .accessibilityIdentifier("item_weight")
                         Picker("Unit", selection: $weightUnit) {
                             ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
                                 Text(u.label).tag(u.rawValue)

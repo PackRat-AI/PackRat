@@ -32,6 +32,7 @@ struct ComposePostView: View {
                                     .padding(.leading, 4)
                             }
                         }
+                        .accessibilityIdentifier("feed_compose_caption")
                 }
                 .padding()
 
