@@ -2,77 +2,43 @@ appId: ${APP_ID}
 ---
 # Catalog Item Detail Flow: Tap a catalog item and verify detail page
 - waitForAnimationToEnd
-
-# Navigate to Catalog tab (scroll-to-top if already active; normal tab tap otherwise)
 - tapOn:
     text: "Catalog"
 - waitForAnimationToEnd
-
-# iOS: returning to the Catalog tab can restore the search bar as first responder,
-# overlaying the screen and suppressing the FlatList items from the accessibility tree.
-# Dismiss it if visible.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - runFlow:
-          when:
-            visible:
-              text: "Cancel"
-          commands:
-            - tapOn:
-                text: "Cancel"
-            - waitForAnimationToEnd
-
-# Wait for catalog items to load via testID.
-# catalog-browse-flow already loaded items (30s wait) so these should appear
-# quickly. Use a generous timeout to handle the case where this flow is run
-# standalone (fresh load).
-- extendedWaitUntil:
-    visible:
-      id: "catalog-item-card"
-    timeout: 30000
-
-# Tap the first visible catalog item by testID.
+# Wait for items to load
+- assertVisible:
+    text: ".*items.*"
+# Tap first visible item using index
 - tapOn:
-    id: "catalog-item-card"
+    id: "catalog:item-.*"
+    index: 0
 - waitForAnimationToEnd
-
-# Wait for the detail screen container to confirm navigation happened.
-# The add-to-pack button is below the fold in a ScrollView; on iOS XCTest
-# does not expose off-screen ScrollView children in the accessibility tree
-# until they are scrolled into view.
-# Use 30s: CI network latency can delay initial data load past 15s.
-- extendedWaitUntil:
-    visible:
-      id: "catalog-detail-content"
-    timeout: 30000
-
-# Scroll the detail screen to bring the action buttons into view.
+# Scroll down to find action buttons
 - scrollUntilVisible:
     element:
       id: "add-to-pack-button"
     direction: DOWN
     timeout: 15000
-
 - assertVisible:
     id: "add-to-pack-button"
+- scrollUntilVisible:
+    element:
+      id: "view-retailer-button"
+    direction: DOWN
+    speed: 10
+    timeout: 10000
 - assertVisible:
     id: "view-retailer-button"
-
-# Go back
-# iOS: XCTest synthetic swipes do not trigger UIScreenEdgePanGestureRecognizer.
-# Tap the native navigation bar back button instead (accessibility label "Back").
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          text: "Back"
-      - waitForAnimationToEnd
+# Go back - platform specific
 - runFlow:
     when:
       platform: Android
     commands:
       - back
-      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: ".*Back.*"
+- waitForAnimationToEnd

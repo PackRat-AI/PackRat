@@ -9,53 +9,29 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Scroll down to find the sign-out button.
-# iOS: use testID (id:) to avoid UITextView accessibilityValue issues with text-based matching.
-# Android: use text: which works reliably (UITextView issue is iOS-only).
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - scrollUntilVisible:
-          element:
-            id: "sign-out-button"
-          direction: DOWN
-      - tapOn:
-          id: "sign-out-button"
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - scrollUntilVisible:
-          element:
-            text: "Log Out"
-          direction: DOWN
-      - tapOn:
-          text: "Log Out"
+# Scroll down to find the log out button if needed
+- scrollUntilVisible:
+    element:
+      text: "Log Out"
+    direction: DOWN
+
+# Tap Log Out
+- tapOn:
+    text: "Log Out"
 
 - waitForAnimationToEnd
 
-# Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes).
-# Both platforms use native Alert.alert(). With snapshotKeyHonorModalViews:false the main-window
-# elements appear first in the snapshot tree, so tapOn:text:"Log Out" (any index) hits the
-# profile list button (resource-id=sign-out-button, y=706) instead of the alert action.
-# Fix: use rightOf:text:"Cancel" to uniquely identify the dialog "Log Out" — "Cancel" only
-# exists inside the dialog, so this selector picks the adjacent alert action button.
-# waitForAnimationToEnd ensures the native alert is fully settled before we interact.
 - runFlow:
     when:
       visible:
         text: "Sync in progress"
     commands:
-      - waitForAnimationToEnd
       - tapOn:
-          text: "Log Out"
-          rightOf:
-            text: "Cancel"
+          text: "Proceed"
 
 - waitForAnimationToEnd
 
-# Handle post-logout dialog if it appears - choose to Sign-in again
+# Handle post-logout dialog - choose to Sign-in again
 - runFlow:
     when:
       visible:
@@ -66,22 +42,6 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Assert we are back on the auth screen (allow up to 30s for app reload).
-# iOS: use testID to avoid UITextView text-matching issues on the Sign In button.
-# Android: use text: which works reliably.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - extendedWaitUntil:
-          visible:
-            id: "sign-in-email-button"
-          timeout: 30000
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - extendedWaitUntil:
-          visible:
-            text: "Sign In"
-          timeout: 30000
+# Assert we are back on the auth screen
+- assertVisible:
+    text: "Sign In"

@@ -7,6 +7,10 @@
  * - Dynamic IDs: factory functions (`testIds.packs.listItem(id)`) so callers
  *   never hand-interpolate strings.
  *
+ * `TestIds` is a backward-compat alias that maps the old PascalCase enum keys
+ * to the same underlying strings. Maestro flows reference these values via
+ * `id:` selectors — keep the string values stable.
+ *
  * Usage in components:
  *   import { testIds } from 'expo-app/lib/testIds';
  *   <TextInput testID={testIds.packs.nameInput} />
@@ -28,9 +32,8 @@ export const testIds = Object.freeze({
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
-    nameInput: 'pack-name-input', // keep Maestro value
-    descriptionInput: 'pack-description-input', // keep Maestro value
-    cancelBtn: 'cancel-pack-form-button', // keep Maestro value
+    nameInput: 'packs:name-input',
+    descriptionInput: 'packs:description-input',
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
     editBtn: 'packs:edit',
@@ -64,18 +67,14 @@ export const testIds = Object.freeze({
   // ── Trips ─────────────────────────────────────────────────────────────────
   trips: Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value
-    nameInput: 'trip-name-input', // keep Maestro value
-    descriptionInput: 'trip-description-input', // keep Maestro value
-    startDateRow: 'start-date-row', // keep Maestro value
-    endDateRow: 'end-date-row', // keep Maestro value
-    listCard: 'trip-list-item', // keep Maestro value
-    searchCard: 'trips:search-result',
-    detailName: 'trip-detail-name', // keep Maestro value
-    cancelBtn: 'cancel-trip-form-button', // keep Maestro value
+    nameInput: 'trips:name-input',
+    descriptionInput: 'trips:description-input',
     submitBtn: 'submit-trip-button', // keep Maestro value
     deleteBtn: 'trips:delete',
     editBtn: 'trips:edit',
     listItem: (id: string | number) => `trips:list-item-${id}`,
+    startDateInput: 'trips:start-date-input',
+    endDateInput: 'trips:end-date-input',
   }),
 
   // ── Catalog ───────────────────────────────────────────────────────────────
@@ -84,8 +83,6 @@ export const testIds = Object.freeze({
     searchInput: 'catalog:search-input',
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
-    itemCard: 'catalog-item-card', // keep Maestro value
-    detailContent: 'catalog-detail-content', // keep Maestro value
     item: (id: string | number) => `catalog:item-${id}`,
   }),
 

@@ -1,18 +1,26 @@
 appId: ${APP_ID}
 ---
-# Dashboard Tiles Flow: Verify dashboard tab loads
+# Dashboard Tiles Flow: Verify dashboard loads with key tiles
 - waitForAnimationToEnd
 
-# Navigate to Dashboard tab
+# Navigate to Dashboard (home tab)
 - tapOn:
     text: "Dashboard"
 - waitForAnimationToEnd
 
-# Verify we landed on the Dashboard screen (large-title header).
-# NativeWindUI ListItem tile titles are not exposed as individual nodes in
-# the iOS accessibility tree, so we only assert on the screen header here.
+# Verify key dashboard tiles are present
+- scrollUntilVisible:
+    element:
+      id: "dashboard-tile-packrat-ai"
+    direction: DOWN
 - assertVisible:
-    text: "Dashboard"
+    id: "dashboard-tile-packrat-ai"
+
+# Scroll to check more tiles
+- scrollUntilVisible:
+    element:
+      text: ".*Pack.*"
+    direction: DOWN
 
 # Return to stable state
 - tapOn:

@@ -1,108 +1,112 @@
 appId: ${APP_ID}
 ---
-# Create Trip Flow: Navigate to trips tab and create a new trip
+# Create Trip Flow
 - waitForAnimationToEnd
-
-# Navigate to the Trips tab
 - tapOn:
     text: "Trips"
-
 - waitForAnimationToEnd
-
-# Tap the header "+" button (testID: create-trip-button) to open the trip creation form
 - tapOn:
     id: "create-trip-button"
-
 - waitForAnimationToEnd
-
-# Fill in the Trip Name field
-- tapOn:
-    id: "trip-name-input"
-- inputText: ${TRIP_NAME}
-
-# Fill in the Description field
-- tapOn:
-    id: "trip-description-input"
-- inputText: "Created by Maestro E2E test"
-
-# Dismiss the keyboard before interacting with the date picker rows.
-# Android: hideKeyboard keeps focus off the description so the submit button
-#   stays visible after the date pickers close.
-# iOS: hideKeyboard fails on multiline TextInput (no toolbar "Done" button).
-#   Tap in the navigation bar title area instead — this blurs the description
-#   input and dismisses the keyboard without triggering any navigation action.
-#   Once the keyboard is gone the date rows are accessible to Maestro.
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - hideKeyboard
 - runFlow:
     when:
       platform: iOS
     commands:
       - tapOn:
-          point: "50%,8%"
+          text: "show map, Trip Name"
+      - inputText: ${TRIP_NAME}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Trip Name"
+      - inputText: ${TRIP_NAME}
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Description"
+      - inputText: "Created by Maestro E2E test"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Description"
+      - inputText: "Created by Maestro E2E test"
+# Tap neutral area to dismiss keyboard on iOS multiline field
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "TRIP DETAILS"
       - waitForAnimationToEnd
+- hideKeyboard
+- waitForAnimationToEnd
 
 # --- Start Date ---
-# Use testID so the row is findable by XCTest accessibilityIdentifier even
-# when the keyboard is still visible (text-based lookup fails when keyboard
-# partially obscures the row on iOS).
 - tapOn:
-    id: "start-date-row"
+    id: "trips:start-date-input"
 - waitForAnimationToEnd
-
-- repeat:
-    times: ${START_TAPS}
-    commands:
-      - tapOn: "Next Month"
-
 - runFlow:
     when:
       platform: Android
     commands:
-      # Android calendar shows bare day numbers; tap the day digit directly
-      - tapOn: "${START_DAY}"
-      - tapOn: "OK"
-
+      - repeat:
+          times: ${START_TAPS}
+          commands:
+            - tapOn:
+                text: "Next Month"
+      - tapOn:
+          text: "${START_DAY} ${START_MONTH} ${START_YEAR}"
+      - tapOn:
+          text: "OK"
 - runFlow:
     when:
       platform: iOS
     commands:
-      # Inline calendar (display="inline") exposes day cells as bare numbers.
-      # Use anchored regex ^N$ so "4" matches only day 4, not "14" or "24".
-      - tapOn: "^${START_DAY}$"
       - tapOn:
-          point: "5%,5%"
-
+          text: "${TODAY_DATE}"
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "${START_DAY}"
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "50%,90%"
 - waitForAnimationToEnd
 
 # --- End Date ---
 - tapOn:
-    id: "end-date-row"
+    id: "trips:end-date-input"
 - waitForAnimationToEnd
-
-- repeat:
-    times: ${END_TAPS}
-    commands:
-      - tapOn: "Next Month"
-
 - runFlow:
     when:
       platform: Android
     commands:
-      - tapOn: "${END_DAY}"
-      - tapOn: "OK"
-
+      - repeat:
+          times: ${END_TAPS}
+          commands:
+            - tapOn:
+                text: "Next Month"
+      - tapOn:
+          text: "${END_DAY} ${END_MONTH} ${END_YEAR}"
+      - tapOn:
+          text: "OK"
 - runFlow:
     when:
       platform: iOS
     commands:
-      - tapOn: "^${END_DAY}$"
       - tapOn:
-          point: "5%,5%"
-
+          text: "${TODAY_DATE}"
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "${END_DAY}"
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "50%,90%"
 - waitForAnimationToEnd
 
 # --- Submit ---
@@ -121,50 +125,12 @@ appId: ${APP_ID}
 # for the header create button, then verify the new trip appears
 - assertVisible:
     id: "create-trip-button"
-
-# iOS: the "Save Password?" keychain prompt can appear late — after returning
-# from any form with a password field. Dismiss it before scrolling so it
-# doesn't intercept taps or obscure the list.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - runFlow:
-          when:
-            visible:
-              text: "Not Now"
-          commands:
-            - tapOn:
-                text: "Not Now"
-            - waitForAnimationToEnd
-
-# Verify the new trip is in the list.
-# Android: scrollUntilVisible works correctly.
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - waitForAnimationToEnd
-      - scrollUntilVisible:
-          element:
-            text: ${TRIP_NAME}
-          direction: DOWN
-          timeout: 30000
-          speed: 40
-      - assertVisible:
-          text: ${TRIP_NAME}
-
-# iOS: text-based assertions and scrollUntilVisible cannot reliably match FlatList Pressable
-# items through the LargeTitleHeader accessibility tree. Use the testID (trip-list-item)
-# instead. The search bar is intentionally avoided — activating it leaves the keyboard up
-# and iOS restores the search bar as first responder on tab return, breaking downstream flows.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - waitForAnimationToEnd
-      - extendedWaitUntil:
-          visible:
-            id: "trip-list-item"
-          timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "trips:list-item-${TRIP_NAME}"
+    direction: DOWN
+    timeout: 60000
+    speed: 99
+- assertVisible:
+      id: "trips:list-item-${TRIP_NAME}"
 

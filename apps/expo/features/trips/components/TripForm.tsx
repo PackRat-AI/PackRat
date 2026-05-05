@@ -11,7 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Keyboard, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -127,7 +127,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             preset: 'done',
           });
         } else {
-          createTrip(submitData);
+          await createTrip(submitData);
           Burnt.toast({
             title: t('trips.tripCreatedSuccess'),
             preset: 'done',
@@ -164,31 +164,20 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         contentContainerStyle={contentContainerStyle}
       >
         <Form>
-          <FormSection
-            ios={{ title: t('trips.tripDetails') }}
-            accessible={Platform.OS === 'ios' ? false : undefined}
-          >
+          <FormSection ios={{ title: t('trips.tripDetails') }}>
             {/* Trip Name */}
             <form.Field name="name">
               {(field) => (
-                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
+                <FormItem>
                   <TextField
-                    containerTestID={testIds.trips.nameInput}
-                    containerAccessibilityLabel={t('trips.tripName')}
                     placeholder={t('trips.tripName')}
-                    label={Platform.OS === 'ios' ? undefined : t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="pl-2 justify-center">
-                        <Icon
-                          name="map"
-                          size={16}
-                          color={colors.grey3}
-                          ios={{ accessible: true, accessibilityLabel: '' }}
-                        />
+                        <Icon name="map" size={16} color={colors.grey3} />
                       </View>
                     }
                   />
@@ -199,12 +188,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             {/* Description */}
             <form.Field name="description">
               {(field) => (
-                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
+                <FormItem>
                   <TextField
-                    containerTestID={testIds.trips.descriptionInput}
-                    containerAccessibilityLabel={t('trips.description')}
                     placeholder={t('trips.description')}
-                    label={Platform.OS === 'ios' ? undefined : t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -316,11 +302,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={testIds.trips.startDateRow}
-                      onPress={() => {
-                        Keyboard.dismiss();
-                        setShowStartPicker(true);
-                      }}
+                      testID={testIds.trips.startDateInput}
+                      onPress={() => setShowStartPicker(true)}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
@@ -340,7 +323,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       <DateTimePicker
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
-                        display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                        display="default"
                         onChange={(_event, date) => {
                           setShowStartPicker(false);
                           if (date) {
@@ -362,11 +345,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={testIds.trips.endDateRow}
-                      onPress={() => {
-                        Keyboard.dismiss();
-                        setShowEndPicker(true);
-                      }}
+                      onPress={() => setShowEndPicker(true)}
+                      testID={testIds.trips.endDateInput}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
@@ -386,7 +366,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       <DateTimePicker
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
-                        display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                        display="default"
                         onChange={(_event, date) => {
                           setShowEndPicker(false);
                           if (date) {

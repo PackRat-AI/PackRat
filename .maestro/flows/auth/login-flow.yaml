@@ -28,10 +28,6 @@ appId: ${APP_ID}
     id: "sign-in-email-button"
 
 # Wait for login form to appear.
-# auth/(login) is presented as a modal; waitForAnimationToEnd alone is not
-# sufficient — the XCTest accessibility tree may not include the modal until
-# the presentation animation fully settles. extendedWaitUntil polls until
-# the field is accessible, giving the modal time to fully render.
 # iOS 26 / slow CI: the app startup takes ~10s before sign-in-button appears;
 # by the time the modal opens we may have little budget left. Use 35s here.
 - runFlow:
@@ -44,10 +40,7 @@ appId: ${APP_ID}
           timeout: 35000
 - waitForAnimationToEnd
 
-# Fill in the email field.
-# iOS: NativeWindUI's TextField inside accessible={false} FormSection doesn't expose
-#      testID to Maestro's XCTest snapshot, so we match the placeholder text instead.
-# Android: testID maps reliably to resource-id.
+# Fill in the email field
 - runFlow:
     when:
       platform: iOS
@@ -89,8 +82,7 @@ appId: ${APP_ID}
 # Wait for navigation to complete — login can take a few seconds
 - waitForAnimationToEnd
 
-# Handle transient network error: if the API call failed (e.g. "Network request
-# failed" dialog), dismiss the alert and retry once with the same credentials.
+# Handle transient network error: if the API call failed, dismiss the alert and retry once.
 - runFlow:
     when:
       visible:

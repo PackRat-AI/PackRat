@@ -7,14 +7,7 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { TripInStore } from '../types';
 
-let _refreshTripsList: (() => void) | undefined;
-export const refreshTripsList = () => _refreshTripsList?.();
-
-// biome-ignore lint/suspicious/noExplicitAny: crud.js getParams is untyped
-const listTrips = async (getParams: any) => {
-  // Force merge mode on every list sync (including initial when lastSync is null),
-  // so obs$.set() is never called and local-only items are never wiped.
-  getParams.mode = 'merge';
+const listTrips = async () => {
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list trips: ${error.value}`);
   return TripSchema.array().parse(data);
@@ -37,9 +30,6 @@ const createTrip = async (tripData: TripInStore) => {
     localUpdatedAt: tripData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create trip: ${error.value}`);
-  // Refresh the list after create so the new trip appears immediately without
-  // waiting for the 30-second polling interval.
-  setTimeout(() => refreshTripsList(), 500);
   return TripSchema.parse(data);
 };
 
@@ -86,14 +76,10 @@ syncObservable(
     update: updateTrip,
     changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
-      _refreshTripsList = refresh;
       const intervalId = setInterval(() => {
         refresh();
       }, 30000);
-      return () => {
-        _refreshTripsList = undefined;
-        clearInterval(intervalId);
-      };
+      return () => clearInterval(intervalId);
     },
   }),
 );

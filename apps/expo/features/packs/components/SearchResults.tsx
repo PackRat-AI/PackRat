@@ -18,7 +18,6 @@ export function SearchResults({ results, searchValue, onResultPress }: SearchRes
       contentContainerClassName="pb-4"
       renderItem={({ item }) => (
         <Pressable
-          testID="pack-search-result"
           onPress={() => onResultPress(item)}
           className="flex-row items-center border-b border-border px-4 py-3 active:bg-muted"
         >
