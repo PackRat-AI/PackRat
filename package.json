@@ -35,6 +35,7 @@
     "swift": "cd apps/swift && xcodegen generate && bun scripts/fix-xcodeproj.ts",
     "swift:codegen": "swift package --package-path apps/swift/PackRatAPIClient plugin --allow-writing-to-package-directory generate-code-from-openapi && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Client.swift apps/swift/Sources/PackRat/API/Client.swift && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Types.swift apps/swift/Sources/PackRat/API/Types.swift",
     "swift:models": "bun run apps/swift/scripts/generate-swift-models.ts",
+    "e2e:swift": "bash apps/swift/scripts/run-e2e.sh",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
     "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts",
