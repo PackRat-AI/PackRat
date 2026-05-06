@@ -185,15 +185,6 @@
       "ai": {
         "binding": "AI"
       },
-      // Local dev: points directly at the Docker PostGIS container.
-      // Replace localConnectionString with your local OSM DB URL.
-      "hyperdrive": [
-        {
-          "binding": "OSM_HYPERDRIVE",
-          "id": "TODO_replace_with_hyperdrive_config_id",
-          "localConnectionString": "postgresql://packrat:packrat@localhost:5433/osm"
-        }
-      ],
       "containers": [
         {
           "name": "packrat-api-container-dev",
