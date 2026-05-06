@@ -4,6 +4,7 @@ import {
   WeatherAPIForecastResponseSchema,
 } from '@packrat/api/schemas/weather';
 import { assertDefined } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
@@ -12,9 +13,15 @@ import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
  */
 export async function searchLocations(query: string) {
   const { data, error } = await apiClient.weather.search.get({ query: { q: query } });
+
   if (error) {
     console.error('Error searching locations:', error.value);
-    throw new Error('Failed to search locations');
+    const err = new Error('Failed to search locations');
+    Sentry.captureException(err, {
+      contexts: { weather: { query, apiError: error.value } },
+      tags: { weather_operation: 'searchLocations' },
+    });
+    throw err;
   }
   return LocationSearchResponseSchema.parse(data ?? []);
 }
@@ -28,7 +35,12 @@ export async function searchLocationsByCoordinates(latitude: number, longitude: 
   });
   if (error) {
     console.error('Error searching locations by coordinates:', error.value);
-    throw new Error('Failed to find locations near you');
+    const err = new Error('Failed to find locations near you');
+    Sentry.captureException(err, {
+      contexts: { weather: { latitude, longitude, apiError: error.value } },
+      tags: { weather_operation: 'searchLocationsByCoordinates' },
+    });
+    throw err;
   }
   return LocationSearchResponseSchema.parse(data ?? []);
 }
@@ -40,7 +52,12 @@ export async function getWeatherData(id: number) {
   const { data, error } = await apiClient.weather.forecast.get({ query: { id: String(id) } });
   if (error) {
     console.error('Error getting weather data:', error.value);
-    throw new Error('Failed to get weather data');
+    const err = new Error('Failed to get weather data');
+    Sentry.captureException(err, {
+      contexts: { weather: { locationId: id, apiError: error.value } },
+      tags: { weather_operation: 'getWeatherData' },
+    });
+    throw err;
   }
   return WeatherAPIForecastResponseSchema.parse(data);
 }
