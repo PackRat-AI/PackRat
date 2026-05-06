@@ -22,7 +22,18 @@ export class WeatherService {
       )}&units=imperial&appid=${this.env.OPENWEATHER_KEY}`,
     );
 
-    if (!response.ok) throw new Error('Weather API request failed');
+    if (!response.ok) {
+      let apiMessage = response.statusText;
+      try {
+        const body = (await response.json()) as { message?: string };
+        if (body.message) apiMessage = body.message;
+      } catch {
+        // response body not parseable — fall back to statusText
+      }
+      throw new Error(
+        `Weather API error ${response.status}: ${apiMessage} (location: "${location}")`,
+      );
+    }
 
     const data = (await response.json()) as {
       main: { temp: number; humidity: number };
