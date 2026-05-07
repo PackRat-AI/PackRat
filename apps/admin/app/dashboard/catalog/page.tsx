@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import {
   Table,
@@ -13,11 +14,15 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
 import { EditCatalogDialog } from 'admin-app/components/edit-catalog-dialog';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
+import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
-import { useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight, ExternalLink, Star } from 'lucide-react';
+
+const PAGE_SIZE = 50;
 
 function TableSkeleton() {
   return (
@@ -32,12 +37,19 @@ function TableSkeleton() {
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-16" />
         </div>
       ))}
     </div>
   );
+}
+
+function availabilityColor(availability: string | null) {
+  if (availability === 'InStock') return 'text-green-500';
+  if (availability === 'OutOfStock') return 'text-destructive';
+  return 'text-muted-foreground';
 }
 
 function CatalogRow({ item }: { item: AdminCatalogItem }) {
@@ -46,7 +58,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteCatalogItem(item.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all() });
     },
   });
 
@@ -54,8 +66,26 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
     <TableRow className="hover:bg-muted/20">
       <TableCell>
         <div>
-          <p className="text-sm font-medium">{item.name}</p>
-          {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium">{item.name}</p>
+            {item.productUrl && (
+              <a
+                href={item.productUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            {item.brand && <span className="text-xs text-muted-foreground">{item.brand}</span>}
+            {item.model && <span className="text-xs text-muted-foreground/60">{item.model}</span>}
+          </div>
+          {item.description && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>
+          )}
         </div>
       </TableCell>
       <TableCell>
@@ -83,8 +113,26 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
       </TableCell>
       <TableCell>
         <span className="text-sm text-muted-foreground">
-          {item.price != null ? `$${item.price.toFixed(2)}` : '—'}
+          {item.price != null
+            ? `${item.currency && item.currency !== 'USD' ? `${item.currency} ` : '$'}${item.price.toFixed(2)}`
+            : '—'}
         </span>
+      </TableCell>
+      <TableCell>
+        <div className="space-y-0.5">
+          <span className={`text-xs font-medium ${availabilityColor(item.availability)}`}>
+            {item.availability ?? '—'}
+          </span>
+          {item.ratingValue != null && (
+            <div className="flex items-center gap-1">
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              <span className="text-xs text-muted-foreground">
+                {item.ratingValue.toFixed(1)}
+                {item.reviewCount != null && ` (${item.reviewCount})`}
+              </span>
+            </div>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <span className="text-sm text-muted-foreground">
@@ -93,6 +141,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
+          <RawObjectDialog label={`item:${item.id}`} data={item} />
           <EditCatalogDialog item={item} />
           <DeleteButton
             label={item.name}
@@ -108,17 +157,20 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
 }
 
 export default function CatalogPage() {
-  const searchParams = useSearchParams();
-  const q = searchParams?.get('q') ?? undefined;
+  const { q, setSearch, page, setPage } = usePaginatedSearch();
+  const offset = page * PAGE_SIZE;
 
   const {
     data: items = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.catalog(q),
-    queryFn: () => getCatalogItems({ q }),
+    queryKey: queryKeys.admin.catalog.list({ q: q || undefined, page }),
+    queryFn: () => getCatalogItems({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
+
+  const hasPrev = page > 0;
+  const hasNext = items.length === PAGE_SIZE;
 
   return (
     <div>
@@ -129,7 +181,7 @@ export default function CatalogPage() {
         </p>
       </div>
       <div className="space-y-4">
-        <SearchInput placeholder="Search by name, brand, or category…" />
+        <SearchInput placeholder="Search by name, brand, or category…" onSearch={setSearch} />
         {isError ? (
           <p className="text-sm text-destructive py-4">
             Failed to load catalog. Check that the API is reachable.
@@ -155,15 +207,18 @@ export default function CatalogPage() {
                       Price
                     </TableHead>
                     <TableHead className="font-medium text-xs uppercase tracking-wide">
+                      Status
+                    </TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wide">
                       Added
                     </TableHead>
-                    <TableHead className="font-medium text-xs uppercase tracking-wide w-20" />
+                    <TableHead className="font-medium text-xs uppercase tracking-wide w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         No catalog items found{q ? ` matching "${q}"` : ''}.
                       </TableCell>
                     </TableRow>
@@ -173,10 +228,34 @@ export default function CatalogPage() {
                 </TableBody>
               </Table>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {items.length.toLocaleString()} item{items.length !== 1 ? 's' : ''}
-              {q ? ` matching "${q}"` : ''}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {items.length === 0
+                  ? `No items${q ? ` matching "${q}"` : ''}`
+                  : `${(offset + 1).toLocaleString()}–${(offset + items.length).toLocaleString()} items${q ? ` matching "${q}"` : ''}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={!hasPrev}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Prev
+                </Button>
+                <span className="text-xs text-muted-foreground">Page {page + 1}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={!hasNext}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </div>

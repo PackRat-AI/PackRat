@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import {
   Table,
@@ -12,11 +13,16 @@ import {
 } from '@packrat/web-ui/components/table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
+import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminUser, deleteUser, getUsers } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
-import { useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
+
+const PAGE_SIZE = 50;
 
 function TableSkeleton() {
   return (
@@ -31,7 +37,7 @@ function TableSkeleton() {
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-12" />
           <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-8" />
+          <Skeleton className="h-4 w-16" />
         </div>
       ))}
     </div>
@@ -44,22 +50,39 @@ function UserRow({ user }: { user: AdminUser }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteUser(user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users.all() });
     },
   });
 
   return (
     <TableRow className="hover:bg-muted/20">
       <TableCell>
-        <div>
-          <p className="text-sm font-medium">
-            {user.firstName || user.lastName
-              ? [user.firstName, user.lastName].filter(Boolean).join(' ')
-              : user.email}
-          </p>
-          {(user.firstName || user.lastName) && (
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+        <div className="flex items-center gap-2">
+          {user.avatarUrl ? (
+            <Image
+              src={user.avatarUrl}
+              alt=""
+              width={24}
+              height={24}
+              className="rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                {user.firstName?.[0] ?? user.email[0] ?? '?'}
+              </span>
+            </div>
           )}
+          <div>
+            <p className="text-sm font-medium">
+              {user.firstName || user.lastName
+                ? [user.firstName, user.lastName].filter(Boolean).join(' ')
+                : user.email}
+            </p>
+            {(user.firstName || user.lastName) && (
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>
@@ -80,30 +103,36 @@ function UserRow({ user }: { user: AdminUser }) {
         </span>
       </TableCell>
       <TableCell>
-        <DeleteButton
-          label={user.email}
-          description="The user account and all associated data will be permanently deleted."
-          onConfirm={async () => {
-            await handleDelete();
-          }}
-        />
+        <div className="flex items-center gap-1">
+          <RawObjectDialog label={`user:${user.id}`} data={user} />
+          <DeleteButton
+            label={user.email}
+            description="The user account and all associated data will be permanently deleted."
+            onConfirm={async () => {
+              await handleDelete();
+            }}
+          />
+        </div>
       </TableCell>
     </TableRow>
   );
 }
 
 export default function UsersPage() {
-  const searchParams = useSearchParams();
-  const q = searchParams?.get('q') ?? undefined;
+  const { q, setSearch, page, setPage } = usePaginatedSearch();
+  const offset = page * PAGE_SIZE;
 
   const {
     data: users = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.users(q),
-    queryFn: () => getUsers({ q }),
+    queryKey: queryKeys.admin.users.list({ q: q || undefined, page }),
+    queryFn: () => getUsers({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
+
+  const hasPrev = page > 0;
+  const hasNext = users.length === PAGE_SIZE;
 
   return (
     <div>
@@ -114,7 +143,7 @@ export default function UsersPage() {
         </p>
       </div>
       <div className="space-y-4">
-        <SearchInput placeholder="Search by email or name…" />
+        <SearchInput placeholder="Search by email or name…" onSearch={setSearch} />
         {isError ? (
           <p className="text-sm text-destructive py-4">
             Failed to load users. Check that the API is reachable.
@@ -139,7 +168,7 @@ export default function UsersPage() {
                     <TableHead className="font-medium text-xs uppercase tracking-wide">
                       Joined
                     </TableHead>
-                    <TableHead className="font-medium text-xs uppercase tracking-wide w-16" />
+                    <TableHead className="font-medium text-xs uppercase tracking-wide w-20" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -155,10 +184,34 @@ export default function UsersPage() {
                 </TableBody>
               </Table>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {users.length.toLocaleString()} user{users.length !== 1 ? 's' : ''}
-              {q ? ` matching "${q}"` : ''}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {users.length === 0
+                  ? `No users${q ? ` matching "${q}"` : ''}`
+                  : `${(offset + 1).toLocaleString()}–${(offset + users.length).toLocaleString()} users${q ? ` matching "${q}"` : ''}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={!hasPrev}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Prev
+                </Button>
+                <span className="text-xs text-muted-foreground">Page {page + 1}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={!hasNext}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </div>

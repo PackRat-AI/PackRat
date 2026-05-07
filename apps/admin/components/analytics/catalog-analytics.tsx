@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import {
   Card,
   CardContent,
@@ -16,6 +17,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@packrat/web-ui/components/chart';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import {
   useCatalogBrands,
   useCatalogEmbeddings,
@@ -23,6 +26,9 @@ import {
   useCatalogOverview,
   useCatalogPrices,
 } from 'admin-app/hooks/use-catalog-analytics';
+import { resetStuckEtlJobs } from 'admin-app/lib/api';
+import { queryKeys } from 'admin-app/lib/queryKeys';
+import { RotateCcw } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 const priceConfig: ChartConfig = {
@@ -49,11 +55,24 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
 }
 
 export function CatalogAnalytics() {
+  const queryClient = useQueryClient();
   const { data: overview } = useCatalogOverview();
   const { data: brands } = useCatalogBrands(15);
   const { data: prices } = useCatalogPrices();
   const { data: etl } = useCatalogEtl(15);
   const { data: embeddings } = useCatalogEmbeddings();
+
+  const {
+    mutate: resetStuck,
+    isPending: isResetting,
+    isError: resetFailed,
+    data: resetResult,
+  } = useMutation({
+    mutationFn: resetStuckEtlJobs,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl.all() });
+    },
+  });
 
   const availConfig: ChartConfig = Object.fromEntries(
     (overview?.availability ?? []).map((a, i) => [
@@ -250,12 +269,35 @@ export function CatalogAnalytics() {
       {etl && (
         <Card>
           <CardHeader>
-            <CardTitle>ETL Pipeline</CardTitle>
-            <CardDescription>
-              {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
-              {etl.summary.failed} failed &mdash; {etl.summary.totalItemsIngested.toLocaleString()}{' '}
-              items ingested
-            </CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>ETL Pipeline</CardTitle>
+                <CardDescription>
+                  {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
+                  {etl.summary.failed} failed &mdash;{' '}
+                  {etl.summary.totalItemsIngested.toLocaleString()} items ingested
+                  {resetFailed && <span className="ml-2 text-destructive">— reset failed</span>}
+                  {!resetFailed && resetResult && resetResult.reset > 0 && (
+                    <span className="ml-2 text-green-600 dark:text-green-400">
+                      — reset {resetResult.reset} stuck job{resetResult.reset !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {!resetFailed && resetResult && resetResult.reset === 0 && (
+                    <span className="ml-2 text-muted-foreground">— no stuck jobs found</span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetStuck()}
+                disabled={isResetting}
+                className="shrink-0"
+              >
+                <RotateCcw className={`h-3.5 w-3.5 mr-1.5 ${isResetting ? 'animate-spin' : ''}`} />
+                Reset Stuck
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -266,8 +308,11 @@ export function CatalogAnalytics() {
                     <th className="pb-2 text-left font-medium">Status</th>
                     <th className="pb-2 text-right font-medium">Processed</th>
                     <th className="pb-2 text-right font-medium">Valid</th>
+                    <th className="pb-2 text-right font-medium">Invalid</th>
                     <th className="pb-2 text-right font-medium">Success %</th>
                     <th className="pb-2 text-left font-medium">Started</th>
+                    <th className="pb-2 text-left font-medium">Completed</th>
+                    <th className="pb-2 w-8" />
                   </tr>
                 </thead>
                 <tbody>
@@ -286,10 +331,25 @@ export function CatalogAnalytics() {
                         {job.totalValid?.toLocaleString() ?? '—'}
                       </td>
                       <td className="py-2 pr-4 text-right">
+                        {job.totalInvalid != null ? (
+                          <span className={job.totalInvalid > 0 ? 'text-destructive' : ''}>
+                            {job.totalInvalid.toLocaleString()}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="py-2 pr-4 text-right">
                         {job.successRate != null ? `${job.successRate}%` : '—'}
                       </td>
-                      <td className="py-2 text-muted-foreground">
+                      <td className="py-2 pr-4 text-muted-foreground">
                         {new Date(job.startedAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 pr-4 text-muted-foreground">
+                        {job.completedAt ? new Date(job.completedAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="py-2">
+                        <RawObjectDialog label={`job:${job.id}`} data={job} />
                       </td>
                     </tr>
                   ))}

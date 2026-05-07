@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs } from '@packrat/api/db/schema';
-import { and, avg, count, desc, gt, isNotNull, max, min, sql } from 'drizzle-orm';
+import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
@@ -242,4 +242,26 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     { detail: { tags: ['Admin'], summary: 'Embedding coverage' } },
+  )
+
+  .post(
+    '/etl/reset-stuck',
+    async () => {
+      const db = createDb();
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+      try {
+        const reset = await db
+          .update(etlJobs)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(and(eq(etlJobs.status, 'running'), lt(etlJobs.startedAt, threeHoursAgo)))
+          .returning();
+
+        return { reset: reset.length, ids: reset.map((r) => r.id) };
+      } catch (error) {
+        console.error('ETL reset-stuck error:', error);
+        return status(500, { error: 'Failed to reset stuck jobs', code: 'ETL_RESET_STUCK_ERROR' });
+      }
+    },
+    { detail: { tags: ['Admin'], summary: 'Reset ETL jobs stuck in running state for >3 hours' } },
   );
