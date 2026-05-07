@@ -1,9 +1,12 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
-import type { ValidationError } from '@packrat/api/types/validation';
+import { ValidationErrorsSchema } from '@packrat/api/types/validation';
+import { fromZod } from '@packrat/guards';
 import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
+
+const parseValidationErrors = fromZod(ValidationErrorsSchema);
 
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
   .get(
@@ -260,7 +263,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
         const tally = new Map<string, number>();
         for (const log of logs) {
-          for (const err of log.errors as ValidationError[]) {
+          for (const err of parseValidationErrors(log.errors) ?? []) {
             const key = `${err.field}|||${err.reason}`;
             tally.set(key, (tally.get(key) ?? 0) + 1);
           }
@@ -314,7 +317,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         // Aggregate error breakdown for this job
         const tally = new Map<string, number>();
         for (const log of logs) {
-          for (const err of log.errors as ValidationError[]) {
+          for (const err of parseValidationErrors(log.errors) ?? []) {
             const key = `${err.field}|||${err.reason}`;
             tally.set(key, (tally.get(key) ?? 0) + 1);
           }
@@ -332,7 +335,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           errorBreakdown,
           samples: logs.slice(0, 20).map((l) => ({
             rowIndex: l.rowIndex,
-            errors: l.errors as ValidationError[],
+            errors: parseValidationErrors(l.errors) ?? [],
             rawData: l.rawData,
           })),
           totalShown: logs.length,
