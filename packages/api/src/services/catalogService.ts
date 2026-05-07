@@ -343,10 +343,19 @@ export class CatalogService {
       .onConflictDoUpdate({
         target: catalogItems.sku,
         set: Object.values(columns).reduce<Record<string, SQL>>((acc, col) => {
-          // Preserve the original creation timestamp; overwrite everything else with the
-          // fresh scraped value so stale/wrong data can be corrected by re-scraping.
-          if (col.name === 'created_at') {
+          if (col.name === 'id' || col.name === 'created_at') {
+            // Never overwrite PK or original creation timestamp
             acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+          } else if (col.name === 'weight') {
+            // Keep old weight if new weight is missing or invalid (0 / negative)
+            acc[col.name] = sql.raw(
+              `CASE WHEN excluded."weight" IS NOT NULL AND excluded."weight" > 0 THEN excluded."weight" ELSE COALESCE(catalog_items.weight, excluded."weight") END`,
+            );
+          } else if (col.name === 'weight_unit') {
+            // weight_unit stays in sync with weight validity
+            acc[col.name] = sql.raw(
+              `CASE WHEN excluded."weight" IS NOT NULL AND excluded."weight" > 0 THEN excluded."weight_unit" ELSE COALESCE(catalog_items.weight_unit, excluded."weight_unit") END`,
+            );
           } else {
             acc[col.name] = sql.raw(`excluded."${col.name}"`);
           }
