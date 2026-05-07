@@ -593,14 +593,13 @@ describe('pack calculation scenarios', () => {
 
   it('percentage is independent of preferred display unit', () => {
     // Weight percentages must not change when user switches display unit
-    const items = [
-      { weight: 1, unit: 'kg' as const },
-      { weight: 500, unit: 'g' as const },
-    ];
+    const item0 = { weight: 1, unit: 'kg' as const };
+    const item1 = { weight: 500, unit: 'g' as const };
+    const items = [item0, item1];
     const totalG = items.reduce((sum, i) => sum + normalize(i.weight, i.unit), 0);
     // 1000g / 1500g = 66.7%, 500g / 1500g = 33.3%
-    const pct0 = (normalize(items[0].weight, items[0].unit) / totalG) * 100;
-    const pct1 = (normalize(items[1].weight, items[1].unit) / totalG) * 100;
+    const pct0 = (normalize(item0.weight, item0.unit) / totalG) * 100;
+    const pct1 = (normalize(item1.weight, item1.unit) / totalG) * 100;
     expect(pct0).toBeCloseTo(66.67, 1);
     expect(pct1).toBeCloseTo(33.33, 1);
     // Same percentages regardless of whether we display in oz, lb, kg
