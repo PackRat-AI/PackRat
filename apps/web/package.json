@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@packrat/api-client": "workspace:*",
+    "@packrat/env": "workspace:*",
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",

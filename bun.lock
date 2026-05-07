@@ -347,6 +347,7 @@
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/app": "workspace:*",
+        "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@packrat/web-ui": "workspace:*",
         "@tanstack/react-query": "^5.76.1",

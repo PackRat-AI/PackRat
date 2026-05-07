@@ -1,8 +1,9 @@
 import { createApiClient } from '@packrat/api-client';
+import { webEnv } from '@packrat/env/web';
 import Cookies from 'js-cookie';
 
 export const apiClient = createApiClient({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787',
+  baseUrl: webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787',
   auth: {
     getAccessToken: () => Cookies.get('access_token') ?? null,
     getRefreshToken: () => Cookies.get('refresh_token') ?? null,
