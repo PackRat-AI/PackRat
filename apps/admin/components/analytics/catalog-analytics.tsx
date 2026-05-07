@@ -64,6 +64,7 @@ export function CatalogAnalytics() {
   const {
     mutate: resetStuck,
     isPending: isResetting,
+    isError: resetFailed,
     data: resetResult,
   } = useMutation({
     mutationFn: resetStuckEtlJobs,
@@ -274,10 +275,14 @@ export function CatalogAnalytics() {
                   {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
                   {etl.summary.failed} failed &mdash;{' '}
                   {etl.summary.totalItemsIngested.toLocaleString()} items ingested
-                  {resetResult && resetResult.reset > 0 && (
+                  {resetFailed && <span className="ml-2 text-destructive">— reset failed</span>}
+                  {!resetFailed && resetResult && resetResult.reset > 0 && (
                     <span className="ml-2 text-green-600 dark:text-green-400">
                       — reset {resetResult.reset} stuck job{resetResult.reset !== 1 ? 's' : ''}
                     </span>
+                  )}
+                  {!resetFailed && resetResult && resetResult.reset === 0 && (
+                    <span className="ml-2 text-muted-foreground">— no stuck jobs found</span>
                   )}
                 </CardDescription>
               </div>

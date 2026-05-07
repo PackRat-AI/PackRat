@@ -15,11 +15,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
 import { EditCatalogDialog } from 'admin-app/components/edit-catalog-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
+import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 
 const PAGE_SIZE = 50;
 
@@ -112,8 +112,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
 }
 
 export default function CatalogPage() {
-  const [q] = useQueryState('q', parseAsString.withDefault(''));
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(0));
+  const { q, setSearch, page, setPage } = usePaginatedSearch();
   const offset = page * PAGE_SIZE;
 
   const {
@@ -137,7 +136,7 @@ export default function CatalogPage() {
         </p>
       </div>
       <div className="space-y-4">
-        <SearchInput placeholder="Search by name, brand, or category…" />
+        <SearchInput placeholder="Search by name, brand, or category…" onSearch={setSearch} />
         {isError ? (
           <p className="text-sm text-destructive py-4">
             Failed to load catalog. Check that the API is reachable.
