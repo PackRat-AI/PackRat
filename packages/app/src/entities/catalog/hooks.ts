@@ -1,7 +1,7 @@
-import { CatalogItemsResponseSchema } from '@packrat/api/schemas/catalog';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useApiClient } from '../../shared/api';
 import { queryKeys } from '../../shared/api/query-keys';
+import { CatalogItemsResponseSchema } from './schema';
 
 type CatalogSortField =
   | 'name'

@@ -1,10 +1,10 @@
+import type { z } from 'zod';
 import type {
   PackItemSchema,
   PackListResponseSchema,
   PackSchema,
   PackWithWeightsSchema,
-} from '@packrat/api/schemas/packs';
-import type { z } from 'zod';
+} from './schema';
 
 export type Pack = z.infer<typeof PackSchema>;
 export type PackItem = z.infer<typeof PackItemSchema>;

@@ -1,4 +1,5 @@
 import type { ApiClient } from '../../shared/api';
+import { CatalogItemsResponseSchema } from './schema';
 
 type CatalogSortField =
   | 'name'
@@ -30,5 +31,5 @@ export async function fetchCatalogItems(client: ApiClient, params: FetchCatalogI
     },
   });
   if (error) throw new Error('Failed to fetch catalog items');
-  return data;
+  return CatalogItemsResponseSchema.parse(data);
 }

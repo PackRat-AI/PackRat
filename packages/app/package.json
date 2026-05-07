@@ -12,11 +12,11 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@packrat/api": "workspace:*",
     "@packrat/api-client": "workspace:*",
     "@tanstack/react-query": "^5.70.0",
     "jotai": "^2.12.2",
-    "react": "catalog:"
+    "react": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.70.0",
