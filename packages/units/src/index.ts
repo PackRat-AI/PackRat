@@ -9,7 +9,7 @@ const TO_GRAMS = {
   lb: 453.59237,
 } as const;
 
-export const WEIGHT_UNITS = Object.freeze(['g', 'kg', 'oz', 'lb'] as const);
+export const WEIGHT_UNITS = Object.freeze(['g', 'oz', 'kg', 'lb'] as const);
 
 export type WeightUnit = keyof typeof TO_GRAMS;
 
