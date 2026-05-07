@@ -1,5 +1,6 @@
 'use client';
 
+import { makeEnumGuard } from '@packrat/guards';
 import { Button } from '@packrat/web-ui';
 import {
   Dialog,
@@ -18,7 +19,9 @@ import { VerifyEmail } from 'trails-app/components/VerifyEmail';
 import { apiForgotPassword } from 'trails-app/lib/auth';
 import { useAuth } from 'trails-app/lib/useAuth';
 
-type Tab = 'register' | 'login' | 'forgot';
+const TABS = ['register', 'login', 'forgot'] as const;
+type Tab = (typeof TABS)[number];
+const isTab = makeEnumGuard(TABS);
 
 export function AuthGate() {
   const { authGateOpen, closeAuthGate, register, login, pendingEmail } = useAuth();
@@ -100,7 +103,12 @@ export function AuthGate() {
         {pendingEmail ? (
           <VerifyEmail />
         ) : (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+          <Tabs
+            value={tab}
+            onValueChange={(v) => {
+              if (isTab(v)) setTab(v);
+            }}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="register">Create account</TabsTrigger>
               <TabsTrigger value="login">Log in</TabsTrigger>

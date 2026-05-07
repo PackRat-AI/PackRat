@@ -2,7 +2,8 @@
 // atomWithStorage JSON-encodes values; raw JWTs may also be written directly.
 // Always use these helpers — never read localStorage tokens raw.
 
-import { isString } from '@packrat/guards';
+import { fromZod, isString } from '@packrat/guards';
+import z from 'zod';
 
 const ACCESS_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
@@ -38,11 +39,13 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_KEY);
 }
 
-export interface UserInfo {
-  id: string;
-  email: string;
-  username?: string;
-}
+const UserInfoSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  username: z.string().optional(),
+});
+
+export type UserInfo = z.infer<typeof UserInfoSchema>;
 
 export function setUser(user: UserInfo): void {
   localStorage.setItem('user', JSON.stringify(user));
@@ -52,7 +55,7 @@ export function getUser(): UserInfo | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem('user');
-    return raw ? (JSON.parse(raw) as UserInfo) : null;
+    return raw ? (fromZod(UserInfoSchema)(JSON.parse(raw)) ?? null) : null;
   } catch {
     return null;
   }
@@ -66,14 +69,16 @@ export function clearUser(): void {
 
 const API_BASE = '/api';
 
-export interface AuthResponse {
-  success: boolean;
-  accessToken?: string;
-  refreshToken?: string;
-  user?: UserInfo;
-  message?: string;
-  userId?: string;
-}
+const AuthResponseSchema = z.object({
+  success: z.boolean().optional(),
+  accessToken: z.string().optional(),
+  refreshToken: z.string().optional(),
+  user: UserInfoSchema.optional(),
+  message: z.string().optional(),
+  userId: z.string().optional(),
+});
+
+export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 
 async function authFetch(path: string, body: Record<string, string>): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -81,9 +86,9 @@ async function authFetch(path: string, body: Record<string, string>): Promise<Au
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as AuthResponse;
+  const data = fromZod(AuthResponseSchema)(await res.json()) ?? {};
   if (!res.ok) {
-    throw new Error((data as { message?: string }).message ?? `Request failed: ${res.status}`);
+    throw new Error(data.message ?? `Request failed: ${res.status}`);
   }
   return data;
 }
