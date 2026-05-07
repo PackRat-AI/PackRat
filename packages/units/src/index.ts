@@ -1,3 +1,5 @@
+import { isString } from '@packrat/guards';
+
 // Exact avoirdupois values per NIST. These constants are the single source of
 // truth for all weight math in the monorepo — do not inline elsewhere.
 const TO_GRAMS = {
@@ -47,7 +49,7 @@ export function displayWeight(grams: number, unit: WeightUnit, precision = 2): n
  * Type guard — returns true if the value is a valid WeightUnit string.
  */
 export function isWeightUnit(value: unknown): value is WeightUnit {
-  return typeof value === 'string' && (WEIGHT_UNITS as readonly string[]).includes(value);
+  return isString(value) && (WEIGHT_UNITS as readonly string[]).includes(value);
 }
 
 /**
