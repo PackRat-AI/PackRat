@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "admin": "bun run --cwd apps/admin dev",
+    "trails": "bun run --cwd apps/trails dev",
     "android": "cd apps/expo && bun android",
     "api": "bun run --cwd packages/api dev",
     "bump": "bun .github/scripts/bump.ts",
