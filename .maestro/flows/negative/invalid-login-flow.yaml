@@ -7,58 +7,40 @@ appId: ${APP_ID}
     stopApp: true
 - waitForAnimationToEnd
 
-# Dismiss Android ANR dialog that can appear during emulator boot
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - runFlow:
-          when:
-            visible:
-              text: "isn't responding"
-          commands:
-            - tapOn:
-                text: "Wait"
-            - waitForAnimationToEnd
-
-# Wait for auth entry screen
+# Navigate to Sign In
 - extendedWaitUntil:
     visible:
-      id: "sign-in-email-button"
-    timeout: 15000
+      text: "Sign In"
+    timeout: 10000
 
-# Navigate to Sign In
 - tapOn:
-    id: "sign-in-email-button"
+    text: "Sign In"
 - waitForAnimationToEnd
 
-# Fill in invalid email
+# Handle possible multi-step auth screens
 - runFlow:
     when:
-      platform: iOS
+      notVisible:
+        text: "Email"
     commands:
       - tapOn:
-          text: "Email"
-      - inputText: "invalid@nonexistent.com"
-      - tapOn:
-          text: "Password"
-      - inputText: "wrongpassword123"
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn:
-          id: "email-input"
-      - inputText: "invalid@nonexistent.com"
-      - tapOn:
-          id: "password-input"
-      - inputText: "wrongpassword123"
+          text: "Sign In"
+      - waitForAnimationToEnd
+
+# Fill in invalid credentials
+- tapOn:
+    text: "Email"
+- inputText: "invalid@nonexistent.com"
+
+- tapOn:
+    text: "Password"
+- inputText: "wrongpassword123"
 
 - hideKeyboard
 
-# Submit via testID — avoids "Submit" vs "Continue" platform difference
+# Submit
 - tapOn:
-    id: "continue-button"
+    text: "Submit"
 - waitForAnimationToEnd
 
 # Should show Login Failed error dialog
@@ -76,15 +58,5 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Should still be on login form
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - assertVisible:
-          text: "Email"
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - assertVisible:
-          id: "email-input"
+- assertVisible:
+    text: "Email"

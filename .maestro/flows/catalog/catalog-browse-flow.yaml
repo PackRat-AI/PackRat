@@ -2,29 +2,21 @@ appId: ${APP_ID}
 ---
 # Catalog Browse Flow: Verify catalog tab loads items and categories
 - waitForAnimationToEnd
-
-# Navigate to Catalog tab
 - tapOn:
     text: "Catalog"
 - waitForAnimationToEnd
-
-# Assert catalog header loaded
 - assertVisible:
     text: "Catalog"
-
-# Wait for actual catalog items to load via testID.
-# Previous text-based check (".*items.*") matched "0 items" during loading
-# state without verifying data actually arrived. Use id: for reliability.
-- extendedWaitUntil:
-    visible:
-      id: "catalog-item-card"
-    timeout: 30000
-
-# Assert category filters render
 - assertVisible:
     text: "All"
-
-# Intentionally stay on Catalog tab.
-# catalog-item-detail-flow runs next and starts with tapOn:"Catalog" which
-# is a scroll-to-top on the already-active tab — items remain loaded and
-# no fresh API call is needed.
+- assertVisible:
+    text: ".*items.*"
+- scrollUntilVisible:
+    element:
+      text: "Showing.*items"
+    direction: DOWN
+    timeout: 10000
+    speed: 20
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd

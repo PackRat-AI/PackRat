@@ -10,6 +10,7 @@
  * through authenticated API endpoints.
  */
 
+import * as Sentry from '@sentry/react-native';
 import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
@@ -99,6 +100,12 @@ export function createLocalTools() {
           .describe('Location to get weather for (city name, state, trail name, etc.)'),
       }),
       execute: async ({ location }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'getWeatherForLocation called',
+          level: 'info',
+          data: { location },
+        });
         try {
           const results = await searchLocations(location);
           if (!results.length) {

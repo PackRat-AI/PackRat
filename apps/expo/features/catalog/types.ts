@@ -91,8 +91,8 @@ export interface CatalogItem {
 
   embedding?: number[] | null; // vector(1536)
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type CatalogItemWithQuantity = CatalogItem & { quantity?: number };

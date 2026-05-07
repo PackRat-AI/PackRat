@@ -2,55 +2,30 @@ appId: ${APP_ID}
 ---
 # Empty Pack Submit Flow: Verify form validation prevents empty pack creation
 - waitForAnimationToEnd
-
-# Navigate to Packs tab
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
-
-# iOS: returning to the Packs tab can restore the search bar as first responder,
-# overlaying the screen and suppressing the navigation bar's create-pack-button
-# from the accessibility tree. Dismiss it if visible.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - runFlow:
-          when:
-            visible:
-              text: "Cancel"
-          commands:
-            - tapOn:
-                text: "Cancel"
-            - waitForAnimationToEnd
-
-# Tap create pack button
 - tapOn:
     id: "create-pack-button"
 - waitForAnimationToEnd
-
 # Try to submit without filling any fields
 - tapOn:
     id: "submit-pack-button"
 - waitForAnimationToEnd
-
-# Should still be on the form (submit button still visible = didn't navigate away)
+# Should still be on the form (submit button still visible = validation blocked submit)
 - assertVisible:
     id: "submit-pack-button"
-
-# Go back
-# iOS: pack/new is a modal (root of its own nav stack) — no system "Back" button.
-# The modal has a Cancel button (testID: cancel-pack-form-button) added for this purpose.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          id: "cancel-pack-form-button"
-      - waitForAnimationToEnd
+# Dismiss the sheet - platform specific
 - runFlow:
     when:
       platform: Android
     commands:
       - back
-      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: DOWN
+          duration: 300
+- waitForAnimationToEnd

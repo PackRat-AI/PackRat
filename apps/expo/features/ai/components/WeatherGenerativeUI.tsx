@@ -1,7 +1,9 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
@@ -37,6 +39,69 @@ interface WeatherGenerativeUIProps {
 export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const { toolCallId } = toolInvocation;
+
+    if (toolInvocation.state === 'input-streaming') {
+      Sentry.addBreadcrumb({
+        category: 'ai.weather',
+        message: 'Weather tool: streaming input',
+        level: 'debug',
+        data: { toolCallId, partialLocation: toolInvocation.input?.location },
+      });
+    } else if (toolInvocation.state === 'input-available') {
+      Sentry.addBreadcrumb({
+        category: 'ai.weather',
+        message: `Weather tool: fetching for "${toolInvocation.input.location}"`,
+        level: 'info',
+        data: { toolCallId, location: toolInvocation.input.location },
+      });
+    } else if (toolInvocation.state === 'output-available') {
+      if (toolInvocation.output.success) {
+        Sentry.addBreadcrumb({
+          category: 'ai.weather',
+          message: `Weather tool: success for "${toolInvocation.input.location}"`,
+          level: 'info',
+          data: { toolCallId, location: toolInvocation.input.location },
+        });
+      } else {
+        Sentry.addBreadcrumb({
+          category: 'ai.weather',
+          message: `Weather tool: failed for "${toolInvocation.input.location}"`,
+          level: 'error',
+          data: {
+            toolCallId,
+            location: toolInvocation.input.location,
+            error: toolInvocation.output.error,
+          },
+        });
+        Sentry.captureException(new Error(toolInvocation.output.error), {
+          contexts: {
+            ai_tool: { tool: 'getWeatherForLocation', location: toolInvocation.input.location },
+          },
+          tags: { ai_tool: 'getWeatherForLocation', ai_mode: 'cloud' },
+        });
+      }
+    } else if (toolInvocation.state === 'output-error') {
+      Sentry.addBreadcrumb({
+        category: 'ai.weather',
+        message: 'Weather tool: stream error',
+        level: 'error',
+        data: {
+          toolCallId,
+          location: toolInvocation.input.location,
+          errorText: toolInvocation.errorText,
+        },
+      });
+      Sentry.captureException(new Error(toolInvocation.errorText), {
+        contexts: {
+          ai_tool: { tool: 'getWeatherForLocation', location: toolInvocation.input.location },
+        },
+        tags: { ai_tool: 'getWeatherForLocation', ai_mode: 'cloud' },
+      });
+    }
+  }, [toolInvocation.state, toolInvocation.toolCallId]);
 
   switch (toolInvocation.state) {
     case 'input-streaming':

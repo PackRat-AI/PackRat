@@ -2,55 +2,30 @@ appId: ${APP_ID}
 ---
 # Empty Trip Submit Flow: Verify form validation prevents empty trip creation
 - waitForAnimationToEnd
-
-# Navigate to Trips tab
 - tapOn:
     text: "Trips"
 - waitForAnimationToEnd
-
-# iOS: returning to the Trips tab can restore the search bar as first responder,
-# overlaying the screen and suppressing the navigation bar's create-trip-button.
-# Dismiss it if visible.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - runFlow:
-          when:
-            visible:
-              text: "Cancel"
-          commands:
-            - tapOn:
-                text: "Cancel"
-            - waitForAnimationToEnd
-
-# Tap create trip button
 - tapOn:
     id: "create-trip-button"
 - waitForAnimationToEnd
-
 # Try to submit without filling any fields
 - tapOn:
     id: "submit-trip-button"
 - waitForAnimationToEnd
-
-# Should still be on the form
+# Should still be on the form (validation blocked submit)
 - assertVisible:
     id: "submit-trip-button"
-
-# Go back
-# iOS: trip/new is a modal (root of its own nav stack) — no system "Back" button.
-# The modal has a Cancel button (testID: cancel-trip-form-button) added for this purpose.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          id: "cancel-trip-form-button"
-      - waitForAnimationToEnd
+# Dismiss - platform specific
 - runFlow:
     when:
       platform: Android
     commands:
       - back
-      - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+    - swipe:
+          direction: DOWN
+          duration: 300
+- waitForAnimationToEnd
