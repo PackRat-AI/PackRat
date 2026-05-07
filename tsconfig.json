@@ -16,6 +16,9 @@
     "target": "ESNext",
     "paths": {
       "admin-app/*": ["./apps/admin/*"],
+      "web-app/*": ["./apps/web/*"],
+      "@packrat/app": ["./packages/app/index.ts"],
+      "@packrat/app/*": ["./packages/app/src/*"],
       "guides-app/*": ["./apps/guides/*"],
       "landing-app/*": ["./apps/landing/*"],
       "expo-app/*": ["./apps/expo/*"],
