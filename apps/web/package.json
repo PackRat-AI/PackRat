@@ -2,15 +2,15 @@
   "name": "packrat-web-app",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
     "build": "next build",
+    "dev": "next dev --port 3001",
     "start": "next start",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@packrat/api-client": "workspace:*",
-    "@packrat/env": "workspace:*",
     "@packrat/app": "workspace:*",
+    "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@tanstack/react-query": "^5.70.0",

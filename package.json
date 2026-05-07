@@ -38,7 +38,6 @@
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
     "mcp": "bun run --cwd packages/mcp dev",
-    "web": "bun run --cwd apps/web dev",
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:api-client:types": "vitest run --config packages/api-client/vitest.config.ts",
@@ -46,7 +45,8 @@
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts",
-    "test:mcp": "bun run --cwd packages/mcp test"
+    "test:mcp": "bun run --cwd packages/mcp test",
+    "web": "bun run --cwd apps/web dev"
   },
   "overrides": {
     "@sinclair/typebox": "^0.34.15",
