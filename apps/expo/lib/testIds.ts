@@ -32,6 +32,7 @@ export const testIds = Object.freeze({
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
+    cancelBtn: 'cancel-pack-form-button', // keep Maestro value
     nameInput: 'packs:name-input',
     descriptionInput: 'packs:description-input',
     submitBtn: 'submit-pack-button', // keep Maestro value
@@ -67,6 +68,7 @@ export const testIds = Object.freeze({
   // ── Trips ─────────────────────────────────────────────────────────────────
   trips: Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value
+    cancelBtn: 'cancel-trip-form-button', // keep Maestro value
     nameInput: 'trips:name-input',
     descriptionInput: 'trips:description-input',
     submitBtn: 'submit-trip-button', // keep Maestro value
