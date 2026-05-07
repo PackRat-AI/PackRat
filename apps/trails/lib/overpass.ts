@@ -24,7 +24,7 @@ export async function loadNearbyTrails(
     const summary = toTrailSummary(el);
     let center: [number, number] | null = null;
     if (summary.bbox) {
-      const [south, west, north, east] = summary.bbox;
+      const [west, south, east, north] = summary.bbox;
       center = [(south + north) / 2, (west + east) / 2];
     }
     return { ...summary, center };

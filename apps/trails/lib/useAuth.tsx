@@ -36,7 +36,8 @@ interface AuthActions {
 const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
 
 function apiError(error: unknown, fallback: string): Error {
-  const msg = asStringRecord(error).message;
+  const rec = asStringRecord(error);
+  const msg = rec.error ?? rec.message;
   return new Error(msg ?? fallback);
 }
 

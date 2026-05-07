@@ -4,23 +4,40 @@ interface Env {
   PACKRAT_API_BASE_URL: string;
 }
 
-const TRAIL_DETAIL_RE = /^\/api\/trails\/[^/]+$/;
+// Only cache responses for individual trail detail lookups (numeric OSM IDs).
+// Excludes /api/trails/search and any other non-ID routes.
+const TRAIL_DETAIL_RE = /^\/api\/trails\/\d+$/;
+const LOCALHOST_RE = /^https?:\/\/localhost(:\d+)?$/;
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://trails.packratai.com',
+  'https://staging.trails.packratai.com',
+]);
 
-function corsResponse(status: number, body: string): Response {
-  return new Response(body, {
-    status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-  });
+function corsHeaders(origin: string | null): Record<string, string> {
+  const allowed =
+    origin !== null && (ALLOWED_ORIGINS.has(origin) || LOCALHOST_RE.test(origin)) ? origin : null;
+  if (!allowed) return {};
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    Vary: 'Origin',
+  };
+}
+
+function jsonError(status: number, body: string): Response {
+  return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
 }
 
 async function proxyToApi(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
+  const origin = request.headers.get('Origin');
+
+  // Handle CORS preflight before rate limiting so OPTIONS never consumes quota
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  }
 
   // Rate limit by IP
   if (env.RATE_LIMITER) {
@@ -30,16 +47,11 @@ async function proxyToApi(request: Request, env: Env): Promise<Response> {
       'unknown';
     const { success } = await env.RATE_LIMITER.limit({ key: ip });
     if (!success) {
-      return corsResponse(
+      return jsonError(
         429,
         JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }),
       );
     }
-  }
-
-  // Handle CORS preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   // Build upstream URL
@@ -56,20 +68,19 @@ async function proxyToApi(request: Request, env: Env): Promise<Response> {
     const response = await fetch(proxyRequest);
     const responseBody = await response.text();
 
-    // Add CORS headers to the proxied response
     const headers = new Headers(response.headers);
-    for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    for (const [key, value] of Object.entries(corsHeaders(origin))) {
       headers.set(key, value);
     }
 
-    // Cache trail detail responses at edge (~1 hour TTL for non-search requests)
+    // Cache trail detail responses at edge (~1 hour TTL); never cache search results
     if (TRAIL_DETAIL_RE.test(url.pathname) && request.method === 'GET') {
       headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=600');
     }
 
     return new Response(responseBody, { status: response.status, headers });
   } catch {
-    return corsResponse(502, JSON.stringify({ error: 'API unavailable. Please try again later.' }));
+    return jsonError(502, JSON.stringify({ error: 'API unavailable. Please try again later.' }));
   }
 }
 

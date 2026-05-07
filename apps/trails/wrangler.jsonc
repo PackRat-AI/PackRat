@@ -9,8 +9,9 @@
     "not_found_handling": "404-page"
   },
   // Rate limiting: 60 requests per IP per 60 seconds
-  // Create namespace: wrangler rate-limit create --simple --limit 60 --period 60
-  // Then replace namespace_id below with the returned ID
+  // Before deploying, create a namespace and set the real ID:
+  //   wrangler rate-limit create --simple --limit 60 --period 60
+  // The worker handles RATE_LIMITER being absent gracefully (no limiting in local dev).
   "rate_limiting": [
     {
       "binding": "RATE_LIMITER",

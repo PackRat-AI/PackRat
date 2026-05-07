@@ -19,10 +19,7 @@ export interface TrailSearchResult {
   hasMore: boolean;
 }
 
-interface ApiBbox {
-  coordinates?: number[][][][];
-}
-
+// API returns toTrailSummary shape: bbox is [minlon, minlat, maxlon, maxlat] (west/south/east/north)
 interface ApiTrail {
   osmId: string;
   name: string | null;
@@ -31,24 +28,17 @@ interface ApiTrail {
   distance: string | null;
   difficulty: string | null;
   description: string | null;
-  bbox: ApiBbox | null;
+  bbox: [number, number, number, number] | null;
 }
 
 function bboxCenter(bbox: ApiTrail['bbox']): [number, number] | null {
-  if (!bbox?.coordinates?.[0]) return null;
-  const ring = bbox.coordinates[0];
-  if (!ring) return null;
-  const lons = ring.flatMap((p) => (typeof p[0] === 'number' ? [p[0]] : []));
-  const lats = ring.flatMap((p) => (typeof p[1] === 'number' ? [p[1]] : []));
-  if (lons.length === 0 || lats.length === 0) return null;
-  const minLon = Math.min(...lons);
-  const maxLon = Math.max(...lons);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  return [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+  if (!bbox) return null;
+  const [west, south, east, north] = bbox;
+  return [(south + north) / 2, (west + east) / 2];
 }
 
 export async function searchTrails(params: TrailSearchParams): Promise<TrailSearchResult> {
+  const limit = params.limit ?? 20;
   const { data, error, status } = await apiClient.trails.search.get({
     query: {
       q: params.q,
@@ -56,19 +46,21 @@ export async function searchTrails(params: TrailSearchParams): Promise<TrailSear
       lon: params.lon,
       radius: params.radius,
       sport: params.sport,
-      limit: params.limit ?? 20,
+      limit,
       offset: params.offset,
     },
   });
 
   if (status === 401) throw new AuthExpiredError();
   if (error || !data) {
-    const msg = asStringRecord(error?.value).message;
+    const rec = asStringRecord(error?.value);
+    const msg = rec.error ?? rec.message;
     throw new Error(msg ?? `Search failed: ${status}`);
   }
 
-  // safe-cast: ApiTrail mirrors Treaty-typed API response; cast narrows to local bbox shape
-  const trails: TrailSummaryWithCoords[] = (data.trails as ApiTrail[]).map((t) => ({
+  // API returns a plain array of trail summaries
+  const rawTrails = data as unknown as ApiTrail[];
+  const trails: TrailSummaryWithCoords[] = rawTrails.map((t) => ({
     osmId: t.osmId,
     name: t.name,
     sport: t.sport,
@@ -76,9 +68,9 @@ export async function searchTrails(params: TrailSearchParams): Promise<TrailSear
     distance: t.distance,
     difficulty: t.difficulty,
     description: t.description,
-    bbox: null,
+    bbox: t.bbox,
     center: bboxCenter(t.bbox),
   }));
 
-  return { trails, hasMore: data.hasMore as boolean };
+  return { trails, hasMore: trails.length >= limit };
 }
