@@ -30,7 +30,7 @@ export default function GlobalError({
       >
         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Something went wrong</h2>
         <p style={{ fontSize: '0.875rem', color: '#6b7280', maxWidth: '24rem', margin: 0 }}>
-          {error.message || 'An unexpected error occurred.'}
+          An unexpected error occurred.
         </p>
         <button
           type="button"

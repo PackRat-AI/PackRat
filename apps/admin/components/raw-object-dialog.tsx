@@ -4,6 +4,7 @@ import { Button } from '@packrat/web-ui/components/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -31,6 +32,7 @@ export function RawObjectDialog({ label, data }: RawObjectDialogProps) {
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-mono text-sm">{label}</DialogTitle>
+          <DialogDescription className="sr-only">Raw JSON data for {label}</DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-auto rounded-md bg-muted p-4">
           <pre className="text-xs leading-relaxed text-foreground whitespace-pre-wrap break-all">
