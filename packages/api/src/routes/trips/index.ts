@@ -35,23 +35,30 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
   // List trips
   .get(
     '/',
-    async ({ user }) => {
+    async ({ query, user }) => {
       const db = createDb();
+      const limit = query.limit ?? 30;
+      const page = query.page ?? 1;
 
       try {
-        const allTrips = await db.query.trips.findMany({
+        const result = await db.query.trips.findMany({
           where: and(eq(trips.userId, user.userId), eq(trips.deleted, false)),
-          with: { pack: true },
           orderBy: (t) => t.createdAt,
+          limit,
+          offset: (page - 1) * limit,
         });
 
-        return allTrips;
+        return result;
       } catch (error) {
         console.error('Error listing trips:', error);
         return status(500, { error: 'Failed to list trips' });
       }
     },
     {
+      query: z.object({
+        page: z.coerce.number().int().min(1).optional().default(1),
+        limit: z.coerce.number().int().min(1).max(100).optional().default(30),
+      }),
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],

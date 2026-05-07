@@ -52,6 +52,9 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // E2E test runner — reads E2E_EMAIL/E2E_PASSWORD from .env.local and forwards
+  // to xcodebuild. Not app code.
+  'apps/swift/scripts/run-e2e.ts',
 ];
 
 // Directories to skip entirely

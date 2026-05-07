@@ -1,0 +1,7 @@
+// Debug build defaults.
+// To override locally, create xcconfig/Config-Debug.local.xcconfig (gitignored).
+#include? "Config-Debug.local.xcconfig"
+
+// NOTE: xcconfig files treat // as a comment, so full URLs can't be stored here.
+// Use PACKRAT_ENV to select an environment; URLs live in APIClient.swift.
+PACKRAT_ENV = local

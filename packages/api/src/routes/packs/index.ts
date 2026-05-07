@@ -50,6 +50,20 @@ const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
   id: z.string(),
 });
 
+// Strip the embedding vector from pack items before sending — it's only needed
+// for similarity search, not for display.
+const stripItemEmbedding = <T extends { embedding?: unknown }>({ embedding: _, ...rest }: T) =>
+  // safe-cast: rest spread of a generic constrained to { embedding?: unknown }
+  // produces Omit<T, 'embedding'> at runtime; TS can't infer that.
+  rest as Omit<T, 'embedding'>;
+
+const stripPackEmbeddings = <T extends { items?: Array<{ embedding?: unknown }> | null }>(
+  pack: T,
+) => ({
+  ...pack,
+  items: pack.items?.map(stripItemEmbedding) ?? [],
+});
+
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
   .use(adminAuthPlugin)
@@ -59,24 +73,30 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/',
     async ({ query, user }) => {
       const includePublic = Number(query.includePublic ?? 0) === 1;
+      const limit = query.limit ?? 30;
+      const page = query.page ?? 1;
       const db = createDb();
 
       const where = includePublic
         ? and(or(eq(packs.userId, user.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
-        : eq(packs.userId, user.userId);
+        : and(eq(packs.userId, user.userId), eq(packs.deleted, false));
 
       const result = await db.query.packs.findMany({
         where,
+        limit,
+        offset: (page - 1) * limit,
         with: {
           items: includePublic ? { where: eq(packItems.deleted, false) } : true,
         },
       });
 
-      return computePacksWeights(result);
+      return computePacksWeights(result).map(stripPackEmbeddings);
     },
     {
       query: z.object({
         includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+        page: z.coerce.number().int().min(1).optional().default(1),
+        limit: z.coerce.number().int().min(1).max(100).optional().default(30),
       }),
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },
@@ -102,7 +122,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           userId: user.userId,
           name: data.name,
           description: data.description,
-          category: data.category,
+          // category column is NOT NULL — default to 'custom' when callers omit it.
+          category: data.category ?? 'custom',
           isPublic: data.isPublic,
           image: data.image,
           tags: data.tags,
@@ -230,7 +251,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!pack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(pack);
+        return stripPackEmbeddings(computePackWeights(pack));
       } catch (error) {
         console.error('Error fetching pack:', error);
         return status(500, { error: 'Failed to fetch pack' });
@@ -275,7 +296,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return stripPackEmbeddings(computePackWeights(updatedPack));
       } catch (error) {
         console.error('Error updating pack:', error);
         return status(500, { error: 'Failed to update pack' });
@@ -577,7 +598,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         with: { catalogItem: true },
       });
 
-      return items.map((item) => ({
+      return items.map(({ embedding: _, ...item }) => ({
         ...item,
         consumable: item.consumable ?? false,
         worn: item.worn ?? false,
@@ -624,8 +645,9 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
           description: data.description,
-          weight: data.weight,
-          weightUnit: data.weightUnit,
+          // weight + weightUnit are NOT NULL in DB; default when caller omits.
+          weight: data.weight ?? 0,
+          weightUnit: data.weightUnit ?? 'g',
           quantity: data.quantity || 1,
           category: data.category,
           consumable: data.consumable || false,
@@ -677,7 +699,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!isOwner && !isPublic) return status(403, { error: 'Unauthorized' });
 
-      return item;
+      const { embedding: _, ...itemWithoutEmbedding } = item;
+      return itemWithoutEmbedding;
     },
     {
       params: z.object({ itemId: z.string() }),
@@ -763,8 +786,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-      updatedItem.embedding = null;
-      return updatedItem;
+      const { embedding: _, ...itemWithoutEmbedding } = updatedItem;
+      return itemWithoutEmbedding;
     },
     {
       params: z.object({ itemId: z.string() }),
