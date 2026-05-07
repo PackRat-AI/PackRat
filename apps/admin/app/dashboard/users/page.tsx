@@ -20,6 +20,7 @@ import { type AdminUser, deleteUser, getUsers } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 
 const PAGE_SIZE = 50;
 
@@ -58,10 +59,12 @@ function UserRow({ user }: { user: AdminUser }) {
       <TableCell>
         <div className="flex items-center gap-2">
           {user.avatarUrl ? (
-            <img
+            <Image
               src={user.avatarUrl}
               alt=""
-              className="h-6 w-6 rounded-full object-cover shrink-0"
+              width={24}
+              height={24}
+              className="rounded-full object-cover shrink-0"
             />
           ) : (
             <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0">

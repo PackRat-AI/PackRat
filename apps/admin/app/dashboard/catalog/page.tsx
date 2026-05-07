@@ -114,7 +114,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
       <TableCell>
         <span className="text-sm text-muted-foreground">
           {item.price != null
-            ? `${item.currency && item.currency !== 'USD' ? item.currency + ' ' : '$'}${item.price.toFixed(2)}`
+            ? `${item.currency && item.currency !== 'USD' ? `${item.currency} ` : '$'}${item.price.toFixed(2)}`
             : '—'}
         </span>
       </TableCell>
