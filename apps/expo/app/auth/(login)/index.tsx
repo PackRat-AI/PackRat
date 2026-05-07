@@ -114,7 +114,7 @@ export default function LoginScreen() {
             <Form className="gap-2">
               <FormSection className="ios:bg-background">
                 <FormItem>
-                  <View testID={testIds.auth.emailInput}>
+                  <View testID={Platform.OS === 'web' ? undefined : testIds.auth.emailInput}>
                     <form.Field name="email">
                       {(field) => (
                         <TextField
