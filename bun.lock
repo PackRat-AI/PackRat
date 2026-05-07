@@ -342,6 +342,7 @@
       "name": "packrat-trails-app",
       "version": "2.0.24",
       "dependencies": {
+        "@packrat/api-client": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@packrat/overpass": "workspace:*",
         "@packrat/web-ui": "workspace:*",

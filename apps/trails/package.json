@@ -11,6 +11,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@packrat/api-client": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/overpass": "workspace:*",
     "@packrat/web-ui": "workspace:*",

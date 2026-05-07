@@ -16,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { VerifyEmail } from 'trails-app/components/VerifyEmail';
-import { apiForgotPassword } from 'trails-app/lib/auth';
+import { apiClient } from 'trails-app/lib/apiClient';
 import { useAuth } from 'trails-app/lib/useAuth';
 
 const TABS = ['register', 'login', 'forgot'] as const;
@@ -31,7 +31,7 @@ export function AuthGate() {
   // Register form
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [regUsername, setRegUsername] = useState('');
+  const [regFirstName, setRegFirstName] = useState('');
 
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
@@ -45,7 +45,7 @@ export function AuthGate() {
     e.preventDefault();
     setLoading(true);
     try {
-      await register(regEmail, { password: regPassword, username: regUsername });
+      await register(regEmail, { password: regPassword, firstName: regFirstName || undefined });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('exists')) {
@@ -77,7 +77,7 @@ export function AuthGate() {
     e.preventDefault();
     setLoading(true);
     try {
-      await apiForgotPassword(forgotEmail);
+      await apiClient.auth['forgot-password'].post({ email: forgotEmail });
       setForgotSent(true);
     } catch {
       toast.error('Could not send reset email. Try again.');
@@ -117,14 +117,13 @@ export function AuthGate() {
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="mt-4 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="reg-username">Username</Label>
+                  <Label htmlFor="reg-name">Name (optional)</Label>
                   <Input
-                    id="reg-username"
-                    placeholder="trailblazer42"
-                    value={regUsername}
-                    onChange={(e) => setRegUsername(e.target.value)}
-                    required
-                    autoComplete="username"
+                    id="reg-name"
+                    placeholder="Trail Blazer"
+                    value={regFirstName}
+                    onChange={(e) => setRegFirstName(e.target.value)}
+                    autoComplete="given-name"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">

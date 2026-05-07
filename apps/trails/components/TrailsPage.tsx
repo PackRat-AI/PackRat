@@ -8,10 +8,9 @@ import { AuthGate } from 'trails-app/components/AuthGate';
 import { DownloadCTA } from 'trails-app/components/DownloadCTA';
 import { SearchBar } from 'trails-app/components/SearchBar';
 import { TrailCard } from 'trails-app/components/TrailCard';
-import { AuthExpiredError } from 'trails-app/lib/apiFetch';
 import { DEFAULT_CENTER, getUserLocation } from 'trails-app/lib/geolocation';
 import { loadNearbyTrails, type TrailSummaryWithCoords } from 'trails-app/lib/overpass';
-import { searchTrails, type TrailSearchParams } from 'trails-app/lib/trailSearch';
+import { AuthExpiredError, searchTrails, type TrailSearchParams } from 'trails-app/lib/trailSearch';
 import { useAuth } from 'trails-app/lib/useAuth';
 
 // Leaflet requires window — load with ssr:false

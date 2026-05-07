@@ -1,5 +1,8 @@
-import { authedFetch } from 'trails-app/lib/apiFetch';
+import { asStringRecord } from '@packrat/guards';
+import { AuthExpiredError, apiClient } from 'trails-app/lib/apiClient';
 import type { TrailSummaryWithCoords } from 'trails-app/lib/overpass';
+
+export { AuthExpiredError } from 'trails-app/lib/apiClient';
 
 export interface TrailSearchParams {
   q?: string;
@@ -16,6 +19,10 @@ export interface TrailSearchResult {
   hasMore: boolean;
 }
 
+interface ApiBbox {
+  coordinates?: number[][][][];
+}
+
 interface ApiTrail {
   osmId: string;
   name: string | null;
@@ -24,15 +31,13 @@ interface ApiTrail {
   distance: string | null;
   difficulty: string | null;
   description: string | null;
-  bbox: { coordinates?: number[][][][] } | null;
+  bbox: ApiBbox | null;
 }
 
 function bboxCenter(bbox: ApiTrail['bbox']): [number, number] | null {
-  // bbox is GeoJSON Feature (ST_AsGeoJSON(ST_Envelope(geometry))) — extract centroid
   if (!bbox?.coordinates?.[0]) return null;
   const ring = bbox.coordinates[0];
   if (!ring) return null;
-  // ring is [[minLon, minLat], [maxLon, minLat], [maxLon, maxLat], [minLon, maxLat], [minLon, minLat]]
   const lons = ring.flatMap((p) => (typeof p[0] === 'number' ? [p[0]] : []));
   const lats = ring.flatMap((p) => (typeof p[1] === 'number' ? [p[1]] : []));
   if (lons.length === 0 || lats.length === 0) return null;
@@ -44,25 +49,25 @@ function bboxCenter(bbox: ApiTrail['bbox']): [number, number] | null {
 }
 
 export async function searchTrails(params: TrailSearchParams): Promise<TrailSearchResult> {
-  const qs = new URLSearchParams();
-  if (params.q) qs.set('q', params.q);
-  if (params.lat !== undefined) qs.set('lat', String(params.lat));
-  if (params.lon !== undefined) qs.set('lon', String(params.lon));
-  if (params.radius !== undefined) qs.set('radius', String(params.radius));
-  if (params.sport) qs.set('sport', params.sport);
-  qs.set('limit', String(params.limit ?? 20));
-  if (params.offset) qs.set('offset', String(params.offset));
+  const { data, error, status } = await apiClient.trails.search.get({
+    query: {
+      q: params.q,
+      lat: params.lat,
+      lon: params.lon,
+      radius: params.radius,
+      sport: params.sport,
+      limit: params.limit ?? 20,
+      offset: params.offset,
+    },
+  });
 
-  const res = await authedFetch(`/api/trails/search?${qs.toString()}`);
-
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(body.message ?? `Search failed: ${res.status}`);
+  if (status === 401) throw new AuthExpiredError();
+  if (error || !data) {
+    const msg = asStringRecord(error?.value)['message'];
+    throw new Error(msg ?? `Search failed: ${status}`);
   }
 
-  const data = (await res.json()) as { trails: ApiTrail[]; hasMore: boolean };
-
-  const trails: TrailSummaryWithCoords[] = data.trails.map((t) => ({
+  const trails: TrailSummaryWithCoords[] = (data.trails as ApiTrail[]).map((t) => ({
     osmId: t.osmId,
     name: t.name,
     sport: t.sport,
@@ -70,9 +75,9 @@ export async function searchTrails(params: TrailSearchParams): Promise<TrailSear
     distance: t.distance,
     difficulty: t.difficulty,
     description: t.description,
-    bbox: null, // not needed client-side after we extract center
+    bbox: null,
     center: bboxCenter(t.bbox),
   }));
 
-  return { trails, hasMore: data.hasMore };
+  return { trails, hasMore: data.hasMore as boolean };
 }

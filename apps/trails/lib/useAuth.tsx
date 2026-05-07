@@ -1,12 +1,9 @@
 'use client';
 
+import { asStringRecord, fromZod } from '@packrat/guards';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { apiClient } from 'trails-app/lib/apiClient';
 import {
-  apiLogin,
-  apiLogout,
-  apiRegister,
-  apiResendVerification,
-  apiVerifyEmail,
   clearTokens,
   clearUser,
   getAccessToken,
@@ -15,6 +12,7 @@ import {
   setTokens,
   setUser,
   type UserInfo,
+  UserInfoSchema,
 } from 'trails-app/lib/auth';
 
 interface AuthState {
@@ -25,7 +23,7 @@ interface AuthState {
 }
 
 interface AuthActions {
-  register(email: string, opts: { password: string; username: string }): Promise<void>;
+  register(email: string, opts: { password: string; firstName?: string }): Promise<void>;
   verifyEmail(otp: string): Promise<void>;
   resendVerification(): Promise<void>;
   login(email: string, password: string): Promise<void>;
@@ -36,6 +34,11 @@ interface AuthActions {
 }
 
 const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
+
+function apiError(error: unknown, fallback: string): Error {
+  const msg = asStringRecord(error).message;
+  return new Error(msg ?? fallback);
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
@@ -55,8 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (email: string, opts: { password: string; username: string }) => {
-      await apiRegister({ email, password: opts.password, username: opts.username });
+    async (email: string, opts: { password: string; firstName?: string }) => {
+      const { error, status } = await apiClient.auth.register.post({
+        email,
+        password: opts.password,
+        firstName: opts.firstName,
+      });
+      if (error) throw apiError(error.value, `Registration failed: ${status}`);
       setState((s) => ({ ...s, pendingEmail: email }));
     },
     [],
@@ -65,10 +73,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verifyEmail = useCallback(
     async (otp: string) => {
       if (!state.pendingEmail) throw new Error('No pending email verification');
-      const { accessToken, refreshToken, user } = await apiVerifyEmail(state.pendingEmail, otp);
+      const { data, error, status } = await apiClient.auth['verify-email'].post({
+        email: state.pendingEmail,
+        code: otp,
+      });
+      if (error || !data) throw apiError(error?.value, `Verification failed: ${status}`);
+      const { accessToken, refreshToken, user } = data;
+      if (!accessToken || !refreshToken || !user) {
+        throw new Error('Verification failed: missing token data');
+      }
+      const parsedUser = fromZod(UserInfoSchema)(user);
+      if (!parsedUser) throw new Error('Verification failed: unexpected user shape');
       setTokens(accessToken, refreshToken);
-      setUser(user);
-      setState({ isAuthed: true, user, pendingEmail: null });
+      setUser(parsedUser);
+      setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
       setAuthGateOpen(false);
     },
     [state.pendingEmail],
@@ -76,14 +94,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resendVerification = useCallback(async () => {
     if (!state.pendingEmail) throw new Error('No pending email');
-    await apiResendVerification(state.pendingEmail);
+    const { error, status } = await apiClient.auth['resend-verification'].post({
+      email: state.pendingEmail,
+    });
+    if (error) throw apiError(error.value, `Resend failed: ${status}`);
   }, [state.pendingEmail]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { accessToken, refreshToken, user } = await apiLogin(email, password);
+    const { data, error, status } = await apiClient.auth.login.post({ email, password });
+    if (error || !data) throw apiError(error?.value, `Login failed: ${status}`);
+    const { accessToken, refreshToken, user } = data;
+    if (!accessToken || !refreshToken || !user) {
+      throw new Error('Login failed: missing token data');
+    }
+    const parsedUser = fromZod(UserInfoSchema)(user);
+    if (!parsedUser) throw new Error('Login failed: unexpected user shape');
     setTokens(accessToken, refreshToken);
-    setUser(user);
-    setState({ isAuthed: true, user, pendingEmail: null });
+    setUser(parsedUser);
+    setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
     setAuthGateOpen(false);
   }, []);
 
@@ -91,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const refreshToken = getRefreshToken();
     if (refreshToken) {
       try {
-        await apiLogout(refreshToken);
+        await apiClient.auth.logout.post({ refreshToken });
       } catch {
         // ignore — clear tokens regardless
       }

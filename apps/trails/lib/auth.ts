@@ -39,10 +39,11 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_KEY);
 }
 
-const UserInfoSchema = z.object({
-  id: z.string(),
+export const UserInfoSchema = z.object({
+  id: z.number(),
   email: z.string(),
-  username: z.string().optional(),
+  firstName: z.string().nullish(),
+  lastName: z.string().nullish(),
 });
 
 export type UserInfo = z.infer<typeof UserInfoSchema>;
@@ -63,85 +64,4 @@ export function getUser(): UserInfo | null {
 
 export function clearUser(): void {
   localStorage.removeItem('user');
-}
-
-// --- API helpers ---
-
-const API_BASE = '/api';
-
-const AuthResponseSchema = z.object({
-  success: z.boolean().optional(),
-  accessToken: z.string().optional(),
-  refreshToken: z.string().optional(),
-  user: UserInfoSchema.optional(),
-  message: z.string().optional(),
-  userId: z.string().optional(),
-});
-
-export type AuthResponse = z.infer<typeof AuthResponseSchema>;
-
-async function authFetch(path: string, body: Record<string, string>): Promise<AuthResponse> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const data = fromZod(AuthResponseSchema)(await res.json()) ?? {};
-  if (!res.ok) {
-    throw new Error(data.message ?? `Request failed: ${res.status}`);
-  }
-  return data;
-}
-
-export async function apiRegister(opts: {
-  email: string;
-  password: string;
-  username: string;
-}): Promise<{ userId: string }> {
-  const data = await authFetch('/auth/register', opts);
-  return { userId: data.userId ?? '' };
-}
-
-export async function apiVerifyEmail(
-  email: string,
-  otp: string,
-): Promise<{ accessToken: string; refreshToken: string; user: UserInfo }> {
-  const data = await authFetch('/auth/verify-email', { email, otp });
-  if (!data.accessToken || !data.refreshToken || !data.user) {
-    throw new Error('Verification failed: missing token data');
-  }
-  return { accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user };
-}
-
-export async function apiResendVerification(email: string): Promise<void> {
-  await authFetch('/auth/resend-verification', { email });
-}
-
-export async function apiLogin(
-  email: string,
-  password: string,
-): Promise<{ accessToken: string; refreshToken: string; user: UserInfo }> {
-  const data = await authFetch('/auth/login', { email, password });
-  if (!data.accessToken || !data.refreshToken || !data.user) {
-    throw new Error('Login failed: missing token data');
-  }
-  return { accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user };
-}
-
-export async function apiForgotPassword(email: string): Promise<void> {
-  await authFetch('/auth/forgot-password', { email });
-}
-
-export async function apiRefreshToken(
-  refreshToken: string,
-): Promise<{ accessToken: string; refreshToken: string }> {
-  const data = await authFetch('/auth/refresh', { refreshToken });
-  if (!data.accessToken || !data.refreshToken) {
-    throw new Error('Token refresh failed');
-  }
-  return { accessToken: data.accessToken, refreshToken: data.refreshToken };
-}
-
-export async function apiLogout(refreshToken: string): Promise<void> {
-  await authFetch('/auth/logout', { refreshToken });
 }
