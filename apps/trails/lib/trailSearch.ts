@@ -1,4 +1,5 @@
 import { asStringRecord, fromZod } from '@packrat/guards';
+import type { OsmSport } from '@packrat/overpass';
 import { AuthExpiredError, apiClient } from 'trails-app/lib/apiClient';
 import type { TrailSummaryWithCoords } from 'trails-app/lib/overpass';
 import { z } from 'zod';
@@ -10,7 +11,7 @@ export interface TrailSearchParams {
   lat?: number;
   lon?: number;
   radius?: number;
-  sport?: string;
+  sport?: OsmSport;
   limit?: number;
   offset?: number;
 }
@@ -52,7 +53,7 @@ export async function searchTrails(params: TrailSearchParams): Promise<TrailSear
       radius: params.radius,
       sport: params.sport,
       limit,
-      offset: params.offset,
+      offset: params.offset ?? 0,
     },
   });
 
