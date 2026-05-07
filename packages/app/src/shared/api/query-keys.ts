@@ -6,8 +6,14 @@ export const queryKeys = {
   trip: (id: string) => ['trip', id] as const,
   catalog: (opts: { page?: number; search?: string; category?: string } = {}) =>
     ['catalog', { page: opts.page ?? 1, search: opts.search, category: opts.category }] as const,
-  catalogInfinite: (search?: string, category?: string) =>
-    ['catalogInfinite', { search, category }] as const,
+  catalogInfinite: (
+    opts: {
+      search?: string;
+      category?: string;
+      limit?: number;
+      sort?: { field: string; order: string };
+    } = {},
+  ) => ['catalogInfinite', opts] as const,
   catalogItem: (id: number) => ['catalogItem', id] as const,
   feed: (page = 1, filter?: 'trending' | 'recent' | 'following') =>
     ['feed', { page, filter }] as const,

@@ -9,7 +9,7 @@ export function useFeed() {
       const { data, error } = await client.feed.get({
         query: { page: pageParam as number, limit: 20 },
       });
-      if (error) throw new Error(`Failed to fetch feed: ${String(error)}`);
+      if (error) throw new Error(`Failed to fetch feed: ${error.value}`);
       return data;
     },
     getNextPageParam: (lastPage) => {

@@ -27,7 +27,7 @@ export function useCatalogItemsInfinite({
 }: UseCatalogItemsParams) {
   const client = useApiClient();
   return useInfiniteQuery({
-    queryKey: queryKeys.catalogInfinite(query, category),
+    queryKey: queryKeys.catalogInfinite({ search: query, category, limit, sort }),
     queryFn: async ({ pageParam = 1 }) => {
       const { data, error } = await client.catalog.get({
         query: {
@@ -38,7 +38,7 @@ export function useCatalogItemsInfinite({
           ...(sort ? { sort } : {}),
         },
       });
-      if (error) throw new Error(`Failed to fetch catalog items: ${String(error)}`);
+      if (error) throw new Error(`Failed to fetch catalog items: ${error.value}`);
       const parseResult = CatalogItemsResponseSchema.safeParse(data);
       if (parseResult.success) return parseResult.data;
       return {

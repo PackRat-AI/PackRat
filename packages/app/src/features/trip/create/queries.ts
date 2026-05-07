@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../../shared/api';
+import { generateId } from '../../../shared/lib/uuid';
 
 interface CreateTripInput {
   name: string;
@@ -19,7 +20,7 @@ export function useCreateTripMutation() {
       const now = new Date().toISOString();
       const { data, error } = await client.trips.post({
         ...input,
-        id: crypto.randomUUID(),
+        id: generateId(),
         localCreatedAt: now,
         localUpdatedAt: now,
       });

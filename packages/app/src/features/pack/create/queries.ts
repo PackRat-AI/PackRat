@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../../shared/api';
+import { generateId } from '../../../shared/lib/uuid';
 
 interface CreatePackInput {
   name: string;
@@ -18,7 +19,7 @@ export function useCreatePackMutation() {
       const now = new Date().toISOString();
       const { data, error } = await client.packs.post({
         ...input,
-        id: crypto.randomUUID(),
+        id: generateId(),
         isPublic: input.isPublic ?? false,
         localCreatedAt: now,
         localUpdatedAt: now,
