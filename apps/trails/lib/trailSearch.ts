@@ -63,10 +63,11 @@ export async function searchTrails(params: TrailSearchParams): Promise<TrailSear
 
   if (status === 401) throw new AuthExpiredError();
   if (error || !data) {
-    const msg = asStringRecord(error?.value)['message'];
+    const msg = asStringRecord(error?.value).message;
     throw new Error(msg ?? `Search failed: ${status}`);
   }
 
+  // safe-cast: ApiTrail mirrors Treaty-typed API response; cast narrows to local bbox shape
   const trails: TrailSummaryWithCoords[] = (data.trails as ApiTrail[]).map((t) => ({
     osmId: t.osmId,
     name: t.name,
