@@ -50,7 +50,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteCatalogItem(item.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all() });
     },
   });
 

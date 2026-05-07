@@ -48,7 +48,7 @@ function OverviewSkeleton() {
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: queryKeys.admin.stats,
+    queryKey: queryKeys.admin.stats(),
     queryFn: getStats,
   });
 

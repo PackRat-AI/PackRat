@@ -49,7 +49,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs.all() });
     },
   });
 

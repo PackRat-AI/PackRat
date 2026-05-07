@@ -12,7 +12,7 @@ import { queryKeys } from 'admin-app/lib/queryKeys';
 
 export function useCatalogOverview() {
   return useQuery({
-    queryKey: queryKeys.catalogAnalytics.overview,
+    queryKey: queryKeys.catalogAnalytics.overview(),
     queryFn: () => getCatalogOverview(),
   });
 }
@@ -26,7 +26,7 @@ export function useCatalogBrands(limit = 20) {
 
 export function useCatalogPrices() {
   return useQuery({
-    queryKey: queryKeys.catalogAnalytics.prices,
+    queryKey: queryKeys.catalogAnalytics.prices(),
     queryFn: () => getCatalogPrices(),
   });
 }
@@ -40,7 +40,7 @@ export function useCatalogEtl(limit = 20) {
 
 export function useCatalogEmbeddings() {
   return useQuery({
-    queryKey: queryKeys.catalogAnalytics.embeddings,
+    queryKey: queryKeys.catalogAnalytics.embeddings(),
     queryFn: () => getCatalogEmbeddings(),
   });
 }

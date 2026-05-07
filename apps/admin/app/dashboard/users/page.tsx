@@ -48,7 +48,7 @@ function UserRow({ user }: { user: AdminUser }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteUser(user.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users.all() });
     },
   });
 

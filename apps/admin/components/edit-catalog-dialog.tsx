@@ -29,7 +29,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
   const { mutate, isPending } = useMutation({
     mutationFn: (data: Parameters<typeof updateCatalogItem>[1]) => updateCatalogItem(item.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all() });
       setOpen(false);
     },
   });
