@@ -26,35 +26,6 @@ export function usePack(packId: string) {
   });
 }
 
-interface CreatePackInput {
-  name: string;
-  description?: string;
-  category?: string;
-  isPublic?: boolean;
-  image?: string | null;
-  tags?: string[];
-}
-
-export function useCreatePackMutation() {
-  const client = useApiClient();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: CreatePackInput) => {
-      const now = new Date().toISOString();
-      const { data, error } = await client.packs.post({
-        ...input,
-        id: crypto.randomUUID(),
-        isPublic: input.isPublic ?? false,
-        localCreatedAt: now,
-        localUpdatedAt: now,
-      });
-      if (error) throw new Error('Failed to create pack');
-      return data;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.packs() }),
-  });
-}
-
 interface UpdatePackBody {
   name?: string;
   description?: string;
@@ -92,42 +63,6 @@ export function useDeletePackMutation() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.packs() }),
-  });
-}
-
-interface AddPackItemInput {
-  name: string;
-  description?: string;
-  weight: number;
-  weightUnit?: 'g' | 'oz' | 'kg' | 'lb';
-  quantity?: number;
-  category?: string;
-  consumable?: boolean;
-  worn?: boolean;
-  image?: string | null;
-  notes?: string | null;
-  catalogItemId?: number | null;
-}
-
-export function useAddPackItemMutation() {
-  const client = useApiClient();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ packId, body }: { packId: string; body: AddPackItemInput }) => {
-      const { data, error } = await client.packs({ packId }).items.post({
-        ...body,
-        id: crypto.randomUUID(),
-        quantity: body.quantity ?? 1,
-        consumable: body.consumable ?? false,
-        worn: body.worn ?? false,
-        weightUnit: body.weightUnit ?? 'g',
-      });
-      if (error) throw new Error('Failed to add item to pack');
-      return data;
-    },
-    onSuccess: (_data, { packId }) => {
-      qc.invalidateQueries({ queryKey: queryKeys.pack(packId) });
-    },
   });
 }
 

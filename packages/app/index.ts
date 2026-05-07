@@ -3,5 +3,8 @@ export * from './src/entities/feed';
 export * from './src/entities/pack';
 export * from './src/entities/trip';
 export * from './src/entities/user';
+export { useAddPackItemMutation } from './src/features/pack/add-item/queries';
+export { useCreatePackMutation } from './src/features/pack/create/queries';
+export { useCreateTripMutation } from './src/features/trip/create/queries';
 export * from './src/shared/api';
 export * from './src/shared/lib/weight';
