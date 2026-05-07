@@ -68,7 +68,7 @@ export function CatalogAnalytics() {
   } = useMutation({
     mutationFn: resetStuckEtlJobs,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl.all });
     },
   });
 

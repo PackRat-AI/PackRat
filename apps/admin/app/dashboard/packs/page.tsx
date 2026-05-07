@@ -18,8 +18,7 @@ import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useTransition } from 'react';
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 
 const PAGE_SIZE = 50;
 
@@ -50,7 +49,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs.all });
     },
   });
 
@@ -98,12 +97,8 @@ function PackRow({ pack }: { pack: AdminPack }) {
 }
 
 export default function PacksPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
-
-  const q = searchParams?.get('q') ?? undefined;
-  const page = Math.max(0, Number(searchParams?.get('page') ?? '0'));
+  const [q] = useQueryState('q', parseAsString.withDefault(''));
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(0));
   const offset = page * PAGE_SIZE;
 
   const {
@@ -111,21 +106,9 @@ export default function PacksPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.packs({ q, page }),
-    queryFn: () => getPacks({ q, limit: PAGE_SIZE, offset }),
+    queryKey: queryKeys.admin.packs.list({ q: q || undefined, page }),
+    queryFn: () => getPacks({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
-
-  function setPage(next: number) {
-    const params = new URLSearchParams(searchParams?.toString() ?? '');
-    if (next === 0) {
-      params.delete('page');
-    } else {
-      params.set('page', String(next));
-    }
-    startTransition(() => {
-      router.replace(`?${params.toString()}`, { scroll: false });
-    });
-  }
 
   const hasPrev = page > 0;
   const hasNext = packs.length === PAGE_SIZE;

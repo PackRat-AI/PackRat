@@ -33,7 +33,7 @@ export function useCatalogPrices() {
 
 export function useCatalogEtl(limit = 20) {
   return useQuery({
-    queryKey: queryKeys.catalogAnalytics.etl(limit),
+    queryKey: queryKeys.catalogAnalytics.etl.list(limit),
     queryFn: () => getCatalogEtl(limit),
   });
 }

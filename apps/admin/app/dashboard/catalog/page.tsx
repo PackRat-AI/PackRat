@@ -19,8 +19,7 @@ import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useTransition } from 'react';
+import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 
 const PAGE_SIZE = 50;
 
@@ -51,7 +50,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deleteCatalogItem(item.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all });
     },
   });
 
@@ -113,12 +112,8 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
 }
 
 export default function CatalogPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
-
-  const q = searchParams?.get('q') ?? undefined;
-  const page = Math.max(0, Number(searchParams?.get('page') ?? '0'));
+  const [q] = useQueryState('q', parseAsString.withDefault(''));
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(0));
   const offset = page * PAGE_SIZE;
 
   const {
@@ -126,21 +121,9 @@ export default function CatalogPage() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.catalog({ q, page }),
-    queryFn: () => getCatalogItems({ q, limit: PAGE_SIZE, offset }),
+    queryKey: queryKeys.admin.catalog.list({ q: q || undefined, page }),
+    queryFn: () => getCatalogItems({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
-
-  function setPage(next: number) {
-    const params = new URLSearchParams(searchParams?.toString() ?? '');
-    if (next === 0) {
-      params.delete('page');
-    } else {
-      params.set('page', String(next));
-    }
-    startTransition(() => {
-      router.replace(`?${params.toString()}`, { scroll: false });
-    });
-  }
 
   const hasPrev = page > 0;
   const hasNext = items.length === PAGE_SIZE;
