@@ -1,9 +1,18 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../shared/api';
-import { type CatalogSortField, getCatalogItems } from './api';
 import { CatalogItemsResponseSchema } from './schema';
 
-interface UseCatalogItemsParams {
+export type CatalogSortField =
+  | 'name'
+  | 'brand'
+  | 'category'
+  | 'price'
+  | 'ratingValue'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'usage';
+
+export interface UseCatalogItemsParams {
   query?: string;
   category?: string;
   limit?: number;
@@ -20,12 +29,14 @@ export function useCatalogItemsInfinite({
   return useInfiniteQuery({
     queryKey: queryKeys.catalogInfinite(query, category),
     queryFn: async ({ pageParam = 1 }) => {
-      const { data, error } = await getCatalogItems(client, {
-        page: pageParam as number,
-        limit,
-        ...(query ? { q: query } : {}),
-        ...(category ? { category } : {}),
-        ...(sort ? { sort } : {}),
+      const { data, error } = await client.catalog.get({
+        query: {
+          page: pageParam as number,
+          limit,
+          ...(query ? { q: query } : {}),
+          ...(category ? { category } : {}),
+          ...(sort ? { sort } : {}),
+        },
       });
       if (error) throw new Error(`Failed to fetch catalog items: ${String(error)}`);
       const parseResult = CatalogItemsResponseSchema.safeParse(data);

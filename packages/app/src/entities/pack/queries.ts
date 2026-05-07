@@ -1,22 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../shared/api';
-import {
-  addPackItem,
-  createPack,
-  deletePack,
-  deletePackItem,
-  getPack,
-  getPacks,
-  updatePack,
-  updatePackItem,
-} from './api';
 
 export function usePacks() {
   const client = useApiClient();
   return useQuery({
     queryKey: queryKeys.packs(),
     queryFn: async () => {
-      const { data, error } = await getPacks(client);
+      const { data, error } = await client.packs.get({ query: { includePublic: 0 } });
       if (error) throw new Error('Failed to fetch packs');
       return data;
     },
@@ -28,7 +18,7 @@ export function usePack(packId: string) {
   return useQuery({
     queryKey: queryKeys.pack(packId),
     queryFn: async () => {
-      const { data, error } = await getPack(client, packId);
+      const { data, error } = await client.packs({ packId }).get();
       if (error) throw new Error('Failed to fetch pack');
       return data;
     },
@@ -51,7 +41,7 @@ export function useCreatePackMutation() {
   return useMutation({
     mutationFn: async (input: CreatePackInput) => {
       const now = new Date().toISOString();
-      const { data, error } = await createPack(client, {
+      const { data, error } = await client.packs.post({
         ...input,
         id: crypto.randomUUID(),
         isPublic: input.isPublic ?? false,
@@ -81,7 +71,7 @@ export function useUpdatePackMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ packId, body }: { packId: string; body: UpdatePackBody }) => {
-      const { data, error } = await updatePack(client, { packId, body });
+      const { data, error } = await client.packs({ packId }).put(body);
       if (error) throw new Error('Failed to update pack');
       return data;
     },
@@ -97,7 +87,7 @@ export function useDeletePackMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (packId: string) => {
-      const { data, error } = await deletePack(client, packId);
+      const { data, error } = await client.packs({ packId }).delete();
       if (error) throw new Error('Failed to delete pack');
       return data;
     },
@@ -124,16 +114,13 @@ export function useAddPackItemMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ packId, body }: { packId: string; body: AddPackItemInput }) => {
-      const { data, error } = await addPackItem(client, {
-        packId,
-        body: {
-          ...body,
-          id: crypto.randomUUID(),
-          quantity: body.quantity ?? 1,
-          consumable: body.consumable ?? false,
-          worn: body.worn ?? false,
-          weightUnit: body.weightUnit ?? 'g',
-        },
+      const { data, error } = await client.packs({ packId }).items.post({
+        ...body,
+        id: crypto.randomUUID(),
+        quantity: body.quantity ?? 1,
+        consumable: body.consumable ?? false,
+        worn: body.worn ?? false,
+        weightUnit: body.weightUnit ?? 'g',
       });
       if (error) throw new Error('Failed to add item to pack');
       return data;
@@ -172,7 +159,7 @@ export function useUpdatePackItemMutation() {
       packId: string;
       body: UpdatePackItemBody;
     }) => {
-      const { data, error } = await updatePackItem(client, { itemId, body });
+      const { data, error } = await client.packs.items({ itemId }).patch(body);
       if (error) throw new Error('Failed to update pack item');
       return data;
     },
@@ -187,7 +174,7 @@ export function useDeletePackItemMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ itemId, packId: _packId }: { itemId: string; packId: string }) => {
-      const { data, error } = await deletePackItem(client, itemId);
+      const { data, error } = await client.packs.items({ itemId }).delete();
       if (error) throw new Error('Failed to delete pack item');
       return data;
     },

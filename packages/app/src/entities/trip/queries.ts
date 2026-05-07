@@ -1,13 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../shared/api';
-import { createTrip, deleteTrip, getTrip, getTrips, updateTrip } from './api';
 
 export function useTrips() {
   const client = useApiClient();
   return useQuery({
     queryKey: queryKeys.trips,
     queryFn: async () => {
-      const { data, error } = await getTrips(client);
+      const { data, error } = await client.trips.get();
       if (error) throw new Error('Failed to fetch trips');
       return data;
     },
@@ -19,7 +18,7 @@ export function useTrip(tripId: string) {
   return useQuery({
     queryKey: queryKeys.trip(tripId),
     queryFn: async () => {
-      const { data, error } = await getTrip(client, tripId);
+      const { data, error } = await client.trips({ tripId }).get();
       if (error) throw new Error('Failed to fetch trip');
       return data;
     },
@@ -43,7 +42,7 @@ export function useCreateTripMutation() {
   return useMutation({
     mutationFn: async (input: CreateTripInput) => {
       const now = new Date().toISOString();
-      const { data, error } = await createTrip(client, {
+      const { data, error } = await client.trips.post({
         ...input,
         id: crypto.randomUUID(),
         localCreatedAt: now,
@@ -72,7 +71,7 @@ export function useUpdateTripMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ tripId, body }: { tripId: string; body: UpdateTripBody }) => {
-      const { data, error } = await updateTrip(client, { tripId, body });
+      const { data, error } = await client.trips({ tripId }).put(body);
       if (error) throw new Error('Failed to update trip');
       return data;
     },
@@ -88,7 +87,7 @@ export function useDeleteTripMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (tripId: string) => {
-      const { data, error } = await deleteTrip(client, tripId);
+      const { data, error } = await client.trips({ tripId }).delete();
       if (error) throw new Error('Failed to delete trip');
       return data;
     },

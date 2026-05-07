@@ -1,13 +1,14 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../shared/api';
-import { addComment, createPost, getFeed, togglePostLike } from './api';
 
 export function useFeed() {
   const client = useApiClient();
   return useInfiniteQuery({
     queryKey: queryKeys.feed(),
     queryFn: async ({ pageParam = 1 }) => {
-      const { data, error } = await getFeed(client, { page: pageParam as number, limit: 20 });
+      const { data, error } = await client.feed.get({
+        query: { page: pageParam as number, limit: 20 },
+      });
       if (error) throw new Error(`Failed to fetch feed: ${String(error)}`);
       return data;
     },
@@ -26,7 +27,7 @@ export function useCreatePostMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: { caption?: string; images: string[] }) => {
-      const { data, error } = await createPost(client, body);
+      const { data, error } = await client.feed.post(body);
       if (error) throw new Error('Failed to create post');
       return data;
     },
@@ -45,7 +46,7 @@ export function useAddCommentMutation() {
       postId: number;
       body: { content: string; parentCommentId?: number };
     }) => {
-      const { data, error } = await addComment(client, { postId, body });
+      const { data, error } = await client.feed({ postId }).comments.post(body);
       if (error) throw new Error('Failed to add comment');
       return data;
     },
@@ -60,7 +61,7 @@ export function useTogglePostLikeMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (postId: number) => {
-      const { data, error } = await togglePostLike(client, postId);
+      const { data, error } = await client.feed({ postId }).like.post();
       if (error) throw new Error('Failed to toggle post like');
       return data;
     },
