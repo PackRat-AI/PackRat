@@ -1,0 +1,26 @@
+{
+  "name": "@packrat/app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@packrat/api": "workspace:*",
+    "@packrat/api-client": "workspace:*",
+    "@tanstack/react-query": "^5.70.0",
+    "jotai": "^2.12.2",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.70.0",
+    "jotai": "^2.12.2",
+    "react": "catalog:"
+  }
+}
