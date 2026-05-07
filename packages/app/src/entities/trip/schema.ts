@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateField } from '../../shared/lib/date';
 
 export const TripLocationSchema = z.object({
   latitude: z.number(),
@@ -17,8 +18,8 @@ export const TripSchema = z.object({
   userId: z.number().optional(),
   packId: z.string().nullable().optional(),
   deleted: z.boolean(),
-  localCreatedAt: z.string().datetime().optional(),
-  localUpdatedAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime().optional(),
-  updatedAt: z.string().datetime().optional(),
+  localCreatedAt: dateField.optional(),
+  localUpdatedAt: dateField.optional(),
+  createdAt: dateField.optional(),
+  updatedAt: dateField.optional(),
 });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateField } from '../../shared/lib/date';
 
 export const CatalogItemSchema = z.object({
   id: z.number().int().positive(),
@@ -23,6 +24,8 @@ export const CatalogItemSchema = z.object({
   currency: z.string().nullable(),
   condition: z.string().nullable(),
   reviewCount: z.number().int().nullable(),
+  createdAt: dateField.optional(),
+  updatedAt: dateField.optional(),
   variants: z
     .array(z.object({ attribute: z.string(), values: z.array(z.string()) }))
     .nullable()

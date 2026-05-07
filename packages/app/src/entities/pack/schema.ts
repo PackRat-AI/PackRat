@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateField } from '../../shared/lib/date';
 
 export const PackItemSchema = z.object({
   id: z.string(),
@@ -18,8 +19,8 @@ export const PackItemSchema = z.object({
   deleted: z.boolean(),
   isAIGenerated: z.boolean(),
   templateItemId: z.string().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: dateField,
+  updatedAt: dateField,
 });
 
 export const PackSchema = z.object({
@@ -34,10 +35,10 @@ export const PackSchema = z.object({
   templateId: z.string().nullable().optional(),
   deleted: z.boolean(),
   isAIGenerated: z.boolean(),
-  localCreatedAt: z.string().datetime().optional(),
-  localUpdatedAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  localCreatedAt: dateField.optional(),
+  localUpdatedAt: dateField.optional(),
+  createdAt: dateField,
+  updatedAt: dateField,
   items: z.array(PackItemSchema).optional(),
 });
 

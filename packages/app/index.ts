@@ -7,4 +7,5 @@ export { useAddPackItemMutation } from './src/features/pack/add-item/queries';
 export { useCreatePackMutation } from './src/features/pack/create/queries';
 export { useCreateTripMutation } from './src/features/trip/create/queries';
 export * from './src/shared/api';
+export * from './src/shared/lib/date';
 export * from './src/shared/lib/weight';

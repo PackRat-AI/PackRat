@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateField } from '../../shared/lib/date';
 
 export const PostAuthorSchema = z.object({
   id: z.number().int(),
@@ -11,8 +12,8 @@ export const PostSchema = z.object({
   userId: z.number().int(),
   caption: z.string().nullable(),
   images: z.array(z.string()),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: dateField,
+  updatedAt: dateField,
   author: PostAuthorSchema.optional(),
   likeCount: z.number().int(),
   commentCount: z.number().int(),
@@ -33,8 +34,8 @@ export const CommentSchema = z.object({
   userId: z.number().int(),
   content: z.string(),
   parentCommentId: z.number().int().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: dateField,
+  updatedAt: dateField,
   author: PostAuthorSchema.optional(),
   likeCount: z.number().int(),
   likedByMe: z.boolean(),

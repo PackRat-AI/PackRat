@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateField } from '../../shared/lib/date';
 
 export const UserSchema = z.object({
   id: z.number().int().positive(),
@@ -7,8 +8,8 @@ export const UserSchema = z.object({
   lastName: z.string().nullable(),
   role: z.string().nullable().default('USER'),
   emailVerified: z.boolean().nullable(),
-  createdAt: z.string().nullable(),
-  updatedAt: z.string().nullable(),
+  createdAt: dateField.nullable(),
+  updatedAt: dateField.nullable(),
   avatarUrl: z.string().nullable().optional(),
 });
 
