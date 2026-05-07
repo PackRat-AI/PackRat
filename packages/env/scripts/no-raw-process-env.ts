@@ -52,6 +52,8 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // Trails app env shim — parses process.env once at module load
+  'apps/trails/lib/env.ts',
 ];
 
 // Directories to skip entirely

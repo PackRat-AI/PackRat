@@ -8,12 +8,13 @@ import {
   getRefreshToken,
   setTokens,
 } from 'trails-app/lib/auth';
+import { trailsEnv } from 'trails-app/lib/env';
 
 // Routes through the same-origin CF Worker proxy (/api/*) so rate limiting applies.
 // In local dev without the worker, set NEXT_PUBLIC_PACKRAT_API_ORIGIN to the API URL directly.
 export const apiClient = createApiClient({
   baseUrl:
-    process.env.NEXT_PUBLIC_PACKRAT_API_ORIGIN ??
+    trailsEnv.NEXT_PUBLIC_PACKRAT_API_ORIGIN ??
     (typeof window !== 'undefined' ? window.location.origin : ''),
   auth: {
     getAccessToken,
