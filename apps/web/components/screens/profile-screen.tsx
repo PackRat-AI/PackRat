@@ -54,7 +54,7 @@ export function ProfileScreen({ navigate }: ProfileScreenProps) {
   const [editLastName, setEditLastName] = useState('');
 
   const { data: packsRaw } = usePacks();
-  const packs = (packsRaw as PackWithWeights[] | undefined) ?? [];
+  const packs = (packsRaw as PackWithWeights[] | undefined) ?? []; // safe-cast: API boundary narrowing to local weight-augmented type
   const { data: meData } = useCurrentUser();
   const { data: profileData } = useUserProfile();
   const { data: tripsData } = useTrips();

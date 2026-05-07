@@ -39,6 +39,8 @@ import { cn } from 'web-app/lib/utils';
 import { useWeight } from 'web-app/lib/weight-context';
 
 type PacksTab = 'my-packs' | 'templates' | 'shared';
+// safe-cast: const literal array narrowed to union type for exhaustive tab rendering
+const PACKS_TABS = ['my-packs', 'templates', 'shared'] as PacksTab[];
 
 export function PacksScreen() {
   const [tab, setTab] = useState<PacksTab>('my-packs');
@@ -46,7 +48,7 @@ export function PacksScreen() {
   const { fw } = useWeight();
 
   const { data: packsRaw, isLoading: packsLoading } = usePacks();
-  const packsData = packsRaw as PackWithWeights[] | undefined;
+  const packsData = packsRaw as PackWithWeights[] | undefined; // safe-cast: API boundary narrowing to local weight-augmented type
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPack, setEditingPack] = useState<PackWithWeights | null>(null);
@@ -86,7 +88,7 @@ export function PacksScreen() {
       </div>
 
       <div className="flex gap-1 bg-muted rounded-xl p-1 mb-5">
-        {(['my-packs', 'templates', 'shared'] as PacksTab[]).map((t) => (
+        {PACKS_TABS.map((t) => (
           <button
             type="button"
             key={t}

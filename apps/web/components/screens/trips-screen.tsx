@@ -27,12 +27,13 @@ export function TripsScreen() {
 
   const { data: tripsRaw, isLoading: tripsLoading } = useTrips();
   const createTrip = useCreateTripMutation();
-  const trips = tripsRaw as Trip[] | undefined;
+  const trips = tripsRaw as Trip[] | undefined; // safe-cast: API boundary narrowing
   const { data: packsData, isLoading: packsLoading } = usePacks();
 
   const isLoading = tripsLoading || packsLoading;
 
   if (selectedTrip) {
+    // safe-cast: API boundary narrowing to local weight-augmented type
     const linkedPack = (packsData as PackWithWeights[] | undefined)?.find(
       (p) => p.id === selectedTrip.packId,
     );
@@ -70,6 +71,7 @@ export function TripsScreen() {
       ) : (
         <div className="space-y-3">
           {trips?.map((trip) => {
+            // safe-cast: API boundary narrowing to local weight-augmented type
             const linkedPack = (packsData as PackWithWeights[] | undefined)?.find(
               (p) => p.id === trip.packId,
             );
