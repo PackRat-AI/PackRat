@@ -1,3 +1,4 @@
+import { UserSchema } from '@packrat/api/schemas/users';
 import { isObject } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -6,7 +7,6 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { userStore } from 'expo-app/features/auth/store';
-import type { User } from 'expo-app/features/profile/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -69,8 +69,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
-      userStore.set(data.user as unknown as User);
+      userStore.set(UserSchema.parse(data.user));
 
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -101,8 +100,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
-      userStore.set(data.user as unknown as User);
+      userStore.set(UserSchema.parse(data.user));
 
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -149,8 +147,7 @@ export function useAuthActions() {
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
-      // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
-      userStore.set(data.user as unknown as User);
+      userStore.set(UserSchema.parse(data.user));
 
       setNeedsReauth(false);
       redirect(redirectTo);
@@ -257,8 +254,7 @@ export function useAuthActions() {
         await Storage.setItem('refresh_token', data.refreshToken);
         await setToken(data.accessToken);
         await setRefreshToken(data.refreshToken);
-        // safe-cast: Treaty response type differs from local User type; Zod-validated at API boundary
-        userStore.set(data.user as unknown as User);
+        userStore.set(UserSchema.parse(data.user));
         redirect(redirectTo);
       }
 
