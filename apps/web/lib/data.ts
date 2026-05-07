@@ -1255,13 +1255,10 @@ export async function fetchTripById(id: string): Promise<Trip | null> {
 
 // ── Catalog ──────────────────────────────────────────────────────────────────
 
-// biome-ignore lint/complexity/useMaxParams: pagination + filter params
 export async function fetchCatalogItems(
-  page = 1,
-  limit = 20,
-  search?: string,
-  category?: string,
+  params: { page?: number; limit?: number; search?: string; category?: string } = {},
 ): Promise<CatalogListResponse> {
+  const { page = 1, limit = 20, search, category } = params;
   await delay(300);
   let items = [...mockCatalogItems];
 
@@ -1298,12 +1295,10 @@ export async function fetchCatalogItemById(id: number): Promise<CatalogItem | nu
 
 // ── Feed ─────────────────────────────────────────────────────────────────────
 
-// biome-ignore lint/complexity/useMaxParams: pagination + filter params
 export async function fetchFeed(
-  page = 1,
-  limit = 10,
-  filter: 'trending' | 'recent' | 'following' = 'trending',
+  params: { page?: number; limit?: number; filter?: 'trending' | 'recent' | 'following' } = {},
 ): Promise<FeedResponse> {
+  const { page = 1, limit = 10, filter = 'trending' } = params;
   await delay(300);
   const items = [...mockPosts];
 

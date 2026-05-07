@@ -276,56 +276,53 @@ function CatalogCard({
   const wcLabels = { ultralight: 'UL', lightweight: 'LW', standard: 'STD' };
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: div needed to avoid nested <button> (card contains action buttons)
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => e.key === 'Enter' && onSelect()}
-      className="rounded-2xl bg-card border border-border p-4 flex flex-col gap-3 text-left hover:border-primary/30 transition-colors cursor-pointer"
-    >
-      {/* Badge + Weight Class */}
-      <div className="flex items-start justify-between">
-        {item.categories?.[0] && (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground capitalize">
-            {item.categories[0]}
-          </span>
-        )}
-        <span
-          className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase', wcStyles[wc])}
-        >
-          {wcLabels[wc]}
-        </span>
-      </div>
-
-      {/* Name / Brand */}
-      <div>
-        <p className="font-semibold text-sm leading-tight">{item.name}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{item.seller}</p>
-      </div>
-
-      <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-2">
-        {item.description}
-      </p>
-
-      {/* Weight + Rating + Price */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-base font-bold">{fw(item.weight)}</span>
-          {item.ratingValue && (
-            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-              <Star className="h-3 w-3 fill-[#ff9f0a] text-[#ff9f0a]" />
-              {item.ratingValue.toFixed(1)}
+    <article className="rounded-2xl bg-card border border-border flex flex-col text-left hover:border-primary/30 transition-colors">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="p-4 pb-0 flex flex-col gap-3 text-left w-full"
+      >
+        {/* Badge + Weight Class */}
+        <div className="flex items-start justify-between">
+          {item.categories?.[0] && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground capitalize">
+              {item.categories[0]}
             </span>
           )}
+          <span
+            className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase', wcStyles[wc])}
+          >
+            {wcLabels[wc]}
+          </span>
         </div>
-        {item.price && <span className="text-xs text-muted-foreground">${item.price}</span>}
-      </div>
 
-      {/* Actions */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: stop propagation wrapper, children are interactive */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stop propagation wrapper */}
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+        {/* Name / Brand */}
+        <div>
+          <p className="font-semibold text-sm leading-tight">{item.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{item.seller}</p>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-2">
+          {item.description}
+        </p>
+
+        {/* Weight + Rating + Price */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold">{fw(item.weight)}</span>
+            {item.ratingValue && (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                <Star className="h-3 w-3 fill-[#ff9f0a] text-[#ff9f0a]" />
+                {item.ratingValue.toFixed(1)}
+              </span>
+            )}
+          </div>
+          {item.price && <span className="text-xs text-muted-foreground">${item.price}</span>}
+        </div>
+      </button>
+
+      {/* Actions — outside the select button to avoid nested interactive elements */}
+      <div className="p-4 pt-3 flex gap-2">
         <button
           type="button"
           onClick={onAdd}
@@ -352,7 +349,7 @@ function CatalogCard({
           <BookmarkPlus className="h-3.5 w-3.5" />
         </button>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -377,15 +374,11 @@ function GearDetailModal({
     <div
       aria-hidden="true"
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/50"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: stop propagation wrapper */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stop propagation wrapper */}
-      <div
-        aria-hidden="false"
-        className="w-full max-w-lg bg-background rounded-t-3xl md:rounded-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-lg bg-background rounded-t-3xl md:rounded-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
         {/* Header */}
         <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-4 flex items-center justify-between">
           <div className="flex-1 min-w-0">

@@ -585,15 +585,11 @@ function AddItemSlideOver({
     <div
       className="fixed inset-0 z-50 flex justify-end bg-black/50"
       aria-hidden="true"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: stop propagation from modal panel */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stop propagation from modal panel */}
-      <div
-        aria-hidden="false"
-        className="w-full max-w-md bg-background border-l border-border h-full flex flex-col animate-in slide-in-from-right duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-md bg-background border-l border-border h-full flex flex-col animate-in slide-in-from-right duration-200">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-semibold">Add Item</h2>
           <button
