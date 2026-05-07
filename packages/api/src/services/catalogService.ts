@@ -343,7 +343,13 @@ export class CatalogService {
       .onConflictDoUpdate({
         target: catalogItems.sku,
         set: Object.values(columns).reduce<Record<string, SQL>>((acc, col) => {
-          acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+          // Preserve the original creation timestamp; overwrite everything else with the
+          // fresh scraped value so stale/wrong data can be corrected by re-scraping.
+          if (col.name === 'created_at') {
+            acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+          } else {
+            acc[col.name] = sql.raw(`excluded."${col.name}"`);
+          }
           return acc;
         }, {}),
       })
