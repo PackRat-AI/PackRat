@@ -57,7 +57,9 @@ export interface AdminUser {
   lastName: string | null;
   role: string | null;
   emailVerified: boolean | null;
+  avatarUrl: string | null;
   createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export function getUsers({
@@ -86,7 +88,11 @@ export interface AdminPack {
   description: string | null;
   category: string;
   isPublic: boolean | null;
+  isAIGenerated: boolean;
+  tags: string[] | null;
+  image: string | null;
   createdAt: string | null;
+  updatedAt: string | null;
   userEmail: string | null;
 }
 
@@ -113,11 +119,27 @@ export function deletePack(id: string): Promise<{ success: boolean }> {
 export interface AdminCatalogItem {
   id: number;
   name: string;
+  description: string | null;
   categories: string[] | null;
   brand: string | null;
+  model: string | null;
+  sku: string | null;
   price: number | null;
+  currency: string | null;
   weight: number | null;
   weightUnit: string;
+  availability: string | null;
+  ratingValue: number | null;
+  reviewCount: number | null;
+  color: string | null;
+  size: string | null;
+  material: string | null;
+  seller: string | null;
+  productUrl: string | null;
+  images: string[] | null;
+  variants: Array<{ attribute: string; values: string[] }> | null;
+  techs: Record<string, string> | null;
+  links: Array<{ title: string; url: string }> | null;
   createdAt: string | null;
 }
 

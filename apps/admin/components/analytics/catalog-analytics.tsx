@@ -18,6 +18,7 @@ import {
   ChartTooltipContent,
 } from '@packrat/web-ui/components/chart';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import {
   useCatalogBrands,
   useCatalogEmbeddings,
@@ -307,8 +308,11 @@ export function CatalogAnalytics() {
                     <th className="pb-2 text-left font-medium">Status</th>
                     <th className="pb-2 text-right font-medium">Processed</th>
                     <th className="pb-2 text-right font-medium">Valid</th>
+                    <th className="pb-2 text-right font-medium">Invalid</th>
                     <th className="pb-2 text-right font-medium">Success %</th>
                     <th className="pb-2 text-left font-medium">Started</th>
+                    <th className="pb-2 text-left font-medium">Completed</th>
+                    <th className="pb-2 w-8" />
                   </tr>
                 </thead>
                 <tbody>
@@ -327,10 +331,25 @@ export function CatalogAnalytics() {
                         {job.totalValid?.toLocaleString() ?? '—'}
                       </td>
                       <td className="py-2 pr-4 text-right">
+                        {job.totalInvalid != null ? (
+                          <span className={job.totalInvalid > 0 ? 'text-destructive' : ''}>
+                            {job.totalInvalid.toLocaleString()}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="py-2 pr-4 text-right">
                         {job.successRate != null ? `${job.successRate}%` : '—'}
                       </td>
-                      <td className="py-2 text-muted-foreground">
+                      <td className="py-2 pr-4 text-muted-foreground">
                         {new Date(job.startedAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 pr-4 text-muted-foreground">
+                        {job.completedAt ? new Date(job.completedAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="py-2">
+                        <RawObjectDialog label={`job:${job.id}`} data={job} />
                       </td>
                     </tr>
                   ))}

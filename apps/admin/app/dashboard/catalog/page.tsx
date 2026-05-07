@@ -14,12 +14,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
 import { EditCatalogDialog } from 'admin-app/components/edit-catalog-dialog';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
 import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Star } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
@@ -36,12 +37,19 @@ function TableSkeleton() {
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-16" />
         </div>
       ))}
     </div>
   );
+}
+
+function availabilityColor(availability: string | null) {
+  if (availability === 'InStock') return 'text-green-500';
+  if (availability === 'OutOfStock') return 'text-destructive';
+  return 'text-muted-foreground';
 }
 
 function CatalogRow({ item }: { item: AdminCatalogItem }) {
@@ -58,8 +66,26 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
     <TableRow className="hover:bg-muted/20">
       <TableCell>
         <div>
-          <p className="text-sm font-medium">{item.name}</p>
-          {item.brand && <p className="text-xs text-muted-foreground">{item.brand}</p>}
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium">{item.name}</p>
+            {item.productUrl && (
+              <a
+                href={item.productUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            {item.brand && <span className="text-xs text-muted-foreground">{item.brand}</span>}
+            {item.model && <span className="text-xs text-muted-foreground/60">{item.model}</span>}
+          </div>
+          {item.description && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>
+          )}
         </div>
       </TableCell>
       <TableCell>
@@ -87,8 +113,26 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
       </TableCell>
       <TableCell>
         <span className="text-sm text-muted-foreground">
-          {item.price != null ? `$${item.price.toFixed(2)}` : '—'}
+          {item.price != null
+            ? `${item.currency && item.currency !== 'USD' ? item.currency + ' ' : '$'}${item.price.toFixed(2)}`
+            : '—'}
         </span>
+      </TableCell>
+      <TableCell>
+        <div className="space-y-0.5">
+          <span className={`text-xs font-medium ${availabilityColor(item.availability)}`}>
+            {item.availability ?? '—'}
+          </span>
+          {item.ratingValue != null && (
+            <div className="flex items-center gap-1">
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              <span className="text-xs text-muted-foreground">
+                {item.ratingValue.toFixed(1)}
+                {item.reviewCount != null && ` (${item.reviewCount})`}
+              </span>
+            </div>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <span className="text-sm text-muted-foreground">
@@ -97,6 +141,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
+          <RawObjectDialog label={`item:${item.id}`} data={item} />
           <EditCatalogDialog item={item} />
           <DeleteButton
             label={item.name}
@@ -162,15 +207,18 @@ export default function CatalogPage() {
                       Price
                     </TableHead>
                     <TableHead className="font-medium text-xs uppercase tracking-wide">
+                      Status
+                    </TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wide">
                       Added
                     </TableHead>
-                    <TableHead className="font-medium text-xs uppercase tracking-wide w-20" />
+                    <TableHead className="font-medium text-xs uppercase tracking-wide w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         No catalog items found{q ? ` matching "${q}"` : ''}.
                       </TableCell>
                     </TableRow>

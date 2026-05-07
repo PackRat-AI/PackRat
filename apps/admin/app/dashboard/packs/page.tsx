@@ -13,6 +13,7 @@ import {
 } from '@packrat/web-ui/components/table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
 import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
@@ -57,9 +58,28 @@ function PackRow({ pack }: { pack: AdminPack }) {
     <TableRow className="hover:bg-muted/20">
       <TableCell>
         <div>
-          <p className="text-sm font-medium">{pack.name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium">{pack.name}</p>
+            {pack.isAIGenerated && (
+              <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                AI
+              </Badge>
+            )}
+          </div>
           {pack.description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{pack.description}</p>
+          )}
+          {pack.tags && pack.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {pack.tags.slice(0, 3).map((tag) => (
+                <span key={tag} className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
+                  {tag}
+                </span>
+              ))}
+              {pack.tags.length > 3 && (
+                <span className="text-[10px] text-muted-foreground">+{pack.tags.length - 3}</span>
+              )}
+            </div>
           )}
         </div>
       </TableCell>
@@ -84,13 +104,16 @@ function PackRow({ pack }: { pack: AdminPack }) {
         </span>
       </TableCell>
       <TableCell>
-        <DeleteButton
-          label={pack.name}
-          description="The pack will be soft-deleted and hidden from all users."
-          onConfirm={async () => {
-            await handleDelete();
-          }}
-        />
+        <div className="flex items-center gap-1">
+          <RawObjectDialog label={`pack:${pack.id}`} data={pack} />
+          <DeleteButton
+            label={pack.name}
+            description="The pack will be soft-deleted and hidden from all users."
+            onConfirm={async () => {
+              await handleDelete();
+            }}
+          />
+        </div>
       </TableCell>
     </TableRow>
   );

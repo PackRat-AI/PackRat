@@ -203,7 +203,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             lastName: users.lastName,
             role: users.role,
             emailVerified: users.emailVerified,
+            avatarUrl: users.avatarUrl,
             createdAt: users.createdAt,
+            updatedAt: users.updatedAt,
           })
           .from(users)
           .where(
@@ -221,7 +223,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         return usersList.map((u) => ({
           ...u,
-          createdAt: u.createdAt?.toISOString() || null,
+          createdAt: u.createdAt?.toISOString() ?? null,
+          updatedAt: u.updatedAt?.toISOString() ?? null,
         }));
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -254,7 +257,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             description: packs.description,
             category: packs.category,
             isPublic: packs.isPublic,
+            isAIGenerated: packs.isAIGenerated,
+            tags: packs.tags,
+            image: packs.image,
             createdAt: packs.createdAt,
+            updatedAt: packs.updatedAt,
             userEmail: users.email,
           })
           .from(packs)
@@ -278,7 +285,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         return packsList.map((p) => ({
           ...p,
-          createdAt: p.createdAt?.toISOString() || null,
+          createdAt: p.createdAt?.toISOString() ?? null,
+          updatedAt: p.updatedAt?.toISOString() ?? null,
         }));
       } catch (error) {
         console.error('Error fetching packs:', error);
@@ -308,11 +316,27 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           .select({
             id: catalogItems.id,
             name: catalogItems.name,
+            description: catalogItems.description,
             categories: catalogItems.categories,
             brand: catalogItems.brand,
+            model: catalogItems.model,
+            sku: catalogItems.sku,
             price: catalogItems.price,
+            currency: catalogItems.currency,
             weight: catalogItems.weight,
             weightUnit: catalogItems.weightUnit,
+            availability: catalogItems.availability,
+            ratingValue: catalogItems.ratingValue,
+            reviewCount: catalogItems.reviewCount,
+            color: catalogItems.color,
+            size: catalogItems.size,
+            material: catalogItems.material,
+            seller: catalogItems.seller,
+            productUrl: catalogItems.productUrl,
+            images: catalogItems.images,
+            variants: catalogItems.variants,
+            techs: catalogItems.techs,
+            links: catalogItems.links,
             createdAt: catalogItems.createdAt,
           })
           .from(catalogItems)
