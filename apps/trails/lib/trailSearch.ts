@@ -1,6 +1,7 @@
-import { asStringRecord } from '@packrat/guards';
+import { asStringRecord, fromZod } from '@packrat/guards';
 import { AuthExpiredError, apiClient } from 'trails-app/lib/apiClient';
 import type { TrailSummaryWithCoords } from 'trails-app/lib/overpass';
+import { z } from 'zod';
 
 export { AuthExpiredError } from 'trails-app/lib/apiClient';
 
@@ -20,16 +21,20 @@ export interface TrailSearchResult {
 }
 
 // API returns toTrailSummary shape: bbox is [minlon, minlat, maxlon, maxlat] (west/south/east/north)
-interface ApiTrail {
-  osmId: string;
-  name: string | null;
-  sport: string | null;
-  network: string | null;
-  distance: string | null;
-  difficulty: string | null;
-  description: string | null;
-  bbox: [number, number, number, number] | null;
-}
+const ApiTrailSchema = z.object({
+  osmId: z.string(),
+  name: z.string().nullable(),
+  sport: z.string().nullable(),
+  network: z.string().nullable(),
+  distance: z.string().nullable(),
+  difficulty: z.string().nullable(),
+  description: z.string().nullable(),
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
+});
+
+type ApiTrail = z.infer<typeof ApiTrailSchema>;
+
+const parseApiTrails = fromZod(z.array(ApiTrailSchema));
 
 function bboxCenter(bbox: ApiTrail['bbox']): [number, number] | null {
   if (!bbox) return null;
@@ -58,8 +63,8 @@ export async function searchTrails(params: TrailSearchParams): Promise<TrailSear
     throw new Error(msg ?? `Search failed: ${status}`);
   }
 
-  // API returns a plain array of trail summaries
-  const rawTrails = data as unknown as ApiTrail[];
+  // API returns a plain array of trail summaries; parse at runtime to validate shape
+  const rawTrails = parseApiTrails(data) ?? [];
   const trails: TrailSummaryWithCoords[] = rawTrails.map((t) => ({
     osmId: t.osmId,
     name: t.name,
