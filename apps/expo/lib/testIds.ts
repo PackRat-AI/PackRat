@@ -33,8 +33,8 @@ export const testIds = Object.freeze({
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
     cancelBtn: 'cancel-pack-form-button', // keep Maestro value
-    nameInput: 'packs:name-input',
-    descriptionInput: 'packs:description-input',
+    nameInput: 'pack-name-input', // keep Playwright + Maestro value
+    descriptionInput: 'pack-description-input', // keep Playwright + Maestro value
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
     editBtn: 'packs:edit',
@@ -80,8 +80,6 @@ export const testIds = Object.freeze({
     startDateInput: 'trips:start-date-input',
     endDateInput: 'trips:end-date-input',
     listItem: (id: string | number) => `trips:list-item-${id}`,
-    startDateInput: 'trips:start-date-input',
-    endDateInput: 'trips:end-date-input',
   }),
 
   // ── Catalog ───────────────────────────────────────────────────────────────
