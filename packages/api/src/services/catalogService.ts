@@ -345,19 +345,17 @@ export class CatalogService {
         set: Object.values(columns).reduce<Record<string, SQL>>((acc, col) => {
           if (col.name === 'id' || col.name === 'created_at') {
             // Never overwrite PK or original creation timestamp
-            acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+            acc[col.name] = sql`COALESCE(${col}, excluded.${sql.identifier(col.name)})`;
           } else if (col.name === 'weight') {
             // Keep old weight if new weight is missing or invalid (0 / negative)
-            acc[col.name] = sql.raw(
-              `CASE WHEN excluded."weight" IS NOT NULL AND excluded."weight" > 0 THEN excluded."weight" ELSE COALESCE(catalog_items.weight, excluded."weight") END`,
-            );
+            acc[col.name] =
+              sql`CASE WHEN excluded.${sql.identifier('weight')} IS NOT NULL AND excluded.${sql.identifier('weight')} > 0 THEN excluded.${sql.identifier('weight')} ELSE COALESCE(${catalogItems.weight}, excluded.${sql.identifier('weight')}) END`;
           } else if (col.name === 'weight_unit') {
             // weight_unit stays in sync with weight validity
-            acc[col.name] = sql.raw(
-              `CASE WHEN excluded."weight" IS NOT NULL AND excluded."weight" > 0 THEN excluded."weight_unit" ELSE COALESCE(catalog_items.weight_unit, excluded."weight_unit") END`,
-            );
+            acc[col.name] =
+              sql`CASE WHEN excluded.${sql.identifier('weight')} IS NOT NULL AND excluded.${sql.identifier('weight')} > 0 THEN excluded.${sql.identifier('weight_unit')} ELSE COALESCE(${catalogItems.weightUnit}, excluded.${sql.identifier('weight_unit')}) END`;
           } else {
-            acc[col.name] = sql.raw(`excluded."${col.name}"`);
+            acc[col.name] = sql`excluded.${sql.identifier(col.name)}`;
           }
           return acc;
         }, {}),
