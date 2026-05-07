@@ -94,6 +94,7 @@ export const CatalogItemSchema = z.object({
     )
     .nullable()
     .optional(),
+  usageCount: z.number().int().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

@@ -26,7 +26,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
     }));
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: Date | string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
