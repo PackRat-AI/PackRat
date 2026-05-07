@@ -307,23 +307,37 @@ function MessageBubble({ message, fw }: { message: Message; fw: (g: number) => s
   );
 }
 
+function parseBoldSegments(line: string): Array<{ text: string; bold: boolean }> {
+  const segments: Array<{ text: string; bold: boolean }> = [];
+  let remaining = line;
+  while (remaining.length > 0) {
+    const start = remaining.indexOf('**');
+    if (start === -1) {
+      segments.push({ text: remaining, bold: false });
+      break;
+    }
+    if (start > 0) segments.push({ text: remaining.slice(0, start), bold: false });
+    const end = remaining.indexOf('**', start + 2);
+    if (end === -1) {
+      segments.push({ text: remaining.slice(start), bold: false });
+      break;
+    }
+    segments.push({ text: remaining.slice(start + 2, end), bold: true });
+    remaining = remaining.slice(end + 2);
+  }
+  return segments;
+}
+
 function FormattedContent({ content }: { content: string }) {
-  // Simple markdown-like rendering
   const lines = content.split('\n');
   return (
     <div className="space-y-1">
       {lines.map((line, i) => {
         if (!line) return <br key={i} />;
-        // Bold text **...**
-        const parts = line.split(/(\*\*[^*]+\*\*)/g);
         return (
           <p key={i}>
-            {parts.map((part, j) =>
-              part.startsWith('**') && part.endsWith('**') ? (
-                <strong key={j}>{part.slice(2, -2)}</strong>
-              ) : (
-                part
-              ),
+            {parseBoldSegments(line).map((seg, j) =>
+              seg.bold ? <strong key={j}>{seg.text}</strong> : seg.text,
             )}
           </p>
         );
