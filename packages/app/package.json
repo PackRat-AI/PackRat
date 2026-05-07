@@ -9,7 +9,8 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "lint:fsd": "steiger ./src"
   },
   "dependencies": {
     "@packrat/api-client": "workspace:*",
@@ -17,6 +18,10 @@
     "jotai": "^2.12.2",
     "react": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@feature-sliced/steiger-plugin": "^0.5.7",
+    "steiger": "^0.5.11"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.70.0",

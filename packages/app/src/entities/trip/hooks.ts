@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useApiClient } from '../../shared/api';
-import { queryKeys } from '../../shared/api/query-keys';
+import { queryKeys, useApiClient } from '../../shared/api';
 
 export function useTrips() {
   const client = useApiClient();

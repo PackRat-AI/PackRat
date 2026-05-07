@@ -19,5 +19,4 @@ export { useDeleteTripMutation } from './src/features/trip/delete/hooks';
 export { useUpdateTripMutation } from './src/features/trip/update/hooks';
 export { useUpdateProfileMutation } from './src/features/user/update-profile/hooks';
 export * from './src/shared/api';
-export * from './src/shared/api/query-keys';
 export * from './src/shared/lib/weight';
