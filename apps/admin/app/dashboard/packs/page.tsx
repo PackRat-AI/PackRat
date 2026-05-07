@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import {
   Table,
@@ -16,7 +17,11 @@ import { SearchInput } from 'admin-app/components/search-input';
 import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
-import { useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
+
+const PAGE_SIZE = 50;
 
 function TableSkeleton() {
   return (
@@ -93,17 +98,37 @@ function PackRow({ pack }: { pack: AdminPack }) {
 }
 
 export default function PacksPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+
   const q = searchParams?.get('q') ?? undefined;
+  const page = Math.max(0, Number(searchParams?.get('page') ?? '0'));
+  const offset = page * PAGE_SIZE;
 
   const {
     data: packs = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: queryKeys.admin.packs(q),
-    queryFn: () => getPacks({ q }),
+    queryKey: queryKeys.admin.packs({ q, page }),
+    queryFn: () => getPacks({ q, limit: PAGE_SIZE, offset }),
   });
+
+  function setPage(next: number) {
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    if (next === 0) {
+      params.delete('page');
+    } else {
+      params.set('page', String(next));
+    }
+    startTransition(() => {
+      router.replace(`?${params.toString()}`, { scroll: false });
+    });
+  }
+
+  const hasPrev = page > 0;
+  const hasNext = packs.length === PAGE_SIZE;
 
   return (
     <div>
@@ -158,10 +183,34 @@ export default function PacksPage() {
                 </TableBody>
               </Table>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {packs.length.toLocaleString()} pack{packs.length !== 1 ? 's' : ''}
-              {q ? ` matching "${q}"` : ''}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {packs.length === 0
+                  ? `No packs${q ? ` matching "${q}"` : ''}`
+                  : `${(offset + 1).toLocaleString()}–${(offset + packs.length).toLocaleString()} packs${q ? ` matching "${q}"` : ''}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={!hasPrev}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Prev
+                </Button>
+                <span className="text-xs text-muted-foreground">Page {page + 1}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={!hasNext}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </div>

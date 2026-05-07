@@ -246,3 +246,7 @@ export function getCatalogEtl(limit = 20): Promise<EtlResponse> {
 export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   return adminFetch('/analytics/catalog/embeddings');
 }
+
+export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {
+  return adminFetch('/analytics/catalog/etl/reset-stuck', { method: 'POST' });
+}

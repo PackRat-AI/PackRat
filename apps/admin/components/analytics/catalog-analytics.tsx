@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import {
   Card,
   CardContent,
@@ -16,6 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@packrat/web-ui/components/chart';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   useCatalogBrands,
   useCatalogEmbeddings,
@@ -23,6 +25,9 @@ import {
   useCatalogOverview,
   useCatalogPrices,
 } from 'admin-app/hooks/use-catalog-analytics';
+import { resetStuckEtlJobs } from 'admin-app/lib/api';
+import { queryKeys } from 'admin-app/lib/queryKeys';
+import { RotateCcw } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 const priceConfig: ChartConfig = {
@@ -49,11 +54,23 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
 }
 
 export function CatalogAnalytics() {
+  const queryClient = useQueryClient();
   const { data: overview } = useCatalogOverview();
   const { data: brands } = useCatalogBrands(15);
   const { data: prices } = useCatalogPrices();
   const { data: etl } = useCatalogEtl(15);
   const { data: embeddings } = useCatalogEmbeddings();
+
+  const {
+    mutate: resetStuck,
+    isPending: isResetting,
+    data: resetResult,
+  } = useMutation({
+    mutationFn: resetStuckEtlJobs,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl() });
+    },
+  });
 
   const availConfig: ChartConfig = Object.fromEntries(
     (overview?.availability ?? []).map((a, i) => [
@@ -250,12 +267,31 @@ export function CatalogAnalytics() {
       {etl && (
         <Card>
           <CardHeader>
-            <CardTitle>ETL Pipeline</CardTitle>
-            <CardDescription>
-              {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
-              {etl.summary.failed} failed &mdash; {etl.summary.totalItemsIngested.toLocaleString()}{' '}
-              items ingested
-            </CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>ETL Pipeline</CardTitle>
+                <CardDescription>
+                  {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
+                  {etl.summary.failed} failed &mdash;{' '}
+                  {etl.summary.totalItemsIngested.toLocaleString()} items ingested
+                  {resetResult && resetResult.reset > 0 && (
+                    <span className="ml-2 text-green-600 dark:text-green-400">
+                      — reset {resetResult.reset} stuck job{resetResult.reset !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetStuck()}
+                disabled={isResetting}
+                className="shrink-0"
+              >
+                <RotateCcw className={`h-3.5 w-3.5 mr-1.5 ${isResetting ? 'animate-spin' : ''}`} />
+                Reset Stuck
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">

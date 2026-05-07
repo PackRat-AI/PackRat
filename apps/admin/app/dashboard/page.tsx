@@ -53,17 +53,17 @@ export default function DashboardPage() {
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: queryKeys.admin.users(5),
+    queryKey: queryKeys.admin.users({ limit: 5 }),
     queryFn: () => getUsers({ limit: 5 }),
   });
 
   const { data: packs = [], isLoading: packsLoading } = useQuery({
-    queryKey: queryKeys.admin.packs(5),
+    queryKey: queryKeys.admin.packs({ limit: 5 }),
     queryFn: () => getPacks({ limit: 5 }),
   });
 
   const { data: catalog = [], isLoading: catalogLoading } = useQuery({
-    queryKey: queryKeys.admin.catalog(5),
+    queryKey: queryKeys.admin.catalog({ limit: 5 }),
     queryFn: () => getCatalogItems({ limit: 5 }),
   });
 

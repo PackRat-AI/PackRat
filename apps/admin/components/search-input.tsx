@@ -3,32 +3,46 @@
 import { Input } from '@packrat/web-ui/components/input';
 import { Search } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useTransition } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
 interface SearchInputProps {
   placeholder?: string;
   paramKey?: string;
 }
 
-// Inner component — must be inside <Suspense> because it calls useSearchParams()
 function SearchInputInner({ placeholder = 'Search…', paramKey = 'q' }: SearchInputProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  const value = searchParams?.get(paramKey) ?? '';
+  const urlValue = searchParams?.get(paramKey) ?? '';
+  const [inputValue, setInputValue] = useState(urlValue);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep input in sync if URL changes externally (e.g. browser back)
+  useEffect(() => {
+    setInputValue(urlValue);
+  }, [urlValue]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? '');
-      if (e.target.value) {
-        next.set(paramKey, e.target.value);
-      } else {
-        next.delete(paramKey);
-      }
-      startTransition(() => {
-        router.replace(`?${next.toString()}`, { scroll: false });
-      });
+      const next = e.target.value;
+      setInputValue(next);
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams?.toString() ?? '');
+        if (next) {
+          params.set(paramKey, next);
+        } else {
+          params.delete(paramKey);
+        }
+        // Also reset pagination when search changes
+        params.delete('page');
+        startTransition(() => {
+          router.replace(`?${params.toString()}`, { scroll: false });
+        });
+      }, 300);
     },
     [router, searchParams, paramKey],
   );
@@ -36,12 +50,16 @@ function SearchInputInner({ placeholder = 'Search…', paramKey = 'q' }: SearchI
   return (
     <div className="relative max-w-sm">
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-      <Input value={value} onChange={handleChange} placeholder={placeholder} className="pl-9" />
+      <Input
+        value={inputValue}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className="pl-9"
+      />
     </div>
   );
 }
 
-// Fallback shown while the inner component suspends
 function SearchInputFallback({ placeholder }: Pick<SearchInputProps, 'placeholder'>) {
   return (
     <div className="relative max-w-sm">

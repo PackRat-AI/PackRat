@@ -12,9 +12,12 @@ export const queryKeys = {
   /** Admin entity queries (dashboard pages). */
   admin: {
     stats: ['admin', 'stats'] as const,
-    users: (limitOrQuery?: number | string) => ['admin', 'users', limitOrQuery] as const,
-    packs: (limitOrQuery?: number | string) => ['admin', 'packs', limitOrQuery] as const,
-    catalog: (limitOrQuery?: number | string) => ['admin', 'catalog', limitOrQuery] as const,
+    users: (params?: { q?: string; page?: number; limit?: number }) =>
+      ['admin', 'users', params] as const,
+    packs: (params?: { q?: string; page?: number; limit?: number }) =>
+      ['admin', 'packs', params] as const,
+    catalog: (params?: { q?: string; page?: number; limit?: number }) =>
+      ['admin', 'catalog', params] as const,
   },
 
   /** Platform analytics queries. */
