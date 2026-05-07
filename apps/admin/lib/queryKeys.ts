@@ -1,57 +1,52 @@
 /**
- * Centralised query key registry for the admin SPA.
+ * Query key factory following the TkDodo self-referencing pattern.
+ * Each level spreads its parent so invalidating a parent truly invalidates all children.
  *
- * All keys are functions so that:
- *   - invalidateQueries({ queryKey: queryKeys.admin.users.all() }) uses prefix matching
- *   - specific keys compose from their parent (e.g. list builds on all)
- *
- * Usage:
- *   queryKey: queryKeys.admin.users.list({ q, page })  — in useQuery
- *   queryKey: queryKeys.admin.users.all()              — in invalidateQueries
+ * @see https://tkdodo.eu/blog/effective-react-query-keys#use-query-key-factories
  */
 export const queryKeys = {
-  cfAccessIdentity: () => ['cf-access-identity'] as const,
+  cfAccessIdentity: () => ['cfAccessIdentity'] as const,
 
   admin: {
     all: () => ['admin'] as const,
-    stats: () => ['admin', 'stats'] as const,
+    stats: () => [...queryKeys.admin.all(), 'stats'] as const,
 
     users: {
-      all: () => ['admin', 'users'] as const,
+      all: () => [...queryKeys.admin.all(), 'users'] as const,
       list: (params?: { q?: string; page?: number; limit?: number }) =>
-        ['admin', 'users', params] as const,
+        [...queryKeys.admin.users.all(), params] as const,
     },
 
     packs: {
-      all: () => ['admin', 'packs'] as const,
+      all: () => [...queryKeys.admin.all(), 'packs'] as const,
       list: (params?: { q?: string; page?: number; limit?: number }) =>
-        ['admin', 'packs', params] as const,
+        [...queryKeys.admin.packs.all(), params] as const,
     },
 
     catalog: {
-      all: () => ['admin', 'catalog'] as const,
+      all: () => [...queryKeys.admin.all(), 'catalog'] as const,
       list: (params?: { q?: string; page?: number; limit?: number }) =>
-        ['admin', 'catalog', params] as const,
+        [...queryKeys.admin.catalog.all(), params] as const,
     },
   },
 
   platform: {
     all: () => ['platform'] as const,
-    growth: (period: string) => ['platform', 'growth', period] as const,
-    activity: (period: string) => ['platform', 'activity', period] as const,
-    breakdown: () => ['platform', 'breakdown'] as const,
+    growth: (period: string) => [...queryKeys.platform.all(), 'growth', period] as const,
+    activity: (period: string) => [...queryKeys.platform.all(), 'activity', period] as const,
+    breakdown: () => [...queryKeys.platform.all(), 'breakdown'] as const,
   },
 
   catalogAnalytics: {
-    all: () => ['catalog'] as const,
-    overview: () => ['catalog', 'overview'] as const,
-    brands: (limit?: number) => ['catalog', 'brands', limit] as const,
-    prices: () => ['catalog', 'prices'] as const,
-    embeddings: () => ['catalog', 'embeddings'] as const,
+    all: () => ['catalogAnalytics'] as const,
+    overview: () => [...queryKeys.catalogAnalytics.all(), 'overview'] as const,
+    brands: (limit?: number) => [...queryKeys.catalogAnalytics.all(), 'brands', limit] as const,
+    prices: () => [...queryKeys.catalogAnalytics.all(), 'prices'] as const,
+    embeddings: () => [...queryKeys.catalogAnalytics.all(), 'embeddings'] as const,
 
     etl: {
-      all: () => ['catalog', 'etl'] as const,
-      list: (limit?: number) => ['catalog', 'etl', limit] as const,
+      all: () => [...queryKeys.catalogAnalytics.all(), 'etl'] as const,
+      list: (limit?: number) => [...queryKeys.catalogAnalytics.etl.all(), limit] as const,
     },
   },
 };
