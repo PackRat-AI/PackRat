@@ -1,0 +1,198 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useApiClient } from '../../shared/api';
+import {
+  addPackItem,
+  createPack,
+  deletePack,
+  deletePackItem,
+  getPack,
+  getPacks,
+  updatePack,
+  updatePackItem,
+} from './api';
+
+export function usePacks() {
+  const client = useApiClient();
+  return useQuery({
+    queryKey: queryKeys.packs(),
+    queryFn: async () => {
+      const { data, error } = await getPacks(client);
+      if (error) throw new Error('Failed to fetch packs');
+      return data;
+    },
+  });
+}
+
+export function usePack(packId: string) {
+  const client = useApiClient();
+  return useQuery({
+    queryKey: queryKeys.pack(packId),
+    queryFn: async () => {
+      const { data, error } = await getPack(client, packId);
+      if (error) throw new Error('Failed to fetch pack');
+      return data;
+    },
+    enabled: !!packId,
+  });
+}
+
+interface CreatePackInput {
+  name: string;
+  description?: string;
+  category?: string;
+  isPublic?: boolean;
+  image?: string | null;
+  tags?: string[];
+}
+
+export function useCreatePackMutation() {
+  const client = useApiClient();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreatePackInput) => {
+      const now = new Date().toISOString();
+      const { data, error } = await createPack(client, {
+        ...input,
+        id: crypto.randomUUID(),
+        isPublic: input.isPublic ?? false,
+        localCreatedAt: now,
+        localUpdatedAt: now,
+      });
+      if (error) throw new Error('Failed to create pack');
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.packs() }),
+  });
+}
+
+interface UpdatePackBody {
+  name?: string;
+  description?: string;
+  category?: string;
+  isPublic?: boolean;
+  image?: string | null;
+  tags?: string[];
+  deleted?: boolean;
+  localUpdatedAt?: string;
+}
+
+export function useUpdatePackMutation() {
+  const client = useApiClient();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ packId, body }: { packId: string; body: UpdatePackBody }) => {
+      const { data, error } = await updatePack(client, { packId, body });
+      if (error) throw new Error('Failed to update pack');
+      return data;
+    },
+    onSuccess: (_data, { packId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.packs() });
+      qc.invalidateQueries({ queryKey: queryKeys.pack(packId) });
+    },
+  });
+}
+
+export function useDeletePackMutation() {
+  const client = useApiClient();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (packId: string) => {
+      const { data, error } = await deletePack(client, packId);
+      if (error) throw new Error('Failed to delete pack');
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.packs() }),
+  });
+}
+
+interface AddPackItemInput {
+  name: string;
+  description?: string;
+  weight: number;
+  weightUnit?: 'g' | 'oz' | 'kg' | 'lb';
+  quantity?: number;
+  category?: string;
+  consumable?: boolean;
+  worn?: boolean;
+  image?: string | null;
+  notes?: string | null;
+  catalogItemId?: number | null;
+}
+
+export function useAddPackItemMutation() {
+  const client = useApiClient();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ packId, body }: { packId: string; body: AddPackItemInput }) => {
+      const { data, error } = await addPackItem(client, {
+        packId,
+        body: {
+          ...body,
+          id: crypto.randomUUID(),
+          quantity: body.quantity ?? 1,
+          consumable: body.consumable ?? false,
+          worn: body.worn ?? false,
+          weightUnit: body.weightUnit ?? 'g',
+        },
+      });
+      if (error) throw new Error('Failed to add item to pack');
+      return data;
+    },
+    onSuccess: (_data, { packId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.pack(packId) });
+    },
+  });
+}
+
+interface UpdatePackItemBody {
+  name?: string;
+  description?: string;
+  weight?: number;
+  weightUnit?: 'g' | 'oz' | 'kg' | 'lb';
+  quantity?: number;
+  category?: string;
+  consumable?: boolean;
+  worn?: boolean;
+  image?: string | null;
+  notes?: string | null;
+  catalogItemId?: number | null;
+  deleted?: boolean;
+}
+
+export function useUpdatePackItemMutation() {
+  const client = useApiClient();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      itemId,
+      packId: _packId,
+      body,
+    }: {
+      itemId: string;
+      packId: string;
+      body: UpdatePackItemBody;
+    }) => {
+      const { data, error } = await updatePackItem(client, { itemId, body });
+      if (error) throw new Error('Failed to update pack item');
+      return data;
+    },
+    onSuccess: (_result, { packId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.pack(packId) });
+    },
+  });
+}
+
+export function useDeletePackItemMutation() {
+  const client = useApiClient();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ itemId, packId: _packId }: { itemId: string; packId: string }) => {
+      const { data, error } = await deletePackItem(client, itemId);
+      if (error) throw new Error('Failed to delete pack item');
+      return data;
+    },
+    onSuccess: (_data, { packId }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.pack(packId) });
+    },
+  });
+}

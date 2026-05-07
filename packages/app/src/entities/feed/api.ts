@@ -1,9 +1,15 @@
 import type { ApiClient } from '../../shared/api';
-import { FeedResponseSchema } from './schema';
 
-export async function fetchFeed(client: ApiClient, params: { page?: number; limit?: number } = {}) {
-  const { page = 1, limit = 20 } = params;
-  const { data, error } = await client.feed.get({ query: { page, limit } });
-  if (error) throw new Error('Failed to fetch feed');
-  return FeedResponseSchema.parse(data);
-}
+export const getFeed = (client: ApiClient, params: { page?: number; limit?: number } = {}) =>
+  client.feed.get({ query: { page: params.page ?? 1, limit: params.limit ?? 20 } });
+
+export const createPost = (client: ApiClient, body: { caption?: string; images: string[] }) =>
+  client.feed.post(body);
+
+export const addComment = (
+  client: ApiClient,
+  { postId, body }: { postId: number; body: { content: string; parentCommentId?: number } },
+) => client.feed({ postId }).comments.post(body);
+
+export const togglePostLike = (client: ApiClient, postId: number) =>
+  client.feed({ postId }).like.post();

@@ -1,5 +1,4 @@
 export type { FetchCatalogItemsParams } from './api';
-export { fetchCatalogItems } from './api';
-export { useCatalogItemsInfinite } from './hooks';
+export { useCatalogItemsInfinite } from './queries';
 export { CatalogItemSchema, CatalogItemsResponseSchema } from './schema';
 export type { CatalogItem, CatalogItemsResponse } from './types';

@@ -1,14 +1,18 @@
 import type { ApiClient } from '../../shared/api';
-import { UserProfileSchema, UserSchema } from './schema';
 
-export async function fetchCurrentUser(client: ApiClient) {
-  const { data, error } = await client.auth.me.get();
-  if (error) throw new Error('Failed to fetch current user');
-  return UserSchema.parse((data as { user?: unknown })?.user ?? data);
-}
+export const getCurrentUser = (client: ApiClient) => client.auth.me.get();
 
-export async function fetchUserProfile(client: ApiClient) {
-  const { data, error } = await client.user.profile.get();
-  if (error) throw new Error('Failed to fetch user profile');
-  return UserProfileSchema.parse(data);
-}
+export const getUserProfile = (client: ApiClient) => client.user.profile.get();
+
+export const login = (client: ApiClient, body: { email: string; password: string }) =>
+  client.auth.login.post(body);
+
+export const register = (
+  client: ApiClient,
+  body: { email: string; password: string; firstName?: string; lastName?: string },
+) => client.auth.register.post(body);
+
+export const updateProfile = (
+  client: ApiClient,
+  body: { firstName?: string; lastName?: string; email?: string; avatarUrl?: string | null },
+) => client.user.profile.put(body);

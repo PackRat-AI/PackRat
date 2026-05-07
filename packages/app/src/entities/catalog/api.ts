@@ -1,7 +1,6 @@
 import type { ApiClient } from '../../shared/api';
-import { CatalogItemsResponseSchema } from './schema';
 
-type CatalogSortField =
+export type CatalogSortField =
   | 'name'
   | 'brand'
   | 'category'
@@ -19,9 +18,9 @@ export interface FetchCatalogItemsParams {
   sort?: { field: CatalogSortField; order: 'asc' | 'desc' };
 }
 
-export async function fetchCatalogItems(client: ApiClient, params: FetchCatalogItemsParams = {}) {
+export const getCatalogItems = (client: ApiClient, params: FetchCatalogItemsParams = {}) => {
   const { page = 1, limit = 20, q, category, sort } = params;
-  const { data, error } = await client.catalog.get({
+  return client.catalog.get({
     query: {
       page,
       limit,
@@ -30,6 +29,4 @@ export async function fetchCatalogItems(client: ApiClient, params: FetchCatalogI
       ...(sort ? { sort } : {}),
     },
   });
-  if (error) throw new Error('Failed to fetch catalog items');
-  return CatalogItemsResponseSchema.parse(data);
-}
+};
