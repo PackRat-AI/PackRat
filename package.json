@@ -49,8 +49,8 @@
     "trails": "bun run --cwd apps/trails dev"
   },
   "overrides": {
-    "@sinclair/typebox": "^0.34.15",
     "@packrat-ai/nativewindui": "2.0.3",
+    "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-sqlite": "~16.0.10"
   },
