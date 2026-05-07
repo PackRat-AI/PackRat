@@ -2,6 +2,8 @@
 // atomWithStorage JSON-encodes values; raw JWTs may also be written directly.
 // Always use these helpers — never read localStorage tokens raw.
 
+import { isString } from '@packrat/guards';
+
 const ACCESS_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
 
@@ -9,7 +11,7 @@ function parseToken(raw: string | null): string | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'string' ? parsed : null;
+    return isString(parsed) ? parsed : null;
   } catch {
     // Not JSON-encoded — return as-is (raw JWT)
     return raw;
