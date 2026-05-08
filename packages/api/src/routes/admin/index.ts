@@ -15,7 +15,7 @@ import {
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
-import { and, count, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -48,7 +48,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
 
 async function issueAdminJwt(username: string): Promise<string> {
   const env = getEnv();
-  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(username)
@@ -62,7 +62,7 @@ async function issueAdminJwt(username: string): Promise<string> {
 async function verifyAdminJwt(token: string): Promise<boolean> {
   try {
     const env = getEnv();
-    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
     const { payload } = await jwtVerify(token, secret, {
       issuer: ADMIN_JWT_ISSUER,
       audience: ADMIN_JWT_AUDIENCE,
@@ -73,15 +73,25 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Protected routes: Bearer JWT only.
-// The JWT is issued by /token, which already enforced both factors (CF JWT + Basic
-// in prod, Basic-only in local dev). No need to re-check CF or Basic here.
+// Protected routes: Bearer JWT is always accepted.
+// When CF Access is configured, CF JWT is also accepted directly (the CF edge
+// injects Cf-Access-Jwt-Assertion on every request, so the user has already
+// passed the CF Access gate).  Basic auth is accepted only in local dev.
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
   const header = request.headers.get('authorization') ?? '';
 
   if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+
+  // When CF Access is configured, verify the CF JWT injected by the CF edge.
+  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+    const cfIdentity = await verifyCFAccessRequest(request, {
+      teamDomain: CF_ACCESS_TEAM_DOMAIN,
+      aud: CF_ACCESS_AUD,
+    });
+    if (cfIdentity) return true;
+  }
 
   // Local dev only: allow Basic auth directly on protected routes as a convenience.
   // Both CF vars absent AND non-production environment must hold — missing CF vars
@@ -172,10 +182,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async () => {
       const db = createDb();
       try {
-        const [userCount] = await db
-          .select({ count: count() })
-          .from(users)
-          .where(isNull(users.deletedAt));
+        const [userCount] = await db.select({ count: count() }).from(users);
         const [packCount] = await db
           .select({ count: count() })
           .from(packs)
@@ -209,7 +216,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const includeDeleted = query.includeDeleted === 'true';
 
         const searchFilter = search
           ? or(
@@ -219,11 +225,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             )
           : undefined;
 
-        const deletedFilter = includeDeleted ? undefined : isNull(users.deletedAt);
-        const whereClause =
-          searchFilter && deletedFilter
-            ? and(deletedFilter, searchFilter)
-            : (deletedFilter ?? searchFilter);
+        const whereClause = searchFilter;
 
         const [usersList, [totalRow]] = await Promise.all([
           db
@@ -235,8 +237,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               role: users.role,
               emailVerified: users.emailVerified,
               createdAt: users.createdAt,
-              lastActiveAt: users.lastActiveAt,
-              deletedAt: users.deletedAt,
             })
             .from(users)
             .where(whereClause)
@@ -250,8 +250,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           data: usersList.map((u) => ({
             ...u,
             createdAt: u.createdAt?.toISOString() ?? null,
-            lastActiveAt: u.lastActiveAt?.toISOString() ?? null,
-            deletedAt: u.deletedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -308,7 +306,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               category: packs.category,
               isPublic: packs.isPublic,
               deleted: packs.deleted,
-              deletedAt: packs.deletedAt,
               createdAt: packs.createdAt,
               userEmail: users.email,
             })
@@ -329,7 +326,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           data: packsList.map((p) => ({
             ...p,
             createdAt: p.createdAt?.toISOString() ?? null,
-            deletedAt: p.deletedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -419,21 +415,12 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .delete(
     '/users/:id',
     async ({ params }) => {
-      const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
-      const db = createDb();
-      try {
-        const updated = await db
-          .update(users)
-          .set({ deletedAt: new Date() })
-          .where(and(eq(users.id, id), isNull(users.deletedAt)))
-          .returning();
-        if (!updated.length) return status(404, { error: 'User not found or already deleted' });
-        return { success: true as const };
-      } catch (error) {
-        console.error('Error soft-deleting user:', error);
-        return status(500, { error: 'Failed to delete user' });
-      }
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
+      // Soft delete not supported for users in Better Auth - use hard delete or ban instead
+      return status(400, {
+        error: 'Soft delete not supported for users. Use hard delete endpoint or ban user.',
+      });
     },
     {
       params: z.object({ id: z.string() }),
@@ -446,8 +433,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .delete(
     '/users/:id/hard',
     async ({ params, body }) => {
-      const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
         // Cascading FKs handle deletion of all related user data.
@@ -481,21 +468,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   .post(
     '/users/:id/restore',
     async ({ params }) => {
-      const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
-      const db = createDb();
-      try {
-        const restored = await db
-          .update(users)
-          .set({ deletedAt: null })
-          .where(and(eq(users.id, id), sql`${users.deletedAt} IS NOT NULL`))
-          .returning();
-        if (!restored.length) return status(404, { error: 'User not found or not deleted' });
-        return { success: true as const };
-      } catch (error) {
-        console.error('Error restoring user:', error);
-        return status(500, { error: 'Failed to restore user' });
-      }
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
+      // Soft delete not supported for users in Better Auth
+      return status(400, { error: 'Soft delete not supported for users in Better Auth' });
     },
     {
       params: z.object({ id: z.string() }),
@@ -510,10 +486,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async ({ params }) => {
       const db = createDb();
       try {
-        const now = new Date();
         const updated = await db
           .update(packs)
-          .set({ deleted: true, deletedAt: now })
+          .set({ deleted: true })
           .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
           .returning();
         if (!updated.length) return status(404, { error: 'Pack not found' });

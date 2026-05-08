@@ -1,6 +1,6 @@
 {
-  "id": "acca2b7a-650e-4e23-83f3-47b309d37e6b",
-  "prevId": "dce94129-f491-41b1-9d2c-e22dcf72101e",
+  "id": "8ca2e099-15ca-4088-b4f6-5eeb66305236",
+  "prevId": "a08154b1-28c9-4757-a8e3-26a98182d7e2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -340,69 +340,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.comment_likes": {
-      "name": "comment_likes",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "comment_id": {
-          "name": "comment_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "comment_likes_comment_id_post_comments_id_fk": {
-          "name": "comment_likes_comment_id_post_comments_id_fk",
-          "tableFrom": "comment_likes",
-          "tableTo": "post_comments",
-          "columnsFrom": ["comment_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "comment_likes_user_id_users_id_fk": {
-          "name": "comment_likes_user_id_users_id_fk",
-          "tableFrom": "comment_likes",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "comment_likes_comment_id_user_id_unique": {
-          "name": "comment_likes_comment_id_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["comment_id", "user_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.etl_jobs": {
       "name": "etl_jobs",
       "schema": "",
@@ -705,12 +642,6 @@
           "notNull": true,
           "default": false
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "is_ai_generated": {
           "name": "is_ai_generated",
           "type": "boolean",
@@ -905,12 +836,6 @@
           "notNull": true,
           "default": false
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1021,12 +946,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "content_source": {
           "name": "content_source",
@@ -1220,12 +1139,6 @@
           "notNull": true,
           "default": false
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "is_ai_generated": {
           "name": "is_ai_generated",
           "type": "boolean",
@@ -1278,227 +1191,6 @@
           "columnsFrom": ["template_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.post_comments": {
-      "name": "post_comments",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_comment_id": {
-          "name": "parent_comment_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "post_comments_post_id_posts_id_fk": {
-          "name": "post_comments_post_id_posts_id_fk",
-          "tableFrom": "post_comments",
-          "tableTo": "posts",
-          "columnsFrom": ["post_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "post_comments_user_id_users_id_fk": {
-          "name": "post_comments_user_id_users_id_fk",
-          "tableFrom": "post_comments",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "post_comments_parent_comment_id_post_comments_id_fk": {
-          "name": "post_comments_parent_comment_id_post_comments_id_fk",
-          "tableFrom": "post_comments",
-          "tableTo": "post_comments",
-          "columnsFrom": ["parent_comment_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.post_likes": {
-      "name": "post_likes",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "post_id": {
-          "name": "post_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "post_likes_post_id_posts_id_fk": {
-          "name": "post_likes_post_id_posts_id_fk",
-          "tableFrom": "post_likes",
-          "tableTo": "posts",
-          "columnsFrom": ["post_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "post_likes_user_id_users_id_fk": {
-          "name": "post_likes_user_id_users_id_fk",
-          "tableFrom": "post_likes",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "post_likes_post_id_user_id_unique": {
-          "name": "post_likes_post_id_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["post_id", "user_id"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.posts": {
-      "name": "posts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "caption": {
-          "name": "caption",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "images": {
-          "name": "images",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "posts_user_id_users_id_fk": {
-          "name": "posts_user_id_users_id_fk",
-          "tableFrom": "posts",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1767,12 +1459,6 @@
           "notNull": true,
           "default": false
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "local_created_at": {
           "name": "local_created_at",
           "type": "timestamp",
@@ -1953,12 +1639,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "trail_osm_id": {
-          "name": "trail_osm_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
         "local_created_at": {
           "name": "local_created_at",
           "type": "timestamp",
@@ -1978,12 +1658,6 @@
           "notNull": true,
           "default": false
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1997,6 +1671,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "trail_osm_id": {
+          "name": "trail_osm_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -2093,18 +1773,6 @@
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
-        },
-        "last_active_at": {
-          "name": "last_active_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},

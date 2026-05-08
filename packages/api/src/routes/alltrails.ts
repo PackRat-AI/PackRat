@@ -78,6 +78,18 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
       return status(502, { error: `AllTrails returned status ${response.status}` });
     }
 
+    // Verify the final URL is still within alltrails.com (guards against redirects followed by fetch)
+    if (response.url) {
+      try {
+        const finalUrl = new URL(response.url);
+        if (finalUrl.protocol !== 'https:' || !ALLTRAILS_HOSTNAME_RE.test(finalUrl.hostname)) {
+          return status(400, { error: 'URL redirected outside alltrails.com' });
+        }
+      } catch {
+        // Non-parseable response.url — proceed
+      }
+    }
+
     const html = await response.text();
 
     const title = extractOgTag(html, 'og:title');

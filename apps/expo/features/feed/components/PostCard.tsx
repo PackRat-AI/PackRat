@@ -21,7 +21,7 @@ interface PostCardProps {
   post: Post;
   onLike: (postId: number) => void;
   onDelete?: (postId: number) => void;
-  currentUserId?: number;
+  currentUserId?: string;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, currentUserId }) => {

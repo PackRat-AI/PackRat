@@ -1,5 +1,5 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
-import { isObject } from '@packrat/guards';
+import { isFunction, isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -26,9 +26,12 @@ const testEnv = {
   NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/packrat_test',
   NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5432/packrat_test',
 
-  JWT_SECRET: 'secret',
-  PASSWORD_RESET_SECRET: 'secret',
+  // Better Auth (replaces JWT_SECRET)
+  BETTER_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!',
+  BETTER_AUTH_URL: 'http://localhost:8787',
   GOOGLE_CLIENT_ID: 'test-client-id',
+  GOOGLE_CLIENT_SECRET: 'test-client-secret',
+
   ADMIN_USERNAME: 'admin',
   ADMIN_PASSWORD: 'admin-password',
   PACKRAT_API_KEY: 'test-api-key',
@@ -52,6 +55,7 @@ const testEnv = {
   PACKRAT_BUCKET_R2_BUCKET_NAME: 'test-bucket',
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: 'test-guides-bucket',
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: 'test-scrapy-bucket',
+  R2_PUBLIC_URL: 'https://r2.test.example.com',
 
   PACKRAT_GUIDES_RAG_NAME: 'test-rag',
   PACKRAT_GUIDES_BASE_URL: 'https://guides.test.com',
@@ -110,6 +114,44 @@ vi.mock('elysia/adapter/cloudflare-worker', async (importOriginal) => {
       ...original.CloudflareAdapter,
       beforeCompile: () => {},
     },
+  };
+});
+
+// Mock Better Auth's getAuth so integration tests don't need a real Better Auth
+// instance. The mock validates the HS256 JWTs that test-helpers issues, mapping
+// the JWT payload to a Better Auth-shaped session object.
+vi.mock('@packrat/api/auth', async () => {
+  const { jwtVerify } = await import('jose');
+  const testJwtSecret = new TextEncoder().encode('secret');
+
+  return {
+    getAuth: vi.fn(async () => ({
+      api: {
+        getSession: vi.fn(async ({ headers }: { headers: Headers }) => {
+          const authHeader = isFunction(headers.get)
+            ? headers.get('authorization')
+            : (headers as unknown as Record<string, string>)?.authorization;
+          if (!authHeader?.startsWith('Bearer ')) return null;
+          const token = authHeader.slice(7).trim();
+          if (!token) return null;
+          try {
+            const { payload } = await jwtVerify(token, testJwtSecret, { algorithms: ['HS256'] });
+            const userId = String(payload.userId ?? '');
+            if (!userId) return null;
+            return {
+              user: {
+                id: userId,
+                email: 'test@example.com',
+                name: 'Test User',
+                role: (payload.role as string) ?? 'USER',
+              },
+            };
+          } catch {
+            return null;
+          }
+        }),
+      },
+    })),
   };
 });
 
@@ -654,9 +696,9 @@ beforeEach(async () => {
   // testPool.query, so cleanup and tests share one path. Surface errors rather
   // than swallowing them.
   const tablesToClean = [
-    'one_time_passwords',
-    'refresh_tokens',
-    'auth_providers',
+    'session',
+    'account',
+    'verification',
     'weight_history',
     'pack_items',
     'pack_template_items',

@@ -14,7 +14,7 @@ import {
   BreakdownItemSchema,
   GrowthPointSchema,
 } from '@packrat/api/schemas/admin';
-import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
@@ -56,7 +56,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
               count: count(),
             })
             .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.createdAt, startDate)))
+            .where(gte(users.createdAt, startDate))
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
@@ -191,33 +191,12 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
   .get(
     '/active-users',
     async () => {
-      const db = createDb();
-
       try {
-        const now = new Date();
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-        const [dau, wau, mau] = await Promise.all([
-          db
-            .select({ count: count() })
-            .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, oneDayAgo))),
-          db
-            .select({ count: count() })
-            .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, sevenDaysAgo))),
-          db
-            .select({ count: count() })
-            .from(users)
-            .where(and(isNull(users.deletedAt), gte(users.lastActiveAt, thirtyDaysAgo))),
-        ]);
-
+        // Note: Better Auth users don't have lastActiveAt field - tracking requires separate implementation
         return {
-          dau: dau[0]?.count ?? 0,
-          wau: wau[0]?.count ?? 0,
-          mau: mau[0]?.count ?? 0,
+          dau: 0, // Requires lastActiveAt tracking
+          wau: 0, // Requires lastActiveAt tracking
+          mau: 0, // Requires lastActiveAt tracking
         };
       } catch (error) {
         console.error('Analytics active-users error:', error);

@@ -4,9 +4,9 @@ import { and, eq } from 'drizzle-orm';
 
 export class PackItemService {
   private db;
-  private userId: number;
+  private userId: string;
 
-  constructor(userId: number) {
+  constructor(userId: string) {
     this.userId = userId;
     this.db = createDb();
   }

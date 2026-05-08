@@ -52,7 +52,6 @@ function CatalogItemsScreen() {
   const {
     data: paginatedData,
     isLoading: isPaginatedLoading,
-    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -74,8 +73,8 @@ function CatalogItemsScreen() {
 
   const paginatedItems: CatalogItem[] =
     // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
-    ((paginatedData?.pages.flatMap((page) => page.items) ?? []) as CatalogItem[]).filter((item) =>
-      Boolean(item?.id),
+    ((paginatedData?.pages.flatMap((page) => page.items) ?? []) as unknown as CatalogItem[]).filter(
+      (item) => Boolean(item?.id),
     );
 
   const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;

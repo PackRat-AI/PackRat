@@ -24,7 +24,7 @@ export const generateEmbedding = async (
   const { value, ...providerConfig } = params;
 
   // Guard: skip if no text or only whitespace
-  if (!value || !value.trim()) {
+  if (!value?.trim()) {
     return null;
   }
 

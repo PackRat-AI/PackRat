@@ -40,9 +40,9 @@ type PackItemConceptSchema = z.infer<typeof packItemConceptSchema>;
 
 export class PackService {
   private db;
-  private userId: number;
+  private userId: string;
 
-  constructor(userId: number) {
+  constructor(userId: string) {
     this.userId = userId;
     this.db = createDb();
   }

@@ -10,7 +10,7 @@ export const LoginResponseSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
   user: z.object({
-    id: z.number(),
+    id: z.string(),
     email: z.string().email(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
@@ -28,7 +28,7 @@ export const RegisterRequestSchema = z.object({
 export const RegisterResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  userId: z.number(),
+  userId: z.string(),
 });
 
 export const VerifyEmailRequestSchema = z.object({
@@ -42,7 +42,7 @@ export const VerifyEmailResponseSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
   user: z.object({
-    id: z.number(),
+    id: z.string(),
     email: z.string().email(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
@@ -59,7 +59,7 @@ export const RefreshTokenResponseSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
   user: z.object({
-    id: z.number(),
+    id: z.string(),
     email: z.string().email(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
@@ -102,7 +102,7 @@ export const SocialAuthResponseSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
   user: z.object({
-    id: z.number(),
+    id: z.string(),
     email: z.string().email(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),
@@ -124,7 +124,7 @@ export const LogoutResponseSchema = z.object({
 export const MeResponseSchema = z.object({
   success: z.boolean(),
   user: z.object({
-    id: z.number(),
+    id: z.string(),
     email: z.string().email(),
     firstName: z.string().nullable(),
     lastName: z.string().nullable(),

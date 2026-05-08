@@ -280,7 +280,6 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
               waterCrossings: trailConditionReports.waterCrossings,
               notes: trailConditionReports.notes,
               deleted: trailConditionReports.deleted,
-              deletedAt: trailConditionReports.deletedAt,
               createdAt: trailConditionReports.createdAt,
               userId: trailConditionReports.userId,
               userEmail: users.email,
@@ -298,7 +297,6 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           data: reports.map((r) => ({
             ...r,
             createdAt: r.createdAt.toISOString(),
-            deletedAt: r.deletedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -330,10 +328,9 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
     async ({ params }) => {
       const db = createDb();
       try {
-        const now = new Date();
         const updated = await db
           .update(trailConditionReports)
-          .set({ deleted: true, deletedAt: now })
+          .set({ deleted: true })
           .where(
             and(
               eq(trailConditionReports.id, params.reportId),

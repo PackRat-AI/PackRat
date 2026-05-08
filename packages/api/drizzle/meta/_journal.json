@@ -278,15 +278,57 @@
     {
       "idx": 38,
       "version": "7",
-      "when": 1777637285430,
-      "tag": "0038_broad_winter_soldier",
+      "when": 1777256400000,
+      "tag": "0040_uuid_pk_better_auth_migration",
       "breakpoints": true
     },
     {
       "idx": 39,
       "version": "7",
-      "when": 1777637471970,
-      "tag": "0039_worried_wrecking_crew",
+      "when": 1777256460000,
+      "tag": "0041_continue_uuid_migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1777256520000,
+      "tag": "0042_migrate_auth_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1777256580000,
+      "tag": "0043_finalize_uuid_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1777256640000,
+      "tag": "0044_complete_uuid_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1777256700000,
+      "tag": "0045_finalize_users_uuid_pk",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1777717813481,
+      "tag": "0044_absurd_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1777803600000,
+      "tag": "0046_social_feed_tables_uuid",
       "breakpoints": true
     }
   ]

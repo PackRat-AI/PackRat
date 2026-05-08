@@ -7,7 +7,7 @@ const SQL_JOIN_KEYWORD = /\bjoin\b/g;
 interface Params {
   query: string;
   limit: number;
-  userId: number;
+  userId: string;
 }
 
 export async function executeSqlAiTool(params: Params) {

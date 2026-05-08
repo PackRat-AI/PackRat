@@ -1,18 +1,18 @@
+import { getAuth } from '@packrat/api/auth';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { generateJWT } from '@packrat/api/utils/auth';
 import { Elysia } from 'elysia';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/**
- * Unit tests for the authPlugin macro. Uses in-process `app.handle` to
- * exercise the full Elysia macro chain without spinning up a Worker.
- */
+// getAuth is mocked globally by test/setup.ts. Override it here to control
+// what session is returned per-test.
+const mockGetSession = vi.fn();
 
-// JWT_SECRET is read at generate + verify time from getEnv(); set it once
-// before any token work happens.
-beforeAll(() => {
-  vi.stubEnv('JWT_SECRET', 'test-secret-at-least-32-chars-long-xx');
-  vi.stubEnv('PACKRAT_API_KEY', 'test-api-key');
+beforeEach(() => {
+  vi.clearAllMocks();
+
+  vi.mocked(getAuth).mockResolvedValue({
+    api: { getSession: mockGetSession },
+  } as never);
 });
 
 function buildTestApp() {
@@ -23,94 +23,70 @@ function buildTestApp() {
 
 describe('authPlugin', () => {
   it('returns 401 when Authorization header is missing', async () => {
+    mockGetSession.mockResolvedValue(null);
     const app = buildTestApp();
-    const res = await app.handle(new Request('http://x/protected'));
+    const res = await app.handle(new Request('http://localhost/protected'));
     expect(res.status).toBe(401);
   });
 
   it('returns 401 when bearer token is empty', async () => {
+    mockGetSession.mockResolvedValue(null);
     const app = buildTestApp();
     const res = await app.handle(
-      new Request('http://x/protected', { headers: { authorization: 'Bearer ' } }),
+      new Request('http://localhost/protected', { headers: { authorization: 'Bearer ' } }),
     );
     expect(res.status).toBe(401);
   });
 
-  it('returns 401 on tampered JWT signature', async () => {
-    const valid = await generateJWT({ payload: { userId: 1, role: 'USER' } });
-    const parts = valid.split('.');
-    // Flip a character in the signature segment so HMAC verification fails.
-    const tamperedSig = parts[2]?.slice(0, -1) + (parts[2]?.endsWith('A') ? 'B' : 'A');
-    const tampered = `${parts[0]}.${parts[1]}.${tamperedSig}`;
+  it('returns 401 when getSession returns null (invalid/expired token)', async () => {
+    mockGetSession.mockResolvedValue(null);
     const app = buildTestApp();
     const res = await app.handle(
-      new Request('http://x/protected', { headers: { authorization: `Bearer ${tampered}` } }),
+      new Request('http://localhost/protected', {
+        headers: { authorization: 'Bearer invalid-token' },
+      }),
     );
     expect(res.status).toBe(401);
   });
 
-  it('returns 401 on an expired JWT', async () => {
-    const expired = await generateJWT({
-      payload: { userId: 1, role: 'USER', exp: Math.floor(Date.now() / 1000) - 60 },
+  it('does NOT accept X-API-Key on user-scoped routes', async () => {
+    mockGetSession.mockResolvedValue(null);
+    const app = buildTestApp();
+    const res = await app.handle(
+      new Request('http://localhost/protected', { headers: { 'x-api-key': 'test-api-key' } }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('accepts a valid session and injects user context', async () => {
+    mockGetSession.mockResolvedValue({
+      user: { id: 'user-42', email: 'test@example.com', name: 'Test User', role: 'USER' },
     });
     const app = buildTestApp();
     const res = await app.handle(
-      new Request('http://x/protected', { headers: { authorization: `Bearer ${expired}` } }),
+      new Request('http://localhost/protected', {
+        headers: { authorization: 'Bearer valid-session-token' },
+      }),
     );
-    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.userId).toBe('user-42');
+    expect(body.role).toBe('USER');
+    expect(body.email).toBe('test@example.com');
   });
 
-  it('rejects alg:none JWTs', async () => {
-    // Hand-crafted alg:none token — header says none, signature is empty
-    const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
-    const payload = Buffer.from(JSON.stringify({ userId: 1, role: 'ADMIN' })).toString('base64url');
-    const noneJwt = `${header}.${payload}.`;
-    const app = buildTestApp();
-    const res = await app.handle(
-      new Request('http://x/protected', { headers: { authorization: `Bearer ${noneJwt}` } }),
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('does NOT accept X-API-Key on user-scoped routes (regression test for #2162)', async () => {
-    // The legacy behavior synthesized { userId: 0, role: 'ADMIN' } from
-    // X-API-Key and injected it into any `isAuthenticated` route. The
-    // removed fallback means API-key-only requests now fail 401 against
-    // user-scoped routes and must use `apiKeyAuthPlugin` instead.
-    const app = buildTestApp();
-    const res = await app.handle(
-      new Request('http://x/protected', { headers: { 'x-api-key': 'test-api-key' } }),
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('role claim cannot be forged via JWT payload spread', async () => {
-    // The resolver picks `role` from `payload.role` explicitly AFTER
-    // spreading `...rest`, so an adversary cannot shove a `role` field into
-    // rest. This guards that ordering.
-    const userToken = await generateJWT({
-      payload: { userId: 7, role: 'USER', scope: 'read' },
+  it('preserves role from session, not from caller-supplied claim', async () => {
+    mockGetSession.mockResolvedValue({
+      user: { id: 'user-7', email: 'test@example.com', name: 'Test User', role: 'USER' },
     });
     const app = new Elysia()
       .use(authPlugin)
       .get('/role', ({ user }) => ({ role: user.role }), { isAuthenticated: true });
     const res = await app.handle(
-      new Request('http://x/role', { headers: { authorization: `Bearer ${userToken}` } }),
+      new Request('http://localhost/role', { headers: { authorization: 'Bearer token' } }),
     );
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body.role).toBe('USER');
-  });
-
-  it('accepts a valid user JWT and injects user context', async () => {
-    const token = await generateJWT({ payload: { userId: 42, role: 'USER' } });
-    const app = buildTestApp();
-    const res = await app.handle(
-      new Request('http://x/protected', { headers: { authorization: `Bearer ${token}` } }),
-    );
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body.userId).toBe(42);
     expect(body.role).toBe('USER');
   });
 });

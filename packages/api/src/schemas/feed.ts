@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 export const PostAuthorSchema = z.object({
-  id: z.number().int(),
+  id: z.string(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
 });
 
 export const PostSchema = z.object({
   id: z.number().int(),
-  userId: z.number().int(),
+  userId: z.string(),
   caption: z.string().nullable(),
   images: z.array(z.string()),
   createdAt: z.string().datetime(),
@@ -35,7 +35,7 @@ export const FeedResponseSchema = z.object({
 export const CommentSchema = z.object({
   id: z.number().int(),
   postId: z.number().int(),
-  userId: z.number().int(),
+  userId: z.string(),
   content: z.string(),
   parentCommentId: z.number().int().nullable(),
   createdAt: z.string().datetime(),

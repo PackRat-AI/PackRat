@@ -9,7 +9,7 @@ import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { tool } from 'ai';
 import { z } from 'zod';
 
-export function createTools(userId: number) {
+export function createTools(userId: string) {
   const packService = new PackService(userId);
   const packItemService = new PackItemService(userId);
   const weatherService = new WeatherService();
