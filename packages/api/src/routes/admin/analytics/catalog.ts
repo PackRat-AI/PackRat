@@ -1,8 +1,12 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs } from '@packrat/api/db/schema';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
+import { ValidationErrorsSchema } from '@packrat/api/types/validation';
+import { fromZod } from '@packrat/guards';
 import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
+
+const parseValidationErrors = fromZod(ValidationErrorsSchema);
 
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
   .get(
@@ -242,6 +246,120 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     { detail: { tags: ['Admin'], summary: 'Embedding coverage' } },
+  )
+
+  .get(
+    '/etl/failure-summary',
+    async ({ query }) => {
+      const db = createDb();
+      const { limit = 20 } = query;
+
+      try {
+        // Pull the errors JSONB array from recent invalid logs and aggregate in app
+        const logs = await db
+          .select({ errors: invalidItemLogs.errors })
+          .from(invalidItemLogs)
+          .orderBy(desc(invalidItemLogs.createdAt))
+          .limit(5000);
+
+        const tally = new Map<string, number>();
+        for (const log of logs) {
+          for (const err of parseValidationErrors(log.errors) ?? []) {
+            const key = `${err.field}|||${err.reason}`;
+            tally.set(key, (tally.get(key) ?? 0) + 1);
+          }
+        }
+
+        const sorted = [...tally.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, limit)
+          .map(([key, count]) => {
+            const sep = key.indexOf('|||');
+            return { field: key.slice(0, sep), reason: key.slice(sep + 3), count };
+          });
+
+        return { topErrors: sorted, totalInvalidItems: logs.length };
+      } catch (error) {
+        console.error('ETL failure summary error:', error);
+        return status(500, {
+          error: 'Failed to fetch failure summary',
+          code: 'ETL_FAILURE_SUMMARY_ERROR',
+        });
+      }
+    },
+    {
+      query: z.object({
+        limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+      }),
+      detail: { tags: ['Admin'], summary: 'Top validation error patterns across all ETL jobs' },
+    },
+  )
+
+  .get(
+    '/etl/:jobId/failures',
+    async ({ params, query }) => {
+      const db = createDb();
+      const { limit = 50 } = query;
+
+      try {
+        const rawLogs = await db
+          .select({
+            errors: invalidItemLogs.errors,
+            rowIndex: invalidItemLogs.rowIndex,
+            rawData: invalidItemLogs.rawData,
+          })
+          .from(invalidItemLogs)
+          .where(eq(invalidItemLogs.jobId, params.jobId))
+          .orderBy(invalidItemLogs.rowIndex)
+          .limit(limit);
+
+        // Parse errors once per row — reuse for both tally and samples
+        const logs = rawLogs.map((l) => ({
+          ...l,
+          parsedErrors: parseValidationErrors(l.errors) ?? [],
+        }));
+
+        // Aggregate error breakdown for this job
+        const tally = new Map<string, number>();
+        for (const log of logs) {
+          for (const err of log.parsedErrors) {
+            const key = `${err.field}|||${err.reason}`;
+            tally.set(key, (tally.get(key) ?? 0) + 1);
+          }
+        }
+
+        const errorBreakdown = [...tally.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => {
+            const sep = key.indexOf('|||');
+            return { field: key.slice(0, sep), reason: key.slice(sep + 3), count };
+          });
+
+        return {
+          jobId: params.jobId,
+          errorBreakdown,
+          samples: logs.slice(0, 20).map((l) => ({
+            rowIndex: l.rowIndex,
+            errors: l.parsedErrors,
+            rawData: l.rawData,
+          })),
+          totalShown: logs.length,
+        };
+      } catch (error) {
+        console.error('ETL job failures error:', error);
+        return status(500, {
+          error: 'Failed to fetch job failures',
+          code: 'ETL_JOB_FAILURES_ERROR',
+        });
+      }
+    },
+    {
+      params: z.object({ jobId: z.string().min(1) }),
+      query: z.object({
+        limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+      }),
+      detail: { tags: ['Admin'], summary: 'Validation failure breakdown for a specific ETL job' },
+    },
   )
 
   .post(

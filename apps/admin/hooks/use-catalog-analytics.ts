@@ -7,6 +7,8 @@ import {
   getCatalogEtl,
   getCatalogOverview,
   getCatalogPrices,
+  getEtlFailureSummary,
+  getEtlJobFailures,
 } from 'admin-app/lib/api';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 
@@ -42,5 +44,21 @@ export function useCatalogEmbeddings() {
   return useQuery({
     queryKey: queryKeys.catalogAnalytics.embeddings(),
     queryFn: () => getCatalogEmbeddings(),
+  });
+}
+
+export function useEtlFailureSummary(limit = 20) {
+  return useQuery({
+    queryKey: queryKeys.catalogAnalytics.etl.failureSummary(limit),
+    queryFn: () => getEtlFailureSummary(limit),
+  });
+}
+
+export function useEtlJobFailures(jobId: string, opts: { enabled?: boolean; limit?: number } = {}) {
+  const { enabled = false, limit = 50 } = opts;
+  return useQuery({
+    queryKey: queryKeys.catalogAnalytics.etl.jobFailures(jobId, limit),
+    queryFn: () => getEtlJobFailures(jobId, limit),
+    enabled,
   });
 }

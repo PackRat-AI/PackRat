@@ -272,3 +272,29 @@ export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
 export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {
   return adminFetch('/analytics/catalog/etl/reset-stuck', { method: 'POST' });
 }
+
+export type EtlErrorRow = { field: string; reason: string; count: number };
+
+export type EtlFailureSummary = {
+  topErrors: EtlErrorRow[];
+  totalInvalidItems: number;
+};
+
+export type EtlJobFailures = {
+  jobId: string;
+  errorBreakdown: EtlErrorRow[];
+  samples: Array<{
+    rowIndex: number;
+    errors: Array<{ field: string; reason: string; value?: unknown }>;
+    rawData: unknown;
+  }>;
+  totalShown: number;
+};
+
+export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
+  return adminFetch(`/analytics/catalog/etl/failure-summary?limit=${limit}`);
+}
+
+export function getEtlJobFailures(jobId: string, limit = 50): Promise<EtlJobFailures> {
+  return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/failures?limit=${limit}`);
+}
