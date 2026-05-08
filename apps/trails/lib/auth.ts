@@ -2,6 +2,7 @@
 // atomWithStorage JSON-encodes values; raw JWTs may also be written directly.
 // Always use these helpers — never read localStorage tokens raw.
 
+import { safeLocalStorage } from '@packrat/app/browser';
 import { fromZod, isString } from '@packrat/guards';
 import z from 'zod';
 
@@ -20,25 +21,21 @@ function parseToken(raw: string | null): string | null {
 }
 
 export function getAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return parseToken(localStorage.getItem(ACCESS_KEY));
+  return parseToken(safeLocalStorage.getItem(ACCESS_KEY));
 }
 
 export function getRefreshToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return parseToken(localStorage.getItem(REFRESH_KEY));
+  return parseToken(safeLocalStorage.getItem(REFRESH_KEY));
 }
 
 export function setTokens(accessToken: string, refreshToken: string): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(ACCESS_KEY, accessToken);
-  localStorage.setItem(REFRESH_KEY, refreshToken);
+  safeLocalStorage.setItem(ACCESS_KEY, accessToken);
+  safeLocalStorage.setItem(REFRESH_KEY, refreshToken);
 }
 
 export function clearTokens(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
+  safeLocalStorage.removeItem(ACCESS_KEY);
+  safeLocalStorage.removeItem(REFRESH_KEY);
 }
 
 export const UserInfoSchema = z.object({
@@ -51,14 +48,12 @@ export const UserInfoSchema = z.object({
 export type UserInfo = z.infer<typeof UserInfoSchema>;
 
 export function setUser(user: UserInfo): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('user', JSON.stringify(user));
+  safeLocalStorage.setItem('user', JSON.stringify(user));
 }
 
 export function getUser(): UserInfo | null {
-  if (typeof window === 'undefined') return null;
   try {
-    const raw = localStorage.getItem('user');
+    const raw = safeLocalStorage.getItem('user');
     return raw ? (fromZod(UserInfoSchema)(JSON.parse(raw)) ?? null) : null;
   } catch {
     return null;
@@ -66,6 +61,5 @@ export function getUser(): UserInfo | null {
 }
 
 export function clearUser(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('user');
+  safeLocalStorage.removeItem('user');
 }

@@ -20,6 +20,8 @@
       }
     ],
     "paths": {
+      "@packrat/app": ["../../packages/app/src/index.ts"],
+      "@packrat/app/*": ["../../packages/app/src/*"],
       "trails-app/*": ["./*"],
       "@packrat/api": ["../../packages/api/src/index.ts"],
       "@packrat/api/*": ["../../packages/api/src/*"],

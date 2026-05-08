@@ -23,6 +23,7 @@
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/api-client": "workspace:*",
+        "@packrat/app": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@packrat/web-ui": "workspace:*",
         "@radix-ui/react-alert-dialog": "catalog:",
@@ -343,6 +344,7 @@
       "version": "2.0.24",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
+        "@packrat/app": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@packrat/overpass": "workspace:*",
         "@packrat/web-ui": "workspace:*",
@@ -467,6 +469,10 @@
       "optionalPeers": [
         "elysia",
       ],
+    },
+    "packages/app": {
+      "name": "@packrat/app",
+      "version": "2.0.24",
     },
     "packages/checks": {
       "name": "@packrat/checks",
@@ -1337,6 +1343,8 @@
     "@packrat/api": ["@packrat/api@workspace:packages/api"],
 
     "@packrat/api-client": ["@packrat/api-client@workspace:packages/api-client"],
+
+    "@packrat/app": ["@packrat/app@workspace:packages/app"],
 
     "@packrat/checks": ["@packrat/checks@workspace:packages/checks"],
 
