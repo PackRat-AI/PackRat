@@ -96,7 +96,19 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   // is rejected by browsers per the CORS spec).
   .use(
     cors({
-      origin: 'https://admin.packratai.com',
+      // Allow production domain, Cloudflare preview deployments, and local dev.
+      // With credentials:true the browser requires a specific origin (not *), so
+      // we reflect the request origin back when it's in our allowlist.
+      origin: (request) => {
+        const origin = request.headers.get('origin');
+        if (!origin) return false;
+        if (origin === 'https://admin.packratai.com') return true;
+        // Cloudflare Workers preview URLs (branch deploys of packrat-admin)
+        if (origin.endsWith('.workers.dev')) return true;
+        // Local development
+        if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
+        return false;
+      },
       credentials: true,
       allowedHeaders: ['Authorization', 'Content-Type'],
     }),
@@ -152,6 +164,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   )
   .onBeforeHandle(async ({ request, path }) => {
     if (path === '/api/admin/token') return;
+    // OPTIONS preflight requests carry no credentials — let the CORS plugin handle them.
+    if (request.method === 'OPTIONS') return;
     const ok = await adminAuthGuard(request);
     if (!ok) return status(401, { error: 'Unauthorized' });
   })
