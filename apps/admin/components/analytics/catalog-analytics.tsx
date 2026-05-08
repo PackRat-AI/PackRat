@@ -162,12 +162,16 @@ function EtlJobFailuresDialog({ jobId, totalInvalid }: { jobId: string; totalInv
   );
 }
 
+const ETL_PAGE_SIZE = 25;
+
 export function CatalogAnalytics() {
   const queryClient = useQueryClient();
+  const [etlLimit, setEtlLimit] = useState(ETL_PAGE_SIZE);
+
   const { data: overview } = useCatalogOverview();
   const { data: brands } = useCatalogBrands(15);
   const { data: prices } = useCatalogPrices();
-  const { data: etl } = useCatalogEtl(15);
+  const { data: etl, isFetching: etlFetching } = useCatalogEtl(etlLimit);
   const { data: embeddings } = useCatalogEmbeddings();
   const { data: failureSummary } = useEtlFailureSummary(20);
 
@@ -506,6 +510,25 @@ export function CatalogAnalytics() {
                 </tbody>
               </table>
             </div>
+            {etl.jobs.length >= etlLimit && etlLimit < 200 && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEtlLimit((prev) => Math.min(prev + ETL_PAGE_SIZE, 200))}
+                  disabled={etlFetching}
+                >
+                  {etlFetching
+                    ? 'Loading…'
+                    : `Load ${Math.min(ETL_PAGE_SIZE, 200 - etlLimit)} more`}
+                </Button>
+              </div>
+            )}
+            {etlLimit >= 200 && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                Showing maximum 200 jobs. Use the API directly for full history.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
