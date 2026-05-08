@@ -76,8 +76,10 @@ export function TrailMap({ center, trails, selectedOsmId, onTrailClick }: TrailM
     if (!markersRef.current) return;
     const group = markersRef.current;
     group.clearLayers();
+    let cancelled = false;
 
     import('leaflet').then(({ default: L }) => {
+      if (cancelled) return;
       for (const trail of trails) {
         if (!trail.center) continue;
         const isSelected = trail.osmId === selectedOsmId;
@@ -96,6 +98,10 @@ export function TrailMap({ center, trails, selectedOsmId, onTrailClick }: TrailM
         group.addLayer(marker);
       }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [trails, selectedOsmId, onTrailClick]);
 
   return <div ref={containerRef} className="trail-map" style={{ minHeight: 360 }} />;

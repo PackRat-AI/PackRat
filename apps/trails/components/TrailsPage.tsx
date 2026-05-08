@@ -55,7 +55,6 @@ export function TrailsPage() {
       setMapState({ status: 'idle', center });
 
       if (!coords) {
-        setMapState({ status: 'idle', center: DEFAULT_CENTER });
         return;
       }
 

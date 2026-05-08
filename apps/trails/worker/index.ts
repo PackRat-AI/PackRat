@@ -41,15 +41,12 @@ async function proxyToApi(request: Request, env: Env): Promise<Response> {
 
   // Rate limit by IP
   if (env.RATE_LIMITER) {
-    const ip =
-      request.headers.get('CF-Connecting-IP') ??
-      request.headers.get('X-Forwarded-For') ??
-      'unknown';
+    const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
     const { success } = await env.RATE_LIMITER.limit({ key: ip });
     if (!success) {
-      return jsonError(
-        429,
+      return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }),
+        { status: 429, headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) } },
       );
     }
   }

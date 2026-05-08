@@ -22,10 +22,18 @@ export const apiClient = createApiClient({
     onAccessTokenRefreshed: (token) => {
       const refresh = getRefreshToken();
       if (refresh) setTokens(token, refresh);
+      else {
+        clearTokens();
+        clearUser();
+      }
     },
     onRefreshTokenRefreshed: (token) => {
       const access = getAccessToken();
       if (access) setTokens(access, token);
+      else {
+        clearTokens();
+        clearUser();
+      }
     },
     onNeedsReauth: () => {
       clearTokens();

@@ -30,11 +30,13 @@ export function getRefreshToken(): string | null {
 }
 
 export function setTokens(accessToken: string, refreshToken: string): void {
+  if (typeof window === 'undefined') return;
   localStorage.setItem(ACCESS_KEY, accessToken);
   localStorage.setItem(REFRESH_KEY, refreshToken);
 }
 
 export function clearTokens(): void {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
 }
@@ -49,6 +51,7 @@ export const UserInfoSchema = z.object({
 export type UserInfo = z.infer<typeof UserInfoSchema>;
 
 export function setUser(user: UserInfo): void {
+  if (typeof window === 'undefined') return;
   localStorage.setItem('user', JSON.stringify(user));
 }
 
@@ -63,5 +66,6 @@ export function getUser(): UserInfo | null {
 }
 
 export function clearUser(): void {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem('user');
 }
