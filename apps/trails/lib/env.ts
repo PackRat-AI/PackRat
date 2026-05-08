@@ -1,16 +1,7 @@
-/**
- * Trails app environment shim.
- * Parses `process.env` once at module load using Zod and exports a typed result.
- *
- * Adding a new variable: declare it on `trailsEnvSchema`, mark it
- * `.optional()` unless every caller genuinely requires it.
- */
-
 import { z } from 'zod';
 
 const trailsEnvSchema = z.object({
-  // Dev override: point the api client at a local server instead of the CF Worker proxy.
-  NEXT_PUBLIC_PACKRAT_API_ORIGIN: z.string().url().optional(),
+  NEXT_PUBLIC_PACKRAT_API_ORIGIN: z.string().url().default('https://api.packratai.com'),
 });
 
 export type TrailsEnv = z.infer<typeof trailsEnvSchema>;
