@@ -255,11 +255,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       const { limit = 20 } = query;
 
       try {
-        // Pull the errors JSONB array from each invalid log and aggregate in app
+        // Pull the errors JSONB array from recent invalid logs and aggregate in app
         const logs = await db
           .select({ errors: invalidItemLogs.errors })
           .from(invalidItemLogs)
-          .limit(5000); // cap to avoid huge payload; covers recent history
+          .orderBy(desc(invalidItemLogs.createdAt))
+          .limit(5000);
 
         const tally = new Map<string, number>();
         for (const log of logs) {
@@ -301,23 +302,27 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       const { limit = 50 } = query;
 
       try {
-        const logs = await db
+        const rawLogs = await db
           .select({
-            id: invalidItemLogs.id,
             errors: invalidItemLogs.errors,
             rowIndex: invalidItemLogs.rowIndex,
             rawData: invalidItemLogs.rawData,
-            createdAt: invalidItemLogs.createdAt,
           })
           .from(invalidItemLogs)
           .where(eq(invalidItemLogs.jobId, params.jobId))
           .orderBy(invalidItemLogs.rowIndex)
           .limit(limit);
 
+        // Parse errors once per row — reuse for both tally and samples
+        const logs = rawLogs.map((l) => ({
+          ...l,
+          parsedErrors: parseValidationErrors(l.errors) ?? [],
+        }));
+
         // Aggregate error breakdown for this job
         const tally = new Map<string, number>();
         for (const log of logs) {
-          for (const err of parseValidationErrors(log.errors) ?? []) {
+          for (const err of log.parsedErrors) {
             const key = `${err.field}|||${err.reason}`;
             tally.set(key, (tally.get(key) ?? 0) + 1);
           }
@@ -335,7 +340,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           errorBreakdown,
           samples: logs.slice(0, 20).map((l) => ({
             rowIndex: l.rowIndex,
-            errors: parseValidationErrors(l.errors) ?? [],
+            errors: l.parsedErrors,
             rawData: l.rawData,
           })),
           totalShown: logs.length,

@@ -119,7 +119,7 @@ function EtlJobFailuresDialog({ jobId, totalInvalid }: { jobId: string; totalInv
                 <h4 className="text-sm font-medium mb-2">
                   Sample rows{' '}
                   <span className="text-muted-foreground font-normal">
-                    ({data.totalShown} total shown)
+                    (showing {data.samples.length} of {data.totalShown} fetched)
                   </span>
                 </h4>
                 <div className="space-y-2">
@@ -518,13 +518,11 @@ export function CatalogAnalytics() {
                   onClick={() => setEtlLimit((prev) => Math.min(prev + ETL_PAGE_SIZE, 200))}
                   disabled={etlFetching}
                 >
-                  {etlFetching
-                    ? 'Loading…'
-                    : `Load ${Math.min(ETL_PAGE_SIZE, 200 - etlLimit)} more`}
+                  {etlFetching ? 'Loading…' : 'Load more'}
                 </Button>
               </div>
             )}
-            {etlLimit >= 200 && (
+            {etl.jobs.length === 200 && (
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 Showing maximum 200 jobs. Use the API directly for full history.
               </p>
