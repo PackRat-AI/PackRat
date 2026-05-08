@@ -1,75 +1,55 @@
 'use client';
-import { Plus, Search, X } from 'lucide-react';
+import { usePacks } from '@packrat/app';
+import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Skeleton } from 'web-app/components/ui/skeleton';
 import { cn } from 'web-app/lib/utils';
 import { useWeight } from 'web-app/lib/weight-context';
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  brand: string;
-  weight: number;
-  category: string;
-}
-
-const mockInventory: InventoryItem[] = [
-  { id: 'i1', name: 'Solplex 1 Tent', brand: 'Zpacks', weight: 340, category: 'Shelter' },
-  {
-    id: 'i2',
-    name: 'Revelation 20° Quilt',
-    brand: 'Enlightened Equipment',
-    weight: 397,
-    category: 'Sleep System',
-  },
-  {
-    id: 'i3',
-    name: 'NeoAir XLite Max SV',
-    brand: 'Therm-a-Rest',
-    weight: 340,
-    category: 'Sleep System',
-  },
-  { id: 'i4', name: 'Merino T-Shirt', brand: 'Patagonia', weight: 155, category: 'Clothing' },
-  { id: 'i5', name: 'Luna Skycliff 70', brand: 'Zpacks', weight: 728, category: 'Pack' },
-  { id: 'i6', name: 'Steripen Ultra', brand: 'SteriPen', weight: 93, category: 'Water' },
-  { id: 'i7', name: 'Montbell Down Jacket', brand: 'Montbell', weight: 280, category: 'Clothing' },
-  {
-    id: 'i8',
-    name: 'Garmin inReach Mini 2',
-    brand: 'Garmin',
-    weight: 100,
-    category: 'Electronics',
-  },
-];
-
-const CATEGORIES = ['All', 'Shelter', 'Sleep System', 'Clothing', 'Pack', 'Water', 'Electronics'];
 
 export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }) {
   const { fw } = useWeight();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
+
+  const { data: packsRaw, isLoading } = usePacks();
+
+  const allItems = useMemo(() => {
+    if (!packsRaw) return [];
+    const seen = new Set<string>();
+    const items: NonNullable<(typeof packsRaw)[number]['items']>[number][] = [];
+    for (const pack of packsRaw) {
+      for (const item of pack.items ?? []) {
+        if (!seen.has(item.id) && !item.deleted) {
+          seen.add(item.id);
+          items.push(item);
+        }
+      }
+    }
+    return items;
+  }, [packsRaw]);
+
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const item of allItems) {
+      if (item.category) cats.add(item.category);
+    }
+    return ['All', ...Array.from(cats).sort()];
+  }, [allItems]);
 
   const filtered = useMemo(
     () =>
-      inventory.filter((item) => {
+      allItems.filter((item) => {
         const matchCat = selectedCategory === 'All' || item.category === selectedCategory;
-        const matchSearch =
-          !search ||
-          item.name.toLowerCase().includes(search.toLowerCase()) ||
-          item.brand.toLowerCase().includes(search.toLowerCase());
+        const matchSearch = !search || item.name.toLowerCase().includes(search.toLowerCase());
         return matchCat && matchSearch;
       }),
-    [inventory, search, selectedCategory],
+    [allItems, search, selectedCategory],
   );
 
   const totalWeight = useMemo(
-    () => filtered.reduce((sum, item) => sum + item.weight, 0),
+    () => filtered.reduce((sum, item) => sum + item.weight * item.quantity, 0),
     [filtered],
   );
-
-  const removeItem = (id: string) => {
-    setInventory((prev) => prev.filter((item) => item.id !== id));
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -85,7 +65,7 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
           />
         </div>
         <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               type="button"
               key={cat}
@@ -104,48 +84,55 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 space-y-2 pb-24">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-2xl bg-card border border-border p-4 flex items-center justify-between gap-3"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{item.name}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
-                  {item.category}
-                </span>
-                <span className="text-[11px] text-muted-foreground">{item.brand}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="text-right">
-                <p className="text-xs font-semibold text-primary">{fw(item.weight)}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeItem(item.id)}
-                className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="font-semibold text-muted-foreground">No items found</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Add items to your packs to see them here
+            </p>
           </div>
-        ))}
+        ) : (
+          filtered.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-2xl bg-card border border-border p-4 flex items-center justify-between gap-3"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">{item.name}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  {item.category && (
+                    <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
+                      {item.category}
+                    </span>
+                  )}
+                  {item.quantity > 1 && (
+                    <span className="text-[11px] text-muted-foreground">×{item.quantity}</span>
+                  )}
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-semibold text-primary">
+                  {fw(item.weight * item.quantity)}
+                </p>
+                <p className="text-[10px] text-muted-foreground">{fw(item.weight)} each</p>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      <div className="fixed bottom-20 md:bottom-0 right-4 md:right-6 flex flex-col items-end gap-2 pb-4">
-        <div className="rounded-2xl bg-card border border-border px-4 py-2.5 text-right">
-          <p className="text-[10px] text-muted-foreground">Total Weight</p>
-          <p className="text-sm font-bold text-primary">{fw(totalWeight)}</p>
+      {!isLoading && filtered.length > 0 && (
+        <div className="fixed bottom-20 md:bottom-0 right-4 md:right-6 pb-4">
+          <div className="rounded-2xl bg-card border border-border px-4 py-2.5 text-right">
+            <p className="text-[10px] text-muted-foreground">Total Weight</p>
+            <p className="text-sm font-bold text-primary">{fw(totalWeight)}</p>
+          </div>
         </div>
-        <button
-          type="button"
-          className="h-12 w-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-all active:scale-95"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
+      )}
     </div>
   );
 }

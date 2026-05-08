@@ -9,6 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.170",
     "@packrat/api-client": "workspace:*",
     "@packrat/app": "workspace:*",
     "@packrat/env": "workspace:*",
@@ -16,6 +17,7 @@
     "@packrat/web-ui": "workspace:*",
     "@tanstack/react-query": "^5.70.0",
     "@tanstack/react-query-devtools": "^5.70.0",
+    "ai": "catalog:",
     "jotai": "^2.12.2",
     "js-cookie": "^3.0.5",
     "lucide-react": "^1.8.0",
