@@ -1,6 +1,8 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
+import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { ValidationErrorsSchema } from '@packrat/api/types/validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { fromZod } from '@packrat/guards';
 import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -382,4 +384,70 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     { detail: { tags: ['Admin'], summary: 'Reset ETL jobs stuck in running state for >3 hours' } },
+  )
+
+  .post(
+    '/etl/:jobId/retry',
+    async ({ params }) => {
+      const db = createDb();
+      const env = getEnv();
+
+      if (!env.ETL_QUEUE) {
+        return status(400, {
+          error: 'ETL_QUEUE is not configured',
+          code: 'ETL_QUEUE_NOT_CONFIGURED',
+        });
+      }
+
+      try {
+        const job = await db.query.etlJobs.findFirst({
+          where: eq(etlJobs.id, params.jobId),
+        });
+
+        if (!job) {
+          return status(404, { error: 'ETL job not found', code: 'ETL_JOB_NOT_FOUND' });
+        }
+
+        if (job.status !== 'failed') {
+          return status(400, {
+            error: 'Only failed jobs can be retried',
+            code: 'ETL_JOB_NOT_FAILED',
+          });
+        }
+
+        if (!job.source || !job.filename) {
+          return status(400, {
+            error: 'Job missing source or filename — cannot reconstruct R2 key',
+            code: 'ETL_JOB_MISSING_METADATA',
+          });
+        }
+
+        const objectKey = `v2/${job.source}/${job.filename}`;
+        const newJobId = crypto.randomUUID();
+
+        await db.insert(etlJobs).values({
+          id: newJobId,
+          status: 'running',
+          source: job.source,
+          filename: job.filename,
+          scraperRevision: job.scraperRevision,
+          startedAt: new Date(),
+        });
+
+        await queueCatalogETL({
+          queue: env.ETL_QUEUE,
+          objectKeys: [objectKey],
+          jobId: newJobId,
+        });
+
+        return { success: true, newJobId, objectKey };
+      } catch (error) {
+        console.error('ETL retry error:', error);
+        return status(500, { error: 'Failed to retry ETL job', code: 'ETL_RETRY_ERROR' });
+      }
+    },
+    {
+      params: z.object({ jobId: z.string().min(1) }),
+      detail: { tags: ['Admin'], summary: 'Retry a failed ETL job using its original R2 object' },
+    },
   );
