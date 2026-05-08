@@ -298,3 +298,11 @@ export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
 export function getEtlJobFailures(jobId: string, limit = 50): Promise<EtlJobFailures> {
   return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/failures?limit=${limit}`);
 }
+
+export function retryEtlJob(
+  jobId: string,
+): Promise<{ success: boolean; newJobId: string; objectKey: string }> {
+  return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`, {
+    method: 'POST',
+  });
+}

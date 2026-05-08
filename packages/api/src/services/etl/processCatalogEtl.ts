@@ -160,6 +160,11 @@ export async function processCatalogETL({
 
     const totalRows = rowIndex;
 
+    await db
+      .update(etlJobs)
+      .set({ status: 'completed', completedAt: new Date() })
+      .where(eq(etlJobs.id, jobId));
+
     console.log(`🔍 [TRACE] ✅ Done processing ${objectKey} - ${totalRows} rows processed`);
   } catch (error) {
     await db

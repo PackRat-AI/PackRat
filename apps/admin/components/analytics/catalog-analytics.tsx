@@ -36,7 +36,7 @@ import {
   useEtlFailureSummary,
   useEtlJobFailures,
 } from 'admin-app/hooks/use-catalog-analytics';
-import { resetStuckEtlJobs } from 'admin-app/lib/api';
+import { resetStuckEtlJobs, retryEtlJob } from 'admin-app/lib/api';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
@@ -182,6 +182,17 @@ export function CatalogAnalytics() {
     data: resetResult,
   } = useMutation({
     mutationFn: resetStuckEtlJobs,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl.all() });
+    },
+  });
+
+  const {
+    mutate: retryJob,
+    isPending: isRetrying,
+    variables: retryingJobId,
+  } = useMutation({
+    mutationFn: retryEtlJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl.all() });
     },
@@ -460,6 +471,7 @@ export function CatalogAnalytics() {
                     <th className="pb-2 text-left font-medium">Started</th>
                     <th className="pb-2 text-left font-medium">Completed</th>
                     <th className="pb-2 w-8" />
+                    <th className="pb-2 w-8" />
                   </tr>
                 </thead>
                 <tbody>
@@ -504,6 +516,22 @@ export function CatalogAnalytics() {
                       </td>
                       <td className="py-2">
                         <RawObjectDialog label={`job:${job.id}`} data={job} />
+                      </td>
+                      <td className="py-2">
+                        {job.status === 'failed' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            disabled={isRetrying && retryingJobId === job.id}
+                            onClick={() => retryJob(job.id)}
+                          >
+                            <RotateCcw
+                              className={`h-3 w-3 mr-1 ${isRetrying && retryingJobId === job.id ? 'animate-spin' : ''}`}
+                            />
+                            Retry
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
