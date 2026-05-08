@@ -91,6 +91,7 @@ export function MessagesScreen() {
 
   if (activeConvo) {
     const convo = conversations.find((c) => c.id === activeConvo) ?? conversations[0];
+    if (!convo) return null;
     const messages = chats[activeConvo] ?? [];
     return (
       <div className="flex flex-col h-full">

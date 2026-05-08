@@ -118,7 +118,7 @@ export type CatalogItem = {
   productUrl: string;
   sku: string;
   weight: number;
-  weightUnit: WeightUnit;
+  weightUnit: string;
   description: string | null;
   categories: string[] | null;
   images: string[] | null;
@@ -132,8 +132,8 @@ export type CatalogItem = {
   seller: string | null;
   material: string | null;
   reviewCount: number | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 export type CatalogListResponse = {
