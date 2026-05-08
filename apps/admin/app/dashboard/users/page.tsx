@@ -98,9 +98,16 @@ function UserRow({ user }: { user: AdminUser }) {
         </span>
       </TableCell>
       <TableCell>
-        <span className="text-sm text-muted-foreground">
-          {user.createdAt ? formatDate(new Date(user.createdAt)) : '—'}
-        </span>
+        <div className="space-y-0.5">
+          <span className="text-sm text-muted-foreground">
+            {user.createdAt ? formatDate(new Date(user.createdAt)) : '—'}
+          </span>
+          {user.updatedAt && user.updatedAt !== user.createdAt && (
+            <p className="text-xs text-muted-foreground/60">
+              act {formatDate(new Date(user.updatedAt))}
+            </p>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">

@@ -20,6 +20,7 @@ import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 
 const PAGE_SIZE = 50;
 
@@ -57,30 +58,46 @@ function PackRow({ pack }: { pack: AdminPack }) {
   return (
     <TableRow className="hover:bg-muted/20">
       <TableCell>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium">{pack.name}</p>
-            {pack.isAIGenerated && (
-              <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                AI
-              </Badge>
-            )}
-          </div>
-          {pack.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{pack.description}</p>
+        <div className="flex items-start gap-2.5">
+          {pack.image ? (
+            <Image
+              src={pack.image}
+              alt=""
+              width={40}
+              height={40}
+              className="rounded object-cover shrink-0 bg-muted"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded bg-muted shrink-0" />
           )}
-          {pack.tags && pack.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {pack.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
-                  {tag}
-                </span>
-              ))}
-              {pack.tags.length > 3 && (
-                <span className="text-[10px] text-muted-foreground">+{pack.tags.length - 3}</span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-medium">{pack.name}</p>
+              {pack.isAIGenerated && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                  AI
+                </Badge>
               )}
             </div>
-          )}
+            {pack.description && (
+              <p className="text-xs text-muted-foreground line-clamp-1">{pack.description}</p>
+            )}
+            {pack.tags && pack.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {pack.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] text-muted-foreground bg-muted px-1 rounded"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {pack.tags.length > 3 && (
+                  <span className="text-[10px] text-muted-foreground">+{pack.tags.length - 3}</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>
@@ -99,9 +116,16 @@ function PackRow({ pack }: { pack: AdminPack }) {
         </span>
       </TableCell>
       <TableCell>
-        <span className="text-sm text-muted-foreground">
-          {pack.createdAt ? formatDate(new Date(pack.createdAt)) : '—'}
-        </span>
+        <div className="space-y-0.5">
+          <span className="text-sm text-muted-foreground">
+            {pack.createdAt ? formatDate(new Date(pack.createdAt)) : '—'}
+          </span>
+          {pack.updatedAt && pack.updatedAt !== pack.createdAt && (
+            <p className="text-xs text-muted-foreground/60">
+              upd {formatDate(new Date(pack.updatedAt))}
+            </p>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
