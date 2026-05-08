@@ -11,7 +11,7 @@ import {
 import { trailsEnv } from 'trails-app/lib/env';
 
 export const apiClient = createApiClient({
-  baseUrl: trailsEnv.NEXT_PUBLIC_PACKRAT_API_ORIGIN,
+  baseUrl: trailsEnv.NEXT_PUBLIC_API_URL,
   auth: {
     getAccessToken,
     getRefreshToken,
