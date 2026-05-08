@@ -21,6 +21,7 @@ import { type AdminCatalogItem, deleteCatalogItem, getCatalogItems } from 'admin
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
 import { ChevronLeft, ChevronRight, ExternalLink, Star } from 'lucide-react';
+import Image from 'next/image';
 
 const PAGE_SIZE = 50;
 
@@ -62,30 +63,47 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
     },
   });
 
+  const thumbUrl = item.images?.[0] ?? null;
+
   return (
     <TableRow className="hover:bg-muted/20">
       <TableCell>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-medium">{item.name}</p>
-            {item.productUrl && (
-              <a
-                href={item.productUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
+        <div className="flex items-start gap-2.5">
+          {thumbUrl ? (
+            <Image
+              src={thumbUrl}
+              alt=""
+              width={40}
+              height={40}
+              className="rounded object-cover shrink-0 bg-muted"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded bg-muted shrink-0" />
+          )}
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-medium">{item.name}</p>
+              {item.productUrl && (
+                <a
+                  href={item.productUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              {item.brand && <span className="text-xs text-muted-foreground">{item.brand}</span>}
+              {item.model && <span className="text-xs text-muted-foreground/60">{item.model}</span>}
+            </div>
+            {item.description && (
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                {item.description}
+              </p>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            {item.brand && <span className="text-xs text-muted-foreground">{item.brand}</span>}
-            {item.model && <span className="text-xs text-muted-foreground/60">{item.model}</span>}
-          </div>
-          {item.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>
-          )}
         </div>
       </TableCell>
       <TableCell>
