@@ -160,10 +160,18 @@ export async function processCatalogETL({
 
     const totalRows = rowIndex;
 
-    await db
-      .update(etlJobs)
-      .set({ status: 'completed', completedAt: new Date() })
-      .where(eq(etlJobs.id, jobId));
+    // Use raw SQL to avoid neon-http enum serialization issues with Drizzle ORM.
+    // Isolated try-catch so a transient DB hiccup here doesn't cascade to status='failed'.
+    try {
+      await db.execute(
+        sql`UPDATE etl_jobs SET status = 'completed'::etl_job_status, completed_at = NOW() WHERE id = ${jobId}`,
+      );
+    } catch (completionErr) {
+      console.error(
+        `[ETL] Failed to mark job ${jobId} completed — will be reset by stuck-job sweep:`,
+        completionErr,
+      );
+    }
 
     console.log(`🔍 [TRACE] ✅ Done processing ${objectKey} - ${totalRows} rows processed`);
   } catch (error) {
