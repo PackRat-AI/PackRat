@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* PackRat iOS Dark Mode Design System - always dark */
+    --background: #000000;
+    --foreground: #ffffff;
+    --card: #1c1c1e;
+    --card-foreground: #ffffff;
+    --popover: #1c1c1e;
+    --popover-foreground: #ffffff;
+    --primary: #0385ff;
+    --primary-foreground: #ffffff;
+    --secondary: #2c2c2e;
+    --secondary-foreground: #ffffff;
+    --muted: #282828;
+    --muted-foreground: #8e8e93;
+    --accent: #2c2c2e;
+    --accent-foreground: #ffffff;
+    --destructive: #fe4336;
+    --destructive-foreground: #ffffff;
+    --border: #3a3a3c;
+    --input: #2c2c2e;
+    --ring: #0385ff;
+    --surface: #282828;
+    --surface-foreground: #ffffff;
+    --deep-surface: #151518;
+
+    /* Chart colors */
+    --chart-1: #0385ff;
+    --chart-2: #30d158;
+    --chart-3: #ff9f0a;
+    --chart-4: #bf5af2;
+    --chart-5: #fe4336;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar: #1c1c1e;
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: #0385ff;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #2c2c2e;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #3a3a3c;
+    --sidebar-ring: #0385ff;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue",
+      Helvetica, Arial, sans-serif;
+  }
+
+  /* Custom scrollbar for dark mode */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3a3a3c;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #636366;
+  }
+}
+
+/* Animate-in utilities used by modals */
+@layer utilities {
+  .animate-in {
+    animation-duration: 200ms;
+    animation-fill-mode: both;
+  }
+  .slide-in-from-bottom-8 {
+    animation-name: slide-in-from-bottom-8;
+  }
+  .zoom-in-95 {
+    animation-name: zoom-in-95;
+  }
+  .duration-200 {
+    animation-duration: 200ms;
+  }
+}

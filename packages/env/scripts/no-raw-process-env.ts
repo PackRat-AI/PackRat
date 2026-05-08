@@ -36,6 +36,7 @@ const ALLOWED: string[] = [
   'packages/env/src/expo-client.ts',
   'packages/env/src/expo-server.ts',
   'packages/env/src/analytics.ts',
+  'packages/env/src/web.ts',
   '.github/scripts/configure-deps.ts',
   '.github/scripts/env.ts',
   'packages/api/src/utils/env-validation.ts',
