@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useApiClient } from '../../../shared/api';
+import { generateId } from '../../../shared/lib/uuid';
 
 interface AddPackItemInput {
   name: string;
@@ -22,7 +23,7 @@ export function useAddPackItemMutation() {
     mutationFn: async ({ packId, body }: { packId: string; body: AddPackItemInput }) => {
       const { data, error } = await client.packs({ packId }).items.post({
         ...body,
-        id: crypto.randomUUID(),
+        id: generateId(),
         quantity: body.quantity ?? 1,
         consumable: body.consumable ?? false,
         worn: body.worn ?? false,
