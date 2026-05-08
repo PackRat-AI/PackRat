@@ -209,7 +209,7 @@ export function CatalogAnalytics() {
               label: 'Price Range',
               value:
                 overview.minPrice != null && overview.maxPrice != null
-                  ? `$${overview.minPrice.toFixed(0)}–$${overview.maxPrice.toFixed(0)}`
+                  ? `$${overview.minPrice.toFixed(2)}–$${overview.maxPrice.toFixed(2)}`
                   : overview.avgPrice != null
                     ? `avg $${overview.avgPrice.toFixed(2)}`
                     : '—',
