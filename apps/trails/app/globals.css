@@ -1,0 +1,31 @@
+@import "../../../packages/web-ui/src/styles/globals.css";
+@import "leaflet/dist/leaflet.css";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Leaflet map container */
+.trail-map {
+  @apply h-full w-full rounded-lg;
+}
+
+/* Ensure Leaflet z-index plays nicely with modals */
+.leaflet-pane {
+  z-index: 10;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10;
+}
+
+.leaflet-control {
+  z-index: 10;
+}
