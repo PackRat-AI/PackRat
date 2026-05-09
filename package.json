@@ -53,7 +53,8 @@
     "@packrat-ai/nativewindui": "2.0.3",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
-    "expo-sqlite": "~55.0.15"
+    "expo-sqlite": "~55.0.15",
+    "react": "19.2.6"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
@@ -112,8 +113,8 @@
     "hono": "^4.10.7",
     "magic-regexp": "^0.11.0",
     "radash": "^12.1.1",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "semver": "^7.7.4",
     "tailwindcss": "^3.4.17",
     "ts-extras": "^1.0.0",
