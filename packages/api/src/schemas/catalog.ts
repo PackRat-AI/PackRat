@@ -95,6 +95,7 @@ export const CatalogItemSchema = z.object({
     )
     .nullable()
     .optional(),
+  usageCount: z.number().int().min(0).optional(),
   createdAt: z.union([
     z.date(),
     z

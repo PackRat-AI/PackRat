@@ -39,7 +39,7 @@ describe('convertWeight', () => {
   });
 
   it('converts ounces to grams', () => {
-    expect(convertWeight(1, 'oz', 'g')).toBe(28);
+    expect(convertWeight(1, 'oz', 'g')).toBeCloseTo(28.349523125, 8);
   });
 
   it('converts grams to kilograms', () => {
@@ -55,7 +55,7 @@ describe('convertWeight', () => {
   });
 
   it('converts pounds to grams', () => {
-    expect(convertWeight(1, 'lb', 'g')).toBe(454);
+    expect(convertWeight(1, 'lb', 'g')).toBeCloseTo(453.59237, 4);
   });
 });
 

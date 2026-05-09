@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -55,6 +55,7 @@
     "@packrat/config": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/units": "workspace:*",
     "@react-native-ai/apple": "~0.10.0",
     "@react-native-ai/llama": "~0.10.0",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -91,30 +92,30 @@
     "expo-apple-authentication": "~55.0.13",
     "expo-blur": "~55.0.14",
     "expo-clipboard": "~55.0.13",
-    "expo-constants": "~55.0.15",
-    "expo-dev-client": "~55.0.28",
-    "expo-device": "~55.0.15",
-    "expo-file-system": "~55.0.17",
-    "expo-font": "~55.0.6",
-    "expo-glass-effect": "~55.0.10",
+    "expo-constants": "~55.0.16",
+    "expo-dev-client": "~55.0.32",
+    "expo-device": "~55.0.16",
+    "expo-file-system": "~55.0.19",
+    "expo-font": "~55.0.7",
+    "expo-glass-effect": "~55.0.11",
     "expo-haptics": "~55.0.14",
-    "expo-image": "~55.0.9",
-    "expo-image-picker": "~55.0.19",
+    "expo-image": "~55.0.10",
+    "expo-image-picker": "~55.0.20",
     "expo-linear-gradient": "~55.0.13",
-    "expo-linking": "~55.0.14",
+    "expo-linking": "~55.0.15",
     "expo-localization": "~55.0.13",
-    "expo-location": "~55.1.8",
+    "expo-location": "~55.1.9",
     "expo-navigation-bar": "~55.0.12",
     "expo-network": "~55.0.13",
-    "expo-router": "~55.0.13",
+    "expo-router": "~55.0.14",
     "expo-secure-store": "~55.0.13",
     "expo-sqlite": "~55.0.15",
-    "expo-status-bar": "~55.0.5",
+    "expo-status-bar": "~55.0.6",
     "expo-store-review": "~55.0.13",
-    "expo-symbols": "~55.0.7",
-    "expo-system-ui": "~55.0.16",
+    "expo-symbols": "~55.0.8",
+    "expo-system-ui": "~55.0.17",
     "expo-updates": "~55.0.21",
-    "expo-web-browser": "~55.0.14",
+    "expo-web-browser": "~55.0.15",
     "google-auth-library": "^10.1.0",
     "he": "^1.2.0",
     "i": "^0.3.7",
@@ -169,5 +170,13 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "~3.1.4"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react",
+        "react-dom"
+      ]
+    }
   }
 }

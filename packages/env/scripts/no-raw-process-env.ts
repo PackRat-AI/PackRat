@@ -56,6 +56,8 @@ const ALLOWED: string[] = [
   // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)
   // to Bun.spawn via { ...process.env, ... }. App-level vars (IMPORT_MODE etc.) use nodeEnv.
   'packages/osm-import/import.ts',
+  // Trails app env shim — parses process.env once at module load
+  'apps/trails/lib/env.ts',
 ];
 
 // Directories to skip entirely

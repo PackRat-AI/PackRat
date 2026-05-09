@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "private": true,
   "type": "module",
   "exports": {
@@ -45,6 +45,7 @@
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/overpass": "workspace:*",
+    "@packrat/units": "workspace:*",
     "@sinclair/typebox": "^0.34.15",
     "@types/nodemailer": "^6.4.17",
     "ai": "catalog:",

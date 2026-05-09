@@ -3,9 +3,6 @@ import type { App } from '@packrat/api';
 import type {
   ActiveUsersSchema,
   ActivityPointSchema,
-  AdminCatalogItemSchema,
-  AdminPackItemSchema,
-  AdminUserItemSchema,
   BrandRowSchema,
   BreakdownItemSchema,
   CatalogOverviewSchema,
@@ -72,7 +69,17 @@ export async function getStats(): Promise<AdminStats> {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export type AdminUser = Static<typeof AdminUserItemSchema>;
+export interface AdminUser {
+  id: number;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: string | null;
+  emailVerified: boolean | null;
+  avatarUrl: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -122,7 +129,19 @@ export async function restoreUser(id: number): Promise<{ success: boolean }> {
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
-export type AdminPack = Static<typeof AdminPackItemSchema>;
+export interface AdminPack {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  isPublic: boolean | null;
+  isAIGenerated: boolean;
+  tags: string[] | null;
+  image: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  userEmail: string | null;
+}
 
 export async function getPacks({
   limit = 100,
@@ -150,7 +169,32 @@ export async function deletePack(id: string): Promise<{ success: boolean }> {
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
 
-export type AdminCatalogItem = Static<typeof AdminCatalogItemSchema>;
+export interface AdminCatalogItem {
+  id: number;
+  name: string;
+  description: string | null;
+  categories: string[] | null;
+  brand: string | null;
+  model: string | null;
+  sku: string | null;
+  price: number | null;
+  currency: string | null;
+  weight: number | null;
+  weightUnit: string;
+  availability: string | null;
+  ratingValue: number | null;
+  reviewCount: number | null;
+  color: string | null;
+  size: string | null;
+  material: string | null;
+  seller: string | null;
+  productUrl: string | null;
+  images: string[] | null;
+  variants: Array<{ attribute: string; values: string[] }> | null;
+  techs: Record<string, string> | null;
+  links: Array<{ title: string; url: string }> | null;
+  createdAt: string | null;
+}
 
 export interface UpdateCatalogItemInput {
   name?: string;
@@ -331,4 +375,42 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
   const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
   if (error) throwOnError(error);
   return unwrap(data, 'deleteTrailCondition');
+}
+
+export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {
+  return adminFetch('/analytics/catalog/etl/reset-stuck', { method: 'POST' });
+}
+
+export type EtlErrorRow = { field: string; reason: string; count: number };
+
+export type EtlFailureSummary = {
+  topErrors: EtlErrorRow[];
+  totalInvalidItems: number;
+};
+
+export type EtlJobFailures = {
+  jobId: string;
+  errorBreakdown: EtlErrorRow[];
+  samples: Array<{
+    rowIndex: number;
+    errors: Array<{ field: string; reason: string; value?: unknown }>;
+    rawData: unknown;
+  }>;
+  totalShown: number;
+};
+
+export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
+  return adminFetch(`/analytics/catalog/etl/failure-summary?limit=${limit}`);
+}
+
+export function getEtlJobFailures(jobId: string, limit = 50): Promise<EtlJobFailures> {
+  return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/failures?limit=${limit}`);
+}
+
+export function retryEtlJob(
+  jobId: string,
+): Promise<{ success: boolean; newJobId: string; objectKey: string }> {
+  return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`, {
+    method: 'POST',
+  });
 }

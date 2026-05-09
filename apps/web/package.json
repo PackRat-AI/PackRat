@@ -4,6 +4,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3001",
+    "doctor:react": "bunx react-doctor",
     "start": "next start",
     "type-check": "tsc --noEmit"
   },

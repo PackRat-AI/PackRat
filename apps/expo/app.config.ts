@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.24',
+      version: '2.0.25',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -47,6 +47,8 @@ export default (): ExpoConfig =>
       plugins: [
         'expo-router',
         'expo-sqlite',
+        'expo-font',
+        'expo-image',
         [
           '@react-native-google-signin/google-signin',
           {

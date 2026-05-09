@@ -88,12 +88,17 @@ export function useAuthActions() {
 
       if (!idToken) throw new Error(t('auth.noIdTokenFromGoogle'));
 
-      const { data, error } = await authClient.signIn.social({
-        provider: 'google',
-        idToken: { token: idToken },
-      });
-      if (error) throw new Error(error.message ?? 'Google sign in failed');
-      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+      const { data, error } = await apiClient.auth.google.post({ idToken });
+      if (error || !data) {
+        throw new Error(extractAuthError(error?.value, t('auth.failedToSignInWithGoogle')));
+      }
+
+      await setToken(data.accessToken);
+      await setRefreshToken(data.refreshToken);
+      userStore.set(UserSchema.parse(data.user));
+
+      setNeedsReauth(false);
+      redirect(redirectTo);
     } catch (error) {
       setIsLoading(false);
 
