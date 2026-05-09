@@ -4,7 +4,6 @@ import {
   AdminErrorResponses,
   BrandRowSchema,
   CatalogOverviewSchema,
-  EmbeddingStatsSchema,
   EtlResponseSchema,
   PriceBucketSchema,
 } from '@packrat/api/schemas/admin';
@@ -257,8 +256,5 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    {
-      response: { 200: EmbeddingStatsSchema, ...AdminErrorResponses },
-      detail: { tags: ['Admin'], summary: 'Embedding coverage' },
-    },
+    { detail: { tags: ['Admin'], summary: 'Embedding coverage' } },
   );

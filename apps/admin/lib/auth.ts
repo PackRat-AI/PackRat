@@ -1,19 +1,20 @@
+import { safeSessionStorage } from '@packrat/app/browser';
+
 const TOKEN_KEY = 'packrat_admin_token';
 
 /** Returns the stored admin JWT, or null if not logged in. */
 export function getStoredToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem(TOKEN_KEY);
+  return safeSessionStorage.getItem(TOKEN_KEY);
 }
 
 /** Persist a short-lived admin JWT for the session. */
 export function storeToken(token: string): void {
-  sessionStorage.setItem(TOKEN_KEY, token);
+  safeSessionStorage.setItem(TOKEN_KEY, token);
 }
 
 /** Remove the token (logout). */
 export function clearToken(): void {
-  if (typeof window !== 'undefined') sessionStorage.removeItem(TOKEN_KEY);
+  safeSessionStorage.removeItem(TOKEN_KEY);
 }
 
 /** Returns an Authorization header object, or empty object if not logged in. */

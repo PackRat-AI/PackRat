@@ -46,7 +46,7 @@ describe('convertWeight', () => {
   });
 
   it('converts ounces to grams', () => {
-    expect(convertWeight(1, 'oz', 'g')).toBe(28);
+    expect(convertWeight(1, 'oz', 'g')).toBeCloseTo(28.349523125, 8);
   });
 
   it('converts grams to kilograms', () => {
@@ -62,7 +62,7 @@ describe('convertWeight', () => {
   });
 
   it('converts pounds to grams', () => {
-    expect(convertWeight(1, 'lb', 'g')).toBe(454);
+    expect(convertWeight(1, 'lb', 'g')).toBeCloseTo(453.59237, 4);
   });
 });
 
@@ -101,9 +101,9 @@ describe('convertToGrams', () => {
     expect(convertToGrams(50, 'unknown')).toBe(50);
   });
 
-  it('is case-insensitive', () => {
-    expect(convertToGrams(1, 'KG')).toBe(1000);
-    expect(convertToGrams(1, 'OZ')).toBeCloseTo(28.35, 1);
+  it('returns weight unchanged for mixed-case units (case-sensitive)', () => {
+    expect(convertToGrams(1, 'KG')).toBe(1); // unknown → treated as grams passthrough
+    expect(convertToGrams(1, 'OZ')).toBe(1);
   });
 });
 

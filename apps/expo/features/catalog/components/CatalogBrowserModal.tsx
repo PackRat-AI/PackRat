@@ -164,8 +164,7 @@ export function CatalogBrowserModal({
   const { recentItems } = useRecentlyUsedCatalogItems();
   const { data: popularData, isLoading: isPopularLoading } = usePopularCatalogItems(8);
 
-  // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
-  const popularItems = (popularData?.items ?? []) as unknown as CatalogItem[];
+  const popularItems = popularData?.items ?? [];
 
   const {
     data: paginatedData,
@@ -188,10 +187,9 @@ export function CatalogBrowserModal({
     error: searchError,
   } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
-  // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
-  const items = (isSearching
+  const items = isSearching
     ? searchResult?.items || []
-    : paginatedData?.pages.flatMap((page) => page.items) || []) as unknown as CatalogItem[]; // safe-cast: treaty response shape matches CatalogItem[]
+    : paginatedData?.pages.flatMap((page) => page.items) || [];
   const isLoading = isSearching ? isSearchLoading : isPaginatedLoading;
   const error = isSearching ? searchError : paginatedError;
 

@@ -20,7 +20,7 @@ export function usePlatformActivity(period: 'day' | 'week' | 'month') {
 
 export function usePlatformBreakdown() {
   return useQuery({
-    queryKey: queryKeys.platform.breakdown,
+    queryKey: queryKeys.platform.breakdown(),
     queryFn: () => getPlatformBreakdown(),
   });
 }

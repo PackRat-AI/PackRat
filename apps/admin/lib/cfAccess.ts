@@ -60,7 +60,7 @@ export async function isBehindCFAccess(): Promise<boolean> {
  */
 export function useCFAccessIdentity() {
   return useQuery({
-    queryKey: queryKeys.cfAccessIdentity,
+    queryKey: queryKeys.cfAccessIdentity(),
     queryFn: getCFAccessIdentity,
     staleTime: Infinity,
     gcTime: Infinity,

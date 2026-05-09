@@ -15,7 +15,7 @@ import {
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
-import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -216,16 +216,13 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-
         const searchFilter = search
           ? or(
               ilike(users.email, `%${search}%`),
-              sql`${users.firstName} ilike ${`%${search}%`}`,
-              sql`${users.lastName} ilike ${`%${search}%`}`,
+              ilike(users.firstName, `%${search}%`),
+              ilike(users.lastName, `%${search}%`),
             )
           : undefined;
-
-        const whereClause = searchFilter;
 
         const [usersList, [totalRow]] = await Promise.all([
           db
@@ -236,20 +233,23 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               lastName: users.lastName,
               role: users.role,
               emailVerified: users.emailVerified,
+              avatarUrl: users.avatarUrl,
               createdAt: users.createdAt,
+              updatedAt: users.updatedAt,
             })
             .from(users)
-            .where(whereClause)
+            .where(searchFilter)
             .orderBy(desc(users.createdAt))
             .limit(limit)
             .offset(offset),
-          db.select({ count: count() }).from(users).where(whereClause),
+          db.select({ count: count() }).from(users).where(searchFilter),
         ]);
 
         return {
           data: usersList.map((u) => ({
             ...u,
             createdAt: u.createdAt?.toISOString() ?? null,
+            updatedAt: u.updatedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -281,21 +281,15 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const includeDeleted = query.includeDeleted === 'true';
-
-        const deletedFilter = includeDeleted ? undefined : eq(packs.deleted, false);
         const searchFilter = search
           ? or(
               ilike(packs.name, `%${search}%`),
               ilike(packs.description, `%${search}%`),
               ilike(packs.category, `%${search}%`),
-              sql`${users.email} ilike ${`%${search}%`}`,
+              ilike(users.email, `%${search}%`),
             )
           : undefined;
-        const whereClause =
-          deletedFilter && searchFilter
-            ? and(deletedFilter, searchFilter)
-            : (deletedFilter ?? searchFilter);
+        const whereClause = and(eq(packs.deleted, false), searchFilter);
 
         const [packsList, [totalRow]] = await Promise.all([
           db
@@ -305,8 +299,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               description: packs.description,
               category: packs.category,
               isPublic: packs.isPublic,
-              deleted: packs.deleted,
+              isAIGenerated: packs.isAIGenerated,
+              tags: packs.tags,
+              image: packs.image,
               createdAt: packs.createdAt,
+              updatedAt: packs.updatedAt,
               userEmail: users.email,
             })
             .from(packs)
@@ -326,6 +323,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           data: packsList.map((p) => ({
             ...p,
             createdAt: p.createdAt?.toISOString() ?? null,
+            updatedAt: p.updatedAt?.toISOString() ?? null,
           })),
           total: totalRow?.count ?? 0,
           limit,
@@ -357,7 +355,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 25);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-
         const whereClause = search
           ? or(
               ilike(catalogItems.name, `%${search}%`),
@@ -371,11 +368,27 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .select({
               id: catalogItems.id,
               name: catalogItems.name,
+              description: catalogItems.description,
               categories: catalogItems.categories,
               brand: catalogItems.brand,
+              model: catalogItems.model,
+              sku: catalogItems.sku,
               price: catalogItems.price,
+              currency: catalogItems.currency,
               weight: catalogItems.weight,
               weightUnit: catalogItems.weightUnit,
+              availability: catalogItems.availability,
+              ratingValue: catalogItems.ratingValue,
+              reviewCount: catalogItems.reviewCount,
+              color: catalogItems.color,
+              size: catalogItems.size,
+              material: catalogItems.material,
+              seller: catalogItems.seller,
+              productUrl: catalogItems.productUrl,
+              images: catalogItems.images,
+              variants: catalogItems.variants,
+              techs: catalogItems.techs,
+              links: catalogItems.links,
               createdAt: catalogItems.createdAt,
             })
             .from(catalogItems)

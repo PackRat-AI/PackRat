@@ -3,7 +3,7 @@ import { QueryProvider } from 'admin-app/components/query-provider';
 import { ThemeProvider } from 'admin-app/components/theme-provider';
 import type { Metadata } from 'next';
 import { Mona_Sans as FontSans } from 'next/font/google';
-import Script from 'next/script';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type React from 'react';
 import './globals.css';
 
@@ -34,17 +34,18 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       </head>
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </QueryProvider>
-        <Script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" strategy="afterInteractive" />
+        <NuqsAdapter>
+          <QueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </QueryProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );

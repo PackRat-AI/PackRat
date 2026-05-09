@@ -11,6 +11,7 @@ import { type CategorySummary, computeCategorySummaries } from 'expo-app/feature
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
@@ -155,7 +156,10 @@ export default function CurrentPackScreen() {
             </Text>
             <Text variant="subhead" className="mt-1 text-muted-foreground">
               {t('packs.lastUpdated', {
-                time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+                time: getRelativeTime(
+                  pack.localUpdatedAt ?? pack.updatedAt,
+                  t as TranslationFunction,
+                ),
               })}
             </Text>
           </View>

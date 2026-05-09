@@ -31,23 +31,9 @@ export class CatalogItemValidator {
       });
     }
 
-    if (!item.weight || !isNumber(item.weight) || item.weight <= 0) {
-      errors.push({
-        field: 'weight',
-        reason: 'Weight is required and must be a positive number',
-        value: item.weight,
-      });
-    }
-
-    if (!item.weightUnit || !isString(item.weightUnit) || item.weightUnit.trim().length === 0) {
-      errors.push({
-        field: 'weightUnit',
-        reason: 'Weight unit is required and must be a non-empty string',
-        value: item.weightUnit,
-      });
-    }
-
     // Additional validations
+    // Note: weight and weightUnit are intentionally not required — clothing/footwear brands often
+    // omit weight data. Items without weight are ingested but won't appear in weight comparisons.
     if (item.productUrl && !this.isValidUrl(item.productUrl)) {
       errors.push({
         field: 'productUrl',

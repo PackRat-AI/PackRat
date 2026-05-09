@@ -4,6 +4,7 @@ import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Image, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,7 +35,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
               {pack.totalWeight ?? 0} g
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt, t)}
+              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt, t as TranslationFunction)}
             </Text>
           </View>
         </View>
@@ -45,7 +46,10 @@ function RecentPackCard({ pack }: { pack: Pack }) {
           </View>
           <Text variant="caption1" className="text-muted-foreground">
             {t('packs.lastUpdated', {
-              time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+              time: getRelativeTime(
+                pack.localUpdatedAt ?? pack.updatedAt,
+                t as TranslationFunction,
+              ),
             })}
           </Text>
         </View>

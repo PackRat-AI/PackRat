@@ -46,9 +46,11 @@
     "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts",
     "test:mcp": "bun run --cwd packages/mcp test",
-    "web": "bun run --cwd apps/web dev"
+    "web": "bun run --cwd apps/web dev",
+    "trails": "bun run --cwd apps/trails dev"
   },
   "overrides": {
+    "@packrat-ai/nativewindui": "2.0.3",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-sqlite": "~55.0.15"
