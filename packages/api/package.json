@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "private": true,
   "type": "module",
   "exports": {
@@ -18,7 +18,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
-    "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "bun run ./migrate.ts",
     "db:seed": "bun run ./src/db/seed.ts",
     "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
@@ -70,12 +70,15 @@
     "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
+    "@better-auth/drizzle-adapter": "^1.6.9",
     "@cloudflare/vitest-pool-workers": "0.8.71",
     "@cloudflare/workers-types": "^4.20250405.0",
     "@types/bun": "latest",
     "@types/pg": "^8.11.15",
     "@types/ws": "^8.5.14",
     "@vitest/coverage-v8": "~3.1.4",
+    "better-auth": "^1.6.9",
+    "better-auth-cloudflare": "^0.3.0",
     "concurrently": "^8.2.2",
     "drizzle-orm": "^0.45.2",
     "typed-htmx": "^0.3.1",

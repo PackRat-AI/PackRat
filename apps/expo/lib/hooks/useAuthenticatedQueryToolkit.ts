@@ -1,9 +1,8 @@
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAtomValue } from 'jotai';
+import { authClient } from 'expo-app/lib/auth-client';
 
 export const useAuthenticatedQueryToolkit = () => {
-  const accessToken = useAtomValue(tokenAtom);
-  const isQueryEnabledWithAccessToken = Boolean(accessToken);
+  const { data: session } = authClient.useSession();
+  const isQueryEnabledWithAccessToken = Boolean(session?.session?.token);
 
   return {
     isQueryEnabledWithAccessToken,

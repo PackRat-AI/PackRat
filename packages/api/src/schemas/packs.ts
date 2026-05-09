@@ -1,6 +1,11 @@
 import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types';
 import { z } from 'zod';
 
+const datetimeString = z.preprocess(
+  (v) => (v instanceof Date ? v.toISOString() : v),
+  z.string().datetime(),
+);
+
 export const PackItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -15,17 +20,17 @@ export const PackItemSchema = z.object({
   notes: z.string().nullable(),
   packId: z.string(),
   catalogItemId: z.number().int().nullable(),
-  userId: z.number().int(),
+  userId: z.string(),
   deleted: z.boolean(),
   isAIGenerated: z.boolean(),
   templateItemId: z.string().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: datetimeString,
+  updatedAt: datetimeString,
 });
 
 export const PackSchema = z.object({
   id: z.string(),
-  userId: z.number(),
+  userId: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   category: z.enum(PACK_CATEGORIES).nullable(),
@@ -35,10 +40,10 @@ export const PackSchema = z.object({
   templateId: z.string().nullable().optional(),
   deleted: z.boolean(),
   isAIGenerated: z.boolean(),
-  localCreatedAt: z.string().datetime().optional(),
-  localUpdatedAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  localCreatedAt: datetimeString.optional(),
+  localUpdatedAt: datetimeString.optional(),
+  createdAt: datetimeString,
+  updatedAt: datetimeString,
   items: z.array(PackItemSchema).optional(),
 });
 
@@ -152,11 +157,11 @@ export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({
 export const PackWeightHistoryResponseSchema = z.object({
   id: z.string(),
   packId: z.string(),
-  userId: z.number(),
+  userId: z.string(),
   weight: z.number(),
-  localCreatedAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  localCreatedAt: datetimeString.optional(),
+  createdAt: datetimeString,
+  updatedAt: datetimeString,
 });
 
 export const CreatePackWeightHistoryBodySchema = z.object({

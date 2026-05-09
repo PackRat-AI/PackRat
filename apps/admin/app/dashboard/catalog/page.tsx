@@ -179,7 +179,7 @@ export default function CatalogPage() {
   const offset = page * PAGE_SIZE;
 
   const {
-    data: items = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
@@ -187,6 +187,8 @@ export default function CatalogPage() {
     queryFn: () => getCatalogItems({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
 
+  const items = result?.data ?? [];
+  const total = result?.total ?? 0;
   const hasPrev = page > 0;
   const hasNext = items.length === PAGE_SIZE;
 
@@ -250,7 +252,7 @@ export default function CatalogPage() {
               <p className="text-xs text-muted-foreground">
                 {items.length === 0
                   ? `No items${q ? ` matching "${q}"` : ''}`
-                  : `${(offset + 1).toLocaleString()}–${(offset + items.length).toLocaleString()} items${q ? ` matching "${q}"` : ''}`}
+                  : `${(offset + 1).toLocaleString()}–${(offset + items.length).toLocaleString()} of ${total.toLocaleString()} items${q ? ` matching "${q}"` : ''}`}
               </p>
               <div className="flex items-center gap-2">
                 <Button

@@ -5,7 +5,7 @@ import { featureFlags } from 'expo-app/config';
 import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
@@ -61,7 +61,7 @@ export default function AuthIndexScreen() {
           <View className="items-center">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
           </View>
@@ -127,7 +127,7 @@ export default function AuthIndexScreen() {
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
-              testID={TestIds.SignInEmailButton}
+              testID={testIds.auth.signInEmailBtn}
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >

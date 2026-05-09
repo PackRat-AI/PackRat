@@ -19,6 +19,7 @@ import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
+import { cn } from 'admin-app/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 
@@ -110,7 +111,10 @@ function PackRow({ pack }: { pack: AdminPack }) {
       </TableCell>
       <TableCell>
         <span
-          className={`text-xs font-medium ${pack.isPublic ? 'text-green-500' : 'text-muted-foreground'}`}
+          className={cn(
+            'text-xs font-medium',
+            pack.isPublic ? 'text-green-500' : 'text-muted-foreground',
+          )}
         >
           {pack.isPublic ? 'Public' : 'Private'}
         </span>
@@ -148,7 +152,7 @@ export default function PacksPage() {
   const offset = page * PAGE_SIZE;
 
   const {
-    data: packs = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
@@ -156,6 +160,8 @@ export default function PacksPage() {
     queryFn: () => getPacks({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
 
+  const packs = result?.data ?? [];
+  const total = result?.total ?? 0;
   const hasPrev = page > 0;
   const hasNext = packs.length === PAGE_SIZE;
 
@@ -216,7 +222,7 @@ export default function PacksPage() {
               <p className="text-xs text-muted-foreground">
                 {packs.length === 0
                   ? `No packs${q ? ` matching "${q}"` : ''}`
-                  : `${(offset + 1).toLocaleString()}–${(offset + packs.length).toLocaleString()} packs${q ? ` matching "${q}"` : ''}`}
+                  : `${(offset + 1).toLocaleString()}–${(offset + packs.length).toLocaleString()} of ${total.toLocaleString()} packs${q ? ` matching "${q}"` : ''}`}
               </p>
               <div className="flex items-center gap-2">
                 <Button

@@ -1,14 +1,15 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
-import { queueCatalogETL } from '@packrat/api/services/etl/queue';
-import { ValidationErrorsSchema } from '@packrat/api/types/validation';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { fromZod } from '@packrat/guards';
-import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { catalogItems, etlJobs } from '@packrat/api/db/schema';
+import {
+  AdminErrorResponses,
+  BrandRowSchema,
+  CatalogOverviewSchema,
+  EtlResponseSchema,
+  PriceBucketSchema,
+} from '@packrat/api/schemas/admin';
+import { and, avg, count, desc, gt, isNotNull, max, min, sql } from 'drizzle-orm';
+import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
-
-const parseValidationErrors = fromZod(ValidationErrorsSchema);
 
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
   .get(
@@ -81,7 +82,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Catalog data lake overview' } },
+    {
+      response: { 200: CatalogOverviewSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Catalog data lake overview' },
+    },
   )
 
   .get(
@@ -123,6 +127,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(100).optional().default(25),
       }),
+      response: { 200: t.Array(BrandRowSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top gear brands' },
     },
   )
@@ -158,7 +163,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Price distribution' } },
+    {
+      response: { 200: t.Array(PriceBucketSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Price distribution' },
+    },
   )
 
   .get(
@@ -215,6 +223,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(200).optional().default(50),
       }),
+      response: { 200: EtlResponseSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'ETL pipeline history' },
     },
   )
@@ -248,206 +257,4 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     { detail: { tags: ['Admin'], summary: 'Embedding coverage' } },
-  )
-
-  .get(
-    '/etl/failure-summary',
-    async ({ query }) => {
-      const db = createDb();
-      const { limit = 20 } = query;
-
-      try {
-        // Pull the errors JSONB array from recent invalid logs and aggregate in app
-        const logs = await db
-          .select({ errors: invalidItemLogs.errors })
-          .from(invalidItemLogs)
-          .orderBy(desc(invalidItemLogs.createdAt))
-          .limit(5000);
-
-        const tally = new Map<string, number>();
-        for (const log of logs) {
-          for (const err of parseValidationErrors(log.errors) ?? []) {
-            const key = `${err.field}|||${err.reason}`;
-            tally.set(key, (tally.get(key) ?? 0) + 1);
-          }
-        }
-
-        const sorted = [...tally.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, limit)
-          .map(([key, count]) => {
-            const sep = key.indexOf('|||');
-            return { field: key.slice(0, sep), reason: key.slice(sep + 3), count };
-          });
-
-        return { topErrors: sorted, totalInvalidItems: logs.length };
-      } catch (error) {
-        console.error('ETL failure summary error:', error);
-        return status(500, {
-          error: 'Failed to fetch failure summary',
-          code: 'ETL_FAILURE_SUMMARY_ERROR',
-        });
-      }
-    },
-    {
-      query: z.object({
-        limit: z.coerce.number().int().min(1).max(100).optional().default(20),
-      }),
-      detail: { tags: ['Admin'], summary: 'Top validation error patterns across all ETL jobs' },
-    },
-  )
-
-  .get(
-    '/etl/:jobId/failures',
-    async ({ params, query }) => {
-      const db = createDb();
-      const { limit = 50 } = query;
-
-      try {
-        const rawLogs = await db
-          .select({
-            errors: invalidItemLogs.errors,
-            rowIndex: invalidItemLogs.rowIndex,
-            rawData: invalidItemLogs.rawData,
-          })
-          .from(invalidItemLogs)
-          .where(eq(invalidItemLogs.jobId, params.jobId))
-          .orderBy(invalidItemLogs.rowIndex)
-          .limit(limit);
-
-        // Parse errors once per row — reuse for both tally and samples
-        const logs = rawLogs.map((l) => ({
-          ...l,
-          parsedErrors: parseValidationErrors(l.errors) ?? [],
-        }));
-
-        // Aggregate error breakdown for this job
-        const tally = new Map<string, number>();
-        for (const log of logs) {
-          for (const err of log.parsedErrors) {
-            const key = `${err.field}|||${err.reason}`;
-            tally.set(key, (tally.get(key) ?? 0) + 1);
-          }
-        }
-
-        const errorBreakdown = [...tally.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .map(([key, count]) => {
-            const sep = key.indexOf('|||');
-            return { field: key.slice(0, sep), reason: key.slice(sep + 3), count };
-          });
-
-        return {
-          jobId: params.jobId,
-          errorBreakdown,
-          samples: logs.slice(0, 20).map((l) => ({
-            rowIndex: l.rowIndex,
-            errors: l.parsedErrors,
-            rawData: l.rawData,
-          })),
-          totalShown: logs.length,
-        };
-      } catch (error) {
-        console.error('ETL job failures error:', error);
-        return status(500, {
-          error: 'Failed to fetch job failures',
-          code: 'ETL_JOB_FAILURES_ERROR',
-        });
-      }
-    },
-    {
-      params: z.object({ jobId: z.string().min(1) }),
-      query: z.object({
-        limit: z.coerce.number().int().min(1).max(200).optional().default(50),
-      }),
-      detail: { tags: ['Admin'], summary: 'Validation failure breakdown for a specific ETL job' },
-    },
-  )
-
-  .post(
-    '/etl/reset-stuck',
-    async () => {
-      const db = createDb();
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
-
-      try {
-        const reset = await db
-          .update(etlJobs)
-          .set({ status: 'failed', completedAt: new Date() })
-          .where(and(eq(etlJobs.status, 'running'), lt(etlJobs.startedAt, threeHoursAgo)))
-          .returning();
-
-        return { reset: reset.length, ids: reset.map((r) => r.id) };
-      } catch (error) {
-        console.error('ETL reset-stuck error:', error);
-        return status(500, { error: 'Failed to reset stuck jobs', code: 'ETL_RESET_STUCK_ERROR' });
-      }
-    },
-    { detail: { tags: ['Admin'], summary: 'Reset ETL jobs stuck in running state for >3 hours' } },
-  )
-
-  .post(
-    '/etl/:jobId/retry',
-    async ({ params }) => {
-      const db = createDb();
-      const env = getEnv();
-
-      if (!env.ETL_QUEUE) {
-        return status(400, {
-          error: 'ETL_QUEUE is not configured',
-          code: 'ETL_QUEUE_NOT_CONFIGURED',
-        });
-      }
-
-      try {
-        const job = await db.query.etlJobs.findFirst({
-          where: eq(etlJobs.id, params.jobId),
-        });
-
-        if (!job) {
-          return status(404, { error: 'ETL job not found', code: 'ETL_JOB_NOT_FOUND' });
-        }
-
-        if (job.status !== 'failed') {
-          return status(400, {
-            error: 'Only failed jobs can be retried',
-            code: 'ETL_JOB_NOT_FAILED',
-          });
-        }
-
-        if (!job.source || !job.filename) {
-          return status(400, {
-            error: 'Job missing source or filename — cannot reconstruct R2 key',
-            code: 'ETL_JOB_MISSING_METADATA',
-          });
-        }
-
-        const objectKey = `v2/${job.source}/${job.filename}`;
-        const newJobId = crypto.randomUUID();
-
-        await db.insert(etlJobs).values({
-          id: newJobId,
-          status: 'running',
-          source: job.source,
-          filename: job.filename,
-          scraperRevision: job.scraperRevision,
-          startedAt: new Date(),
-        });
-
-        await queueCatalogETL({
-          queue: env.ETL_QUEUE,
-          objectKeys: [objectKey],
-          jobId: newJobId,
-        });
-
-        return { success: true, newJobId, objectKey };
-      } catch (error) {
-        console.error('ETL retry error:', error);
-        return status(500, { error: 'Failed to retry ETL job', code: 'ETL_RETRY_ERROR' });
-      }
-    },
-    {
-      params: z.object({ jobId: z.string().min(1) }),
-      detail: { tags: ['Admin'], summary: 'Retry a failed ETL job using its original R2 object' },
-    },
   );

@@ -21,9 +21,9 @@ const ADMIN_JWT_ISSUER = 'packrat-api';
 const ADMIN_JWT_AUDIENCE = 'packrat-admin';
 
 function secretKey(): Uint8Array {
-  // Reads the JWT_SECRET from the already-mocked getEnv in setup.ts.
+  // Reads the BETTER_AUTH_SECRET from the already-mocked getEnv in setup.ts.
   const env = vi.mocked(getEnv)();
-  return new TextEncoder().encode(env.JWT_SECRET ?? 'secret');
+  return new TextEncoder().encode(env.BETTER_AUTH_SECRET ?? 'secret');
 }
 
 /** Issue a JWT via the /token endpoint using Basic auth. */

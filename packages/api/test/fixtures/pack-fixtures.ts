@@ -1,8 +1,8 @@
 import type { InferInsertModel } from 'drizzle-orm';
 import type { packItems, packs } from '../../src/db/schema';
 
-type PackOverrides = Partial<InferInsertModel<typeof packs>> & { userId: number };
-type PackItemOverrides = Partial<InferInsertModel<typeof packItems>> & { userId: number };
+type PackOverrides = Partial<InferInsertModel<typeof packs>> & { userId: string };
+type PackItemOverrides = Partial<InferInsertModel<typeof packItems>> & { userId: string };
 
 /**
  * Test fixture for creating a minimal valid pack.

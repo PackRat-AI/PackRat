@@ -7,13 +7,13 @@ import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
 import { clientEnvs } from '@packrat/env/expo-client';
-import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
+import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
@@ -40,6 +40,13 @@ function RootLayout() {
   appAlert = useRef<AlertMethods>(null);
 
   const { colorScheme, isDarkColorScheme } = useColorScheme();
+
+  // Sync NativeWind dark mode class to <html> on web (darkMode: 'class' requires it)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', isDarkColorScheme);
+    }
+  }, [isDarkColorScheme]);
 
   return (
     <Providers>

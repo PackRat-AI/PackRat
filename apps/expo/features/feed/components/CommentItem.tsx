@@ -9,7 +9,7 @@ interface CommentItemProps {
   comment: Comment;
   onLike: (commentId: number) => void;
   onDelete?: (commentId: number) => void;
-  currentUserId?: number;
+  currentUserId?: string;
 }
 
 export const CommentItem: React.FC<CommentItemProps> = ({

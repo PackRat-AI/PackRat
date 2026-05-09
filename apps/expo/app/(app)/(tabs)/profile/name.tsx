@@ -3,6 +3,7 @@ import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Alert, Platform, View } from 'react-native';
@@ -84,6 +85,7 @@ export default function NameScreen() {
             <FormItem>
               <TextField
                 textContentType="givenName"
+                testID={testIds.profile.firstNameInput}
                 autoFocus
                 autoComplete="name-given"
                 label={Platform.select({ ios: undefined, default: t('profile.firstNameLabel') })}
@@ -100,6 +102,7 @@ export default function NameScreen() {
             <FormItem>
               <TextField
                 textContentType="familyName"
+                testID={testIds.profile.lastNameInput}
                 autoComplete="name-family"
                 label={Platform.select({ ios: undefined, default: t('profile.lastNameLabel') })}
                 leftView={Platform.select({
@@ -117,6 +120,7 @@ export default function NameScreen() {
             <View className="items-end">
               <Button
                 // className={cn('px-6', !canSave && 'bg-muted')}
+                testID={testIds.profile.saveBtn}
                 disabled={!canSave || isLoading}
                 onPress={handleSave}
               >

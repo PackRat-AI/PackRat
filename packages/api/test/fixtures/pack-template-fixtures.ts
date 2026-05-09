@@ -1,7 +1,7 @@
 import type { InferInsertModel } from 'drizzle-orm';
 import type { packTemplateItems, packTemplates } from '../../src/db/schema';
 
-type PackTemplateOverrides = Partial<InferInsertModel<typeof packTemplates>> & { userId: number };
+type PackTemplateOverrides = Partial<InferInsertModel<typeof packTemplates>> & { userId: string };
 
 /**
  * Test fixture for creating a minimal valid pack template.
@@ -31,7 +31,7 @@ export const createTestPackTemplate = (
  */
 
 type PackTemplateItemOverrides = Partial<InferInsertModel<typeof packTemplateItems>> & {
-  userId: number;
+  userId: string;
 };
 
 export const createTestPackTemplateItem = (

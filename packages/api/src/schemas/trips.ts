@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+const datetimeString = z.preprocess(
+  (v) => (v instanceof Date ? v.toISOString() : v),
+  z.string().datetime(),
+);
+
+const nullableDateString = z.preprocess(
+  (v) => (v instanceof Date ? v.toISOString() : v),
+  z.string().nullable(),
+);
+
 export const TripLocationSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
@@ -12,15 +22,15 @@ export const TripSchema = z.object({
   description: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   location: TripLocationSchema.nullable().optional(),
-  startDate: z.string().nullable().optional(),
-  endDate: z.string().nullable().optional(),
-  userId: z.number().optional(),
+  startDate: nullableDateString.optional(),
+  endDate: nullableDateString.optional(),
+  userId: z.string().optional(),
   packId: z.string().nullable().optional(),
   deleted: z.boolean(),
-  localCreatedAt: z.string().datetime().optional(),
-  localUpdatedAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime().optional(),
-  updatedAt: z.string().datetime().optional(),
+  localCreatedAt: datetimeString.optional(),
+  localUpdatedAt: datetimeString.optional(),
+  createdAt: datetimeString.optional(),
+  updatedAt: datetimeString.optional(),
 });
 
 export const CreateTripBodySchema = z.object({

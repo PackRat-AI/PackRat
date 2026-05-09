@@ -7,8 +7,15 @@ import {
   trips,
   users,
 } from '@packrat/api/db/schema';
+import {
+  ActiveUsersSchema,
+  ActivityPointSchema,
+  AdminErrorResponses,
+  BreakdownItemSchema,
+  GrowthPointSchema,
+} from '@packrat/api/schemas/admin';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
 const PeriodSchema = z.object({
@@ -29,6 +36,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     analytics: {
       growth: '/api/admin/analytics/platform/growth',
       activity: '/api/admin/analytics/platform/activity',
+      activeUsers: '/api/admin/analytics/platform/active-users',
       breakdown: '/api/admin/analytics/platform/breakdown',
     },
   }))
@@ -98,6 +106,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     },
     {
       query: PeriodSchema,
+      response: { 200: t.Array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
   )
@@ -174,7 +183,32 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     },
     {
       query: PeriodSchema,
+      response: { 200: t.Array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
+    },
+  )
+
+  .get(
+    '/active-users',
+    async () => {
+      try {
+        // Note: Better Auth users don't have lastActiveAt field - tracking requires separate implementation
+        return {
+          dau: 0, // Requires lastActiveAt tracking
+          wau: 0, // Requires lastActiveAt tracking
+          mau: 0, // Requires lastActiveAt tracking
+        };
+      } catch (error) {
+        console.error('Analytics active-users error:', error);
+        return status(500, {
+          error: 'Failed to fetch active user counts',
+          code: 'ANALYTICS_ACTIVE_USERS_ERROR',
+        });
+      }
+    },
+    {
+      response: { 200: ActiveUsersSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'DAU / WAU / MAU based on last_active_at' },
     },
   )
 
@@ -203,5 +237,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' } },
+    {
+      response: { 200: t.Array(BreakdownItemSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' },
+    },
   );

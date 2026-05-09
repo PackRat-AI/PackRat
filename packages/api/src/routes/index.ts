@@ -2,7 +2,6 @@ import { Elysia } from 'elysia';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
 import { alltrailsRoutes } from './alltrails';
-import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
@@ -25,7 +24,6 @@ import { wildlifeRoutes } from './wildlife';
  * Eden Treaty client for end-to-end type safety.
  */
 export const routes = new Elysia({ prefix: '/api' })
-  .use(authRoutes)
   .use(adminRoutes)
   .use(catalogRoutes)
   .use(guidesRoutes)

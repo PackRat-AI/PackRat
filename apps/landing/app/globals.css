@@ -110,9 +110,13 @@
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
     animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
     animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
     transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
     scroll-behavior: auto !important;
   }
 }

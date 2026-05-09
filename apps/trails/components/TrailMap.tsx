@@ -77,6 +77,7 @@ export function TrailMap({ center, trails, selectedOsmId, onTrailClick }: TrailM
     const group = markersRef.current;
     group.clearLayers();
     let cancelled = false;
+    const addedMarkers: import('leaflet').CircleMarker[] = [];
 
     import('leaflet').then(({ default: L }) => {
       if (cancelled) return;
@@ -96,11 +97,16 @@ export function TrailMap({ center, trails, selectedOsmId, onTrailClick }: TrailM
           marker.on('click', () => onTrailClick(trail.osmId));
         }
         group.addLayer(marker);
+        addedMarkers.push(marker);
       }
     });
 
     return () => {
       cancelled = true;
+      for (const m of addedMarkers) {
+        m.off('click');
+      }
+      group.clearLayers();
     };
   }, [trails, selectedOsmId, onTrailClick]);
 

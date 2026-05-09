@@ -9,19 +9,25 @@
  *  - MCP resources: pack/trip/gear data accessible by URI
  *  - Guided prompts: trip planning, pack optimization, gear recommendations
  *  - Stateful sessions with hibernation (via Durable Objects)
- *  - JWT Bearer token authentication forwarded to PackRat API
+ *  - OAuth 2.1 + PKCE authorization via @cloudflare/workers-oauth-provider
  *
  * Transport: Streamable HTTP (default) and SSE
- * Auth: Authorization: Bearer <packrat-jwt>
  *
- * Connection URL: https://<your-worker>.workers.dev/mcp
+ * OAuth flow:
+ *   GET  /authorize  → login form redirect
+ *   POST /login      → Better Auth sign-in, session stored in KV
+ *   GET  /callback   → issue auth code, redirect to client
+ *   POST /token      → exchange code for access token (handled by OAuthProvider)
+ *   POST /register   → dynamic client registration (handled by OAuthProvider)
  */
 
+import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
+import { z } from 'zod';
+import { PackRatAuthHandler } from './auth';
 import type { PackRatApiClient } from './client';
 import { createPackRatClient } from './client';
-import { ServiceMeta, WorkerRoute } from './constants';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
 import { registerCatalogTools } from './tools/catalog';
@@ -31,24 +37,19 @@ import { registerTrailConditionTools } from './tools/trail-conditions';
 import { registerTrailTools } from './tools/trails';
 import { registerTripTools } from './tools/trips';
 import { registerWeatherTools } from './tools/weather';
+import type { Env } from './types';
 
-// ── Environment type ──────────────────────────────────────────────────────────
-
-export interface Env {
-  /** Durable Object binding for MCP sessions */
-  PackRatMCP: DurableObjectNamespace;
-  /** Base URL of the PackRat API (e.g. "https://packrat.world") */
-  PACKRAT_API_URL: string;
-}
+// Re-export Env for consumers (e.g. tests)
+export type { Env };
 
 // ── Session state ─────────────────────────────────────────────────────────────
 
 export interface State {
-  /** JWT Bearer token extracted from the initial Authorization header */
+  /** Better Auth session token, injected per-request from OAuth props or legacy Bearer header */
   authToken: string;
 }
 
-// ── MCP Agent ─────────────────────────────────────────────────────────────────
+// ── MCP Agent (Durable Object) ────────────────────────────────────────────────
 
 export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   server = new McpServer({
@@ -58,10 +59,6 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
 
   initialState: State = { authToken: '' };
 
-  /**
-   * Typed API client, lazily initialised on first use.
-   * Reads the current auth token from Durable Object state on every request.
-   */
   private _api: PackRatApiClient | null = null;
 
   get api(): PackRatApiClient {
@@ -71,19 +68,10 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     return this._api;
   }
 
-  /**
-   * Override the DO's fetch to capture the Authorization header and persist
-   * it in state before the MCP protocol layer processes each message.
-   * This ensures tools always have access to the current session's auth token.
-   */
   override async fetch(request: Request): Promise<Response> {
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
 
-    // Persist the latest auth token in state (including clearing stale tokens
-    // when a request arrives without a valid bearer token).
-    // setState is synchronous — state is updated before super.fetch processes
-    // the MCP protocol message and calls any tool handlers.
     if (token !== this.state.authToken) {
       this.setState({ ...this.state, authToken: token });
     }
@@ -91,10 +79,6 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     return super.fetch(request);
   }
 
-  /**
-   * Called once when the Durable Object starts up.
-   * Register all tools, resources, and prompts here.
-   */
   async init(): Promise<void> {
     registerPackTools(this);
     registerCatalogTools(this);
@@ -108,70 +92,58 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   }
 }
 
-// ── Worker entry point ────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const BEARER_REGEX = /^Bearer\s+(\S+)/i;
 
-/**
- * The Cloudflare Worker fetch handler.
- *
- * Validates the Authorization header before routing to the McpAgent Durable Object.
- * The token is forwarded via the request and stored in DO state for tool calls.
- */
-const mcpHandler = PackRatMCP.serve('/mcp');
+const mcpDoHandler = PackRatMCP.serve('/mcp');
 
-export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
-    const url = new URL(request.url);
+// ── Props schema (OAuthProvider injects this at runtime via ctx) ──────────────
 
-    // ── Health check ──────────────────────────────────────────────────────
-    if (url.pathname === WorkerRoute.Root || url.pathname === WorkerRoute.Health) {
-      return Response.json({
-        status: 'ok',
-        service: ServiceMeta.Name,
-        version: ServiceMeta.Version,
-        transport: ServiceMeta.Transport,
-        endpoint: WorkerRoute.Mcp,
-        docs: 'https://packrat.world/docs/mcp',
-      });
+const PropsSchema = z.object({
+  betterAuthToken: z.string(),
+  userId: z.string(),
+});
+
+// ── API handler: wraps McpAgent, injecting the Better Auth token from OAuth props ──
+
+const mcpApiHandler = {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const rawCtx = ctx as unknown as Record<string, unknown>; // safe-cast: OAuth provider injects props at runtime; ExecutionContext has no index signature
+    const propsResult = PropsSchema.safeParse(rawCtx.props);
+    const token = propsResult.success ? propsResult.data.betterAuthToken : '';
+
+    const headers = new Headers(request.headers);
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
-    // ── MCP endpoint ──────────────────────────────────────────────────────
-    if (url.pathname === WorkerRoute.Mcp || url.pathname.startsWith(`${WorkerRoute.Mcp}/`)) {
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
-
-      if (!token) {
-        return Response.json(
-          {
-            error: 'Unauthorized',
-            message:
-              'Provide your PackRat JWT as: Authorization: Bearer <token>. ' +
-              'Get your token from https://packrat.world/settings/api',
-          },
-          {
-            status: 401,
-            headers: {
-              'WWW-Authenticate': 'Bearer realm="PackRat MCP Server"',
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-      }
-
-      return mcpHandler.fetch(request, env, ctx);
-    }
-
-    // ── 404 ───────────────────────────────────────────────────────────────
-    return Response.json(
-      {
-        error: 'Not Found',
-        availableEndpoints: [
-          { method: 'GET', path: WorkerRoute.Root, description: 'Health check' },
-          { method: '*', path: WorkerRoute.Mcp, description: 'MCP endpoint (Streamable HTTP)' },
-        ],
-      },
-      { status: 404 },
-    );
+    return mcpDoHandler.fetch(new Request(request, { headers }), env, ctx);
   },
 };
+
+// ── OAuthProvider — the Worker entrypoint ─────────────────────────────────────
+
+export default new OAuthProvider<Env>({
+  // /mcp and sub-paths are API routes: require a valid access token
+  apiRoute: '/mcp',
+  apiHandler: mcpApiHandler,
+
+  // All other routes (/, /health, /authorize, /login, /callback) go to the auth handler
+  defaultHandler: PackRatAuthHandler,
+
+  // OAuth 2.1 endpoints (token + register are served by OAuthProvider itself)
+  authorizeEndpoint: '/authorize',
+  tokenEndpoint: '/token',
+  clientRegistrationEndpoint: '/register',
+
+  // Security: S256 PKCE only; no implicit flow
+  allowPlainPKCE: false,
+  allowImplicitFlow: false,
+
+  // Token lifetimes: 60-min access tokens, 30-day refresh tokens
+  accessTokenTTL: 3600,
+  refreshTokenTTL: 2592000,
+
+  scopesSupported: ['mcp'],
+});

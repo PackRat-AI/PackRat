@@ -1,6 +1,7 @@
-import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
+import { Alert, Button, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { t } from 'expo-app/lib/i18n';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import AddPackItemActions from '../components/AddPackItemActions';
@@ -41,11 +42,12 @@ export function getPackDetailOptions(id: string) {
               },
             ]}
           >
-            <Button variant="plain" size="icon">
+            <Button testID={testIds.packs.deleteBtn} variant="plain" size="icon">
               <Icon name="trash-can-outline" color={colors.grey2} />
             </Button>
           </Alert>
           <Button
+            testID={testIds.packs.editBtn}
             variant="plain"
             size="icon"
             onPress={() => router.push({ pathname: '/pack/[id]/edit', params: { id } })}

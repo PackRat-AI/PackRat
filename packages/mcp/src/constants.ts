@@ -3,6 +3,11 @@ export const WorkerRoute = {
   Root: '/',
   Health: '/health',
   Mcp: '/mcp',
+  Authorize: '/authorize',
+  Login: '/login',
+  Callback: '/callback',
+  Token: '/token',
+  Register: '/register',
 } as const;
 
 /** Service identification metadata */
