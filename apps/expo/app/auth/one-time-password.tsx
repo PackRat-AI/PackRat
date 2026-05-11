@@ -3,7 +3,9 @@ import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packra
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import {
@@ -251,6 +253,9 @@ function OTPField({
 }: OTPFieldProps) {
   const { colors } = useColorScheme();
   const inputRef = React.useRef<TextInput>(null);
+
+  // Apply keyboard hide blur fix
+  useKeyboardHideBlur(asNonNullableRef(inputRef));
 
   function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     if (nativeEvent.key === 'Backspace' && value === '') {

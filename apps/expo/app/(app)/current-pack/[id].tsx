@@ -15,8 +15,8 @@ import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
-import { Platform, ScrollView, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function WeightCard({
   title,
@@ -39,14 +39,14 @@ function WeightCard({
   );
 }
 
-function CustomList({
+function CustomList<T>({
   data,
   renderItem,
   keyExtractor,
 }: {
-  data: unknown[];
-  renderItem: (item: unknown, index: number) => React.ReactNode;
-  keyExtractor: (item: unknown, index: number) => string;
+  data: T[];
+  renderItem: (item: T, index: number) => React.ReactNode;
+  keyExtractor: (item: T, index: number) => string;
 }) {
   return (
     <View>
@@ -132,22 +132,19 @@ export default function CurrentPackScreen() {
 
   const pack = usePackDetailsFromStore(params.id as string);
   const uniqueCategories = computeCategorySummaries(pack);
-  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.currentPack')} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
+        contentInsetAdjustmentBehavior="automatic"
       >
-        <View
-          className="flex-row items-center p-4"
-          style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
-        >
+        <View className="flex-row items-center p-4">
           <Avatar className="mr-4 h-16 w-16" alt="">
-            <AvatarImage source={{ uri: pack.image }} />
+            <AvatarImage source={{ uri: pack.image ?? undefined }} />
             <AvatarFallback>
               <Text>{pack.name.substring(0, 2)}</Text>
             </AvatarFallback>
@@ -157,7 +154,9 @@ export default function CurrentPackScreen() {
               {pack.name}
             </Text>
             <Text variant="subhead" className="mt-1 text-muted-foreground">
-              {t('packs.lastUpdated', { time: getRelativeTime(pack.localUpdatedAt) })}
+              {t('packs.lastUpdated', {
+                time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+              })}
             </Text>
           </View>
         </View>
@@ -177,10 +176,8 @@ export default function CurrentPackScreen() {
 
           <CustomList
             data={uniqueCategories}
-            keyExtractor={(item) => (item as CategorySummary).name}
-            renderItem={(item, index) => (
-              <CategoryItem category={item as CategorySummary} index={index} />
-            )}
+            keyExtractor={(item) => item.name}
+            renderItem={(item, index) => <CategoryItem category={item} index={index} />}
           />
         </View>
 
@@ -195,7 +192,10 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => <ItemRow item={item as PackItem} index={index} />}
+            renderItem={(item, index) => (
+              // safe-cast: Treaty response type has createdAt?: string but PackItem schema requires string
+              <ItemRow item={item as unknown as PackItem} index={index} />
+            )}
           />
         </View>
       </ScrollView>

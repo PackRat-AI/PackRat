@@ -133,9 +133,9 @@ export default function WeatherAlertsScreen() {
   const { alerts, loading, error, activeLocation } = useWeatherAlerts();
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />
-      <ScrollView className="flex-1 mt-20">
+      <ScrollView className="flex-1 mt-20" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
           <Text
             variant="subhead"

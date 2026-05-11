@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
-import type { Post } from '../types';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 interface CreatePostInput {
   caption?: string;
@@ -12,8 +11,9 @@ export const useCreatePost = () => {
 
   return useMutation({
     mutationFn: async (input: CreatePostInput) => {
-      const response = await axiosInstance.post<Post>('/api/feed', input);
-      return response.data;
+      const { data, error } = await apiClient.feed.post(input);
+      if (error) throw new Error(`Failed to create post: ${error.value}`);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });

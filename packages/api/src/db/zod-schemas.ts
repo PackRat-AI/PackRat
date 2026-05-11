@@ -1,17 +1,14 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import {
-  authProviders,
   catalogItemEtlJobs,
   catalogItems,
   etlJobs,
   invalidItemLogs,
-  oneTimePasswords,
   packItems,
   packs,
   packTemplateItems,
   packTemplates,
   packWeightHistory,
-  refreshTokens,
   reportedContent,
   users,
 } from './schema';
@@ -19,14 +16,6 @@ import {
 // User schemas
 export const selectUserSchema = createSelectSchema(users);
 export const insertUserSchema = createInsertSchema(users);
-
-// Auth schemas
-export const selectAuthProviderSchema = createSelectSchema(authProviders);
-export const insertAuthProviderSchema = createInsertSchema(authProviders);
-export const selectRefreshTokenSchema = createSelectSchema(refreshTokens);
-export const insertRefreshTokenSchema = createInsertSchema(refreshTokens);
-export const selectOneTimePasswordSchema = createSelectSchema(oneTimePasswords);
-export const insertOneTimePasswordSchema = createInsertSchema(oneTimePasswords);
 
 // Pack schemas
 export const selectPackSchema = createSelectSchema(packs);

@@ -1,50 +1,46 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { PackItemSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import { isRemoteUrl } from '@packrat/guards';
 import { isAuthed } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import Storage from 'expo-sqlite/kv-store';
-import type { Pack, PackItem } from '../types';
+import type { PackItem } from '../types';
 import { uploadImage } from '../utils';
 
-const listAllPackItems = async () => {
-  try {
-    const res = await axiosInstance.get<Pack[]>('/api/packs');
-    const items = res.data.flatMap((pack: Pack) => pack.items);
-    return items;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to list packitems: ${message}`);
-  }
+const listAllPackItems = async (): Promise<PackItem[] | null> => {
+  const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
+  if (error) throw new Error(`Failed to list packitems: ${error.value}`);
+  return (
+    PackWithWeightsSchema.array()
+      .parse(data)
+      // safe-cast: Zod parse validates the shape; PackItem extends the Zod-inferred type
+      .flatMap((pack) => pack.items ?? []) as unknown as PackItem[]
+  );
 };
 
-const createPackItem = async ({ packId, ...data }: PackItem) => {
-  try {
-    if (data.image) {
-      await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
-    }
-
-    const response = await axiosInstance.post(`/api/packs/${packId}/items`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to create pack item: ${message}`);
+const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem | null> => {
+  if (data.image && !isRemoteUrl(data.image)) {
+    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
+  const { data: result, error } = await apiClient
+    .packs({ packId: String(packId) })
+    .items.post(data);
+  if (error) throw new Error(`Failed to create pack item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackItem extends the Zod-inferred type
+  return PackItemSchema.parse(result) as unknown as PackItem;
 };
 
-const updatePackItem = async ({ id, ...data }: PackItem) => {
-  try {
-    if (data.image) {
-      await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
-    }
-    const response = await axiosInstance.patch(`/api/packs/items/${id}`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to update pack: ${message}`);
+const updatePackItem = async ({ id, ...data }: PackItem): Promise<PackItem | null> => {
+  if (data.image && !isRemoteUrl(data.image)) {
+    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
+  const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
+  if (error) throw new Error(`Failed to update pack item: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackItem extends the Zod-inferred type
+  return PackItemSchema.parse(result) as unknown as PackItem;
 };
 
 export const packItemsStore = observable<Record<string, PackItem>>({});
@@ -58,9 +54,7 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(
-        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-      ),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'packItems',
     },

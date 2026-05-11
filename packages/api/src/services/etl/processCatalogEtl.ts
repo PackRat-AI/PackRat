@@ -76,13 +76,10 @@ export async function processCatalogETL({
       await new Promise((resolve) => setTimeout(resolve, 1)); // Yield to event loop for GC Opportunities to prevent memory bloat
       const row = record as string[];
       if (!isHeaderProcessed) {
-        fieldMap = row.reduce(
-          (acc, header, idx) => {
-            acc[header.trim()] = idx;
-            return acc;
-          },
-          {} as Record<string, number>,
-        );
+        fieldMap = row.reduce<Record<string, number>>((acc, header, idx) => {
+          acc[header.trim()] = idx;
+          return acc;
+        }, {});
         isHeaderProcessed = true;
         console.log(
           `🔍 [TRACE] Header processed - fields: ${Object.keys(fieldMap).length}, mapping:`,
@@ -110,16 +107,38 @@ export async function processCatalogETL({
       }
 
       rowIndex++;
+
+      // Flush valid batch to DB every BATCH_SIZE rows to avoid Worker OOM on large files
+      if (validItemsBatch.length >= BATCH_SIZE) {
+        await processValidItemsBatch({ jobId, items: [...validItemsBatch], env });
+        await db
+          .update(etlJobs)
+          .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${BATCH_SIZE}` })
+          .where(eq(etlJobs.id, jobId));
+        validItemsBatch.length = 0;
+      }
+      // Flush invalid batch to DB every BATCH_SIZE rows
+      if (invalidItemsBatch.length >= BATCH_SIZE) {
+        await processLogsBatch({ jobId, logs: [...invalidItemsBatch], env });
+        await db
+          .update(etlJobs)
+          .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${BATCH_SIZE}` })
+          .where(eq(etlJobs.id, jobId));
+        invalidItemsBatch.length = 0;
+      }
     }
 
-    console.log(`🔍 [TRACE] Streaming complete - processing batches`);
+    console.log(`🔍 [TRACE] Streaming complete - processing remaining batches`);
 
-    const itemsProcessed = validItemsBatch.length + invalidItemsBatch.length;
+    // Flush remaining items after the stream ends
+    const remainingItems = validItemsBatch.length + invalidItemsBatch.length;
 
-    await db
-      .update(etlJobs)
-      .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${itemsProcessed}` })
-      .where(eq(etlJobs.id, jobId));
+    if (remainingItems > 0) {
+      await db
+        .update(etlJobs)
+        .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${remainingItems}` })
+        .where(eq(etlJobs.id, jobId));
+    }
 
     if (validItemsBatch.length > 0) {
       console.log(`🔍 [TRACE] Processing valid items batch - size: ${validItemsBatch.length}`);
@@ -140,6 +159,11 @@ export async function processCatalogETL({
     }
 
     const totalRows = rowIndex;
+
+    await db
+      .update(etlJobs)
+      .set({ status: 'completed', completedAt: new Date() })
+      .where(eq(etlJobs.id, jobId));
 
     console.log(`🔍 [TRACE] ✅ Done processing ${objectKey} - ${totalRows} rows processed`);
   } catch (error) {

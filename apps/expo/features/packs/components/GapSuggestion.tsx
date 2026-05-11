@@ -142,7 +142,7 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
       {catalogSuggestionsModalVisible && (
         <GapItemCatalogSuggestions
           visible={catalogSuggestionsModalVisible}
-          suggestions={data?.items}
+          suggestions={data?.items as (CatalogItem & { similarity: number })[] | undefined}
           isLoading={isLoading}
           isAdding={isAdding}
           onRetry={refetch}

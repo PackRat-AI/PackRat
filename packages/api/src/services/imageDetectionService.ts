@@ -2,7 +2,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
-import type { Context } from 'hono';
 import { z } from 'zod';
 import type { CatalogItem } from '../db/schema';
 import { CatalogService } from './catalogService';
@@ -46,17 +45,11 @@ export interface DetectedItemWithMatches {
 }
 
 export class ImageDetectionService {
-  private readonly c: Context;
-
-  constructor(c: Context) {
-    this.c = c;
-  }
-
   /**
    * Analyze an image to detect outdoor gear items
    */
   async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-    const { OPENAI_API_KEY } = getEnv(this.c);
+    const { OPENAI_API_KEY } = getEnv();
     const openai = createOpenAI({
       apiKey: OPENAI_API_KEY,
     });
@@ -107,7 +100,7 @@ export class ImageDetectionService {
       const highConfidenceItems = analysis.items.filter((item) => item.confidence >= 0.5);
 
       // Find catalog matches for each detected item
-      const catalogService = new CatalogService(this.c);
+      const catalogService = new CatalogService();
 
       const searchQueries = highConfidenceItems.map((detected) =>
         `${detected.name} ${detected.description}`.trim(),

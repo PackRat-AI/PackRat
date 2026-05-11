@@ -7,6 +7,7 @@
  */
 
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { isString } from '@packrat/guards';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 
@@ -235,7 +236,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow));
+      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow)); // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     }
 
     // Create specs table
@@ -259,7 +260,7 @@ export class SpecParser {
           const v = (x: unknown) =>
             x === null || x === undefined
               ? 'NULL'
-              : typeof x === 'string'
+              : isString(x)
                 ? `'${SQLFragments.escapeSql(String(x))}'`
                 : String(x);
           return `(${v(s.site)}, ${v(s.name)}, ${v(s.brand)}, ${v(s.category)}, ${v(s.price)}, ${v(s.product_url)}, ${v(s.weight_grams)}, ${v(s.capacity_liters)}, ${v(s.temp_rating_f)}, ${v(s.fill_power)}, ${v(s.waterproof_rating)}, ${v(s.seasons)}, ${v(s.gender)}, ${v(s.fabric)})`;
@@ -300,7 +301,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 
@@ -355,7 +356,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 }

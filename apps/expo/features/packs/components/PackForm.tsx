@@ -1,3 +1,5 @@
+import { PackCategorySchema } from '@packrat/api/types';
+import { fromZod } from '@packrat/guards';
 import {
   Button,
   createDropdownItem,
@@ -14,7 +16,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -28,7 +30,7 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
-import type { Pack, PackCategory } from '../types';
+import type { Pack } from '../types';
 
 // Define Zod schema
 const packFormSchema = z.object({
@@ -97,7 +99,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
         ? {
             name: template.name,
             description: template.description,
-            category: template.category as PackCategory,
+            category: fromZod(PackCategorySchema)(template.category) ?? 'hiking',
             isPublic: false,
             tags: template.tags,
           }
@@ -117,7 +119,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       } else if (isEditingExistingPack) {
         updatePack({ ...pack, ...value });
       } else {
-        createPack({ ...value, category: value.category as PackCategory });
+        createPack({ ...value, category: value.category });
       }
 
       router.back();
@@ -147,6 +149,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packs.nameInput}
                     placeholder={t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -200,7 +203,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                       }),
                     )}
                     onItemPress={(item) => {
-                      field.handleChange(item.actionKey as PackCategory);
+                      const cat = fromZod(PackCategorySchema)(item.actionKey);
+                      if (cat) field.handleChange(cat);
                     }}
                   >
                     <Button className="my-2 w-full" variant="plain">
@@ -258,7 +262,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
-              testID={TestIds.SubmitPackButton}
+              testID={testIds.packs.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

@@ -1,13 +1,13 @@
+import { isObject, zodGuard } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
 import type { SelectedImage } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
+import { z } from 'zod';
 import { identifyFromDescription } from '../lib/offlineIdentifier';
 import type { IdentificationResult } from '../types';
 
-interface OnlineIdentificationResponse {
-  results: IdentificationResult[];
-}
+const isIdentifyResponse = zodGuard(z.object({ results: z.array(z.unknown()) }));
 
 async function identifyOnline(selectedImage: SelectedImage): Promise<IdentificationResult[]> {
   const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
@@ -16,36 +16,29 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
       `Couldn't upload image${selectedImage.fileName ? ` "${selectedImage.fileName}"` : ' (no filename provided)'}`,
     );
   }
-  const response = await axiosInstance.post<OnlineIdentificationResponse>(
-    '/api/wildlife/identify',
-    { image },
-    { timeout: 30000 },
-  );
-  return response.data.results;
+  const { data, error } = await apiClient.wildlife.identify.post({ image });
+  if (error) {
+    const wrapped = new Error(`Wildlife identification failed: ${error.value}`) as Error & {
+      isApiError?: boolean;
+    };
+    wrapped.isApiError = true;
+    throw wrapped;
+  }
+  if (!isIdentifyResponse(data))
+    throw new Error('Unexpected response from wildlife identify endpoint');
+  // safe-cast: isIdentifyResponse guard confirms data.results is an array; element type guaranteed by API contract
+  return data.results as IdentificationResult[];
 }
 
 function isNetworkError(error: unknown): boolean {
   // Primitives and null are not classifiable as network errors
-  if (typeof error !== 'object' || error === null) {
+  if (!isObject(error)) {
     return false;
   }
 
-  // If there's a server response the request reached the server – not a network error
-  if ('response' in error && (error as { response?: unknown }).response != null) {
+  // Errors flagged as API responses reached the server — not a network error
+  if ('isApiError' in error && (error as { isApiError?: boolean }).isApiError) {
     return false;
-  }
-
-  // Check Axios-specific error codes that unambiguously indicate network issues
-  if ('code' in error) {
-    const code = (error as { code?: string }).code;
-    if (
-      code === 'ERR_NETWORK' ||
-      code === 'ECONNABORTED' ||
-      code === 'ECONNREFUSED' ||
-      code === 'ETIMEDOUT'
-    ) {
-      return true;
-    }
   }
 
   // Error instances: check message for network patterns, but be conservative —
@@ -60,7 +53,6 @@ function isNetworkError(error: unknown): boolean {
     );
   }
 
-  // Unknown non-Error object shapes without a response: don't assume network error
   return false;
 }
 
@@ -78,7 +70,6 @@ export function useWildlifeIdentification() {
         // Authorization errors, validation failures, etc. are re-thrown.
         if (isNetworkError(error)) {
           console.warn('Online identification unavailable, using offline database:', {
-            code: (error as { code?: string })?.code,
             message: error instanceof Error ? error.message : undefined,
           });
           const trimmed = offlineQuery?.trim();

@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import {
   Avatar,
   AvatarFallback,
@@ -10,6 +11,7 @@ import {
 import { Portal } from '@rn-primitives/portal';
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, Stack } from 'expo-router';
@@ -19,7 +21,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   View,
@@ -99,17 +100,19 @@ export default function ChatAndroid() {
           }}
           data={messages}
           renderItem={({ item, index }) => {
-            if (typeof item === 'string') {
+            if (isString(item)) {
               return <DateSeparator date={item} />;
             }
 
             const nextMessage = messages[index - 1];
-            const isSameNextSender =
-              typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
+            const isSameNextSender = !isString(nextMessage)
+              ? nextMessage?.sender === item.sender
+              : false;
 
             const previousMessage = messages[index + 1];
-            const isSamePreviousSender =
-              typeof previousMessage !== 'string' ? previousMessage?.sender === item.sender : false;
+            const isSamePreviousSender = !isString(previousMessage)
+              ? previousMessage?.sender === item.sender
+              : false;
 
             return (
               <ChatBubble

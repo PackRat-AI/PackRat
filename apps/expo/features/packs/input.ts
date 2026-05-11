@@ -2,7 +2,7 @@ import type { WeightUnit } from 'expo-app/types';
 
 export interface PackItemInput {
   name: string;
-  description?: string;
+  description?: string | null;
   weight: number;
   weightUnit: WeightUnit;
   quantity: number;

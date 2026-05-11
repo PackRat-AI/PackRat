@@ -1,18 +1,27 @@
 {
   "name": "@packrat/api-client",
-  "version": "1.0.0",
+  "version": "2.0.25",
   "private": true,
-  "description": "PackRat typed API client — authenticated HTTP client with error handling and MCP result helpers",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "scripts": {
-    "check-types": "tsc --noEmit"
+  "dependencies": {
+    "@elysiajs/eden": "catalog:",
+    "@packrat/guards": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "@packrat/api": "workspace:*",
+    "elysia": "catalog:"
+  },
+  "peerDependencies": {
+    "elysia": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "elysia": {
+      "optional": true
+    }
   }
 }

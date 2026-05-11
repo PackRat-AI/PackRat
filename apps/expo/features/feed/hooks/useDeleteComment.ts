@@ -1,12 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 export const useDeleteComment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ postId, commentId }: { postId: number; commentId: number }) => {
-      await axiosInstance.delete(`/api/feed/${postId}/comments/${commentId}`);
+      const { error } = await apiClient
+        .feed({ postId: String(postId) })
+        .comments({ commentId: String(commentId) })
+        .delete();
+      if (error) throw new Error(`Failed to delete comment: ${error.value}`);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['feed', variables.postId, 'comments'] });

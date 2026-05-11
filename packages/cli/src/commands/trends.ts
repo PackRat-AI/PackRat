@@ -16,7 +16,7 @@ export default defineCommand({
       site: args.site,
       days,
     });
-    printTable(rows as unknown as Record<string, unknown>[], {
+    printTable(rows, {
       title: `Price Trends: "${args.keyword}"`,
     });
   },

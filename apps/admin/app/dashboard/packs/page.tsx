@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import {
   Table,
@@ -12,17 +13,27 @@ import {
 } from '@packrat/web-ui/components/table';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DeleteButton } from 'admin-app/components/delete-button';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
 import { SearchInput } from 'admin-app/components/search-input';
+import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminPack, deletePack, getPacks } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
-import { useSearchParams } from 'next/navigation';
+import { queryKeys } from 'admin-app/lib/queryKeys';
+import { cn } from 'admin-app/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
+
+const PAGE_SIZE = 50;
 
 function TableSkeleton() {
   return (
     <div className="rounded-lg border border-border/60 overflow-hidden">
       <div className="h-10 bg-muted/30 border-b border-border/60" />
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0">
+        <div
+          key={`skeleton-row-${i}`}
+          className="flex gap-4 px-4 py-3 border-b border-border/30 last:border-0"
+        >
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
@@ -41,18 +52,53 @@ function PackRow({ pack }: { pack: AdminPack }) {
   const { mutateAsync: handleDelete } = useMutation({
     mutationFn: () => deletePack(pack.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'packs'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.packs.all() });
     },
   });
 
   return (
     <TableRow className="hover:bg-muted/20">
       <TableCell>
-        <div>
-          <p className="text-sm font-medium">{pack.name}</p>
-          {pack.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{pack.description}</p>
+        <div className="flex items-start gap-2.5">
+          {pack.image ? (
+            <Image
+              src={pack.image}
+              alt=""
+              width={40}
+              height={40}
+              className="rounded object-cover shrink-0 bg-muted"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded bg-muted shrink-0" />
           )}
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-medium">{pack.name}</p>
+              {pack.isAIGenerated && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                  AI
+                </Badge>
+              )}
+            </div>
+            {pack.description && (
+              <p className="text-xs text-muted-foreground line-clamp-1">{pack.description}</p>
+            )}
+            {pack.tags && pack.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {pack.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] text-muted-foreground bg-muted px-1 rounded"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {pack.tags.length > 3 && (
+                  <span className="text-[10px] text-muted-foreground">+{pack.tags.length - 3}</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>
@@ -65,41 +111,59 @@ function PackRow({ pack }: { pack: AdminPack }) {
       </TableCell>
       <TableCell>
         <span
-          className={`text-xs font-medium ${pack.isPublic ? 'text-green-500' : 'text-muted-foreground'}`}
+          className={cn(
+            'text-xs font-medium',
+            pack.isPublic ? 'text-green-500' : 'text-muted-foreground',
+          )}
         >
           {pack.isPublic ? 'Public' : 'Private'}
         </span>
       </TableCell>
       <TableCell>
-        <span className="text-sm text-muted-foreground">
-          {pack.createdAt ? formatDate(new Date(pack.createdAt)) : '—'}
-        </span>
+        <div className="space-y-0.5">
+          <span className="text-sm text-muted-foreground">
+            {pack.createdAt ? formatDate(new Date(pack.createdAt)) : '—'}
+          </span>
+          {pack.updatedAt && pack.updatedAt !== pack.createdAt && (
+            <p className="text-xs text-muted-foreground/60">
+              upd {formatDate(new Date(pack.updatedAt))}
+            </p>
+          )}
+        </div>
       </TableCell>
       <TableCell>
-        <DeleteButton
-          label={pack.name}
-          description="The pack will be soft-deleted and hidden from all users."
-          onConfirm={async () => {
-            await handleDelete();
-          }}
-        />
+        <div className="flex items-center gap-1">
+          <RawObjectDialog label={`pack:${pack.id}`} data={pack} />
+          <DeleteButton
+            label={pack.name}
+            description="The pack will be soft-deleted and hidden from all users."
+            onConfirm={async () => {
+              await handleDelete();
+            }}
+          />
+        </div>
       </TableCell>
     </TableRow>
   );
 }
 
 export default function PacksPage() {
-  const searchParams = useSearchParams();
-  const q = searchParams?.get('q') ?? undefined;
+  const { q, setSearch, page, setPage } = usePaginatedSearch();
+  const offset = page * PAGE_SIZE;
 
   const {
-    data: packs = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['admin', 'packs', q],
-    queryFn: () => getPacks({ q }),
+    queryKey: queryKeys.admin.packs.list({ q: q || undefined, page }),
+    queryFn: () => getPacks({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
+
+  const packs = result?.data ?? [];
+  const total = result?.total ?? 0;
+  const hasPrev = page > 0;
+  const hasNext = packs.length === PAGE_SIZE;
 
   return (
     <div>
@@ -110,7 +174,7 @@ export default function PacksPage() {
         </p>
       </div>
       <div className="space-y-4">
-        <SearchInput placeholder="Search by name, owner, or category…" />
+        <SearchInput placeholder="Search by name, owner, or category…" onSearch={setSearch} />
         {isError ? (
           <p className="text-sm text-destructive py-4">
             Failed to load packs. Check that the API is reachable.
@@ -154,10 +218,34 @@ export default function PacksPage() {
                 </TableBody>
               </Table>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {packs.length.toLocaleString()} pack{packs.length !== 1 ? 's' : ''}
-              {q ? ` matching "${q}"` : ''}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {packs.length === 0
+                  ? `No packs${q ? ` matching "${q}"` : ''}`
+                  : `${(offset + 1).toLocaleString()}–${(offset + packs.length).toLocaleString()} of ${total.toLocaleString()} packs${q ? ` matching "${q}"` : ''}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={!hasPrev}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Prev
+                </Button>
+                <span className="text-xs text-muted-foreground">Page {page + 1}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={!hasNext}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </div>

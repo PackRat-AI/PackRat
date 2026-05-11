@@ -33,6 +33,19 @@ When a user's session expires (access token and refresh token both expire), the 
 - `atoms/authAtoms.ts`: Jotai atoms for authentication state including re-auth flags
 - `hooks/useAuthActions.ts`: Actions for sign-in, sign-out, and state management
 - `lib/api/client.ts`: Axios interceptor handling token refresh and re-auth triggering
+- `lib/api/rpcTransport.ts`: Hono RPC fetch adapter mirroring the same refresh and re-auth behavior
+- `lib/api/rpcClient.ts`: Shared Expo RPC client entry point backed by `@packrat/api-client`
+
+## RPC Migration Status
+
+The app is currently in a coexistence period:
+
+- Legacy feature modules still use `lib/api/client.ts` and `axiosInstance`
+- New Hono RPC infrastructure lives in `lib/api/rpcTransport.ts` and `lib/api/rpcClient.ts`
+- The RPC transport is intended to preserve the same auth contract as axios:
+  bearer token attachment, refresh retry queueing, and `needsReauthAtom` on hard failure
+
+Until feature consumers are migrated, both transport layers may exist side-by-side. Changes to auth behavior should keep them aligned.
 
 ### Example Flow
 

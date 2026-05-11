@@ -1,7 +1,8 @@
 import { openai } from '@ai-sdk/openai';
+import { treaty } from '@elysiajs/eden';
+import type { App } from '@packrat/api';
 import { guideEnv } from '@packrat/env/next';
 import { generateText, tool } from 'ai';
-import axios from 'axios';
 import { z } from 'zod';
 
 // System prompt for contextual content enhancement
@@ -51,6 +52,20 @@ export async function enhanceGuideContent(
   if (!apiKey) {
     throw new Error('PACKRAT_API_KEY environment variable is required for content enhancement');
   }
+
+  // safe-cast: Eden Treaty fetcher expects typeof fetch; CF Workers adds preconnect
+  // which is never called by Eden — only the (input, init) signature is used.
+  const catalogFetcher: typeof fetch = Object.assign(
+    (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+      const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
+      return fetch(input, {
+        ...init,
+        headers: { ...existing, 'X-API-KEY': apiKey },
+      });
+    },
+    fetch,
+  );
+  const catalogClient = treaty<App>(apiBaseUrl, { fetcher: catalogFetcher }).api.catalog;
 
   // Track products used for reporting
   const productsUsed: Array<{
@@ -115,30 +130,24 @@ export async function enhanceGuideContent(
                 offset,
               );
 
-              const response = await axios.get(`${apiBaseUrl}/api/catalog/vector-search`, {
-                params: { q: query, limit, offset },
-                headers: {
-                  'X-API-KEY': apiKey,
-                  'Content-Type': 'application/json',
-                },
+              const { data, error } = await catalogClient['vector-search'].get({
+                query: { q: query, limit, offset },
               });
 
-              const searchResults = response.data;
+              if (error) {
+                throw new Error(`Catalog search failed: ${error.status}`);
+              }
+
+              const searchResults = data;
 
               // Track products for reporting
-              if (searchResults.items) {
-                for (const item of searchResults.items as {
-                  name: string;
-                  productUrl: string;
-                  similarity?: number;
-                }[]) {
-                  productsUsed.push({
-                    name: item.name,
-                    url: item.productUrl,
-                    context: query,
-                    similarity: item.similarity,
-                  });
-                }
+              for (const item of searchResults.items ?? []) {
+                productsUsed.push({
+                  name: item.name,
+                  url: item.productUrl,
+                  context: query,
+                  similarity: item.similarity,
+                });
               }
 
               console.log(`✅ Found ${searchResults.items?.length || 0} relevant products`);

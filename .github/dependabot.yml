@@ -13,8 +13,8 @@ updates:
     commit-message:
       prefix: 'chore(ci)'
 
-  # npm / Bun workspaces — root
-  - package-ecosystem: 'npm'
+  # bun workspaces — root
+  - package-ecosystem: 'bun'
     directory: '/'
     schedule:
       interval: 'weekly'
@@ -48,8 +48,8 @@ updates:
           - 'drizzle-orm'
           - 'drizzle-kit'
 
-  # npm — API package
-  - package-ecosystem: 'npm'
+  # bun — API package
+  - package-ecosystem: 'bun'
     directory: '/packages/api'
     schedule:
       interval: 'weekly'
@@ -60,8 +60,8 @@ updates:
     commit-message:
       prefix: 'chore(deps/api)'
 
-  # npm — Expo app
-  - package-ecosystem: 'npm'
+  # bun — Expo app
+  - package-ecosystem: 'bun'
     directory: '/apps/expo'
     schedule:
       interval: 'weekly'
@@ -72,8 +72,8 @@ updates:
     commit-message:
       prefix: 'chore(deps/expo)'
 
-  # npm — Landing page
-  - package-ecosystem: 'npm'
+  # bun — Landing page
+  - package-ecosystem: 'bun'
     directory: '/apps/landing'
     schedule:
       interval: 'weekly'
@@ -84,8 +84,8 @@ updates:
     commit-message:
       prefix: 'chore(deps/landing)'
 
-  # npm — Guides site
-  - package-ecosystem: 'npm'
+  # bun — Guides site
+  - package-ecosystem: 'bun'
     directory: '/apps/guides'
     schedule:
       interval: 'weekly'

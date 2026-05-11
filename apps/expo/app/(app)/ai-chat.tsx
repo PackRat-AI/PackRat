@@ -6,6 +6,7 @@ import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { featureFlags } from 'expo-app/config';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
@@ -19,9 +20,9 @@ import { LocationContext } from 'expo-app/features/ai/components/LocationContext
 import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
 import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
 import { createLocalTools } from 'expo-app/features/ai/lib/tools';
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { authClient } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
@@ -34,7 +35,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   ScrollView,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   TouchableOpacity,
@@ -90,7 +90,8 @@ export default function AIChat() {
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
-  const token = useAtomValue(tokenAtom);
+  const { data: _authSession } = authClient.useSession();
+  const token = _authSession?.session?.token ?? null;
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -103,7 +104,7 @@ export default function AIChat() {
         id: '1',
         role: 'assistant',
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
+      } satisfies UIMessage,
     ],
     [context],
   );

@@ -1,6 +1,4 @@
-import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import type { Context } from 'hono';
 
 type WeatherData = {
   location: string;
@@ -11,10 +9,10 @@ type WeatherData = {
 };
 
 export class WeatherService {
-  private env: Env;
+  private env: ReturnType<typeof getEnv>;
 
-  constructor(c: Context) {
-    this.env = getEnv(c);
+  constructor() {
+    this.env = getEnv();
   }
 
   async getWeatherForLocation(location: string): Promise<WeatherData> {
@@ -25,15 +23,28 @@ export class WeatherService {
     );
 
     if (!response.ok) {
-      throw new Error('Weather API request failed');
+      let apiMessage = response.statusText;
+      try {
+        const body = (await response.json()) as { message?: string };
+        if (body.message) apiMessage = body.message;
+      } catch {
+        // response body not parseable — fall back to statusText
+      }
+      throw new Error(
+        `Weather API error ${response.status}: ${apiMessage} (location: "${location}")`,
+      );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      main: { temp: number; humidity: number };
+      weather: Array<{ main: string }>;
+      wind: { speed: number };
+    };
 
     return {
       location,
       temperature: Math.round(data.main.temp),
-      conditions: data.weather[0].main,
+      conditions: data.weather[0]?.main ?? '',
       humidity: data.main.humidity,
       windSpeed: Math.round(data.wind.speed),
     };

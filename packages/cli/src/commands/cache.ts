@@ -1,5 +1,5 @@
 import {
-  type CatalogCacheManager,
+  CatalogCacheManager,
   configureS3,
   createCatalogConnection,
   dbPath,
@@ -52,7 +52,11 @@ async function showStatus(): Promise<void> {
   const mode = env().ANALYTICS_MODE;
 
   if (mode === 'catalog') {
-    const cache = (await getCache()) as CatalogCacheManager;
+    const cache = await getCache();
+    if (!(cache instanceof CatalogCacheManager)) {
+      consola.error('Expected CatalogCacheManager in catalog mode.');
+      return;
+    }
     consola.start('Fetching catalog stats...');
     const stats = await cache.getLiveStats();
     printSummary(

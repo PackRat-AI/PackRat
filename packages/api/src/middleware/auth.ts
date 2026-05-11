@@ -1,33 +1,76 @@
+import { getAuth } from '@packrat/api/auth';
 import { isValidApiKey } from '@packrat/api/utils/auth';
+import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import type { MiddlewareHandler } from 'hono';
-import { verify } from 'hono/jwt';
+import { Elysia, status } from 'elysia';
 
-export const authMiddleware: MiddlewareHandler = async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-
-  // JWT Auth
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-    if (!token) {
-      return c.json({ error: 'No token provided' }, 401);
-    }
-
-    const { JWT_SECRET } = getEnv(c);
-
-    try {
-      const payload = await verify(token, JWT_SECRET, { alg: 'HS256' });
-      c.set('user', payload);
-      return next();
-    } catch (_error) {
-      return c.json({ error: 'Invalid token' }, 401);
-    }
-  }
-
-  // API Key Auth
-  if (isValidApiKey(c)) {
-    return next();
-  }
-
-  return c.json({ error: 'Unauthorized' }, 401);
+export type AuthUser = {
+  userId: string;
+  role: string;
+  email: string;
+  name: string;
 };
+
+/**
+ * Elysia macro that enforces Better Auth session authentication.
+ *
+ * Accepts both cookie-based sessions and Bearer token sessions (via the
+ * bearer() plugin).  Sets `user` in the request context for downstream routes.
+ */
+export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
+  isAuthenticated: {
+    resolve: async ({ request }: { request: Request }) => {
+      const env = getEnv() as ValidatedEnv; // safe-cast: Worker env validated at startup; TS can't narrow the return type
+      const auth = await getAuth(env);
+      const session = await auth.api.getSession({ headers: request.headers });
+      if (!session) return status(401, { error: 'Unauthorized' });
+
+      return {
+        user: {
+          userId: session.user.id,
+          role: (session.user as unknown as { role?: string }).role ?? 'USER',
+          email: session.user.email,
+          name: session.user.name,
+        },
+      };
+    },
+  },
+});
+
+/**
+ * Macro that additionally enforces ADMIN role.
+ */
+export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(authPlugin).macro({
+  isAdmin: {
+    resolve: async ({ request }: { request: Request }) => {
+      const env = getEnv() as ValidatedEnv; // safe-cast: Worker env validated at startup; TS can't narrow the return type
+      const auth = await getAuth(env);
+      const session = await auth.api.getSession({ headers: request.headers });
+      if (!session) return status(401, { error: 'Unauthorized' });
+
+      const role = (session.user as unknown as { role?: string }).role;
+      if (role !== 'ADMIN') return status(403, { error: 'Forbidden' });
+
+      return {
+        user: {
+          userId: session.user.id,
+          role: 'ADMIN' as const,
+          email: session.user.email,
+          name: session.user.name,
+        },
+      };
+    },
+  },
+});
+
+/**
+ * Minimal macro accepting only the `X-API-Key` header for cron/admin routes.
+ */
+export const apiKeyAuthPlugin = new Elysia({ name: 'packrat-api-key-auth' }).macro({
+  isValidApiKey: {
+    resolve: ({ request }: { request: Request }) => {
+      if (isValidApiKey(request.headers)) return { authorized: true };
+      return status(401, { error: 'Unauthorized' });
+    },
+  },
+});

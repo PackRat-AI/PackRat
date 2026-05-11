@@ -16,13 +16,19 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
-          ref: development
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      - name: Merge main into development
-        uses: devmasx/merge-branch@v1.4.0
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
         with:
-          type: now
-          from_branch: main
-          target_branch: development
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: sync-main-to-development
+          base: development
+          title: "chore: sync main to development"
+          body: |
+            Automated PR to sync changes from `main` to `development`.
+            
+            This PR is created automatically when changes are pushed to `main`.
+          labels: automated
+          delete-branch: true

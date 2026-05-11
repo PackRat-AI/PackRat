@@ -1,4 +1,4 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -8,7 +8,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
@@ -33,7 +33,7 @@ const tripFormSchema = z
       .optional(),
     startDate: z.string().min(1, 'Start date is required'),
     endDate: z.string().min(1, 'End date is required'),
-    packId: z.string().optional(),
+    packId: z.string().nullable().optional(),
   })
   .refine(
     ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
@@ -91,7 +91,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     if (value instanceof Date) {
       return value.toISOString().split('T')[0];
     }
-    if (typeof value === 'string') {
+    if (isString(value)) {
       return value.split('T')[0];
     }
     return '';
@@ -109,10 +109,16 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
+      // safe-cast: defaultValues object matches TripFormValues shape; useForm generic infers
+      // narrower literal types from the object literal without the cast.
     } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
-      const submitData = { ...value, location: location ?? value.location };
+      const submitData = {
+        ...value,
+        location: location ?? value.location,
+        packId: value.packId === '' ? undefined : (value.packId ?? undefined),
+      };
       try {
         if (isEditingExistingTrip) {
           await updateTrip({ ...trip, ...submitData });
@@ -296,6 +302,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
+                      testID={testIds.trips.startDateInput}
                       onPress={() => setShowStartPicker(true)}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
@@ -339,6 +346,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       onPress={() => setShowEndPicker(true)}
+                      testID={testIds.trips.endDateInput}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
@@ -380,7 +388,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
-              testID={TestIds.SubmitTripButton}
+              testID={testIds.trips.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

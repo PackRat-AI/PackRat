@@ -1,6 +1,7 @@
 'use client';
 
 import { guideEnv } from '@packrat/env/next';
+import { assertEnum } from '@packrat/guards';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import {
@@ -284,18 +285,20 @@ export default function GeneratePage() {
                 <div className="space-y-2">
                   <Label>Categories (select at least one)</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {Object.entries(CATEGORY_DISPLAY_NAMES).map(([key, name]) => (
-                      <div key={key} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`category-${key}`}
-                          checked={selectedCategories.includes(key as ContentCategory)}
-                          onCheckedChange={() => handleCategoryToggle(key as ContentCategory)}
-                        />
-                        <Label htmlFor={`category-${key}`} className="text-sm">
-                          {name}
-                        </Label>
-                      </div>
-                    ))}
+                    {(Object.entries(CATEGORY_DISPLAY_NAMES) as [ContentCategory, string][]).map(
+                      ([key, name]) => (
+                        <div key={key} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${key}`}
+                            checked={selectedCategories.includes(key)}
+                            onCheckedChange={() => handleCategoryToggle(key)}
+                          />
+                          <Label htmlFor={`category-${key}`} className="text-sm">
+                            {name}
+                          </Label>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -303,7 +306,10 @@ export default function GeneratePage() {
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value: string) => setDifficulty(value as DifficultyLevel)}
+                    onValueChange={(value: string) => {
+                      assertEnum(value, { members: difficulties, name: 'difficulty' });
+                      setDifficulty(value);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select difficulty" />
@@ -421,18 +427,18 @@ export default function GeneratePage() {
                   Select categories to focus on, or leave empty for a mix
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {Object.entries(CATEGORY_DISPLAY_NAMES).map(([key, name]) => (
-                    <Badge
-                      key={key}
-                      variant={
-                        batchCategories.includes(key as ContentCategory) ? 'default' : 'outline'
-                      }
-                      className="cursor-pointer"
-                      onClick={() => handleBatchCategoryToggle(key as ContentCategory)}
-                    >
-                      {name}
-                    </Badge>
-                  ))}
+                  {(Object.entries(CATEGORY_DISPLAY_NAMES) as [ContentCategory, string][]).map(
+                    ([key, name]) => (
+                      <Badge
+                        key={key}
+                        variant={batchCategories.includes(key) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => handleBatchCategoryToggle(key)}
+                      >
+                        {name}
+                      </Badge>
+                    ),
+                  )}
                 </div>
               </div>
 

@@ -5,9 +5,13 @@
 // Runs the following checks in parallel and prints a unified summary table:
 //   - scripts/lint/no-raw-regex.ts
 //   - scripts/lint/no-raw-typeof.ts
+//   - packages/env/scripts/no-raw-process-env.ts
 //   - scripts/lint/no-circular-deps.ts
 //   - scripts/lint/no-duplicate-deps.ts  (skipped if file doesn't exist)
+//   - scripts/lint/no-duplicate-guards.ts
+//   - scripts/lint/no-unauth-routes.ts
 //   - packages/checks/src/check-magic-strings.ts
+//   - packages/checks/src/check-type-casts.ts --strict
 //   - scripts/lint/check-react-doctor.ts
 //   - scripts/format/sort-package-json.ts --check
 //
@@ -59,12 +63,29 @@ const ALL_CHECKS: CheckDef[] = [
     script: join(ROOT, 'scripts', 'lint', 'no-raw-typeof.ts'),
   },
   {
+    name: 'no-raw-process-env',
+    script: join(ROOT, 'packages', 'env', 'scripts', 'no-raw-process-env.ts'),
+  },
+  {
     name: 'no-circular-deps',
     script: join(ROOT, 'scripts', 'lint', 'no-circular-deps.ts'),
   },
   {
     name: 'no-duplicate-deps',
     script: join(ROOT, 'scripts', 'lint', 'no-duplicate-deps.ts'),
+  },
+  {
+    name: 'no-duplicate-guards',
+    script: join(ROOT, 'scripts', 'lint', 'no-duplicate-guards.ts'),
+  },
+  {
+    name: 'no-unauth-routes',
+    script: join(ROOT, 'scripts', 'lint', 'no-unauth-routes.ts'),
+  },
+  {
+    name: 'check-type-casts',
+    script: join(ROOT, 'packages', 'checks', 'src', 'check-type-casts.ts'),
+    args: ['--strict'],
   },
   {
     name: 'check-magic-strings',

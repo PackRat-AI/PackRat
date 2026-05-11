@@ -1,15 +1,15 @@
-import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import type { AxiosError } from 'axios';
 import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance from 'expo-app/lib/api/client';
+import type { User } from 'expo-app/features/profile/types';
+import { authClient } from 'expo-app/lib/auth-client';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { queryClient } from 'expo-app/providers/TanstackProvider';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
@@ -19,8 +19,7 @@ import {
   isLoadingAtom,
   needsReauthAtom,
   redirectToAtom,
-  refreshTokenAtom,
-  tokenAtom,
+  suppressSignOutNavAtom,
 } from '../atoms/authAtoms';
 
 function redirect(route: string) {
@@ -28,54 +27,50 @@ function redirect(route: string) {
     const parsedRoute: Href = JSON.parse(route);
     return router.dismissTo(parsedRoute);
   } catch {
-    router.dismissTo(route as Href);
+    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
+function mapToUser(raw: Record<string, unknown>): User {
+  const name = String(raw.name ?? '');
+  const spaceIdx = name.indexOf(' ');
+  return {
+    id: String(raw.id ?? ''),
+    email: String(raw.email ?? ''),
+    firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
+    lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
+    role: (raw.role as 'USER' | 'ADMIN') ?? 'USER',
+    avatarUrl: (raw.image as string | null) ?? null,
+    preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
+  };
+}
+
 export function useAuthActions() {
-  const setToken = useSetAtom(tokenAtom);
-  const setRefreshToken = useSetAtom(refreshTokenAtom);
-  const refreshToken = useAtomValue(refreshTokenAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
+  const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
   const clearLocalData = async () => {
+    queryClient.clear();
     const allKeys = await Storage.getAllKeys();
     await Promise.all(allKeys.map((key) => Storage.removeItem(key)));
-
     await AsyncStorage.clear();
-
     await ImageCacheManager.clearCache();
+  };
+
+  const applySession = (user: Record<string, unknown>) => {
+    userStore.set(mapToUser(user));
+    setNeedsReauth(false);
+    redirect(redirectTo);
   };
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignIn'));
-      }
-
-      console.log(data.accessToken, data.refreshToken);
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
-      setNeedsReauth(false);
-
-      redirect(redirectTo);
+      const { data, error } = await authClient.signIn.email({ email, password });
+      if (error) throw new Error(error.message ?? 'Sign in failed');
+      applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -85,45 +80,20 @@ export function useAuthActions() {
   };
 
   const signInWithGoogle = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
-      // Check if user is already signed in to Google
       await GoogleSignin.hasPlayServices();
-
-      // Sign in with Google
-      const _userInfo = await GoogleSignin.signIn();
-
-      // Get the ID token
+      await GoogleSignin.signIn();
       const { idToken } = await GoogleSignin.getTokens();
 
-      if (!idToken) {
-        throw new Error(t('auth.noIdTokenFromGoogle'));
-      }
+      if (!idToken) throw new Error(t('auth.noIdTokenFromGoogle'));
 
-      // Send the token to backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
+      const { data, error } = await authClient.signIn.social({
+        provider: 'google',
+        idToken: { token: idToken },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignInWithGoogle'));
-      }
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
-      setNeedsReauth(false);
-
-      redirect(redirectTo);
+      if (error) throw new Error(error.message ?? t('auth.failedToSignInWithGoogle'));
+      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       setIsLoading(false);
 
@@ -136,19 +106,15 @@ export function useAuthActions() {
       } else {
         console.error('Google sign in error:', error);
       }
-
       throw error;
     }
   };
 
   const signInWithApple = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
       const isAvailable = await AppleAuthentication.isAvailableAsync();
-      if (!isAvailable) {
-        throw new Error(t('auth.appleSignInNotAvailable'));
-      }
+      if (!isAvailable) throw new Error(t('auth.appleSignInNotAvailable'));
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -157,32 +123,12 @@ export function useAuthActions() {
         ],
       });
 
-      // Send the identity token to your backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/apple`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          identityToken: credential.identityToken,
-          authorizationCode: credential.authorizationCode,
-        }),
+      const { data, error } = await authClient.signIn.social({
+        provider: 'apple',
+        idToken: { token: credential.identityToken ?? '' },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignInWithApple'));
-      }
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
-      setNeedsReauth(false);
-
-      redirect(redirectTo);
+      if (error) throw new Error(error.message ?? 'Apple sign in failed');
+      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       console.error('Apple sign in error:', error);
       throw error;
@@ -204,21 +150,11 @@ export function useAuthActions() {
   }) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, firstName, lastName }),
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || t('auth.registrationFailed'));
-      }
+      const name = [firstName, lastName].filter(Boolean).join(' ') || email;
+      const { error } = await authClient.signUp.email({ email, password, name });
+      if (error) throw new Error(error.message ?? 'Sign up failed');
     } catch (error) {
-      console.error('Registration error:', (error as AxiosError).message);
+      console.error('Registration error:', error instanceof Error ? error.message : String(error));
       throw error;
     } finally {
       setIsLoading(false);
@@ -226,156 +162,68 @@ export function useAuthActions() {
   };
 
   const signOut = async () => {
+    // Suppress AppLayout's auto-navigation to /auth so the profile screen can
+    // show a post-sign-out prompt and handle navigation itself.
+    setSuppressSignOutNav(true);
     setIsLoading(true);
     try {
-      // Sign out from Google if signed in
       const isSignedIn = await GoogleSignin.hasPreviousSignIn();
-      if (isSignedIn) {
-        await GoogleSignin.signOut();
-      }
-
-      // Get the refresh token
-      if (refreshToken) {
-        // Call the logout endpoint to revoke the refresh token
-        await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-      }
+      if (isSignedIn) await GoogleSignin.signOut();
+      await authClient.signOut();
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
-      // Clear tokens and user data
-      setToken(null);
-      setRefreshToken(null);
+      userStore.set(null);
       await clearLocalData();
       setNeedsReauth(false);
-      setIsLoading(false);
+      // isLoadingAtom intentionally left true — the caller (profile/handleSignOut)
+      // shows a post-sign-out Alert and is responsible for clearing it and
+      // navigating (either to '/' for guest mode or to /auth via releasing
+      // suppressSignOutNav while isLoadingAtom is still true).
     }
   };
 
   const forgotPassword = async (email: string) => {
-    try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToProcessRequest'));
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      throw error;
-    }
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: 'packrat://reset-password',
+    });
+    if (error) throw new Error(error.message ?? 'Forgot password failed');
   };
 
-  const resetPassword = async (email: string, opts: { code: string; newPassword: string }) => {
-    const { code, newPassword } = opts;
-    try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code, newPassword }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.resetPasswordFailed'));
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Reset password error:', error);
-      throw error;
-    }
+  const resetPassword = async (_email: string, opts: { token: string; newPassword: string }) => {
+    const { error } = await authClient.resetPassword({
+      token: opts.token,
+      newPassword: opts.newPassword,
+    });
+    if (error) throw new Error(error.message ?? 'Reset password failed');
   };
 
-  const verifyEmail = async (email: string, code: string) => {
-    try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code }),
-      });
+  const verifyEmail = async (_email: string, token: string) => {
+    const { data, error } = await authClient.verifyEmail({ query: { token } });
+    if (error) throw new Error(error.message ?? 'Email verification failed');
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToVerifyEmail'));
-      }
-
-      // If verification is successful, set the user and tokens
-      if (data.accessToken && data.refreshToken && data.user) {
-        await Storage.setItem('access_token', data.accessToken);
-        await Storage.setItem('refresh_token', data.refreshToken);
-
-        await setToken(data.accessToken);
-        await setRefreshToken(data.refreshToken);
-        userStore.set(data.user);
-        redirect(redirectTo);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Email verification error:', error);
-      throw error;
+    const session = await authClient.getSession();
+    if (session.data?.user) {
+      applySession(session.data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     }
+    return data;
   };
 
   const resendVerificationEmail = async (email: string) => {
-    try {
-      const response = await fetch(
-        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/resend-verification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToResendVerificationEmail'));
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Resend verification email error:', error);
-      throw error;
-    }
+    const { error } = await authClient.sendVerificationEmail({
+      email,
+      callbackURL: 'packrat://verify-email',
+    });
+    if (error) throw new Error(error.message ?? 'Failed to resend verification email');
   };
 
   const deleteAccount = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.delete('/api/auth');
-
-      if (response.status !== 200) {
-        throw new Error(response.data?.error || t('auth.failedToDeleteAccount'));
-      }
-
-      // Clear tokens and user data
-      setToken(null);
-      setRefreshToken(null);
+      const { error } = await authClient.deleteUser();
+      if (error) throw new Error(error.message ?? 'Delete account failed');
+      userStore.set(null);
       await clearLocalData();
       await Updates.reloadAsync();
     } catch (error) {

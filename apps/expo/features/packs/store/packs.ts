@@ -1,39 +1,50 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
-import Storage from 'expo-sqlite/kv-store';
+import { apiClient } from 'expo-app/lib/api/packrat';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { PackInStore } from '../types';
 
-const listPacks = async () => {
-  try {
-    const res = await axiosInstance.get('/api/packs');
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to list packs: ${message}`);
-  }
-};
-const createPack = async (packData: PackInStore) => {
-  try {
-    const response = await axiosInstance.post('/api/packs', packData);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to create pack: ${message}`);
-  }
+const listPacks = async (): Promise<PackInStore[] | null> => {
+  const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
+  if (error) throw new Error(`Failed to list packs: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
+  return PackWithWeightsSchema.array().parse(data) as unknown as PackInStore[];
 };
 
-const updatePack = async ({ id, ...data }: Partial<PackInStore>) => {
-  try {
-    const response = await axiosInstance.put(`/api/packs/${id}`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to update pack: ${message}`);
-  }
+const createPack = async (packData: PackInStore): Promise<PackInStore | null> => {
+  const { data, error } = await apiClient.packs.post({
+    id: packData.id,
+    name: packData.name,
+    description: packData.description ?? undefined,
+    category: packData.category ?? undefined,
+    isPublic: packData.isPublic,
+    image: packData.image,
+    tags: packData.tags ?? undefined,
+    localCreatedAt: packData.localCreatedAt ?? new Date().toISOString(),
+    localUpdatedAt: packData.localUpdatedAt ?? new Date().toISOString(),
+  });
+  if (error) throw new Error(`Failed to create pack: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
+  return PackWithWeightsSchema.parse(data) as unknown as PackInStore;
+};
+
+const updatePack = async ({ id, ...data }: Partial<PackInStore>): Promise<PackInStore | null> => {
+  const { data: result, error } = await apiClient.packs({ packId: String(id) }).put({
+    ...(data.name !== undefined ? { name: data.name } : {}),
+    ...(data.description !== undefined ? { description: data.description ?? undefined } : {}),
+    ...(data.category !== undefined ? { category: data.category ?? undefined } : {}),
+    ...(data.isPublic !== undefined ? { isPublic: data.isPublic } : {}),
+    ...(data.image !== undefined ? { image: data.image } : {}),
+    ...(data.tags !== undefined ? { tags: data.tags ?? undefined } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
+    ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+  });
+  if (error) throw new Error(`Failed to update pack: ${error.value}`);
+  // safe-cast: Zod parse validates the shape; PackInStore extends the Zod-inferred type with local store fields
+  return PackWithWeightsSchema.parse(result) as unknown as PackInStore;
 };
 
 export const packsStore = observable<Record<string, PackInStore>>({});
@@ -46,9 +57,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(
-        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-      ),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'packs',
     },

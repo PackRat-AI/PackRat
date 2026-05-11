@@ -18,6 +18,8 @@ function Icon({
   const prefersMaterialCommunityIcons = materialIcon?.type === 'MaterialCommunityIcons';
 
   if (prefersMaterialCommunityIcons) {
+    // safe-cast: string fallback chain produces a valid MaterialCommunityIcons name at runtime;
+    // the icon name union is too wide for TypeScript to verify statically.
     const iconName = (materialIcon?.name ??
       iconNames.materialCommunityIcon ??
       'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -26,6 +28,8 @@ function Icon({
   }
 
   if (prefersMaterialIcons) {
+    // safe-cast: string fallback chain produces a valid MaterialIcons name at runtime;
+    // the icon name union is too wide for TypeScript to verify statically.
     const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
       typeof MaterialIcons
     >['name'];
@@ -35,6 +39,8 @@ function Icon({
 
   // Prefer MaterialIcons if available, otherwise use MaterialCommunityIcons
   if (iconNames.materialIcon) {
+    // safe-cast: string fallback chain produces a valid MaterialIcons name at runtime;
+    // the icon name union is too wide for TypeScript to verify statically.
     const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
       typeof MaterialIcons
     >['name'];
@@ -42,6 +48,8 @@ function Icon({
     return <MaterialIcons {...restProps} name={iconName} size={size} color={color} />;
   }
 
+  // safe-cast: string fallback chain produces a valid MaterialCommunityIcons name at runtime;
+  // the icon name union is too wide for TypeScript to verify statically.
   const iconName = (materialIcon?.name ??
     iconNames.materialCommunityIcon ??
     'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];

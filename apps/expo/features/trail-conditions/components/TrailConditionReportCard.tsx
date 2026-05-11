@@ -53,11 +53,10 @@ export function TrailConditionReportCard({ report }: TrailConditionReportCardPro
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  const surfaceLabel = SURFACE_LABELS[report.surface as TrailSurface] ?? report.surface;
+  const surfaceLabel = SURFACE_LABELS[report.surface] ?? report.surface;
 
   const difficultyLabel = report.waterCrossingDifficulty
-    ? (WATER_DIFFICULTY_LABELS[report.waterCrossingDifficulty as WaterCrossingDifficulty] ??
-      report.waterCrossingDifficulty)
+    ? (WATER_DIFFICULTY_LABELS[report.waterCrossingDifficulty] ?? report.waterCrossingDifficulty)
     : null;
 
   const hazardLabels = (report.hazards ?? []).map((h) => HAZARD_LABELS[h.toLowerCase()] ?? h);

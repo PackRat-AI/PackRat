@@ -105,6 +105,22 @@
   animation-delay: 0.6s;
 }
 
+/* Respect user's reduced-motion preference (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: required to override component animations for accessibility */
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Gradient mesh background */
 .bg-gradient-mesh {
   background-image:

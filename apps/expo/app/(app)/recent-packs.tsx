@@ -6,6 +6,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Image, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function RecentPackCard({ pack }: { pack: Pack }) {
   const { colors } = useColorScheme();
@@ -33,7 +34,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
               {pack.totalWeight ?? 0} g
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {getRelativeTime(pack.localCreatedAt)}
+              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt, t)}
             </Text>
           </View>
         </View>
@@ -43,7 +44,9 @@ function RecentPackCard({ pack }: { pack: Pack }) {
             <Icon name="clock-outline" size={14} color={colors.grey} />
           </View>
           <Text variant="caption1" className="text-muted-foreground">
-            {t('packs.lastUpdated', { time: getRelativeTime(pack.localUpdatedAt) })}
+            {t('packs.lastUpdated', {
+              time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+            })}
           </Text>
         </View>
       </View>
@@ -56,10 +59,10 @@ export default function RecentPacksScreen() {
   const { t } = useTranslation();
 
   return (
-    <View className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('packs.recentPacks')} />
       {recentPacks.length ? (
-        <ScrollView className="flex-1">
+        <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
           <View className="p-4">
             <Text variant="subhead" className="mb-2 text-muted-foreground">
               {t('packs.recentlyUpdated')}
@@ -79,6 +82,6 @@ export default function RecentPacksScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

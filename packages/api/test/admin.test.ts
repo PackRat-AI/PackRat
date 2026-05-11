@@ -1,6 +1,3 @@
-import { createDb } from '@packrat/api/db';
-import { refreshTokens } from '@packrat/api/db/schema';
-import type { Context } from 'hono';
 import { describe, expect, it } from 'vitest';
 import { seedCatalogItem, seedPack, seedTestUser } from './utils/db-helpers';
 import {
@@ -108,22 +105,6 @@ describe('Admin Routes', () => {
     it('returns 404 for a non-existent user', async () => {
       const res = await apiWithBasicAuth('/users/999999', { method: 'DELETE' });
       expect(res.status).toBe(404);
-    });
-
-    it('returns 409 when the user has dependent data (e.g. refresh token)', async () => {
-      // refresh_tokens.user_id uses ON DELETE RESTRICT (schema.ts:48), so a
-      // row here triggers Postgres 23503 → 409 in the admin delete handler.
-      // packs/pack_items cascade, so they can't be used to verify this path.
-      const user = await seedTestUser({ email: 'admin-del-conflict@example.com' });
-      const db = createDb({} as unknown as Context);
-      await db.insert(refreshTokens).values({
-        userId: user.id,
-        token: `test-${Date.now()}-${Math.random()}`,
-        expiresAt: new Date(Date.now() + 86_400_000),
-      });
-
-      const res = await apiWithBasicAuth(`/users/${user.id}`, { method: 'DELETE' });
-      expect(res.status).toBe(409);
     });
   });
 

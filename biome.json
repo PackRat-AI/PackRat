@@ -16,6 +16,7 @@
       "!**/ios",
       "!**/android",
       "!**/public",
+      "!**/coverage",
       "!**/.next",
       "!**/.wrangler",
       "!**/*.gen.ts",
@@ -47,7 +48,7 @@
         "noUnusedImports": "error"
       },
       "performance": {
-        "useTopLevelRegex": "warn"
+        "useTopLevelRegex": "error"
       },
       "style": {
         "noNonNullAssertion": "error"
@@ -62,6 +63,8 @@
       "includes": [
         "apps/expo/atoms/atomWith*.ts",
         "apps/expo/features/weather/atoms/locationsAtoms.ts",
+        "apps/expo/lib/api/client.ts",
+        "packages/api/src/index.ts",
         "packages/api/src/routes/admin/index.ts",
         "packages/api/src/services/r2-bucket.ts",
         "packages/api/src/services/etl/processCatalogEtl.ts",
@@ -69,6 +72,7 @@
         "packages/api/test/setup.ts",
         "apps/expo/utils/weight.ts",
         "packages/api/src/utils/weight.ts",
+        "packages/units/src/index.ts",
         "packages/mcp/src/index.ts",
         "scripts/lint/**",
         "scripts/format/**",
