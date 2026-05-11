@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.170",
-    "@better-auth/expo": "^1.6.9",
+    "@better-auth/expo": "^1.6.10",
     "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.1.2",
