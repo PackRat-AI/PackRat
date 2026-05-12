@@ -123,30 +123,40 @@ export default function AIChat() {
   const isLocalReady = modelStatus === 'ready';
   const tools = React.useMemo(() => createLocalTools(), []);
 
-  const transport = React.useMemo(() => {
+  const { transport, transportKey } = React.useMemo(() => {
     if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
-        return new CustomChatTransport(model, tools);
+        return {
+          transport: new CustomChatTransport(model, createLocalTools()),
+          transportKey: 'local',
+        };
       }
+    } else {
     }
-    return new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
-      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: () => ({
-        contextType: contextRef.current.contextType,
-        itemId: contextRef.current.itemId,
-        packId: contextRef.current.packId,
-        location: locationRef.current,
-        date: new Date().toLocaleString(),
+    return {
+      transport: new DefaultChatTransport({
+        fetch: expoFetch as unknown as typeof globalThis.fetch,
+        api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: () => ({
+          contextType: contextRef.current.contextType,
+          itemId: contextRef.current.itemId,
+          packId: contextRef.current.packId,
+          location: locationRef.current,
+          date: new Date().toLocaleString(),
+        }),
       }),
-    });
-  }, [aiMode, isLocalReady, token, tools]);
+      transportKey: 'remote',
+    };
+  }, [aiMode, isLocalReady, modelStatus, token, tools]);
 
+  // transportKey forces useChat to remount when the transport type switches,
+  // since useChat captures the transport reference on mount and won't update it.
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
+    id: transportKey,
     transport,
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200,
