@@ -32,7 +32,7 @@ import type { Screen } from 'web-app/components/app-shell';
 import { BetaBadge } from 'web-app/components/beta-badge';
 import { ConfirmDialog, Modal, NotificationsPanel } from 'web-app/components/modals';
 import { SettingsScreen } from 'web-app/components/screens/settings-screen';
-import { clearTokens } from 'web-app/lib/auth';
+import { authClient } from 'web-app/lib/auth-client';
 import type { PackWithWeights } from 'web-app/lib/types';
 import { cn } from 'web-app/lib/utils';
 import { useWeight } from 'web-app/lib/weight-context';
@@ -250,8 +250,7 @@ export function ProfileScreen({ navigate }: ProfileScreenProps) {
         open={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={() => {
-          clearTokens();
-          router.push('/auth');
+          void authClient.signOut().then(() => router.push('/auth'));
         }}
         title="Sign Out?"
         description="Are you sure you want to sign out of your account?"

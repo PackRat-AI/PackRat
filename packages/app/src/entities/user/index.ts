@@ -1,7 +1,5 @@
 export {
   useCurrentUser,
-  useLoginMutation,
-  useRegisterMutation,
   useUpdateProfileMutation,
   useUserProfile,
 } from './queries';

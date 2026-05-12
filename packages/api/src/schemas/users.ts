@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Base user schema
 export const UserSchema = z.object({
-  id: z.number().int().positive(),
+  id: z.string(),
   email: z.string().email(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),

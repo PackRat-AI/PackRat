@@ -69,7 +69,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // ── Mock Current User ────────────────────────────────────────────────────────
 
 export const currentUser: User = {
-  id: 1,
+  id: '1',
   email: 'alex@packrat.app',
   firstName: 'Alex',
   lastName: 'Rivera',
@@ -94,7 +94,7 @@ function createPackItem(
     image: null,
     notes: null,
     catalogItemId: null,
-    userId: 1,
+    userId: '1',
     deleted: false,
     isAIGenerated: false,
     createdAt: now,
@@ -385,7 +385,7 @@ const alpineWeights = calcWeights(alpineItems);
 export const mockPacks: PackWithWeights[] = [
   {
     id: 'pack-1',
-    userId: 1,
+    userId: '1',
     name: '3-Season PCT Thru-Hike',
     description:
       'Optimized for the Pacific Crest Trail, spring through fall. Sub-10lb base weight.',
@@ -402,7 +402,7 @@ export const mockPacks: PackWithWeights[] = [
   },
   {
     id: 'pack-2',
-    userId: 1,
+    userId: '1',
     name: 'Weekend Backpacking',
     description: 'Comfortable 3-day base for Sierra trips. Prioritizes comfort over weight.',
     category: 'backpacking',
@@ -418,7 +418,7 @@ export const mockPacks: PackWithWeights[] = [
   },
   {
     id: 'pack-3',
-    userId: 1,
+    userId: '1',
     name: 'Alpine Summit Push',
     description: 'Fast and light mountaineering kit for technical approaches and summit pushes.',
     category: 'climbing',
@@ -439,7 +439,7 @@ export const mockPacks: PackWithWeights[] = [
 export const mockTemplates: PackWithWeights[] = [
   {
     id: 'tmpl-1',
-    userId: 0,
+    userId: '0',
     name: 'Desert Thru-Hike Starter',
     description:
       'Minimal kit optimized for hot, dry conditions. Focus on sun protection and water capacity.',
@@ -457,7 +457,7 @@ export const mockTemplates: PackWithWeights[] = [
   },
   {
     id: 'tmpl-2',
-    userId: 0,
+    userId: '0',
     name: 'Winter Mountaineering',
     description:
       'Cold weather alpine setup for sub-freezing conditions. Includes insulation layers.',
@@ -475,7 +475,7 @@ export const mockTemplates: PackWithWeights[] = [
   },
   {
     id: 'tmpl-3',
-    userId: 0,
+    userId: '0',
     name: 'Ultralight Day Hike',
     description: 'Minimal essentials for a fast day on the trail. 10 essentials coverage.',
     category: 'hiking',
@@ -508,7 +508,7 @@ export const mockTrips: Trip[] = [
     },
     startDate: '2024-08-10',
     endDate: '2024-08-17',
-    userId: 1,
+    userId: '1',
     packId: 'pack-1',
     deleted: false,
     createdAt: '2024-06-15T09:00:00Z',
@@ -526,7 +526,7 @@ export const mockTrips: Trip[] = [
     },
     startDate: '2024-09-22',
     endDate: '2024-09-25',
-    userId: 1,
+    userId: '1',
     packId: 'pack-3',
     deleted: false,
     createdAt: '2024-07-01T14:00:00Z',
@@ -544,7 +544,7 @@ export const mockTrips: Trip[] = [
     },
     startDate: '2024-10-05',
     endDate: '2024-10-08',
-    userId: 1,
+    userId: '1',
     packId: 'pack-2',
     deleted: false,
     createdAt: '2024-08-01T11:30:00Z',
@@ -1031,65 +1031,65 @@ export const mockCatalogItems: CatalogItem[] = [
 export const mockPosts: Post[] = [
   {
     id: 1,
-    userId: 2,
+    userId: '2',
     caption:
       'Finally dialed in my SoCal desert PCT setup. 6.5lb base weight! The key was switching to a tarp and going stoveless for the desert section.',
     images: [],
     createdAt: '2024-07-28T14:30:00Z',
     updatedAt: '2024-07-28T14:30:00Z',
-    author: { id: 2, firstName: 'Sarah', lastName: 'Chen' },
+    author: { id: '2', firstName: 'Sarah', lastName: 'Chen' },
     likeCount: 142,
     commentCount: 23,
     likedByMe: false,
   },
   {
     id: 2,
-    userId: 3,
+    userId: '3',
     caption:
       'Wind River High Route gear list. This is what 4000+ miles of thru-hiking has taught me. Every gram has been earned.',
     images: [],
     createdAt: '2024-07-25T09:15:00Z',
     updatedAt: '2024-07-25T09:15:00Z',
-    author: { id: 3, firstName: 'Jake', lastName: 'Morrison' },
+    author: { id: '3', firstName: 'Jake', lastName: 'Morrison' },
     likeCount: 89,
     commentCount: 11,
     likedByMe: true,
   },
   {
     id: 3,
-    userId: 4,
+    userId: '4',
     caption:
       'AT weekend basecamp setup. Not the lightest but extremely comfortable for section hiking with my kids.',
     images: [],
     createdAt: '2024-07-22T16:45:00Z',
     updatedAt: '2024-07-22T16:45:00Z',
-    author: { id: 4, firstName: 'Maria', lastName: 'Santos' },
+    author: { id: '4', firstName: 'Maria', lastName: 'Santos' },
     likeCount: 54,
     commentCount: 7,
     likedByMe: false,
   },
   {
     id: 4,
-    userId: 5,
+    userId: '5',
     caption:
       'Wonderland Trail FKT attempt kit. Shaved 2 lbs from last year. Going for sub-24 hours this time.',
     images: [],
     createdAt: '2024-07-20T11:00:00Z',
     updatedAt: '2024-07-20T11:00:00Z',
-    author: { id: 5, firstName: 'Alex', lastName: 'Park' },
+    author: { id: '5', firstName: 'Alex', lastName: 'Park' },
     likeCount: 211,
     commentCount: 38,
     likedByMe: true,
   },
   {
     id: 5,
-    userId: 6,
+    userId: '6',
     caption:
       "Zion Narrows overnighter loadout. Waterproof everything! Learned from experience that the river doesn't care about your gear.",
     images: [],
     createdAt: '2024-07-18T08:30:00Z',
     updatedAt: '2024-07-18T08:30:00Z',
-    author: { id: 6, firstName: 'Jordan', lastName: 'Kim' },
+    author: { id: '6', firstName: 'Jordan', lastName: 'Kim' },
     likeCount: 77,
     commentCount: 14,
     likedByMe: false,

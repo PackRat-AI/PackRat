@@ -40,7 +40,10 @@ function mapToUser(raw: Record<string, unknown>): User {
     firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
     lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
     role: (raw.role as 'USER' | 'ADMIN') ?? 'USER',
+    emailVerified: (raw.emailVerified as boolean | null) ?? null,
     avatarUrl: (raw.image as string | null) ?? null,
+    createdAt: (raw.createdAt as string | null) ?? null,
+    updatedAt: (raw.updatedAt as string | null) ?? null,
     preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
   };
 }

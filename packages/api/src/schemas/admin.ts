@@ -33,9 +33,9 @@ export const AdminUserItemSchema = t.Object({
   lastName: t.Nullable(t.String()),
   role: t.Nullable(t.String()),
   emailVerified: t.Nullable(t.Boolean()),
+  avatarUrl: t.Nullable(t.String()),
   createdAt: t.Nullable(t.String()),
-  lastActiveAt: t.Nullable(t.String()),
-  deletedAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
 });
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -46,9 +46,11 @@ export const AdminPackItemSchema = t.Object({
   description: t.Nullable(t.String()),
   category: t.String(),
   isPublic: t.Nullable(t.Boolean()),
-  deleted: t.Boolean(),
-  deletedAt: t.Nullable(t.String()),
+  isAIGenerated: t.Nullable(t.Boolean()),
+  tags: t.Nullable(t.Array(t.String())),
+  image: t.Nullable(t.String()),
   createdAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
   userEmail: t.Nullable(t.String()),
 });
 
@@ -57,11 +59,19 @@ export const AdminPackItemSchema = t.Object({
 export const AdminCatalogItemSchema = t.Object({
   id: t.Number(),
   name: t.String(),
+  description: t.Nullable(t.String()),
   categories: t.Nullable(t.Array(t.String())),
   brand: t.Nullable(t.String()),
+  model: t.Nullable(t.String()),
   price: t.Nullable(t.Number()),
+  currency: t.Nullable(t.String()),
   weight: t.Number(),
   weightUnit: t.String(),
+  availability: t.Nullable(t.String()),
+  ratingValue: t.Nullable(t.Number()),
+  reviewCount: t.Nullable(t.Number()),
+  productUrl: t.Nullable(t.String()),
+  images: t.Nullable(t.Array(t.String())),
   createdAt: t.Nullable(t.String()),
 });
 

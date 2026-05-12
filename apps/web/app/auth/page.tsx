@@ -1,9 +1,9 @@
 'use client';
-import { useLoginMutation, useRegisterMutation } from '@packrat/app';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
-import { setTokens } from 'web-app/lib/auth';
+import { authClient } from 'web-app/lib/auth-client';
 
 export default function AuthPage() {
   const [tab, setTab] = useState<'login' | 'register'>('login');
@@ -13,45 +13,34 @@ export default function AuthPage() {
   const [info, setInfo] = useState<string | null>(null);
   const router = useRouter();
 
-  const loginMutation = useLoginMutation();
-  const registerMutation = useRegisterMutation();
+  const loginMutation = useMutation({
+    mutationFn: async (body: { email: string; password: string }) => {
+      const { error } = await authClient.signIn.email(body);
+      if (error) throw new Error(error.message ?? 'Login failed');
+    },
+    onSuccess: () => router.push('/'),
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (body: { email: string; password: string; name: string }) => {
+      const { error } = await authClient.signUp.email(body);
+      if (error) throw new Error(error.message ?? 'Registration failed');
+    },
+    onSuccess: () => {
+      setTab('login');
+      setInfo('Account created! Please check your email to verify, then sign in.');
+    },
+  });
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setInfo(null);
-    loginMutation.mutate(
-      { email, password },
-      {
-        onSuccess: (data) => {
-          const response = data as { accessToken?: string; refreshToken?: string } | null;
-          const accessToken = response?.accessToken ?? '';
-          const refreshToken = response?.refreshToken ?? '';
-          if (!accessToken) return;
-          setTokens(accessToken, refreshToken);
-          router.push('/');
-        },
-      },
-    );
+    loginMutation.mutate({ email, password });
   }
 
   function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    setInfo(null);
-    const [firstName, ...rest] = username.trim().split(' ');
-    const lastName = rest.join(' ') || undefined;
-    registerMutation.mutate(
-      { email, password, firstName: firstName ?? username, lastName },
-      {
-        onSuccess: () => {
-          setTab('login');
-          setInfo('Account created! Please check your email to verify, then sign in.');
-        },
-      },
-    );
+    registerMutation.mutate({ email, password, name: username || email });
   }
-
-  const loginError = loginMutation.error?.message ?? null;
-  const registerError = registerMutation.error?.message ?? null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -94,7 +83,9 @@ export default function AuthPage() {
               required
             />
             {info && <p className="text-sm text-green-400">{info}</p>}
-            {loginError && <p className="text-sm text-destructive">{loginError}</p>}
+            {loginMutation.error && (
+              <p className="text-sm text-destructive">{loginMutation.error.message}</p>
+            )}
             <button
               type="submit"
               disabled={loginMutation.isPending}
@@ -130,7 +121,9 @@ export default function AuthPage() {
               required
               minLength={8}
             />
-            {registerError && <p className="text-sm text-destructive">{registerError}</p>}
+            {registerMutation.error && (
+              <p className="text-sm text-destructive">{registerMutation.error.message}</p>
+            )}
             <button
               type="submit"
               disabled={registerMutation.isPending}
