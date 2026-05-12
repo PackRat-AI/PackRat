@@ -3,8 +3,16 @@ import { usePacks } from '@packrat/app';
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Skeleton } from 'web-app/components/ui/skeleton';
+import { toGrams } from 'web-app/lib/data';
 import { cn } from 'web-app/lib/utils';
 import { useWeight } from 'web-app/lib/weight-context';
+
+function formatCategory(cat: string): string {
+  return cat
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
 
 export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }) {
   const { fw } = useWeight();
@@ -18,6 +26,7 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
     const seen = new Set<string>();
     const items: NonNullable<(typeof packsRaw)[number]['items']>[number][] = [];
     for (const pack of packsRaw) {
+      if (pack.deleted) continue;
       for (const item of pack.items ?? []) {
         if (!seen.has(item.id) && !item.deleted) {
           seen.add(item.id);
@@ -47,7 +56,11 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
   );
 
   const totalWeight = useMemo(
-    () => filtered.reduce((sum, item) => sum + item.weight * item.quantity, 0),
+    () =>
+      filtered.reduce(
+        (sum, item) => sum + toGrams(item.weight, item.weightUnit) * item.quantity,
+        0,
+      ),
     [filtered],
   );
 
@@ -77,7 +90,7 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
                   : 'bg-muted text-muted-foreground hover:text-foreground',
               )}
             >
-              {cat}
+              {cat === 'All' ? 'All' : formatCategory(cat)}
             </button>
           ))}
         </div>
@@ -96,32 +109,35 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
             </p>
           </div>
         ) : (
-          filtered.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-2xl bg-card border border-border p-4 flex items-center justify-between gap-3"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{item.name}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  {item.category && (
-                    <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
-                      {item.category}
-                    </span>
-                  )}
-                  {item.quantity > 1 && (
-                    <span className="text-[11px] text-muted-foreground">×{item.quantity}</span>
-                  )}
+          filtered.map((item) => {
+            const itemWeightG = toGrams(item.weight, item.weightUnit);
+            return (
+              <div
+                key={item.id}
+                className="rounded-2xl bg-card border border-border p-4 flex items-center justify-between gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">{item.name}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {item.category && (
+                      <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
+                        {formatCategory(item.category)}
+                      </span>
+                    )}
+                    {item.quantity > 1 && (
+                      <span className="text-[11px] text-muted-foreground">×{item.quantity}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-semibold text-primary">
+                    {fw(itemWeightG * item.quantity)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{fw(itemWeightG)} each</p>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-primary">
-                  {fw(item.weight * item.quantity)}
-                </p>
-                <p className="text-[10px] text-muted-foreground">{fw(item.weight)} each</p>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

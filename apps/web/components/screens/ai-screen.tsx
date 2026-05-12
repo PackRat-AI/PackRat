@@ -4,7 +4,7 @@ import { webEnv } from '@packrat/env/web';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import Cookies from 'js-cookie';
 import { Bot, Send, User } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from 'web-app/lib/utils';
 import { useWeight } from 'web-app/lib/weight-context';
 
@@ -18,7 +18,10 @@ const STARTER_PROMPTS = [
 const API_BASE = webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
 
 function getTextContent(msg: UIMessage): string {
-  return msg.parts.find((p): p is TextUIPart => p.type === 'text')?.text ?? '';
+  return msg.parts
+    .filter((p): p is TextUIPart => p.type === 'text')
+    .map((p) => p.text)
+    .join('');
 }
 
 export function AIScreen() {
@@ -26,11 +29,15 @@ export function AIScreen() {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const transport = new DefaultChatTransport({
-    api: `${API_BASE}/api/chat`,
-    headers: () => ({ Authorization: `Bearer ${Cookies.get('access_token') ?? ''}` }),
-    body: () => ({ date: new Date().toISOString() }),
-  });
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: `${API_BASE}/api/chat`,
+        headers: () => ({ Authorization: `Bearer ${Cookies.get('access_token') ?? ''}` }),
+        body: () => ({ date: new Date().toISOString() }),
+      }),
+    [],
+  );
 
   const { messages, sendMessage, status } = useChat({ transport });
 
@@ -95,13 +102,15 @@ export function AIScreen() {
           </div>
         )}
 
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            role={msg.role as 'user' | 'assistant'}
-            content={getTextContent(msg)}
-          />
-        ))}
+        {messages
+          .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+          .map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              role={msg.role as 'user' | 'assistant'}
+              content={getTextContent(msg)}
+            />
+          ))}
 
         {/* Typing indicator */}
         {isTyping && (
