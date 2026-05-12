@@ -27,7 +27,7 @@ export const AdminStatsSchema = t.Object({
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const AdminUserItemSchema = t.Object({
-  id: t.Number(),
+  id: t.String(),
   email: t.String(),
   firstName: t.Nullable(t.String()),
   lastName: t.Nullable(t.String()),
@@ -174,6 +174,40 @@ export const EmbeddingStatsSchema = t.Object({
   withEmbedding: t.Number(),
   pending: t.Number(),
   coveragePct: t.Number(),
+});
+
+const EtlErrorRowSchema = t.Object({ field: t.String(), reason: t.String(), count: t.Number() });
+
+export const EtlFailureSummarySchema = t.Object({
+  topErrors: t.Array(EtlErrorRowSchema),
+  totalInvalidItems: t.Number(),
+});
+
+export const EtlJobFailuresSchema = t.Object({
+  jobId: t.String(),
+  errorBreakdown: t.Array(EtlErrorRowSchema),
+  samples: t.Array(
+    t.Object({
+      rowIndex: t.Number(),
+      errors: t.Array(
+        t.Object({
+          field: t.String(),
+          reason: t.String(),
+          value: t.Optional(t.Unknown()),
+        }),
+      ),
+      rawData: t.Unknown(),
+    }),
+  ),
+  totalShown: t.Number(),
+});
+
+export const EtlResetStuckSchema = t.Object({ reset: t.Number(), ids: t.Array(t.String()) });
+
+export const EtlRetrySchema = t.Object({
+  success: t.Literal(true),
+  newJobId: t.String(),
+  objectKey: t.String(),
 });
 
 // ─── Trails ───────────────────────────────────────────────────────────────────
