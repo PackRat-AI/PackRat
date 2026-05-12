@@ -71,6 +71,7 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
+            aria-label="Search gear"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search gear…"
