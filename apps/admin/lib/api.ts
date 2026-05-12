@@ -3,6 +3,9 @@ import type { App } from '@packrat/api';
 import type {
   ActiveUsersSchema,
   ActivityPointSchema,
+  AdminCatalogItemSchema,
+  AdminPackItemSchema,
+  AdminUserItemSchema,
   BrandRowSchema,
   BreakdownItemSchema,
   CatalogOverviewSchema,
@@ -69,17 +72,7 @@ export async function getStats(): Promise<AdminStats> {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export interface AdminUser {
-  id: number;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  role: string | null;
-  emailVerified: boolean | null;
-  avatarUrl: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
+export type AdminUser = Static<typeof AdminUserItemSchema>;
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -129,19 +122,7 @@ export async function restoreUser(id: number): Promise<{ success: boolean }> {
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
-export interface AdminPack {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  isPublic: boolean | null;
-  isAIGenerated: boolean | null;
-  tags: string[] | null;
-  image: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-  userEmail: string | null;
-}
+export type AdminPack = Static<typeof AdminPackItemSchema>;
 
 export async function getPacks({
   limit = 100,
@@ -169,24 +150,7 @@ export async function deletePack(id: string): Promise<{ success: boolean }> {
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
 
-export interface AdminCatalogItem {
-  id: number;
-  name: string;
-  description: string | null;
-  categories: string[] | null;
-  brand: string | null;
-  model: string | null;
-  price: number | null;
-  currency: string | null;
-  weight: number;
-  weightUnit: string;
-  availability: string | null;
-  ratingValue: number | null;
-  reviewCount: number | null;
-  productUrl: string | null;
-  images: string[] | null;
-  createdAt: string | null;
-}
+export type AdminCatalogItem = Static<typeof AdminCatalogItemSchema>;
 
 export interface UpdateCatalogItemInput {
   name?: string;
@@ -371,11 +335,7 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await adminFetcher(`${API_BASE}/api/admin${path}`, init);
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Admin API error: ${res.status}`);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  if (!res.ok) throw new Error(`Admin API error: ${res.status}`);
   return res.json();
 }
 
