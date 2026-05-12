@@ -1,0 +1,246 @@
+name: Swift E2E Tests
+
+on:
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "apps/swift/**"
+      - "packages/api/src/**"
+      - "packages/api/drizzle/**"
+      - "packages/api/package.json"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/swift-e2e.yml"
+  push:
+    branches: [main, development]
+    paths:
+      - "apps/swift/**"
+      - "packages/api/src/**"
+      - "packages/api/drizzle/**"
+      - "packages/api/package.json"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/swift-e2e.yml"
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+    inputs:
+      run_macos_ui:
+        description: "Run the full macOS UI suite on a self-hosted Mac runner"
+        required: false
+        type: boolean
+        default: true
+      run_ios_ui:
+        description: "Run the exploratory Swift iOS UI suite on a GitHub-hosted macOS runner"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  XCODE_VERSION: "26.2"
+  E2E_API_BASE_URL: ${{ secrets.SWIFT_E2E_API_BASE_URL }}
+  E2E_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+  E2E_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+  E2E_SCREENSHOT_DIR: ${{ github.workspace }}/apps/swift/TestResults/screenshots
+  PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+
+jobs:
+  macos-ui:
+    name: macOS Swift UI E2E
+    runs-on: [self-hosted, macOS, packrat-e2e]
+    timeout-minutes: 45
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_macos_ui) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify Swift E2E secrets
+        run: |
+          missing=()
+          [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
+          [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          [ -z "${E2E_API_BASE_URL:-}" ] && missing+=("SWIFT_E2E_API_BASE_URL")
+          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required Swift E2E secrets missing: ${missing[*]}"
+            exit 1
+          fi
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+
+      - name: Check Automation Mode status
+        run: |
+          automationmodetool status || true
+
+      - name: Generate Swift Xcode project
+        run: bun run swift
+
+      - name: Seed E2E test user
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
+
+      - name: Run macOS Swift UI E2E
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            caffeinate -dimsu bun run e2e:swift:mac-smoke
+          else
+            caffeinate -dimsu bun run e2e:swift:mac-ui
+          fi
+
+      - name: Summarize macOS xcresult
+        if: always()
+        run: |
+          result="$(find apps/swift/TestResults -maxdepth 1 -name '*.xcresult' -type d | sort | tail -1)"
+          if [ -z "$result" ]; then
+            echo "No xcresult bundle found."
+            exit 0
+          fi
+          echo "### macOS Swift UI E2E" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$result\`" >> "$GITHUB_STEP_SUMMARY"
+          xcrun xcresulttool get test-results summary --path "$result" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload macOS xcresult
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-macos-ui-xcresult
+          path: apps/swift/TestResults/*.xcresult
+          retention-days: 14
+
+      - name: Upload macOS screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-macos-ui-screenshots
+          path: apps/swift/TestResults/screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload macOS failure triage bundle
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-macos-ui-failure-triage
+          path: apps/swift/TestResults/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  ios-ui:
+    name: iOS Swift UI E2E (Exploratory)
+    runs-on: macos-15
+    timeout-minutes: 60
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_ios_ui)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify Swift E2E secrets
+        run: |
+          missing=()
+          [ -z "${E2E_EMAIL:-}" ] && missing+=("E2E_TEST_EMAIL")
+          [ -z "${E2E_PASSWORD:-}" ] && missing+=("E2E_TEST_PASSWORD")
+          [ -z "${E2E_API_BASE_URL:-}" ] && missing+=("SWIFT_E2E_API_BASE_URL")
+          [ -z "${NEON_DATABASE_URL:-}" ] && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required Swift E2E secrets missing: ${missing[*]}"
+            exit 1
+          fi
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+
+      - name: Generate Swift Xcode project
+        run: bun run swift
+
+      - name: Seed E2E test user
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.E2E_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.E2E_PASSWORD }}
+
+      - name: Run iOS Swift UI E2E
+        run: bun run e2e:swift:ios
+
+      - name: Summarize iOS xcresult
+        if: always()
+        run: |
+          result="$(find apps/swift/TestResults -maxdepth 1 -name '*.xcresult' -type d | sort | tail -1)"
+          if [ -z "$result" ]; then
+            echo "No xcresult bundle found."
+            exit 0
+          fi
+          echo "### iOS Swift UI E2E" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$result\`" >> "$GITHUB_STEP_SUMMARY"
+          xcrun xcresulttool get test-results summary --path "$result" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload iOS xcresult
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-ios-ui-xcresult
+          path: apps/swift/TestResults/*.xcresult
+          retention-days: 14
+
+      - name: Upload iOS screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-ios-ui-screenshots
+          path: apps/swift/TestResults/screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload iOS failure triage bundle
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: swift-ios-ui-failure-triage
+          path: apps/swift/TestResults/
+          if-no-files-found: ignore
+          retention-days: 14

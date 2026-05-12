@@ -29,7 +29,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .packs:         return "backpack"
         case .trips:         return "map"
         case .weather:       return "cloud.sun"
-        case .chat:          return "bubble.left.and.sparkles"
+        case .chat:          return "bubble.left"
         case .catalog:       return "magnifyingglass"
         case .templates:     return "doc.on.doc"
         case .trailConditions: return "figure.hiking"
@@ -104,6 +104,23 @@ struct AppNavigation: View {
 
     private var sidebar: some View {
         @Bindable var state = appState
+        #if os(macOS)
+        return List(NavItem.allCases) { item in
+            Button {
+                state.navItem = item
+            } label: {
+                Label(item.label, systemImage: item.symbol)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("sidebar_nav_\(item.rawValue)")
+        }
+        .navigationTitle("PackRat")
+        .navigationSplitViewColumnWidth(min: 160, ideal: 190)
+        .safeAreaInset(edge: .bottom) {
+            userFooter
+        }
+        #else
         let optionalNavItem = Binding<NavItem?>(
             get: { state.navItem },
             set: { state.navItem = $0 ?? .home }
@@ -118,6 +135,7 @@ struct AppNavigation: View {
         .safeAreaInset(edge: .bottom) {
             userFooter
         }
+        #endif
     }
 
     @ViewBuilder
@@ -127,28 +145,40 @@ struct AppNavigation: View {
         switch appState.navItem {
         case .home:
             HomeView().environment(appState)
+                .accessibilityIdentifier("screen_home")
         case .packs:
             PacksListView(viewModel: appState.packsVM, selectedId: $state.selectedPackId)
+                .accessibilityIdentifier("screen_packs")
         case .trips:
             TripsListView(viewModel: appState.tripsVM, selectedId: $state.selectedTripId)
+                .accessibilityIdentifier("screen_trips")
         case .templates:
             PackTemplatesListView(viewModel: appState.templatesVM, selectedId: $state.selectedTemplateId, packsVM: appState.packsVM)
+                .accessibilityIdentifier("screen_templates")
         case .trailConditions:
             TrailConditionsListView(viewModel: appState.trailConditionsVM, selectedId: $state.selectedReportId)
+                .accessibilityIdentifier("screen_trailConditions")
         case .weather:
             WeatherView(viewModel: appState.weatherVM)
+                .accessibilityIdentifier("screen_weather")
         case .catalog:
             CatalogView().environment(appState)
+                .accessibilityIdentifier("screen_catalog")
         case .chat:
             ChatView(viewModel: appState.chatVM)
+                .accessibilityIdentifier("screen_chat")
         case .feed:
             FeedView(viewModel: appState.feedVM)
+                .accessibilityIdentifier("screen_feed")
         case .guides:
             GuidesView()
+                .accessibilityIdentifier("screen_guides")
         case .gearInventory:
             GearInventoryView().environment(appState)
+                .accessibilityIdentifier("screen_gearInventory")
         case .wildlife:
             WildlifeView()
+                .accessibilityIdentifier("screen_wildlife")
         }
     }
 
@@ -196,13 +226,16 @@ struct AppNavigation: View {
 
     #if os(iOS)
     private var phoneLayout: some View {
-        TabView {
+        @Bindable var state = appState
+
+        return TabView(selection: $state.navItem) {
             ForEach(NavItem.allCases) { item in
                 NavigationStack {
                     phoneContentView(item)
                         .navigationTitle(item.label)
                 }
                 .tabItem { Label(item.label, systemImage: item.symbol) }
+                .tag(item)
             }
         }
         .environment(appState)

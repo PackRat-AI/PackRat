@@ -9,6 +9,9 @@ final class AuthTests: XCTestCase {
         app.launchArguments.append("--disable-animations")
         // Force logged-out state so the login screen is reachable.
         app.launchArguments.append("--reset-auth")
+        if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
+            app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
+        }
         app.launch()
     }
 

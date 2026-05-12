@@ -16,6 +16,7 @@ struct WeatherAlertPreferencesView: View {
         Form {
             Section("General") {
                 Toggle("Weather Notifications", isOn: $weatherNotifications)
+                    .accessibilityIdentifier("weather_notifications_toggle")
                 Toggle("Location Monitoring", isOn: $locationMonitoring)
             }
 
@@ -76,6 +77,7 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.teal)
                     }
                 }
+                .accessibilityIdentifier("high_winds_toggle")
                 Toggle(isOn: $fogAlerts) {
                     Label {
                         Text("Fog Alerts")

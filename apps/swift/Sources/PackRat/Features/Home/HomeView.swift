@@ -120,7 +120,7 @@ struct HomeView: View {
             HomeTileCard(
                 title: "AI Assistant",
                 subtitle: "Ask about gear & trips",
-                symbol: "bubble.left.and.sparkles",
+                symbol: "bubble.left",
                 color: .purple
             ) { appState.navItem = .chat }
 
@@ -248,5 +248,15 @@ struct HomeTileCard: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityID)
+    }
+
+    private var accessibilityID: String {
+        let slug = title
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: "_")
+        return "home_tile_\(slug)"
     }
 }

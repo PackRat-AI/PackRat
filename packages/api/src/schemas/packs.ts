@@ -1,6 +1,8 @@
 import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types';
 import { z } from 'zod';
 
+export const DEFAULT_PACK_CATEGORY = 'custom' satisfies (typeof PACK_CATEGORIES)[number];
+
 export const PackItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -49,11 +51,16 @@ export const PackWithWeightsSchema = PackSchema.extend({
 
 export const CreatePackRequestSchema = z.object({
   name: z.string().min(1).max(255),
-  description: z.string().optional(),
-  category: z.string().optional(),
+  description: z.string().nullish(),
+  category: z
+    .preprocess(
+      (value) => (value === null || value === '' ? undefined : value),
+      z.enum(PACK_CATEGORIES).optional(),
+    )
+    .default(DEFAULT_PACK_CATEGORY),
   isPublic: z.boolean().optional().default(false),
   image: z.string().nullish(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()).nullish(),
 });
 
 export const UpdatePackRequestSchema = z.object({

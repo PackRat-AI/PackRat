@@ -42,6 +42,7 @@ struct FeedView: View {
                     showingCompose = true
                 }
                 .keyboardShortcut("n", modifiers: .command)
+                .accessibilityIdentifier("new_post_button")
             }
         }
         .task { if viewModel.posts.isEmpty { await viewModel.load() } }

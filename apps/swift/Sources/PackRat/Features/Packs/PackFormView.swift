@@ -26,6 +26,7 @@ struct PackFormView: View {
             Form {
                 Section("Details") {
                     TextField("Pack Name", text: $name)
+                        .accessibilityIdentifier("pack_name")
                     TextField("Description (optional)", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
                 }

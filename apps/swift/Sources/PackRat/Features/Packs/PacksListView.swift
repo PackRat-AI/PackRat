@@ -60,6 +60,7 @@ struct PacksListView: View {
                 if !isExplore {
                     Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
                         .keyboardShortcut("n", modifiers: .command)
+                        .accessibilityIdentifier("new_pack_button")
                 }
                 if viewModel.isLoading || isLoadingPublic {
                     ProgressView().controlSize(.small)

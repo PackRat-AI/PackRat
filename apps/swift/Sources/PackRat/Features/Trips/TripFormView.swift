@@ -38,6 +38,7 @@ struct TripFormView: View {
             Form {
                 Section("Details") {
                     TextField("Trip Name", text: $name)
+                        .accessibilityIdentifier("trip_name")
                     TextField("Description (optional)", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
                 }
