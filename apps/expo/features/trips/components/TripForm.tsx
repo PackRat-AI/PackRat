@@ -350,7 +350,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     <Pressable
                       testID={testIds.trips.endDateBtn}
                       onPress={() => setShowEndPicker(true)}
-                      testID={testIds.trips.endDateInput}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}

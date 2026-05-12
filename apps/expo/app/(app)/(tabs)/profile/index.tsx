@@ -29,12 +29,11 @@ import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
-import * as Updates from 'expo-app/lib/updates';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
 import { useSetAtom } from 'jotai';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
