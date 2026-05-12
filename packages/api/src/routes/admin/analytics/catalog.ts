@@ -65,14 +65,14 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
         return {
           totalItems: t.totalItems,
-          totalBrands: t.totalBrands,
+          totalBrands: Number(t.totalBrands),
           avgPrice: t.avgPrice != null ? Math.round(Number(t.avgPrice) * 100) / 100 : null,
           minPrice: t.minPrice != null ? Number(t.minPrice) : null,
           maxPrice: t.maxPrice != null ? Number(t.maxPrice) : null,
           embeddingCoverage: {
             total: e.total,
-            withEmbedding: e.withEmbedding,
-            pct: e.total > 0 ? Math.round((e.withEmbedding / e.total) * 1000) / 10 : 0,
+            withEmbedding: Number(e.withEmbedding),
+            pct: e.total > 0 ? Math.round((Number(e.withEmbedding) / e.total) * 1000) / 10 : 0,
           },
           availability: availabilityStats.map((r) => ({
             status: r.status ?? null,
@@ -215,9 +215,9 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           })),
           summary: {
             totalRuns: s?.totalRuns ?? 0,
-            completed: s?.completed ?? 0,
-            failed: s?.failed ?? 0,
-            totalItemsIngested: s?.totalItemsIngested ?? 0,
+            completed: Number(s?.completed ?? 0),
+            failed: Number(s?.failed ?? 0),
+            totalItemsIngested: Number(s?.totalItemsIngested ?? 0),
           },
         };
       } catch (error) {
