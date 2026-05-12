@@ -1,33 +1,18 @@
 'use client';
 
-import { asStringRecord, fromZod } from '@packrat/guards';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { apiClient } from 'trails-app/lib/apiClient';
-import {
-  clearTokens,
-  clearUser,
-  getAccessToken,
-  getRefreshToken,
-  getUser,
-  setTokens,
-  setUser,
-  type UserInfo,
-  UserInfoSchema,
-} from 'trails-app/lib/auth';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { authClient } from 'trails-app/lib/auth-client';
 
 interface AuthState {
   isAuthed: boolean;
-  user: UserInfo | null;
-  // Pending verification: user registered but hasn't verified email yet
-  pendingEmail: string | null;
+  user: { id: string; email: string; name?: string | null } | null;
 }
 
 interface AuthActions {
   register(email: string, opts: { password: string; firstName?: string }): Promise<void>;
-  verifyEmail(otp: string): Promise<void>;
-  resendVerification(): Promise<void>;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
+  forgotPassword(email: string): Promise<void>;
   openAuthGate(): void;
   closeAuthGate(): void;
   authGateOpen: boolean;
@@ -35,99 +20,43 @@ interface AuthActions {
 
 const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
 
-function apiError(error: unknown, fallback: string): Error {
-  const rec = asStringRecord(error);
-  const msg = rec.error ?? rec.message;
-  return new Error(msg ?? fallback);
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    isAuthed: false,
-    user: null,
-    pendingEmail: null,
-  });
+  const session = authClient.useSession();
   const [authGateOpen, setAuthGateOpen] = useState(false);
 
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    const token = getAccessToken();
-    const user = getUser();
-    if (token && user) {
-      setState({ isAuthed: true, user, pendingEmail: null });
-    }
-  }, []);
+  const isAuthed = !!session.data?.user;
+  const user = session.data?.user ?? null;
 
   const register = useCallback(
-    async (email: string, opts: { password: string; firstName?: string }) => {
-      const { error, status } = await apiClient.auth.register.post({
+    async (email: string, { password, firstName }: { password: string; firstName?: string }) => {
+      const { error } = await authClient.signUp.email({
         email,
-        password: opts.password,
-        firstName: opts.firstName,
+        password,
+        name: firstName || email,
       });
-      if (error) throw apiError(error.value, `Registration failed: ${status}`);
-      setState((s) => ({ ...s, pendingEmail: email }));
+      if (error) throw new Error(error.message ?? 'Registration failed');
+      setAuthGateOpen(false);
     },
     [],
   );
 
-  const verifyEmail = useCallback(
-    async (otp: string) => {
-      if (!state.pendingEmail) throw new Error('No pending email verification');
-      const { data, error, status } = await apiClient.auth['verify-email'].post({
-        email: state.pendingEmail,
-        code: otp,
-      });
-      if (error || !data) throw apiError(error?.value, `Verification failed: ${status}`);
-      const { accessToken, refreshToken, user } = data;
-      if (!accessToken || !refreshToken || !user) {
-        throw new Error('Verification failed: missing token data');
-      }
-      const parsedUser = fromZod(UserInfoSchema)(user);
-      if (!parsedUser) throw new Error('Verification failed: unexpected user shape');
-      setTokens(accessToken, refreshToken);
-      setUser(parsedUser);
-      setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
-      setAuthGateOpen(false);
-    },
-    [state.pendingEmail],
-  );
-
-  const resendVerification = useCallback(async () => {
-    if (!state.pendingEmail) throw new Error('No pending email');
-    const { error, status } = await apiClient.auth['resend-verification'].post({
-      email: state.pendingEmail,
-    });
-    if (error) throw apiError(error.value, `Resend failed: ${status}`);
-  }, [state.pendingEmail]);
-
   const login = useCallback(async (email: string, password: string) => {
-    const { data, error, status } = await apiClient.auth.login.post({ email, password });
-    if (error || !data) throw apiError(error?.value, `Login failed: ${status}`);
-    const { accessToken, refreshToken, user } = data;
-    if (!accessToken || !refreshToken || !user) {
-      throw new Error('Login failed: missing token data');
-    }
-    const parsedUser = fromZod(UserInfoSchema)(user);
-    if (!parsedUser) throw new Error('Login failed: unexpected user shape');
-    setTokens(accessToken, refreshToken);
-    setUser(parsedUser);
-    setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
+    const { error } = await authClient.signIn.email({ email, password });
+    if (error) throw new Error(error.message ?? 'Login failed');
     setAuthGateOpen(false);
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        await apiClient.auth.logout.post({ refreshToken });
-      } catch {
-        // ignore — clear tokens regardless
-      }
-    }
-    clearTokens();
-    clearUser();
-    setState({ isAuthed: false, user: null, pendingEmail: null });
+    await authClient.signOut();
+  }, []);
+
+  const forgotPassword = useCallback(async (email: string) => {
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/reset-password`
+        : '/reset-password';
+    const { error } = await authClient.requestPasswordReset({ email, redirectTo });
+    if (error) throw new Error(error.message ?? 'Failed to send reset email');
   }, []);
 
   const openAuthGate = useCallback(() => setAuthGateOpen(true), []);
@@ -135,24 +64,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      ...state,
+      isAuthed,
+      user,
       authGateOpen,
       register,
-      verifyEmail,
-      resendVerification,
       login,
       logout,
+      forgotPassword,
       openAuthGate,
       closeAuthGate,
     }),
     [
-      state,
+      isAuthed,
+      user,
       authGateOpen,
       register,
-      verifyEmail,
-      resendVerification,
       login,
       logout,
+      forgotPassword,
       openAuthGate,
       closeAuthGate,
     ],

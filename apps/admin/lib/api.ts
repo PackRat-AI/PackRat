@@ -135,7 +135,7 @@ export interface AdminPack {
   description: string | null;
   category: string;
   isPublic: boolean | null;
-  isAIGenerated: boolean;
+  isAIGenerated: boolean | null;
   tags: string[] | null;
   image: string | null;
   createdAt: string | null;
@@ -176,23 +176,15 @@ export interface AdminCatalogItem {
   categories: string[] | null;
   brand: string | null;
   model: string | null;
-  sku: string | null;
   price: number | null;
   currency: string | null;
-  weight: number | null;
+  weight: number;
   weightUnit: string;
   availability: string | null;
   ratingValue: number | null;
   reviewCount: number | null;
-  color: string | null;
-  size: string | null;
-  material: string | null;
-  seller: string | null;
   productUrl: string | null;
   images: string[] | null;
-  variants: Array<{ attribute: string; values: string[] }> | null;
-  techs: Record<string, string> | null;
-  links: Array<{ title: string; url: string }> | null;
   createdAt: string | null;
 }
 
@@ -375,6 +367,15 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
   const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
   if (error) throwOnError(error);
   return unwrap(data, 'deleteTrailCondition');
+}
+
+async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await adminFetcher(`${API_BASE}/api/admin${path}`, init);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `Admin API error: ${res.status}`);
+  }
+  return res.json() as Promise<T>;
 }
 
 export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {

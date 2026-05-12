@@ -362,6 +362,7 @@
         "@radix-ui/react-separator": "catalog:",
         "@radix-ui/react-tabs": "catalog:",
         "@radix-ui/react-toast": "catalog:",
+        "better-auth": "^1.6.9",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "input-otp": "1.4.1",
@@ -389,6 +390,7 @@
     "apps/web": {
       "name": "packrat-web-app",
       "dependencies": {
+        "@ai-sdk/react": "^3.0.170",
         "@packrat/api-client": "workspace:*",
         "@packrat/app": "workspace:*",
         "@packrat/env": "workspace:*",
@@ -396,6 +398,7 @@
         "@packrat/web-ui": "workspace:*",
         "@tanstack/react-query": "^5.70.0",
         "@tanstack/react-query-devtools": "^5.70.0",
+        "ai": "catalog:",
         "jotai": "^2.12.2",
         "js-cookie": "^3.0.5",
         "lucide-react": "^1.8.0",

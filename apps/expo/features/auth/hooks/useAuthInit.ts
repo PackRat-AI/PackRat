@@ -33,7 +33,10 @@ function applySessionUser(sessionUser: Record<string, unknown>) {
         .slice(1)
         .join(' ') ?? '',
     role: (sessionUser.role as 'USER' | 'ADMIN') ?? 'USER', // safe-cast: Better Auth client type omits additionalFields; role is present at runtime
+    emailVerified: (sessionUser.emailVerified as boolean | null) ?? null,
     avatarUrl: (sessionUser.image as string | null) ?? null,
+    createdAt: (sessionUser.createdAt as string | null) ?? null,
+    updatedAt: (sessionUser.updatedAt as string | null) ?? null,
     preferredWeightUnit: 'g',
   });
 }

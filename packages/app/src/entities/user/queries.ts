@@ -6,7 +6,7 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: queryKeys.user,
     queryFn: async () => {
-      const { data, error } = await client.auth.me.get();
+      const { data, error } = await client.user.profile.get();
       if (error) throw new Error('Failed to fetch current user');
       return data;
     },
@@ -25,11 +25,30 @@ export function useUserProfile() {
   });
 }
 
+// Auth routes are handled by Better Auth (/api/auth/**), not Eden Treaty.
+// These hooks use a cast to maintain backwards-compatibility until the
+// auth screen is rebuilt against Better Auth.
+type LegacyAuthClient = {
+  auth: {
+    login: {
+      post: (b: { email: string; password: string }) => Promise<{ data: unknown; error: unknown }>;
+    };
+    register: {
+      post: (b: {
+        email: string;
+        password: string;
+        firstName?: string;
+        lastName?: string;
+      }) => Promise<{ data: unknown; error: unknown }>;
+    };
+  };
+};
+
 export function useLoginMutation() {
   const client = useApiClient();
   return useMutation({
     mutationFn: async (body: { email: string; password: string }) => {
-      const { data, error } = await client.auth.login.post(body);
+      const { data, error } = await (client as unknown as LegacyAuthClient).auth.login.post(body);
       if (error) throw new Error('Login failed');
       return data;
     },
@@ -45,7 +64,9 @@ export function useRegisterMutation() {
       firstName?: string;
       lastName?: string;
     }) => {
-      const { data, error } = await client.auth.register.post(body);
+      const { data, error } = await (client as unknown as LegacyAuthClient).auth.register.post(
+        body,
+      );
       if (error) throw new Error('Registration failed');
       return data;
     },

@@ -37,6 +37,13 @@ export const queryKeys = {
     breakdown: () => [...queryKeys.platform.all(), 'breakdown'] as const,
   },
 
+  osm: {
+    all: () => ['osm'] as const,
+    search: (q: string, sport?: string) => [...queryKeys.osm.all(), 'search', q, sport] as const,
+    trail: (osmId: string) => [...queryKeys.osm.all(), 'trail', osmId] as const,
+    conditions: (search?: string) => [...queryKeys.osm.all(), 'conditions', search] as const,
+  },
+
   catalogAnalytics: {
     all: () => ['catalogAnalytics'] as const,
     overview: () => [...queryKeys.catalogAnalytics.all(), 'overview'] as const,
