@@ -50,7 +50,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         env:
@@ -80,7 +79,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         env:
