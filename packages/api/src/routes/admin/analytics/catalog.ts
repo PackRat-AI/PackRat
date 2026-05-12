@@ -4,7 +4,11 @@ import {
   AdminErrorResponses,
   BrandRowSchema,
   CatalogOverviewSchema,
+  EtlFailureSummarySchema,
+  EtlJobFailuresSchema,
+  EtlResetStuckSchema,
   EtlResponseSchema,
+  EtlRetrySchema,
   PriceBucketSchema,
 } from '@packrat/api/schemas/admin';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
@@ -270,21 +274,22 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       const { limit = 20 } = query;
 
       try {
-        const rows = await db.execute<{ field: string; reason: string; count: number }>(
-          sql`
-            SELECT
-              err->>'field'  AS field,
-              err->>'reason' AS reason,
-              COUNT(*)::int  AS count
-            FROM ${invalidItemLogs},
-                 jsonb_array_elements(${invalidItemLogs.errors}) AS err
-            GROUP BY err->>'field', err->>'reason'
-            ORDER BY count DESC
-            LIMIT ${limit}
-          `,
-        );
-
-        const [total] = await db.select({ n: count() }).from(invalidItemLogs);
+        const [rows, [total]] = await Promise.all([
+          db.execute<{ field: string; reason: string; count: number }>(
+            sql`
+              SELECT
+                err->>'field'  AS field,
+                err->>'reason' AS reason,
+                COUNT(*)::int  AS count
+              FROM ${invalidItemLogs},
+                   jsonb_array_elements(${invalidItemLogs.errors}) AS err
+              GROUP BY err->>'field', err->>'reason'
+              ORDER BY count DESC
+              LIMIT ${limit}
+            `,
+          ),
+          db.select({ n: count() }).from(invalidItemLogs),
+        ]);
 
         return {
           topErrors: rows.rows.map((r) => ({
@@ -306,6 +311,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(100).optional().default(20),
       }),
+      response: { 200: EtlFailureSummarySchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top ETL validation failure patterns' },
     },
   )
@@ -319,26 +325,27 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       const { limit = 50 } = query;
 
       try {
-        const samples = await db
-          .select()
-          .from(invalidItemLogs)
-          .where(eq(invalidItemLogs.jobId, params.jobId))
-          .orderBy(invalidItemLogs.rowIndex)
-          .limit(limit);
-
-        const breakdown = await db.execute<{ field: string; reason: string; count: number }>(
-          sql`
-            SELECT
-              err->>'field'  AS field,
-              err->>'reason' AS reason,
-              COUNT(*)::int  AS count
-            FROM ${invalidItemLogs},
-                 jsonb_array_elements(${invalidItemLogs.errors}) AS err
-            WHERE ${invalidItemLogs.jobId} = ${params.jobId}
-            GROUP BY err->>'field', err->>'reason'
-            ORDER BY count DESC
-          `,
-        );
+        const [samples, breakdown] = await Promise.all([
+          db
+            .select()
+            .from(invalidItemLogs)
+            .where(eq(invalidItemLogs.jobId, params.jobId))
+            .orderBy(invalidItemLogs.rowIndex)
+            .limit(limit),
+          db.execute<{ field: string; reason: string; count: number }>(
+            sql`
+              SELECT
+                err->>'field'  AS field,
+                err->>'reason' AS reason,
+                COUNT(*)::int  AS count
+              FROM ${invalidItemLogs},
+                   jsonb_array_elements(${invalidItemLogs.errors}) AS err
+              WHERE ${invalidItemLogs.jobId} = ${params.jobId}
+              GROUP BY err->>'field', err->>'reason'
+              ORDER BY count DESC
+            `,
+          ),
+        ]);
 
         return {
           jobId: params.jobId,
@@ -363,10 +370,11 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     {
-      params: z.object({ jobId: z.string() }),
+      params: z.object({ jobId: z.string().uuid() }),
       query: z.object({
         limit: z.coerce.number().int().min(1).max(200).optional().default(50),
       }),
+      response: { 200: EtlJobFailuresSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Validation failures for a specific ETL job' },
     },
   )
@@ -394,7 +402,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         return status(500, { error: 'Failed to reset stuck jobs', code: 'ETL_RESET_STUCK_ERROR' });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Mark stuck running ETL jobs as failed' } },
+    {
+      response: { 200: EtlResetStuckSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Mark stuck running ETL jobs as failed' },
+    },
   )
 
   // ─── Retry a failed job ───────────────────────────────────────────────────────
@@ -412,9 +423,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           .limit(1);
 
         if (!original) return status(404, { error: 'ETL job not found' });
-        if (original.status === 'running')
+        if (original.status !== 'failed')
           return status(409, {
-            error: 'Job is still running — wait for it to complete or reset stuck jobs first',
+            error:
+              original.status === 'running'
+                ? 'Job is still running — wait for it to complete or reset stuck jobs first'
+                : 'Only failed jobs can be retried',
           });
 
         const newJobId = crypto.randomUUID();
@@ -432,16 +446,25 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           startedAt: new Date(),
         });
 
-        await queueCatalogETL({ queue: env.ETL_QUEUE, chunks: [{ objectKey }], jobId: newJobId });
+        try {
+          await queueCatalogETL({ queue: env.ETL_QUEUE, objectKeys: [objectKey], jobId: newJobId });
+        } catch (enqueueErr) {
+          await db
+            .update(etlJobs)
+            .set({ status: 'failed', completedAt: new Date() })
+            .where(eq(etlJobs.id, newJobId));
+          throw enqueueErr;
+        }
 
-        return { success: true, newJobId, objectKey };
+        return { success: true as const, newJobId, objectKey };
       } catch (error) {
         console.error('ETL retry error:', error);
         return status(500, { error: 'Failed to retry ETL job', code: 'ETL_RETRY_ERROR' });
       }
     },
     {
-      params: z.object({ jobId: z.string() }),
+      params: z.object({ jobId: z.string().uuid() }),
+      response: { 200: EtlRetrySchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Retry a failed ETL job' },
     },
   );
