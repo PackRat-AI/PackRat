@@ -6,7 +6,7 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: queryKeys.user,
     queryFn: async () => {
-      const { data, error } = await client.auth.me.get();
+      const { data, error } = await client.user.profile.get();
       if (error) throw new Error('Failed to fetch current user');
       return data;
     },
@@ -20,33 +20,6 @@ export function useUserProfile() {
     queryFn: async () => {
       const { data, error } = await client.user.profile.get();
       if (error) throw new Error('Failed to fetch user profile');
-      return data;
-    },
-  });
-}
-
-export function useLoginMutation() {
-  const client = useApiClient();
-  return useMutation({
-    mutationFn: async (body: { email: string; password: string }) => {
-      const { data, error } = await client.auth.login.post(body);
-      if (error) throw new Error('Login failed');
-      return data;
-    },
-  });
-}
-
-export function useRegisterMutation() {
-  const client = useApiClient();
-  return useMutation({
-    mutationFn: async (body: {
-      email: string;
-      password: string;
-      firstName?: string;
-      lastName?: string;
-    }) => {
-      const { data, error } = await client.auth.register.post(body);
-      if (error) throw new Error('Registration failed');
       return data;
     },
   });

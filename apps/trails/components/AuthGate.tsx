@@ -16,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { VerifyEmail } from 'trails-app/components/VerifyEmail';
-import { apiClient } from 'trails-app/lib/apiClient';
+import { trailsAuthClient } from 'trails-app/lib/auth-client';
 import { useAuth } from 'trails-app/lib/useAuth';
 
 const TABS = ['register', 'login', 'forgot'] as const;
@@ -77,7 +77,14 @@ export function AuthGate() {
     e.preventDefault();
     setLoading(true);
     try {
-      await apiClient.auth['forgot-password'].post({ email: forgotEmail });
+      const { error } = await trailsAuthClient.requestPasswordReset({
+        email: forgotEmail,
+        redirectTo:
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/reset-password`
+            : '/reset-password',
+      });
+      if (error) throw new Error(error.message);
       setForgotSent(true);
     } catch {
       toast.error('Could not send reset email. Try again.');

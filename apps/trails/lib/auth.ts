@@ -39,7 +39,7 @@ export function clearTokens(): void {
 }
 
 export const UserInfoSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   email: z.string(),
   firstName: z.string().nullish(),
   lastName: z.string().nullish(),
