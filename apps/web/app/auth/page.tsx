@@ -37,7 +37,7 @@ function useRegisterMutation() {
         body: JSON.stringify({ email: body.email, password: body.password, name }),
       });
       if (!res.ok) throw new Error('Registration failed');
-      return res.json() as Promise<unknown>;
+      return res.json();
     },
   });
 }
