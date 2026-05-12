@@ -33,9 +33,9 @@ export const AdminUserItemSchema = t.Object({
   lastName: t.Nullable(t.String()),
   role: t.Nullable(t.String()),
   emailVerified: t.Nullable(t.Boolean()),
+  avatarUrl: t.Nullable(t.String()),
   createdAt: t.Nullable(t.String()),
-  lastActiveAt: t.Nullable(t.String()),
-  deletedAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
 });
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -46,9 +46,11 @@ export const AdminPackItemSchema = t.Object({
   description: t.Nullable(t.String()),
   category: t.String(),
   isPublic: t.Nullable(t.Boolean()),
-  deleted: t.Boolean(),
-  deletedAt: t.Nullable(t.String()),
+  isAIGenerated: t.Boolean(),
+  tags: t.Nullable(t.Array(t.String())),
+  image: t.Nullable(t.String()),
   createdAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
   userEmail: t.Nullable(t.String()),
 });
 
@@ -57,11 +59,27 @@ export const AdminPackItemSchema = t.Object({
 export const AdminCatalogItemSchema = t.Object({
   id: t.Number(),
   name: t.String(),
+  description: t.Nullable(t.String()),
   categories: t.Nullable(t.Array(t.String())),
   brand: t.Nullable(t.String()),
+  model: t.Nullable(t.String()),
+  sku: t.String(),
   price: t.Nullable(t.Number()),
-  weight: t.Number(),
-  weightUnit: t.String(),
+  currency: t.Nullable(t.String()),
+  weight: t.Nullable(t.Number()),
+  weightUnit: t.Nullable(t.String()),
+  availability: t.Nullable(t.String()),
+  ratingValue: t.Nullable(t.Number()),
+  reviewCount: t.Nullable(t.Number()),
+  color: t.Nullable(t.String()),
+  size: t.Nullable(t.String()),
+  material: t.Nullable(t.String()),
+  seller: t.Nullable(t.String()),
+  productUrl: t.String(),
+  images: t.Nullable(t.Array(t.String())),
+  variants: t.Nullable(t.Array(t.Object({ attribute: t.String(), values: t.Array(t.String()) }))),
+  techs: t.Nullable(t.Record(t.String(), t.String())),
+  links: t.Nullable(t.Array(t.Object({ title: t.String(), url: t.String() }))),
   createdAt: t.Nullable(t.String()),
 });
 
