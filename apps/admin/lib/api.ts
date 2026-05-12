@@ -375,7 +375,8 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `Admin API error: ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return res.json();
 }
 
 export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {

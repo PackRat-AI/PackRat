@@ -1,9 +1,8 @@
 'use client';
-import { useLoginMutation, useRegisterMutation } from '@packrat/app';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
-import { setTokens } from 'web-app/lib/auth';
+import { authClient } from 'web-app/lib/auth-client';
 
 export default function AuthPage() {
   const [tab, setTab] = useState<'login' | 'register'>('login');
@@ -11,47 +10,44 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  const loginMutation = useLoginMutation();
-  const registerMutation = useRegisterMutation();
-
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setInfo(null);
-    loginMutation.mutate(
-      { email, password },
-      {
-        onSuccess: (data) => {
-          const response = data as { accessToken?: string; refreshToken?: string } | null;
-          const accessToken = response?.accessToken ?? '';
-          const refreshToken = response?.refreshToken ?? '';
-          if (!accessToken) return;
-          setTokens(accessToken, refreshToken);
-          router.push('/');
-        },
-      },
-    );
+    setError(null);
+    setIsPending(true);
+    try {
+      const { error: authError } = await authClient.signIn.email({ email, password });
+      if (authError) throw new Error(authError.message ?? 'Login failed');
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setIsPending(false);
+    }
   }
 
-  function handleRegister(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    setInfo(null);
-    const [firstName, ...rest] = username.trim().split(' ');
-    const lastName = rest.join(' ') || undefined;
-    registerMutation.mutate(
-      { email, password, firstName: firstName ?? username, lastName },
-      {
-        onSuccess: () => {
-          setTab('login');
-          setInfo('Account created! Please check your email to verify, then sign in.');
-        },
-      },
-    );
+    setError(null);
+    setIsPending(true);
+    try {
+      const { error: authError } = await authClient.signUp.email({
+        email,
+        password,
+        name: username || email,
+      });
+      if (authError) throw new Error(authError.message ?? 'Registration failed');
+      setTab('login');
+      setInfo('Account created! Please check your email to verify, then sign in.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setIsPending(false);
+    }
   }
-
-  const loginError = loginMutation.error?.message ?? null;
-  const registerError = registerMutation.error?.message ?? null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -94,13 +90,13 @@ export default function AuthPage() {
               required
             />
             {info && <p className="text-sm text-green-400">{info}</p>}
-            {loginError && <p className="text-sm text-destructive">{loginError}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={isPending}
               className="w-full py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
+              {isPending ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         ) : (
@@ -130,13 +126,13 @@ export default function AuthPage() {
               required
               minLength={8}
             />
-            {registerError && <p className="text-sm text-destructive">{registerError}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <button
               type="submit"
-              disabled={registerMutation.isPending}
+              disabled={isPending}
               className="w-full py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {registerMutation.isPending ? 'Creating account...' : 'Create Account'}
+              {isPending ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
         )}

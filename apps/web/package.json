@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.170",
+    "better-auth": "^1.6.9",
     "@packrat/api-client": "workspace:*",
     "@packrat/app": "workspace:*",
     "@packrat/env": "workspace:*",
