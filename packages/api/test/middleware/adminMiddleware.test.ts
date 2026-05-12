@@ -1,11 +1,17 @@
+import { getAuth } from '@packrat/api/auth';
 import { adminAuthPlugin } from '@packrat/api/middleware/auth';
-import { generateJWT } from '@packrat/api/utils/auth';
 import { Elysia } from 'elysia';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-beforeAll(() => {
-  vi.stubEnv('JWT_SECRET', 'test-secret-at-least-32-chars-long-xx');
-  vi.stubEnv('PACKRAT_API_KEY', 'test-api-key');
+// getAuth is mocked globally by test/setup.ts. Override here to control sessions.
+const mockGetSession = vi.fn();
+
+beforeEach(() => {
+  vi.clearAllMocks();
+
+  vi.mocked(getAuth).mockResolvedValue({
+    api: { getSession: mockGetSession },
+  } as never);
 });
 
 function buildAdminApp() {
@@ -16,45 +22,57 @@ function buildAdminApp() {
 
 describe('adminAuthPlugin / isAdmin', () => {
   it('returns 401 when no Authorization header is present', async () => {
+    mockGetSession.mockResolvedValue(null);
     const app = buildAdminApp();
-    const res = await app.handle(new Request('http://x/admin-only'));
+    const res = await app.handle(new Request('http://localhost/admin-only'));
     expect(res.status).toBe(401);
   });
 
-  it('returns 403 for a USER-role JWT', async () => {
-    const userJwt = await generateJWT({ payload: { userId: 1, role: 'USER' } });
+  it('returns 403 for a USER-role session', async () => {
+    mockGetSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'user@test.com', name: 'User', role: 'USER' },
+    });
     const app = buildAdminApp();
     const res = await app.handle(
-      new Request('http://x/admin-only', { headers: { authorization: `Bearer ${userJwt}` } }),
+      new Request('http://localhost/admin-only', {
+        headers: { authorization: 'Bearer user-token' },
+      }),
     );
     expect(res.status).toBe(403);
   });
 
-  it('returns 403 for a JWT with missing role (defaults to non-admin)', async () => {
-    const jwt = await generateJWT({ payload: { userId: 1 } as { userId: number } });
+  it('returns 403 when session user has no role', async () => {
+    mockGetSession.mockResolvedValue({
+      user: { id: 'user-1', email: 'user@test.com', name: 'User' },
+    });
     const app = buildAdminApp();
     const res = await app.handle(
-      new Request('http://x/admin-only', { headers: { authorization: `Bearer ${jwt}` } }),
+      new Request('http://localhost/admin-only', { headers: { authorization: 'Bearer token' } }),
     );
     expect(res.status).toBe(403);
   });
 
-  it('accepts a valid ADMIN-role JWT', async () => {
-    const adminJwt = await generateJWT({ payload: { userId: 99, role: 'ADMIN' } });
+  it('accepts a valid ADMIN-role session', async () => {
+    mockGetSession.mockResolvedValue({
+      user: { id: 'admin-99', email: 'admin@test.com', name: 'Admin', role: 'ADMIN' },
+    });
     const app = buildAdminApp();
     const res = await app.handle(
-      new Request('http://x/admin-only', { headers: { authorization: `Bearer ${adminJwt}` } }),
+      new Request('http://localhost/admin-only', {
+        headers: { authorization: 'Bearer admin-token' },
+      }),
     );
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.role).toBe('ADMIN');
-    expect(body.userId).toBe(99);
+    expect(body.userId).toBe('admin-99');
   });
 
-  it('rejects X-API-Key on admin routes (no API-key → ADMIN escalation)', async () => {
+  it('rejects X-API-Key on admin routes', async () => {
+    mockGetSession.mockResolvedValue(null);
     const app = buildAdminApp();
     const res = await app.handle(
-      new Request('http://x/admin-only', { headers: { 'x-api-key': 'test-api-key' } }),
+      new Request('http://localhost/admin-only', { headers: { 'x-api-key': 'test-api-key' } }),
     );
     expect(res.status).toBe(401);
   });

@@ -2,6 +2,16 @@ import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
+import {
+  AdminCatalogListSchema,
+  AdminErrorResponses,
+  AdminPacksListSchema,
+  AdminStatsSchema,
+  AdminUsersListSchema,
+  CatalogUpdateSchema,
+  HardDeleteSuccessSchema,
+  SuccessSchema,
+} from '@packrat/api/schemas/admin';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
@@ -10,6 +20,7 @@ import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { analyticsRoutes } from './analytics';
+import { adminTrailsRoutes } from './trails';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
@@ -37,7 +48,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
 
 async function issueAdminJwt(username: string): Promise<string> {
   const env = getEnv();
-  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(username)
@@ -51,7 +62,7 @@ async function issueAdminJwt(username: string): Promise<string> {
 async function verifyAdminJwt(token: string): Promise<boolean> {
   try {
     const env = getEnv();
-    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
     const { payload } = await jwtVerify(token, secret, {
       issuer: ADMIN_JWT_ISSUER,
       audience: ADMIN_JWT_AUDIENCE,
@@ -62,15 +73,25 @@ async function verifyAdminJwt(token: string): Promise<boolean> {
   }
 }
 
-// Protected routes: Bearer JWT only.
-// The JWT is issued by /token, which already enforced both factors (CF JWT + Basic
-// in prod, Basic-only in local dev). No need to re-check CF or Basic here.
+// Protected routes: Bearer JWT is always accepted.
+// When CF Access is configured, CF JWT is also accepted directly (the CF edge
+// injects Cf-Access-Jwt-Assertion on every request, so the user has already
+// passed the CF Access gate).  Basic auth is accepted only in local dev.
 async function adminAuthGuard(request: Request): Promise<boolean> {
   const env = getEnv();
   const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
   const header = request.headers.get('authorization') ?? '';
 
   if (header.startsWith('Bearer ')) return verifyAdminJwt(header.slice(7));
+
+  // When CF Access is configured, verify the CF JWT injected by the CF edge.
+  if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+    const cfIdentity = await verifyCFAccessRequest(request, {
+      teamDomain: CF_ACCESS_TEAM_DOMAIN,
+      aud: CF_ACCESS_AUD,
+    });
+    if (cfIdentity) return true;
+  }
 
   // Local dev only: allow Basic auth directly on protected routes as a convenience.
   // Both CF vars absent AND non-production environment must hold — missing CF vars
@@ -120,11 +141,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
       // Basic credentials are always required and remain the primary gate.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(
-          request,
-          CF_ACCESS_TEAM_DOMAIN,
-          CF_ACCESS_AUD,
-        );
+        const cfIdentity = await verifyCFAccessRequest(request, {
+          teamDomain: CF_ACCESS_TEAM_DOMAIN,
+          aud: CF_ACCESS_AUD,
+        });
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
 
@@ -182,6 +202,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       }
     },
     {
+      response: { 200: AdminStatsSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Get admin dashboard statistics' },
     },
   )
@@ -195,37 +216,45 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const usersList = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            role: users.role,
-            emailVerified: users.emailVerified,
-            avatarUrl: users.avatarUrl,
-            createdAt: users.createdAt,
-            updatedAt: users.updatedAt,
-          })
-          .from(users)
-          .where(
-            search
-              ? or(
-                  ilike(users.email, `%${search}%`),
-                  ilike(users.firstName, `%${search}%`),
-                  ilike(users.lastName, `%${search}%`),
-                )
-              : undefined,
-          )
-          .orderBy(desc(users.createdAt))
-          .limit(limit)
-          .offset(offset);
+        const searchFilter = search
+          ? or(
+              ilike(users.email, `%${search}%`),
+              ilike(users.firstName, `%${search}%`),
+              ilike(users.lastName, `%${search}%`),
+            )
+          : undefined;
 
-        return usersList.map((u) => ({
-          ...u,
-          createdAt: u.createdAt?.toISOString() ?? null,
-          updatedAt: u.updatedAt?.toISOString() ?? null,
-        }));
+        const [usersList, [totalRow]] = await Promise.all([
+          db
+            .select({
+              id: users.id,
+              email: users.email,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              role: users.role,
+              emailVerified: users.emailVerified,
+              avatarUrl: users.avatarUrl,
+              createdAt: users.createdAt,
+              updatedAt: users.updatedAt,
+            })
+            .from(users)
+            .where(searchFilter)
+            .orderBy(desc(users.createdAt))
+            .limit(limit)
+            .offset(offset),
+          db.select({ count: count() }).from(users).where(searchFilter),
+        ]);
+
+        return {
+          data: usersList.map((u) => ({
+            ...u,
+            createdAt: u.createdAt?.toISOString() ?? null,
+            updatedAt: u.updatedAt?.toISOString() ?? null,
+          })),
+          total: totalRow?.count ?? 0,
+          limit,
+          offset,
+        };
       } catch (error) {
         console.error('Error fetching users:', error);
         return status(500, { error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' });
@@ -236,7 +265,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
+        includeDeleted: z.string().optional(),
       }),
+      response: { 200: AdminUsersListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List users' },
     },
   )
@@ -250,44 +281,54 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const packsList = await db
-          .select({
-            id: packs.id,
-            name: packs.name,
-            description: packs.description,
-            category: packs.category,
-            isPublic: packs.isPublic,
-            isAIGenerated: packs.isAIGenerated,
-            tags: packs.tags,
-            image: packs.image,
-            createdAt: packs.createdAt,
-            updatedAt: packs.updatedAt,
-            userEmail: users.email,
-          })
-          .from(packs)
-          .leftJoin(users, eq(packs.userId, users.id))
-          .where(
-            and(
-              eq(packs.deleted, false),
-              search
-                ? or(
-                    ilike(packs.name, `%${search}%`),
-                    ilike(packs.description, `%${search}%`),
-                    ilike(packs.category, `%${search}%`),
-                    ilike(users.email, `%${search}%`),
-                  )
-                : undefined,
-            ),
-          )
-          .orderBy(desc(packs.createdAt))
-          .limit(limit)
-          .offset(offset);
+        const searchFilter = search
+          ? or(
+              ilike(packs.name, `%${search}%`),
+              ilike(packs.description, `%${search}%`),
+              ilike(packs.category, `%${search}%`),
+              ilike(users.email, `%${search}%`),
+            )
+          : undefined;
+        const whereClause = and(eq(packs.deleted, false), searchFilter);
 
-        return packsList.map((p) => ({
-          ...p,
-          createdAt: p.createdAt?.toISOString() ?? null,
-          updatedAt: p.updatedAt?.toISOString() ?? null,
-        }));
+        const [packsList, [totalRow]] = await Promise.all([
+          db
+            .select({
+              id: packs.id,
+              name: packs.name,
+              description: packs.description,
+              category: packs.category,
+              isPublic: packs.isPublic,
+              isAIGenerated: packs.isAIGenerated,
+              tags: packs.tags,
+              image: packs.image,
+              createdAt: packs.createdAt,
+              updatedAt: packs.updatedAt,
+              userEmail: users.email,
+            })
+            .from(packs)
+            .leftJoin(users, eq(packs.userId, users.id))
+            .where(whereClause)
+            .orderBy(desc(packs.createdAt))
+            .limit(limit)
+            .offset(offset),
+          db
+            .select({ count: count() })
+            .from(packs)
+            .leftJoin(users, eq(packs.userId, users.id))
+            .where(whereClause),
+        ]);
+
+        return {
+          data: packsList.map((p) => ({
+            ...p,
+            createdAt: p.createdAt?.toISOString() ?? null,
+            updatedAt: p.updatedAt?.toISOString() ?? null,
+          })),
+          total: totalRow?.count ?? 0,
+          limit,
+          offset,
+        };
       } catch (error) {
         console.error('Error fetching packs:', error);
         return status(500, { error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' });
@@ -298,7 +339,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
+        includeDeleted: z.string().optional(),
       }),
+      response: { 200: AdminPacksListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List packs' },
     },
   )
@@ -312,51 +355,59 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 25);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
-        const itemsList = await db
-          .select({
-            id: catalogItems.id,
-            name: catalogItems.name,
-            description: catalogItems.description,
-            categories: catalogItems.categories,
-            brand: catalogItems.brand,
-            model: catalogItems.model,
-            sku: catalogItems.sku,
-            price: catalogItems.price,
-            currency: catalogItems.currency,
-            weight: catalogItems.weight,
-            weightUnit: catalogItems.weightUnit,
-            availability: catalogItems.availability,
-            ratingValue: catalogItems.ratingValue,
-            reviewCount: catalogItems.reviewCount,
-            color: catalogItems.color,
-            size: catalogItems.size,
-            material: catalogItems.material,
-            seller: catalogItems.seller,
-            productUrl: catalogItems.productUrl,
-            images: catalogItems.images,
-            variants: catalogItems.variants,
-            techs: catalogItems.techs,
-            links: catalogItems.links,
-            createdAt: catalogItems.createdAt,
-          })
-          .from(catalogItems)
-          .where(
-            search
-              ? or(
-                  ilike(catalogItems.name, `%${search}%`),
-                  ilike(catalogItems.brand, `%${search}%`),
-                  ilike(catalogItems.description, `%${search}%`),
-                )
-              : undefined,
-          )
-          .orderBy(desc(catalogItems.id))
-          .limit(limit)
-          .offset(offset);
+        const whereClause = search
+          ? or(
+              ilike(catalogItems.name, `%${search}%`),
+              ilike(catalogItems.brand, `%${search}%`),
+              ilike(catalogItems.description, `%${search}%`),
+            )
+          : undefined;
 
-        return itemsList.map((it) => ({
-          ...it,
-          createdAt: it.createdAt?.toISOString() || null,
-        }));
+        const [itemsList, [totalRow]] = await Promise.all([
+          db
+            .select({
+              id: catalogItems.id,
+              name: catalogItems.name,
+              description: catalogItems.description,
+              categories: catalogItems.categories,
+              brand: catalogItems.brand,
+              model: catalogItems.model,
+              sku: catalogItems.sku,
+              price: catalogItems.price,
+              currency: catalogItems.currency,
+              weight: catalogItems.weight,
+              weightUnit: catalogItems.weightUnit,
+              availability: catalogItems.availability,
+              ratingValue: catalogItems.ratingValue,
+              reviewCount: catalogItems.reviewCount,
+              color: catalogItems.color,
+              size: catalogItems.size,
+              material: catalogItems.material,
+              seller: catalogItems.seller,
+              productUrl: catalogItems.productUrl,
+              images: catalogItems.images,
+              variants: catalogItems.variants,
+              techs: catalogItems.techs,
+              links: catalogItems.links,
+              createdAt: catalogItems.createdAt,
+            })
+            .from(catalogItems)
+            .where(whereClause)
+            .orderBy(desc(catalogItems.id))
+            .limit(limit)
+            .offset(offset),
+          db.select({ count: count() }).from(catalogItems).where(whereClause),
+        ]);
+
+        return {
+          data: itemsList.map((it) => ({
+            ...it,
+            createdAt: it.createdAt?.toISOString() ?? null,
+          })),
+          total: totalRow?.count ?? 0,
+          limit,
+          offset,
+        };
       } catch (error) {
         console.error('Error fetching catalog items:', error);
         return status(500, { error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' });
@@ -368,32 +419,77 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
       }),
+      response: { 200: AdminCatalogListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List catalog items' },
     },
   )
 
-  // Delete a user
+  // Soft-delete a user
   .delete(
     '/users/:id',
     async ({ params }) => {
-      const id = Number(params.id);
-      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
+      // Soft delete not supported for users in Better Auth - use hard delete or ban instead
+      return status(400, {
+        error: 'Soft delete not supported for users. Use hard delete endpoint or ban user.',
+      });
+    },
+    {
+      params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Soft-delete a user (recoverable)' },
+    },
+  )
+
+  // Hard-delete a user for compliance (GDPR / right to erasure)
+  .delete(
+    '/users/:id/hard',
+    async ({ params, body }) => {
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
       const db = createDb();
       try {
+        // Cascading FKs handle deletion of all related user data.
+        // Caller must supply a compliance reason for the audit log.
         const deleted = await db.delete(users).where(eq(users.id, id)).returning();
         if (!deleted.length) return status(404, { error: 'User not found' });
-        return { success: true as const };
+        console.info(`[COMPLIANCE] Hard-deleted user ${id}. Reason: ${body.reason}`);
+        return { success: true as const, purged: true as const };
       } catch (error) {
         if ((error as { code?: string })?.code === '23503') {
-          return status(409, { error: 'Cannot delete: user has dependent data' });
+          return status(409, { error: 'Cannot delete: user has dependent data without cascade' });
         }
-        console.error('Error deleting user:', error);
-        return status(500, { error: 'Failed to delete user' });
+        console.error('Error hard-deleting user:', error);
+        return status(500, { error: 'Failed to hard-delete user' });
       }
     },
     {
       params: z.object({ id: z.string() }),
-      detail: { tags: ['Admin'], summary: 'Delete a user' },
+      body: z.object({
+        reason: z.string().min(1, 'Compliance reason is required'),
+      }),
+      response: { 200: HardDeleteSuccessSchema, ...AdminErrorResponses },
+      detail: {
+        tags: ['Admin'],
+        summary: 'Hard-delete a user and all their data (irreversible, for GDPR compliance)',
+      },
+    },
+  )
+
+  // Restore a soft-deleted user
+  .post(
+    '/users/:id/restore',
+    async ({ params }) => {
+      const id = params.id;
+      if (!id) return status(400, { error: 'Invalid user id' });
+      // Soft delete not supported for users in Better Auth
+      return status(400, { error: 'Soft delete not supported for users in Better Auth' });
+    },
+    {
+      params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Restore a soft-deleted user' },
     },
   )
 
@@ -417,6 +513,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Soft-delete a pack' },
     },
   )
@@ -442,6 +539,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: SuccessSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Delete a catalog item' },
     },
   )
@@ -489,7 +587,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         price: z.number().nullable().optional(),
         description: z.string().nullable().optional(),
       }),
+      response: { 200: CatalogUpdateSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Update a catalog item' },
     },
   )
-  .use(analyticsRoutes);
+  .use(analyticsRoutes)
+  .use(adminTrailsRoutes);

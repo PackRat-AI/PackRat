@@ -1,6 +1,6 @@
 {
   "name": "packrat-guides-app",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "private": true,
   "scripts": {
     "build": "bun run build-content && next build",
@@ -10,6 +10,7 @@
     "dev": "next dev",
     "doctor:react": "bunx react-doctor",
     "enhance-content": "bun run scripts/enhance-content.ts",
+    "lighthouse": "bun run build && bunx lhci autorun",
     "lint": "next lint",
     "start": "next start",
     "sync-to-r2": "bun run scripts/sync-to-r2.ts",
@@ -87,9 +88,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.14.0",
     "@types/mdx": "^2.0.13",
     "@types/node": "^25.6.0",
-    "@types/react": "~19.1.10",
+    "@types/react": "~19.2.10",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",

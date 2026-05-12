@@ -25,7 +25,7 @@ export const ChatRequestSchema = z.any();
 // ;
 
 export const ReportedContentUserSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   email: z.string().email(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
@@ -33,14 +33,14 @@ export const ReportedContentUserSchema = z.object({
 
 export const ReportedContentSchema = z.object({
   id: z.number(),
-  userId: z.number(),
+  userId: z.string(),
   userQuery: z.string(),
   aiResponse: z.string(),
   reason: z.string(),
   userComment: z.string().nullable(),
   status: z.string(),
   reviewed: z.boolean().nullable(),
-  reviewedBy: z.number().nullable(),
+  reviewedBy: z.string().nullable(),
   reviewedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

@@ -16,6 +16,9 @@
     "target": "ESNext",
     "paths": {
       "admin-app/*": ["./apps/admin/*"],
+      "web-app/*": ["./apps/web/*"],
+      "@packrat/app": ["./packages/app/index.ts"],
+      "@packrat/app/*": ["./packages/app/src/*"],
       "guides-app/*": ["./apps/guides/*"],
       "landing-app/*": ["./apps/landing/*"],
       "trails-app/*": ["./apps/trails/*"],
@@ -24,8 +27,6 @@
       "expo-app/*": ["./apps/expo/*"],
       "app/*": ["./packages/app/*"],
       "config/*": ["./packages/config/*"],
-      "@packrat/app": ["./packages/app/src/index.ts"],
-      "@packrat/app/*": ["./packages/app/src/*"],
       "@packrat/api": ["./packages/api/src/index.ts"],
       "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/api-client": ["./packages/api-client/src/index.ts"],
@@ -62,6 +63,9 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    "packages/mcp"
+    "packages/mcp",
+    "packages/osm-db",
+    "packages/osm-import",
+    "packages/overpass"
   ]
 }

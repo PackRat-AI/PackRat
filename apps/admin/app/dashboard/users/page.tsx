@@ -19,6 +19,7 @@ import { usePaginatedSearch } from 'admin-app/hooks/use-paginated-search';
 import { type AdminUser, deleteUser, getUsers } from 'admin-app/lib/api';
 import { formatDate } from 'admin-app/lib/date';
 import { queryKeys } from 'admin-app/lib/queryKeys';
+import { cn } from 'admin-app/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 
@@ -92,15 +93,25 @@ function UserRow({ user }: { user: AdminUser }) {
       </TableCell>
       <TableCell>
         <span
-          className={`text-xs font-medium ${user.emailVerified ? 'text-green-500' : 'text-muted-foreground'}`}
+          className={cn(
+            'text-xs font-medium',
+            user.emailVerified ? 'text-green-500' : 'text-muted-foreground',
+          )}
         >
           {user.emailVerified ? 'Yes' : 'No'}
         </span>
       </TableCell>
       <TableCell>
-        <span className="text-sm text-muted-foreground">
-          {user.createdAt ? formatDate(new Date(user.createdAt)) : '—'}
-        </span>
+        <div className="space-y-0.5">
+          <span className="text-sm text-muted-foreground">
+            {user.createdAt ? formatDate(new Date(user.createdAt)) : '—'}
+          </span>
+          {user.updatedAt && user.updatedAt !== user.createdAt && (
+            <p className="text-xs text-muted-foreground/60">
+              act {formatDate(new Date(user.updatedAt))}
+            </p>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
@@ -123,7 +134,7 @@ export default function UsersPage() {
   const offset = page * PAGE_SIZE;
 
   const {
-    data: users = [],
+    data: result,
     isLoading,
     isError,
   } = useQuery({
@@ -131,6 +142,8 @@ export default function UsersPage() {
     queryFn: () => getUsers({ q: q || undefined, limit: PAGE_SIZE, offset }),
   });
 
+  const users = result?.data ?? [];
+  const total = result?.total ?? 0;
   const hasPrev = page > 0;
   const hasNext = users.length === PAGE_SIZE;
 
@@ -174,7 +187,7 @@ export default function UsersPage() {
                 <TableBody>
                   {users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         No users found{q ? ` matching "${q}"` : ''}.
                       </TableCell>
                     </TableRow>
@@ -188,7 +201,7 @@ export default function UsersPage() {
               <p className="text-xs text-muted-foreground">
                 {users.length === 0
                   ? `No users${q ? ` matching "${q}"` : ''}`
-                  : `${(offset + 1).toLocaleString()}–${(offset + users.length).toLocaleString()} users${q ? ` matching "${q}"` : ''}`}
+                  : `${(offset + 1).toLocaleString()}–${(offset + users.length).toLocaleString()} of ${total.toLocaleString()} users${q ? ` matching "${q}"` : ''}`}
               </p>
               <div className="flex items-center gap-2">
                 <Button

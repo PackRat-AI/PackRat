@@ -34,6 +34,8 @@ function CatalogItemsScreen() {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
@@ -50,7 +52,6 @@ function CatalogItemsScreen() {
   const {
     data: paginatedData,
     isLoading: isPaginatedLoading,
-    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -85,6 +86,11 @@ function CatalogItemsScreen() {
 
   const handleItemPress = (item: CatalogItem) => {
     router.push({ pathname: '/catalog/[id]', params: { id: item.id } });
+  };
+  const handleRefresh = async () => {
+    setIsManualRefresh(true);
+    await refetch();
+    setIsManualRefresh(false);
   };
 
   const loadMore = () => {
@@ -208,7 +214,6 @@ function CatalogItemsScreen() {
       />
 
       <FlatList
-        key={activeFilter}
         data={paginatedItems}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
@@ -216,7 +221,7 @@ function CatalogItemsScreen() {
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}
         ListHeaderComponent={listHeader}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={handleRefresh} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         contentContainerStyle={{ flexGrow: 1, padding: 16 }}

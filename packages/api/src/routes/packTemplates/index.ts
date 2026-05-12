@@ -220,6 +220,15 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         const { isAppTemplate } = body;
         contentUrl = body.contentUrl;
 
+        if (!contentUrl) {
+          return status(400, { error: 'contentUrl is required' });
+        }
+        try {
+          new URL(contentUrl);
+        } catch {
+          return status(400, { error: 'contentUrl must be a valid URL' });
+        }
+
         const { GOOGLE_GENERATIVE_AI_API_KEY } = getEnv();
         const google = createGoogleGenerativeAI({ apiKey: GOOGLE_GENERATIVE_AI_API_KEY });
 
@@ -378,7 +387,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           return { newTemplate: createdTemplate, insertedItems: insertedItemsResult };
         });
 
-        return { ...newTemplate, items: insertedItems };
+        return status(201, { ...newTemplate, items: insertedItems });
       } catch (error) {
         console.error('Error generating pack template:', error);
         let errorCode = 'UNKNOWN_ERROR';

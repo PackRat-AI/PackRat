@@ -36,6 +36,7 @@ const ALLOWED: string[] = [
   'packages/env/src/expo-client.ts',
   'packages/env/src/expo-server.ts',
   'packages/env/src/analytics.ts',
+  'packages/env/src/web.ts',
   '.github/scripts/configure-deps.ts',
   '.github/scripts/env.ts',
   'packages/api/src/utils/env-validation.ts',
@@ -52,6 +53,9 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)
+  // to Bun.spawn via { ...process.env, ... }. App-level vars (IMPORT_MODE etc.) use nodeEnv.
+  'packages/osm-import/import.ts',
   // Trails app env shim — parses process.env once at module load
   'apps/trails/lib/env.ts',
 ];

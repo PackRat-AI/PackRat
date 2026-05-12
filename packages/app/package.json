@@ -1,12 +1,31 @@
 {
   "name": "@packrat/app",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    ".": "./index.ts"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts"
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint:fsd": "steiger ./src"
+  },
+  "dependencies": {
+    "@packrat/api-client": "workspace:*",
+    "@tanstack/react-query": "^5.70.0",
+    "jotai": "^2.12.2",
+    "react": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@feature-sliced/steiger-plugin": "^0.5.7",
+    "steiger": "^0.5.11"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.70.0",
+    "jotai": "^2.12.2",
+    "react": "catalog:"
+  }
 }

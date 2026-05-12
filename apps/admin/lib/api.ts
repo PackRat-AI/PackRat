@@ -1,51 +1,70 @@
-// Browser-callable API client for the admin app.
-//
-// Auth: when behind CF Access, the Cf-Access-Jwt-Assertion header is added
-// automatically by CF Access on every request to a protected service — no manual
-// forwarding needed. For local dev, a short-lived Bearer token from Basic auth
-// login is used instead.
-
+import { treaty } from '@elysiajs/eden';
+import type { App } from '@packrat/api';
+import type {
+  ActiveUsersSchema,
+  ActivityPointSchema,
+  BrandRowSchema,
+  BreakdownItemSchema,
+  CatalogOverviewSchema,
+  EmbeddingStatsSchema,
+  EtlJobSchema,
+  EtlResponseSchema,
+  GrowthPointSchema,
+  PriceBucketSchema,
+  TrailConditionReportSchema,
+  TrailGeometrySchema,
+  TrailSearchItemSchema,
+  TrailSearchResultSchema,
+} from '@packrat/api/schemas/admin';
+import { isObject } from '@packrat/guards';
+import type { Static } from '@sinclair/typebox';
 import { clearToken, getAuthHeader } from './auth';
 import { adminEnv } from './env';
 
 const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
-async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const authHeaders = getAuthHeader();
-  const res = await fetch(`${API_BASE}/api/admin${path}`, {
-    credentials: 'include',
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders,
-      ...init?.headers,
-    },
-  });
+// Injects admin auth header and redirects to /login on 401.
+const adminFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const authHeader = getAuthHeader();
+  const headers = new Headers(init?.headers);
+  headers.set('Content-Type', 'application/json');
+  for (const [k, v] of Object.entries(authHeader)) headers.set(k, v);
+
+  const res = await fetch(input, { ...init, headers, credentials: 'include' });
 
   if (res.status === 401) {
     clearToken();
     if (typeof window !== 'undefined') window.location.replace('/login');
-    throw new Error('Unauthorized');
   }
+  return res;
+};
 
-  if (!res.ok) {
-    throw new Error(`Admin API error: ${res.status} ${res.statusText} — ${path}`);
-  }
+// Pre-drilled into .api.admin so call sites write `adminClient.stats.get()`.
+const adminClient = treaty<App>(API_BASE, {
+  fetcher: adminFetcher as unknown as typeof fetch,
+  parseDate: false,
+}).api.admin;
 
-  // T is caller-verified via the typed adminFetch<T> call-sites above.
-  return res.json() as Promise<T>; // safe-cast: fetch boundary — caller provides T
+function throwOnError(error: { value?: unknown } | null, fallback = 'Admin API error'): never {
+  const val = error?.value;
+  const msg =
+    isObject(val) && 'error' in val ? String((val as { error: unknown }).error) : fallback;
+  throw new Error(msg);
+}
+
+function unwrap<T>(data: T | null | undefined, name: string): T {
+  if (data == null) throw new Error(`Admin API returned no data for ${name}`);
+  return data;
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
-export interface AdminStats {
-  users: number;
-  packs: number;
-  items: number;
-}
+export type AdminStats = { users: number; packs: number; items: number };
 
-export function getStats(): Promise<AdminStats> {
-  return adminFetch<AdminStats>('/stats');
+export async function getStats(): Promise<AdminStats> {
+  const { data, error } = await adminClient.stats.get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'stats');
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -62,22 +81,50 @@ export interface AdminUser {
   updatedAt: string | null;
 }
 
-export function getUsers({
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function getUsers({
   limit = 100,
   offset = 0,
   q,
+  includeDeleted = false,
 }: {
   limit?: number;
   offset?: number;
   q?: string;
-} = {}): Promise<AdminUser[]> {
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-  if (q) params.set('q', q);
-  return adminFetch<AdminUser[]>(`/users-list?${params}`);
+  includeDeleted?: boolean;
+} = {}): Promise<PaginatedResponse<AdminUser>> {
+  const { data, error } = await adminClient['users-list'].get({
+    query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'users');
 }
 
-export function deleteUser(id: number): Promise<{ success: boolean }> {
-  return adminFetch(`/users/${id}`, { method: 'DELETE' });
+export async function deleteUser(id: number): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.users({ id: String(id) }).delete();
+  if (error) throwOnError(error);
+  return unwrap(data, 'deleteUser');
+}
+
+export async function hardDeleteUser(
+  id: number,
+  reason: string,
+): Promise<{ success: boolean; purged: boolean }> {
+  const { data, error } = await adminClient.users({ id: String(id) }).hard.delete({ reason });
+  if (error) throwOnError(error);
+  return unwrap(data, 'hardDeleteUser');
+}
+
+export async function restoreUser(id: number): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.users({ id: String(id) }).restore.post();
+  if (error) throwOnError(error);
+  return unwrap(data, 'restoreUser');
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -96,22 +143,28 @@ export interface AdminPack {
   userEmail: string | null;
 }
 
-export function getPacks({
+export async function getPacks({
   limit = 100,
   offset = 0,
   q,
+  includeDeleted = false,
 }: {
   limit?: number;
   offset?: number;
   q?: string;
-} = {}): Promise<AdminPack[]> {
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-  if (q) params.set('q', q);
-  return adminFetch<AdminPack[]>(`/packs-list?${params}`);
+  includeDeleted?: boolean;
+} = {}): Promise<PaginatedResponse<AdminPack>> {
+  const { data, error } = await adminClient['packs-list'].get({
+    query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'packs');
 }
 
-export function deletePack(id: string): Promise<{ success: boolean }> {
-  return adminFetch(`/packs/${id}`, { method: 'DELETE' });
+export async function deletePack(id: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.packs({ id }).delete();
+  if (error) throwOnError(error);
+  return unwrap(data, 'deletePack');
 }
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
@@ -147,13 +200,13 @@ export interface UpdateCatalogItemInput {
   name?: string;
   brand?: string | null;
   categories?: string[] | null;
-  weight?: number | null;
+  weight?: number;
   weightUnit?: string;
   price?: number | null;
   description?: string | null;
 }
 
-export function getCatalogItems({
+export async function getCatalogItems({
   limit = 100,
   offset = 0,
   q,
@@ -161,112 +214,167 @@ export function getCatalogItems({
   limit?: number;
   offset?: number;
   q?: string;
-} = {}): Promise<AdminCatalogItem[]> {
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
-  if (q) params.set('q', q);
-  return adminFetch<AdminCatalogItem[]>(`/catalog-list?${params}`);
-}
-
-export function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
-  return adminFetch(`/catalog/${id}`, { method: 'DELETE' });
-}
-
-export function updateCatalogItem(
-  id: number,
-  data: UpdateCatalogItemInput,
-): Promise<{ id: number; name: string }> {
-  return adminFetch(`/catalog/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
+} = {}): Promise<PaginatedResponse<AdminCatalogItem>> {
+  const { data, error } = await adminClient['catalog-list'].get({
+    query: { limit, offset, q },
   });
+  if (error) throwOnError(error);
+  return unwrap(data, 'catalog');
+}
+
+export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.catalog({ id: String(id) }).delete();
+  if (error) throwOnError(error);
+  return unwrap(data, 'deleteCatalogItem');
+}
+
+export async function updateCatalogItem(
+  id: number,
+  body: UpdateCatalogItemInput,
+): Promise<{ id: number; name: string }> {
+  const { data, error } = await adminClient.catalog({ id: String(id) }).patch(body);
+  if (error) throwOnError(error);
+  return unwrap(data, 'updateCatalogItem');
 }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
 
-export type GrowthPoint = { period: string; users: number; packs: number; catalogItems: number };
-export type ActivityPoint = { period: string; trips: number; trailReports: number; posts: number };
-export type BreakdownItem = { category: string; count: number };
+export type GrowthPoint = Static<typeof GrowthPointSchema>;
+export type ActivityPoint = Static<typeof ActivityPointSchema>;
+export type BreakdownItem = Static<typeof BreakdownItemSchema>;
+export type ActiveUsers = Static<typeof ActiveUsersSchema>;
+export type AnalyticsPeriod = 'day' | 'week' | 'month';
 
-export function getPlatformGrowth(period: string): Promise<GrowthPoint[]> {
-  return adminFetch(`/analytics/platform/growth?period=${period}`);
+export async function getPlatformGrowth(
+  period: AnalyticsPeriod,
+  range = 12,
+): Promise<GrowthPoint[]> {
+  const { data, error } = await adminClient.analytics.platform.growth.get({
+    query: { period, range },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'platformGrowth');
 }
 
-export function getPlatformActivity(period: string): Promise<ActivityPoint[]> {
-  return adminFetch(`/analytics/platform/activity?period=${period}`);
+export async function getPlatformActivity(
+  period: AnalyticsPeriod,
+  range = 12,
+): Promise<ActivityPoint[]> {
+  const { data, error } = await adminClient.analytics.platform.activity.get({
+    query: { period, range },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'platformActivity');
 }
 
-export function getPlatformBreakdown(): Promise<BreakdownItem[]> {
-  return adminFetch('/analytics/platform/breakdown');
+export async function getPlatformBreakdown(): Promise<BreakdownItem[]> {
+  const { data, error } = await adminClient.analytics.platform.breakdown.get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'platformBreakdown');
 }
 
 // ─── Analytics — Catalog ─────────────────────────────────────────────────────
 
-export type CatalogOverview = {
-  totalItems: number;
-  totalBrands: number;
-  avgPrice: number | null;
-  minPrice: number | null;
-  maxPrice: number | null;
-  embeddingCoverage: { total: number; withEmbedding: number; pct: number };
-  availability: { status: string | null; count: number }[];
-  addedLast30Days: number;
-};
+export type CatalogOverview = Static<typeof CatalogOverviewSchema>;
+export type BrandRow = Static<typeof BrandRowSchema>;
+export type PriceBucket = Static<typeof PriceBucketSchema>;
+export type EtlJob = Static<typeof EtlJobSchema>;
+export type EtlResponse = Static<typeof EtlResponseSchema>;
+export type EmbeddingStats = Static<typeof EmbeddingStatsSchema>;
 
-export type BrandRow = {
-  brand: string;
-  itemCount: number;
-  avgPrice: number | null;
-  minPrice: number | null;
-  maxPrice: number | null;
-  avgRating: number | null;
-};
-
-export type PriceBucket = { bucket: string; count: number };
-
-export type EtlJob = {
-  id: string;
-  status: 'running' | 'completed' | 'failed';
-  source: string;
-  filename: string;
-  scraperRevision: string;
-  startedAt: string;
-  completedAt: string | null;
-  totalProcessed: number | null;
-  totalValid: number | null;
-  totalInvalid: number | null;
-  successRate: number | null;
-};
-
-export type EtlResponse = {
-  jobs: EtlJob[];
-  summary: { totalRuns: number; completed: number; failed: number; totalItemsIngested: number };
-};
-
-export type EmbeddingStats = {
-  total: number;
-  withEmbedding: number;
-  pending: number;
-  coveragePct: number;
-};
-
-export function getCatalogOverview(): Promise<CatalogOverview> {
-  return adminFetch('/analytics/catalog/overview');
+export async function getCatalogOverview(): Promise<CatalogOverview> {
+  const { data, error } = await adminClient.analytics.catalog.overview.get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'catalogOverview');
 }
 
-export function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
-  return adminFetch(`/analytics/catalog/brands?limit=${limit}`);
+export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
+  const { data, error } = await adminClient.analytics.catalog.brands.get({
+    query: { limit },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'catalogBrands');
 }
 
-export function getCatalogPrices(): Promise<PriceBucket[]> {
-  return adminFetch('/analytics/catalog/prices');
+export async function getCatalogPrices(): Promise<PriceBucket[]> {
+  const { data, error } = await adminClient.analytics.catalog.prices.get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'catalogPrices');
 }
 
-export function getCatalogEtl(limit = 20): Promise<EtlResponse> {
-  return adminFetch(`/analytics/catalog/etl?limit=${limit}`);
+export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
+  const { data, error } = await adminClient.analytics.catalog.etl.get({
+    query: { limit },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'catalogEtl');
 }
 
-export function getCatalogEmbeddings(): Promise<EmbeddingStats> {
-  return adminFetch('/analytics/catalog/embeddings');
+export async function getCatalogEmbeddings(): Promise<EmbeddingStats> {
+  const { data, error } = await adminClient.analytics.catalog.embeddings.get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'catalogEmbeddings');
+}
+
+// ─── Admin Trails ─────────────────────────────────────────────────────────────
+
+export type TrailSearchResult = Static<typeof TrailSearchItemSchema>;
+export type TrailGeometry = Static<typeof TrailGeometrySchema>;
+export type TrailSearchPage = Static<typeof TrailSearchResultSchema>;
+export type TrailConditionReport = Static<typeof TrailConditionReportSchema>;
+
+export async function searchTrails({
+  q,
+  sport,
+  limit = 50,
+  offset = 0,
+}: {
+  q: string;
+  sport?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<TrailSearchPage> {
+  const { data, error } = await adminClient.trails.search.get({
+    query: { q, sport, limit, offset },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'searchTrails');
+}
+
+export async function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
+  const { data, error } = await adminClient.trails({ osmId }).geometry.get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'trailGeometry');
+}
+
+export async function getAdminTrail(osmId: string): Promise<TrailSearchResult> {
+  const { data, error } = await adminClient.trails({ osmId }).get();
+  if (error) throwOnError(error);
+  return unwrap(data, 'adminTrail');
+}
+
+export async function getTrailConditions({
+  q,
+  limit = 50,
+  offset = 0,
+  includeDeleted = false,
+}: {
+  q?: string;
+  limit?: number;
+  offset?: number;
+  includeDeleted?: boolean;
+} = {}): Promise<PaginatedResponse<TrailConditionReport>> {
+  const { data, error } = await adminClient.trails.conditions.get({
+    query: { q, limit, offset, includeDeleted: includeDeleted ? 'true' : undefined },
+  });
+  if (error) throwOnError(error);
+  return unwrap(data, 'trailConditions');
+}
+
+export async function deleteTrailCondition(reportId: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
+  if (error) throwOnError(error);
+  return unwrap(data, 'deleteTrailCondition');
 }
 
 export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {

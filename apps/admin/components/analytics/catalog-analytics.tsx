@@ -217,8 +217,13 @@ export function CatalogAnalytics() {
             { label: 'Total Items', value: overview.totalItems.toLocaleString() },
             { label: 'Brands', value: overview.totalBrands.toLocaleString() },
             {
-              label: 'Avg Price',
-              value: overview.avgPrice != null ? `$${overview.avgPrice.toFixed(2)}` : '—',
+              label: 'Price Range',
+              value:
+                overview.minPrice != null && overview.maxPrice != null
+                  ? `$${overview.minPrice.toFixed(2)}–$${overview.maxPrice.toFixed(2)}`
+                  : overview.avgPrice != null
+                    ? `avg $${overview.avgPrice.toFixed(2)}`
+                    : '—',
             },
             { label: 'Added Last 30d', value: overview.addedLast30Days.toLocaleString() },
           ].map((s) => (
@@ -461,7 +466,7 @@ export function CatalogAnalytics() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="pb-2 text-left font-medium">Source</th>
+                    <th className="pb-2 text-left font-medium">Source / File</th>
                     <th className="pb-2 text-left font-medium">Status</th>
                     <th className="pb-2 text-right font-medium">Processed</th>
                     <th className="pb-2 text-right font-medium">Valid</th>
@@ -477,7 +482,22 @@ export function CatalogAnalytics() {
                 <tbody>
                   {etl.jobs.map((job) => (
                     <tr key={job.id} className="border-b last:border-0">
-                      <td className="py-2 pr-4 font-mono text-xs">{job.source}</td>
+                      <td className="py-2 pr-4">
+                        <div className="font-mono text-xs">{job.source}</div>
+                        {job.filename && (
+                          <div
+                            className="text-xs text-muted-foreground truncate max-w-[180px]"
+                            title={job.filename}
+                          >
+                            {job.filename}
+                          </div>
+                        )}
+                        {job.scraperRevision && (
+                          <div className="text-[10px] text-muted-foreground/60 font-mono">
+                            rev {job.scraperRevision.slice(0, 7)}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-2 pr-4">
                         <Badge variant={statusBadgeVariant(job.status)} className="text-xs">
                           {job.status}

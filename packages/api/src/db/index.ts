@@ -58,6 +58,24 @@ export const createReadOnlyDb = () => {
 };
 
 /**
+ * Create a client for the dedicated OSM/trail database.
+ *
+ * Reads OSM_DATABASE_URL — a separate Postgres instance from the main app DB.
+ * For Cloudflare Workers + dedicated Postgres: set this to env.OSM_HYPERDRIVE.connectionString
+ * (add a [[hyperdrive]] binding in wrangler.jsonc pointing at the Postgres instance).
+ * The isStandardPostgresUrl check will route Hyperdrive URLs to pg.Pool automatically.
+ */
+export const createOsmDb = () => {
+  const { OSM_DATABASE_URL } = getEnv();
+  if (!OSM_DATABASE_URL) {
+    throw new Error(
+      'OSM_DATABASE_URL is not configured — trail features are disabled on this server',
+    );
+  }
+  return createConnection(OSM_DATABASE_URL);
+};
+
+/**
  * Create SQL client tuned for queue workers (HTTP driver, no pool).
  * Used from the queue handler which has direct access to the validated env.
  */

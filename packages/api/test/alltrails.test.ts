@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api } from './utils/test-helpers';
+import { apiWithAuth } from './utils/test-helpers';
 
 const PREVIEW_PATH = '/alltrails/preview';
 
 function post(body: unknown) {
-  return api(PREVIEW_PATH, {
+  return apiWithAuth(PREVIEW_PATH, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

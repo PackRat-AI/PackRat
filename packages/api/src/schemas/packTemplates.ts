@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const datetimeString = z.preprocess(
+  (v) => (v instanceof Date ? v.toISOString() : v),
+  z.string().datetime(),
+);
+
 export const ErrorResponseSchema = z.object({
   error: z.string(),
   code: z.string().optional(),
@@ -11,15 +16,15 @@ export const PackTemplateSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   category: z.string(),
-  userId: z.number(),
+  userId: z.string(),
   image: z.string().nullable(),
   tags: z.array(z.string()).nullable(),
   isAppTemplate: z.boolean(),
   deleted: z.boolean(),
-  localCreatedAt: z.string().datetime(),
-  localUpdatedAt: z.string().datetime(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  localCreatedAt: datetimeString,
+  localUpdatedAt: datetimeString,
+  createdAt: datetimeString,
+  updatedAt: datetimeString,
   contentSource: z.string().nullable(),
   contentId: z.string().nullable(),
 });
@@ -38,10 +43,10 @@ export const PackTemplateItemSchema = z.object({
   notes: z.string().nullable(),
   packTemplateId: z.string(),
   catalogItemId: z.number().nullable(),
-  userId: z.number(),
+  userId: z.string(),
   deleted: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: datetimeString,
+  updatedAt: datetimeString,
 });
 
 export const PackTemplateWithItemsSchema = PackTemplateSchema.extend({

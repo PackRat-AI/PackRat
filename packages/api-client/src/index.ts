@@ -97,7 +97,27 @@ export function createApiClient(config: ApiClientConfig) {
       base: RequestInfo | URL,
     ): [RequestInfo | URL, RequestInit | undefined] => {
       if (!token) return [base, init];
-      const headers = new Headers(init?.headers ?? {});
+      const headers = new Headers();
+      const existing = init?.headers;
+      if (existing instanceof Headers) {
+        existing.forEach((v, k) => {
+          headers.set(k, v);
+        });
+      } else if (Array.isArray(existing)) {
+        for (const entry of existing) {
+          if (
+            Array.isArray(entry) &&
+            typeof entry[0] === 'string' &&
+            typeof entry[1] === 'string'
+          ) {
+            headers.set(entry[0], entry[1]);
+          }
+        }
+      } else if (isObject(existing)) {
+        for (const [k, v] of Object.entries(existing)) {
+          if (isString(v)) headers.set(k, v);
+        }
+      }
       headers.set('Authorization', `Bearer ${token}`);
       return [base, { ...init, headers }];
     };
@@ -127,7 +147,13 @@ export function createApiClient(config: ApiClientConfig) {
   // Treaty only uses the callable form of `fetch`; the globalThis.fetch type
   // includes a `preconnect` method our wrapper doesn't need. Cast through
   // unknown to bridge the two shapes without pulling preconnect into scope.
-  return treaty<App>(config.baseUrl, { fetcher: authFetcher as unknown as typeof fetch }).api;
+  // parseDate:false disables Eden Treaty's JSON reviver that silently converts
+  // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
+  // this, every Zod z.string().datetime() field in API response schemas fails.
+  return treaty<App>(config.baseUrl, {
+    fetcher: authFetcher as unknown as typeof fetch,
+    parseDate: false,
+  }).api;
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

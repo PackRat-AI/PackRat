@@ -18,6 +18,8 @@ export const GuidesListScreen = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const {
@@ -29,7 +31,6 @@ export const GuidesListScreen = () => {
   const {
     data: guidesData,
     isLoading: isLoadingGuides,
-    isRefetching: isRefetchingGuides,
     refetch: refetchGuides,
     fetchNextPage: fetchNextPageGuides,
     hasNextPage: hasNextPageGuides,
@@ -44,7 +45,6 @@ export const GuidesListScreen = () => {
   const {
     data: searchData,
     isLoading: isSearching,
-    isRefetching: isRefetchingSearch,
     refetch: refetchSearch,
     fetchNextPage: fetchNextPageSearch,
     hasNextPage: hasNextPageSearch,
@@ -60,7 +60,6 @@ export const GuidesListScreen = () => {
   const isSearchMode = searchQuery.length > 0;
   const data = isSearchMode ? searchData : guidesData;
   const isLoading = isSearchMode ? isSearching : isLoadingGuides;
-  const isRefetching = isSearchMode ? isRefetchingSearch : isRefetchingGuides;
   const refetch = isSearchMode ? refetchSearch : refetchGuides;
   const fetchNextPage = isSearchMode ? fetchNextPageSearch : fetchNextPageGuides;
   const hasNextPage = isSearchMode ? hasNextPageSearch : hasNextPageGuides;
@@ -81,6 +80,11 @@ export const GuidesListScreen = () => {
   const handleSearch = useCallback((text: string) => {
     setSearchQuery(text);
   }, []);
+  const handleRefresh = async () => {
+    setIsManualRefresh(true);
+    await refetch();
+    setIsManualRefresh(false);
+  };
 
   const handleCategoryChange = useCallback((category: string) => {
     setSelectedCategory(category);
@@ -219,8 +223,8 @@ export const GuidesListScreen = () => {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={isManualRefresh}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
         }

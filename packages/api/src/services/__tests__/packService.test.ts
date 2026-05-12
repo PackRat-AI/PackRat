@@ -80,7 +80,7 @@ describe('PackService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new PackService(1);
+    service = new PackService('user-test-id-1');
   });
 
   // -------------------------------------------------------------------------

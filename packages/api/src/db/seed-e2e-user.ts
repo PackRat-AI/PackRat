@@ -75,6 +75,8 @@ async function seedE2EUser() {
       const [inserted] = await db
         .insert(schema.users)
         .values({
+          id: crypto.randomUUID(),
+          name: 'E2E Automation',
           email: normalizedEmail,
           passwordHash,
           emailVerified: true,

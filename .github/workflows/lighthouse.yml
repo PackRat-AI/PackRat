@@ -1,0 +1,80 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'apps/guides/**'
+      - 'apps/landing/**'
+      - 'packages/web-ui/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse-guides:
+    name: Lighthouse (guides)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/guides
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+        working-directory: .
+
+      - name: Build
+        run: bun run build
+
+      - name: Lighthouse — desktop
+        run: bunx lhci autorun --config=.lighthouserc.js
+        continue-on-error: true
+
+      - name: Lighthouse — mobile
+        run: bunx lhci autorun --config=.lighthouserc.mobile.js
+        continue-on-error: true
+
+  lighthouse-landing:
+    name: Lighthouse (landing)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/landing
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+        working-directory: .
+
+      - name: Build
+        run: bun run build
+
+      - name: Lighthouse — desktop
+        run: bunx lhci autorun --config=.lighthouserc.js
+        continue-on-error: true
+
+      - name: Lighthouse — mobile
+        run: bunx lhci autorun --config=.lighthouserc.mobile.js
+        continue-on-error: true
