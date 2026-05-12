@@ -1,9 +1,46 @@
 'use client';
-import { useLoginMutation, useRegisterMutation } from '@packrat/app';
+import { webEnv } from '@packrat/env/web';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
 import { setTokens } from 'web-app/lib/auth';
+
+const API_BASE = webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
+
+function useLoginMutation() {
+  return useMutation({
+    mutationFn: async (body: { email: string; password: string }) => {
+      const res = await fetch(`${API_BASE}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Login failed');
+      return res.json() as Promise<{ token?: string; user?: unknown }>;
+    },
+  });
+}
+
+function useRegisterMutation() {
+  return useMutation({
+    mutationFn: async (body: {
+      email: string;
+      password: string;
+      firstName?: string;
+      lastName?: string;
+    }) => {
+      const name = [body.firstName, body.lastName].filter(Boolean).join(' ') || body.email;
+      const res = await fetch(`${API_BASE}/api/auth/sign-up/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: body.email, password: body.password, name }),
+      });
+      if (!res.ok) throw new Error('Registration failed');
+      return res.json();
+    },
+  });
+}
 
 export default function AuthPage() {
   const [tab, setTab] = useState<'login' | 'register'>('login');
@@ -23,11 +60,9 @@ export default function AuthPage() {
       { email, password },
       {
         onSuccess: (data) => {
-          const response = data as { accessToken?: string; refreshToken?: string } | null;
-          const accessToken = response?.accessToken ?? '';
-          const refreshToken = response?.refreshToken ?? '';
-          if (!accessToken) return;
-          setTokens(accessToken, refreshToken);
+          const token = (data as { token?: string }).token ?? '';
+          if (!token) return;
+          setTokens(token, '');
           router.push('/');
         },
       },

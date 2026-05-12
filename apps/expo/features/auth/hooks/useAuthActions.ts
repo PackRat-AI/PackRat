@@ -1,3 +1,4 @@
+import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -32,15 +33,18 @@ function redirect(route: string) {
 }
 
 function mapToUser(raw: Record<string, unknown>): User {
-  const name = String(raw.name ?? '');
+  const name = asString(raw.name) ?? '';
   const spaceIdx = name.indexOf(' ');
   return {
-    id: String(raw.id ?? ''),
-    email: String(raw.email ?? ''),
+    id: asString(raw.id) ?? '',
+    email: asString(raw.email) ?? '',
     firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
     lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
-    role: (raw.role as 'USER' | 'ADMIN') ?? 'USER',
-    avatarUrl: (raw.image as string | null) ?? null,
+    role: asString(raw.role) ?? 'USER',
+    emailVerified: asBoolean(raw.emailVerified) ?? null,
+    avatarUrl: asString(raw.image) ?? null,
+    createdAt: asString(raw.createdAt) ?? null,
+    updatedAt: asString(raw.updatedAt) ?? null,
     preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
   };
 }
@@ -88,17 +92,12 @@ export function useAuthActions() {
 
       if (!idToken) throw new Error(t('auth.noIdTokenFromGoogle'));
 
-      const { data, error } = await apiClient.auth.google.post({ idToken });
-      if (error || !data) {
-        throw new Error(extractAuthError(error?.value, t('auth.failedToSignInWithGoogle')));
-      }
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(UserSchema.parse(data.user));
-
-      setNeedsReauth(false);
-      redirect(redirectTo);
+      const { data, error } = await authClient.signIn.social({
+        provider: 'google',
+        idToken: { token: idToken },
+      });
+      if (error) throw new Error(error.message ?? t('auth.failedToSignInWithGoogle'));
+      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
     } catch (error) {
       setIsLoading(false);
 

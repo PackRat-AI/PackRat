@@ -147,14 +147,14 @@ export type CatalogListResponse = {
 // ── Feed ─────────────────────────────────────────────────────────────────────
 
 export type PostAuthor = {
-  id: number;
+  id: string;
   firstName: string | null;
   lastName: string | null;
 };
 
 export type Post = {
   id: number;
-  userId: number;
+  userId: string;
   caption: string | null;
   images: string[]; // array of image URLs
   createdAt: string;

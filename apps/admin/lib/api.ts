@@ -103,7 +103,7 @@ export async function getUsers({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return unwrap(data, 'users');
+  return unwrap(data, 'users') as unknown as PaginatedResponse<AdminUser>; // safe-cast: Eden Treaty infers wide union; runtime shape matches PaginatedResponse<T>
 }
 
 export async function deleteUser(id: number): Promise<{ success: boolean }> {
@@ -158,7 +158,7 @@ export async function getPacks({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return unwrap(data, 'packs');
+  return unwrap(data, 'packs') as unknown as PaginatedResponse<AdminPack>; // safe-cast: Eden Treaty infers wide union; runtime shape matches PaginatedResponse<T>
 }
 
 export async function deletePack(id: string): Promise<{ success: boolean }> {
@@ -219,7 +219,7 @@ export async function getCatalogItems({
     query: { limit, offset, q },
   });
   if (error) throwOnError(error);
-  return unwrap(data, 'catalog');
+  return unwrap(data, 'catalog') as unknown as PaginatedResponse<AdminCatalogItem>; // safe-cast: Eden Treaty infers wide union; runtime shape matches PaginatedResponse<T>
 }
 
 export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
@@ -375,6 +375,12 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
   const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
   if (error) throwOnError(error);
   return unwrap(data, 'deleteTrailCondition');
+}
+
+async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await adminFetcher(`${API_BASE}/api/admin${path}`, init);
+  if (!res.ok) throw new Error(`Admin API error: ${res.status}`);
+  return res.json();
 }
 
 export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {

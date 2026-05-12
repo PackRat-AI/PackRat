@@ -44,12 +44,13 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
         </Text>
       </View>
 
-      {reviews.map((review) => {
-        const isExpanded = expandedReviews[review.title] || false;
-        const shouldTruncate = review.text.length > 150;
+      {reviews.map((review, idx) => {
+        const reviewKey = review.title ?? String(idx);
+        const isExpanded = expandedReviews[reviewKey] || false;
+        const shouldTruncate = (review.text?.length ?? 0) > 150;
 
         return (
-          <View key={review.title} className="mb-3 rounded-lg bg-card p-3 shadow-sm">
+          <View key={reviewKey} className="mb-3 rounded-lg bg-card p-3 shadow-sm">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
                 {review.user_avatar ? (
@@ -63,7 +64,9 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   <Text className="font-medium text-foreground">
                     {review.user_name || t('catalog.anonymous')}
                   </Text>
-                  <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
+                  {review.date && (
+                    <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
+                  )}
                 </View>
               </View>
               <View className="flex-row items-center">
@@ -97,10 +100,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
               </Text>
 
               {shouldTruncate && (
-                <TouchableOpacity
-                  className="mt-1"
-                  onPress={() => toggleReviewExpansion(review.title)}
-                >
+                <TouchableOpacity className="mt-1" onPress={() => toggleReviewExpansion(reviewKey)}>
                   <Text className="text-sm text-primary">
                     {isExpanded ? t('catalog.showLess') : t('catalog.readMore')}
                   </Text>

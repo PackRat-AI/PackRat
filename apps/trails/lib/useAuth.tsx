@@ -1,30 +1,28 @@
 'use client';
 
-import { asStringRecord, fromZod } from '@packrat/guards';
+import { fromZod } from '@packrat/guards';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { apiClient } from 'trails-app/lib/apiClient';
 import {
   clearTokens,
   clearUser,
   getAccessToken,
-  getRefreshToken,
   getUser,
   setTokens,
   setUser,
   type UserInfo,
   UserInfoSchema,
 } from 'trails-app/lib/auth';
+import { trailsAuthClient } from 'trails-app/lib/auth-client';
 
 interface AuthState {
   isAuthed: boolean;
   user: UserInfo | null;
-  // Pending verification: user registered but hasn't verified email yet
   pendingEmail: string | null;
 }
 
 interface AuthActions {
   register(email: string, opts: { password: string; firstName?: string }): Promise<void>;
-  verifyEmail(otp: string): Promise<void>;
+  verifyEmail(token: string): Promise<void>;
   resendVerification(): Promise<void>;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
@@ -35,10 +33,19 @@ interface AuthActions {
 
 const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
 
-function apiError(error: unknown, fallback: string): Error {
-  const rec = asStringRecord(error);
-  const msg = rec.error ?? rec.message;
-  return new Error(msg ?? fallback);
+function parseAuthUser(user: {
+  id: string;
+  email: string;
+  [key: string]: unknown;
+}): UserInfo | null {
+  return (
+    fromZod(UserInfoSchema)({
+      id: user.id,
+      email: user.email,
+      firstName: (user.firstName as string | null | undefined) ?? null,
+      lastName: (user.lastName as string | null | undefined) ?? null,
+    }) ?? null
+  );
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -60,32 +67,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (email: string, opts: { password: string; firstName?: string }) => {
-      const { error, status } = await apiClient.auth.register.post({
+      const name = opts.firstName ?? email;
+      const { data, error } = await trailsAuthClient.signUp.email({
         email,
         password: opts.password,
-        firstName: opts.firstName,
+        name,
       });
-      if (error) throw apiError(error.value, `Registration failed: ${status}`);
-      setState((s) => ({ ...s, pendingEmail: email }));
+      if (error) throw new Error(error.message ?? 'Registration failed');
+      if (data?.token) {
+        // autoSignIn: true succeeded — token is the Bearer session token
+        const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
+        if (!parsedUser) throw new Error('Registration failed: unexpected user shape');
+        setTokens(data.token, '');
+        setUser(parsedUser);
+        setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
+        setAuthGateOpen(false);
+      } else {
+        setState((s) => ({ ...s, pendingEmail: email }));
+      }
     },
     [],
   );
 
   const verifyEmail = useCallback(
-    async (otp: string) => {
+    async (token: string) => {
       if (!state.pendingEmail) throw new Error('No pending email verification');
-      const { data, error, status } = await apiClient.auth['verify-email'].post({
-        email: state.pendingEmail,
-        code: otp,
-      });
-      if (error || !data) throw apiError(error?.value, `Verification failed: ${status}`);
-      const { accessToken, refreshToken, user } = data;
-      if (!accessToken || !refreshToken || !user) {
-        throw new Error('Verification failed: missing token data');
+      const { error } = await trailsAuthClient.verifyEmail({ query: { token } });
+      if (error) throw new Error(error.message ?? 'Verification failed');
+      const sessionRes = await trailsAuthClient.getSession();
+      if (!sessionRes.data?.session || !sessionRes.data.user) {
+        throw new Error('Verification failed: could not get session');
       }
-      const parsedUser = fromZod(UserInfoSchema)(user);
+      const parsedUser = parseAuthUser(sessionRes.data.user as Parameters<typeof parseAuthUser>[0]);
       if (!parsedUser) throw new Error('Verification failed: unexpected user shape');
-      setTokens(accessToken, refreshToken);
+      setTokens(sessionRes.data.session.token, '');
       setUser(parsedUser);
       setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
       setAuthGateOpen(false);
@@ -95,36 +110,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resendVerification = useCallback(async () => {
     if (!state.pendingEmail) throw new Error('No pending email');
-    const { error, status } = await apiClient.auth['resend-verification'].post({
+    const { error } = await trailsAuthClient.sendVerificationEmail({
       email: state.pendingEmail,
+      callbackURL: typeof window !== 'undefined' ? window.location.origin : '',
     });
-    if (error) throw apiError(error.value, `Resend failed: ${status}`);
+    if (error) throw new Error(error.message ?? 'Resend failed');
   }, [state.pendingEmail]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { data, error, status } = await apiClient.auth.login.post({ email, password });
-    if (error || !data) throw apiError(error?.value, `Login failed: ${status}`);
-    const { accessToken, refreshToken, user } = data;
-    if (!accessToken || !refreshToken || !user) {
-      throw new Error('Login failed: missing token data');
-    }
-    const parsedUser = fromZod(UserInfoSchema)(user);
+    const { data, error } = await trailsAuthClient.signIn.email({ email, password });
+    if (error || !data) throw new Error(error?.message ?? 'Login failed');
+    const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
     if (!parsedUser) throw new Error('Login failed: unexpected user shape');
-    setTokens(accessToken, refreshToken);
+    setTokens(data.token, '');
     setUser(parsedUser);
     setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
     setAuthGateOpen(false);
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        await apiClient.auth.logout.post({ refreshToken });
-      } catch {
-        // ignore — clear tokens regardless
-      }
-    }
+    await trailsAuthClient.signOut();
     clearTokens();
     clearUser();
     setState({ isAuthed: false, user: null, pendingEmail: null });
