@@ -33,6 +33,8 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
         const allowed = [
           /^https:\/\/(www\.)?packrat\.world$/,
           /^https:\/\/[\w-]+\.packrat\.world$/,
+          /^https:\/\/[\w-]+\.packratai\.com$/,
+          /^https?:\/\/[\w-]+\.workers\.dev$/,
           /^http:\/\/localhost:\d+$/,
           /^exp:\/\//,
         ];
