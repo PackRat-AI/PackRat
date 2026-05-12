@@ -3,6 +3,9 @@ import type { App } from '@packrat/api';
 import type {
   ActiveUsersSchema,
   ActivityPointSchema,
+  AdminCatalogItemSchema,
+  AdminPackItemSchema,
+  AdminUserItemSchema,
   BrandRowSchema,
   BreakdownItemSchema,
   CatalogOverviewSchema,
@@ -69,17 +72,7 @@ export async function getStats(): Promise<AdminStats> {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export interface AdminUser {
-  id: number;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  role: string | null;
-  emailVerified: boolean | null;
-  avatarUrl: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
+export type AdminUser = Static<typeof AdminUserItemSchema>;
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -103,7 +96,7 @@ export async function getUsers({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return unwrap(data, 'users') as unknown as PaginatedResponse<AdminUser>; // safe-cast: Eden Treaty infers wide union; runtime shape matches PaginatedResponse<T>
+  return unwrap(data, 'users');
 }
 
 export async function deleteUser(id: number): Promise<{ success: boolean }> {
@@ -129,19 +122,7 @@ export async function restoreUser(id: number): Promise<{ success: boolean }> {
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
-export interface AdminPack {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  isPublic: boolean | null;
-  isAIGenerated: boolean;
-  tags: string[] | null;
-  image: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-  userEmail: string | null;
-}
+export type AdminPack = Static<typeof AdminPackItemSchema>;
 
 export async function getPacks({
   limit = 100,
@@ -158,7 +139,7 @@ export async function getPacks({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
   if (error) throwOnError(error);
-  return unwrap(data, 'packs') as unknown as PaginatedResponse<AdminPack>; // safe-cast: Eden Treaty infers wide union; runtime shape matches PaginatedResponse<T>
+  return unwrap(data, 'packs');
 }
 
 export async function deletePack(id: string): Promise<{ success: boolean }> {
@@ -169,32 +150,7 @@ export async function deletePack(id: string): Promise<{ success: boolean }> {
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
 
-export interface AdminCatalogItem {
-  id: number;
-  name: string;
-  description: string | null;
-  categories: string[] | null;
-  brand: string | null;
-  model: string | null;
-  sku: string | null;
-  price: number | null;
-  currency: string | null;
-  weight: number | null;
-  weightUnit: string;
-  availability: string | null;
-  ratingValue: number | null;
-  reviewCount: number | null;
-  color: string | null;
-  size: string | null;
-  material: string | null;
-  seller: string | null;
-  productUrl: string | null;
-  images: string[] | null;
-  variants: Array<{ attribute: string; values: string[] }> | null;
-  techs: Record<string, string> | null;
-  links: Array<{ title: string; url: string }> | null;
-  createdAt: string | null;
-}
+export type AdminCatalogItem = Static<typeof AdminCatalogItemSchema>;
 
 export interface UpdateCatalogItemInput {
   name?: string;
@@ -219,7 +175,7 @@ export async function getCatalogItems({
     query: { limit, offset, q },
   });
   if (error) throwOnError(error);
-  return unwrap(data, 'catalog') as unknown as PaginatedResponse<AdminCatalogItem>; // safe-cast: Eden Treaty infers wide union; runtime shape matches PaginatedResponse<T>
+  return unwrap(data, 'catalog');
 }
 
 export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
