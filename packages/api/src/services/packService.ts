@@ -150,8 +150,8 @@ export class PackService {
           catalogItemId: catalogItem.id,
           name: catalogItem.name,
           description: catalogItem.description,
-          weight: catalogItem.weight,
-          weightUnit: catalogItem.weightUnit,
+          weight: catalogItem.weight ?? 0,
+          weightUnit: catalogItem.weightUnit ?? 'g',
           image: catalogItem.images?.[0],
         };
       })
