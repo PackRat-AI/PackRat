@@ -1,4 +1,5 @@
 'use client';
+import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
@@ -10,43 +11,35 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [info, setInfo] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsPending(true);
-    try {
-      const { error: authError } = await authClient.signIn.email({ email, password });
-      if (authError) throw new Error(authError.message ?? 'Login failed');
-      router.push('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
-      setIsPending(false);
-    }
-  }
+  const loginMutation = useMutation({
+    mutationFn: async (body: { email: string; password: string }) => {
+      const { error } = await authClient.signIn.email(body);
+      if (error) throw new Error(error.message ?? 'Login failed');
+    },
+    onSuccess: () => router.push('/'),
+  });
 
-  async function handleRegister(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsPending(true);
-    try {
-      const { error: authError } = await authClient.signUp.email({
-        email,
-        password,
-        name: username || email,
-      });
-      if (authError) throw new Error(authError.message ?? 'Registration failed');
+  const registerMutation = useMutation({
+    mutationFn: async (body: { email: string; password: string; name: string }) => {
+      const { error } = await authClient.signUp.email(body);
+      if (error) throw new Error(error.message ?? 'Registration failed');
+    },
+    onSuccess: () => {
       setTab('login');
       setInfo('Account created! Please check your email to verify, then sign in.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
-      setIsPending(false);
-    }
+    },
+  });
+
+  function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    loginMutation.mutate({ email, password });
+  }
+
+  function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    registerMutation.mutate({ email, password, name: username || email });
   }
 
   return (
@@ -90,13 +83,15 @@ export default function AuthPage() {
               required
             />
             {info && <p className="text-sm text-green-400">{info}</p>}
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {loginMutation.error && (
+              <p className="text-sm text-destructive">{loginMutation.error.message}</p>
+            )}
             <button
               type="submit"
-              disabled={isPending}
+              disabled={loginMutation.isPending}
               className="w-full py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {isPending ? 'Signing in...' : 'Sign In'}
+              {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         ) : (
@@ -126,13 +121,15 @@ export default function AuthPage() {
               required
               minLength={8}
             />
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {registerMutation.error && (
+              <p className="text-sm text-destructive">{registerMutation.error.message}</p>
+            )}
             <button
               type="submit"
-              disabled={isPending}
+              disabled={registerMutation.isPending}
               className="w-full py-3 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {isPending ? 'Creating account...' : 'Create Account'}
+              {registerMutation.isPending ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
         )}
