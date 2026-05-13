@@ -68,21 +68,25 @@ struct ShoppingListView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .accessibilityIdentifier("shopping_done")
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button { showingAddSheet = true } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("shopping_add_item")
                 }
                 if !items.isEmpty {
                     ToolbarItem(placement: .secondaryAction) {
                         Button(showPurchased ? "Hide Purchased" : "Show Purchased") {
                             withAnimation { showPurchased.toggle() }
                         }
+                        .accessibilityIdentifier("shopping_toggle_purchased_visibility")
                     }
                     if items.contains(where: { $0.isPurchased }) {
                         ToolbarItem(placement: .secondaryAction) {
                             Button("Clear Purchased", role: .destructive) { clearPurchased() }
+                                .accessibilityIdentifier("shopping_clear_purchased")
                         }
                     }
                 }
@@ -131,6 +135,7 @@ private struct ShoppingItemRow: View {
                     .foregroundStyle(item.isPurchased ? .green : .secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("shopping_toggle_\(item.id)")
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
@@ -181,20 +186,24 @@ private struct AddShoppingItemSheet: View {
             Form {
                 Section("Item") {
                     TextField("Name (required)", text: $name)
+                        .accessibilityIdentifier("shopping_item_name")
                     Picker("Category", selection: $category) {
                         Text("None").tag("")
                         ForEach(categories, id: \.self) { cat in
                             Text(cat).tag(cat)
                         }
                     }
+                    .accessibilityIdentifier("shopping_item_category")
                 }
                 Section("Details") {
                     TextField("Estimated price ($)", text: $priceText)
+                        .accessibilityIdentifier("shopping_item_price")
                         #if os(iOS)
                         .keyboardType(.decimalPad)
                         #endif
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(3)
+                        .accessibilityIdentifier("shopping_item_notes")
                 }
             }
             .navigationTitle("Add Item")
@@ -204,10 +213,12 @@ private struct AddShoppingItemSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("shopping_item_cancel")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") { save() }
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .accessibilityIdentifier("shopping_item_add")
                 }
             }
         }

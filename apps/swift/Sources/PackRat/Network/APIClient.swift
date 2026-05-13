@@ -27,6 +27,9 @@ actor APIClient {
     ]
 
     static var resolvedBaseURL: URL {
+        if let override = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"],
+           !override.isEmpty,
+           let url = URL(string: override) { return url }
         if let override = UserDefaults.standard.string(forKey: "apiBaseURL"),
            !override.isEmpty,
            let url = URL(string: override) { return url }

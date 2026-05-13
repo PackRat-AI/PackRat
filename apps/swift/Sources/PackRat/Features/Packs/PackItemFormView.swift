@@ -29,65 +29,65 @@ struct PackItemFormView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Item") {
-                    TextField("Name", text: $name)
-                }
+            Group {
+                #if os(macOS)
+                macForm
+                #else
+                Form {
+                    Section("Item") {
+                        TextField("Name", text: $name)
+                            .accessibilityIdentifier("item_name")
+                    }
 
-                Section("Weight") {
-                    HStack {
-                        TextField("0", text: $weightText)
-                            #if os(iOS)
-                            .keyboardType(.decimalPad)
-                            #endif
-                            .accessibilityIdentifier("item_weight")
-                        Picker("Unit", selection: $weightUnit) {
-                            ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
-                                Text(u.label).tag(u.rawValue)
+                    Section("Weight") {
+                        HStack {
+                            TextField("0", text: $weightText)
+                                .keyboardType(.decimalPad)
+                                .accessibilityIdentifier("item_weight")
+                            Picker("Unit", selection: $weightUnit) {
+                                ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
+                                    Text(u.label).tag(u.rawValue)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 60)
+                        }
+                    }
+
+                    Section("Quantity & Category") {
+                        HStack {
+                            Text("Quantity")
+                            Spacer()
+                            TextField("1", text: $quantityText)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60)
+                        }
+                        Picker("Category", selection: $category) {
+                            Text("None").tag("")
+                            ForEach(PackCategory.allCases, id: \.rawValue) { cat in
+                                Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
                             }
                         }
-                        .labelsHidden()
-                        .frame(width: 60)
                     }
-                }
 
-                Section("Quantity & Category") {
-                    HStack {
-                        Text("Quantity")
-                        Spacer()
-                        TextField("1", text: $quantityText)
-                            #if os(iOS)
-                            .keyboardType(.numberPad)
-                            #endif
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 60)
+                    Section("Flags") {
+                        Toggle("Consumable", isOn: $consumable)
+                        Toggle("Worn on body", isOn: $worn)
                     }
-                    Picker("Category", selection: $category) {
-                        Text("None").tag("")
-                        ForEach(PackCategory.allCases, id: \.rawValue) { cat in
-                            Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
+
+                    Section("Notes") {
+                        TextField("Optional notes", text: $notes, axis: .vertical)
+                            .lineLimit(3, reservesSpace: true)
+                    }
+
+                    if let error {
+                        Section {
+                            InlineErrorView(message: error)
                         }
                     }
-                    #if os(macOS)
-                    .pickerStyle(.menu)
-                    #endif
                 }
-
-                Section("Flags") {
-                    Toggle("Consumable", isOn: $consumable)
-                    Toggle("Worn on body", isOn: $worn)
-                }
-
-                Section("Notes") {
-                    TextField("Optional notes", text: $notes, axis: .vertical)
-                        .lineLimit(3, reservesSpace: true)
-                }
-
-                if let error {
-                    Section {
-                        InlineErrorView(message: error)
-                    }
-                }
+                #endif
             }
             .navigationTitle(isEditing ? "Edit Item" : "Add Item")
             #if os(iOS)
@@ -108,6 +108,83 @@ struct PackItemFormView: View {
         .frame(minWidth: 400, minHeight: 350)
         #endif
     }
+
+    #if os(macOS)
+    private var macForm: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Name")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("Name", text: $name)
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityIdentifier("item_name")
+                }
+
+                HStack(alignment: .bottom, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Weight")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextField("0", text: $weightText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 120)
+                            .accessibilityIdentifier("item_weight")
+                    }
+
+                    Picker("Unit", selection: $weightUnit) {
+                        ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
+                            Text(u.label).tag(u.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 90)
+                }
+
+                HStack(alignment: .bottom, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Quantity")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextField("1", text: $quantityText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 120)
+                    }
+
+                    Picker("Category", selection: $category) {
+                        Text("None").tag("")
+                        ForEach(PackCategory.allCases, id: \.rawValue) { cat in
+                            Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("Consumable", isOn: $consumable)
+                    Toggle("Worn on body", isOn: $worn)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Notes")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("Optional notes", text: $notes, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .lineLimit(3, reservesSpace: true)
+                }
+
+                if let error {
+                    InlineErrorView(message: error)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    #endif
 
     private func prefill() {
         guard let item = existingItem else { return }

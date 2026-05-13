@@ -40,6 +40,7 @@ struct PackTemplatesListView: View {
                 Button("New Template", systemImage: "plus") {
                     showingNewTemplate = true
                 }
+                .accessibilityIdentifier("new_template_button")
             }
         }
         .sheet(isPresented: $showingNewTemplate) {

@@ -98,7 +98,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 7WV9JYCW55
+        DEVELOPMENT_TEAM: 666HGMV2LU
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat
         PRODUCT_MODULE_NAME: PackRat
 
@@ -149,7 +149,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 7WV9JYCW55
+        DEVELOPMENT_TEAM: 666HGMV2LU
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac
 
   PackRatTests:
@@ -176,6 +176,21 @@ targets:
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
 
+  PackRatMacUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - Tests/PackRatMacUITests
+    dependencies:
+      - target: PackRat-macOS
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 666HGMV2LU
+        PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac.uitests
+
 schemes:
   PackRat-iOS:
     build:
@@ -195,6 +210,10 @@ schemes:
     build:
       targets:
         PackRat-macOS: all
+        PackRatMacUITests: [test]
+    test:
+      targets:
+        - PackRatMacUITests
     run:
       config: Debug
     archive:

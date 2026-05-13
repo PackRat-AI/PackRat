@@ -14,6 +14,7 @@ import { AnalyzeImageRequestSchema } from '@packrat/api/schemas/imageDetection';
 import {
   CreatePackItemRequestSchema,
   CreatePackRequestSchema,
+  DEFAULT_PACK_CATEGORY,
   GapAnalysisRequestSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
@@ -108,34 +109,40 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/',
     async ({ body, user }) => {
       const db = createDb();
-      const data = body;
+      try {
+        const data = body;
 
-      const packId = data.id as string;
-      if (!packId) return status(400, { error: 'Pack ID is required' });
+        const packId = data.id as string;
+        if (!packId) return status(400, { error: 'Pack ID is required' });
 
-      // Zod validates all fields at runtime; cast through the Standard Schema
-      // inference gap so drizzle's insert accepts the values.
-      const [newPack] = await db
-        .insert(packs)
-        .values({
-          id: packId,
-          userId: user.userId,
-          name: data.name,
-          description: data.description,
-          // category column is NOT NULL — default to 'custom' when callers omit it.
-          category: data.category ?? 'custom',
-          isPublic: data.isPublic,
-          image: data.image,
-          tags: data.tags,
-          localCreatedAt: new Date(data.localCreatedAt as string),
-          localUpdatedAt: new Date(data.localUpdatedAt as string),
-        } as typeof packs.$inferInsert)
-        .returning();
+        const category = data.category || DEFAULT_PACK_CATEGORY;
 
-      if (!newPack) return status(400, { error: 'Failed to create pack' });
+        // Zod validates all fields at runtime; cast through the Standard Schema
+        // inference gap so drizzle's insert accepts the values.
+        const [newPack] = await db
+          .insert(packs)
+          .values({
+            id: packId,
+            userId: user.userId,
+            name: data.name,
+            description: data.description ?? null,
+            category,
+            isPublic: data.isPublic ?? false,
+            image: data.image ?? null,
+            tags: data.tags ?? null,
+            localCreatedAt: new Date(data.localCreatedAt as string),
+            localUpdatedAt: new Date(data.localUpdatedAt as string),
+          } as typeof packs.$inferInsert)
+          .returning();
 
-      const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return computePacksWeights([packWithItems])[0];
+        if (!newPack) return status(400, { error: 'Failed to create pack' });
+
+        const packWithItems: PackWithItems = { ...newPack, items: [] };
+        return computePacksWeights([packWithItems])[0];
+      } catch (error) {
+        console.error('Error creating pack:', error);
+        return status(500, { error: 'Failed to create pack' });
+      }
     },
     {
       body: CreatePackBodySchema,

@@ -39,6 +39,7 @@ struct CatalogView: View {
             TextField("Search tents, packs, sleeping bags…", text: $bvm.searchText)
                 .onChange(of: vm.searchText) { vm.onSearchTextChanged() }
                 .onSubmit { Task { await vm.search(reset: true) } }
+                .accessibilityIdentifier("catalog_search")
             if vm.isLoading {
                 ProgressView().controlSize(.small)
             } else if !vm.searchText.isEmpty {
@@ -46,6 +47,7 @@ struct CatalogView: View {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("catalog_search_clear")
             }
         }
         .padding(10)

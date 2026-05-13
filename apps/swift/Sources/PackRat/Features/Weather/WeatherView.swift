@@ -59,6 +59,7 @@ struct WeatherView: View {
                 } label: {
                     Label("Alert Preferences", systemImage: "slider.horizontal.3")
                 }
+                .accessibilityIdentifier("weather_alert_preferences_button")
             }
         }
         .sheet(isPresented: $showingAlerts) {
@@ -75,6 +76,7 @@ struct WeatherView: View {
                     .foregroundStyle(.secondary)
                 TextField("Search locations…", text: $viewModel.searchText)
                     .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
+                    .accessibilityIdentifier("weather_location_search")
                 if viewModel.isSearching {
                     ProgressView().controlSize(.small)
                 } else if !viewModel.searchText.isEmpty {

@@ -118,12 +118,19 @@ struct ChatView: View {
 
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 10) {
+            #if os(macOS)
+            TextField("Ask about gear, trips, packing...", text: $viewModel.inputText)
+                .textFieldStyle(.roundedBorder)
+                .onSubmit { viewModel.sendMessage() }
+                .accessibilityIdentifier("chat_input")
+            #else
             TextField("Ask about gear, trips, packing…", text: $viewModel.inputText, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(1...5)
                 .padding(.vertical, 8)
                 .onSubmit { viewModel.sendMessage() }
                 .accessibilityIdentifier("chat_input")
+            #endif
 
             Group {
                 if viewModel.isStreaming {

@@ -18,6 +18,9 @@ class AppUITestCase: XCTestCase {
         app = XCUIApplication()
         // Disable animations so tests don't have to wait for spring physics
         app.launchArguments.append("--disable-animations")
+        if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
+            app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
+        }
         app.launch()
         try loginIfNeeded()
     }
@@ -51,6 +54,7 @@ class AppUITestCase: XCTestCase {
             app.tabBars.firstMatch.waitForExistence(timeout: 20),
             "Tab bar must appear after login — check credentials or network"
         )
+        dismissSystemPrompts(timeout: 2)
     }
 
     // MARK: - Navigation helpers
@@ -58,6 +62,8 @@ class AppUITestCase: XCTestCase {
     /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
     /// the rest behind a "More" overflow tab — this helper handles both cases.
     func goToTab(_ label: String) {
+        dismissSystemPrompts(timeout: 0.1)
+
         // Dismiss any active keyboard / search focus that could obstruct
         // tab bar interaction.
         if app.keyboards.firstMatch.exists {
@@ -94,6 +100,22 @@ class AppUITestCase: XCTestCase {
             "Tab '\(label)' not found in tab bar or More overflow"
         )
         direct.tap()
+    }
+
+    func dismissSystemPrompts(timeout: TimeInterval) {
+        let labels = ["Not Now", "Don’t Save", "Don't Save", "Cancel"]
+        let deadline = Date().addingTimeInterval(timeout)
+
+        repeat {
+            for label in labels {
+                let button = app.buttons[label]
+                if button.exists {
+                    button.tap()
+                    return
+                }
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        } while Date() < deadline
     }
 
     // MARK: - Wait helpers

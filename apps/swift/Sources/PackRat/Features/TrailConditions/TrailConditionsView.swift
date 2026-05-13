@@ -36,6 +36,7 @@ struct TrailConditionsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Submit Report", systemImage: "plus") { showingSubmitSheet = true }
+                    .accessibilityIdentifier("trail_submit_report_toolbar")
             }
         }
         .task { if viewModel.reports.isEmpty { await viewModel.load() } }
@@ -237,6 +238,7 @@ struct SubmitTrailConditionView: View {
             Form {
                 Section("Trail") {
                     TextField("Trail Name", text: $trailName)
+                        .accessibilityIdentifier("trail_name")
                     TextField("Region / Area (optional)", text: $trailRegion)
                 }
                 Section("Conditions") {
@@ -258,6 +260,7 @@ struct SubmitTrailConditionView: View {
                             get: { selectedHazards.contains(hazard) },
                             set: { on in if on { selectedHazards.insert(hazard) } else { selectedHazards.remove(hazard) } }
                         ))
+                        .accessibilityIdentifier("trail_hazard_\(hazard.replacingOccurrences(of: " ", with: "_"))")
                     }
                 }
                 Section("Notes") {

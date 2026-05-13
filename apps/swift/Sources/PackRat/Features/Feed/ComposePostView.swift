@@ -46,6 +46,7 @@ struct ComposePostView: View {
                     Text("\(caption.count) / 500")
                         .font(.caption)
                         .foregroundStyle(caption.count > 450 ? .orange : .secondary)
+                        .accessibilityIdentifier("feed_compose_counter")
                     Spacer()
                 }
                 .padding(.horizontal)

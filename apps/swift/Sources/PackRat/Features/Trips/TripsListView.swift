@@ -38,6 +38,7 @@ struct TripsListView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
+                    .accessibilityIdentifier("plan_trip_button")
             }
         }
         .task { await viewModel.load(context: modelContext) }
