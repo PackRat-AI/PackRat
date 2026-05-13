@@ -2,6 +2,12 @@ import { WEIGHT_UNITS } from '@packrat/api/types/constants';
 import { isString } from '@packrat/guards';
 import { z } from 'zod';
 
+// Accepts Date objects from Drizzle at runtime and coerces to ISO string for the wire.
+const datetimeString = z.preprocess(
+  (v) => (v instanceof Date ? v.toISOString() : v),
+  z.string().datetime(),
+);
+
 export const ErrorResponseSchema = z.object({
   error: z.string(),
   code: z.string().optional(),
@@ -96,20 +102,8 @@ export const CatalogItemSchema = z.object({
     .nullable()
     .optional(),
   usageCount: z.number().int().min(0).optional(),
-  createdAt: z.union([
-    z.date(),
-    z
-      .string()
-      .datetime()
-      .transform((val) => new Date(val)),
-  ]),
-  updatedAt: z.union([
-    z.date(),
-    z
-      .string()
-      .datetime()
-      .transform((val) => new Date(val)),
-  ]),
+  createdAt: datetimeString,
+  updatedAt: datetimeString,
 });
 
 const SortSchema = z.object({
