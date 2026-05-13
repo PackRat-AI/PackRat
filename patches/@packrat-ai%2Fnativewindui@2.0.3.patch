@@ -1,3 +1,6 @@
+diff --git a/node_modules/@packrat-ai/nativewindui/.bun-tag-85507b58e8a01901 b/.bun-tag-85507b58e8a01901
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
 diff --git a/package.json b/package.json
 index d8cbd357556aa4e99da8aeb1e80290cb8edad082..a88f91e07aeab9facef841075b4aeb9f49beb879 100644
 --- a/package.json
@@ -89,3 +92,15 @@ index 95c66bbdece307542084c2e510c847543134f63e..d6cf24dbaf209ea0086cfb05d9203c81
                        keyboardType={searchBarInputTypeToKeyboardType(props.searchBar.inputType)}
                        returnKeyType="search"
                        blurOnSubmit={props.searchBar.materialBlurOnSubmit}
+diff --git a/src/components/LargeTitleHeader/types.ts b/src/components/LargeTitleHeader/types.ts
+index 573a8a80bc2718dc126167ed4738a8b66b698f26..df2dbec782c732b62d8017c3083d951047fccff7 100644
+--- a/src/components/LargeTitleHeader/types.ts
++++ b/src/components/LargeTitleHeader/types.ts
+@@ -88,6 +88,7 @@ type LargeTitleHeaderProps = {
+     onSearchButtonPress?: () => void;
+     placeholder?: string;
+     ref?: React.Ref<LargeTitleSearchBarMethods>;
++    testID?: string;
+     textColor?: string;
+     content?: React.ReactNode;
+   };
