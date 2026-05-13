@@ -31,18 +31,17 @@ export function fromGrams(grams: number, unit: WeightUnit): number {
 /**
  * Convert directly between any two weight units.
  */
-export function convert(weight: number, from: WeightUnit, to: WeightUnit): number {
-  if (from === to) return weight;
-  return (weight * TO_GRAMS[from]) / TO_GRAMS[to];
+export function convert(weight: number, units: { from: WeightUnit; to: WeightUnit }): number {
+  if (units.from === units.to) return weight;
+  return (weight * TO_GRAMS[units.from]) / TO_GRAMS[units.to];
 }
 
 /**
- * Format a gram value for display in the given unit.
- * Returns a number rounded to `precision` decimal places (default 2).
+ * Format a gram value for display in the given unit, rounded to 2 decimal places.
  * Use this for all weight display — never roll your own toFixed.
  */
-export function displayWeight(grams: number, unit: WeightUnit, precision = 2): number {
-  return parseFloat(fromGrams(grams, unit).toFixed(precision));
+export function displayWeight(grams: number, unit: WeightUnit): number {
+  return parseFloat(fromGrams(grams, unit).toFixed(2));
 }
 
 /**
