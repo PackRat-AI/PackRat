@@ -19,8 +19,9 @@ import {
   localModelProgressAtom,
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
-
+import { AppleModelWrapper } from './appleModelWrapper';
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
+import { createLocalTools } from './tools';
 
 const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
 const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
@@ -210,6 +211,31 @@ export async function cancelLocalModelDownload(): Promise<void> {
   _isCancellingDownload = false;
 }
 
+/**
+ * Unload the active model from memory without deleting the file.
+ * Use when backgrounding the app or before hot-reload, so native modules
+ * are cleanly invalidated. Call `initLocalModel` to reload after.
+ */
+export async function releaseLocalModel(): Promise<void> {
+  if (appleModel) {
+    try {
+      await appleModel.unload?.();
+    } catch {
+      // ignore
+    }
+    appleModel = null;
+  }
+  if (llamaModel) {
+    try {
+      await llamaModel.unload();
+    } catch {
+      // ignore
+    }
+    llamaModel = null;
+  }
+  store.set(localModelStatusAtom, 'idle');
+}
+
 /** Delete the downloaded llama model from disk. */
 export async function deleteLocalModel(): Promise<void> {
   if (llamaModel) {
@@ -247,8 +273,11 @@ async function _initAppleModel(): Promise<void> {
     const mod = await getAppleModule();
     if (!mod) throw new Error('Apple module not available');
 
-    appleModel = mod.apple();
-    // appleModel.updateTools(createLocalTools());
+    const apple = mod.createAppleProvider({
+      availableTools: createLocalTools(),
+    });
+
+    appleModel = new AppleModelWrapper(apple());
     store.set(localModelStatusAtom, 'ready');
   } catch {
     store.set(localModelStatusAtom, 'error');
