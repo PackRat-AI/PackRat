@@ -26,13 +26,44 @@ export default async function setup() {
   await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
   await page.getByTestId('sign-in-email-button').click();
 
-  // testID on TextField spreads via {...props} → TextInput → <input>, so
-  // getByTestId() resolves to the <input> element directly. fill() on it
-  // properly triggers onChangeText; page.keyboard.press('Enter') then fires
-  // the password field's onSubmitEditing → form.handleSubmit().
+  // testID on TextField spreads via {...props} → TextInput → <input> directly.
+  // Playwright's fill() sets the DOM value but doesn't fire React Native Web's
+  // synthetic onChange for controlled inputs. Use the native HTMLInputElement
+  // value-setter so React's event delegation calls onChangeText → field.handleChange.
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
-  await page.getByTestId('email-input').fill(email);
-  await page.getByTestId('password-input').fill(password);
+
+  await page.evaluate(
+    ({ email, password }) => {
+      const setter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        'value',
+      )?.set;
+      if (!setter) throw new Error('Cannot find HTMLInputElement value setter');
+
+      const fire = (selector: string, value: string) => {
+        const el = document.querySelector<HTMLInputElement>(selector);
+        if (!el) throw new Error(`Input not found: ${selector}`);
+        el.focus();
+        setter.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+
+      fire('[data-testid="email-input"]', email);
+      fire('[data-testid="password-input"]', password);
+    },
+    { email, password },
+  );
+
+  // Wait for the continue button to become enabled — confirms form validation
+  // passed and React has flushed the field value updates.
+  await page.waitForFunction(
+    () => {
+      const btn = document.querySelector<HTMLButtonElement>('[data-testid="continue-button"]');
+      return btn !== null && !btn.disabled;
+    },
+    { timeout: 10_000 },
+  );
 
   // Wait for the sign-in API response so we know auth cookies are set before
   // navigating away. router.dismissTo('/') from a stack screen is unreliable
@@ -42,7 +73,7 @@ export default async function setup() {
       (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
       { timeout: 30_000 },
     ),
-    page.keyboard.press('Enter'),
+    page.getByTestId('continue-button').click(),
   ]);
 
   if (!signInResponse.ok()) {
