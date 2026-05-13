@@ -19,32 +19,68 @@ export default async function setup() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
+  // Capture ALL page console output so CI logs reveal JS errors, warnings,
+  // auth client messages, etc.
+  page.on('console', (msg) => {
+    console.log(`[page:${msg.type()}]`, msg.text());
+  });
+
+  // Capture every network request so we can see what URLs are hit (or not hit).
+  page.on('request', (req) => {
+    console.log('[req]', req.method(), req.url());
+  });
+  page.on('response', (res) => {
+    console.log('[res]', res.status(), res.url());
+  });
+
   // Start from the auth entry screen, then click through to login
   await page.goto(`${BASE_URL}/auth`, { waitUntil: 'load' });
 
-  // Click the "Sign In" button to open the login modal
   await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
   await page.getByTestId('sign-in-email-button').click();
 
-  // testID on TextField spreads via {...props} → TextInput → <input> on web,
-  // so getByTestId() resolves to the <input> directly. Playwright's fill()
-  // uses CDP to dispatch real keyboard/input events, which properly trigger
-  // React Native Web's onChangeText and update tanstack-form field state.
-  // The manual native-setter + dispatchEvent approach does NOT fire the CDP
-  // path and leaves form state empty, so canSubmit stays false.
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
   await page.getByTestId('email-input').fill(email);
   await page.getByTestId('password-input').fill(password);
 
-  // page.keyboard.press('Enter') fires the password field's onSubmitEditing
-  // → form.handleSubmit(). Auth storage on web uses localStorage (not
-  // expo-secure-store, which ships an empty stub on web and would throw).
+  // Read the React props directly off the DOM elements to verify that
+  // fill() actually updated the tanstack-form field state (not just DOM value).
+  const postFillState = await page.evaluate(() => {
+    const getReactValue = (sel: string): string => {
+      const el = document.querySelector(sel);
+      if (!el) return 'NOT_FOUND';
+      const propsKey = Object.keys(el).find((k) => k.startsWith('__reactProps'));
+      if (!propsKey) return 'NO_REACT_PROPS';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return String((el as any)[propsKey]?.value ?? 'UNDEFINED');
+    };
+    const btn = document.querySelector('[data-testid="continue-button"]');
+    return {
+      emailReactValue: getReactValue('[data-testid="email-input"]'),
+      pwdReactLen: (() => {
+        const v = getReactValue('[data-testid="password-input"]');
+        return v.length;
+      })(),
+      btnAriaDisabled: btn?.getAttribute('aria-disabled') ?? 'NO_ATTR',
+      btnPointerEvents: btn ? window.getComputedStyle(btn).pointerEvents : 'N/A',
+    };
+  });
+  console.log('[globalSetup] post-fill React state:', JSON.stringify(postFillState));
+
+  // Use locator.press('Enter') which explicitly targets the password input
+  // (more reliable than page.keyboard which depends on current focus state).
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
-      (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
+      (r) => {
+        const method = r.request().method();
+        const url = r.url();
+        if (method === 'POST') console.log('[globalSetup] POST response:', url, r.status());
+        // Catch any POST — the URL check is just for the specific sign-in path.
+        return method === 'POST' && url.includes('/sign-in/email');
+      },
       { timeout: 30_000 },
     ),
-    page.keyboard.press('Enter'),
+    page.getByTestId('password-input').press('Enter'),
   ]);
 
   if (!signInResponse.ok()) {
@@ -52,7 +88,6 @@ export default async function setup() {
     throw new Error(`Sign-in failed (${signInResponse.status()}): ${body}`);
   }
 
-  // Auth cookies/localStorage tokens are now set; navigate to the main app
   await page.goto(`${BASE_URL}/`, { waitUntil: 'load' });
   await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 15_000 });
 
