@@ -26,87 +26,33 @@ export default async function setup() {
   await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
   await page.getByTestId('sign-in-email-button').click();
 
-  // testID on TextField spreads via {...props} → TextInput → <input> directly.
-  // Playwright's fill() sets the DOM value but doesn't fire React Native Web's
-  // synthetic onChange for controlled inputs. Use the native HTMLInputElement
-  // value-setter so React's event delegation calls onChangeText → field.handleChange.
+  // testID on TextField spreads via {...props} → TextInput → <input> on web,
+  // so getByTestId() resolves to the <input> directly. Playwright's fill()
+  // uses CDP to dispatch real keyboard/input events, which properly trigger
+  // React Native Web's onChangeText and update tanstack-form field state.
+  // The manual native-setter + dispatchEvent approach does NOT fire the CDP
+  // path and leaves form state empty, so canSubmit stays false.
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
+  await page.getByTestId('email-input').fill(email);
+  await page.getByTestId('password-input').fill(password);
 
-  await page.evaluate(
-    ({ email, password }) => {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        'value',
-      )?.set;
-      if (!setter) throw new Error('Cannot find HTMLInputElement value setter');
-
-      const fire = (selector: string, value: string) => {
-        const el = document.querySelector<HTMLInputElement>(selector);
-        if (!el) throw new Error(`Input not found: ${selector}`);
-        el.focus();
-        setter.call(el, value);
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      };
-
-      fire('[data-testid="email-input"]', email);
-      fire('[data-testid="password-input"]', password);
-    },
-    { email, password },
-  );
-
-  // Diagnostic: log DOM values and button state so CI logs reveal what happened.
-  const preState = await page.evaluate(() => {
-    const emailEl = document.querySelector<HTMLInputElement>('[data-testid="email-input"]');
-    const pwdEl = document.querySelector<HTMLInputElement>('[data-testid="password-input"]');
-    const btn = document.querySelector('[data-testid="continue-button"]');
-    return {
-      emailValue: emailEl?.value ?? 'NOT_FOUND',
-      pwdLen: pwdEl ? pwdEl.value.length : -1,
-      btnExists: !!btn,
-      btnAriaDisabled: btn?.getAttribute('aria-disabled') ?? 'NO_ATTR',
-      btnHtmlDisabled: btn instanceof HTMLButtonElement ? btn.disabled : 'NOT_BUTTON',
-    };
-  });
-  console.log('[globalSetup] pre-submit:', JSON.stringify(preState));
-
-  // Log every network request and page console error so CI output reveals
-  // whether the API call is made and what URL it uses.
-  const networkLog: string[] = [];
-  page.on('request', (req) => {
-    networkLog.push(`${req.method()} ${req.url()}`);
-  });
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      console.log('[globalSetup] page error:', msg.text());
-    }
-  });
-
-  // Catch ANY POST response — if the filter was wrong, this will still succeed
-  // and the networkLog will show us the actual URL.
+  // page.keyboard.press('Enter') fires the password field's onSubmitEditing
+  // → form.handleSubmit(). Auth storage on web uses localStorage (not
+  // expo-secure-store, which ships an empty stub on web and would throw).
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
-      (r) => {
-        if (r.request().method() === 'POST') {
-          console.log('[globalSetup] POST response:', r.url(), r.status());
-        }
-        return r.request().method() === 'POST';
-      },
+      (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
       { timeout: 30_000 },
     ),
-    // force: true bypasses Playwright's actionability checks (visibility,
-    // pointer-events) so we're sure the click event is dispatched.
-    page.getByTestId('continue-button').click({ force: true }),
+    page.keyboard.press('Enter'),
   ]);
-
-  console.log('[globalSetup] network log (last 20):', JSON.stringify(networkLog.slice(-20)));
 
   if (!signInResponse.ok()) {
     const body = await signInResponse.text().catch(() => '');
     throw new Error(`Sign-in failed (${signInResponse.status()}): ${body}`);
   }
 
-  // Auth cookies are now set; navigate to the main app explicitly
+  // Auth cookies/localStorage tokens are now set; navigate to the main app
   await page.goto(`${BASE_URL}/`, { waitUntil: 'load' });
   await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 15_000 });
 

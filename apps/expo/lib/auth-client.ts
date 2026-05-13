@@ -2,6 +2,27 @@ import { expoClient } from '@better-auth/expo/client';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { createAuthClient } from 'better-auth/react';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+
+// expo-secure-store ships an empty stub on web (ExpoSecureStore.web.js = {}).
+// Calling setItem/getItem there throws because the underlying sync native
+// methods don't exist. Fall back to localStorage so the auth client works in
+// the browser without crashing before the sign-in HTTP request is made.
+const authStorage =
+  Platform.OS === 'web'
+    ? {
+        setItem: (key: string, value: string) => {
+          if (typeof window !== 'undefined') window.localStorage.setItem(key, value);
+        },
+        getItem: (key: string): string | null => {
+          if (typeof window !== 'undefined') return window.localStorage.getItem(key);
+          return null;
+        },
+      }
+    : {
+        setItem: (key: string, value: string) => SecureStore.setItem(key, value),
+        getItem: (key: string) => SecureStore.getItem(key),
+      };
 
 export const authClient = createAuthClient({
   baseURL: clientEnvs.EXPO_PUBLIC_API_URL,
@@ -9,10 +30,7 @@ export const authClient = createAuthClient({
     expoClient({
       scheme: 'packrat',
       storagePrefix: 'packrat',
-      storage: {
-        setItem: (key: string, value: string) => SecureStore.setItem(key, value),
-        getItem: (key: string) => SecureStore.getItem(key),
-      },
+      storage: authStorage,
     }),
   ],
 });
