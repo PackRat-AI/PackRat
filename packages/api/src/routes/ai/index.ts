@@ -17,7 +17,7 @@ export const aiRoutes = new Elysia({ prefix: '/ai' })
       try {
         const { q, limit } = query;
         const aiService = new AIService();
-        const result = await aiService.searchPackratOutdoorGuidesRAG(q, limit);
+        const result = await aiService.searchPackratOutdoorGuidesRAG({ query: q, limit });
         return result;
       } catch (error) {
         console.error('RAG search error:', error);

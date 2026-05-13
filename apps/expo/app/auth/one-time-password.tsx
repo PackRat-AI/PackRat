@@ -135,7 +135,7 @@ export default function OneTimePasswordScreen() {
           params: { email, code },
         });
       } else {
-        await verifyEmail(email, code); // Navigation is handled in the function
+        await verifyEmail({ _email: email, token: code }); // Navigation is handled in the function
       }
     } catch (error) {
       Alert.alert(
@@ -254,7 +254,7 @@ function OTPField({
   const inputRef = React.useRef<TextInput>(null);
 
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(asNonNullableRef(inputRef));
+  useKeyboardHideBlur({ textInputRef: asNonNullableRef(inputRef) });
 
   function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     if (nativeEvent.key === 'Backspace' && value === '') {

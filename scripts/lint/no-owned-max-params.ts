@@ -34,13 +34,18 @@ const EXCLUDED_FILES = new Set([
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
+  'fetcher',
   'keyExtractor',
+  'list',
   'onChange',
+  'onContentSizeChange',
   'onError',
   'onSettled',
   'onSuccess',
   'orderBy',
   'renderItem',
+  'set',
+  'setItem',
   'webpack',
 ]);
 const TARGET_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs']);

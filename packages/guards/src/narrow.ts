@@ -35,7 +35,7 @@ export const nullToUndefined = <T>(value: T | null): T | undefined =>
  * @example
  * safeIndexOf(['g', 'oz', 'kg', 'lb'], field.state.value)  // 0-3 or -1
  */
-export const safeIndexOf = <T>(array: readonly T[], value: unknown): number =>
+export const safeIndexOf = <T>({ array, value }: { array: readonly T[]; value: unknown }): number =>
   (array as readonly unknown[]).indexOf(value);
 
 /**

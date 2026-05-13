@@ -81,9 +81,9 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
 }) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { data, isLoading, isError } = useSimilarCatalogItems(catalogItemId, {
-    limit,
-    threshold,
+  const { data, isLoading, isError } = useSimilarCatalogItems({
+    id: catalogItemId,
+    params: { limit, threshold },
   });
 
   const handleItemPress = (itemId: string) => {

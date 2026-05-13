@@ -86,7 +86,7 @@ interface Violation {
 
 const violations: Violation[] = [];
 
-function walkDir(dir: string, relPath: string): void {
+function walkDir({ dir, relPath }: { dir: string; relPath: string }): void {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -108,7 +108,7 @@ function walkDir(dir: string, relPath: string): void {
     }
 
     if (isDir) {
-      walkDir(entryFull, entryRel);
+      walkDir({ dir: entryFull, relPath: entryRel });
     } else if (isTargetFile(entry)) {
       if (isAllowed(entryRel)) continue;
 
@@ -133,7 +133,7 @@ for (const root of SCAN_ROOTS) {
   const absRoot = join(ROOT, root);
   // For .github/scripts we use the relative path directly
   const relRoot = relative(ROOT, absRoot);
-  walkDir(absRoot, relRoot);
+  walkDir({ dir: absRoot, relPath: relRoot });
 }
 
 if (violations.length > 0) {

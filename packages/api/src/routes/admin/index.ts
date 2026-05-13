@@ -37,8 +37,8 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
     const username = decoded.slice(0, sep);
     const password = decoded.slice(sep + 1);
     const env = getEnv();
-    const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
-    const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
+    const userOk = timingSafeEqual({ a: username, b: env.ADMIN_USERNAME });
+    const passOk = timingSafeEqual({ a: password, b: env.ADMIN_PASSWORD });
     if (userOk && passOk) return { authorized: true };
   } catch {
     return { authorized: false };
@@ -86,9 +86,12 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
 
   // When CF Access is configured, verify the CF JWT injected by the CF edge.
   if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    const cfIdentity = await verifyCFAccessRequest(request, {
-      teamDomain: CF_ACCESS_TEAM_DOMAIN,
-      aud: CF_ACCESS_AUD,
+    const cfIdentity = await verifyCFAccessRequest({
+      request,
+      opts: {
+        teamDomain: CF_ACCESS_TEAM_DOMAIN,
+        aud: CF_ACCESS_AUD,
+      },
     });
     if (cfIdentity) return true;
   }
@@ -141,9 +144,12 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
       // Basic credentials are always required and remain the primary gate.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(request, {
-          teamDomain: CF_ACCESS_TEAM_DOMAIN,
-          aud: CF_ACCESS_AUD,
+        const cfIdentity = await verifyCFAccessRequest({
+          request,
+          opts: {
+            teamDomain: CF_ACCESS_TEAM_DOMAIN,
+            aud: CF_ACCESS_AUD,
+          },
         });
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
@@ -189,7 +195,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           .where(eq(packs.deleted, false));
         const [itemCount] = await db.select({ count: count() }).from(catalogItems);
 
-        assertAllDefined([userCount, packCount, itemCount]);
+        assertAllDefined({ values: [userCount, packCount, itemCount] });
 
         return {
           users: userCount?.count ?? 0,

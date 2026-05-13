@@ -11,10 +11,13 @@ export interface AIRequestLog {
   error?: string;
 }
 
-export function logAIRequest(
-  env: Env,
-  opts: { headers: Headers; log: Partial<AIRequestLog> },
-): AIRequestLog {
+export function logAIRequest({
+  env,
+  opts,
+}: {
+  env: Env;
+  opts: { headers: Headers; log: Partial<AIRequestLog> };
+}): AIRequestLog {
   const { headers, log: options } = opts;
   const log: AIRequestLog = {
     provider: env.AI_PROVIDER || 'openai',

@@ -24,7 +24,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri, { packId }) => {
       try {
-        const pack = await agent.api.get(`/packs/${String(packId)}`);
+        const pack = await agent.api.get({ path: `/packs/${String(packId)}` });
         return {
           contents: [
             { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(pack, null, 2) },
@@ -58,7 +58,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri, { tripId }) => {
       try {
-        const trip = await agent.api.get(`/trips/${String(tripId)}`);
+        const trip = await agent.api.get({ path: `/trips/${String(tripId)}` });
         return {
           contents: [
             { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(trip, null, 2) },
@@ -92,7 +92,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri, { itemId }) => {
       try {
-        const item = await agent.api.get(`/catalog/${String(itemId)}`);
+        const item = await agent.api.get({ path: `/catalog/${String(itemId)}` });
         return {
           contents: [
             { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(item, null, 2) },
@@ -126,7 +126,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri) => {
       try {
-        const categories = await agent.api.get('/catalog/categories');
+        const categories = await agent.api.get({ path: '/catalog/categories' });
         return {
           contents: [
             {

@@ -22,7 +22,10 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ include_public }) => {
       try {
-        const data = await agent.api.get('/trips', { includePublic: include_public ? 1 : 0 });
+        const data = await agent.api.get({
+          path: '/trips',
+          params: { includePublic: include_public ? 1 : 0 },
+        });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -43,7 +46,7 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ trip_id }) => {
       try {
-        const data = await agent.api.get(`/trips/${trip_id}`);
+        const data = await agent.api.get({ path: `/trips/${trip_id}` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -93,20 +96,23 @@ export function registerTripTools(agent: AgentContext): void {
       try {
         const id = `t_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post('/trips', {
-          id,
-          name,
-          description,
-          location:
-            latitude !== undefined && longitude !== undefined
-              ? { latitude, longitude, name: location_name }
-              : null,
-          startDate: start_date,
-          endDate: end_date,
-          notes,
-          packId: pack_id,
-          localCreatedAt: now,
-          localUpdatedAt: now,
+        const data = await agent.api.post({
+          path: '/trips',
+          body: {
+            id,
+            name,
+            description,
+            location:
+              latitude !== undefined && longitude !== undefined
+                ? { latitude, longitude, name: location_name }
+                : null,
+            startDate: start_date,
+            endDate: end_date,
+            notes,
+            packId: pack_id,
+            localCreatedAt: now,
+            localUpdatedAt: now,
+          },
         });
         return ok(data);
       } catch (e) {
@@ -163,7 +169,7 @@ export function registerTripTools(agent: AgentContext): void {
         } else if (location_name !== undefined) {
           body.location = { name: location_name };
         }
-        const data = await agent.api.patch(`/trips/${trip_id}`, body);
+        const data = await agent.api.patch({ path: `/trips/${trip_id}`, body });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -183,7 +189,7 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ trip_id }) => {
       try {
-        const data = await agent.api.delete(`/trips/${trip_id}`);
+        const data = await agent.api.delete({ path: `/trips/${trip_id}` });
         return ok(data);
       } catch (e) {
         return err(e);

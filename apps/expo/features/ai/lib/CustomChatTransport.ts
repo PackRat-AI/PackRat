@@ -14,7 +14,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
   private model: LanguageModel | undefined;
   private tools: ToolSet | undefined;
 
-  constructor(model?: LanguageModel, tools?: ToolSet) {
+  constructor({ model, tools }: { model?: LanguageModel; tools?: ToolSet } = {}) {
     this.model = model;
     this.tools = tools;
   }

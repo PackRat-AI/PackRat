@@ -70,7 +70,7 @@ interface Violation {
   source: string;
 }
 
-function isSafeCast(_line: string, castMatch: string): boolean {
+function isSafeCast({ castMatch }: { _line?: string; castMatch: string }): boolean {
   const full = `as ${castMatch}`;
   return SAFE_CAST_PATTERNS.some((p) => p.test(full));
 }
@@ -125,7 +125,7 @@ function collectViolations(filePath: string): Violation[] {
     CAST_PATTERN.lastIndex = 0;
     for (let match = CAST_PATTERN.exec(line); match !== null; match = CAST_PATTERN.exec(line)) {
       const castType = match[1]?.trim();
-      if (!castType || isSafeCast(line, castType)) continue;
+      if (!castType || isSafeCast({ castMatch: castType })) continue;
 
       // Skip single-word lowercase types (string, number, boolean, void, etc.)
       if (LOWERCASE_TYPE.test(castType)) continue;

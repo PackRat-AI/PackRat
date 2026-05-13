@@ -28,7 +28,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.get('/ai/rag-search', { q: query, limit });
+        const data = await agent.api.get({ path: '/ai/rag-search', params: { q: query, limit } });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -54,7 +54,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async ({ query }) => {
       try {
-        const data = await agent.api.get('/ai/web-search', { q: query });
+        const data = await agent.api.get({ path: '/ai/web-search', params: { q: query } });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -87,7 +87,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.post('/ai/execute-sql', { query, limit });
+        const data = await agent.api.post({ path: '/ai/execute-sql', body: { query, limit } });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -106,7 +106,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async () => {
       try {
-        const data = await agent.api.get('/ai/db-schema');
+        const data = await agent.api.get({ path: '/ai/db-schema' });
         return ok(data);
       } catch (e) {
         return err(e);

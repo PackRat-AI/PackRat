@@ -30,7 +30,10 @@ export function registerTrailConditionTools(agent: AgentContext): void {
     },
     async ({ trail_name, limit }) => {
       try {
-        const data = await agent.api.get('/trail-conditions', { trailName: trail_name, limit });
+        const data = await agent.api.get({
+          path: '/trail-conditions',
+          params: { trailName: trail_name, limit },
+        });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -89,19 +92,22 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       try {
         const id = `tcr_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post('/trail-conditions', {
-          id,
-          trailName: trail_name,
-          trailRegion: trail_region ?? null,
-          surface,
-          overallCondition: overall_condition,
-          hazards: hazards ?? [],
-          waterCrossings: water_crossings ?? 0,
-          waterCrossingDifficulty: water_crossing_difficulty ?? null,
-          notes: notes ?? null,
-          photos: [],
-          localCreatedAt: now,
-          localUpdatedAt: now,
+        const data = await agent.api.post({
+          path: '/trail-conditions',
+          body: {
+            id,
+            trailName: trail_name,
+            trailRegion: trail_region ?? null,
+            surface,
+            overallCondition: overall_condition,
+            hazards: hazards ?? [],
+            waterCrossings: water_crossings ?? 0,
+            waterCrossingDifficulty: water_crossing_difficulty ?? null,
+            notes: notes ?? null,
+            photos: [],
+            localCreatedAt: now,
+            localUpdatedAt: now,
+          },
         });
         return ok(data);
       } catch (e) {

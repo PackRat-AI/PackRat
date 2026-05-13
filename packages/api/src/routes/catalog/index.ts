@@ -93,7 +93,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       try {
         const { q: searchQuery, limit = 10, offset = 0 } = query;
         const catalogService = new CatalogService();
-        return await catalogService.vectorSearch(searchQuery, { limit, offset });
+        return await catalogService.vectorSearch({ q: searchQuery, opts: { limit, offset } });
       } catch (error) {
         console.error('Vector search error:', error);
         return status(500, { error: 'Failed to search catalog items' });
@@ -231,7 +231,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(500, { error: 'OpenAI API key not configured' });
       }
 
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
@@ -428,8 +428,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
 
       let embedding: number[] | null = null;
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       if (newEmbeddingText !== oldEmbeddingText) {
         embedding = await generateEmbedding({

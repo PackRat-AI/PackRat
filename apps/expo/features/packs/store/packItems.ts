@@ -23,7 +23,10 @@ const listAllPackItems = async (): Promise<PackItem[] | null> => {
 
 const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem | null> => {
   if (data.image && !isRemoteUrl(data.image)) {
-    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
+    await uploadImage({
+      fileName: data.image,
+      uri: `${ImageCacheManager.cacheDirectory}${data.image}`,
+    });
   }
   const { data: result, error } = await apiClient
     .packs({ packId: String(packId) })
@@ -35,7 +38,10 @@ const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem |
 
 const updatePackItem = async ({ id, ...data }: PackItem): Promise<PackItem | null> => {
   if (data.image && !isRemoteUrl(data.image)) {
-    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
+    await uploadImage({
+      fileName: data.image,
+      uri: `${ImageCacheManager.cacheDirectory}${data.image}`,
+    });
   }
   const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
   if (error) throw new Error(`Failed to update pack item: ${error.value}`);

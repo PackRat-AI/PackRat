@@ -19,7 +19,10 @@ export function useLocationRefresh() {
         const formattedData = formatWeatherData(weatherData);
 
         // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
-        updateLocation(locationId, formattedData as unknown as Partial<WeatherLocation>);
+        updateLocation({
+          locationId,
+          updates: formattedData as unknown as Partial<WeatherLocation>,
+        });
 
         return true;
       }
@@ -49,7 +52,10 @@ export function useLocationRefresh() {
             const formattedData = formatWeatherData(weatherData);
 
             // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
-            updateLocation(location.id, formattedData as unknown as Partial<WeatherLocation>);
+            updateLocation({
+              locationId: location.id,
+              updates: formattedData as unknown as Partial<WeatherLocation>,
+            });
           }
         } catch (error) {
           console.error(`Error updating weather for ${location.name}:`, error);

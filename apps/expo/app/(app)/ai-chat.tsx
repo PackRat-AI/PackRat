@@ -127,7 +127,7 @@ export default function AIChat() {
     if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
-        return new CustomChatTransport(model, tools);
+        return new CustomChatTransport({ model, tools });
       }
     }
     return new DefaultChatTransport({
@@ -185,7 +185,7 @@ export default function AIChat() {
     }
 
     const timeoutId = setTimeout(() => {
-      saveChatMessages(context, messages);
+      saveChatMessages({ context, messages });
     }, 500);
 
     return () => clearTimeout(timeoutId);

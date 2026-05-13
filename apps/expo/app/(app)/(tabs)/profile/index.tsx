@@ -133,7 +133,7 @@ function Profile() {
   );
 }
 
-export default withAuthWall(Profile, ProfileAuthWall);
+export default withAuthWall({ Component: Profile, AuthWall: ProfileAuthWall });
 
 function renderItem(info: ListRenderItemInfo<DataItem>) {
   return <Item info={info} />;
@@ -192,7 +192,7 @@ function ListHeaderComponent() {
       }
 
       setIsUploading(true);
-      const remoteFileName = await uploadImage(image.fileName, image.uri);
+      const remoteFileName = await uploadImage({ fileName: image.fileName, uri: image.uri });
       if (remoteFileName) {
         const success = await updateProfile({ avatarUrl: remoteFileName });
         if (!success) {

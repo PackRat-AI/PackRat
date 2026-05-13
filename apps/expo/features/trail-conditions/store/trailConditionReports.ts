@@ -7,7 +7,7 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { TrailConditionReportInStore } from '../types';
 
-const listMyReports = async (_params: unknown, { lastSync }: { lastSync?: number } = {}) => {
+const _listMyReportsImpl = async ({ lastSync }: { lastSync?: number } = {}) => {
   const { data, error } = await apiClient['trail-conditions'].mine.get({
     query: lastSync != null ? { updatedAt: new Date(lastSync + 1).toISOString() } : {},
   });
@@ -86,7 +86,7 @@ syncObservable(
       backoff: 'exponential',
       maxDelay: 30000,
     },
-    list: listMyReports,
+    list: (_params: unknown, opts?: { lastSync?: number }) => _listMyReportsImpl(opts),
     create: createReport,
     update: updateReport,
     changesSince: 'last-sync',

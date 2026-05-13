@@ -9,10 +9,13 @@ export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackTemplateItem();
 
-  const addItemsToPackTemplate = async (
-    packTemplateId: string,
-    catalogItems: CatalogItemWithPackItemFields[],
-  ) => {
+  const addItemsToPackTemplate = async ({
+    packTemplateId,
+    catalogItems,
+  }: {
+    packTemplateId: string;
+    catalogItems: CatalogItemWithPackItemFields[];
+  }) => {
     if (catalogItems.length === 0) return;
 
     setIsLoading(true);

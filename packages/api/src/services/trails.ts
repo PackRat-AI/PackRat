@@ -21,10 +21,13 @@ export type OsmMember = z.infer<typeof OsmMemberSchema>;
  * will return null for those routes. This only affects the rare null-geometry
  * fallback path — osm2pgsql assembles geometry for >99% of routes directly.
  */
-export async function stitchRouteGeometry(
-  db: ReturnType<typeof createOsmDb>,
-  members: OsmMember[],
-): Promise<unknown> {
+export async function stitchRouteGeometry({
+  db,
+  members,
+}: {
+  db: ReturnType<typeof createOsmDb>;
+  members: OsmMember[];
+}): Promise<unknown> {
   const wayRefs = members.filter((m) => m.type === 'w').map((m) => m.ref);
   if (wayRefs.length === 0) return null;
 

@@ -14,12 +14,15 @@ export default defineCommand({
     const cache = await ensureCache();
     const rows = await cache.getTopRated({
       category: args.category,
-      minReviews: parseNonNegativeNumberArg(args['min-reviews'], '--min-reviews'),
+      minReviews: parseNonNegativeNumberArg({
+        value: args['min-reviews'],
+        argName: '--min-reviews',
+      }),
       sites: parseCsvArg(args.sites),
-      limit: parsePositiveIntArg(args.limit, '--limit'),
+      limit: parsePositiveIntArg({ value: args.limit, argName: '--limit' }),
     });
-    printTable(
-      rows.map(({ site, name, brand, rating_value, review_count, price, score }) => ({
+    printTable({
+      rows: rows.map(({ site, name, brand, rating_value, review_count, price, score }) => ({
         site,
         name: String(name).slice(0, 40),
         brand,
@@ -28,7 +31,7 @@ export default defineCommand({
         price,
         score,
       })),
-      { title: 'Top Rated Products' },
-    );
+      options: { title: 'Top Rated Products' },
+    });
   },
 });

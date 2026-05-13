@@ -11,10 +11,13 @@ export function useAddCatalogItem() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  const addItemToPack = async (
-    packId: string,
-    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> },
-  ) => {
+  const addItemToPack = async ({
+    packId,
+    opts,
+  }: {
+    packId: string;
+    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> };
+  }) => {
     const { catalogItem, data } = opts;
     setIsLoading(true);
     const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);

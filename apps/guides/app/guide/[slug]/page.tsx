@@ -62,7 +62,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
   const content = getMdxContent(slug);
 
   // Get related posts
-  const relatedPosts = getRelatedPosts(post, 3);
+  const relatedPosts = getRelatedPosts({ post, count: 3 });
 
   return (
     <div>

@@ -24,7 +24,13 @@ import { adminEnv } from './env';
 const API_BASE = adminEnv.NEXT_PUBLIC_API_URL;
 
 // Injects admin auth header and redirects to /login on 401.
-const adminFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+const adminFetcher = async ({
+  input,
+  init,
+}: {
+  input: RequestInfo | URL;
+  init?: RequestInit;
+}): Promise<Response> => {
   const authHeader = getAuthHeader();
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
@@ -41,18 +47,24 @@ const adminFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promi
 
 // Pre-drilled into .api.admin so call sites write `adminClient.stats.get()`.
 const adminClient = treaty<App>(API_BASE, {
-  fetcher: adminFetcher as unknown as typeof fetch,
+  fetcher: ((input, init) => adminFetcher({ input, init })) as unknown as typeof fetch,
   parseDate: false,
 }).api.admin;
 
-function throwOnError(error: { value?: unknown } | null, fallback = 'Admin API error'): never {
+function throwOnError({
+  error,
+  fallback = 'Admin API error',
+}: {
+  error: { value?: unknown } | null;
+  fallback?: string;
+}): never {
   const val = error?.value;
   const msg =
     isObject(val) && 'error' in val ? String((val as { error: unknown }).error) : fallback;
   throw new Error(msg);
 }
 
-function unwrap<T>(data: T | null | undefined, name: string): T {
+function unwrap<T>({ data, name }: { data: T | null | undefined; name: string }): T {
   if (data == null) throw new Error(`Admin API returned no data for ${name}`);
   return data;
 }
@@ -63,8 +75,8 @@ export type AdminStats = { users: number; packs: number; items: number };
 
 export async function getStats(): Promise<AdminStats> {
   const { data, error } = await adminClient.stats.get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'stats');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'stats' });
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -102,29 +114,32 @@ export async function getUsers({
   const { data, error } = await adminClient['users-list'].get({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'users');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'users' });
 }
 
 export async function deleteUser(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).delete();
-  if (error) throwOnError(error);
-  return unwrap(data, 'deleteUser');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deleteUser' });
 }
 
-export async function hardDeleteUser(
-  id: number,
-  reason: string,
-): Promise<{ success: boolean; purged: boolean }> {
+export async function hardDeleteUser({
+  id,
+  reason,
+}: {
+  id: number;
+  reason: string;
+}): Promise<{ success: boolean; purged: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).hard.delete({ reason });
-  if (error) throwOnError(error);
-  return unwrap(data, 'hardDeleteUser');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'hardDeleteUser' });
 }
 
 export async function restoreUser(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.users({ id: String(id) }).restore.post();
-  if (error) throwOnError(error);
-  return unwrap(data, 'restoreUser');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'restoreUser' });
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -157,14 +172,14 @@ export async function getPacks({
   const { data, error } = await adminClient['packs-list'].get({
     query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'packs');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'packs' });
 }
 
 export async function deletePack(id: string): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.packs({ id }).delete();
-  if (error) throwOnError(error);
-  return unwrap(data, 'deletePack');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deletePack' });
 }
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
@@ -210,23 +225,26 @@ export async function getCatalogItems({
   const { data, error } = await adminClient['catalog-list'].get({
     query: { limit, offset, q },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'catalog');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'catalog' });
 }
 
 export async function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.catalog({ id: String(id) }).delete();
-  if (error) throwOnError(error);
-  return unwrap(data, 'deleteCatalogItem');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deleteCatalogItem' });
 }
 
-export async function updateCatalogItem(
-  id: number,
-  body: UpdateCatalogItemInput,
-): Promise<{ id: number; name: string }> {
+export async function updateCatalogItem({
+  id,
+  body,
+}: {
+  id: number;
+  body: UpdateCatalogItemInput;
+}): Promise<{ id: number; name: string }> {
   const { data, error } = await adminClient.catalog({ id: String(id) }).patch(body);
-  if (error) throwOnError(error);
-  return unwrap(data, 'updateCatalogItem');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'updateCatalogItem' });
 }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
@@ -237,32 +255,38 @@ export type BreakdownItem = Static<typeof BreakdownItemSchema>;
 export type ActiveUsers = Static<typeof ActiveUsersSchema>;
 export type AnalyticsPeriod = 'day' | 'week' | 'month';
 
-export async function getPlatformGrowth(
-  period: AnalyticsPeriod,
+export async function getPlatformGrowth({
+  period,
   range = 12,
-): Promise<GrowthPoint[]> {
+}: {
+  period: AnalyticsPeriod;
+  range?: number;
+}): Promise<GrowthPoint[]> {
   const { data, error } = await adminClient.analytics.platform.growth.get({
     query: { period, range },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'platformGrowth');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'platformGrowth' });
 }
 
-export async function getPlatformActivity(
-  period: AnalyticsPeriod,
+export async function getPlatformActivity({
+  period,
   range = 12,
-): Promise<ActivityPoint[]> {
+}: {
+  period: AnalyticsPeriod;
+  range?: number;
+}): Promise<ActivityPoint[]> {
   const { data, error } = await adminClient.analytics.platform.activity.get({
     query: { period, range },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'platformActivity');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'platformActivity' });
 }
 
 export async function getPlatformBreakdown(): Promise<BreakdownItem[]> {
   const { data, error } = await adminClient.analytics.platform.breakdown.get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'platformBreakdown');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'platformBreakdown' });
 }
 
 // ─── Analytics — Catalog ─────────────────────────────────────────────────────
@@ -276,36 +300,36 @@ export type EmbeddingStats = Static<typeof EmbeddingStatsSchema>;
 
 export async function getCatalogOverview(): Promise<CatalogOverview> {
   const { data, error } = await adminClient.analytics.catalog.overview.get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'catalogOverview');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'catalogOverview' });
 }
 
 export async function getCatalogBrands(limit = 20): Promise<BrandRow[]> {
   const { data, error } = await adminClient.analytics.catalog.brands.get({
     query: { limit },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'catalogBrands');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'catalogBrands' });
 }
 
 export async function getCatalogPrices(): Promise<PriceBucket[]> {
   const { data, error } = await adminClient.analytics.catalog.prices.get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'catalogPrices');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'catalogPrices' });
 }
 
 export async function getCatalogEtl(limit = 20): Promise<EtlResponse> {
   const { data, error } = await adminClient.analytics.catalog.etl.get({
     query: { limit },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'catalogEtl');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'catalogEtl' });
 }
 
 export async function getCatalogEmbeddings(): Promise<EmbeddingStats> {
   const { data, error } = await adminClient.analytics.catalog.embeddings.get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'catalogEmbeddings');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'catalogEmbeddings' });
 }
 
 // ─── Admin Trails ─────────────────────────────────────────────────────────────
@@ -329,20 +353,20 @@ export async function searchTrails({
   const { data, error } = await adminClient.trails.search.get({
     query: { q, sport, limit, offset },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'searchTrails');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'searchTrails' });
 }
 
 export async function getTrailGeometry(osmId: string): Promise<TrailGeometry> {
   const { data, error } = await adminClient.trails({ osmId }).geometry.get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'trailGeometry');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'trailGeometry' });
 }
 
 export async function getAdminTrail(osmId: string): Promise<TrailSearchResult> {
   const { data, error } = await adminClient.trails({ osmId }).get();
-  if (error) throwOnError(error);
-  return unwrap(data, 'adminTrail');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'adminTrail' });
 }
 
 export async function getTrailConditions({
@@ -359,14 +383,14 @@ export async function getTrailConditions({
   const { data, error } = await adminClient.trails.conditions.get({
     query: { q, limit, offset, includeDeleted: includeDeleted ? 'true' : undefined },
   });
-  if (error) throwOnError(error);
-  return unwrap(data, 'trailConditions');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'trailConditions' });
 }
 
 export async function deleteTrailCondition(reportId: string): Promise<{ success: boolean }> {
   const { data, error } = await adminClient.trails.conditions({ reportId }).delete();
-  if (error) throwOnError(error);
-  return unwrap(data, 'deleteTrailCondition');
+  if (error) throwOnError({ error });
+  return unwrap({ data, name: 'deleteTrailCondition' });
 }
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -405,7 +429,13 @@ export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
   return adminFetch(`/analytics/catalog/etl/failure-summary?limit=${limit}`);
 }
 
-export function getEtlJobFailures(jobId: string, limit = 50): Promise<EtlJobFailures> {
+export function getEtlJobFailures({
+  jobId,
+  limit = 50,
+}: {
+  jobId: string;
+  limit?: number;
+}): Promise<EtlJobFailures> {
   return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/failures?limit=${limit}`);
 }
 

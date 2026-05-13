@@ -63,7 +63,10 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
 
   get api(): PackRatApiClient {
     if (!this._api) {
-      this._api = createPackRatClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
+      this._api = createPackRatClient({
+        baseUrl: this.env.PACKRAT_API_URL,
+        getAuthToken: () => this.state.authToken,
+      });
     }
     return this._api;
   }

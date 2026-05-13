@@ -56,7 +56,7 @@ export const queryKeys = {
       list: (limit?: number) => [...queryKeys.catalogAnalytics.etl.all(), limit] as const,
       failureSummary: (limit?: number) =>
         [...queryKeys.catalogAnalytics.etl.all(), 'failureSummary', limit] as const,
-      jobFailures: (jobId: string, limit?: number) =>
+      jobFailures: ({ jobId, limit }: { jobId: string; limit?: number }) =>
         [...queryKeys.catalogAnalytics.etl.all(), 'jobFailures', jobId, limit] as const,
     },
   },

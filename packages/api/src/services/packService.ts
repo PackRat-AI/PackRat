@@ -61,7 +61,7 @@ export class PackService {
     });
 
     if (!pack) return null;
-    return computePackWeights(pack);
+    return computePackWeights({ pack });
   }
 
   async generatePacks(count: number) {
@@ -135,10 +135,10 @@ export class PackService {
     packItemConcepts: PackItemConceptSchema[],
   ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
     const catalogService = new CatalogService();
-    const searchResults = await catalogService.batchVectorSearch(
-      packItemConcepts.map((item) => item.item),
-      1,
-    );
+    const searchResults = await catalogService.batchVectorSearch({
+      queries: packItemConcepts.map((item) => item.item),
+      limit: 1,
+    });
 
     return packItemConcepts
       .map((item, idx) => {

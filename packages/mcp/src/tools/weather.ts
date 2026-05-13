@@ -26,8 +26,11 @@ export function registerWeatherTools(agent: AgentContext): void {
     async ({ location }) => {
       try {
         // Step 1: search for the location to get its ID
-        const searchResults = await agent.api.get<Record<string, unknown>>('/weather/search', {
-          q: location,
+        const searchResults = await agent.api.get<Record<string, unknown>>({
+          path: '/weather/search',
+          params: {
+            q: location,
+          },
         });
 
         const locationId =
@@ -38,8 +41,11 @@ export function registerWeatherTools(agent: AgentContext): void {
         }
 
         // Step 2: fetch the forecast for that location
-        const forecast = await agent.api.get('/weather/forecast', {
-          id: String(locationId),
+        const forecast = await agent.api.get({
+          path: '/weather/forecast',
+          params: {
+            id: String(locationId),
+          },
         });
         return ok(forecast);
       } catch (e) {
@@ -61,7 +67,7 @@ export function registerWeatherTools(agent: AgentContext): void {
     },
     async ({ query }) => {
       try {
-        const data = await agent.api.get('/weather/search', { q: query });
+        const data = await agent.api.get({ path: '/weather/search', params: { q: query } });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -87,7 +93,7 @@ export function registerWeatherTools(agent: AgentContext): void {
     },
     async ({ destination }) => {
       try {
-        const data = await agent.api.post('/season-suggestions', { destination });
+        const data = await agent.api.post({ path: '/season-suggestions', body: { destination } });
         return ok(data);
       } catch (e) {
         return err(e);

@@ -38,7 +38,10 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ include_public }) => {
       try {
-        const data = await agent.api.get('/packs', { includePublic: include_public ? 1 : 0 });
+        const data = await agent.api.get({
+          path: '/packs',
+          params: { includePublic: include_public ? 1 : 0 },
+        });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -59,7 +62,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const data = await agent.api.get(`/packs/${pack_id}`);
+        const data = await agent.api.get({ path: `/packs/${pack_id}` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -89,15 +92,18 @@ export function registerPackTools(agent: AgentContext): void {
       try {
         const id = `p_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post('/packs', {
-          id,
-          name,
-          description,
-          category,
-          isPublic: is_public,
-          tags,
-          localCreatedAt: now,
-          localUpdatedAt: now,
+        const data = await agent.api.post({
+          path: '/packs',
+          body: {
+            id,
+            name,
+            description,
+            category,
+            isPublic: is_public,
+            tags,
+            localCreatedAt: now,
+            localUpdatedAt: now,
+          },
         });
         return ok(data);
       } catch (e) {
@@ -129,7 +135,7 @@ export function registerPackTools(agent: AgentContext): void {
         if (category !== undefined) body.category = category;
         if (is_public !== undefined) body.isPublic = is_public;
         if (tags !== undefined) body.tags = tags;
-        const data = await agent.api.put(`/packs/${pack_id}`, body);
+        const data = await agent.api.put({ path: `/packs/${pack_id}`, body });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -149,7 +155,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const data = await agent.api.delete(`/packs/${pack_id}`);
+        const data = await agent.api.delete({ path: `/packs/${pack_id}` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -197,18 +203,21 @@ export function registerPackTools(agent: AgentContext): void {
       try {
         const id = `i_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post(`/packs/${pack_id}/items`, {
-          id,
-          name,
-          category,
-          weight: weight_grams,
-          quantity,
-          catalogItemId: catalog_item_id,
-          consumable: is_consumable,
-          worn: is_worn,
-          notes,
-          localCreatedAt: now,
-          localUpdatedAt: now,
+        const data = await agent.api.post({
+          path: `/packs/${pack_id}/items`,
+          body: {
+            id,
+            name,
+            category,
+            weight: weight_grams,
+            quantity,
+            catalogItemId: catalog_item_id,
+            consumable: is_consumable,
+            worn: is_worn,
+            notes,
+            localCreatedAt: now,
+            localUpdatedAt: now,
+          },
         });
         return ok(data);
       } catch (e) {
@@ -229,7 +238,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ item_id }) => {
       try {
-        const data = await agent.api.delete(`/packs/items/${item_id}`);
+        const data = await agent.api.delete({ path: `/packs/items/${item_id}` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -250,7 +259,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const pack = await agent.api.get<PackDetailResponse>(`/packs/${pack_id}`);
+        const pack = await agent.api.get<PackDetailResponse>({ path: `/packs/${pack_id}` });
 
         const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> =
           {};
@@ -310,9 +319,12 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id, activity, duration_days }) => {
       try {
-        const data = await agent.api.post(`/packs/${pack_id}/gap-analysis`, {
-          activity,
-          durationDays: duration_days,
+        const data = await agent.api.post({
+          path: `/packs/${pack_id}/gap-analysis`,
+          body: {
+            activity,
+            durationDays: duration_days,
+          },
         });
         return ok(data);
       } catch (e) {

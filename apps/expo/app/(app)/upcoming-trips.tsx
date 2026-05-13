@@ -16,7 +16,13 @@ function formatDate(dateString?: string) {
 }
 
 // Calculate trip status based on dates
-function getTripStatus(trip: { startDate?: string; endDate?: string }, t: TranslationFunction) {
+function getTripStatus({
+  trip,
+  t,
+}: {
+  trip: { startDate?: string; endDate?: string };
+  t: TranslationFunction;
+}) {
   if (!trip.startDate || !trip.endDate) return { status: t('trips.notStarted'), completion: 0 };
 
   const start = new Date(trip.startDate).getTime();
@@ -173,7 +179,7 @@ function UpcomingTripsScreenInner() {
         keyExtractor={(item) => item.id}
         renderItem={(info) => {
           const { trip } = info.item;
-          const { status, completion } = getTripStatus(trip, t);
+          const { status, completion } = getTripStatus({ trip, t });
 
           return (
             <ListItem

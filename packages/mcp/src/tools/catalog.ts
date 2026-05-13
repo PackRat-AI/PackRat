@@ -36,13 +36,16 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ query, category, limit, page, sort_by, sort_order }) => {
       try {
-        const data = await agent.api.get('/catalog', {
-          q: query,
-          category,
-          limit,
-          page,
-          'sort[field]': sort_by,
-          'sort[order]': sort_order,
+        const data = await agent.api.get({
+          path: '/catalog',
+          params: {
+            q: query,
+            category,
+            limit,
+            page,
+            'sort[field]': sort_by,
+            'sort[order]': sort_order,
+          },
         });
         return ok(data);
       } catch (e) {
@@ -76,7 +79,10 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.get('/catalog/vector-search', { q: query, limit });
+        const data = await agent.api.get({
+          path: '/catalog/vector-search',
+          params: { q: query, limit },
+        });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -100,7 +106,7 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ item_id }) => {
       try {
-        const data = await agent.api.get(`/catalog/${item_id}`);
+        const data = await agent.api.get({ path: `/catalog/${item_id}` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -119,7 +125,7 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async () => {
       try {
-        const data = await agent.api.get('/catalog/categories');
+        const data = await agent.api.get({ path: '/catalog/categories' });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -145,7 +151,7 @@ export function registerCatalogTools(agent: AgentContext): void {
     async ({ item_ids }) => {
       try {
         const items = await Promise.all(
-          item_ids.map((id) => agent.api.get<Record<string, unknown>>(`/catalog/${id}`)),
+          item_ids.map((id) => agent.api.get<Record<string, unknown>>({ path: `/catalog/${id}` })),
         );
         const comparison = items.map((it) => ({
           id: it.id,

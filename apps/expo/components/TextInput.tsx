@@ -12,7 +12,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>((props, ref) =>
   const textInputRef = useRef<RNTextInput>(null);
 
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(asNonNullableRef(textInputRef));
+  useKeyboardHideBlur({ textInputRef: asNonNullableRef(textInputRef) });
 
   // Forward ref methods to the internal ref
   useImperativeHandle(ref, () => {

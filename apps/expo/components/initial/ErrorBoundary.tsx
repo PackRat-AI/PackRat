@@ -49,7 +49,7 @@ const DefaultFallback = () => {
 };
 
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
-  const handleError = (error: unknown, info: { componentStack: string }) => {
+  const handleError = ({ error, info }: { error: unknown; info: { componentStack: string } }) => {
     // Log the error to your preferred logging service
     console.error('Error caught by ErrorBoundary:', error);
     console.error('Component stack:', info.componentStack);
@@ -65,7 +65,7 @@ export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBou
       fallback={fallback ? fallback : DefaultFallback}
       onReset={onReset}
       onError={(error: unknown, componentStack: ErrorInfo['componentStack']) =>
-        handleError(error, { componentStack: componentStack || '' })
+        handleError({ error, info: { componentStack: componentStack || '' } })
       }
     >
       {children}

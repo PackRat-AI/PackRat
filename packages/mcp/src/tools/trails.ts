@@ -49,14 +49,17 @@ export function registerTrailTools(agent: AgentContext): void {
     },
     async ({ q, lat, lon, radius, sport, limit, offset }) => {
       try {
-        const data = await agent.api.get('/trails/search', {
-          q,
-          lat,
-          lon,
-          radius,
-          sport,
-          limit,
-          offset,
+        const data = await agent.api.get({
+          path: '/trails/search',
+          params: {
+            q,
+            lat,
+            lon,
+            radius,
+            sport,
+            limit,
+            offset,
+          },
         });
         return ok(data);
       } catch (e) {
@@ -80,7 +83,7 @@ export function registerTrailTools(agent: AgentContext): void {
     },
     async ({ osm_id }) => {
       try {
-        const data = await agent.api.get(`/trails/${osm_id}`);
+        const data = await agent.api.get({ path: `/trails/${osm_id}` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -103,7 +106,7 @@ export function registerTrailTools(agent: AgentContext): void {
     },
     async ({ osm_id }) => {
       try {
-        const data = await agent.api.get(`/trails/${osm_id}/geometry`);
+        const data = await agent.api.get({ path: `/trails/${osm_id}/geometry` });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -127,7 +130,7 @@ export function registerTrailTools(agent: AgentContext): void {
     },
     async ({ url }) => {
       try {
-        const data = await agent.api.post('/alltrails/preview', { url });
+        const data = await agent.api.post({ path: '/alltrails/preview', body: { url } });
         return ok(data);
       } catch (e) {
         return err(e);

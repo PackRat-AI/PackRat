@@ -69,7 +69,7 @@ export function useAuthActions() {
     redirect(redirectTo);
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async ({ email, password }: { email: string; password: string }) => {
     setIsLoading(true);
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
@@ -199,7 +199,13 @@ export function useAuthActions() {
     }
   };
 
-  const resetPassword = async (email: string, opts: { token: string; newPassword: string }) => {
+  const resetPassword = async ({
+    email,
+    opts,
+  }: {
+    email: string;
+    opts: { token: string; newPassword: string };
+  }) => {
     const res = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -211,7 +217,7 @@ export function useAuthActions() {
     }
   };
 
-  const verifyEmail = async (_email: string, token: string) => {
+  const verifyEmail = async ({ token }: { _email?: string; token: string }) => {
     const { data, error } = await authClient.verifyEmail({ query: { token } });
     if (error) throw new Error(error.message ?? 'Email verification failed');
 

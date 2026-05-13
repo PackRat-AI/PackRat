@@ -28,9 +28,15 @@ export function getRefreshToken(): string | null {
   return parseToken(safeLocalStorage.getItem(REFRESH_KEY));
 }
 
-export function setTokens(accessToken: string, refreshToken: string): void {
-  safeLocalStorage.setItem(ACCESS_KEY, accessToken);
-  safeLocalStorage.setItem(REFRESH_KEY, refreshToken);
+export function setTokens({
+  accessToken,
+  refreshToken,
+}: {
+  accessToken: string;
+  refreshToken: string;
+}): void {
+  safeLocalStorage.setItem({ key: ACCESS_KEY, value: accessToken });
+  safeLocalStorage.setItem({ key: REFRESH_KEY, value: refreshToken });
 }
 
 export function clearTokens(): void {
@@ -48,7 +54,7 @@ export const UserInfoSchema = z.object({
 export type UserInfo = z.infer<typeof UserInfoSchema>;
 
 export function setUser(user: UserInfo): void {
-  safeLocalStorage.setItem('user', JSON.stringify(user));
+  safeLocalStorage.setItem({ key: 'user', value: JSON.stringify(user) });
 }
 
 export function getUser(): UserInfo | null {

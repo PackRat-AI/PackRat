@@ -18,10 +18,13 @@ export interface SimilarItemsResponse {
   sourceItem: CatalogItem;
 }
 
-export const getSimilarCatalogItems = async (
-  id: string,
-  params?: SimilarItemsParams,
-): Promise<SimilarItemsResponse> => {
+export const getSimilarCatalogItems = async ({
+  id,
+  params,
+}: {
+  id: string;
+  params?: SimilarItemsParams;
+}): Promise<SimilarItemsResponse> => {
   const { data, error } = await apiClient.catalog({ id }).similar.get({
     query: {
       ...(params?.limit !== undefined ? { limit: String(params.limit) } : {}),
@@ -33,10 +36,13 @@ export const getSimilarCatalogItems = async (
   return data as unknown as SimilarItemsResponse;
 };
 
-export const getSimilarPackItems = async (
-  packId: string,
-  opts: { itemId: string; params?: SimilarItemsParams },
-) => {
+export const getSimilarPackItems = async ({
+  packId,
+  opts,
+}: {
+  packId: string;
+  opts: { itemId: string; params?: SimilarItemsParams };
+}) => {
   const { itemId, params } = opts;
   const { data, error } = await apiClient
     .packs({ packId })
@@ -51,27 +57,36 @@ export const getSimilarPackItems = async (
   return data;
 };
 
-export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) {
+export function useSimilarCatalogItems({
+  id,
+  params,
+}: {
+  id: string;
+  params?: SimilarItemsParams;
+}) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
     queryKey: ['similarCatalogItems', id, params],
-    queryFn: () => getSimilarCatalogItems(id, params),
+    queryFn: () => getSimilarCatalogItems({ id, params }),
     enabled: isQueryEnabledWithAccessToken && !!id,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useSimilarPackItems(
-  packId: string,
-  opts: { itemId: string; params?: SimilarItemsParams },
-) {
+export function useSimilarPackItems({
+  packId,
+  opts,
+}: {
+  packId: string;
+  opts: { itemId: string; params?: SimilarItemsParams };
+}) {
   const { itemId, params } = opts;
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
     queryKey: ['similarPackItems', packId, itemId, params],
-    queryFn: () => getSimilarPackItems(packId, { itemId, params }),
+    queryFn: () => getSimilarPackItems({ packId, opts: { itemId, params } }),
     enabled: isQueryEnabledWithAccessToken && !!packId && !!itemId,
     staleTime: 5 * 60 * 1000,
   });

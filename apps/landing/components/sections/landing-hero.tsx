@@ -8,7 +8,13 @@ import Link from 'next/link';
 import type React from 'react';
 
 export default function LandingHero() {
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const scrollToSection = ({
+    e,
+    href,
+  }: {
+    e: React.MouseEvent<HTMLAnchorElement>;
+    href: string;
+  }) => {
     e.preventDefault();
     const targetId = href.substring(1);
     const element = document.getElementById(targetId);
@@ -82,7 +88,7 @@ export default function LandingHero() {
             >
               <Link
                 href={siteConfig.cta.primary.href}
-                onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
+                onClick={(e) => scrollToSection({ e, href: siteConfig.cta.primary.href })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue text-white px-8 h-12 text-sm font-medium hover:bg-apple-blue/90 transition-colors"
               >
                 <Download className="h-4 w-4" />
@@ -92,7 +98,7 @@ export default function LandingHero() {
 
               <Link
                 href={siteConfig.cta.secondary.href}
-                onClick={(e) => scrollToSection(e, siteConfig.cta.secondary.href)}
+                onClick={(e) => scrollToSection({ e, href: siteConfig.cta.secondary.href })}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-8 h-12 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               >
                 {siteConfig.cta.secondary.text}
