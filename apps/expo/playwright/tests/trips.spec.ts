@@ -180,15 +180,18 @@ test.describe('Trip CRUD', () => {
       startDate: '2026-10-01',
       endDate: '2026-10-05',
     });
-    // tripId is used below to scope the DELETE response listener to this specific trip
 
-    // Put /trips in browser history so router.back() returns there after deletion.
+    // Navigate to the trips list so the new trip is visible.
     await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
 
-    // Navigate directly to the trip detail (avoids relying on FlatList rendering
-    // the new trip, which may be off-screen when the list has many accumulated entries).
-    await page.goto(`${BASE_URL}/trip/${tripId}`);
+    // Navigate to the trip detail via a SPA click (NOT page.goto) so the trips list
+    // stays mounted in the same JS context.  Using page.goto here would put the list
+    // in the browser bfcache; router.back() would then restore a frozen JS snapshot
+    // where deleted===false, and the trip would remain visible indefinitely.
+    await expect(page.getByText(tripName)).toBeVisible({ timeout: 15_000 });
+    await page.getByText(tripName).first().click();
+    await page.waitForURL(new RegExp(`/trip/${tripId}$`), { timeout: 10_000 });
     await page.waitForLoadState('networkidle');
 
     // Accept window.confirm dialogs before triggering delete
@@ -207,23 +210,14 @@ test.describe('Trip CRUD', () => {
     await deleteButton.click();
 
     // Wait for the server to confirm the hard-delete.
-    // useDeleteTrip awaits this before calling router.back(), so the URL change
-    // happens after this resolves — but we still confirm ok() for diagnostics.
     const deleteResponse = await deletePromise;
     expect(deleteResponse.ok()).toBeTruthy();
 
-    // router.back() SPA-navigates away from the trip detail to /trips.
-    // Do NOT use page.goto here — the persist plugin would reload with the old
-    // deleted:false state and mode:'merge' wouldn't clean it up.
-    // Instead, stay in the SPA context where the store already has deleted:true.
+    // useDeleteTrip sets deleted:true in the Legend State store BEFORE the API call
+    // (optimistic update), so the trips list is already filtering out the trip by the
+    // time router.back() brings it back into view.  Because we navigated via SPA click
+    // above, the list was never put in bfcache — the store update is visible immediately.
     await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
-    // Wait for the trips list GET — React Query may refetch after deletion-invalidation
-    // after networkidle fires, leaving the deleted trip visible in stale cache briefly.
-    await page
-      .waitForResponse((r) => r.url().includes('/api/trips') && r.request().method() === 'GET', {
-        timeout: 15_000,
-      })
-      .catch(() => {}); // list served from cache with no network round-trip is also fine
     await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 15_000 });
   });
 });
