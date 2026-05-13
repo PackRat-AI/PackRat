@@ -15,11 +15,17 @@ concurrency:
 
 permissions:
   contents: read
+  statuses: write
+  checks: write
+  pull-requests: write
 
 jobs:
   lighthouse-guides:
     name: Lighthouse (guides)
     runs-on: ubuntu-latest
+    env:
+      LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     defaults:
       run:
         working-directory: apps/guides
@@ -29,7 +35,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         env:
@@ -41,16 +46,39 @@ jobs:
         run: bun run build
 
       - name: Lighthouse — desktop
+        id: lighthouse_desktop
         run: bunx lhci autorun --config=.lighthouserc.js
         continue-on-error: true
 
       - name: Lighthouse — mobile
+        id: lighthouse_mobile
+        if: always()
         run: bunx lhci autorun --config=.lighthouserc.mobile.js
         continue-on-error: true
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-guides-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/guides/.lighthouseci
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail if Lighthouse checks failed
+        if: always()
+        run: |
+          if [[ "${{ steps.lighthouse_desktop.outcome }}" != "success" || "${{ steps.lighthouse_mobile.outcome }}" != "success" ]]; then
+            echo "Lighthouse desktop or mobile checks failed."
+            exit 1
+          fi
 
   lighthouse-landing:
     name: Lighthouse (landing)
     runs-on: ubuntu-latest
+    env:
+      LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     defaults:
       run:
         working-directory: apps/landing
@@ -60,7 +88,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Install dependencies
         env:
@@ -72,9 +99,29 @@ jobs:
         run: bun run build
 
       - name: Lighthouse — desktop
+        id: lighthouse_desktop
         run: bunx lhci autorun --config=.lighthouserc.js
         continue-on-error: true
 
       - name: Lighthouse — mobile
+        id: lighthouse_mobile
+        if: always()
         run: bunx lhci autorun --config=.lighthouserc.mobile.js
         continue-on-error: true
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-landing-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/landing/.lighthouseci
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail if Lighthouse checks failed
+        if: always()
+        run: |
+          if [[ "${{ steps.lighthouse_desktop.outcome }}" != "success" || "${{ steps.lighthouse_mobile.outcome }}" != "success" ]]; then
+            echo "Lighthouse desktop or mobile checks failed."
+            exit 1
+          fi

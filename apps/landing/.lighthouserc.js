@@ -31,6 +31,18 @@ module.exports = {
         'html-has-lang': 'error',
         'image-alt': 'error',
       },
+      assertMatrix: [
+        {
+          matchingUrlPattern: '.*/(404|500)\\.html$',
+          assertions: {
+            'categories:accessibility': 'off',
+            'categories:seo': 'off',
+            'document-title': 'off',
+            'html-has-lang': 'off',
+            'meta-description': 'off',
+          },
+        },
+      ],
     },
     upload: {
       target: 'temporary-public-storage',

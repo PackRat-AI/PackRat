@@ -1,5 +1,15 @@
 import { siteConfig } from 'landing-app/config/site';
 import type { Metadata } from 'next';
+import { buildWebsiteSocialMetadata } from '../../shared/lib/og';
+
+const socialMetadata = buildWebsiteSocialMetadata({
+  siteUrl: siteConfig.url,
+  siteName: siteConfig.name,
+  title: siteConfig.name,
+  description: siteConfig.description,
+  imagePath: '/og-image.png',
+  twitterHandle: siteConfig.twitterHandle,
+});
 
 export const landingMetadata: Metadata = {
   title: {
@@ -10,23 +20,7 @@ export const landingMetadata: Metadata = {
   keywords: siteConfig.keywords,
   authors: [{ name: siteConfig.author, url: siteConfig.url }],
   creator: siteConfig.author,
-  metadataBase: new URL(siteConfig.url),
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: siteConfig.url,
-    title: siteConfig.name,
-    description: siteConfig.description,
-    siteName: siteConfig.name,
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: siteConfig.name }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteConfig.name,
-    description: siteConfig.description,
-    creator: siteConfig.twitterHandle,
-    images: ['/og-image.png'],
-  },
+  ...socialMetadata,
   icons: {
     icon: '/PackRat.ico',
     shortcut: '/favicon-16x16.png',

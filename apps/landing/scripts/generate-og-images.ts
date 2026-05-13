@@ -17,7 +17,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ImageResponse } from 'next/og';
 import { createElement } from 'react';
-import { getLandingOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
+import { OG_IMAGE_SIZE } from '../../shared/lib/og';
+import { getLandingOgImageElement } from '../lib/og-image';
 
 const PUBLIC_DIR = path.join(import.meta.dir, '..', 'public');
 

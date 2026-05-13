@@ -20,8 +20,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ImageResponse } from 'next/og';
 import { createElement } from 'react';
+import { OG_IMAGE_SIZE } from '../../shared/lib/og';
 import { getAllPosts } from '../lib/mdx-static';
-import { getGuidesOgImageElement, getPostOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
+import { getGuidesOgImageElement, getPostOgImageElement } from '../lib/og-image';
 
 const PUBLIC_DIR = path.join(import.meta.dir, '..', 'public');
 const OG_DIR = path.join(PUBLIC_DIR, 'og');

@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 
-export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
-export const OG_IMAGE_CONTENT_TYPE = 'image/png' as const;
+export { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from '../../shared/lib/og';
 
 /** Returns the JSX element for the root Guides Open Graph / Twitter card image. */
 export function getGuidesOgImageElement(): ReactElement {
