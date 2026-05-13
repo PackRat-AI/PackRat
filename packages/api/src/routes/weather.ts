@@ -2,6 +2,7 @@ import { authPlugin } from '@packrat/api/middleware/auth';
 import {
   type WeatherAPICurrentResponse,
   type WeatherAPIForecastResponse,
+  WeatherAPIForecastResponseSchema,
   type WeatherAPISearchResponse,
   WeatherCoordinateQuerySchema,
   WeatherLocationIdSchema,
@@ -133,7 +134,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
       const id = Number(idParam);
 
       if (!idParam || Number.isNaN(id)) {
-        return status(400, { error: 'Valid location ID is required' });
+        throw new Error('Valid location ID is required');
       }
 
       try {
@@ -144,23 +145,21 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         if (!response.ok) throw new Error(`API error: ${response.status}`);
 
         const data = (await response.json()) as WeatherAPIForecastResponse; // safe-cast: WeatherAPI.com response shape matches this type
-        return {
+        return WeatherAPIForecastResponseSchema.parse({
           ...data,
           location: {
             ...data.location,
             id: Number(id),
           },
-        };
+        });
       } catch (error) {
         console.error('Error fetching weather forecast:', error);
-        return status(500, {
-          error: 'Internal server error',
-          code: 'WEATHER_FORECAST_ERROR',
-        });
+        throw error;
       }
     },
     {
       query: WeatherLocationIdSchema,
+      response: { 200: WeatherAPIForecastResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Weather'],

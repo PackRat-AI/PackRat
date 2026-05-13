@@ -1,5 +1,12 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { GuideSearchQuerySchema, GuidesQuerySchema } from '@packrat/api/schemas/guides';
+import {
+  GuideCategoriesResponseSchema,
+  GuideDetailSchema,
+  GuideSearchQuerySchema,
+  GuideSearchResponseSchema,
+  GuidesQuerySchema,
+  GuidesResponseSchema,
+} from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { asNumber, asString, isArray } from '@packrat/guards';
@@ -7,7 +14,7 @@ import { asNumber, asString, isArray } from '@packrat/guards';
 const MDX_EXT_RE = /\.(mdx?|md)$/;
 const DASH_RE = /-/g;
 
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError } from 'elysia';
 import matter from 'gray-matter';
 import { z } from 'zod';
 
@@ -110,20 +117,21 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const paginatedGuides = filteredGuides.slice(offset, offset + limit);
         const totalPages = Math.ceil(total / limit);
 
-        return {
+        return GuidesResponseSchema.parse({
           items: paginatedGuides,
           totalCount: total,
           page,
           limit,
           totalPages,
-        };
+        });
       } catch (error) {
         console.error('Error listing guides:', error);
-        return status(500, { error: 'Failed to list guides' });
+        throw error;
       }
     },
     {
       query: GuidesQuerySchema,
+      response: { 200: GuidesResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],
@@ -170,13 +178,14 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         }
 
         const categories = Array.from(categoriesSet).sort();
-        return { categories, count: categories.length };
+        return GuideCategoriesResponseSchema.parse({ categories, count: categories.length });
       } catch (error) {
         console.error('Error getting guide categories:', error);
-        return status(500, { error: 'Failed to get guide categories' });
+        throw error;
       }
     },
     {
+      response: { 200: GuideCategoriesResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],
@@ -192,7 +201,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     async ({ query }) => {
       const { q, page, limit, category } = query;
       if (!q || q.trim() === '') {
-        return status(400, { error: 'Search query parameter q is required' });
+        throw new Error('Search query parameter q is required');
       }
       const searchQuery = q.toLowerCase();
 
@@ -261,21 +270,22 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const paginatedGuides = guides.slice(offset, offset + limit);
         const totalPages = Math.ceil(total / limit);
 
-        return {
+        return GuideSearchResponseSchema.parse({
           items: paginatedGuides,
           totalCount: total,
           page,
           limit,
           totalPages,
           query: q,
-        };
+        });
       } catch (error) {
         console.error('Error searching guides:', error);
-        return status(500, { error: 'Failed to search guides' });
+        throw error;
       }
     },
     {
       query: GuideSearchQuerySchema,
+      response: { 200: GuideSearchResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],
@@ -306,7 +316,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         }
 
         if (!object) {
-          return status(404, { error: 'Guide not found' });
+          throw new NotFoundError('Guide not found');
         }
 
         const headResult = await bucket.head(key);
@@ -314,7 +324,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         const rawContent = await object.text();
         const { data: frontmatter, content } = matter(rawContent);
 
-        return {
+        return GuideDetailSchema.parse({
           id,
           key,
           title: frontmatter.title || metadata.title || id.replace(DASH_RE, ' '),
@@ -327,14 +337,15 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           content,
           createdAt: object.uploaded.toISOString(),
           updatedAt: object.uploaded.toISOString(),
-        };
+        });
       } catch (error) {
         console.error('Error fetching guide:', error);
-        return status(500, { error: 'Failed to fetch guide' });
+        throw error;
       }
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: GuideDetailSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],

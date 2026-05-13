@@ -59,3 +59,8 @@ export const GuideSearchResponseSchema = z.object({
   totalPages: z.number(),
   query: z.string(),
 });
+
+export const GuideCategoriesResponseSchema = z.object({
+  categories: z.array(z.string()),
+  count: z.number().int(),
+});

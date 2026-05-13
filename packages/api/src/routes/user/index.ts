@@ -1,9 +1,13 @@
 import { createDb } from '@packrat/api/db';
 import { users } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { UpdateUserRequestSchema } from '@packrat/api/schemas/users';
+import {
+  UpdateUserRequestSchema,
+  UpdateUserResponseSchema,
+  UserProfileSchema,
+} from '@packrat/api/schemas/users';
 import { eq } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError } from 'elysia';
 
 export const userRoutes = new Elysia({ prefix: '/user' })
   .use(authPlugin)
@@ -31,23 +35,24 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           .limit(1);
 
         if (!userRecord) {
-          return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
+          throw new NotFoundError('User not found');
         }
 
-        return {
+        return UserProfileSchema.parse({
           success: true,
           user: {
             ...userRecord,
             createdAt: userRecord.createdAt?.toISOString() || null,
             updatedAt: userRecord.updatedAt?.toISOString() || null,
           },
-        };
+        });
       } catch (error) {
         console.error('Error fetching user profile:', error);
-        return status(500, { error: 'Failed to fetch user profile', code: 'FETCH_ERROR' });
+        throw error;
       }
     },
     {
+      response: { 200: UserProfileSchema },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Get user profile', security: [{ bearerAuth: [] }] },
     },
@@ -69,10 +74,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
             .limit(1);
 
           if (existingUser && existingUser.id !== user.userId) {
-            return status(409, {
-              error: 'Email already in use by another user',
-              code: 'EMAIL_CONFLICT',
-            });
+            throw new Error('Email already in use by another user');
           }
         }
 
@@ -94,14 +96,14 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           .returning();
 
         if (!updatedUser) {
-          return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
+          throw new NotFoundError('User not found');
         }
 
         const message = email
           ? 'Profile updated successfully. Please verify your new email address.'
           : 'Profile updated successfully';
 
-        return {
+        return UpdateUserResponseSchema.parse({
           success: true,
           message,
           user: {
@@ -115,14 +117,15 @@ export const userRoutes = new Elysia({ prefix: '/user' })
             createdAt: updatedUser.createdAt?.toISOString() || null,
             updatedAt: updatedUser.updatedAt?.toISOString() || null,
           },
-        };
+        });
       } catch (error) {
         console.error('Error updating user profile:', error);
-        return status(500, { error: 'Failed to update user profile', code: 'UPDATE_ERROR' });
+        throw error;
       }
     },
     {
       body: UpdateUserRequestSchema,
+      response: { 200: UpdateUserResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Update user profile', security: [{ bearerAuth: [] }] },
     },

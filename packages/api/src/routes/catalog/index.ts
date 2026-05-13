@@ -2,7 +2,10 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs, packItems } from '@packrat/api/db/schema';
 import { apiKeyAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import {
+  CatalogCategoriesResponseSchema,
+  CatalogItemSchema,
   CatalogItemsQuerySchema,
+  CatalogItemsResponseSchema,
   CreateCatalogItemRequestSchema,
   UpdateCatalogItemRequestSchema,
   VectorSearchQuerySchema,
@@ -27,7 +30,7 @@ import {
   ne,
   sql,
 } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
 const catalogETLSchema = z.object({
@@ -68,16 +71,17 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
 
       const totalPages = Math.ceil(result.total / limit);
 
-      return {
+      return CatalogItemsResponseSchema.parse({
         items: result.items,
         totalCount: result.total,
         page,
         limit,
         totalPages,
-      };
+      });
     },
     {
       query: CatalogItemsQuerySchema,
+      response: { 200: CatalogItemsResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -116,12 +120,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     '/categories',
     async ({ query }) => {
       const categories = await new CatalogService().getCategories(query.limit);
-      return categories;
+      return CatalogCategoriesResponseSchema.parse(categories);
     },
     {
       query: z.object({
         limit: z.coerce.number().int().positive().optional().default(10),
       }),
+      response: { 200: CatalogCategoriesResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -319,7 +324,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         itemId <= 0 ||
         itemId > 2147483647
       ) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
 
       const item = await db.query.catalogItems.findFirst({
@@ -333,15 +338,16 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       });
 
       if (!item) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
 
       const usageCount = item.packItems?.length || 0;
       const { packItems: _packItems, ...itemData } = item;
-      return { ...itemData, usageCount };
+      return CatalogItemSchema.parse({ ...itemData, usageCount });
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: CatalogItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],

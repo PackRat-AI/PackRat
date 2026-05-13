@@ -15,6 +15,8 @@ import {
   CreatePackItemRequestSchema,
   CreatePackRequestSchema,
   GapAnalysisRequestSchema,
+  PackItemSchema,
+  PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
 } from '@packrat/api/schemas/packs';
@@ -37,7 +39,7 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
 const CreatePackBodySchema = CreatePackRequestSchema.extend({
@@ -72,12 +74,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return computePacksWeights(result);
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights(result));
     },
     {
       query: z.object({
         includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
       }),
+      response: { 200: z.array(PackWithWeightsSchema) },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },
     },
@@ -91,7 +94,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const data = body;
 
       const packId = data.id as string;
-      if (!packId) return status(400, { error: 'Pack ID is required' });
+      if (!packId) throw new Error('Pack ID is required');
 
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
@@ -111,13 +114,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         } as typeof packs.$inferInsert)
         .returning();
 
-      if (!newPack) return status(400, { error: 'Failed to create pack' });
+      if (!newPack) throw new Error('Failed to create pack');
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return computePacksWeights([packWithItems])[0];
+      return PackWithWeightsSchema.parse(computePacksWeights([packWithItems])[0]);
     },
     {
       body: CreatePackBodySchema,
+      response: { 200: PackWithWeightsSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -233,15 +237,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           with: { items: { where: eq(packItems.deleted, false) } },
         });
 
-        if (!pack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(pack);
+        if (!pack) throw new NotFoundError('Pack not found');
+        return PackWithWeightsSchema.parse(computePackWeights(pack));
       } catch (error) {
+        if (error instanceof NotFoundError) throw error;
         console.error('Error fetching pack:', error);
-        return status(500, { error: 'Failed to fetch pack' });
+        throw error;
       }
     },
     {
       params: z.object({ packId: z.string() }),
+      response: { 200: PackWithWeightsSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
     },
@@ -674,17 +680,18 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         with: { catalogItem: true, pack: true },
       });
 
-      if (!item) return status(404, { error: 'Item not found' });
+      if (!item) throw new NotFoundError('Item not found');
 
       const isOwner = item.userId === user.userId;
       const isPublic = item.pack.isPublic;
 
-      if (!isOwner && !isPublic) return status(403, { error: 'Unauthorized' });
+      if (!isOwner && !isPublic) throw new Error('Unauthorized');
 
-      return item;
+      return PackItemSchema.parse(item);
     },
     {
       params: z.object({ itemId: z.string() }),
+      response: { 200: PackItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],
@@ -704,13 +711,13 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
-      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
+      if (!OPENAI_API_KEY) throw new Error('OpenAI API key not configured');
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
-      if (!existingItem) return status(404, { error: 'Pack item not found' });
+      if (!existingItem) throw new NotFoundError('Pack item not found');
 
       const newEmbeddingText = getEmbeddingText(data, existingItem);
       const oldEmbeddingText = getEmbeddingText(existingItem);
@@ -763,16 +770,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         .where(and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)))
         .returning();
 
-      if (!updatedItem) return status(404, { error: 'Pack item not found' });
+      if (!updatedItem) throw new NotFoundError('Pack item not found');
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
       updatedItem.embedding = null;
-      return updatedItem;
+      return PackItemSchema.parse(updatedItem);
     },
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
+      response: { 200: PackItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

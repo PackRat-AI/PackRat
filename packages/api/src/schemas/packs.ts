@@ -1,6 +1,7 @@
 import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types';
 import { z } from 'zod';
 
+// Accepts Date objects from Drizzle at runtime and coerces to ISO string for the wire.
 const datetimeString = z.preprocess(
   (v) => (v instanceof Date ? v.toISOString() : v),
   z.string().datetime(),

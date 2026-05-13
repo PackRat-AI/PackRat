@@ -1,33 +1,10 @@
 import { createDb } from '@packrat/api/db';
-import { type Trip, trips } from '@packrat/api/db/schema';
+import { trips } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/api/schemas/trips';
 import { and, eq } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError } from 'elysia';
 import { z } from 'zod';
-
-const LocationSchema = z
-  .object({
-    latitude: z.number(),
-    longitude: z.number(),
-    name: z.string().optional(),
-  })
-  .nullable()
-  .optional();
-
-const CreateTripRequestSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1),
-  description: z.string().optional().nullable(),
-  location: LocationSchema,
-  startDate: z.string().optional().nullable(),
-  endDate: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  packId: z.string().optional().nullable(),
-  localCreatedAt: z.string().datetime(),
-  localUpdatedAt: z.string().datetime(),
-});
-
-const UpdateTripRequestSchema = CreateTripRequestSchema.partial();
 
 export const tripsRoutes = new Elysia({ prefix: '/trips' })
   .use(authPlugin)
@@ -45,13 +22,14 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
           orderBy: (t) => t.createdAt,
         });
 
-        return allTrips;
+        return z.array(TripSchema).parse(allTrips);
       } catch (error) {
         console.error('Error listing trips:', error);
-        return status(500, { error: 'Failed to list trips' });
+        throw error;
       }
     },
     {
+      response: { 200: z.array(TripSchema) },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -67,8 +45,6 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
     async ({ body, user }) => {
       const db = createDb();
       const data = body;
-
-      if (!data.id) return status(400, { error: 'Trip ID is required' });
 
       try {
         const [newTrip] = await db
@@ -89,7 +65,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
           })
           .returning();
 
-        if (!newTrip) return status(400, { error: 'Failed to create trip' });
+        if (!newTrip) throw new Error('Failed to create trip');
 
         const tripWithPack = data.packId
           ? await db.query.trips.findFirst({
@@ -98,14 +74,15 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
             })
           : newTrip;
 
-        return tripWithPack;
+        return TripSchema.parse(tripWithPack ?? newTrip);
       } catch (error) {
         console.error('Error creating trip:', error);
-        return status(500, { error: 'Failed to create trip' });
+        throw error;
       }
     },
     {
-      body: CreateTripRequestSchema,
+      body: CreateTripBodySchema,
+      response: { 200: TripSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -126,11 +103,12 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
         with: { pack: true },
       });
-      if (!trip) return status(404, { error: 'Trip not found' });
-      return trip;
+      if (!trip) throw new NotFoundError('Trip not found');
+      return TripSchema.parse(trip);
     },
     {
       params: z.object({ tripId: z.string() }),
+      response: { 200: TripSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -169,20 +147,21 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
           .set(updateData)
           .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)));
 
-        const updatedTrip: Trip | undefined = await db.query.trips.findFirst({
+        const updatedTrip = await db.query.trips.findFirst({
           where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
         });
 
-        if (!updatedTrip) return status(404, { error: 'Trip not found' });
-        return updatedTrip;
+        if (!updatedTrip) throw new NotFoundError('Trip not found');
+        return TripSchema.parse(updatedTrip);
       } catch (error) {
         console.error('Error updating trip:', error);
-        return status(500, { error: 'Failed to update trip' });
+        throw error;
       }
     },
     {
       params: z.object({ tripId: z.string() }),
-      body: UpdateTripRequestSchema,
+      body: UpdateTripBodySchema,
+      response: { 200: TripSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -204,15 +183,15 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
           where: eq(trips.id, tripId),
         });
 
-        if (!trip) return status(404, { error: 'Trip not found' });
-        if (trip.userId !== user.userId) return status(403, { error: 'Forbidden' });
+        if (!trip) throw new NotFoundError('Trip not found');
+        if (trip.userId !== user.userId) throw new Error('Forbidden');
 
         await db.delete(trips).where(eq(trips.id, tripId));
 
         return { success: true };
       } catch (error) {
         console.error('Error deleting trip:', error);
-        return status(500, { error: 'Failed to delete trip' });
+        throw error;
       }
     },
     {
