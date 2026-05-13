@@ -432,7 +432,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           startedAt: new Date(),
         });
 
-        await queueCatalogETL({ queue: env.ETL_QUEUE, objectKeys: [objectKey], jobId: newJobId });
+        await queueCatalogETL({ queue: env.ETL_QUEUE, chunks: [{ objectKey }], jobId: newJobId });
 
         return { success: true, newJobId, objectKey };
       } catch (error) {

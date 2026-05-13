@@ -5,13 +5,13 @@ export interface CatalogETLMessage {
   id: string;
   data: {
     objectKey: string;
+    byteStart?: number;
+    byteEnd?: number;
   };
 }
 
 export interface QueueCatalogETLParams {
   queue: Queue;
-  objectKey: string;
-  userId: string;
-  source: string;
-  scraperRevision: string;
+  chunks: Array<{ objectKey: string; byteStart?: number; byteEnd?: number }>;
+  jobId: string;
 }

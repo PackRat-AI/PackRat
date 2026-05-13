@@ -10,6 +10,7 @@ import {
 import { CatalogService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isString } from '@packrat/guards';
@@ -176,9 +177,31 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         startedAt: new Date(),
       });
 
+      // Split large files into 20 MB byte-range chunks so each Worker
+      // invocation stays within the CPU time budget (~30k rows / chunk).
+      const CHUNK_BYTES = 20 * 1024 * 1024;
+      const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+      const queueChunks: Array<{ objectKey: string; byteStart?: number; byteEnd?: number }> = [];
+
+      for (const objectKey of chunks) {
+        const meta = await r2.head(objectKey);
+        if (!meta || meta.size <= CHUNK_BYTES) {
+          queueChunks.push({ objectKey });
+        } else {
+          const n = Math.ceil(meta.size / CHUNK_BYTES);
+          for (let i = 0; i < n; i++) {
+            queueChunks.push({
+              objectKey,
+              byteStart: i * CHUNK_BYTES,
+              byteEnd: Math.min((i + 1) * CHUNK_BYTES - 1, meta.size - 1),
+            });
+          }
+        }
+      }
+
       await queueCatalogETL({
         queue: env.ETL_QUEUE,
-        objectKeys: chunks,
+        chunks: queueChunks,
         jobId,
       });
 
