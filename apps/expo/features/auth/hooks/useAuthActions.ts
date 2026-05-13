@@ -7,8 +7,8 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
-import { authClient } from 'expo-app/lib/auth-client';
 import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
+import { authClient } from 'expo-app/lib/auth-client';
 import { t } from 'expo-app/lib/i18n';
 import * as Updates from 'expo-app/lib/updates';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
