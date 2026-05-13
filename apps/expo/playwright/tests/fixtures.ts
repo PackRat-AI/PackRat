@@ -1,10 +1,25 @@
 import { type Browser, type BrowserContext, test as base, type Page } from '@playwright/test';
 import { AUTH_STATE_PATH } from './globalSetup';
 
+const TRAILING_SLASH_RE = /\/$/;
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
+export const API_URL = process.env.API_URL ?? 'http://localhost:8787';
 
 async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
-  return browser.newContext({ storageState: AUTH_STATE_PATH });
+  const context = await browser.newContext({ storageState: AUTH_STATE_PATH });
+  // Strip Origin header so Better Auth's trustedOrigins check doesn't reject
+  // requests from localhost:8081 with INVALID_ORIGIN.
+  const apiBase = API_URL.replace(TRAILING_SLASH_RE, '');
+  await context.route(
+    (url) => url.href.startsWith(apiBase),
+    async (route) => {
+      const headers = { ...route.request().headers() };
+      delete headers.origin;
+      const response = await route.fetch({ headers });
+      await route.fulfill({ response });
+    },
+  );
+  return context;
 }
 
 export type AuthFixtures = { authedPage: Page };
@@ -20,4 +35,3 @@ export const test = base.extend<AuthFixtures>({
 
 export { expect } from '@playwright/test';
 export { BASE_URL };
-export const API_URL = process.env.API_URL ?? 'http://localhost:8787';

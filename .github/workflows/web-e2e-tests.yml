@@ -115,6 +115,7 @@ jobs:
         working-directory: apps/expo
         env:
           BASE_URL: http://localhost:8081
+          API_URL: ${{ secrets.E2E_EXPO_PUBLIC_API_URL }}
           CI: "true"
         run: bun test:web
 
