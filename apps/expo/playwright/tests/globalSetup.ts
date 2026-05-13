@@ -70,29 +70,36 @@ export default async function setup() {
   });
   console.log('[globalSetup] pre-submit:', JSON.stringify(preState));
 
-  // RNW Pressable is a <div>, not a <button>, so the native disabled property
-  // is always undefined. Check aria-disabled="true" instead.
-  await page.waitForFunction(
-    () => {
-      const btn = document.querySelector('[data-testid="continue-button"]');
-      return btn !== null && btn.getAttribute('aria-disabled') !== 'true';
-    },
-    { timeout: 10_000 },
-  );
+  // Log every network request and page console error so CI output reveals
+  // whether the API call is made and what URL it uses.
+  const networkLog: string[] = [];
+  page.on('request', (req) => {
+    networkLog.push(`${req.method()} ${req.url()}`);
+  });
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') {
+      console.log('[globalSetup] page error:', msg.text());
+    }
+  });
 
-  // Wait for the sign-in API response so we know auth cookies are set before
-  // navigating away. router.dismissTo('/') from a stack screen is unreliable
-  // on web, so we drive navigation explicitly after the API call succeeds.
-  // Broad filter: catch the auth POST regardless of exact path segment order.
+  // Catch ANY POST response — if the filter was wrong, this will still succeed
+  // and the networkLog will show us the actual URL.
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
-      (r) =>
-        r.request().method() === 'POST' &&
-        (r.url().includes('/sign-in/email') || r.url().includes('/sign-in')),
+      (r) => {
+        if (r.request().method() === 'POST') {
+          console.log('[globalSetup] POST response:', r.url(), r.status());
+        }
+        return r.request().method() === 'POST';
+      },
       { timeout: 30_000 },
     ),
-    page.getByTestId('continue-button').click(),
+    // force: true bypasses Playwright's actionability checks (visibility,
+    // pointer-events) so we're sure the click event is dispatched.
+    page.getByTestId('continue-button').click({ force: true }),
   ]);
+
+  console.log('[globalSetup] network log (last 20):', JSON.stringify(networkLog.slice(-20)));
 
   if (!signInResponse.ok()) {
     const body = await signInResponse.text().catch(() => '');
