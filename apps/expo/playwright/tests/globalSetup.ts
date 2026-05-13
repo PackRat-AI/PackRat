@@ -55,12 +55,27 @@ export default async function setup() {
     { email, password },
   );
 
-  // Wait for the continue button to become enabled — confirms form validation
-  // passed and React has flushed the field value updates.
+  // Diagnostic: log DOM values and button state so CI logs reveal what happened.
+  const preState = await page.evaluate(() => {
+    const emailEl = document.querySelector<HTMLInputElement>('[data-testid="email-input"]');
+    const pwdEl = document.querySelector<HTMLInputElement>('[data-testid="password-input"]');
+    const btn = document.querySelector('[data-testid="continue-button"]');
+    return {
+      emailValue: emailEl?.value ?? 'NOT_FOUND',
+      pwdLen: pwdEl ? pwdEl.value.length : -1,
+      btnExists: !!btn,
+      btnAriaDisabled: btn?.getAttribute('aria-disabled') ?? 'NO_ATTR',
+      btnHtmlDisabled: btn instanceof HTMLButtonElement ? btn.disabled : 'NOT_BUTTON',
+    };
+  });
+  console.log('[globalSetup] pre-submit:', JSON.stringify(preState));
+
+  // RNW Pressable is a <div>, not a <button>, so the native disabled property
+  // is always undefined. Check aria-disabled="true" instead.
   await page.waitForFunction(
     () => {
-      const btn = document.querySelector<HTMLButtonElement>('[data-testid="continue-button"]');
-      return btn !== null && !btn.disabled;
+      const btn = document.querySelector('[data-testid="continue-button"]');
+      return btn !== null && btn.getAttribute('aria-disabled') !== 'true';
     },
     { timeout: 10_000 },
   );
@@ -68,9 +83,12 @@ export default async function setup() {
   // Wait for the sign-in API response so we know auth cookies are set before
   // navigating away. router.dismissTo('/') from a stack screen is unreliable
   // on web, so we drive navigation explicitly after the API call succeeds.
+  // Broad filter: catch the auth POST regardless of exact path segment order.
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
-      (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
+      (r) =>
+        r.request().method() === 'POST' &&
+        (r.url().includes('/sign-in/email') || r.url().includes('/sign-in')),
       { timeout: 30_000 },
     ),
     page.getByTestId('continue-button').click(),
