@@ -15,8 +15,13 @@ async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
     async (route) => {
       const headers = { ...route.request().headers() };
       delete headers.origin;
-      const response = await route.fetch({ headers });
-      await route.fulfill({ response });
+      try {
+        const response = await route.fetch({ headers });
+        await route.fulfill({ response });
+      } catch {
+        // Context may be disposed when a request fires during context.close().
+        await route.abort().catch(() => {});
+      }
     },
   );
   return context;

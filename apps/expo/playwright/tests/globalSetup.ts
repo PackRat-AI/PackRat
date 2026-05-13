@@ -33,8 +33,13 @@ export default async function setup() {
     async (route) => {
       const headers = { ...route.request().headers() };
       delete headers.origin;
-      const response = await route.fetch({ headers });
-      await route.fulfill({ response });
+      try {
+        const response = await route.fetch({ headers });
+        await route.fulfill({ response });
+      } catch {
+        // Context may be disposed if a request fires while the browser is closing.
+        await route.abort().catch(() => {});
+      }
     },
   );
 
