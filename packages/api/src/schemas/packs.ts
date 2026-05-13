@@ -1,4 +1,4 @@
-import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types';
+import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/api/types/constants';
 import { z } from 'zod';
 
 // Accepts Date objects from Drizzle at runtime and coerces to ISO string for the wire.

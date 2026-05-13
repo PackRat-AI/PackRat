@@ -1,4 +1,4 @@
-import type { PackItem } from '@packrat/api/types';
+import type { PackItem } from '@packrat/api/types/constants';
 import { describe, expect, it } from 'vitest';
 import {
   calculateBaseWeight,

@@ -7,7 +7,7 @@ import {
   packItems,
   packs,
 } from '@packrat/api/db/schema';
-import { PACK_CATEGORIES } from '@packrat/api/types';
+import { PACK_CATEGORIES } from '@packrat/api/types/constants';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';

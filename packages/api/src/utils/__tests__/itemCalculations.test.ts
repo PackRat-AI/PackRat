@@ -1,4 +1,4 @@
-import type { CatalogItem, PackItem } from '@packrat/api/types';
+import type { CatalogItem, PackItem } from '@packrat/api/types/constants';
 import { describe, expect, it } from 'vitest';
 import {
   calculateTotalWeight,

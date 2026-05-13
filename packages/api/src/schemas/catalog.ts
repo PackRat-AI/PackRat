@@ -1,4 +1,4 @@
-import { WEIGHT_UNITS } from '@packrat/api/types';
+import { WEIGHT_UNITS } from '@packrat/api/types/constants';
 import { isString } from '@packrat/guards';
 import { z } from 'zod';
 
