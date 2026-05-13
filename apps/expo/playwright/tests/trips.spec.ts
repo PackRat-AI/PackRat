@@ -217,8 +217,14 @@ test.describe('Trip CRUD', () => {
     // deleted:false state and mode:'merge' wouldn't clean it up.
     // Instead, stay in the SPA context where the store already has deleted:true.
     await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
+    // Wait for the trips list GET — React Query may refetch after deletion-invalidation
+    // after networkidle fires, leaving the deleted trip visible in stale cache briefly.
+    await page
+      .waitForResponse((r) => r.url().includes('/api/trips') && r.request().method() === 'GET', {
+        timeout: 15_000,
+      })
+      .catch(() => {}); // list served from cache with no network round-trip is also fine
+    await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 15_000 });
   });
 });
 
