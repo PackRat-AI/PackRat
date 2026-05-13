@@ -45,6 +45,8 @@
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts",
+    "test:guides": "vitest run --config apps/guides/vitest.config.ts",
+    "test:landing": "vitest run --config apps/landing/vitest.config.ts",
     "test:mcp": "bun run --cwd packages/mcp test",
     "trails": "bun run --cwd apps/trails dev",
     "web": "bun run --cwd apps/web dev"

@@ -3,17 +3,19 @@
   "version": "2.0.25",
   "private": true,
   "scripts": {
-    "build": "bun run build-content && next build",
+    "build": "bun run generate-og-images && bun run build-content && next build",
     "build-content": "bun run scripts/build-content.ts",
     "clean": "bunx rimraf .next node_modules out",
     "demo-enhancement": "bun run scripts/demo-enhancement.ts",
     "dev": "next dev",
     "doctor:react": "bunx react-doctor",
     "enhance-content": "bun run scripts/enhance-content.ts",
+    "generate-og-images": "bun run scripts/generate-og-images.ts",
     "lighthouse": "bun run build && bunx lhci autorun",
     "lint": "next lint",
     "start": "next start",
     "sync-to-r2": "bun run scripts/sync-to-r2.ts",
+    "test": "vitest run --config vitest.config.ts",
     "test-enhancement": "bun run scripts/test-enhancement.ts",
     "update-authors": "bun run scripts/update-authors.ts"
   },
@@ -96,6 +98,7 @@
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "~3.1.4"
   }
 }
