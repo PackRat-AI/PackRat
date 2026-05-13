@@ -234,7 +234,7 @@ export default function LoginScreen() {
                     accessible={true}
                     disabled={!canSubmit || loading}
                     onPress={() => {
-                      if (focusedTextField === 'email') {
+                      if (Platform.OS !== 'web' && focusedTextField === 'email') {
                         KeyboardController.setFocusTo('next');
                         return;
                       }
