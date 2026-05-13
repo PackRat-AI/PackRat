@@ -33,21 +33,42 @@ export async function processCatalogETL({
   message: CatalogETLMessage;
   env: Env;
 }): Promise<void> {
-  const { objectKey } = message.data;
+  const { objectKey, byteStart, byteEnd } = message.data;
   const jobId = message.id;
 
   const db = createDbClient(env);
 
   try {
-    console.log(`🔄 Processing file ${objectKey}, job ${jobId}`);
+    const chunkDesc = byteStart !== undefined ? ` [bytes ${byteStart}-${byteEnd ?? 'end'}]` : '';
+    console.log(`🔄 Processing file ${objectKey}${chunkDesc}, job ${jobId}`);
 
     const r2Service = new R2BucketService({
       env,
       bucketType: 'catalog',
     });
 
-    console.log(`🔍 [TRACE] Getting stream for object: ${objectKey}`);
-    const r2Object = await r2Service.get(objectKey);
+    // For non-first chunks (byteStart > 0): fetch the header row separately via a
+    // cheap 4 KB range request so the CSV parser sees a valid header.
+    let injectedHeader = '';
+    if (byteStart !== undefined && byteStart > 0) {
+      const headerSlice = await r2Service.get(objectKey, { range: { offset: 0, length: 4096 } });
+      if (!headerSlice) throw new Error(`Failed to fetch header for ${objectKey}`);
+      const headerText = await headerSlice.text();
+      injectedHeader = headerText.split('\n')[0] ?? '';
+    }
+
+    const rangeOptions =
+      byteStart !== undefined
+        ? {
+            range: {
+              offset: byteStart,
+              length: byteEnd !== undefined ? byteEnd - byteStart + 1 : undefined,
+            },
+          }
+        : undefined;
+
+    console.log(`🔍 [TRACE] Getting stream for object: ${objectKey}${chunkDesc}`);
+    const r2Object = await r2Service.get(objectKey, rangeOptions);
     if (!r2Object) {
       throw new Error(`Failed to get stream for object: ${objectKey}`);
     }
@@ -66,11 +87,30 @@ export async function processCatalogETL({
     });
 
     (async () => {
+      // Non-first chunks: inject the header row so csv-parse sees a valid header,
+      // then skip the partial row at the chunk boundary (tail of the previous chunk).
+      if (injectedHeader) {
+        parser.write(`${injectedHeader}\n`);
+      }
+      let skipPartialRow = byteStart !== undefined && byteStart > 0;
+
       for await (const chunk of streamToText(r2Object.body)) {
+        let text = chunk;
+
+        if (skipPartialRow) {
+          // Discard bytes up to and including the first newline — those bytes are
+          // the tail of the row that the previous chunk already processed.
+          const nl = text.indexOf('\n');
+          if (nl === -1) continue; // entire buffer is still the partial row tail
+          text = text.slice(nl + 1);
+          skipPartialRow = false;
+          if (!text) continue;
+        }
+
         // Respect backpressure: if the parser buffer is full, wait for drain before
         // pushing more data. Without this, R2 fills the parser buffer for the entire
         // file (up to 600 MB) before the main loop processes any rows → Worker OOM.
-        const ok = parser.write(chunk);
+        const ok = parser.write(text);
         if (!ok) await new Promise<void>((resolve) => parser.once('drain', resolve));
       }
       parser.end();
