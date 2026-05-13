@@ -23,7 +23,7 @@ function makeItem(
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
     packId: 'pack-1',
-    userId: 1,
+    userId: 'user-1',
     category: 'tools',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

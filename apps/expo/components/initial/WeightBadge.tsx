@@ -1,6 +1,6 @@
+import type { WeightUnit } from '@packrat/api/types/constants';
 import { isString } from '@packrat/guards';
 import { cn } from 'expo-app/lib/cn';
-import type { WeightUnit } from 'expo-app/types';
 import { formatWeight } from 'expo-app/utils/weight';
 import { Text, View } from 'react-native';
 

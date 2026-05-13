@@ -1,6 +1,6 @@
+import type { PackItem } from '@packrat/api/types/constants';
 import type { WeightUnit } from '@packrat/units';
 import { convert, displayWeight, normalize, parseWeightUnit } from '@packrat/units';
-import type { PackItem } from 'expo-app/types';
 
 export { convert as convertWeight };
 

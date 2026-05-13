@@ -26,7 +26,7 @@ function makePackItem(overrides: Partial<PackItem> = {}): PackItem {
     quantity: 1,
     consumable: false,
     worn: false,
-    userId: 1,
+    userId: 'user-1',
     category: 'tools',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

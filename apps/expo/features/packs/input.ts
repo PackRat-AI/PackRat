@@ -1,4 +1,4 @@
-import type { WeightUnit } from 'expo-app/types';
+import type { WeightUnit } from '@packrat/api/types/constants';
 
 export interface PackItemInput {
   name: string;

@@ -1,4 +1,4 @@
-import type { User } from 'expo-app/types';
+import type { User } from '@packrat/api/types/constants';
 
 // --- Users ---
 export const mockUsers: [User, ...User[]] = [

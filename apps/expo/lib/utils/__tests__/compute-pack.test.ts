@@ -1,4 +1,4 @@
-import type { Pack, PackItem } from 'expo-app/types';
+import type { Pack, PackItem } from '@packrat/api/types/constants';
 import { describe, expect, it } from 'vitest';
 import { computePacksWeights, computePackWeights } from '../compute-pack';
 

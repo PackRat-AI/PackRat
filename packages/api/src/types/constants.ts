@@ -147,7 +147,7 @@ export const PackItemSchema = z.object({
   catalogItemId: z.number().int().positive().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
-  userId: z.number().int().positive(),
+  userId: z.string(),
 });
 
 export type PackItem = z.infer<typeof PackItemSchema>;
@@ -160,7 +160,7 @@ export const PackSchema = z.object({
   baseWeight: z.number().nonnegative().optional(),
   totalWeight: z.number().nonnegative().optional(),
   items: z.array(PackItemSchema).optional(),
-  userId: z.number().int().positive(),
+  userId: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   isPublic: z.boolean(),
@@ -171,7 +171,7 @@ export const PackSchema = z.object({
 export type Pack = z.infer<typeof PackSchema>;
 
 export const UserSchema = z.object({
-  id: z.number().int().positive(),
+  id: z.string(),
   name: z.string(),
   email: z.string().email(),
   avatar: z.string().url(),

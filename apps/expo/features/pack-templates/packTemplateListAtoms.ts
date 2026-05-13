@@ -1,4 +1,4 @@
-import type { PackCategory } from 'expo-app/types';
+import type { PackCategory } from '@packrat/api/types/constants';
 import { atom } from 'jotai';
 
 export const activeTemplateFilterAtom = atom<PackCategory | 'all'>('all');
