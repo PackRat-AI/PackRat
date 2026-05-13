@@ -19,13 +19,13 @@
     "db:migrate": "bun run ./migrate.ts"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.0",
-    "drizzle-orm": "^0.45.2",
-    "pg": "^8.16.3",
-    "ws": "^8.18.1"
+    "@neondatabase/serverless": "catalog:",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:",
+    "ws": "catalog:"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.10",
+    "drizzle-kit": "catalog:",
     "typescript": "catalog:"
   }
 }

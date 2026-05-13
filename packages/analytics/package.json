@@ -9,16 +9,16 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@duckdb/node-api": "1.5.0-r.1",
+    "@duckdb/node-api": "catalog:",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
-    "consola": "^3.4.2",
+    "consola": "catalog:",
     "magic-regexp": "catalog:",
     "radash": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "vitest": "~3.1.4"
+    "@types/bun": "catalog:",
+    "vitest": "catalog:"
   }
 }
