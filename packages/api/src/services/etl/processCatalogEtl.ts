@@ -73,7 +73,7 @@ export async function processCatalogETL({
     })();
 
     for await (const record of parser) {
-      await new Promise((resolve) => setTimeout(resolve, 1)); // Yield to event loop for GC Opportunities to prevent memory bloat
+      if (rowIndex % 100 === 0) await new Promise((resolve) => setTimeout(resolve, 1)); // Yield every 100 rows for GC; per-row yield hits the CF Worker wall-clock limit on large files
       const row = record as string[];
       if (!isHeaderProcessed) {
         fieldMap = row.reduce<Record<string, number>>((acc, header, idx) => {
