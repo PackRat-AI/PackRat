@@ -26,25 +26,24 @@ export default async function setup() {
   await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
   await page.getByTestId('sign-in-email-button').click();
 
-  // Fill login form inside the modal
+  // Fill the actual <input> elements directly (testIDs land on RN View wrappers,
+  // not the underlying <input>, so getByTestId().fill() works but .press() does
+  // not fire onSubmitEditing). Use locator('input') within each testID container
+  // to reach the real DOM input, then press Enter on the focused element via
+  // page.keyboard to trigger the password field's onSubmitEditing → form.handleSubmit().
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
-  await page.getByTestId('email-input').fill(email);
-  await page.getByTestId('password-input').fill(password);
+  await page.getByTestId('email-input').locator('input').fill(email);
+  await page.getByTestId('password-input').locator('input').fill(password);
 
   // Wait for the sign-in API response so we know auth cookies are set before
   // navigating away. router.dismissTo('/') from a stack screen is unreliable
   // on web, so we drive navigation explicitly after the API call succeeds.
-  //
-  // Submit via Enter on the password field (onSubmitEditing → form.handleSubmit)
-  // rather than clicking the button, because the button's onPress has an early
-  // return when focusedTextField === 'email' — which can happen on web if the
-  // password TextField's onFocus doesn't propagate through Playwright's fill().
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
       (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
       { timeout: 30_000 },
     ),
-    page.getByTestId('password-input').press('Enter'),
+    page.keyboard.press('Enter'),
   ]);
 
   if (!signInResponse.ok()) {
