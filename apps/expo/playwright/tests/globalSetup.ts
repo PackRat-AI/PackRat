@@ -15,69 +15,38 @@ export default async function setup() {
 
   fs.mkdirSync(path.dirname(AUTH_STATE_PATH), { recursive: true });
 
-  const browser = await chromium.launch();
+  // --disable-web-security is required because the production API doesn't
+  // allow CORS from http://localhost:8081. The same flag is set in
+  // playwright.config.ts for the test projects so all browser contexts are
+  // consistent.
+  const browser = await chromium.launch({
+    args: ['--disable-web-security', '--disable-site-isolation-trials'],
+  });
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Capture ALL page console output so CI logs reveal JS errors, warnings,
-  // auth client messages, etc.
+  // Capture console errors so CI logs show any auth failures.
   page.on('console', (msg) => {
-    console.log(`[page:${msg.type()}]`, msg.text());
+    if (msg.type() === 'error') console.log('[page:error]', msg.text());
   });
 
-  // Capture every network request so we can see what URLs are hit (or not hit).
-  page.on('request', (req) => {
-    console.log('[req]', req.method(), req.url());
-  });
-  page.on('response', (res) => {
-    console.log('[res]', res.status(), res.url());
-  });
-
-  // Start from the auth entry screen, then click through to login
   await page.goto(`${BASE_URL}/auth`, { waitUntil: 'load' });
 
   await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
   await page.getByTestId('sign-in-email-button').click();
 
+  // fill() uses Playwright's CDP path which fires real browser input events,
+  // correctly updating React/tanstack-form field state (verified via React
+  // props diagnostic in a prior run). locator.press('Enter') targets the
+  // focused password input directly and triggers onSubmitEditing →
+  // form.handleSubmit().
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
   await page.getByTestId('email-input').fill(email);
   await page.getByTestId('password-input').fill(password);
 
-  // Read the React props directly off the DOM elements to verify that
-  // fill() actually updated the tanstack-form field state (not just DOM value).
-  const postFillState = await page.evaluate(() => {
-    const getReactValue = (sel: string): string => {
-      const el = document.querySelector(sel);
-      if (!el) return 'NOT_FOUND';
-      const propsKey = Object.keys(el).find((k) => k.startsWith('__reactProps'));
-      if (!propsKey) return 'NO_REACT_PROPS';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return String((el as any)[propsKey]?.value ?? 'UNDEFINED');
-    };
-    const btn = document.querySelector('[data-testid="continue-button"]');
-    return {
-      emailReactValue: getReactValue('[data-testid="email-input"]'),
-      pwdReactLen: (() => {
-        const v = getReactValue('[data-testid="password-input"]');
-        return v.length;
-      })(),
-      btnAriaDisabled: btn?.getAttribute('aria-disabled') ?? 'NO_ATTR',
-      btnPointerEvents: btn ? window.getComputedStyle(btn).pointerEvents : 'N/A',
-    };
-  });
-  console.log('[globalSetup] post-fill React state:', JSON.stringify(postFillState));
-
-  // Use locator.press('Enter') which explicitly targets the password input
-  // (more reliable than page.keyboard which depends on current focus state).
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
-      (r) => {
-        const method = r.request().method();
-        const url = r.url();
-        if (method === 'POST') console.log('[globalSetup] POST response:', url, r.status());
-        // Catch any POST — the URL check is just for the specific sign-in path.
-        return method === 'POST' && url.includes('/sign-in/email');
-      },
+      (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
       { timeout: 30_000 },
     ),
     page.getByTestId('password-input').press('Enter'),

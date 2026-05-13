@@ -18,6 +18,12 @@ export default defineConfig({
     trace: 'on-first-retry',
     video: 'on-first-retry',
     headless: true,
+    // The production API does not allow CORS from http://localhost:8081.
+    // Disable the browser's Same-Origin enforcement so all API calls succeed
+    // during testing. This flag is only applied in the headless CI context.
+    launchOptions: {
+      args: ['--disable-web-security', '--disable-site-isolation-trials'],
+    },
   },
 
   projects: [
