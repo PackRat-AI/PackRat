@@ -14,7 +14,7 @@ const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0
 
 /** Read a uint32 big-endian from a buffer at offset. */
 function readUint32BE(buf: Buffer, offset: number): number {
-  return (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+  return buf.readUInt32BE(offset);
 }
 
 function assertValidPng(filePath: string): void {
@@ -88,6 +88,7 @@ describe('guides per-slug page metadata', () => {
     const { generateMetadata } = await import('../app/guide/[slug]/page');
     const posts = getAllPosts();
     const post = posts[0];
+    if (!post) throw new Error('No posts found');
 
     const meta = await generateMetadata({ params: Promise.resolve({ slug: post.slug }) });
     const images = (meta.openGraph as { images?: unknown })?.images;
@@ -101,6 +102,7 @@ describe('guides per-slug page metadata', () => {
     const { generateMetadata } = await import('../app/guide/[slug]/page');
     const posts = getAllPosts();
     const post = posts[0];
+    if (!post) throw new Error('No posts found');
 
     const meta = await generateMetadata({ params: Promise.resolve({ slug: post.slug }) });
     const images = (meta.twitter as { images?: unknown })?.images;
