@@ -34,12 +34,17 @@ export default async function setup() {
   // Wait for the sign-in API response so we know auth cookies are set before
   // navigating away. router.dismissTo('/') from a stack screen is unreliable
   // on web, so we drive navigation explicitly after the API call succeeds.
+  //
+  // Submit via Enter on the password field (onSubmitEditing → form.handleSubmit)
+  // rather than clicking the button, because the button's onPress has an early
+  // return when focusedTextField === 'email' — which can happen on web if the
+  // password TextField's onFocus doesn't propagate through Playwright's fill().
   const [signInResponse] = await Promise.all([
     page.waitForResponse(
       (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
       { timeout: 30_000 },
     ),
-    page.getByTestId('continue-button').click(),
+    page.getByTestId('password-input').press('Enter'),
   ]);
 
   if (!signInResponse.ok()) {
