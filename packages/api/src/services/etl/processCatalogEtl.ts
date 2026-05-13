@@ -67,7 +67,11 @@ export async function processCatalogETL({
 
     (async () => {
       for await (const chunk of streamToText(r2Object.body)) {
-        parser.write(chunk);
+        // Respect backpressure: if the parser buffer is full, wait for drain before
+        // pushing more data. Without this, R2 fills the parser buffer for the entire
+        // file (up to 600 MB) before the main loop processes any rows → Worker OOM.
+        const ok = parser.write(chunk);
+        if (!ok) await new Promise<void>((resolve) => parser.once('drain', resolve));
       }
       parser.end();
     })();
