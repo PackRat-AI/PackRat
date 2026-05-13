@@ -26,14 +26,13 @@ export default async function setup() {
   await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
   await page.getByTestId('sign-in-email-button').click();
 
-  // Fill the actual <input> elements directly (testIDs land on RN View wrappers,
-  // not the underlying <input>, so getByTestId().fill() works but .press() does
-  // not fire onSubmitEditing). Use locator('input') within each testID container
-  // to reach the real DOM input, then press Enter on the focused element via
-  // page.keyboard to trigger the password field's onSubmitEditing → form.handleSubmit().
+  // testID on TextField spreads via {...props} → TextInput → <input>, so
+  // getByTestId() resolves to the <input> element directly. fill() on it
+  // properly triggers onChangeText; page.keyboard.press('Enter') then fires
+  // the password field's onSubmitEditing → form.handleSubmit().
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
-  await page.getByTestId('email-input').locator('input').fill(email);
-  await page.getByTestId('password-input').locator('input').fill(password);
+  await page.getByTestId('email-input').fill(email);
+  await page.getByTestId('password-input').fill(password);
 
   // Wait for the sign-in API response so we know auth cookies are set before
   // navigating away. router.dismissTo('/') from a stack screen is unreliable
