@@ -18,9 +18,9 @@ export function useLocationRefresh() {
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);
 
-        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
         updateLocation({
           locationId,
+          // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
           updates: formattedData as unknown as Partial<WeatherLocation>,
         });
 
@@ -51,9 +51,9 @@ export function useLocationRefresh() {
           if (weatherData) {
             const formattedData = formatWeatherData(weatherData);
 
-            // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
             updateLocation({
               locationId: location.id,
+              // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
               updates: formattedData as unknown as Partial<WeatherLocation>,
             });
           }

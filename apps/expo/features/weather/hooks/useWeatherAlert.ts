@@ -250,9 +250,8 @@ export function useWeatherAlerts() {
 
       try {
         const data = await getWeatherData(locationId);
-        // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a
-        // structural subset of that type used only by this alert generator.
         const formatted = generateAlerts({
+          // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a structural subset used only by this alert generator.
           data: data as unknown as WeatherApiData,
           activeLocation,
         });
