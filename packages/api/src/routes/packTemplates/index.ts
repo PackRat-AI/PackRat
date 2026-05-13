@@ -2,7 +2,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
 import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/api/db/schema';
-import { authPlugin } from '@packrat/api/middleware/auth';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import {
   CreatePackTemplateItemRequestSchema,
   CreatePackTemplateRequestSchema,
@@ -140,6 +140,7 @@ const analysisSchema = z.object({
 
 export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
   .use(authPlugin)
+  .use(adminAuthPlugin)
 
   // List all templates
   .get(
@@ -213,10 +214,6 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     async ({ body, user }) => {
       let contentUrl: string | undefined;
       try {
-        if (user.role !== 'ADMIN') {
-          return status(403, { error: 'Forbidden: Admin access required' });
-        }
-
         const { isAppTemplate } = body;
         contentUrl = body.contentUrl;
 
@@ -413,10 +410,10 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       body: GenerateFromOnlineContentRequestSchema,
-      isAuthenticated: true,
+      isAdmin: true,
       detail: {
         tags: ['Pack Templates'],
-        summary: 'Generate a pack template from an online content URL',
+        summary: 'Generate a pack template from an online content URL (Admin only)',
         security: [{ bearerAuth: [] }],
       },
     },

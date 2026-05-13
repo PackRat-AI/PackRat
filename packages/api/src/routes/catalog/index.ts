@@ -247,16 +247,16 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const db = createDb();
       const data = body;
       if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
-        return status(400, { error: 'name, weight, and weightUnit are required' });
+        throw new Error('name, weight, and weightUnit are required');
       }
       if (data.weight <= 0) {
-        return status(400, { error: 'weight must be a positive number' });
+        throw new Error('weight must be a positive number');
       }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        return status(500, { error: 'OpenAI API key not configured' });
+        throw new Error('OpenAI API key not configured');
       }
 
       const embeddingText = getEmbeddingText(data);
@@ -299,10 +299,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         })
         .returning();
 
-      return newItem;
+      return CatalogItemSchema.parse(newItem);
     },
     {
       body: CreateCatalogItemRequestSchema,
+      response: { 200: CatalogItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -435,17 +436,17 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         itemId <= 0 ||
         itemId > 2147483647
       ) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
       const data = body;
       if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
-        return status(400, { error: 'weight must be a positive number' });
+        throw new Error('weight must be a positive number');
       }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        return status(500, { error: 'OpenAI API key not configured' });
+        throw new Error('OpenAI API key not configured');
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
@@ -453,7 +454,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       });
 
       if (!existingItem) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
 
       let embedding: number[] | null = null;
@@ -481,11 +482,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .where(eq(catalogItems.id, itemId))
         .returning();
 
-      return updatedItem;
+      return CatalogItemSchema.parse(updatedItem);
     },
     {
       params: z.object({ id: z.string() }),
       body: UpdateCatalogItemRequestSchema,
+      response: { 200: CatalogItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
