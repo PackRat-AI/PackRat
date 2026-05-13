@@ -30,10 +30,26 @@ export default async function setup() {
   await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
   await page.getByTestId('email-input').fill(email);
   await page.getByTestId('password-input').fill(password);
-  await page.getByTestId('continue-button').click();
 
-  // Wait for dashboard tab — confirms successful login
-  await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 30_000 });
+  // Wait for the sign-in API response so we know auth cookies are set before
+  // navigating away. router.dismissTo('/') from a stack screen is unreliable
+  // on web, so we drive navigation explicitly after the API call succeeds.
+  const [signInResponse] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
+      { timeout: 30_000 },
+    ),
+    page.getByTestId('continue-button').click(),
+  ]);
+
+  if (!signInResponse.ok()) {
+    const body = await signInResponse.text().catch(() => '');
+    throw new Error(`Sign-in failed (${signInResponse.status()}): ${body}`);
+  }
+
+  // Auth cookies are now set; navigate to the main app explicitly
+  await page.goto(`${BASE_URL}/`, { waitUntil: 'load' });
+  await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 15_000 });
 
   await context.storageState({ path: AUTH_STATE_PATH });
   console.log(`[globalSetup] Logged in as ${email}`);
