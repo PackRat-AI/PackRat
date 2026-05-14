@@ -79,8 +79,6 @@ export const testIds = Object.freeze({
     startDateInput: 'trips:start-date-input',
     endDateInput: 'trips:end-date-input',
     listItem: (id: string | number) => `trips:list-item-${id}`,
-    startDateInput: 'trips:start-date-input',
-    endDateInput: 'trips:end-date-input',
   }),
 
   // ── Catalog ───────────────────────────────────────────────────────────────

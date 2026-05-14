@@ -346,9 +346,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
-                      testID={testIds.trips.endDateBtn}
-                      onPress={() => setShowEndPicker(true)}
                       testID={testIds.trips.endDateInput}
+                      onPress={() => setShowEndPicker(true)}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
