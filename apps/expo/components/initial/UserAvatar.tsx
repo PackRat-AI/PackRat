@@ -2,8 +2,6 @@ import { Image, Text, View } from 'react-native';
 
 type UserLike = {
   name: string;
-  avatar?: string | null;
-  image?: string | null;
   avatarUrl?: string | null;
 };
 
@@ -26,7 +24,7 @@ export function UserAvatar({ user, size = 'md', showName = false }: UserAvatarPr
     lg: 'text-base',
   }[size];
 
-  const avatarUri = user.avatar ?? user.image ?? user.avatarUrl;
+  const avatarUri = user.avatarUrl || null;
 
   return (
     <View className="flex-row items-center">

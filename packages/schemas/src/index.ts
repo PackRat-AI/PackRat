@@ -15,5 +15,6 @@ export * from './trailConditions';
 export * from './trips';
 export * from './upload';
 export * from './users';
+export * from './utils';
 export * from './validation';
 export * from './weather';

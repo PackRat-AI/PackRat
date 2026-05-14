@@ -18,7 +18,6 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       try {
         const allTrips = await db.query.trips.findMany({
           where: and(eq(trips.userId, user.userId), eq(trips.deleted, false)),
-          with: { pack: true },
           orderBy: (t) => t.createdAt,
         });
 
@@ -67,14 +66,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
 
         if (!newTrip) throw new Error('Failed to create trip');
 
-        const tripWithPack = data.packId
-          ? await db.query.trips.findFirst({
-              where: eq(trips.id, newTrip.id),
-              with: { pack: true },
-            })
-          : newTrip;
-
-        return TripSchema.parse(tripWithPack ?? newTrip);
+        return TripSchema.parse(newTrip);
       } catch (error) {
         console.error('Error creating trip:', error);
         throw error;
@@ -101,7 +93,6 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
 
       const trip = await db.query.trips.findFirst({
         where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
-        with: { pack: true },
       });
       if (!trip) throw new NotFoundError('Trip not found');
       return TripSchema.parse(trip);

@@ -2,27 +2,27 @@ import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
 import { isObject } from '@packrat/guards';
 import type {
-  ActiveUsersSchema,
-  ActivityPointSchema,
-  AdminCatalogItemSchema,
-  AdminPackItemSchema,
-  AdminTrailConditionReportSchema,
-  AdminUserItemSchema,
-  BrandRowSchema,
-  BreakdownItemSchema,
-  CatalogOverviewSchema,
-  EmbeddingStatsSchema,
-  EtlFailureSummarySchema,
-  EtlJobFailuresSchema,
-  EtlJobSchema,
-  EtlResponseSchema,
-  GrowthPointSchema,
-  PriceBucketSchema,
-  TrailGeometrySchema,
-  TrailSearchItemSchema,
-  TrailSearchResultSchema,
+  ActiveUsers,
+  ActivityPoint,
+  AdminCatalogItem,
+  AdminPackItem,
+  AdminStats,
+  AdminTrailConditionReport,
+  AdminUserItem,
+  BrandRow,
+  BreakdownItem,
+  CatalogOverview,
+  EmbeddingStats,
+  EtlFailureSummary,
+  EtlJob,
+  EtlJobFailures,
+  EtlResponse,
+  GrowthPoint,
+  PriceBucket,
+  TrailGeometry,
+  TrailSearchItem,
+  TrailSearchResult as TrailSearchResultList,
 } from '@packrat/schemas/admin';
-import type { z } from 'zod';
 import { clearToken, getAuthHeader } from './auth';
 import { adminEnv } from './env';
 
@@ -64,7 +64,7 @@ function unwrap<T>(data: T | null | undefined, name: string): T {
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
-export type AdminStats = { users: number; packs: number; items: number };
+export type { AdminStats };
 
 export async function getStats(): Promise<AdminStats> {
   const { data, error } = await adminClient.stats.get();
@@ -74,7 +74,7 @@ export async function getStats(): Promise<AdminStats> {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export type AdminUser = z.infer<typeof AdminUserItemSchema>;
+export type AdminUser = AdminUserItem;
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -124,7 +124,7 @@ export async function restoreUser(id: string): Promise<{ success: boolean }> {
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
-export type AdminPack = z.infer<typeof AdminPackItemSchema>;
+export type AdminPack = AdminPackItem;
 
 export async function getPacks({
   limit = 100,
@@ -152,7 +152,7 @@ export async function deletePack(id: string): Promise<{ success: boolean }> {
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
 
-export type AdminCatalogItem = z.infer<typeof AdminCatalogItemSchema>;
+export type { AdminCatalogItem };
 
 export interface UpdateCatalogItemInput {
   name?: string;
@@ -197,10 +197,7 @@ export async function updateCatalogItem(
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
 
-export type GrowthPoint = z.infer<typeof GrowthPointSchema>;
-export type ActivityPoint = z.infer<typeof ActivityPointSchema>;
-export type BreakdownItem = z.infer<typeof BreakdownItemSchema>;
-export type ActiveUsers = z.infer<typeof ActiveUsersSchema>;
+export type { GrowthPoint, ActivityPoint, BreakdownItem, ActiveUsers };
 export type AnalyticsPeriod = 'day' | 'week' | 'month';
 
 export async function getPlatformGrowth(
@@ -233,12 +230,7 @@ export async function getPlatformBreakdown(): Promise<BreakdownItem[]> {
 
 // ─── Analytics — Catalog ─────────────────────────────────────────────────────
 
-export type CatalogOverview = z.infer<typeof CatalogOverviewSchema>;
-export type BrandRow = z.infer<typeof BrandRowSchema>;
-export type PriceBucket = z.infer<typeof PriceBucketSchema>;
-export type EtlJob = z.infer<typeof EtlJobSchema>;
-export type EtlResponse = z.infer<typeof EtlResponseSchema>;
-export type EmbeddingStats = z.infer<typeof EmbeddingStatsSchema>;
+export type { CatalogOverview, BrandRow, PriceBucket, EtlJob, EtlResponse, EmbeddingStats };
 
 export async function getCatalogOverview(): Promise<CatalogOverview> {
   const { data, error } = await adminClient.analytics.catalog.overview.get();
@@ -276,10 +268,10 @@ export async function getCatalogEmbeddings(): Promise<EmbeddingStats> {
 
 // ─── Admin Trails ─────────────────────────────────────────────────────────────
 
-export type TrailSearchResult = z.infer<typeof TrailSearchItemSchema>;
-export type TrailGeometry = z.infer<typeof TrailGeometrySchema>;
-export type TrailSearchPage = z.infer<typeof TrailSearchResultSchema>;
-export type TrailConditionReport = z.infer<typeof AdminTrailConditionReportSchema>;
+export type TrailSearchResult = TrailSearchItem;
+export type TrailSearchPage = TrailSearchResultList;
+export type { TrailGeometry };
+export type TrailConditionReport = AdminTrailConditionReport;
 
 export async function searchTrails({
   q,
@@ -345,8 +337,7 @@ export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {
   return adminFetch('/analytics/catalog/etl/reset-stuck', { method: 'POST' });
 }
 
-export type EtlFailureSummary = z.infer<typeof EtlFailureSummarySchema>;
-export type EtlJobFailures = z.infer<typeof EtlJobFailuresSchema>;
+export type { EtlFailureSummary, EtlJobFailures };
 
 export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
   return adminFetch(`/analytics/catalog/etl/failure-summary?limit=${limit}`);

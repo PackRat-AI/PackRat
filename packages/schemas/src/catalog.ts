@@ -1,12 +1,7 @@
 import { isString } from '@packrat/guards';
 import { z } from 'zod';
 import { WEIGHT_UNITS } from './constants';
-
-// Accepts Date objects from Drizzle at runtime and coerces to ISO string for the wire.
-const datetimeString = z.preprocess(
-  (v) => (v instanceof Date ? v.toISOString() : v),
-  z.string().datetime(),
-);
+import { datetimeString } from './utils';
 
 export const CatalogItemSchema = z.object({
   id: z.number().int().positive(),

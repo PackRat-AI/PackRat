@@ -154,7 +154,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         });
       } catch (error) {
         console.error('Error fetching weather forecast:', error);
-        throw error;
+        return status(500, { error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' });
       }
     },
     {

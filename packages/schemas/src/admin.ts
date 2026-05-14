@@ -24,6 +24,7 @@ export const AdminStatsSchema = z.object({
   packs: z.number(),
   items: z.number(),
 });
+export type AdminStats = z.infer<typeof AdminStatsSchema>;
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ export const AdminUserItemSchema = z.object({
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
+export type AdminUserItem = z.infer<typeof AdminUserItemSchema>;
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,7 @@ export const AdminPackItemSchema = z.object({
   updatedAt: z.string().nullable(),
   userEmail: z.string().nullable(),
 });
+export type AdminPackItem = z.infer<typeof AdminPackItemSchema>;
 
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
@@ -97,6 +100,7 @@ const paginated = <T extends z.ZodTypeAny>(item: T) =>
 export const AdminUsersListSchema = paginated(AdminUserItemSchema);
 export const AdminPacksListSchema = paginated(AdminPackItemSchema);
 export const AdminCatalogListSchema = paginated(AdminCatalogItemSchema);
+export type AdminCatalogItem = z.infer<typeof AdminCatalogItemSchema>;
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
@@ -115,6 +119,7 @@ export const GrowthPointSchema = z.object({
   packs: z.number(),
   catalogItems: z.number(),
 });
+export type GrowthPoint = z.infer<typeof GrowthPointSchema>;
 
 export const ActivityPointSchema = z.object({
   period: z.string(),
@@ -270,3 +275,21 @@ export const AdminTrailConditionReportSchema = z.object({
 });
 
 export const TrailConditionsListSchema = paginated(AdminTrailConditionReportSchema);
+
+// ─── Inferred types ───────────────────────────────────────────────────────────
+
+export type ActivityPoint = z.infer<typeof ActivityPointSchema>;
+export type BreakdownItem = z.infer<typeof BreakdownItemSchema>;
+export type ActiveUsers = z.infer<typeof ActiveUsersSchema>;
+export type CatalogOverview = z.infer<typeof CatalogOverviewSchema>;
+export type BrandRow = z.infer<typeof BrandRowSchema>;
+export type PriceBucket = z.infer<typeof PriceBucketSchema>;
+export type EtlJob = z.infer<typeof EtlJobSchema>;
+export type EtlResponse = z.infer<typeof EtlResponseSchema>;
+export type EmbeddingStats = z.infer<typeof EmbeddingStatsSchema>;
+export type EtlFailureSummary = z.infer<typeof EtlFailureSummarySchema>;
+export type EtlJobFailures = z.infer<typeof EtlJobFailuresSchema>;
+export type TrailSearchItem = z.infer<typeof TrailSearchItemSchema>;
+export type TrailSearchResult = z.infer<typeof TrailSearchResultSchema>;
+export type TrailGeometry = z.infer<typeof TrailGeometrySchema>;
+export type AdminTrailConditionReport = z.infer<typeof AdminTrailConditionReportSchema>;

@@ -671,7 +671,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const item = await db.query.packItems.findFirst({
         where: eq(packItems.id, params.itemId),
-        with: { catalogItem: true, pack: true },
+        with: { pack: true },
       });
 
       if (!item) throw new NotFoundError('Item not found');

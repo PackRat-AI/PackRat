@@ -68,7 +68,7 @@ describe('computePackWeights', () => {
   it('throws when items property is null/undefined', () => {
     const pack = makePack();
     // Force missing items
-    (pack as any).items = undefined;
+    (pack as unknown as { items: undefined }).items = undefined;
     expect(() => computePackWeights(pack)).toThrow('Pack with ID pack-1 has no items');
   });
 
