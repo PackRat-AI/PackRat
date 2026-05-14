@@ -5,28 +5,20 @@ import { eq, sql } from 'drizzle-orm';
 
 export async function updateEtlJobProgress(
   env: Env,
-  params: { jobId: string; valid?: number; invalid?: number },
+  params: { jobId: string; valid?: number; invalid?: number; processed?: number },
 ): Promise<void> {
   const db = createDbClient(env);
 
   const valid = params?.valid ?? 0;
   const invalid = params?.invalid ?? 0;
+  const processed = params?.processed ?? 0;
 
   await db
     .update(etlJobs)
     .set({
       totalValid: sql`COALESCE(${etlJobs.totalValid}, 0) + ${valid}`,
       totalInvalid: sql`COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid}`,
-      status: sql`CASE 
-        WHEN COALESCE(${etlJobs.totalProcessed}, 0) = COALESCE(${etlJobs.totalValid}, 0) + ${valid} + COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid} 
-        THEN 'completed' 
-        ELSE ${etlJobs.status} 
-      END`,
-      completedAt: sql`CASE 
-        WHEN COALESCE(${etlJobs.totalProcessed}, 0) = COALESCE(${etlJobs.totalValid}, 0) + ${valid} + COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid}
-        THEN CURRENT_TIMESTAMP 
-        ELSE ${etlJobs.completedAt} 
-      END`,
+      totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${processed}`,
     })
     .where(eq(etlJobs.id, params.jobId));
 }
