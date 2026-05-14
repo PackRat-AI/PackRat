@@ -3,18 +3,46 @@ import { clientEnvs } from '@packrat/env/expo-client';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { authClient } from 'expo-app/lib/auth-client';
+import * as SecureStore from 'expo-secure-store';
+
+// The expoClient plugin serialises all cookies into SecureStore under this key.
+// Parsing it locally avoids a network round-trip on every API request.
+const COOKIE_STORE_KEY = 'packrat_cookie';
+
+// expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
+function parseSessionToken(cookieJson: string | null): string | null {
+  console.log('[auth] Parsing session token from cookie string:', cookieJson);
+  if (!cookieJson) return null;
+  try {
+    const cookies = JSON.parse(cookieJson) as Record<string, { value: string }>;
+    console.log(
+      '[auth] Parsed session token from cookie string:',
+      cookies['better-auth.session_token']?.value ?? 'null',
+    );
+    return cookies['better-auth.session_token']?.value ?? null;
+  } catch (err) {
+    console.warn('[auth] Failed to parse session token from cookie string:', err);
+    return null;
+  }
+}
 
 export const apiClient = createApiClient({
   baseUrl: clientEnvs.EXPO_PUBLIC_API_URL,
   auth: {
+    // Read the token from SecureStore — no network call on every API request.
     getAccessToken: async () => {
-      const { data } = await authClient.getSession();
-      return data?.session?.token ?? null;
+      const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
+      return parseSessionToken(cookieStr);
     },
-    // Better Auth manages session renewal internally — no separate refresh token flow.
+    // Better Auth has no separate refresh-token endpoint; the 7-day session
+    // token is the only credential. Returning null here is intentional.
     getRefreshToken: () => null,
     onAccessTokenRefreshed: () => {},
-    onNeedsReauth: () => {
+    onNeedsReauth: async () => {
+      // A 401 can be transient (e.g. the server briefly returned an error).
+      // Verify the session is actually gone before alarming the user.
+      const { data } = await authClient.getSession();
+      if (data?.session) return;
       store.set(needsReauthAtom, true);
     },
   },
