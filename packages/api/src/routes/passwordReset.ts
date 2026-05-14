@@ -6,6 +6,7 @@ import {
 import { Elysia, status } from 'elysia';
 
 export const passwordResetRoutes = new Elysia({ prefix: '/password-reset' })
+  // public-route: unauthenticated users need this to initiate a password reset
   .post(
     '/request',
     async ({ body }) => {
@@ -22,6 +23,7 @@ export const passwordResetRoutes = new Elysia({ prefix: '/password-reset' })
       },
     },
   )
+  // public-route: unauthenticated users need this to verify OTP and set a new password
   .post(
     '/verify',
     async ({ body }) => {
