@@ -9,7 +9,7 @@ import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
-import { useRef } from 'react';
+import { type RefObject, useRef } from 'react';
 
 /**
  * Web version of the root layout.
@@ -21,7 +21,7 @@ import { useRef } from 'react';
 
 export { ErrorBoundary } from 'expo-router';
 
-export let appAlert: React.RefObject<AlertMethods | null>;
+export let appAlert: RefObject<AlertMethods | null>;
 
 function RootLayout() {
   useInitialAndroidBarSync();

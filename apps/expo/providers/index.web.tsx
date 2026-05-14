@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
 import 'expo-app/utils/polyfills';
@@ -14,7 +15,7 @@ import { TanstackProvider } from './TanstackProvider';
  *   - ActionSheetProvider (@expo/react-native-action-sheet uses React.Children.only which breaks on web)
  * Metro automatically picks this file over providers/index.tsx for web builds.
  */
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary>
       <JotaiProvider>
