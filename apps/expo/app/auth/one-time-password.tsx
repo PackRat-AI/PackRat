@@ -270,15 +270,6 @@ function OTPField({
     }
   }
 
-  function onFocus(_e: NativeSyntheticEvent<TargetedEvent>) {
-    if (typeof inputRef.current?.setNativeProps === 'function') {
-      inputRef.current.setNativeProps({
-        selection: { start: 0, end: value?.toString().length },
-      });
-    }
-  }
-
-
   function onChangeText(text: string) {
     setCodeValues((prev) => {
       const values = [...prev];
