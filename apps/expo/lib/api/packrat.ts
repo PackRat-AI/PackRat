@@ -1,25 +1,29 @@
 import { createApiClient } from '@packrat/api-client';
 import { clientEnvs } from '@packrat/env/expo-client';
+import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { authClient } from 'expo-app/lib/auth-client';
 import * as SecureStore from 'expo-secure-store';
+import { z } from 'zod';
 
 // The expoClient plugin serialises all cookies into SecureStore under this key.
 // Parsing it locally avoids a network round-trip on every API request.
 const COOKIE_STORE_KEY = 'packrat_cookie';
+
+const CookieStoreSchema = z.record(z.object({ value: z.string() }));
 
 // expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
 function parseSessionToken(cookieJson: string | null): string | null {
   console.log('[auth] Parsing session token from cookie string:', cookieJson);
   if (!cookieJson) return null;
   try {
-    const cookies = JSON.parse(cookieJson) as Record<string, { value: string }>;
+    const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
     console.log(
       '[auth] Parsed session token from cookie string:',
-      cookies['better-auth.session_token']?.value ?? 'null',
+      cookies?.['better-auth.session_token']?.value ?? 'null',
     );
-    return cookies['better-auth.session_token']?.value ?? null;
+    return cookies?.['better-auth.session_token']?.value ?? null;
   } catch (err) {
     console.warn('[auth] Failed to parse session token from cookie string:', err);
     return null;
