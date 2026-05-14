@@ -1,18 +1,18 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
-import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { CatalogService } from '@packrat/api/services/catalogService';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
+import { assertDefined } from '@packrat/guards';
 import {
   CreatePackTemplateItemRequestSchema,
   CreatePackTemplateRequestSchema,
   GenerateFromOnlineContentRequestSchema,
   UpdatePackTemplateItemRequestSchema,
   UpdatePackTemplateRequestSchema,
-} from '@packrat/api/schemas/packTemplates';
-import { CatalogService } from '@packrat/api/services/catalogService';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertDefined } from '@packrat/guards';
+} from '@packrat/schemas/packTemplates';
 import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';

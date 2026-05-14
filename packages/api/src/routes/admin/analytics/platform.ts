@@ -1,19 +1,12 @@
 import { createDb } from '@packrat/api/db';
 import {
-  catalogItems,
-  packs,
-  posts,
-  trailConditionReports,
-  trips,
-  users,
-} from '@packrat/api/db/schema';
-import {
   ActiveUsersSchema,
   ActivityPointSchema,
   AdminErrorResponses,
   BreakdownItemSchema,
   GrowthPointSchema,
 } from '@packrat/api/schemas/admin';
+import { catalogItems, packs, posts, trailConditionReports, trips, users } from '@packrat/db';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';

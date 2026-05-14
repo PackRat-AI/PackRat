@@ -1,5 +1,4 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
 import {
   AdminErrorResponses,
   BrandRowSchema,
@@ -13,6 +12,7 @@ import {
 } from '@packrat/api/schemas/admin';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
 import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';

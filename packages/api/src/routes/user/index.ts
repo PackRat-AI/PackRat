@@ -1,11 +1,11 @@
 import { createDb } from '@packrat/api/db';
-import { users } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { users } from '@packrat/db';
 import {
   UpdateUserRequestSchema,
   UpdateUserResponseSchema,
   UserProfileSchema,
-} from '@packrat/api/schemas/users';
+} from '@packrat/schemas/users';
 import { eq } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 

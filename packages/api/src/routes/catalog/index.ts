@@ -1,6 +1,13 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs, packItems } from '@packrat/api/db/schema';
 import { apiKeyAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { CatalogService } from '@packrat/api/services';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { queueCatalogETL } from '@packrat/api/services/etl/queue';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, etlJobs, packItems } from '@packrat/db';
+import { isString } from '@packrat/guards';
 import {
   CatalogCategoriesResponseSchema,
   CatalogItemSchema,
@@ -9,14 +16,7 @@ import {
   CreateCatalogItemRequestSchema,
   UpdateCatalogItemRequestSchema,
   VectorSearchQuerySchema,
-} from '@packrat/api/schemas/catalog';
-import { CatalogService } from '@packrat/api/services';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { queueCatalogETL } from '@packrat/api/services/etl/queue';
-import { R2BucketService } from '@packrat/api/services/r2-bucket';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { isString } from '@packrat/guards';
+} from '@packrat/schemas/catalog';
 import {
   and,
   cosineDistance,

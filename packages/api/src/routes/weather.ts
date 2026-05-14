@@ -1,4 +1,6 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import {
   type WeatherAPICurrentResponse,
   type WeatherAPIForecastResponse,
@@ -7,9 +9,7 @@ import {
   WeatherCoordinateQuerySchema,
   WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
-} from '@packrat/api/schemas/weather';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { isString } from '@packrat/guards';
+} from '@packrat/schemas/weather';
 import { Elysia, status } from 'elysia';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';

@@ -1,6 +1,5 @@
 import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import {
   AdminCatalogListSchema,
@@ -14,6 +13,7 @@ import {
 } from '@packrat/api/schemas/admin';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, packs, users } from '@packrat/db';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';

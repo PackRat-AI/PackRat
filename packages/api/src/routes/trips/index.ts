@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
-import { trips } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/api/schemas/trips';
+import { trips } from '@packrat/db';
+import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/schemas/trips';
 import { and, eq } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';

@@ -1,13 +1,13 @@
 import { createDb, createDbClient } from '@packrat/api/db';
+import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
+import type { Env } from '@packrat/api/types/env';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import {
   type CatalogItem,
   catalogItemEtlJobs,
   catalogItems,
   type NewCatalogItem,
-} from '@packrat/api/db/schema';
-import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
-import type { Env } from '@packrat/api/types/env';
-import { getEnv } from '@packrat/api/utils/env-validation';
+} from '@packrat/db';
 import {
   and,
   asc,

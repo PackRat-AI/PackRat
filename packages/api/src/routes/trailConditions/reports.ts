@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
-import type { NewTrailConditionReport } from '@packrat/api/db/schema';
-import { trailConditionReports } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import type { NewTrailConditionReport } from '@packrat/db';
+import { trailConditionReports } from '@packrat/db';
 import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';

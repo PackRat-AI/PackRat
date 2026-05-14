@@ -1,7 +1,7 @@
-import type { NewCatalogItem } from '@packrat/api/db/schema';
-import type { ValidationError } from './validation';
+import type { NewCatalogItem } from '@packrat/db';
+import type { ValidationError } from '@packrat/schemas/validation';
 
-export type { ValidationError } from './validation';
+export type { ValidationError } from '@packrat/schemas/validation';
 
 export interface ValidatedCatalogItem {
   item: Partial<NewCatalogItem>;

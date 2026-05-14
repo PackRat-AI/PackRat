@@ -1,3 +1,4 @@
+import type { PackCategory, WeightUnit } from '@packrat/constants';
 import { type InferInsertModel, type InferSelectModel, relations, sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
@@ -15,7 +16,6 @@ import {
   unique,
   vector,
 } from 'drizzle-orm/pg-core';
-import type { PackCategory, WeightUnit } from './constants';
 import type { ValidationError } from './validation';
 
 const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'preorder']);

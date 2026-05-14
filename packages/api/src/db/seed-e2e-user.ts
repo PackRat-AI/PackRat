@@ -10,6 +10,7 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
@@ -17,7 +18,6 @@ import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-post
 import { Client } from 'pg';
 import WebSocket from 'ws';
 import { hashPassword } from '../utils/auth';
-import * as schema from './schema';
 
 neonConfig.webSocketConstructor = WebSocket;
 

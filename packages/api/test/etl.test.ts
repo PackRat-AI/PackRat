@@ -1,8 +1,8 @@
 import { createDbClient } from '@packrat/api/db';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
 import { processCatalogETL } from '@packrat/api/services/etl/processCatalogEtl';
 import { processValidItemsBatch } from '@packrat/api/services/etl/processValidItemsBatch';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
 import { count, eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 

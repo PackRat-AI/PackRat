@@ -1,5 +1,13 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { ImageDetectionService, PackService } from '@packrat/api/services';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
+import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 import {
   catalogItems,
   type NewPack,
@@ -8,9 +16,8 @@ import {
   packItems,
   packs,
   packWeightHistory,
-} from '@packrat/api/db/schema';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import { AnalyzeImageRequestSchema } from '@packrat/api/schemas/imageDetection';
+} from '@packrat/db';
+import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
   CreatePackItemRequestSchema,
   CreatePackRequestSchema,
@@ -19,14 +26,7 @@ import {
   PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
-} from '@packrat/api/schemas/packs';
-import { ImageDetectionService, PackService } from '@packrat/api/services';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
-import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+} from '@packrat/schemas/packs';
 import {
   and,
   cosineDistance,
