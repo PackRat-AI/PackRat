@@ -17,9 +17,11 @@ export const uploadImage = async (
   }
 
   try {
+    const userId = userStore.id.peek();
+    if (!userId) throw new Error('Cannot upload: user not authenticated');
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
-    const remoteFileName = `${userStore.id.peek()}-${fileName}`;
+    const remoteFileName = `${userId}-${fileName}`;
 
     const { url: presignedUrl } = await getPresignedUrl(remoteFileName, type);
 
@@ -57,7 +59,8 @@ const getPresignedUrl = async (
 async function urlToBlob(url: string, type: string): Promise<Blob> {
   if (url.startsWith('data:')) {
     const arr = url.split(',');
-    const bstr = atob(arr[1] ?? '');
+    if (arr.length < 2) throw new Error('Malformed data URL: missing comma separator');
+    const bstr = atob(arr[1]);
     const n = bstr.length;
     const u8arr = new Uint8Array(n);
     for (let i = 0; i < n; i++) {
@@ -67,5 +70,6 @@ async function urlToBlob(url: string, type: string): Promise<Blob> {
   }
   // blob: URL or http URL — fetch it
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch blob: ${res.status}`);
   return res.blob();
 }

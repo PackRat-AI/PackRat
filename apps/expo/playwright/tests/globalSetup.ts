@@ -81,7 +81,7 @@ export default async function setup() {
   await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 15_000 });
 
   await context.storageState({ path: AUTH_STATE_PATH });
-  console.log(`[globalSetup] Logged in as ${email}`);
+  console.log('[globalSetup] Auth state saved');
 
   await browser.close();
 }
