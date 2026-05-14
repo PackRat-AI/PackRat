@@ -1,4 +1,4 @@
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { invalidItemLogs, type NewInvalidItemLog } from '@packrat/db';
 import { createDbClient } from '../../db';
 import { updateEtlJobProgress } from './updateEtlJobProgress';

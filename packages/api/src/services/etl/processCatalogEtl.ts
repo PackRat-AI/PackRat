@@ -1,6 +1,6 @@
 import { createDbClient } from '@packrat/api/db';
-import type { Env } from '@packrat/api/types/env';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';

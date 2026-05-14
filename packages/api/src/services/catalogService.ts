@@ -1,6 +1,6 @@
 import { createDb, createDbClient } from '@packrat/api/db';
 import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import {
   type CatalogItem,

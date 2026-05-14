@@ -1,6 +1,6 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 // import type { createWorkersAI } from 'workers-ai-provider';
 
 export type AIProvider = 'openai' | 'cloudflare-workers-ai';
