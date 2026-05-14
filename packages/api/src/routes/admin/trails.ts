@@ -1,4 +1,5 @@
 import { createDb, createOsmDb } from '@packrat/api/db';
+import { trailConditionReports, users } from '@packrat/db';
 import {
   AdminErrorResponses,
   SuccessSchema,
@@ -6,8 +7,7 @@ import {
   TrailGeometrySchema,
   TrailSearchItemSchema,
   TrailSearchResultSchema,
-} from '@packrat/api/schemas/admin';
-import { trailConditionReports, users } from '@packrat/db';
+} from '@packrat/schemas/admin';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';

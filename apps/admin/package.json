@@ -13,6 +13,7 @@
   "dependencies": {
     "@elysiajs/eden": "catalog:",
     "@packrat/api-client": "workspace:*",
+    "@packrat/schemas": "workspace:*",
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/web-ui": "workspace:*",
