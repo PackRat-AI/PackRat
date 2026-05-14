@@ -10,6 +10,9 @@ const config = getSentryExpoConfig(__dirname);
 config.resolver = {
   ...config.resolver,
   assetExts: [...(config.resolver?.assetExts ?? []), 'wasm'],
+  // Enable package.json "exports" field resolution so workspace packages with
+  // subpath exports (e.g. @packrat/schemas/constants) resolve correctly.
+  unstable_enablePackageExports: true,
   // Exclude the ESM "import" condition so packages like Jotai resolve to their
   // CJS builds instead of .mjs files that contain import.meta (invalid in
   // Metro's __d() CJS module wrapper).
