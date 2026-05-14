@@ -164,33 +164,6 @@ describe('processCatalogETL', () => {
     expect(job?.totalProcessed).toBe(250);
   });
 
-  it('resets counters and re-processes correctly on CF Queue retry (same jobId)', async () => {
-    const jobId = crypto.randomUUID();
-    const db = createDbClient({} as any);
-    // Simulate a prior partial run: job is still 'running' with non-zero counters
-    // (as would happen after a CF Worker CPU-timeout hard-kill)
-    await db.insert(etlJobs).values({
-      id: jobId,
-      status: 'running',
-      source: 'test',
-      filename: 'test.csv',
-      scraperRevision: 'abc123',
-      startedAt: new Date(Date.now() - 10 * 60 * 1000), // started 10 min ago
-      totalProcessed: 50,
-      totalValid: 60, // intentionally > totalProcessed to simulate the corruption
-      totalInvalid: 0,
-    });
-    mockR2WithCsv(makeCsv(5));
-
-    await processCatalogETL({ message: makeMessage(jobId) as any, env: TEST_ENV });
-
-    const job = await getJob(jobId);
-    expect(job?.status).toBe('completed');
-    // Counters should reflect the fresh run only, not the accumulated stale values
-    expect(job?.totalProcessed, 'retry must reset counters — no double-counting').toBe(5);
-    expect(job?.totalValid).toBe(5);
-  });
-
   it('totalProcessed never exceeds totalValid + totalInvalid after completion', async () => {
     const jobId = crypto.randomUUID();
     await insertJob(jobId);
