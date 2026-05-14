@@ -68,7 +68,7 @@ export async function verifyOtpAndResetPassword({
     .update(account)
     .set({ password: hashedPassword, updatedAt: now })
     .where(and(eq(account.userId, user.id), eq(account.providerId, 'credential')))
-    .returning({ id: account.id });
+    .returning();
 
   // Fallback for legacy users whose password lives on the users row
   if (updated.length === 0) {
