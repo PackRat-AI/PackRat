@@ -21,7 +21,7 @@ appId: ${APP_ID}
       platform: iOS
     commands:
       - tapOn:
-          text: "move, Pack Name"
+          text: "folder, Pack Name"
       - inputText: ${PACK_NAME}
 - runFlow:
     when:
