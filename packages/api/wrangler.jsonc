@@ -16,7 +16,7 @@
     "head_sampling_rate": 1
   },
   "limits": {
-    "cpu_ms": 400000 // 400,000 milliseconds = max allowed by Cloudflare
+    "cpu_ms": 300000 // 300,000 milliseconds = max allowed by Cloudflare (code: 10206)
   },
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
