@@ -3,7 +3,7 @@ import { trips } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/api/schemas/trips';
 import { and, eq } from 'drizzle-orm';
-import { Elysia, NotFoundError } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
 export const tripsRoutes = new Elysia({ prefix: '/trips' })
@@ -178,21 +178,14 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
       const tripId = params.tripId;
 
-      try {
-        const trip = await db.query.trips.findFirst({
-          where: eq(trips.id, tripId),
-        });
+      const [deleted] = await db
+        .update(trips)
+        .set({ deleted: true, updatedAt: new Date() })
+        .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)))
+        .returning();
 
-        if (!trip) throw new NotFoundError('Trip not found');
-        if (trip.userId !== user.userId) throw new Error('Forbidden');
-
-        await db.delete(trips).where(eq(trips.id, tripId));
-
-        return { success: true };
-      } catch (error) {
-        console.error('Error deleting trip:', error);
-        throw error;
-      }
+      if (!deleted) return status(404, { error: 'Trip not found' });
+      return { success: true };
     },
     {
       params: z.object({ tripId: z.string() }),

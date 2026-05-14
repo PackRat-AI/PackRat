@@ -134,7 +134,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
       const id = Number(idParam);
 
       if (!idParam || Number.isNaN(id)) {
-        throw new Error('Valid location ID is required');
+        return status(400, { error: 'Valid location ID is required' });
       }
 
       try {
@@ -159,7 +159,6 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
     },
     {
       query: WeatherLocationIdSchema,
-      response: { 200: WeatherAPIForecastResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Weather'],

@@ -12,7 +12,7 @@ export const PresignedUploadQuerySchema = z.object({
 });
 
 export const PresignedUploadResponseSchema = z.object({
-  url: z.string(),
+  url: z.string().url(),
   objectKey: z.string(),
-  publicUrl: z.string(),
+  publicUrl: z.string().url(),
 });

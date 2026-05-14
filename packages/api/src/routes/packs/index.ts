@@ -117,7 +117,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       if (!newPack) throw new Error('Failed to create pack');
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return PackWithWeightsSchema.parse(computePacksWeights([packWithItems])[0]);
+      return PackWithWeightsSchema.parse(computePackWeights(packWithItems));
     },
     {
       body: CreatePackBodySchema,
@@ -231,19 +231,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/:packId',
     async ({ params }) => {
       const db = createDb();
-      try {
-        const pack = await db.query.packs.findFirst({
-          where: eq(packs.id, params.packId),
-          with: { items: { where: eq(packItems.deleted, false) } },
-        });
+      const pack = await db.query.packs.findFirst({
+        where: eq(packs.id, params.packId),
+        with: { items: { where: eq(packItems.deleted, false) } },
+      });
 
-        if (!pack) throw new NotFoundError('Pack not found');
-        return PackWithWeightsSchema.parse(computePackWeights(pack));
-      } catch (error) {
-        if (error instanceof NotFoundError) throw error;
-        console.error('Error fetching pack:', error);
-        throw error;
-      }
+      if (!pack) throw new NotFoundError('Pack not found');
+      return PackWithWeightsSchema.parse(computePackWeights(pack));
     },
     {
       params: z.object({ packId: z.string() }),
@@ -685,13 +679,12 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const isOwner = item.userId === user.userId;
       const isPublic = item.pack.isPublic;
 
-      if (!isOwner && !isPublic) throw new Error('Unauthorized');
+      if (!isOwner && !isPublic) return status(403, { error: 'Forbidden' });
 
       return PackItemSchema.parse(item);
     },
     {
       params: z.object({ itemId: z.string() }),
-      response: { 200: PackItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

@@ -14,7 +14,7 @@ import { asNumber, asString, isArray } from '@packrat/guards';
 const MDX_EXT_RE = /\.(mdx?|md)$/;
 const DASH_RE = /-/g;
 
-import { Elysia, NotFoundError } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import matter from 'gray-matter';
 import { z } from 'zod';
 
@@ -201,7 +201,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     async ({ query }) => {
       const { q, page, limit, category } = query;
       if (!q || q.trim() === '') {
-        throw new Error('Search query parameter q is required');
+        return status(400, { error: 'Search query parameter q is required' });
       }
       const searchQuery = q.toLowerCase();
 
@@ -285,7 +285,6 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     },
     {
       query: GuideSearchQuerySchema,
-      response: { 200: GuideSearchResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],

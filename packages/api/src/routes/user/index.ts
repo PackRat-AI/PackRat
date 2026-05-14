@@ -7,7 +7,7 @@ import {
   UserProfileSchema,
 } from '@packrat/api/schemas/users';
 import { eq } from 'drizzle-orm';
-import { Elysia, NotFoundError } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 
 export const userRoutes = new Elysia({ prefix: '/user' })
   .use(authPlugin)
@@ -74,7 +74,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
             .limit(1);
 
           if (existingUser && existingUser.id !== user.userId) {
-            throw new Error('Email already in use by another user');
+            return status(409, { error: 'Email already in use by another user' });
           }
         }
 
@@ -125,7 +125,6 @@ export const userRoutes = new Elysia({ prefix: '/user' })
     },
     {
       body: UpdateUserRequestSchema,
-      response: { 200: UpdateUserResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Update user profile', security: [{ bearerAuth: [] }] },
     },
