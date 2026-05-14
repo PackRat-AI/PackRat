@@ -8,7 +8,6 @@ import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/Larg
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
