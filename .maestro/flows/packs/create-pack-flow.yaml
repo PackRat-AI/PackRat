@@ -16,12 +16,15 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in Pack Name
+# iOS: tap the container Pressable (pack-name-container) which is the
+# accessibility leaf and focuses the inner TextInput on press.
+# Android: match by placeholder text (no container wrapper needed).
 - runFlow:
     when:
       platform: iOS
     commands:
       - tapOn:
-          text: "folder, Pack Name"
+          id: "pack-name-container"
       - inputText: ${PACK_NAME}
 - runFlow:
     when:

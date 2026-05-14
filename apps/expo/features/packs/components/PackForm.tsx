@@ -150,6 +150,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                 <FormItem>
                   <TextField
                     testID={testIds.packs.nameInput}
+                    containerTestID="pack-name-container"
                     placeholder={t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
