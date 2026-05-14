@@ -1,4 +1,4 @@
-import type { PackCategory } from '@packrat/api/types/constants';
+import type { PackCategory } from '@packrat/db';
 import { atom } from 'jotai';
 
 export const activeTemplateFilterAtom = atom<PackCategory | 'all'>('all');
