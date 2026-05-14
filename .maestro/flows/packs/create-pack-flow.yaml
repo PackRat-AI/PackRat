@@ -25,6 +25,7 @@ appId: ${APP_ID}
     commands:
       - tapOn:
           id: "pack-name-container"
+      - waitForAnimationToEnd
       - inputText: ${PACK_NAME}
 - runFlow:
     when:
