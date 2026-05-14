@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
+import type { ReactNode } from 'react';
 import 'expo-app/utils/polyfills';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
