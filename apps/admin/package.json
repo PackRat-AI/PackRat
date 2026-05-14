@@ -13,9 +13,9 @@
   "dependencies": {
     "@elysiajs/eden": "catalog:",
     "@packrat/api-client": "workspace:*",
-    "@packrat/schemas": "workspace:*",
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/schemas": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-avatar": "catalog:",
