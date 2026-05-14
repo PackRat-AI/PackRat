@@ -328,3 +328,10 @@ export const VectorSearchResponseSchema = z.object({
   offset: z.number(),
   nextOffset: z.number(),
 });
+
+export const CatalogETLSchema = z.object({
+  filename: z.string().min(1, 'Filename is required'),
+  chunks: z.array(z.string()).min(1, 'At least one object key is required'),
+  source: z.string().min(1, 'Source name is required'),
+  scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
+});

@@ -10,6 +10,7 @@ import { catalogItems, etlJobs, packItems } from '@packrat/db';
 import { isString } from '@packrat/guards';
 import {
   CatalogCategoriesResponseSchema,
+  CatalogETLSchema,
   CatalogItemSchema,
   CatalogItemsQuerySchema,
   CatalogItemsResponseSchema,
@@ -17,6 +18,7 @@ import {
   UpdateCatalogItemRequestSchema,
   VectorSearchQuerySchema,
 } from '@packrat/schemas/catalog';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -32,15 +34,6 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const catalogETLSchema = z.object({
-  filename: z.string().min(1, 'Filename is required'),
-  chunks: z.array(z.string()).min(1, 'At least one object key is required'),
-  source: z.string().min(1, 'Source name is required'),
-  scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
-});
-
-const ApiErrorSchema = z.object({ error: z.string() });
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
@@ -219,7 +212,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       };
     },
     {
-      body: catalogETLSchema,
+      body: CatalogETLSchema,
       isValidApiKey: true,
       detail: {
         tags: ['Catalog'],
@@ -305,7 +298,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       body: CreateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema, 400: ApiErrorSchema, 500: ApiErrorSchema },
+      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -489,7 +482,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     {
       params: z.object({ id: z.string() }),
       body: UpdateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema, 400: ApiErrorSchema, 500: ApiErrorSchema },
+      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],

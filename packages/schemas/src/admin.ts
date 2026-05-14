@@ -113,6 +113,11 @@ export const CatalogUpdateSchema = z.object({ id: z.number(), name: z.string() }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
 
+export const AnalyticsPeriodSchema = z.object({
+  period: z.enum(['day', 'week', 'month']).optional().default('month'),
+  range: z.coerce.number().int().min(1).max(365).optional().default(12),
+});
+
 export const GrowthPointSchema = z.object({
   period: z.string(),
   users: z.number(),

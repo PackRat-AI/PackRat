@@ -4,17 +4,13 @@ import {
   ActiveUsersSchema,
   ActivityPointSchema,
   AdminErrorResponses,
+  AnalyticsPeriodSchema,
   BreakdownItemSchema,
   GrowthPointSchema,
 } from '@packrat/schemas/admin';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-const PeriodSchema = z.object({
-  period: z.enum(['day', 'week', 'month']).optional().default('month'),
-  range: z.coerce.number().int().min(1).max(365).optional().default(12),
-});
 
 function getStartDate(period: 'day' | 'week' | 'month', range: number): Date {
   const d = new Date();
@@ -98,7 +94,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
+      query: AnalyticsPeriodSchema,
       response: { 200: z.array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
@@ -175,7 +171,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
+      query: AnalyticsPeriodSchema,
       response: { 200: z.array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
     },

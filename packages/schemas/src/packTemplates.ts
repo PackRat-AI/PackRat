@@ -1,9 +1,5 @@
 import { z } from 'zod';
-
-const datetimeString = z.preprocess(
-  (v) => (v instanceof Date ? v.toISOString() : v),
-  z.string().datetime(),
-);
+import { datetimeString } from './utils';
 
 export const PackTemplateErrorResponseSchema = z.object({
   error: z.string(),
@@ -110,3 +106,30 @@ export const GenerateFromOnlineContentRequestSchema = z.object({
 });
 
 export const GenerateFromOnlineContentResponseSchema = PackTemplateWithItemsSchema;
+
+export const AIPackAnalysisItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  quantity: z.number().int().positive().default(1),
+  category: z.string(),
+  weightGrams: z.number().nonnegative().default(0),
+  consumable: z.boolean().default(false),
+  worn: z.boolean().default(false),
+});
+
+export const AIPackAnalysisSchema = z.object({
+  templateName: z.string(),
+  templateCategory: z.enum([
+    'hiking',
+    'backpacking',
+    'camping',
+    'climbing',
+    'winter',
+    'desert',
+    'custom',
+    'water sports',
+    'skiing',
+  ]),
+  templateDescription: z.string(),
+  items: z.array(AIPackAnalysisItemSchema),
+});

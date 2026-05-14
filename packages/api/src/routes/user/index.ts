@@ -1,6 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { users } from '@packrat/db';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   UpdateUserRequestSchema,
   UpdateUserResponseSchema,
@@ -8,9 +9,6 @@ import {
 } from '@packrat/schemas/users';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
-import { z } from 'zod';
-
-const UserNotFoundSchema = z.object({ error: z.string(), code: z.string() });
 
 export const userRoutes = new Elysia({ prefix: '/user' })
   .use(authPlugin)
@@ -55,7 +53,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       }
     },
     {
-      response: { 200: UserProfileSchema, 404: UserNotFoundSchema },
+      response: { 200: UserProfileSchema, 404: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Get user profile', security: [{ bearerAuth: [] }] },
     },

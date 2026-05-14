@@ -155,6 +155,10 @@ export const CreatePackBodySchema = CreatePackRequestSchema.extend({
   localUpdatedAt: z.string().datetime(),
 });
 
+export const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
+  id: z.string(),
+});
+
 export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({
   localUpdatedAt: z.string().datetime().optional(),
 });

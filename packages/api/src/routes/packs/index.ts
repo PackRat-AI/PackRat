@@ -19,14 +19,15 @@ import {
 } from '@packrat/db';
 import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
-  CreatePackItemRequestSchema,
-  CreatePackRequestSchema,
+  AddPackItemBodySchema,
+  CreatePackBodySchema,
   GapAnalysisRequestSchema,
   PackItemSchema,
   PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
 } from '@packrat/schemas/packs';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -41,18 +42,6 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const ApiErrorSchema = z.object({ error: z.string() });
-
-const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
-  localCreatedAt: z.string(),
-  localUpdatedAt: z.string(),
-});
-
-const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
-});
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -123,7 +112,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     },
     {
       body: CreatePackBodySchema,
-      response: { 200: PackWithWeightsSchema, 400: ApiErrorSchema, 500: ApiErrorSchema },
+      response: { 200: PackWithWeightsSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -775,7 +764,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
-      response: { 200: PackItemSchema, 500: ApiErrorSchema },
+      response: { 200: PackItemSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],
