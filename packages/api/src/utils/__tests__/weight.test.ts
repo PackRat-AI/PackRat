@@ -17,17 +17,24 @@ function makeItem(
   return {
     id: 'item-1',
     name: 'Test Item',
-    weight: overrides.weight,
-    weightUnit: overrides.weightUnit,
+    description: null,
     quantity: overrides.quantity ?? 1,
+    category: null,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
+    image: null,
+    notes: null,
     packId: 'pack-1',
+    catalogItemId: null,
     userId: 'user-1',
-    category: 'tools',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+    deleted: false,
+    isAIGenerated: false,
+    templateItemId: null,
+    embedding: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  } as PackItem;
 }
 
 // ---------------------------------------------------------------------------

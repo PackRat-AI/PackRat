@@ -1,12 +1,11 @@
-import type { Pack, PackItem } from '@packrat/api/types/constants';
+import type { PackItem, PackWithItems } from '@packrat/api/types/constants';
 import { describe, expect, it } from 'vitest';
 import { computePacksWeights, computePackWeights } from '../compute-pack';
 
 // ---------------------------------------------------------------------------
 // Minimal factory helpers
 // ---------------------------------------------------------------------------
-// Arbitrary fixed timestamp used only as a required field value, not asserted on
-const NOW = new Date().toISOString();
+const NOW = new Date();
 
 function makePackItem(
   overrides: Partial<PackItem> & Pick<PackItem, 'weight' | 'weightUnit'>,
@@ -14,28 +13,44 @@ function makePackItem(
   return {
     id: 'item-1',
     name: 'Test Item',
+    description: null,
     quantity: overrides.quantity ?? 1,
+    category: null,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
-    category: 'tools',
+    image: null,
+    notes: null,
     packId: 'pack-1',
+    catalogItemId: null,
     userId: 'user-1',
+    deleted: false,
+    isAIGenerated: false,
+    templateItemId: null,
+    embedding: null,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,
-  };
+  } as PackItem;
 }
 
-function makePack(items: PackItem[] = [], overrides: Partial<Pack> = {}): Pack {
+function makePack(items: PackItem[] = [], overrides: Partial<PackWithItems> = {}): PackWithItems {
   return {
     id: 'pack-1',
     name: 'Test Pack',
+    description: null,
     category: 'hiking',
-    items,
     userId: 'user-1',
+    templateId: null,
+    isPublic: false,
+    image: null,
+    tags: null,
+    deleted: false,
+    isAIGenerated: false,
+    localCreatedAt: NOW,
+    localUpdatedAt: NOW,
     createdAt: NOW,
     updatedAt: NOW,
-    isPublic: false,
+    items,
     ...overrides,
   };
 }
@@ -53,7 +68,7 @@ describe('computePackWeights', () => {
   it('throws when items property is null/undefined', () => {
     const pack = makePack();
     // Force missing items
-    (pack as Pack & { items: undefined }).items = undefined;
+    (pack as any).items = undefined;
     expect(() => computePackWeights(pack)).toThrow('Pack with ID pack-1 has no items');
   });
 

@@ -1,1 +1,1 @@
-export { TripLocationSchema, TripSchema } from '@packrat/api/schemas/trips';
+export { TripLocationSchema, TripSchema } from '@packrat/schemas/trips';

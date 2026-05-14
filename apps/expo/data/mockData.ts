@@ -1,7 +1,15 @@
-import type { User } from '@packrat/api/types/constants';
+export type MockUser = {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  experience: string;
+  joinedAt: string;
+  bio: string;
+};
 
 // --- Users ---
-export const mockUsers: [User, ...User[]] = [
+export const mockUsers: [MockUser, ...MockUser[]] = [
   {
     id: '1',
     name: 'Alex Hiker',

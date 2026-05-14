@@ -1,8 +1,14 @@
-import type { User } from '@packrat/api/types/constants';
 import { Image, Text, View } from 'react-native';
 
+type UserLike = {
+  name: string;
+  avatar?: string | null;
+  image?: string | null;
+  avatarUrl?: string | null;
+};
+
 type UserAvatarProps = {
-  user: User;
+  user: UserLike;
   size?: 'sm' | 'md' | 'lg';
   showName?: boolean;
 };
@@ -20,11 +26,13 @@ export function UserAvatar({ user, size = 'md', showName = false }: UserAvatarPr
     lg: 'text-base',
   }[size];
 
+  const avatarUri = user.avatar ?? user.image ?? user.avatarUrl;
+
   return (
     <View className="flex-row items-center">
       <View className={`${sizeClass} overflow-hidden rounded-full bg-gray-200`}>
-        {user.avatar ? (
-          <Image source={{ uri: user.avatar }} className="h-full w-full" resizeMode="cover" />
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} className="h-full w-full" resizeMode="cover" />
         ) : (
           <View className="h-full w-full items-center justify-center bg-blue-500">
             <Text className="font-bold text-white">{user.name.substring(0, 2).toUpperCase()}</Text>
