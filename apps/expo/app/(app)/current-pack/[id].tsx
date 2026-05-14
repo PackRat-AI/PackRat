@@ -1,4 +1,4 @@
-import type { PackItem } from '@packrat/db';
+import type { PackItem } from '@packrat/types';
 import {
   Avatar,
   AvatarFallback,

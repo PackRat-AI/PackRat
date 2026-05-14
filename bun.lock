@@ -77,8 +77,12 @@
         "@legendapp/state": "^3.0.0-beta.30",
         "@packrat/api-client": "workspace:*",
         "@packrat/config": "workspace:*",
+        "@packrat/constants": "workspace:*",
+        "@packrat/db": "workspace:*",
         "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
+        "@packrat/schemas": "workspace:*",
+        "@packrat/types": "workspace:*",
         "@packrat/units": "workspace:*",
         "@react-native-ai/apple": "~0.10.0",
         "@react-native-ai/llama": "~0.10.0",
@@ -452,11 +456,13 @@
         "@elysiajs/openapi": "catalog:",
         "@mozilla/readability": "^0.6.0",
         "@neondatabase/serverless": "catalog:",
+        "@packrat/constants": "workspace:*",
         "@packrat/db": "workspace:*",
         "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@packrat/overpass": "workspace:*",
         "@packrat/schemas": "workspace:*",
+        "@packrat/types": "workspace:*",
         "@packrat/units": "workspace:*",
         "@sinclair/typebox": "^0.34.15",
         "@types/nodemailer": "^6.4.17",
@@ -465,7 +471,7 @@
         "csv-parse": "^6.2.1",
         "drizzle-kit": "catalog:",
         "drizzle-orm": "catalog:",
-        "drizzle-zod": "^0.8.3",
+        "drizzle-zod": "catalog:",
         "elysia": "catalog:",
         "google-auth-library": "catalog:",
         "gray-matter": "catalog:",
@@ -569,10 +575,18 @@
         "@packrat/guards": "workspace:*",
       },
     },
+    "packages/constants": {
+      "name": "@packrat/constants",
+      "version": "0.0.0",
+      "devDependencies": {
+        "typescript": "catalog:",
+      },
+    },
     "packages/db": {
       "name": "@packrat/db",
       "version": "0.0.0",
       "dependencies": {
+        "@packrat/constants": "workspace:*",
         "drizzle-orm": "catalog:",
         "drizzle-zod": "catalog:",
       },
@@ -654,9 +668,20 @@
       "name": "@packrat/schemas",
       "version": "0.0.0",
       "dependencies": {
+        "@packrat/constants": "workspace:*",
         "@packrat/db": "workspace:*",
         "@packrat/guards": "workspace:*",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "typescript": "catalog:",
+      },
+    },
+    "packages/types": {
+      "name": "@packrat/types",
+      "version": "0.0.0",
+      "dependencies": {
+        "@packrat/db": "workspace:*",
       },
       "devDependencies": {
         "typescript": "catalog:",
@@ -673,6 +698,7 @@
       "name": "@packrat/units",
       "version": "0.1.0",
       "dependencies": {
+        "@packrat/constants": "workspace:*",
         "@packrat/guards": "workspace:*",
       },
       "devDependencies": {
@@ -1567,6 +1593,8 @@
 
     "@packrat/config": ["@packrat/config@workspace:packages/config"],
 
+    "@packrat/constants": ["@packrat/constants@workspace:packages/constants"],
+
     "@packrat/db": ["@packrat/db@workspace:packages/db"],
 
     "@packrat/env": ["@packrat/env@workspace:packages/env"],
@@ -1582,6 +1610,8 @@
     "@packrat/overpass": ["@packrat/overpass@workspace:packages/overpass"],
 
     "@packrat/schemas": ["@packrat/schemas@workspace:packages/schemas"],
+
+    "@packrat/types": ["@packrat/types@workspace:packages/types"],
 
     "@packrat/ui": ["@packrat/ui@workspace:packages/ui"],
 

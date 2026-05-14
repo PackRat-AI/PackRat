@@ -1,4 +1,4 @@
-import type { WeightUnit } from '@packrat/db';
+import type { WeightUnit } from '@packrat/constants';
 
 export interface PackItemInput {
   name: string;

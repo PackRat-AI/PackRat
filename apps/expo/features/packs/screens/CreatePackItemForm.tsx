@@ -1,5 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import type { WeightUnit } from '@packrat/db';
+import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';

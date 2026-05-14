@@ -17,6 +17,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@packrat/constants": "workspace:*",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "catalog:"
   },

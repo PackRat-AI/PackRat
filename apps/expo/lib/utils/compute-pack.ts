@@ -1,4 +1,4 @@
-import type { PackWithItems } from '@packrat/db';
+import type { PackWithItems } from '@packrat/types';
 import type { WeightUnit } from '@packrat/units';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 

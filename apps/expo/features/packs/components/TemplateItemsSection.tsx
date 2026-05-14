@@ -1,4 +1,4 @@
-import type { WeightUnit } from '@packrat/db';
+import type { WeightUnit } from '@packrat/constants';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

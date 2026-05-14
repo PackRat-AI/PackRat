@@ -1,4 +1,5 @@
-import type { CatalogItem, PackItem, WeightUnit } from '@packrat/db';
+import type { WeightUnit } from '@packrat/constants';
+import type { CatalogItem, PackItem } from '@packrat/types';
 
 /**
  * Checks if an item is a pack item

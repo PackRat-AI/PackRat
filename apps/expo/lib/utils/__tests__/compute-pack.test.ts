@@ -1,4 +1,4 @@
-import type { PackItem, PackWithItems } from '@packrat/db';
+import type { PackItem, PackWithItems } from '@packrat/types';
 import { describe, expect, it } from 'vitest';
 import { computePacksWeights, computePackWeights } from '../compute-pack';
 

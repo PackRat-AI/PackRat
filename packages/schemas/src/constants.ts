@@ -11,14 +11,14 @@ export {
   type PackCategory,
   WEIGHT_UNITS,
   type WeightUnit,
-} from '@packrat/db/constants';
+} from '@packrat/constants';
 
 import {
   AVAILABILITY_VALUES,
   ITEM_CATEGORIES,
   PACK_CATEGORIES,
   WEIGHT_UNITS,
-} from '@packrat/db/constants';
+} from '@packrat/constants';
 
 export const PackCategorySchema = z.enum(PACK_CATEGORIES);
 export const ItemCategorySchema = z.enum(ITEM_CATEGORIES);
