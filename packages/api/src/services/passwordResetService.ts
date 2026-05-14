@@ -53,7 +53,7 @@ export async function verifyOtpAndResetPassword({
     where: and(eq(verification.identifier, identifier), gt(verification.expiresAt, new Date())),
   });
 
-  if (!record || !timingSafeEqual(record.value, code)) {
+  if (!record || !timingSafeEqual({ a: record.value, b: code })) {
     throw new Error('Invalid or expired reset code');
   }
 
