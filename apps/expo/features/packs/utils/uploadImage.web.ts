@@ -59,8 +59,10 @@ const getPresignedUrl = async (
 async function urlToBlob(url: string, type: string): Promise<Blob> {
   if (url.startsWith('data:')) {
     const arr = url.split(',');
-    if (arr.length < 2) throw new Error('Malformed data URL: missing comma separator');
-    const bstr = atob(arr[1]);
+    const encoded = arr[1];
+    if (arr.length < 2 || encoded === undefined)
+      throw new Error('Malformed data URL: missing comma separator');
+    const bstr = atob(encoded);
     const n = bstr.length;
     const u8arr = new Uint8Array(n);
     for (let i = 0; i < n; i++) {
