@@ -32,7 +32,7 @@ async function verifyPasswordCompat({
   if (BCRYPT_HASH_RE.test(hash)) {
     return bcrypt.compare(password, hash);
   }
-  return verifyPassword({ password, hash });
+  return verifyPassword(password, hash);
 }
 
 // ─── Apple client-secret generation ──────────────────────────────────────────

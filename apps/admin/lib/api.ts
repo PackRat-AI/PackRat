@@ -394,7 +394,7 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
 }
 
 async function adminFetch<T>({ path, init }: { path: string; init?: RequestInit }): Promise<T> {
-  const res = await adminFetcher(`${API_BASE}/api/admin${path}`, init);
+  const res = await adminFetcher({ input: `${API_BASE}/api/admin${path}`, init });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `Admin API error: ${res.status}`);
