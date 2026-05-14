@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@packrat/env": "workspace:*",
-    "pg": "^8.16.3"
+    "pg": "catalog:"
   }
 }
