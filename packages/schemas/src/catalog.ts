@@ -1,6 +1,6 @@
+import { WEIGHT_UNITS } from '@packrat/constants';
 import { isString } from '@packrat/guards';
 import { z } from 'zod';
-import { WEIGHT_UNITS } from './constants';
 import { datetimeString } from './utils';
 
 export const CatalogItemSchema = z.object({
@@ -109,6 +109,8 @@ const SortSchema = z.object({
   ]),
   order: z.enum(['asc', 'desc']),
 });
+
+export type CatalogItem = z.infer<typeof CatalogItemSchema>;
 
 export const CatalogItemsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),

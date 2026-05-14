@@ -5,7 +5,7 @@ import { computePacksWeights, computePackWeights } from '../compute-pack';
 // ---------------------------------------------------------------------------
 // Minimal factory helpers
 // ---------------------------------------------------------------------------
-const NOW = new Date();
+const NOW = new Date().toISOString();
 
 function makePackItem(
   overrides: Partial<PackItem> & Pick<PackItem, 'weight' | 'weightUnit'>,

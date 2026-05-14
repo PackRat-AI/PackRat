@@ -1,5 +1,5 @@
+import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/constants';
 import { z } from 'zod';
-import { PACK_CATEGORIES, WEIGHT_UNITS } from './constants';
 import { datetimeString } from './utils';
 
 export const PackItemSchema = z.object({
@@ -43,10 +43,19 @@ export const PackSchema = z.object({
   items: z.array(PackItemSchema).optional(),
 });
 
+export const PackWithItemsSchema = PackSchema.extend({
+  items: z.array(PackItemSchema),
+});
+
 export const PackWithWeightsSchema = PackSchema.extend({
   totalWeight: z.number(),
   baseWeight: z.number(),
 });
+
+export type PackItem = z.infer<typeof PackItemSchema>;
+export type Pack = z.infer<typeof PackSchema>;
+export type PackWithItems = z.infer<typeof PackWithItemsSchema>;
+export type PackWithWeights = z.infer<typeof PackWithWeightsSchema>;
 
 export const CreatePackRequestSchema = z.object({
   name: z.string().min(1).max(255),

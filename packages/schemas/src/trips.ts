@@ -1,9 +1,5 @@
 import { z } from 'zod';
-
-const datetimeString = z.preprocess(
-  (v) => (v instanceof Date ? v.toISOString() : v),
-  z.string().datetime(),
-);
+import { datetimeString } from './utils';
 
 const nullableDateString = z.preprocess(
   (v) => (v instanceof Date ? v.toISOString() : v),
@@ -33,6 +29,8 @@ export const TripSchema = z.object({
   updatedAt: datetimeString.optional(),
 });
 
+export type Trip = z.infer<typeof TripSchema>;
+
 export const CreateTripBodySchema = z.object({
   id: z.string(),
   name: z.string().min(1).max(255),
@@ -58,4 +56,3 @@ export const UpdateTripBodySchema = z.object({
 });
 
 export type TripLocation = z.infer<typeof TripLocationSchema>;
-export type Trip = z.infer<typeof TripSchema>;

@@ -42,6 +42,8 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
+const ApiErrorSchema = z.object({ error: z.string() });
+
 const CreatePackBodySchema = CreatePackRequestSchema.extend({
   id: z.string(),
   localCreatedAt: z.string(),
@@ -94,7 +96,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const data = body;
 
       const packId = data.id as string;
-      if (!packId) throw new Error('Pack ID is required');
+      if (!packId) return status(400, { error: 'Pack ID is required' });
 
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
@@ -114,14 +116,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         } as typeof packs.$inferInsert)
         .returning();
 
-      if (!newPack) throw new Error('Failed to create pack');
+      if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
       return PackWithWeightsSchema.parse(computePackWeights(packWithItems));
     },
     {
       body: CreatePackBodySchema,
-      response: { 200: PackWithWeightsSchema },
+      response: { 200: PackWithWeightsSchema, 400: ApiErrorSchema, 500: ApiErrorSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -704,7 +706,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
-      if (!OPENAI_API_KEY) throw new Error('OpenAI API key not configured');
+      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
@@ -773,7 +775,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
-      response: { 200: PackItemSchema },
+      response: { 200: PackItemSchema, 500: ApiErrorSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

@@ -1,6 +1,3 @@
-// Model types from @packrat/db
-
-// Constant types from @packrat/constants
 export type {
   Availability,
   ItemCategory,
@@ -9,44 +6,8 @@ export type {
   PackCategory,
   WeightUnit,
 } from '@packrat/constants';
-export type {
-  Account,
-  CatalogItem,
-  CommentLike,
-  ETLJob,
-  InvalidItemLog,
-  Jwks,
-  NewAccount,
-  NewCatalogItem,
-  NewCommentLike,
-  NewETLJob,
-  NewInvalidItemLog,
-  NewJwks,
-  NewPack,
-  NewPackItem,
-  NewPackTemplate,
-  NewPackTemplateItem,
-  NewPost,
-  NewPostComment,
-  NewPostLike,
-  NewReportedContent,
-  NewSession,
-  NewTrip,
-  NewUser,
-  NewVerification,
-  Pack,
-  PackItem,
-  PackTemplate,
-  PackTemplateItem,
-  PackTemplateWithItems,
-  PackWithItems,
-  Post,
-  PostComment,
-  PostLike,
-  ReportedContent,
-  Session,
-  TrailConditionReport,
-  Trip,
-  User,
-  Verification,
-} from '@packrat/db';
+export type { CatalogItem } from '@packrat/schemas/catalog';
+export type { Pack, PackItem, PackWithItems, PackWithWeights } from '@packrat/schemas/packs';
+export type { TrailConditionReport } from '@packrat/schemas/trailConditions';
+export type { Trip } from '@packrat/schemas/trips';
+export type { User } from '@packrat/schemas/users';

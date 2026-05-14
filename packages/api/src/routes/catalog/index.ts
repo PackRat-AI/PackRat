@@ -40,6 +40,8 @@ const catalogETLSchema = z.object({
   scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
 });
 
+const ApiErrorSchema = z.object({ error: z.string() });
+
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
   .use(apiKeyAuthPlugin)
@@ -247,16 +249,16 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const db = createDb();
       const data = body;
       if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
-        throw new Error('name, weight, and weightUnit are required');
+        return status(400, { error: 'name, weight, and weightUnit are required' });
       }
       if (data.weight <= 0) {
-        throw new Error('weight must be a positive number');
+        return status(400, { error: 'weight must be a positive number' });
       }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not configured');
+        return status(500, { error: 'OpenAI API key not configured' });
       }
 
       const embeddingText = getEmbeddingText(data);
@@ -303,7 +305,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       body: CreateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema },
+      response: { 200: CatalogItemSchema, 400: ApiErrorSchema, 500: ApiErrorSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -440,13 +442,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
       const data = body;
       if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
-        throw new Error('weight must be a positive number');
+        return status(400, { error: 'weight must be a positive number' });
       }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not configured');
+        return status(500, { error: 'OpenAI API key not configured' });
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
@@ -487,7 +489,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     {
       params: z.object({ id: z.string() }),
       body: UpdateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema },
+      response: { 200: CatalogItemSchema, 400: ApiErrorSchema, 500: ApiErrorSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],

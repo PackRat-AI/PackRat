@@ -19,6 +19,8 @@ export const UserProfileSchema = z.object({
   user: UserSchema,
 });
 
+export type User = z.infer<typeof UserSchema>;
+
 // Update user request schema
 export const UpdateUserRequestSchema = z.object({
   firstName: z.string().optional(),

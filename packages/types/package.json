@@ -12,7 +12,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@packrat/db": "workspace:*"
+    "@packrat/constants": "workspace:*",
+    "@packrat/schemas": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:"
