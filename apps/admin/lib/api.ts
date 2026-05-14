@@ -393,7 +393,7 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
   return unwrap({ data, name: 'deleteTrailCondition' });
 }
 
-async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function adminFetch<T>({ path, init }: { path: string; init?: RequestInit }): Promise<T> {
   const res = await adminFetcher(`${API_BASE}/api/admin${path}`, init);
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -404,7 +404,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {
-  return adminFetch('/analytics/catalog/etl/reset-stuck', { method: 'POST' });
+  return adminFetch({ path: '/analytics/catalog/etl/reset-stuck', init: { method: 'POST' } });
 }
 
 export type EtlErrorRow = { field: string; reason: string; count: number };
@@ -426,7 +426,7 @@ export type EtlJobFailures = {
 };
 
 export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
-  return adminFetch(`/analytics/catalog/etl/failure-summary?limit=${limit}`);
+  return adminFetch({ path: `/analytics/catalog/etl/failure-summary?limit=${limit}` });
 }
 
 export function getEtlJobFailures({
@@ -436,13 +436,16 @@ export function getEtlJobFailures({
   jobId: string;
   limit?: number;
 }): Promise<EtlJobFailures> {
-  return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/failures?limit=${limit}`);
+  return adminFetch({
+    path: `/analytics/catalog/etl/${encodeURIComponent(jobId)}/failures?limit=${limit}`,
+  });
 }
 
 export function retryEtlJob(
   jobId: string,
 ): Promise<{ success: boolean; newJobId: string; objectKey: string }> {
-  return adminFetch(`/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`, {
-    method: 'POST',
+  return adminFetch({
+    path: `/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`,
+    init: { method: 'POST' },
   });
 }
