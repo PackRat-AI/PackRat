@@ -1,12 +1,8 @@
+import type { MockUser } from 'expo-app/data/mockData';
 import { Image, Text, View } from 'react-native';
 
-type UserLike = {
-  name: string;
-  avatarUrl?: string | null;
-};
-
 type UserAvatarProps = {
-  user: UserLike;
+  user: Pick<MockUser, 'name' | 'avatarUrl'>;
   size?: 'sm' | 'md' | 'lg';
   showName?: boolean;
 };
