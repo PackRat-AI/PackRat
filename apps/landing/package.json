@@ -75,6 +75,6 @@
     "postcss-import": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vitest": "~3.1.4"
+    "vitest": "catalog:"
   }
 }
