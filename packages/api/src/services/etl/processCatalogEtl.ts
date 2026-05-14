@@ -42,22 +42,6 @@ export async function processCatalogETL({
     const chunkDesc = byteStart !== undefined ? ` [bytes ${byteStart}-${byteEnd ?? 'end'}]` : '';
     console.log(`🔄 Processing file ${objectKey}${chunkDesc}, job ${jobId}`);
 
-    // If this job is already in the DB with non-zero counters, it's a retry after a CF Worker
-    // timeout (hard-kill bypasses the catch block, so CF Queue re-delivers the message).
-    // Reset counters so the retry doesn't double-count valid/invalid/processed rows.
-    const existingJob = await db
-      .select({ status: etlJobs.status, totalProcessed: etlJobs.totalProcessed })
-      .from(etlJobs)
-      .where(eq(etlJobs.id, jobId))
-      .limit(1);
-    if (existingJob[0]?.status === 'running' && (existingJob[0].totalProcessed ?? 0) > 0) {
-      console.log(`[ETL] Retry detected for job ${jobId} — resetting counters before re-processing`);
-      await db
-        .update(etlJobs)
-        .set({ totalProcessed: 0, totalValid: 0, totalInvalid: 0 })
-        .where(eq(etlJobs.id, jobId));
-    }
-
     const r2Service = new R2BucketService({
       env,
       bucketType: 'catalog',
