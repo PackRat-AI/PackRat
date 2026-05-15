@@ -18,6 +18,7 @@ export async function processLogsBatch({
     await updateEtlJobProgress(env, {
       jobId,
       invalid: logs.length,
+      processed: logs.length,
     });
 
     console.log(`📝 Processed and wrote ${logs.length} invalid items for job ${jobId}`);

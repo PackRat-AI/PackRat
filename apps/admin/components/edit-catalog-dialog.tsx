@@ -49,7 +49,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
       : null;
     const weightRaw = fd.get('weight')?.toString().trim();
     const weight = weightRaw ? Number(weightRaw) : undefined;
-    const weightUnit = fd.get('weightUnit')?.toString().trim() || item.weightUnit;
+    const weightUnit = fd.get('weightUnit')?.toString().trim() || item.weightUnit || undefined;
     const priceRaw = fd.get('price')?.toString().trim();
     const price = priceRaw ? Number(priceRaw) : null;
 
@@ -108,7 +108,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
               <Input
                 id="weightUnit"
                 name="weightUnit"
-                defaultValue={item.weightUnit}
+                defaultValue={item.weightUnit ?? ''}
                 placeholder="g"
               />
             </div>

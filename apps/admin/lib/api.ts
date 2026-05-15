@@ -3,10 +3,15 @@ import type { App } from '@packrat/api';
 import type {
   ActiveUsersSchema,
   ActivityPointSchema,
+  AdminCatalogItemSchema,
+  AdminPackItemSchema,
+  AdminUserItemSchema,
   BrandRowSchema,
   BreakdownItemSchema,
   CatalogOverviewSchema,
   EmbeddingStatsSchema,
+  EtlFailureSummarySchema,
+  EtlJobFailuresSchema,
   EtlJobSchema,
   EtlResponseSchema,
   GrowthPointSchema,
@@ -69,17 +74,7 @@ export async function getStats(): Promise<AdminStats> {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export interface AdminUser {
-  id: number;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  role: string | null;
-  emailVerified: boolean | null;
-  avatarUrl: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
+export type AdminUser = Static<typeof AdminUserItemSchema>;
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -106,42 +101,30 @@ export async function getUsers({
   return unwrap(data, 'users');
 }
 
-export async function deleteUser(id: number): Promise<{ success: boolean }> {
-  const { data, error } = await adminClient.users({ id: String(id) }).delete();
+export async function deleteUser(id: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.users({ id }).delete();
   if (error) throwOnError(error);
   return unwrap(data, 'deleteUser');
 }
 
 export async function hardDeleteUser(
-  id: number,
+  id: string,
   reason: string,
 ): Promise<{ success: boolean; purged: boolean }> {
-  const { data, error } = await adminClient.users({ id: String(id) }).hard.delete({ reason });
+  const { data, error } = await adminClient.users({ id }).hard.delete({ reason });
   if (error) throwOnError(error);
   return unwrap(data, 'hardDeleteUser');
 }
 
-export async function restoreUser(id: number): Promise<{ success: boolean }> {
-  const { data, error } = await adminClient.users({ id: String(id) }).restore.post();
+export async function restoreUser(id: string): Promise<{ success: boolean }> {
+  const { data, error } = await adminClient.users({ id }).restore.post();
   if (error) throwOnError(error);
   return unwrap(data, 'restoreUser');
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
 
-export interface AdminPack {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  isPublic: boolean | null;
-  isAIGenerated: boolean | null;
-  tags: string[] | null;
-  image: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-  userEmail: string | null;
-}
+export type AdminPack = Static<typeof AdminPackItemSchema>;
 
 export async function getPacks({
   limit = 100,
@@ -169,24 +152,7 @@ export async function deletePack(id: string): Promise<{ success: boolean }> {
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
 
-export interface AdminCatalogItem {
-  id: number;
-  name: string;
-  description: string | null;
-  categories: string[] | null;
-  brand: string | null;
-  model: string | null;
-  price: number | null;
-  currency: string | null;
-  weight: number;
-  weightUnit: string;
-  availability: string | null;
-  ratingValue: number | null;
-  reviewCount: number | null;
-  productUrl: string | null;
-  images: string[] | null;
-  createdAt: string | null;
-}
+export type AdminCatalogItem = Static<typeof AdminCatalogItemSchema>;
 
 export interface UpdateCatalogItemInput {
   name?: string;
@@ -371,11 +337,7 @@ export async function deleteTrailCondition(reportId: string): Promise<{ success:
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await adminFetcher(`${API_BASE}/api/admin${path}`, init);
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(body.error ?? `Admin API error: ${res.status}`);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  if (!res.ok) throw new Error(`Admin API error: ${res.status}`);
   return res.json();
 }
 
@@ -383,23 +345,8 @@ export function resetStuckEtlJobs(): Promise<{ reset: number; ids: string[] }> {
   return adminFetch('/analytics/catalog/etl/reset-stuck', { method: 'POST' });
 }
 
-export type EtlErrorRow = { field: string; reason: string; count: number };
-
-export type EtlFailureSummary = {
-  topErrors: EtlErrorRow[];
-  totalInvalidItems: number;
-};
-
-export type EtlJobFailures = {
-  jobId: string;
-  errorBreakdown: EtlErrorRow[];
-  samples: Array<{
-    rowIndex: number;
-    errors: Array<{ field: string; reason: string; value?: unknown }>;
-    rawData: unknown;
-  }>;
-  totalShown: number;
-};
+export type EtlFailureSummary = Static<typeof EtlFailureSummarySchema>;
+export type EtlJobFailures = Static<typeof EtlJobFailuresSchema>;
 
 export function getEtlFailureSummary(limit = 20): Promise<EtlFailureSummary> {
   return adminFetch(`/analytics/catalog/etl/failure-summary?limit=${limit}`);
