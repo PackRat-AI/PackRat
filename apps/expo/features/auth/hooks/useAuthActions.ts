@@ -1,4 +1,5 @@
 import { clientEnvs } from '@packrat/env/expo-client';
+import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -33,18 +34,18 @@ function redirect(route: string) {
 }
 
 function mapToUser(raw: Record<string, unknown>): User {
-  const name = String(raw.name ?? '');
+  const name = asString(raw.name) ?? '';
   const spaceIdx = name.indexOf(' ');
   return {
-    id: String(raw.id ?? ''),
-    email: String(raw.email ?? ''),
+    id: asString(raw.id) ?? '',
+    email: asString(raw.email) ?? '',
     firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
     lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
-    role: (raw.role as 'USER' | 'ADMIN') ?? 'USER',
-    emailVerified: (raw.emailVerified as boolean | null) ?? null,
-    avatarUrl: (raw.image as string | null) ?? null,
-    createdAt: (raw.createdAt as string | null) ?? null,
-    updatedAt: (raw.updatedAt as string | null) ?? null,
+    role: asString(raw.role) ?? 'USER',
+    emailVerified: asBoolean(raw.emailVerified) ?? null,
+    avatarUrl: asString(raw.image) ?? null,
+    createdAt: asString(raw.createdAt) ?? null,
+    updatedAt: asString(raw.updatedAt) ?? null,
     preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
   };
 }

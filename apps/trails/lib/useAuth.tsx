@@ -1,15 +1,29 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { authClient } from 'trails-app/lib/auth-client';
+import { fromZod } from '@packrat/guards';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  clearTokens,
+  clearUser,
+  getAccessToken,
+  getUser,
+  setTokens,
+  setUser,
+  type UserInfo,
+  UserInfoSchema,
+} from 'trails-app/lib/auth';
+import { trailsAuthClient } from 'trails-app/lib/auth-client';
 
 interface AuthState {
   isAuthed: boolean;
-  user: { id: string; email: string; name?: string | null } | null;
+  user: UserInfo | null;
+  pendingEmail: string | null;
 }
 
 interface AuthActions {
   register(email: string, opts: { password: string; firstName?: string }): Promise<void>;
+  verifyEmail(token: string): Promise<void>;
+  resendVerification(): Promise<void>;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
   forgotPassword(email: string): Promise<void>;
@@ -20,34 +34,106 @@ interface AuthActions {
 
 const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const session = authClient.useSession();
-  const [authGateOpen, setAuthGateOpen] = useState(false);
+function parseAuthUser(user: {
+  id: string;
+  email: string;
+  [key: string]: unknown;
+}): UserInfo | null {
+  return (
+    fromZod(UserInfoSchema)({
+      id: user.id,
+      email: user.email,
+      firstName: (user.firstName as string | null | undefined) ?? null,
+      lastName: (user.lastName as string | null | undefined) ?? null,
+    }) ?? null
+  );
+}
 
-  const isAuthed = !!session.data?.user;
-  const user = session.data?.user ?? null;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [authGateOpen, setAuthGateOpen] = useState(false);
+  const [state, setState] = useState<AuthState>({
+    isAuthed: false,
+    user: null,
+    pendingEmail: null,
+  });
+
+  useEffect(() => {
+    const storedUser = getUser();
+    const token = getAccessToken();
+    if (storedUser && token) {
+      setState({ isAuthed: true, user: storedUser, pendingEmail: null });
+    }
+  }, []);
+
+  const { isAuthed, user, pendingEmail } = state;
 
   const register = useCallback(
-    async (email: string, { password, firstName }: { password: string; firstName?: string }) => {
-      const { error } = await authClient.signUp.email({
+    async (email: string, opts: { password: string; firstName?: string }) => {
+      const name = opts.firstName ?? email;
+      const { data, error } = await trailsAuthClient.signUp.email({
         email,
-        password,
-        name: firstName || email,
+        password: opts.password,
+        name,
       });
       if (error) throw new Error(error.message ?? 'Registration failed');
-      setAuthGateOpen(false);
+      if (data?.token) {
+        const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
+        if (!parsedUser) throw new Error('Registration failed: unexpected user shape');
+        setTokens(data.token, '');
+        setUser(parsedUser);
+        setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
+        setAuthGateOpen(false);
+      } else {
+        setState((s) => ({ ...s, pendingEmail: email }));
+      }
     },
     [],
   );
 
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      if (!state.pendingEmail) throw new Error('No pending email verification');
+      const { error } = await trailsAuthClient.verifyEmail({ query: { token } });
+      if (error) throw new Error(error.message ?? 'Verification failed');
+      const sessionRes = await trailsAuthClient.getSession();
+      if (!sessionRes.data?.session || !sessionRes.data.user) {
+        throw new Error('Verification failed: could not get session');
+      }
+      const parsedUser = parseAuthUser(sessionRes.data.user as Parameters<typeof parseAuthUser>[0]);
+      if (!parsedUser) throw new Error('Verification failed: unexpected user shape');
+      setTokens(sessionRes.data.session.token, '');
+      setUser(parsedUser);
+      setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
+      setAuthGateOpen(false);
+    },
+    [state.pendingEmail],
+  );
+
+  const resendVerification = useCallback(async () => {
+    if (!state.pendingEmail) throw new Error('No pending email');
+    const { error } = await trailsAuthClient.sendVerificationEmail({
+      email: state.pendingEmail,
+      callbackURL: typeof window !== 'undefined' ? window.location.origin : '',
+    });
+    if (error) throw new Error(error.message ?? 'Resend failed');
+  }, [state.pendingEmail]);
+
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await authClient.signIn.email({ email, password });
-    if (error) throw new Error(error.message ?? 'Login failed');
+    const { data, error } = await trailsAuthClient.signIn.email({ email, password });
+    if (error || !data) throw new Error(error?.message ?? 'Login failed');
+    const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
+    if (!parsedUser) throw new Error('Login failed: unexpected user shape');
+    setTokens(data.token, '');
+    setUser(parsedUser);
+    setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
     setAuthGateOpen(false);
   }, []);
 
   const logout = useCallback(async () => {
-    await authClient.signOut();
+    await trailsAuthClient.signOut();
+    clearTokens();
+    clearUser();
+    setState({ isAuthed: false, user: null, pendingEmail: null });
   }, []);
 
   const forgotPassword = useCallback(async (email: string) => {
@@ -55,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       typeof window !== 'undefined'
         ? `${window.location.origin}/reset-password`
         : '/reset-password';
-    const { error } = await authClient.requestPasswordReset({ email, redirectTo });
+    const { error } = await trailsAuthClient.requestPasswordReset({ email, redirectTo });
     if (error) throw new Error(error.message ?? 'Failed to send reset email');
   }, []);
 
@@ -66,8 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       isAuthed,
       user,
+      pendingEmail,
       authGateOpen,
       register,
+      verifyEmail,
+      resendVerification,
       login,
       logout,
       forgotPassword,
@@ -77,8 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [
       isAuthed,
       user,
+      pendingEmail,
       authGateOpen,
       register,
+      verifyEmail,
+      resendVerification,
       login,
       logout,
       forgotPassword,

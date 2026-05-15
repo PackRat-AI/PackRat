@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@packrat/web-ui/compon
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { trailsAuthClient } from 'trails-app/lib/auth-client';
 import { useAuth } from 'trails-app/lib/useAuth';
 
 const TABS = ['register', 'login', 'forgot'] as const;
@@ -22,7 +23,7 @@ type Tab = (typeof TABS)[number];
 const isTab = makeEnumGuard(TABS);
 
 export function AuthGate() {
-  const { authGateOpen, closeAuthGate, register, login, forgotPassword } = useAuth();
+  const { authGateOpen, closeAuthGate, register, login } = useAuth();
   const [tab, setTab] = useState<Tab>('register');
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +76,14 @@ export function AuthGate() {
     e.preventDefault();
     setLoading(true);
     try {
-      await forgotPassword(forgotEmail);
+      const { error } = await trailsAuthClient.requestPasswordReset({
+        email: forgotEmail,
+        redirectTo:
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/reset-password`
+            : '/reset-password',
+      });
+      if (error) throw new Error(error.message);
       setForgotSent(true);
     } catch {
       toast.error('Could not send reset email. Try again.');

@@ -34,6 +34,7 @@ export default function AuthPage() {
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setInfo(null);
     loginMutation.mutate({ email, password });
   }
 
