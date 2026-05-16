@@ -175,7 +175,7 @@ export function createLocalTools() {
         const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
         const trimmedItems = items.map((item) => trimCatalogItem(item as Record<string, unknown>));
         console.log('getCatalogItems returning', { items: trimmedItems });
-        return { success: true, data: trimmedItems };
+        return { success: true, data: { items: trimmedItems } };
       },
     }),
 
@@ -202,7 +202,7 @@ export function createLocalTools() {
         const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
         return {
           success: true,
-          data: items.map((item) => trimCatalogItem(item as Record<string, unknown>)),
+          data: { items: items.map((item) => trimCatalogItem(item as Record<string, unknown>)) },
         };
       },
     }),
