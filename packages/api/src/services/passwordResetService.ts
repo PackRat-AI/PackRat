@@ -1,6 +1,6 @@
 import { hashPassword } from '@better-auth/utils/password';
 import { createDb } from '@packrat/api/db';
-import { account, users, verification } from '@packrat/api/db/schema';
+import { account, users, verification } from '@packrat/db';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail } from '@packrat/api/utils/email';
 import { and, eq, gt } from 'drizzle-orm';

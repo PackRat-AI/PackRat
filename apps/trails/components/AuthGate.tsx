@@ -108,7 +108,7 @@ export function AuthGate() {
         </DialogHeader>
 
         {pendingEmail ? (
-          <VerifyEmail />
+          <VerifyEmail email={pendingEmail} />
         ) : (
           <Tabs
             value={tab}

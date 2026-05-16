@@ -1,4 +1,4 @@
-import { ForgotPasswordRequestSchema, ResetPasswordRequestSchema } from '@packrat/api/schemas/auth';
+import { ForgotPasswordRequestSchema, ResetPasswordRequestSchema } from '@packrat/schemas/auth';
 import {
   requestPasswordReset,
   verifyOtpAndResetPassword,
