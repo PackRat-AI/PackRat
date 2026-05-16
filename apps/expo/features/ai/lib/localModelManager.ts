@@ -107,6 +107,7 @@ export function isAppleIntelligenceAvailable(): boolean {
 /** Returns the ready model instance, or null if not prepared yet. */
 export function getLocalModel(): LanguageModel | null {
   if (isAppleIntelligenceAvailable()) return appleModel;
+  // safe-cast: LlamaToolsWrapper is structurally a LanguageModel; double-cast through unknown is required because two incompatible @ai-sdk/provider versions are installed
   return llamaModelWrapper as unknown as LanguageModel;
 }
 

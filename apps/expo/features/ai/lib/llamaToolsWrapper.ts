@@ -14,6 +14,7 @@
  */
 
 import { generateId } from '@ai-sdk/provider-utils';
+import { isString } from '@packrat/guards';
 import type { LlamaLanguageModel } from '@react-native-ai/llama';
 
 // Minimal structural slice of LanguageModelV2CallOptions we need
@@ -55,7 +56,7 @@ type LlamaMessage = {
 // biome-ignore lint/suspicious/noExplicitAny: mirrors AI SDK ToolResultOutput union
 function toolResultOutputToString(output: any): string {
   if (!output) return '';
-  if (typeof output === 'string') return output;
+  if (isString(output)) return output;
   switch (output.type) {
     case 'text':
     case 'error-text':
@@ -113,7 +114,7 @@ function convertPromptToLlamaMessages(prompt: Prompt): LlamaMessage[] {
             id: p.toolCallId,
             function: {
               name: p.toolName,
-              arguments: typeof p.input === 'string' ? p.input : JSON.stringify(p.input),
+              arguments: isString(p.input) ? p.input : JSON.stringify(p.input),
             },
           })),
         });
@@ -143,7 +144,7 @@ function convertPromptToLlamaMessages(prompt: Prompt): LlamaMessage[] {
 
 function convertTools(tools: CallOptions['tools']): object[] | undefined {
   if (!tools?.length) return undefined;
-  const fns = (tools as ToolDef[]).filter((t) => t.type === 'function');
+  const fns = [...tools].filter((t) => t.type === 'function');
   if (!fns.length) return undefined;
   return fns.map((t) => ({
     type: 'function',

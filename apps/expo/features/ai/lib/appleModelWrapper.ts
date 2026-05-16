@@ -23,6 +23,8 @@
  * while the upstream provider bug is unresolved.
  */
 
+import { isString } from '@packrat/guards';
+
 // biome-ignore lint/suspicious/noExplicitAny: Apple model type is unknown at this layer
 type AnyModel = any;
 
@@ -94,7 +96,7 @@ export class AppleModelWrapper {
               toolCallId,
               toolName: part.toolName,
               // Apple may return input as an object; the spec requires a JSON string
-              input: typeof part.input === 'string' ? part.input : JSON.stringify(part.input),
+              input: isString(part.input) ? part.input : JSON.stringify(part.input),
               providerExecuted: true,
             });
           } else if (part.type === 'tool-result') {

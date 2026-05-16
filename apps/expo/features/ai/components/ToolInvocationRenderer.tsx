@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import type { ToolUIPart } from 'ai';
 import type { CatalogItemsTool } from './CatalogItemsGenerativeUI';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
@@ -20,7 +21,7 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
   // On-device AI models may serialize tool output as a JSON string instead of a parsed object.
   // Normalize it here once so all GenUI components receive a plain object.
   const normalizedInvocation =
-    toolInvocation.state === 'output-available' && typeof toolInvocation.output === 'string'
+    toolInvocation.state === 'output-available' && isString(toolInvocation.output)
       ? { ...toolInvocation, output: JSON.parse(toolInvocation.output) }
       : toolInvocation;
 

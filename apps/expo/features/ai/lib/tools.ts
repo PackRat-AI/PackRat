@@ -10,6 +10,7 @@
  * through authenticated API endpoints.
  */
 
+import { isString } from '@packrat/guards';
 import * as Sentry from '@sentry/react-native';
 import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
@@ -22,18 +23,20 @@ import {
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
-function trimCatalogItem(item: Record<string, unknown>) {
-  const cats = Array.isArray(item.categories) ? (item.categories as string[]).slice(0, 2) : [];
+function trimCatalogItem(item: unknown) {
+  // safe-cast: items originate from the PackRat API which returns typed JSON objects
+  const obj = item as Record<string, unknown>;
+  const cats = Array.isArray(obj.categories) ? (obj.categories as string[]).slice(0, 2) : [];
   return {
-    id: item.id,
-    name: item.name,
-    brand: item.brand,
-    weight: item.weight,
-    weightUnit: item.weightUnit,
+    id: obj.id,
+    name: obj.name,
+    brand: obj.brand,
+    weight: obj.weight,
+    weightUnit: obj.weightUnit,
     categories: cats,
-    price: item.price,
-    ratingValue: item.ratingValue,
-    description: typeof item.description === 'string' ? item.description.slice(0, 120) : undefined,
+    price: obj.price,
+    ratingValue: obj.ratingValue,
+    description: isString(obj.description) ? obj.description.slice(0, 120) : undefined,
   };
 }
 
@@ -173,7 +176,7 @@ export function createLocalTools() {
           return { success: false, error: error.value ?? 'Failed to retrieve catalog items' };
         }
         const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
-        const trimmedItems = items.map((item) => trimCatalogItem(item as Record<string, unknown>));
+        const trimmedItems = items.map((item) => trimCatalogItem(item));
         console.log('getCatalogItems returning', { items: trimmedItems });
         return { success: true, data: { items: trimmedItems } };
       },
@@ -202,7 +205,7 @@ export function createLocalTools() {
         const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
         return {
           success: true,
-          data: { items: items.map((item) => trimCatalogItem(item as Record<string, unknown>)) },
+          data: { items: items.map((item) => trimCatalogItem(item)) },
         };
       },
     }),

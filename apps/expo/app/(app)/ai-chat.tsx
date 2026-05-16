@@ -134,14 +134,9 @@ export default function AIChat() {
     });
 
     // In development, release before fast-refresh tears down native modules.
-    type HotModule = NodeJS.Module & {
-      hot?: { dispose: (cb: () => void) => void };
-    };
-    const hotModule = module as HotModule;
-    if (__DEV__ && typeof hotModule.hot?.dispose === 'function') {
-      hotModule.hot.dispose(() => {
-        releaseLocalModel();
-      });
+    if (__DEV__) {
+      const devModule = module as unknown as { hot?: { dispose: (cb: () => void) => void } };
+      devModule.hot?.dispose(() => releaseLocalModel());
     }
 
     return () => {
