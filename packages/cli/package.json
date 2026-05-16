@@ -13,6 +13,7 @@
   "dependencies": {
     "@duckdb/node-api": "catalog:",
     "@packrat/analytics": "workspace:*",
+    "@packrat/api-client": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "chalk": "catalog:",
