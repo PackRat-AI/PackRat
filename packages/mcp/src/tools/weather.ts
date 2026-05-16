@@ -1,13 +1,9 @@
-import { isObject } from '@packrat/guards';
 import { z } from 'zod';
-import { call, errMessage } from '../client';
+import { call } from '../client';
 import type { AgentContext } from '../types';
 
 export function registerWeatherTools(agent: AgentContext): void {
-  // ── Get weather (search + forecast combined) ──────────────────────────────
-  // Candidate for API thickening: a single GET /weather/by-name?q=... would
-  // collapse this two-step into one server call.
-
+  // ── Get weather (single API call) ─────────────────────────────────────────
   agent.server.registerTool(
     'get_weather',
     {
@@ -20,22 +16,11 @@ export function registerWeatherTools(agent: AgentContext): void {
           .describe('Location to get weather for (city, trail, park, etc.)'),
       },
     },
-    async ({ location }) => {
-      const search = await agent.api.user.weather.search.get({ query: { q: location } });
-      if (search.error || !search.data) {
-        return call(Promise.resolve(search), {
-          action: 'search weather location',
-          resourceHint: location,
-        });
-      }
-      const first = Array.isArray(search.data) ? search.data[0] : null;
-      const id = isObject(first) && 'id' in first ? first.id : null;
-      if (id == null) return errMessage(`No weather location found for: ${location}`);
-      return call(agent.api.user.weather.forecast.get({ query: { id: String(id) } }), {
+    async ({ location }) =>
+      call(agent.api.user.weather['by-name'].get({ query: { q: location } }), {
         action: 'fetch weather forecast',
         resourceHint: location,
-      });
-    },
+      }),
   );
 
   // ── Search weather location ───────────────────────────────────────────────

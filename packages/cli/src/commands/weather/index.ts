@@ -1,13 +1,11 @@
-import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
-import consola from 'consola';
 import { getUserClient } from '../../api/client';
-import { requireAuth, runApi, tryApi } from '../../api/run';
+import { requireAuth, runApi } from '../../api/run';
 
 const forecastCmd = defineCommand({
   meta: {
     name: 'forecast',
-    description: 'Get a 10-day forecast for a location (name or lat,lon).',
+    description: 'Get a 10-day forecast for a named location (single API call).',
   },
   args: {
     location: { type: 'positional', required: true, description: 'Location string' },
@@ -15,19 +13,9 @@ const forecastCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const search = await tryApi(client.weather.search.get({ query: { q: args.location } }));
-    if (!search.ok) {
-      consola.error(`Could not search for "${args.location}" (HTTP ${search.status})`);
-      process.exit(1);
-    }
-    const first = Array.isArray(search.data) ? toRecord(search.data[0]) : null;
-    const id = first && 'id' in first ? first.id : null;
-    if (id == null) {
-      consola.error(`No matching weather location for "${args.location}".`);
-      process.exit(1);
-    }
-    const forecast = await runApi(client.weather.forecast.get({ query: { id: String(id) } }), {
+    const forecast = await runApi(client.weather['by-name'].get({ query: { q: args.location } }), {
       action: 'get weather forecast',
+      resourceHint: args.location,
     });
     process.stdout.write(`${JSON.stringify(forecast, null, 2)}\n`);
   },
