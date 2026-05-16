@@ -14,7 +14,11 @@ import * as Sentry from '@sentry/react-native';
 import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
-import { getWeatherData, searchLocations } from 'expo-app/features/weather/lib/weatherService';
+import {
+  formatWeatherData,
+  getWeatherData,
+  searchLocations,
+} from 'expo-app/features/weather/lib/weatherService';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
@@ -116,7 +120,7 @@ export function createLocalTools() {
             return { success: false, error: `No location found for "${location}"` };
           }
           const weatherData = await getWeatherData(first.id);
-          return { success: true, data: weatherData };
+          return { success: true, data: formatWeatherData(weatherData) };
         } catch (error) {
           return {
             success: false,
