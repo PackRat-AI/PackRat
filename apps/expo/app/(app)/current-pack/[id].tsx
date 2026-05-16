@@ -1,4 +1,3 @@
-import type { PackItem } from '@packrat/api/types/constants';
 import {
   Avatar,
   AvatarFallback,
@@ -8,6 +7,7 @@ import {
 } from '@packrat/ui/nativewindui';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
+import type { PackItem } from 'expo-app/features/packs/types';
 import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -192,10 +192,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => (
-              // safe-cast: Treaty response type has createdAt?: string but PackItem schema requires string
-              <ItemRow item={item as unknown as PackItem} index={index} />
-            )}
+            renderItem={(item, index) => <ItemRow item={item} index={index} />}
           />
         </View>
       </ScrollView>

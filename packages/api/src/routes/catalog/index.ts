@@ -246,17 +246,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
-      if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
-        throw new Error('name, weight, and weightUnit are required');
-      }
-      if (data.weight <= 0) {
-        throw new Error('weight must be a positive number');
-      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not configured');
+        // Configuration error: surface as a 500 with a clear message
+        throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
       const embeddingText = getEmbeddingText(data);
@@ -439,14 +434,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
       const data = body;
-      if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
-        throw new Error('weight must be a positive number');
-      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        throw new Error('OpenAI API key not configured');
+        // Configuration error: surface as a 500 with a clear message
+        throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
       const existingItem = await db.query.catalogItems.findFirst({

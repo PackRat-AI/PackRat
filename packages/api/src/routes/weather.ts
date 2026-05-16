@@ -11,6 +11,7 @@ import {
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isString } from '@packrat/guards';
 import { Elysia, status } from 'elysia';
+import { ZodError } from 'zod';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
@@ -153,6 +154,11 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           },
         });
       } catch (error) {
+        if (error instanceof ZodError) {
+          const invalidPaths = error.errors.map((e) => e.path.join('.')).join(', ');
+          console.error('Weather forecast response failed schema validation:', error.errors);
+          throw new Error(`Weather forecast response failed schema validation at: ${invalidPaths}`);
+        }
         console.error('Error fetching weather forecast:', error);
         throw error;
       }
