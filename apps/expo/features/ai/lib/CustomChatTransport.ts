@@ -5,6 +5,7 @@ import {
   type ChatTransport,
   convertToModelMessages,
   type LanguageModel,
+  stepCountIs,
   streamText,
   type ToolSet,
   type UIMessageChunk,
@@ -47,6 +48,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
       model: this.model,
       messages: await convertToModelMessages(options.messages),
       abortSignal: options.abortSignal,
+      stopWhen: stepCountIs(5),
       ...(this.systemPrompt ? { system: this.systemPrompt } : {}),
       ...(this.tools ? { tools: this.tools, toolChoice: 'auto' } : {}),
     });
