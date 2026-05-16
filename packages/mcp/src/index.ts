@@ -4,14 +4,22 @@
  * A full-featured Model Context Protocol server for outdoor adventure planning,
  * built on Cloudflare Workers + Durable Objects using the Cloudflare Agents SDK.
  *
- * Features:
- *  - 20+ tools: packs, gear catalog, trips, weather, trail conditions, outdoor knowledge
- *  - MCP resources: pack/trip/gear data accessible by URI
- *  - Guided prompts: trip planning, pack optimization, gear recommendations
- *  - Stateful sessions with hibernation (via Durable Objects)
- *  - OAuth 2.1 + PKCE authorization via @cloudflare/workers-oauth-provider
+ * The MCP server is intentionally a *lean* layer on top of the PackRat API.
+ * All business logic lives in the API (`@packrat/api`); this package just
+ * surfaces typed tool wrappers via Eden Treaty, plus per-session auth state.
  *
- * Transport: Streamable HTTP (default) and SSE
+ * Features:
+ *  - 60+ tools across user + admin surfaces — packs, gear catalog, trips,
+ *    weather, trail conditions, outdoor knowledge, feed, pack templates,
+ *    season suggestions, wildlife, alltrails, uploads, guides, AI, admin.
+ *  - End-to-end typed Eden Treaty calls to the PackRat API.
+ *  - MCP resources: pack/trip/gear data accessible by URI.
+ *  - Guided prompts: trip planning, pack optimization, gear recommendations.
+ *  - Stateful sessions with hibernation (via Durable Objects).
+ *  - OAuth 2.1 + PKCE authorization via @cloudflare/workers-oauth-provider.
+ *  - Per-session admin JWT, supplied via `X-PackRat-Admin-Token` or `admin_login`.
+ *
+ * Transport: Streamable HTTP (default) and SSE.
  *
  * OAuth flow:
  *   GET  /authorize  → login form redirect
@@ -22,31 +30,42 @@
  */
 
 import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
 import { z } from 'zod';
 import { PackRatAuthHandler } from './auth';
-import type { PackRatApiClient } from './client';
-import { createPackRatClient } from './client';
+import { createMcpClients, type McpClients } from './client';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
+import { registerAdminTools } from './tools/admin';
+import { registerAiTools } from './tools/ai';
+import { registerAlltrailsTools } from './tools/alltrails';
+import { registerAuthTools } from './tools/auth';
 import { registerCatalogTools } from './tools/catalog';
+import { registerFeedTools } from './tools/feed';
+import { registerGuidesTools } from './tools/guides';
 import { registerKnowledgeTools } from './tools/knowledge';
+import { registerPackTemplateTools } from './tools/packTemplates';
 import { registerPackTools } from './tools/packs';
+import { registerSeasonTools } from './tools/seasons';
 import { registerTrailConditionTools } from './tools/trail-conditions';
 import { registerTrailTools } from './tools/trails';
 import { registerTripTools } from './tools/trips';
+import { registerUploadTools } from './tools/upload';
+import { registerUserTools } from './tools/user';
 import { registerWeatherTools } from './tools/weather';
-import type { Env } from './types';
+import { registerWildlifeTools } from './tools/wildlife';
+import type { AgentContext, Env } from './types';
 
-// Re-export Env for consumers (e.g. tests)
 export type { Env };
 
 // ── Session state ─────────────────────────────────────────────────────────────
 
 export interface State {
-  /** Better Auth session token, injected per-request from OAuth props or legacy Bearer header */
+  /** Better Auth session token, injected per-request from OAuth props or a Bearer header. */
   authToken: string;
+  /** Admin JWT, populated by `admin_login` or injected via `X-PackRat-Admin-Token`. */
+  adminToken: string;
 }
 
 // ── MCP Agent (Durable Object) ────────────────────────────────────────────────
@@ -54,39 +73,131 @@ export interface State {
 export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   server = new McpServer({
     name: 'packrat',
-    version: '1.0.0',
+    version: '2.0.0',
   });
 
-  initialState: State = { authToken: '' };
+  initialState: State = { authToken: '', adminToken: '' };
 
-  private _api: PackRatApiClient | null = null;
+  private _api: McpClients | null = null;
+  private _adminTools: RegisteredTool[] = [];
+  private _flaggedTools: Map<string, RegisteredTool[]> = new Map();
+  private _flagState: Map<string, boolean> = new Map();
 
-  get api(): PackRatApiClient {
+  get api(): McpClients {
     if (!this._api) {
-      this._api = createPackRatClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
+      this._api = createMcpClients({
+        baseUrl: this.apiBaseUrl,
+        getUserToken: () => this.state.authToken,
+        getAdminToken: () => this.state.adminToken,
+      });
     }
     return this._api;
   }
 
+  get apiBaseUrl(): string {
+    return this.env.PACKRAT_API_URL;
+  }
+
+  /** Replace the per-session admin token. Toggles visibility of admin tools. */
+  setAdminToken(token: string): void {
+    if (token === this.state.adminToken) return;
+    this.setState({ ...this.state, adminToken: token });
+    this.syncAdminToolVisibility();
+  }
+
+  /**
+   * Register a tool that's only listed when an admin JWT is on the session.
+   * Mirrors `server.registerTool` and toggles visibility via the MCP SDK's
+   * `enable()/disable()` (which emits `tools/list_changed`).
+   */
+  registerAdminTool: McpServer['registerTool'] = (...args) => {
+    // safe-cast: McpServer.registerTool's overloads collapse at the implementation level;
+    // forwarding via spread requires a single call signature here.
+    const tool = (this.server.registerTool as (...a: unknown[]) => RegisteredTool)(...args);
+    this._adminTools.push(tool);
+    if (!this.state.adminToken) tool.disable();
+    return tool;
+  };
+
+  private syncAdminToolVisibility(): void {
+    const enabled = Boolean(this.state.adminToken);
+    for (const tool of this._adminTools) {
+      if (enabled && !tool.enabled) tool.enable();
+      else if (!enabled && tool.enabled) tool.disable();
+    }
+  }
+
+  /**
+   * Register a tool gated on a feature flag. The tool is hidden unless the
+   * flag is present in `MCP_FEATURE_FLAGS` or enabled via `setFeatureFlag`.
+   */
+  registerFlaggedTool: AgentContext['registerFlaggedTool'] = (flag, ...args) => {
+    // safe-cast: McpServer.registerTool's overloads collapse at the implementation level;
+    // forwarding via spread requires a single call signature here.
+    const tool = (this.server.registerTool as (...a: unknown[]) => RegisteredTool)(...args);
+    const bucket = this._flaggedTools.get(flag) ?? [];
+    bucket.push(tool);
+    this._flaggedTools.set(flag, bucket);
+    if (!this.isFlagEnabled(flag)) tool.disable();
+    return tool;
+  };
+
+  setFeatureFlag(flag: string, enabled: boolean): void {
+    this._flagState.set(flag, enabled);
+    for (const tool of this._flaggedTools.get(flag) ?? []) {
+      if (enabled && !tool.enabled) tool.enable();
+      else if (!enabled && tool.enabled) tool.disable();
+    }
+  }
+
+  private isFlagEnabled(flag: string): boolean {
+    const runtime = this._flagState.get(flag);
+    if (runtime !== undefined) return runtime;
+    const envList = (this.env.MCP_FEATURE_FLAGS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return envList.includes(flag);
+  }
+
   override async fetch(request: Request): Promise<Response> {
     const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
+    const userToken = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
+    const adminToken = request.headers.get('X-PackRat-Admin-Token') ?? '';
 
-    if (token !== this.state.authToken) {
-      this.setState({ ...this.state, authToken: token });
+    const nextAuth = userToken || this.state.authToken;
+    const nextAdmin = adminToken || this.state.adminToken;
+    if (nextAuth !== this.state.authToken || nextAdmin !== this.state.adminToken) {
+      this.setState({ ...this.state, authToken: nextAuth, adminToken: nextAdmin });
     }
 
     return super.fetch(request);
   }
 
   async init(): Promise<void> {
+    // ── User-level (Bearer) ────────────────────────────────────────────────
+    registerAuthTools(this);
+    registerUserTools(this);
     registerPackTools(this);
+    registerPackTemplateTools(this);
     registerCatalogTools(this);
     registerTripTools(this);
     registerWeatherTools(this);
     registerKnowledgeTools(this);
     registerTrailConditionTools(this);
     registerTrailTools(this);
+    registerFeedTools(this);
+    registerSeasonTools(this);
+    registerWildlifeTools(this);
+    registerAlltrailsTools(this);
+    registerUploadTools(this);
+    registerGuidesTools(this);
+    registerAiTools(this);
+
+    // ── Admin (admin JWT) ──────────────────────────────────────────────────
+    registerAdminTools(this);
+
+    // ── Resources + prompts ────────────────────────────────────────────────
     registerResources(this);
     registerPrompts(this);
   }
@@ -103,6 +214,7 @@ const mcpDoHandler = PackRatMCP.serve('/mcp');
 const PropsSchema = z.object({
   betterAuthToken: z.string(),
   userId: z.string(),
+  adminToken: z.string().optional(),
 });
 
 // ── API handler: wraps McpAgent, injecting the Better Auth token from OAuth props ──
@@ -111,11 +223,13 @@ const mcpApiHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rawCtx = ctx as unknown as Record<string, unknown>; // safe-cast: OAuth provider injects props at runtime; ExecutionContext has no index signature
     const propsResult = PropsSchema.safeParse(rawCtx.props);
-    const token = propsResult.success ? propsResult.data.betterAuthToken : '';
+    const userToken = propsResult.success ? propsResult.data.betterAuthToken : '';
+    const adminToken = propsResult.success ? (propsResult.data.adminToken ?? '') : '';
 
     const headers = new Headers(request.headers);
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+    if (userToken) headers.set('Authorization', `Bearer ${userToken}`);
+    if (adminToken && !headers.has('X-PackRat-Admin-Token')) {
+      headers.set('X-PackRat-Admin-Token', adminToken);
     }
 
     return mcpDoHandler.fetch(new Request(request, { headers }), env, ctx);

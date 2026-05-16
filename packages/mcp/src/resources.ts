@@ -1,19 +1,54 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ApiError } from './client';
 import type { AgentContext } from './types';
 
-function resourceError(opts: { uri: string; context: string; error: unknown }): object {
-  const { uri, context, error } = opts;
-  if (error instanceof ApiError) {
-    return { uri, error: error.message, status: error.status, context };
+type TreatyResult = {
+  data: unknown;
+  error: { status: number; value: unknown } | null;
+  status: number;
+};
+
+function resourceError(opts: { uri: string; context: string; status: number; value: unknown }) {
+  const { uri, context, status, value } = opts;
+  const message =
+    typeof value === 'string'
+      ? value
+      : value && typeof value === 'object' && 'error' in value
+        ? String((value as { error: unknown }).error)
+        : `HTTP ${status}`;
+  return { uri, context, status, error: message };
+}
+
+function asContent(uri: string, body: object): { contents: Array<{ uri: string; mimeType: string; text: string }> } {
+  return {
+    contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(body, null, 2) }],
+  };
+}
+
+async function settle(
+  uri: string,
+  context: string,
+  promise: Promise<TreatyResult>,
+): Promise<{ contents: Array<{ uri: string; mimeType: string; text: string }> }> {
+  try {
+    const { data, error, status } = await promise;
+    if (error || data == null) {
+      return asContent(
+        uri,
+        resourceError({ uri, context, status, value: error?.value ?? null }),
+      );
+    }
+    return asContent(uri, data as object);
+  } catch (e) {
+    return asContent(uri, {
+      uri,
+      context,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
-  return { uri, error: error instanceof Error ? error.message : String(error), context };
 }
 
 export function registerResources(agent: AgentContext): void {
-  // ── Pack resource (URI template) ──────────────────────────────────────────
-  // Clients can read: packrat://packs/<packId>
-
+  // ── Pack resource ─────────────────────────────────────────────────────────
   agent.server.registerResource(
     'pack',
     new ResourceTemplate('packrat://packs/{packId}', { list: undefined }),
@@ -22,32 +57,11 @@ export function registerResources(agent: AgentContext): void {
         'A PackRat packing list. Contains all items with weights, categories, and computed weight totals.',
       mimeType: 'application/json',
     },
-    async (uri, { packId }) => {
-      try {
-        const pack = await agent.api.get(`/packs/${String(packId)}`);
-        return {
-          contents: [
-            { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(pack, null, 2) },
-          ],
-        };
-      } catch (e) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(
-                resourceError({ uri: uri.href, context: `pack:${String(packId)}`, error: e }),
-              ),
-            },
-          ],
-        };
-      }
-    },
+    (uri, { packId }) =>
+      settle(uri.href, `pack:${String(packId)}`, agent.api.user.packs({ packId: String(packId) }).get()),
   );
 
   // ── Trip resource ─────────────────────────────────────────────────────────
-
   agent.server.registerResource(
     'trip',
     new ResourceTemplate('packrat://trips/{tripId}', { list: undefined }),
@@ -56,32 +70,11 @@ export function registerResources(agent: AgentContext): void {
         'A PackRat trip plan. Contains destination, dates, notes, and linked pack information.',
       mimeType: 'application/json',
     },
-    async (uri, { tripId }) => {
-      try {
-        const trip = await agent.api.get(`/trips/${String(tripId)}`);
-        return {
-          contents: [
-            { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(trip, null, 2) },
-          ],
-        };
-      } catch (e) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(
-                resourceError({ uri: uri.href, context: `trip:${String(tripId)}`, error: e }),
-              ),
-            },
-          ],
-        };
-      }
-    },
+    (uri, { tripId }) =>
+      settle(uri.href, `trip:${String(tripId)}`, agent.api.user.trips({ tripId: String(tripId) }).get()),
   );
 
   // ── Catalog item resource ─────────────────────────────────────────────────
-
   agent.server.registerResource(
     'catalog_item',
     new ResourceTemplate('packrat://catalog/{itemId}', { list: undefined }),
@@ -90,32 +83,15 @@ export function registerResources(agent: AgentContext): void {
         'A gear catalog item with full specifications, weight, price, availability, and user reviews.',
       mimeType: 'application/json',
     },
-    async (uri, { itemId }) => {
-      try {
-        const item = await agent.api.get(`/catalog/${String(itemId)}`);
-        return {
-          contents: [
-            { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(item, null, 2) },
-          ],
-        };
-      } catch (e) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(
-                resourceError({ uri: uri.href, context: `catalog:${String(itemId)}`, error: e }),
-              ),
-            },
-          ],
-        };
-      }
-    },
+    (uri, { itemId }) =>
+      settle(
+        uri.href,
+        `catalog:${String(itemId)}`,
+        agent.api.user.catalog({ id: String(itemId) }).get(),
+      ),
   );
 
   // ── Gear categories list (static URI) ─────────────────────────────────────
-
   agent.server.registerResource(
     'gear_categories',
     'packrat://catalog/categories',
@@ -124,31 +100,6 @@ export function registerResources(agent: AgentContext): void {
         'Complete list of gear categories available in the PackRat catalog. Use this to discover what types of gear are available.',
       mimeType: 'application/json',
     },
-    async (uri) => {
-      try {
-        const categories = await agent.api.get('/catalog/categories');
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(categories, null, 2),
-            },
-          ],
-        };
-      } catch (e) {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(
-                resourceError({ uri: uri.href, context: 'gear_categories', error: e }),
-              ),
-            },
-          ],
-        };
-      }
-    },
+    (uri) => settle(uri.href, 'gear_categories', agent.api.user.catalog.categories.get()),
   );
 }

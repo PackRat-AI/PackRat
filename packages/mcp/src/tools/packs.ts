@@ -1,10 +1,7 @@
 import { z } from 'zod';
-import { err, ok } from '../client';
+import { call, nowIso, ok, shortId } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
-
-// ── Tool regex constants ──
-const STRIP_HYPHENS = /-/g;
 
 interface PackDetailResponse {
   items?: Array<{
@@ -36,14 +33,10 @@ export function registerPackTools(agent: AgentContext): void {
           .describe('Include public packs from other users'),
       },
     },
-    async ({ include_public }) => {
-      try {
-        const data = await agent.api.get('/packs', { includePublic: include_public ? 1 : 0 });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ include_public }) =>
+      call(agent.api.user.packs.get({ query: { includePublic: include_public ? 1 : 0 } }), {
+        action: 'list packs',
+      }),
   );
 
   // ── Get pack details ──────────────────────────────────────────────────────
@@ -57,14 +50,11 @@ export function registerPackTools(agent: AgentContext): void {
         pack_id: z.string().describe('The unique pack ID (e.g. "p_abc123")'),
       },
     },
-    async ({ pack_id }) => {
-      try {
-        const data = await agent.api.get(`/packs/${pack_id}`);
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ pack_id }) =>
+      call(agent.api.user.packs({ packId: pack_id }).get(), {
+        action: 'get pack',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Create pack ───────────────────────────────────────────────────────────
@@ -86,10 +76,10 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ name, description, category, is_public, tags }) => {
-      try {
-        const id = `p_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
-        const now = new Date().toISOString();
-        const data = await agent.api.post('/packs', {
+      const id = shortId('p');
+      const now = nowIso();
+      return call(
+        agent.api.user.packs.post({
           id,
           name,
           description,
@@ -98,11 +88,9 @@ export function registerPackTools(agent: AgentContext): void {
           tags,
           localCreatedAt: now,
           localUpdatedAt: now,
-        });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
+        }),
+        { action: 'create pack' },
+      );
     },
   );
 
@@ -122,18 +110,16 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id, name, description, category, is_public, tags }) => {
-      try {
-        const body: Record<string, unknown> = { localUpdatedAt: new Date().toISOString() };
-        if (name !== undefined) body.name = name;
-        if (description !== undefined) body.description = description;
-        if (category !== undefined) body.category = category;
-        if (is_public !== undefined) body.isPublic = is_public;
-        if (tags !== undefined) body.tags = tags;
-        const data = await agent.api.put(`/packs/${pack_id}`, body);
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
+      const body: Record<string, unknown> = { localUpdatedAt: nowIso() };
+      if (name !== undefined) body.name = name;
+      if (description !== undefined) body.description = description;
+      if (category !== undefined) body.category = category;
+      if (is_public !== undefined) body.isPublic = is_public;
+      if (tags !== undefined) body.tags = tags;
+      return call(agent.api.user.packs({ packId: pack_id }).put(body), {
+        action: 'update pack',
+        resourceHint: `pack ${pack_id}`,
+      });
     },
   );
 
@@ -147,14 +133,41 @@ export function registerPackTools(agent: AgentContext): void {
         pack_id: z.string().describe('The unique pack ID to delete'),
       },
     },
-    async ({ pack_id }) => {
-      try {
-        const data = await agent.api.delete(`/packs/${pack_id}`);
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
+    async ({ pack_id }) =>
+      call(agent.api.user.packs({ packId: pack_id }).delete(), {
+        action: 'delete pack',
+        resourceHint: `pack ${pack_id}`,
+      }),
+  );
+
+  // ── List pack items ───────────────────────────────────────────────────────
+
+  agent.server.registerTool(
+    'list_pack_items',
+    {
+      description: 'List all items in a pack.',
+      inputSchema: { pack_id: z.string().describe('The pack ID') },
     },
+    async ({ pack_id }) =>
+      call(agent.api.user.packs({ packId: pack_id }).items.get(), {
+        action: 'list pack items',
+        resourceHint: `pack ${pack_id}`,
+      }),
+  );
+
+  // ── Get a single pack item ────────────────────────────────────────────────
+
+  agent.server.registerTool(
+    'get_pack_item',
+    {
+      description: 'Get full details of a single pack item.',
+      inputSchema: { item_id: z.string().describe('The pack item ID') },
+    },
+    async ({ item_id }) =>
+      call(agent.api.user.packs.items({ itemId: item_id }).get(), {
+        action: 'get pack item',
+        resourceHint: `item ${item_id}`,
+      }),
   );
 
   // ── Add item to pack ──────────────────────────────────────────────────────
@@ -194,10 +207,10 @@ export function registerPackTools(agent: AgentContext): void {
       is_worn,
       notes,
     }) => {
-      try {
-        const id = `i_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
-        const now = new Date().toISOString();
-        const data = await agent.api.post(`/packs/${pack_id}/items`, {
+      const id = shortId('i');
+      const now = nowIso();
+      return call(
+        agent.api.user.packs({ packId: pack_id }).items.post({
           id,
           name,
           category,
@@ -209,11 +222,42 @@ export function registerPackTools(agent: AgentContext): void {
           notes,
           localCreatedAt: now,
           localUpdatedAt: now,
-        });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
+        }),
+        { action: 'add pack item', resourceHint: `pack ${pack_id}` },
+      );
+    },
+  );
+
+  // ── Update pack item ──────────────────────────────────────────────────────
+
+  agent.server.registerTool(
+    'update_pack_item',
+    {
+      description: 'Update fields on an existing pack item.',
+      inputSchema: {
+        item_id: z.string().describe('The pack item ID'),
+        name: z.string().min(1).optional(),
+        category: z.nativeEnum(ItemCategory).optional(),
+        weight_grams: z.number().min(0).optional(),
+        quantity: z.number().int().min(1).optional(),
+        is_consumable: z.boolean().optional(),
+        is_worn: z.boolean().optional(),
+        notes: z.string().nullable().optional(),
+      },
+    },
+    async ({ item_id, name, category, weight_grams, quantity, is_consumable, is_worn, notes }) => {
+      const body: Record<string, unknown> = { localUpdatedAt: nowIso() };
+      if (name !== undefined) body.name = name;
+      if (category !== undefined) body.category = category;
+      if (weight_grams !== undefined) body.weight = weight_grams;
+      if (quantity !== undefined) body.quantity = quantity;
+      if (is_consumable !== undefined) body.consumable = is_consumable;
+      if (is_worn !== undefined) body.worn = is_worn;
+      if (notes !== undefined) body.notes = notes;
+      return call(agent.api.user.packs.items({ itemId: item_id }).patch(body), {
+        action: 'update pack item',
+        resourceHint: `item ${item_id}`,
+      });
     },
   );
 
@@ -223,101 +267,193 @@ export function registerPackTools(agent: AgentContext): void {
     'remove_pack_item',
     {
       description: 'Remove an item from a pack (soft-delete).',
+      inputSchema: { item_id: z.string().describe('The item ID to remove') },
+    },
+    async ({ item_id }) =>
+      call(agent.api.user.packs.items({ itemId: item_id }).delete(), {
+        action: 'delete pack item',
+        resourceHint: `item ${item_id}`,
+      }),
+  );
+
+  // ── Similar items for an item in a pack ───────────────────────────────────
+
+  agent.server.registerTool(
+    'similar_pack_items',
+    {
+      description:
+        'Find catalog gear similar to a specific item in a pack (semantic similarity).',
       inputSchema: {
-        item_id: z.string().describe('The item ID to remove'),
+        pack_id: z.string(),
+        item_id: z.string(),
+        limit: z.number().int().min(1).max(50).default(10),
+        threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
       },
     },
-    async ({ item_id }) => {
-      try {
-        const data = await agent.api.delete(`/packs/items/${item_id}`);
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
+    async ({ pack_id, item_id, limit, threshold }) =>
+      call(
+        agent.api.user
+          .packs({ packId: pack_id })
+          .items({ itemId: item_id })
+          .similar.get({ query: { limit, ...(threshold !== undefined ? { threshold } : {}) } }),
+        { action: 'find similar items', resourceHint: `item ${item_id}` },
+      ),
+  );
+
+  // ── Pack item suggestions ─────────────────────────────────────────────────
+
+  agent.server.registerTool(
+    'suggest_pack_items',
+    {
+      description:
+        'Get AI-driven catalog item suggestions for a pack based on the items already in it.',
+      inputSchema: {
+        pack_id: z.string(),
+        existing_catalog_item_ids: z.array(z.number().int()).default([]),
+      },
+    },
+    async ({ pack_id, existing_catalog_item_ids }) =>
+      call(
+        agent.api.user
+          .packs({ packId: pack_id })
+          ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
+        { action: 'suggest pack items', resourceHint: `pack ${pack_id}` },
+      ),
+  );
+
+  // ── Weight history ────────────────────────────────────────────────────────
+
+  agent.server.registerTool(
+    'get_pack_weight_history',
+    {
+      description: "Get the weight history for all of the user's packs over time.",
+      inputSchema: {},
+    },
+    async () =>
+      call(agent.api.user.packs['weight-history'].get(), {
+        action: 'list pack weight history',
+      }),
+  );
+
+  agent.server.registerTool(
+    'record_pack_weight',
+    {
+      description: 'Record a weight measurement for a pack at a specific point in time.',
+      inputSchema: { pack_id: z.string(), weight_grams: z.number().min(0) },
+    },
+    async ({ pack_id, weight_grams }) => {
+      const id = shortId('w');
+      return call(
+        agent.api.user
+          .packs({ packId: pack_id })
+          ['weight-history'].post({ id, weight: weight_grams, localCreatedAt: nowIso() }),
+        { action: 'record pack weight', resourceHint: `pack ${pack_id}` },
+      );
     },
   );
 
   // ── Pack weight analysis ──────────────────────────────────────────────────
+  // The API already returns totalWeight/baseWeight/wornWeight/consumableWeight
+  // on a pack detail but does NOT return a per-category breakdown. Candidate
+  // for API thickening: GET /packs/:packId/weight-breakdown.
 
   agent.server.registerTool(
     'analyze_pack_weight',
     {
       description:
         'Get a detailed weight breakdown for a pack by category. Returns base weight, worn weight, consumable weight, and total weight with per-category summaries. Useful for identifying the heaviest items and optimization opportunities.',
-      inputSchema: {
-        pack_id: z.string().describe('The pack ID to analyze'),
-      },
+      inputSchema: { pack_id: z.string().describe('The pack ID to analyze') },
     },
     async ({ pack_id }) => {
-      try {
-        const pack = await agent.api.get<PackDetailResponse>(`/packs/${pack_id}`);
-
-        const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> =
-          {};
-        const items = pack.items ?? [];
-
-        for (const item of items) {
-          const cat = item.category || 'Uncategorized';
-          const entry = byCategory[cat] ?? { items: [], totalGrams: 0, count: 0 };
-          entry.items.push(`${item.name} (${item.weight}g × ${item.quantity})`);
-          entry.totalGrams += item.weight * item.quantity;
-          entry.count += item.quantity;
-          byCategory[cat] = entry;
-        }
-
-        const analysis = {
-          packId: pack_id,
-          totalWeight: pack.totalWeight ?? 0,
-          baseWeight: pack.baseWeight ?? 0,
-          wornWeight: pack.wornWeight ?? 0,
-          consumableWeight: pack.consumableWeight ?? 0,
-          itemCount: items.length,
-          byCategory: Object.entries(byCategory)
-            .sort((a, b) => b[1].totalGrams - a[1].totalGrams)
-            .map(([category, stats]) => ({
-              category,
-              totalGrams: stats.totalGrams,
-              totalLbs: (stats.totalGrams / 453.592).toFixed(2),
-              itemCount: stats.count,
-              items: stats.items,
-            })),
-        };
-
-        return ok(analysis);
-      } catch (e) {
-        return err(e);
+      const { data, error, status } = await agent.api.user.packs({ packId: pack_id }).get();
+      if (error || !data) {
+        return call(Promise.resolve({ data: null, error, status }), {
+          action: 'analyze pack weight',
+          resourceHint: `pack ${pack_id}`,
+        });
       }
+      const pack = data as unknown as PackDetailResponse; // safe-cast: API returns the pack detail shape used below
+      const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> = {};
+      const items = pack.items ?? [];
+      for (const item of items) {
+        const cat = item.category || 'Uncategorized';
+        const entry = byCategory[cat] ?? { items: [], totalGrams: 0, count: 0 };
+        entry.items.push(`${item.name} (${item.weight}g × ${item.quantity})`);
+        entry.totalGrams += item.weight * item.quantity;
+        entry.count += item.quantity;
+        byCategory[cat] = entry;
+      }
+      return ok({
+        packId: pack_id,
+        totalWeight: pack.totalWeight ?? 0,
+        baseWeight: pack.baseWeight ?? 0,
+        wornWeight: pack.wornWeight ?? 0,
+        consumableWeight: pack.consumableWeight ?? 0,
+        itemCount: items.length,
+        byCategory: Object.entries(byCategory)
+          .sort((a, b) => b[1].totalGrams - a[1].totalGrams)
+          .map(([category, stats]) => ({
+            category,
+            totalGrams: stats.totalGrams,
+            totalLbs: (stats.totalGrams / 453.592).toFixed(2),
+            itemCount: stats.count,
+            items: stats.items,
+          })),
+      });
     },
   );
 
-  // ── Pack gap analysis ─────────────────────────────────────────────────────
+  // ── Gap analysis ──────────────────────────────────────────────────────────
 
   agent.server.registerTool(
     'analyze_pack_gaps',
     {
       description:
-        "Identify missing essential gear categories for a specific activity type. Compares the pack's current categories against recommended essentials and returns what's missing.",
+        "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
       inputSchema: {
         pack_id: z.string().describe('The pack ID to analyze'),
-        activity: z.nativeEnum(PackCategory).describe('Activity type to check gear gaps for'),
-        duration_days: z
+        destination: z.string().describe('Trip destination'),
+        trip_type: z.nativeEnum(PackCategory).describe('Trip / activity type'),
+        duration_days: z.number().int().min(1).describe('Trip duration in days'),
+        start_date: z.string().optional().describe('ISO date for trip start'),
+        end_date: z.string().optional().describe('ISO date for trip end'),
+      },
+    },
+    async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
+      call(
+        agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
+          destination,
+          tripType: trip_type,
+          duration: duration_days,
+          startDate: start_date,
+          endDate: end_date,
+        }),
+        { action: 'analyze pack gaps', resourceHint: `pack ${pack_id}` },
+      ),
+  );
+
+  // ── Image-based gear detection ───────────────────────────────────────────
+
+  agent.server.registerTool(
+    'analyze_pack_image',
+    {
+      description:
+        'Submit a gear image (R2 key from upload_image_url) for AI-powered item detection. Returns detected items with catalog matches.',
+      inputSchema: {
+        image_key: z.string().describe('R2 image key from a presigned upload'),
+        match_limit: z
           .number()
           .int()
           .min(1)
-          .optional()
-          .describe('Trip duration in days (affects consumable recommendations)'),
+          .max(20)
+          .default(5)
+          .describe('Max catalog matches per detected item'),
       },
     },
-    async ({ pack_id, activity, duration_days }) => {
-      try {
-        const data = await agent.api.post(`/packs/${pack_id}/gap-analysis`, {
-          activity,
-          durationDays: duration_days,
-        });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ image_key, match_limit }) =>
+      call(
+        agent.api.user.packs['analyze-image'].post({ image: image_key, matchLimit: match_limit }),
+        { action: 'analyze pack image' },
+      ),
   );
 }
