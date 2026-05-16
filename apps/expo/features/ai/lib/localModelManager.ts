@@ -2,14 +2,16 @@
  * Singleton manager for the on-device AI model.
  *
  * - On iOS 26+: uses @react-native-ai/apple (Apple Foundation Models, no download needed)
- * - On other devices: uses @react-native-ai/llama with SmolLM3-3B-GGUF
+ * - On other devices: uses @react-native-ai/llama with Qwen2.5-3B-Instruct Q3_K_M
  *
  * Updates Jotai atoms via the global store so download progress is visible
  * from any component, even while the bottom sheet is closed.
  */
 
 import { isString } from '@packrat/guards';
-import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
+import type { LlamaLanguageModel } from '@react-native-ai/llama';
+import { llama } from '@react-native-ai/llama';
+import type { LanguageModel } from 'ai';
 import { store } from 'expo-app/atoms/store';
 import { Platform } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
@@ -19,11 +21,12 @@ import {
   localModelProgressAtom,
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
-
+import { AppleModelWrapper } from './appleModelWrapper';
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
+import { LlamaToolsWrapper } from './llamaToolsWrapper';
 import { createLocalTools } from './tools';
 
-const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
+const LLAMA_MODEL_FILENAME = LLAMA_MODEL_ID.split('/').at(-1) ?? 'model.gguf';
 const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
 
 function _getLlamaModelPath(): string {
@@ -58,9 +61,12 @@ function getAppleModule() {
   if (appleModule) return appleModule;
 
   try {
-    appleModule = import('@react-native-ai/apple');
+    // require() is synchronous — import() returns a Promise, which breaks
+    // the synchronous callers (isAppleIntelligenceAvailable, etc.)
+    appleModule = require('@react-native-ai/apple');
     return appleModule;
-  } catch {
+  } catch (err) {
+    console.error('Failed to load Apple module:', err);
     return null;
   }
 }
@@ -68,6 +74,7 @@ function getAppleModule() {
 // ─── Singletons ─────────────────────────────────────────────────────────────
 
 let llamaModel: LlamaLanguageModel | null = null;
+let llamaModelWrapper: LlamaToolsWrapper | null = null;
 // biome-ignore lint/suspicious/noExplicitAny: Apple module type unknown
 let appleModel: any = null;
 // biome-ignore lint/suspicious/noExplicitAny: download task type unknown
@@ -98,9 +105,10 @@ export function isAppleIntelligenceAvailable(): boolean {
 }
 
 /** Returns the ready model instance, or null if not prepared yet. */
-export function getLocalModel(): LlamaLanguageModel | null {
+export function getLocalModel(): LanguageModel | null {
   if (isAppleIntelligenceAvailable()) return appleModel;
-  return llamaModel;
+  // safe-cast: LlamaToolsWrapper is structurally a LanguageModel; double-cast through unknown is required because two incompatible @ai-sdk/provider versions are installed
+  return llamaModelWrapper as unknown as LanguageModel;
 }
 
 /** Check if the local model file is fully present on disk (existence + size). */
@@ -144,7 +152,7 @@ export async function downloadLocalModel(): Promise<void> {
   store.set(localModelErrorAtom, null);
 
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
   }
 
   const isAvailable = await _isLlamaModelAvailable();
@@ -171,8 +179,15 @@ export async function downloadLocalModel(): Promise<void> {
       activeDownloadTask.progress((received: number, total: number) => {
         store.set(localModelProgressAtom, Math.round((Number(received) / Number(total)) * 100));
       });
-      await activeDownloadTask;
+      const downloadRes = await activeDownloadTask;
       activeDownloadTask = null;
+      const httpStatus = downloadRes.respInfo?.status ?? 0;
+      if (httpStatus < 200 || httpStatus >= 300) {
+        await RNBlobUtil.fs.unlink(_getLlamaModelPath()).catch(() => {});
+        store.set(localModelStatusAtom, 'error');
+        store.set(localModelErrorAtom, `Download failed: HTTP ${httpStatus}`);
+        return;
+      }
     } catch (err) {
       activeDownloadTask = null;
       if (_isCancellingDownload) return;
@@ -208,6 +223,32 @@ export async function cancelLocalModelDownload(): Promise<void> {
   _isCancellingDownload = false;
 }
 
+/**
+ * Unload the active model from memory without deleting the file.
+ * Use when backgrounding the app or before hot-reload, so native modules
+ * are cleanly invalidated. Call `initLocalModel` to reload after.
+ */
+export async function releaseLocalModel(): Promise<void> {
+  if (appleModel) {
+    try {
+      await appleModel.unload?.();
+    } catch {
+      // ignore
+    }
+    appleModel = null;
+  }
+  if (llamaModel) {
+    try {
+      await llamaModel.unload();
+    } catch {
+      // ignore
+    }
+    llamaModel = null;
+    llamaModelWrapper = null;
+  }
+  store.set(localModelStatusAtom, 'idle');
+}
+
 /** Delete the downloaded llama model from disk. */
 export async function deleteLocalModel(): Promise<void> {
   if (llamaModel) {
@@ -217,6 +258,7 @@ export async function deleteLocalModel(): Promise<void> {
       // ignore unload errors
     }
     llamaModel = null;
+    llamaModelWrapper = null;
   }
 
   // Direct filesystem deletion — more reliable than the library's remove()
@@ -245,8 +287,11 @@ async function _initAppleModel(): Promise<void> {
     const mod = await getAppleModule();
     if (!mod) throw new Error('Apple module not available');
 
-    appleModel = mod.apple();
-    appleModel.updateTools(createLocalTools());
+    const apple = mod.createAppleProvider({
+      availableTools: createLocalTools(),
+    });
+
+    appleModel = new AppleModelWrapper(apple());
     store.set(localModelStatusAtom, 'ready');
   } catch {
     store.set(localModelStatusAtom, 'error');
@@ -256,7 +301,7 @@ async function _initAppleModel(): Promise<void> {
 
 async function _initLlamaModel(): Promise<void> {
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
   }
   const isAvailable = await _isLlamaModelAvailable();
   store.set(localModelFileAvailableAtom, isAvailable);
@@ -273,6 +318,7 @@ async function _prepareLlamaModel(): Promise<void> {
   try {
     if (!llamaModel) throw new Error('llamaModel is not initialised');
     await llamaModel.prepare();
+    llamaModelWrapper = new LlamaToolsWrapper(llamaModel);
     store.set(localModelFileAvailableAtom, true);
     store.set(localModelStatusAtom, 'ready');
   } catch (err) {
