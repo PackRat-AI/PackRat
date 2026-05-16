@@ -140,6 +140,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const { ids } = body;
+      const uniqueIds = Array.from(new Set(ids));
       const items = await db
         .select({
           id: catalogItems.id,
@@ -153,10 +154,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           categories: catalogItems.categories,
         })
         .from(catalogItems)
-        .where(inArray(catalogItems.id, ids));
+        .where(inArray(catalogItems.id, uniqueIds));
 
-      if (items.length === 0) {
-        return status(404, { error: 'No catalog items matched the supplied IDs' });
+      const foundIds = new Set(items.map((it) => it.id));
+      const missing = uniqueIds.filter((id) => !foundIds.has(id));
+      if (missing.length > 0) {
+        return status(404, {
+          error: `Catalog item(s) not found: ${missing.join(', ')}`,
+        });
       }
 
       const rank = <K extends keyof (typeof items)[number]>(

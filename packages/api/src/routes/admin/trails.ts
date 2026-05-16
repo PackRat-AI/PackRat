@@ -8,6 +8,7 @@ import {
   TrailSearchItemSchema,
   TrailSearchResultSchema,
 } from '@packrat/api/schemas/admin';
+import { queryBoolean } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -312,7 +313,8 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
         q: z.string().optional(),
         limit: z.coerce.number().int().min(1).max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
-        includeDeleted: z.coerce.boolean().optional(),
+        // queryBoolean() — see admin/index.ts for why we avoid z.coerce.boolean
+        includeDeleted: queryBoolean(),
       }),
       response: { 200: TrailConditionsListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List all trail condition reports' },

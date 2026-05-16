@@ -268,10 +268,11 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
 
   // Weight breakdown — total/base/worn/consumable + per-category aggregation.
   // Edge apps were computing this by walking pack.items locally; centralising
-  // here keeps MCP/CLI tools as one-line passthroughs.
+  // here keeps MCP/CLI tools as one-line passthroughs. Matches the
+  // owner-or-public access pattern used by GET /:packId/items.
   .get(
     '/:packId/weight-breakdown',
-    async ({ params }) => {
+    async ({ params, user }) => {
       const db = createDb();
       try {
         const pack = await db.query.packs.findFirst({
@@ -279,6 +280,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           with: { items: { where: eq(packItems.deleted, false) } },
         });
         if (!pack) return status(404, { error: 'Pack not found' });
+        const canAccess = pack.isPublic || pack.userId === user.userId;
+        if (!canAccess) return status(403, { error: 'Unauthorized' });
         return computePackBreakdown(pack);
       } catch (error) {
         console.error('Error computing pack breakdown:', error);

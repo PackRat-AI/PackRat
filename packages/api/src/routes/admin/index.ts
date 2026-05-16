@@ -14,7 +14,7 @@ import {
 } from '@packrat/api/schemas/admin';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertAllDefined } from '@packrat/guards';
+import { assertAllDefined, queryBoolean } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
@@ -401,7 +401,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
-        includeDeleted: z.coerce.boolean().optional(),
+        // queryBoolean() instead of z.coerce.boolean() — the latter treats
+        // any non-empty string as truthy, so ?includeDeleted=false would
+        // wrongly include soft-deleted rows.
+        includeDeleted: queryBoolean(),
       }),
       response: { 200: AdminPacksListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List packs' },

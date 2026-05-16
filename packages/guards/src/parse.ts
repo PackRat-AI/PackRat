@@ -5,7 +5,7 @@
  * don't need to unpack `{ success, data }` everywhere, and so the
  * pattern is consistent across the codebase.
  */
-import type { ZodSchema } from 'zod';
+import { type ZodSchema, z } from 'zod';
 
 /**
  * Returns a parser function `(value: unknown) => T | undefined`.
@@ -37,3 +37,24 @@ export const zodGuard =
   <T>(schema: ZodSchema<T>) =>
   (value: unknown): value is T =>
     schema.safeParse(value).success;
+
+/**
+ * Strict boolean parser for HTTP query strings — `'true' / '1'` → true,
+ * `'false' / '0' / ''` → false, anything else fails validation.
+ *
+ * Why a custom parser: `z.coerce.boolean()` treats every non-empty string as
+ * truthy, so `?includeDeleted=false` arrives at the handler as `true`. That
+ * silently bypasses ACL filters that gate on "include soft-deleted" flags.
+ *
+ * @example
+ * query: z.object({ includeDeleted: queryBoolean() })
+ */
+export const queryBoolean = () =>
+  z
+    .preprocess((v) => {
+      if (typeof v === 'boolean') return v;
+      if (v === 'true' || v === '1') return true;
+      if (v === 'false' || v === '0' || v === '' || v === undefined || v === null) return false;
+      return v;
+    }, z.boolean())
+    .optional();
