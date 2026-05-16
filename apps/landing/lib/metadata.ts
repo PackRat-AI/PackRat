@@ -1,5 +1,5 @@
+import { siteConfig } from 'landing-app/config/site';
 import type { Metadata } from 'next';
-import { siteConfig } from '../config/site';
 
 export const landingMetadata: Metadata = {
   title: {

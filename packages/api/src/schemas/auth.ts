@@ -79,7 +79,7 @@ export const ForgotPasswordResponseSchema = z.object({
 
 export const ResetPasswordRequestSchema = z.object({
   email: z.string().email(),
-  code: z.string().length(5),
+  code: z.string().length(6),
   newPassword: z.string().min(8),
 });
 

@@ -3,9 +3,9 @@ import Footer from 'guides-app/components/footer';
 import Header from 'guides-app/components/header';
 import { QueryProvider } from 'guides-app/components/providers/query-provider';
 import { ThemeProvider } from 'guides-app/components/theme-provider';
+import { guidesMetadata } from 'guides-app/lib/metadata';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
-import { guidesMetadata } from './metadata';
 import './globals.css';
 
 const fontSans = FontSans({

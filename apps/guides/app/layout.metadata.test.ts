@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { siteConfig } from '../lib/config';
-import { guidesMetadata as metadata } from './metadata';
+import { guidesMetadata as metadata } from '../lib/metadata';
 
 describe('guides metadata', () => {
   it('includes absolute Open Graph and Twitter image URLs', () => {

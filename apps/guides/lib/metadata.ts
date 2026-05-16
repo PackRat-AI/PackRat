@@ -1,5 +1,5 @@
+import { siteConfig } from 'guides-app/lib/config';
 import type { Metadata } from 'next';
-import { siteConfig } from '../lib/config';
 
 export const guidesMetadata: Metadata = {
   title: {

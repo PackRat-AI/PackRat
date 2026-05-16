@@ -117,7 +117,16 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   // is rejected by browsers per the CORS spec).
   .use(
     cors({
-      origin: 'https://admin.packratai.com',
+      // With credentials:true the browser requires a specific origin (not *).
+      // Reflect origin back when it's in our allowlist.
+      origin: (request) => {
+        const origin = request.headers.get('origin');
+        if (!origin) return false;
+        if (origin === 'https://admin.packratai.com') return true;
+        if (origin.endsWith('.workers.dev')) return true;
+        if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return true;
+        return false;
+      },
       credentials: true,
       allowedHeaders: ['Authorization', 'Content-Type'],
     }),
@@ -172,6 +181,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   )
   .onBeforeHandle(async ({ request, path }) => {
     if (path === '/api/admin/token') return;
+    if (request.method === 'OPTIONS') return;
     const ok = await adminAuthGuard(request);
     if (!ok) return status(401, { error: 'Unauthorized' });
   })

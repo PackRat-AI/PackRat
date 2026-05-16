@@ -18,7 +18,11 @@ import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
 import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
-import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
+import {
+  getLocalModel,
+  initLocalModel,
+  releaseLocalModel,
+} from 'expo-app/features/ai/lib/localModelManager';
 import { createLocalTools } from 'expo-app/features/ai/lib/tools';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
@@ -31,6 +35,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import {
+  AppState,
   Dimensions,
   type NativeSyntheticEvent,
   Platform,
@@ -92,6 +97,7 @@ export default function AIChat() {
 
   const { data: _authSession } = authClient.useSession();
   const token = _authSession?.session?.token ?? null;
+  const userId = _authSession?.user?.id ?? '';
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -109,9 +115,33 @@ export default function AIChat() {
     [context],
   );
 
-  // Kick off model init check on mount (prepares already-downloaded models)
+  // Kick off model init check on mount (prepares already-downloaded models).
+  // Release the model when the app backgrounds so the llama TurboModule can be
+  // properly invalidated — prevents "Timed out waiting for modules to be
+  // invalidated" crashes on hot reload and app restart.
   React.useEffect(() => {
-    if (featureFlags.enableLocalAI) initLocalModel();
+    if (!featureFlags.enableLocalAI) return;
+
+    initLocalModel();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        releaseLocalModel();
+      } else if (nextState === 'active') {
+        // Re-prepare the model when the app comes back to the foreground.
+        initLocalModel();
+      }
+    });
+
+    // In development, release before fast-refresh tears down native modules.
+    if (__DEV__) {
+      const devModule = module as unknown as { hot?: { dispose: (cb: () => void) => void } };
+      devModule.hot?.dispose(() => releaseLocalModel());
+    }
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   // Keep a ref for context body values so the transport closure stays fresh
@@ -123,30 +153,65 @@ export default function AIChat() {
   const isLocalReady = modelStatus === 'ready';
   const tools = React.useMemo(() => createLocalTools(), []);
 
-  const transport = React.useMemo(() => {
+  const { transport, transportKey } = React.useMemo(() => {
     if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
-        return new CustomChatTransport(model, tools);
-      }
-    }
-    return new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
-      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: () => ({
-        contextType: contextRef.current.contextType,
-        itemId: contextRef.current.itemId,
-        packId: contextRef.current.packId,
-        location: locationRef.current,
-        date: new Date().toLocaleString(),
-      }),
-    });
-  }, [aiMode, isLocalReady, token, tools]);
+        let systemPrompt = `You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
+      You help users manage their hiking packs and gear efficiently using ultralight principles.
 
+      Guidelines:
+      - Focus on ultralight hiking principles when appropriate
+      - For beginners, emphasize safety and comfort over weight savings
+      - Always consider weather conditions in your recommendations
+      - Suggest multi-purpose items to reduce pack weight
+      - Be concise but helpful in your responses
+      - Use tools proactively to provide accurate, up-to-date information
+
+      Context:
+      - User id is ${userId}
+      - Current date is ${new Date().toLocaleString()}`;
+
+        if (contextRef.current.contextType === 'pack' && contextRef.current.packId) {
+          systemPrompt += `\n- You are currently helping with a pack with ID: ${contextRef.current.packId}.`;
+        } else if (contextRef.current.contextType === 'item' && contextRef.current.itemId) {
+          systemPrompt += `\n- You are currently helping with an item with ID: ${contextRef.current.itemId}.`;
+        }
+
+        if (contextRef.current.location) {
+          systemPrompt += `\n- The current location of the user is: ${contextRef.current.location}.`;
+        }
+
+        return {
+          transport: new CustomChatTransport({ model, tools, systemPrompt }),
+          transportKey: 'local',
+        };
+      }
+    } else {
+    }
+    return {
+      transport: new DefaultChatTransport({
+        fetch: expoFetch as unknown as typeof globalThis.fetch,
+        api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: () => ({
+          contextType: contextRef.current.contextType,
+          itemId: contextRef.current.itemId,
+          packId: contextRef.current.packId,
+          location: locationRef.current,
+          date: new Date().toLocaleString(),
+        }),
+      }),
+      transportKey: 'remote',
+    };
+  }, [aiMode, isLocalReady, modelStatus, token, tools, userId]);
+
+  // transportKey forces useChat to remount when the transport type switches,
+  // since useChat captures the transport reference on mount and won't update it.
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
+    id: transportKey,
     transport,
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200,

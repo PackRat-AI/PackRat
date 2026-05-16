@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { siteConfig } from '../config/site';
-import { landingMetadata as metadata } from './metadata';
+import { landingMetadata as metadata } from '../lib/metadata';
 
 describe('landing metadata', () => {
   it('includes absolute Open Graph and Twitter image URLs', () => {

@@ -2,9 +2,9 @@ import { cn } from '@packrat/web-ui/lib/utils';
 import MainNav from 'landing-app/components/main-nav';
 import SiteFooter from 'landing-app/components/site-footer';
 import { ThemeProvider } from 'landing-app/components/theme-provider';
+import { landingMetadata } from 'landing-app/lib/metadata';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
-import { landingMetadata } from './metadata';
 import './globals.css';
 
 const fontSans = FontSans({
