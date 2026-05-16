@@ -20,7 +20,11 @@ import {
 } from '@packrat/api/schemas/packs';
 import { ImageDetectionService, PackService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
+import {
+  computePackBreakdown,
+  computePacksWeights,
+  computePackWeights,
+} from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -245,6 +249,36 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       params: z.object({ packId: z.string() }),
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Weight breakdown — total/base/worn/consumable + per-category aggregation.
+  // Edge apps were computing this by walking pack.items locally; centralising
+  // here keeps MCP/CLI tools as one-line passthroughs.
+  .get(
+    '/:packId/weight-breakdown',
+    async ({ params }) => {
+      const db = createDb();
+      try {
+        const pack = await db.query.packs.findFirst({
+          where: eq(packs.id, params.packId),
+          with: { items: { where: eq(packItems.deleted, false) } },
+        });
+        if (!pack) return status(404, { error: 'Pack not found' });
+        return computePackBreakdown(pack);
+      } catch (error) {
+        console.error('Error computing pack breakdown:', error);
+        return status(500, { error: 'Failed to compute breakdown' });
+      }
+    },
+    {
+      params: z.object({ packId: z.string() }),
+      isAuthenticated: true,
+      detail: {
+        tags: ['Packs'],
+        summary: 'Per-category weight breakdown',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 

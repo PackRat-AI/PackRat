@@ -1,22 +1,7 @@
 import { z } from 'zod';
-import { call, nowIso, ok, shortId } from '../client';
+import { call, nowIso, shortId } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
-
-interface PackDetailResponse {
-  items?: Array<{
-    name: string;
-    category: string;
-    weight: number;
-    quantity: number;
-    worn: boolean;
-    consumable: boolean;
-  }>;
-  totalWeight?: number;
-  baseWeight?: number;
-  wornWeight?: number;
-  consumableWeight?: number;
-}
 
 export function registerPackTools(agent: AgentContext): void {
   // ── List packs ────────────────────────────────────────────────────────────
@@ -351,55 +336,19 @@ export function registerPackTools(agent: AgentContext): void {
     },
   );
 
-  // ── Pack weight analysis ──────────────────────────────────────────────────
-  // The API already returns totalWeight/baseWeight/wornWeight/consumableWeight
-  // on a pack detail but does NOT return a per-category breakdown. Candidate
-  // for API thickening: GET /packs/:packId/weight-breakdown.
-
+  // ── Pack weight analysis (server-computed breakdown) ─────────────────────
   agent.server.registerTool(
     'analyze_pack_weight',
     {
       description:
-        'Get a detailed weight breakdown for a pack by category. Returns base weight, worn weight, consumable weight, and total weight with per-category summaries. Useful for identifying the heaviest items and optimization opportunities.',
+        'Get a detailed weight breakdown for a pack: total / base / worn / consumable grams plus a per-category aggregation sorted heaviest first.',
       inputSchema: { pack_id: z.string().describe('The pack ID to analyze') },
     },
-    async ({ pack_id }) => {
-      const { data, error, status } = await agent.api.user.packs({ packId: pack_id }).get();
-      if (error || !data) {
-        return call(Promise.resolve({ data: null, error, status }), {
-          action: 'analyze pack weight',
-          resourceHint: `pack ${pack_id}`,
-        });
-      }
-      const pack = data as unknown as PackDetailResponse; // safe-cast: API returns the pack detail shape used below
-      const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> = {};
-      const items = pack.items ?? [];
-      for (const item of items) {
-        const cat = item.category || 'Uncategorized';
-        const entry = byCategory[cat] ?? { items: [], totalGrams: 0, count: 0 };
-        entry.items.push(`${item.name} (${item.weight}g × ${item.quantity})`);
-        entry.totalGrams += item.weight * item.quantity;
-        entry.count += item.quantity;
-        byCategory[cat] = entry;
-      }
-      return ok({
-        packId: pack_id,
-        totalWeight: pack.totalWeight ?? 0,
-        baseWeight: pack.baseWeight ?? 0,
-        wornWeight: pack.wornWeight ?? 0,
-        consumableWeight: pack.consumableWeight ?? 0,
-        itemCount: items.length,
-        byCategory: Object.entries(byCategory)
-          .sort((a, b) => b[1].totalGrams - a[1].totalGrams)
-          .map(([category, stats]) => ({
-            category,
-            totalGrams: stats.totalGrams,
-            totalLbs: (stats.totalGrams / 453.592).toFixed(2),
-            itemCount: stats.count,
-            items: stats.items,
-          })),
-      });
-    },
+    async ({ pack_id }) =>
+      call(agent.api.user.packs({ packId: pack_id })['weight-breakdown'].get(), {
+        action: 'analyze pack weight',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Gap analysis ──────────────────────────────────────────────────────────

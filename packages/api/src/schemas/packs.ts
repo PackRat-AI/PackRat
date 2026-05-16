@@ -120,6 +120,24 @@ export const ItemSuggestionsResponseSchema = z.object({
   ),
 });
 
+export const PackCategoryBreakdownSchema = z.object({
+  category: z.string(),
+  totalGrams: z.number(),
+  totalLbs: z.number(),
+  itemCount: z.number(),
+  items: z.array(z.string()),
+});
+
+export const PackWeightBreakdownSchema = z.object({
+  packId: z.string(),
+  totalGrams: z.number(),
+  baseGrams: z.number(),
+  wornGrams: z.number(),
+  consumableGrams: z.number(),
+  itemCount: z.number(),
+  byCategory: z.array(PackCategoryBreakdownSchema),
+});
+
 export const GapAnalysisRequestSchema = z.object({
   destination: z.string().optional(),
   tripType: z.string().optional(),
