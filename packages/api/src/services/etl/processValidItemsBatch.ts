@@ -42,12 +42,14 @@ export async function processValidItemsBatch({
     const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);
     // Track the ETL job that processed these items
     await catalogService.trackEtlJob({ itemIds: upsertedItems, jobId });
-    // Update the ETL job progress
+    // Update the ETL job progress — processed is incremented atomically with valid to prevent
+    // totalValid > totalProcessed if the Worker dies between two separate DB updates.
     await updateEtlJobProgress({
       env,
       params: {
         jobId,
         valid: items.length,
+        processed: items.length,
       },
     });
   } catch (error) {
@@ -60,6 +62,7 @@ export async function processValidItemsBatch({
       params: {
         jobId,
         valid: items.length,
+        processed: items.length,
       },
     });
   } finally {

@@ -14,20 +14,16 @@ const COOKIE_STORE_KEY = 'packrat_cookie';
 const CookieStoreSchema = z.record(z.object({ value: z.string() }));
 
 // expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
+// HTTPS servers (remote dev/prod) prefix the cookie name with __Secure-; HTTP (local) does not.
 function parseSessionToken(cookieJson: string | null): string | null {
-  console.log('[auth] Parsing session token from cookie string:', cookieJson);
   if (!cookieJson) return null;
-  try {
-    const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
-    console.log(
-      '[auth] Parsed session token from cookie string:',
-      cookies?.['better-auth.session_token']?.value ?? 'null',
-    );
-    return cookies?.['better-auth.session_token']?.value ?? null;
-  } catch (err) {
-    console.warn('[auth] Failed to parse session token from cookie string:', err);
-    return null;
-  }
+  const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
+  if (!cookies) return null;
+  return (
+    cookies['better-auth.session_token']?.value ??
+    cookies['__Secure-better-auth.session_token']?.value ??
+    null
+  );
 }
 
 export const apiClient = createApiClient({

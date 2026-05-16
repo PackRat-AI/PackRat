@@ -2,8 +2,7 @@ import { cn } from '@packrat/web-ui/lib/utils';
 import MainNav from 'landing-app/components/main-nav';
 import SiteFooter from 'landing-app/components/site-footer';
 import { ThemeProvider } from 'landing-app/components/theme-provider';
-import { siteConfig } from 'landing-app/config/site';
-import type { Metadata } from 'next';
+import { landingMetadata } from 'landing-app/lib/metadata';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
 import './globals.css';
@@ -14,37 +13,7 @@ const fontSans = FontSans({
   weight: ['400', '500', '600', '700'],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  keywords: siteConfig.keywords,
-  authors: [{ name: siteConfig.author, url: siteConfig.url }],
-  creator: siteConfig.author,
-  metadataBase: new URL(siteConfig.url),
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: siteConfig.url,
-    title: siteConfig.name,
-    description: siteConfig.description,
-    siteName: siteConfig.name,
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteConfig.name,
-    description: siteConfig.description,
-    creator: siteConfig.twitterHandle,
-  },
-  icons: {
-    icon: '/PackRat.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  },
-  manifest: `${siteConfig.url}/site.webmanifest`,
-};
+export const metadata = landingMetadata;
 
 export default function RootLayout({
   children,

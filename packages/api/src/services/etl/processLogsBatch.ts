@@ -20,6 +20,7 @@ export async function processLogsBatch({
       params: {
         jobId,
         invalid: logs.length,
+        processed: logs.length,
       },
     });
 
