@@ -1,4 +1,4 @@
-import { toRecordArray } from '@packrat/guards';
+import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
