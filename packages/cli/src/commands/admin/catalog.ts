@@ -1,4 +1,4 @@
-import { isString, toRecordArray } from '@packrat/guards';
+import { isString, toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
@@ -30,8 +30,9 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
+    // Endpoint returns { data: [...], total, limit, offset }
     printTable(
-      toRecordArray(data).map((it) => ({
+      toRecordArray(toRecord(data).data).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,

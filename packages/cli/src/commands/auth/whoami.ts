@@ -11,15 +11,16 @@ export default defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const profile = toRecord(await runApi(client.user.profile.get(), { action: 'fetch profile' }));
+    const response = toRecord(await runApi(client.user.profile.get(), { action: 'fetch profile' }));
+    const user = toRecord(response.user);
     const config = await loadConfig();
     printSummary(
       {
         baseUrl: config.baseUrl,
         userId: config.userId ?? '—',
-        email: config.userEmail ?? '—',
-        firstName: profile.firstName ?? '—',
-        lastName: profile.lastName ?? '—',
+        email: config.userEmail ?? user.email ?? '—',
+        firstName: user.firstName ?? '—',
+        lastName: user.lastName ?? '—',
         adminTokenSet: Boolean(config.adminToken),
         configFile: CONFIG_FILE_PATH,
       },

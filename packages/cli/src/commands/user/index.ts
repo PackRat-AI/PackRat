@@ -10,13 +10,14 @@ const getCmd = defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const data = await runApi(client.user.profile.get(), { action: 'get profile' });
-    const r = toRecord(data);
+    // Endpoint returns { success, user: { firstName, ... } }
+    const user = toRecord(toRecord(data).user);
     printSummary(
       {
-        firstName: r.firstName,
-        lastName: r.lastName,
-        email: r.email,
-        avatarUrl: r.avatarUrl,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
       },
       'Profile',
     );

@@ -32,8 +32,9 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
+    // Endpoint returns { data: [...], total, limit, offset }
     printTable(
-      toRecordArray(data).map((p) => ({
+      toRecordArray(toRecord(data).data).map((p) => ({
         id: p.id,
         name: p.name,
         userId: p.userId,

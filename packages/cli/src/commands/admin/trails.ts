@@ -65,8 +65,9 @@ const reportsCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
+    // Endpoint returns { data: [...], total, limit, offset }
     printTable(
-      toRecordArray(data).map((r) => ({
+      toRecordArray(toRecord(data).data).map((r) => ({
         id: r.id,
         trailName: r.trailName,
         condition: r.overallCondition,
