@@ -149,7 +149,6 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           weightUnit: catalogItems.weightUnit,
           price: catalogItems.price,
           ratingValue: catalogItems.ratingValue,
-          ratingCount: catalogItems.ratingCount,
           productUrl: catalogItems.productUrl,
           categories: catalogItems.categories,
         })

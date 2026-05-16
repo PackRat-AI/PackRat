@@ -358,7 +358,6 @@ export const CatalogCompareRowSchema = z.object({
   weightUnit: z.string().nullable(),
   price: z.number().nullable(),
   ratingValue: z.number().nullable(),
-  ratingCount: z.number().nullable(),
   productUrl: z.string().nullable(),
   categories: z.array(z.string()).nullable(),
 });
