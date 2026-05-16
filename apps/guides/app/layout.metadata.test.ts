@@ -4,7 +4,7 @@ import { guidesMetadata as metadata } from './metadata';
 
 describe('guides metadata', () => {
   it('includes absolute Open Graph and Twitter image URLs', () => {
-    const expectedImageUrl = new URL('/opengraph-image', siteConfig.url).toString();
+    const expectedImageUrl = new URL('/opengraph-image.png', siteConfig.url).toString();
 
     expect(metadata.openGraph?.images).toEqual([
       {
@@ -15,6 +15,8 @@ describe('guides metadata', () => {
       },
     ]);
 
-    expect(metadata.twitter?.images).toEqual([expectedImageUrl]);
+    expect(metadata.twitter?.images).toEqual([
+      new URL('/twitter-image.png', siteConfig.url).toString(),
+    ]);
   });
 });
