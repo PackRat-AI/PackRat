@@ -1,12 +1,12 @@
 export interface PostAuthor {
-  id: number;
+  id: string;
   firstName: string | null;
   lastName: string | null;
 }
 
 export interface Post {
   id: number;
-  userId: number;
+  userId: string;
   caption: string | null;
   images: string[];
   createdAt: string;
@@ -28,7 +28,7 @@ export interface FeedResponse {
 export interface Comment {
   id: number;
   postId: number;
-  userId: number;
+  userId: string;
   content: string;
   parentCommentId: number | null;
   createdAt: string;

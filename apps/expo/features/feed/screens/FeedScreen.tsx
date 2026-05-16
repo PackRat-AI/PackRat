@@ -14,7 +14,7 @@ export const FeedScreen = () => {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const router = useRouter();
-  const currentUserId = userStore.id.peek() as number | undefined;
+  const currentUserId = userStore.id.peek() as string | undefined;
 
   const { data, isLoading, isRefetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useFeed();

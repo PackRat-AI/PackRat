@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import {
   Card,
   CardContent,
@@ -17,12 +18,28 @@ import {
   ChartTooltipContent,
 } from '@packrat/web-ui/components/chart';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@packrat/web-ui/components/dialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { RawObjectDialog } from 'admin-app/components/raw-object-dialog';
+import {
   useCatalogBrands,
   useCatalogEmbeddings,
   useCatalogEtl,
   useCatalogOverview,
   useCatalogPrices,
+  useEtlFailureSummary,
+  useEtlJobFailures,
 } from 'admin-app/hooks/use-catalog-analytics';
+import { resetStuckEtlJobs, retryEtlJob } from 'admin-app/lib/api';
+import { queryKeys } from 'admin-app/lib/queryKeys';
+import { RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 const priceConfig: ChartConfig = {
@@ -48,12 +65,138 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
   return 'secondary';
 }
 
+function EtlJobFailuresDialog({ jobId, totalInvalid }: { jobId: string; totalInvalid: number }) {
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useEtlJobFailures(jobId, { enabled: open });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          {totalInvalid.toLocaleString()} failures
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-sm">Failures — job {jobId}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Validation failures for ETL job {jobId}
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">Loading…</div>
+        ) : data ? (
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            {data.errorBreakdown.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">Error breakdown</h4>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-muted-foreground">
+                      <th className="pb-1 text-left font-medium">Field</th>
+                      <th className="pb-1 text-left font-medium">Reason</th>
+                      <th className="pb-1 text-right font-medium">Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.errorBreakdown.map((e) => (
+                      <tr key={`${e.field}|${e.reason}`} className="border-b last:border-0">
+                        <td className="py-1 pr-4 font-mono">{e.field}</td>
+                        <td className="py-1 pr-4 text-muted-foreground">{e.reason}</td>
+                        <td className="py-1 text-right font-medium">{e.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {data.samples.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">
+                  Sample rows{' '}
+                  <span className="text-muted-foreground font-normal">
+                    (showing {data.samples.length} of {data.totalShown} fetched)
+                  </span>
+                </h4>
+                <div className="space-y-2">
+                  {data.samples.map((s) => (
+                    <div
+                      key={s.rowIndex}
+                      className="rounded-md border bg-muted/50 p-3 text-xs space-y-1"
+                    >
+                      <div className="text-muted-foreground">Row {s.rowIndex}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {s.errors.map((e, i) => (
+                          <Badge
+                            key={i}
+                            variant="destructive"
+                            className="text-xs font-mono font-normal"
+                          >
+                            {e.field}: {e.reason}
+                          </Badge>
+                        ))}
+                      </div>
+                      {s.rawData != null && (
+                        <details className="mt-1">
+                          <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                            raw data
+                          </summary>
+                          <pre className="mt-1 text-xs whitespace-pre-wrap break-all">
+                            {JSON.stringify(s.rawData, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const ETL_PAGE_SIZE = 25;
+
 export function CatalogAnalytics() {
+  const queryClient = useQueryClient();
+  const [etlLimit, setEtlLimit] = useState(ETL_PAGE_SIZE);
+
   const { data: overview } = useCatalogOverview();
   const { data: brands } = useCatalogBrands(15);
   const { data: prices } = useCatalogPrices();
-  const { data: etl } = useCatalogEtl(15);
+  const { data: etl, isFetching: etlFetching } = useCatalogEtl(etlLimit);
   const { data: embeddings } = useCatalogEmbeddings();
+  const { data: failureSummary } = useEtlFailureSummary(20);
+
+  const {
+    mutate: resetStuck,
+    isPending: isResetting,
+    isError: resetFailed,
+    data: resetResult,
+  } = useMutation({
+    mutationFn: resetStuckEtlJobs,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl.all() });
+    },
+  });
+
+  const {
+    mutate: retryJob,
+    isPending: isRetrying,
+    variables: retryingJobId,
+  } = useMutation({
+    mutationFn: retryEtlJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.catalogAnalytics.etl.all() });
+    },
+  });
 
   const availConfig: ChartConfig = Object.fromEntries(
     (overview?.availability ?? []).map((a, i) => [
@@ -74,8 +217,13 @@ export function CatalogAnalytics() {
             { label: 'Total Items', value: overview.totalItems.toLocaleString() },
             { label: 'Brands', value: overview.totalBrands.toLocaleString() },
             {
-              label: 'Avg Price',
-              value: overview.avgPrice != null ? `$${overview.avgPrice.toFixed(2)}` : '—',
+              label: 'Price Range',
+              value:
+                overview.minPrice != null && overview.maxPrice != null
+                  ? `$${overview.minPrice.toFixed(2)}–$${overview.maxPrice.toFixed(2)}`
+                  : overview.avgPrice != null
+                    ? `avg $${overview.avgPrice.toFixed(2)}`
+                    : '—',
             },
             { label: 'Added Last 30d', value: overview.addedLast30Days.toLocaleString() },
           ].map((s) => (
@@ -246,34 +394,110 @@ export function CatalogAnalytics() {
         </Card>
       )}
 
+      {/* ETL failure summary */}
+      {failureSummary && failureSummary.topErrors.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Validation Errors</CardTitle>
+            <CardDescription>
+              Most common failure patterns across all ETL jobs —{' '}
+              {failureSummary.totalInvalidItems.toLocaleString()} invalid items sampled
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-muted-foreground">
+                  <th className="pb-2 text-left font-medium">Field</th>
+                  <th className="pb-2 text-left font-medium">Reason</th>
+                  <th className="pb-2 text-right font-medium">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {failureSummary.topErrors.map((e) => (
+                  <tr key={`${e.field}|${e.reason}`} className="border-b last:border-0">
+                    <td className="py-2 pr-4 font-mono text-xs">{e.field}</td>
+                    <td className="py-2 pr-4 text-muted-foreground text-xs">{e.reason}</td>
+                    <td className="py-2 text-right font-medium">{e.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ETL pipeline */}
       {etl && (
         <Card>
           <CardHeader>
-            <CardTitle>ETL Pipeline</CardTitle>
-            <CardDescription>
-              {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
-              {etl.summary.failed} failed &mdash; {etl.summary.totalItemsIngested.toLocaleString()}{' '}
-              items ingested
-            </CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>ETL Pipeline</CardTitle>
+                <CardDescription>
+                  {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
+                  {etl.summary.failed} failed &mdash;{' '}
+                  {etl.summary.totalItemsIngested.toLocaleString()} items ingested
+                  {resetFailed && <span className="ml-2 text-destructive">— reset failed</span>}
+                  {!resetFailed && resetResult && resetResult.reset > 0 && (
+                    <span className="ml-2 text-green-600 dark:text-green-400">
+                      — reset {resetResult.reset} stuck job{resetResult.reset !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {!resetFailed && resetResult && resetResult.reset === 0 && (
+                    <span className="ml-2 text-muted-foreground">— no stuck jobs found</span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetStuck()}
+                disabled={isResetting}
+                className="shrink-0"
+              >
+                <RotateCcw className={`h-3.5 w-3.5 mr-1.5 ${isResetting ? 'animate-spin' : ''}`} />
+                Reset Stuck
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-muted-foreground">
-                    <th className="pb-2 text-left font-medium">Source</th>
+                    <th className="pb-2 text-left font-medium">Source / File</th>
                     <th className="pb-2 text-left font-medium">Status</th>
                     <th className="pb-2 text-right font-medium">Processed</th>
                     <th className="pb-2 text-right font-medium">Valid</th>
+                    <th className="pb-2 text-right font-medium">Invalid</th>
+                    <th className="pb-2 text-left font-medium">Failures</th>
                     <th className="pb-2 text-right font-medium">Success %</th>
                     <th className="pb-2 text-left font-medium">Started</th>
+                    <th className="pb-2 text-left font-medium">Completed</th>
+                    <th className="pb-2 w-8" />
+                    <th className="pb-2 w-8" />
                   </tr>
                 </thead>
                 <tbody>
                   {etl.jobs.map((job) => (
                     <tr key={job.id} className="border-b last:border-0">
-                      <td className="py-2 pr-4 font-mono text-xs">{job.source}</td>
+                      <td className="py-2 pr-4">
+                        <div className="font-mono text-xs">{job.source}</div>
+                        {job.filename && (
+                          <div
+                            className="text-xs text-muted-foreground truncate max-w-[180px]"
+                            title={job.filename}
+                          >
+                            {job.filename}
+                          </div>
+                        )}
+                        {job.scraperRevision && (
+                          <div className="text-[10px] text-muted-foreground/60 font-mono">
+                            rev {job.scraperRevision.slice(0, 7)}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-2 pr-4">
                         <Badge variant={statusBadgeVariant(job.status)} className="text-xs">
                           {job.status}
@@ -286,16 +510,71 @@ export function CatalogAnalytics() {
                         {job.totalValid?.toLocaleString() ?? '—'}
                       </td>
                       <td className="py-2 pr-4 text-right">
+                        {job.totalInvalid != null ? (
+                          <span className={job.totalInvalid > 0 ? 'text-destructive' : ''}>
+                            {job.totalInvalid.toLocaleString()}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="py-2 pr-4">
+                        {job.totalInvalid != null && job.totalInvalid > 0 ? (
+                          <EtlJobFailuresDialog jobId={job.id} totalInvalid={job.totalInvalid} />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-4 text-right">
                         {job.successRate != null ? `${job.successRate}%` : '—'}
                       </td>
-                      <td className="py-2 text-muted-foreground">
+                      <td className="py-2 pr-4 text-muted-foreground">
                         {new Date(job.startedAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 pr-4 text-muted-foreground">
+                        {job.completedAt ? new Date(job.completedAt).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="py-2">
+                        <RawObjectDialog label={`job:${job.id}`} data={job} />
+                      </td>
+                      <td className="py-2">
+                        {job.status === 'failed' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            disabled={isRetrying && retryingJobId === job.id}
+                            onClick={() => retryJob(job.id)}
+                          >
+                            <RotateCcw
+                              className={`h-3 w-3 mr-1 ${isRetrying && retryingJobId === job.id ? 'animate-spin' : ''}`}
+                            />
+                            Retry
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {etl.jobs.length >= etlLimit && etlLimit < 200 && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEtlLimit((prev) => Math.min(prev + ETL_PAGE_SIZE, 200))}
+                  disabled={etlFetching}
+                >
+                  {etlFetching ? 'Loading…' : 'Load more'}
+                </Button>
+              </div>
+            )}
+            {etl.jobs.length === 200 && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                Showing maximum 200 jobs. Use the API directly for full history.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

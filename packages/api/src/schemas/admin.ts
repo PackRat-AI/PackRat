@@ -1,0 +1,260 @@
+import { t } from 'elysia';
+
+// t.Unsafe<any> keeps the JSON Schema shape for OpenAPI docs while giving
+// TypeScript type `any`. ElysiaCustomStatusResponse has T in both covariant
+// and contravariant positions (invariant), so a literal error body literal
+// can never unify with { error: string } without `any` bypassing invariance.
+// biome-ignore lint/suspicious/noExplicitAny: intentional — see comment above
+const Err = t.Unsafe<any>(t.Object({ error: t.String() }, { additionalProperties: true }));
+export const AdminErrorResponses = {
+  400: Err,
+  401: Err,
+  404: Err,
+  409: Err,
+  429: Err,
+  500: Err,
+  503: Err,
+} as const;
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+
+export const AdminStatsSchema = t.Object({
+  users: t.Number(),
+  packs: t.Number(),
+  items: t.Number(),
+});
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+export const AdminUserItemSchema = t.Object({
+  id: t.String(),
+  email: t.String(),
+  firstName: t.Nullable(t.String()),
+  lastName: t.Nullable(t.String()),
+  role: t.Nullable(t.String()),
+  emailVerified: t.Nullable(t.Boolean()),
+  avatarUrl: t.Nullable(t.String()),
+  createdAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
+});
+
+// ─── Packs ────────────────────────────────────────────────────────────────────
+
+export const AdminPackItemSchema = t.Object({
+  id: t.String(),
+  name: t.String(),
+  description: t.Nullable(t.String()),
+  category: t.String(),
+  isPublic: t.Nullable(t.Boolean()),
+  isAIGenerated: t.Boolean(),
+  tags: t.Nullable(t.Array(t.String())),
+  image: t.Nullable(t.String()),
+  createdAt: t.Nullable(t.String()),
+  updatedAt: t.Nullable(t.String()),
+  userEmail: t.Nullable(t.String()),
+});
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
+export const AdminCatalogItemSchema = t.Object({
+  id: t.Number(),
+  name: t.String(),
+  description: t.Nullable(t.String()),
+  categories: t.Nullable(t.Array(t.String())),
+  brand: t.Nullable(t.String()),
+  model: t.Nullable(t.String()),
+  sku: t.String(),
+  price: t.Nullable(t.Number()),
+  currency: t.Nullable(t.String()),
+  weight: t.Nullable(t.Number()),
+  weightUnit: t.Nullable(t.String()),
+  availability: t.Nullable(t.String()),
+  ratingValue: t.Nullable(t.Number()),
+  reviewCount: t.Nullable(t.Number()),
+  color: t.Nullable(t.String()),
+  size: t.Nullable(t.String()),
+  material: t.Nullable(t.String()),
+  seller: t.Nullable(t.String()),
+  productUrl: t.String(),
+  images: t.Nullable(t.Array(t.String())),
+  variants: t.Nullable(t.Array(t.Object({ attribute: t.String(), values: t.Array(t.String()) }))),
+  techs: t.Nullable(t.Record(t.String(), t.String())),
+  links: t.Nullable(t.Array(t.Object({ title: t.String(), url: t.String() }))),
+  createdAt: t.Nullable(t.String()),
+});
+
+// ─── Paginated wrappers ───────────────────────────────────────────────────────
+
+const Paginated = <T extends ReturnType<typeof t.Object>>(item: T) =>
+  t.Object({ data: t.Array(item), total: t.Number(), limit: t.Number(), offset: t.Number() });
+
+export const AdminUsersListSchema = Paginated(AdminUserItemSchema);
+export const AdminPacksListSchema = Paginated(AdminPackItemSchema);
+export const AdminCatalogListSchema = Paginated(AdminCatalogItemSchema);
+
+// ─── Mutations ────────────────────────────────────────────────────────────────
+
+export const SuccessSchema = t.Object({ success: t.Literal(true) });
+export const HardDeleteSuccessSchema = t.Object({
+  success: t.Literal(true),
+  purged: t.Literal(true),
+});
+export const CatalogUpdateSchema = t.Object({ id: t.Number(), name: t.String() });
+
+// ─── Analytics — Platform ─────────────────────────────────────────────────────
+
+export const GrowthPointSchema = t.Object({
+  period: t.String(),
+  users: t.Number(),
+  packs: t.Number(),
+  catalogItems: t.Number(),
+});
+
+export const ActivityPointSchema = t.Object({
+  period: t.String(),
+  trips: t.Number(),
+  trailReports: t.Number(),
+  posts: t.Number(),
+});
+
+export const ActiveUsersSchema = t.Object({ dau: t.Number(), wau: t.Number(), mau: t.Number() });
+
+export const BreakdownItemSchema = t.Object({ category: t.String(), count: t.Number() });
+
+// ─── Analytics — Catalog ─────────────────────────────────────────────────────
+
+export const CatalogOverviewSchema = t.Object({
+  totalItems: t.Number(),
+  totalBrands: t.Number(),
+  avgPrice: t.Nullable(t.Number()),
+  minPrice: t.Nullable(t.Number()),
+  maxPrice: t.Nullable(t.Number()),
+  embeddingCoverage: t.Object({ total: t.Number(), withEmbedding: t.Number(), pct: t.Number() }),
+  availability: t.Array(t.Object({ status: t.Nullable(t.String()), count: t.Number() })),
+  addedLast30Days: t.Number(),
+});
+
+export const BrandRowSchema = t.Object({
+  brand: t.String(),
+  itemCount: t.Number(),
+  avgPrice: t.Nullable(t.Number()),
+  minPrice: t.Nullable(t.Number()),
+  maxPrice: t.Nullable(t.Number()),
+  avgRating: t.Nullable(t.Number()),
+});
+
+export const PriceBucketSchema = t.Object({ bucket: t.String(), count: t.Number() });
+
+export const EtlJobSchema = t.Object({
+  id: t.String(),
+  status: t.Union([t.Literal('running'), t.Literal('completed'), t.Literal('failed')]),
+  source: t.String(),
+  filename: t.String(),
+  scraperRevision: t.String(),
+  startedAt: t.String(),
+  completedAt: t.Nullable(t.String()),
+  totalProcessed: t.Nullable(t.Number()),
+  totalValid: t.Nullable(t.Number()),
+  totalInvalid: t.Nullable(t.Number()),
+  successRate: t.Nullable(t.Number()),
+});
+
+export const EtlResponseSchema = t.Object({
+  jobs: t.Array(EtlJobSchema),
+  summary: t.Object({
+    totalRuns: t.Number(),
+    completed: t.Number(),
+    failed: t.Number(),
+    totalItemsIngested: t.Number(),
+  }),
+});
+
+export const EmbeddingStatsSchema = t.Object({
+  total: t.Number(),
+  withEmbedding: t.Number(),
+  pending: t.Number(),
+  coveragePct: t.Number(),
+});
+
+const EtlErrorRowSchema = t.Object({ field: t.String(), reason: t.String(), count: t.Number() });
+
+export const EtlFailureSummarySchema = t.Object({
+  topErrors: t.Array(EtlErrorRowSchema),
+  totalInvalidItems: t.Number(),
+});
+
+export const EtlJobFailuresSchema = t.Object({
+  jobId: t.String(),
+  errorBreakdown: t.Array(EtlErrorRowSchema),
+  samples: t.Array(
+    t.Object({
+      rowIndex: t.Number(),
+      errors: t.Array(
+        t.Object({
+          field: t.String(),
+          reason: t.String(),
+          value: t.Optional(t.Unknown()),
+        }),
+      ),
+      rawData: t.Unknown(),
+    }),
+  ),
+  totalShown: t.Number(),
+});
+
+export const EtlResetStuckSchema = t.Object({ reset: t.Number(), ids: t.Array(t.String()) });
+
+export const EtlRetrySchema = t.Object({
+  success: t.Literal(true),
+  newJobId: t.String(),
+  objectKey: t.String(),
+});
+
+// ─── Trails ───────────────────────────────────────────────────────────────────
+
+export const TrailSearchItemSchema = t.Object({
+  osmId: t.String(),
+  name: t.Nullable(t.String()),
+  sport: t.Nullable(t.String()),
+  network: t.Nullable(t.String()),
+  distance: t.Nullable(t.String()),
+  difficulty: t.Nullable(t.String()),
+  description: t.Nullable(t.String()),
+  bbox: t.Nullable(t.Unknown()),
+});
+
+export const TrailSearchResultSchema = t.Object({
+  trails: t.Array(TrailSearchItemSchema),
+  hasMore: t.Boolean(),
+  offset: t.Number(),
+  limit: t.Number(),
+});
+
+export const TrailGeometrySchema = t.Object({
+  osmId: t.String(),
+  name: t.Nullable(t.String()),
+  sport: t.Nullable(t.String()),
+  network: t.Nullable(t.String()),
+  distance: t.Nullable(t.String()),
+  difficulty: t.Nullable(t.String()),
+  description: t.Nullable(t.String()),
+  geometry: t.Nullable(t.Unknown()),
+});
+
+export const TrailConditionReportSchema = t.Object({
+  id: t.String(),
+  trailName: t.String(),
+  trailRegion: t.Nullable(t.String()),
+  surface: t.String(),
+  overallCondition: t.String(),
+  hazards: t.Array(t.String()),
+  waterCrossings: t.Number(),
+  notes: t.Nullable(t.String()),
+  deleted: t.Boolean(),
+  deletedAt: t.Nullable(t.String()),
+  createdAt: t.String(),
+  userId: t.Number(),
+  userEmail: t.Nullable(t.String()),
+});
+
+export const TrailConditionsListSchema = Paginated(TrailConditionReportSchema);

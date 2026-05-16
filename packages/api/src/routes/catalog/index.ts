@@ -10,6 +10,7 @@ import {
 import { CatalogService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isString } from '@packrat/guards';
@@ -43,8 +44,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   // -- List items
   .get(
     '/',
-    async ({ query, request }) => {
-      const { page, limit, q, category: encodedCategory } = query;
+    async ({ query }) => {
+      const { page, limit, q, category: encodedCategory, sort } = query;
       let category: string | undefined;
       if (isString(encodedCategory) && encodedCategory.length > 0) {
         try {
@@ -53,33 +54,6 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           category = undefined;
         }
       }
-
-      // Manually parse `sort[field]` / `sort[order]` from raw query.
-      // Matches dev's getCatalogItemsRoute behavior; Elysia does not
-      // unflatten bracketed query keys.
-      const searchParams = new URL(request.url).searchParams;
-      const sortField = searchParams.get('sort[field]');
-      const sortOrder = searchParams.get('sort[order]');
-      const validSortFields = [
-        'name',
-        'brand',
-        'price',
-        'ratingValue',
-        'createdAt',
-        'updatedAt',
-        'usage',
-      ] as const;
-      const validSortOrders = ['asc', 'desc'] as const;
-      const sort =
-        sortField &&
-        sortOrder &&
-        validSortFields.includes(sortField as (typeof validSortFields)[number]) &&
-        validSortOrders.includes(sortOrder as (typeof validSortOrders)[number])
-          ? {
-              field: sortField as (typeof validSortFields)[number],
-              order: sortOrder as (typeof validSortOrders)[number],
-            }
-          : undefined;
 
       const catalogService = new CatalogService();
       const offset = (page - 1) * limit;
@@ -128,11 +102,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: VectorSearchQuerySchema,
-      isValidApiKey: true,
+      isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
         summary: 'Vector search catalog items',
-        security: [{ apiKey: [] }],
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -203,9 +177,31 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         startedAt: new Date(),
       });
 
+      // Split large files into 20 MB byte-range chunks so each Worker
+      // invocation stays within the CPU time budget (~30k rows / chunk).
+      const CHUNK_BYTES = 20 * 1024 * 1024;
+      const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+      const queueChunks: Array<{ objectKey: string; byteStart?: number; byteEnd?: number }> = [];
+
+      for (const objectKey of chunks) {
+        const meta = await r2.head(objectKey);
+        if (!meta || meta.size <= CHUNK_BYTES) {
+          queueChunks.push({ objectKey });
+        } else {
+          const n = Math.ceil(meta.size / CHUNK_BYTES);
+          for (let i = 0; i < n; i++) {
+            queueChunks.push({
+              objectKey,
+              byteStart: i * CHUNK_BYTES,
+              byteEnd: Math.min((i + 1) * CHUNK_BYTES - 1, meta.size - 1),
+            });
+          }
+        }
+      }
+
       await queueCatalogETL({
         queue: env.ETL_QUEUE,
-        objectKeys: chunks,
+        chunks: queueChunks,
         jobId,
       });
 
@@ -245,6 +241,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
+      if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
+        return status(400, { error: 'name, weight, and weightUnit are required' });
+      }
+      if (data.weight <= 0) {
+        return status(400, { error: 'weight must be a positive number' });
+      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
@@ -311,6 +313,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found' });
+      }
 
       const item = await db.query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),
@@ -347,6 +357,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params, query }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found or has no embedding' });
+      }
       const limit = query.limit ? Number(query.limit) : 5;
       const threshold = query.threshold ? Number(query.threshold) : 0.1;
 
@@ -405,7 +423,18 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params, body }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found' });
+      }
       const data = body;
+      if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
+        return status(400, { error: 'weight must be a positive number' });
+      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
@@ -466,6 +495,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ params }) => {
       const db = createDb();
       const itemId = Number(params.id);
+      if (
+        !Number.isFinite(itemId) ||
+        !Number.isInteger(itemId) ||
+        itemId <= 0 ||
+        itemId > 2147483647
+      ) {
+        return status(404, { error: 'Catalog item not found' });
+      }
 
       const existingItem = await db.query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),

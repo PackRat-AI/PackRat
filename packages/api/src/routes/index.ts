@@ -2,7 +2,6 @@ import { Elysia } from 'elysia';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
 import { alltrailsRoutes } from './alltrails';
-import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
@@ -10,6 +9,7 @@ import { guidesRoutes } from './guides';
 import { knowledgeBaseRoutes } from './knowledgeBase';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
+import { passwordResetRoutes } from './passwordReset';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { trailsRoutes } from './trails';
@@ -25,7 +25,6 @@ import { wildlifeRoutes } from './wildlife';
  * Eden Treaty client for end-to-end type safety.
  */
 export const routes = new Elysia({ prefix: '/api' })
-  .use(authRoutes)
   .use(adminRoutes)
   .use(catalogRoutes)
   .use(guidesRoutes)
@@ -37,6 +36,7 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(weatherRoutes)
   .use(packTemplatesRoutes)
   .use(seasonSuggestionsRoutes)
+  .use(passwordResetRoutes)
   .use(userRoutes)
   .use(uploadRoutes)
   .use(trailConditionsRoutes)

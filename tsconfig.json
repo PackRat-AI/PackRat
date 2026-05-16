@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
     "esModuleInterop": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "jsx": "react-native",
     "lib": ["DOM", "ESNext"],
     "module": "preserve",
@@ -17,8 +16,14 @@
     "target": "ESNext",
     "paths": {
       "admin-app/*": ["./apps/admin/*"],
+      "web-app/*": ["./apps/web/*"],
+      "@packrat/app": ["./packages/app/index.ts"],
+      "@packrat/app/*": ["./packages/app/src/*"],
       "guides-app/*": ["./apps/guides/*"],
       "landing-app/*": ["./apps/landing/*"],
+      "trails-app/*": ["./apps/trails/*"],
+      "@packrat/overpass": ["./packages/overpass/src/index.ts"],
+      "@packrat/overpass/*": ["./packages/overpass/src/*"],
       "expo-app/*": ["./apps/expo/*"],
       "app/*": ["./packages/app/*"],
       "config/*": ["./packages/config/*"],
@@ -58,6 +63,9 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    "packages/mcp"
+    "packages/mcp",
+    "packages/osm-db",
+    "packages/osm-import",
+    "packages/overpass"
   ]
 }

@@ -41,5 +41,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .claude/scheduled_tasks.lock
 .dev.vars
 
+# Generated OG images (produced at build time by scripts/generate-og-images.ts)
+apps/landing/public/og-image.png
+apps/guides/public/og-image.png
+apps/guides/public/og/
+
 # Git worktrees
 .worktrees/
+.worktrees

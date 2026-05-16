@@ -13,7 +13,7 @@ export function useCreatePackItem() {
       const newItem: PackItem = {
         id,
         name: itemData.name,
-        description: itemData.description,
+        description: itemData.description ?? undefined,
         weight: itemData.weight,
         weightUnit: itemData.weightUnit,
         quantity: itemData.quantity,

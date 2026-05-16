@@ -1,7 +1,20 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs } from '@packrat/api/db/schema';
-import { and, avg, count, desc, gt, isNotNull, max, min, sql } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
+import {
+  AdminErrorResponses,
+  BrandRowSchema,
+  CatalogOverviewSchema,
+  EtlFailureSummarySchema,
+  EtlJobFailuresSchema,
+  EtlResetStuckSchema,
+  EtlResponseSchema,
+  EtlRetrySchema,
+  PriceBucketSchema,
+} from '@packrat/api/schemas/admin';
+import { queueCatalogETL } from '@packrat/api/services/etl/queue';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
+import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
@@ -52,14 +65,14 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
         return {
           totalItems: t.totalItems,
-          totalBrands: t.totalBrands,
+          totalBrands: Number(t.totalBrands),
           avgPrice: t.avgPrice != null ? Math.round(Number(t.avgPrice) * 100) / 100 : null,
           minPrice: t.minPrice != null ? Number(t.minPrice) : null,
           maxPrice: t.maxPrice != null ? Number(t.maxPrice) : null,
           embeddingCoverage: {
             total: e.total,
-            withEmbedding: e.withEmbedding,
-            pct: e.total > 0 ? Math.round((e.withEmbedding / e.total) * 1000) / 10 : 0,
+            withEmbedding: Number(e.withEmbedding),
+            pct: e.total > 0 ? Math.round((Number(e.withEmbedding) / e.total) * 1000) / 10 : 0,
           },
           availability: availabilityStats.map((r) => ({
             status: r.status ?? null,
@@ -75,7 +88,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Catalog data lake overview' } },
+    {
+      response: { 200: CatalogOverviewSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Catalog data lake overview' },
+    },
   )
 
   .get(
@@ -117,6 +133,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(100).optional().default(25),
       }),
+      response: { 200: t.Array(BrandRowSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top gear brands' },
     },
   )
@@ -152,7 +169,10 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Price distribution' } },
+    {
+      response: { 200: t.Array(PriceBucketSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Price distribution' },
+    },
   )
 
   .get(
@@ -195,9 +215,9 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           })),
           summary: {
             totalRuns: s?.totalRuns ?? 0,
-            completed: s?.completed ?? 0,
-            failed: s?.failed ?? 0,
-            totalItemsIngested: s?.totalItemsIngested ?? 0,
+            completed: Number(s?.completed ?? 0),
+            failed: Number(s?.failed ?? 0),
+            totalItemsIngested: Number(s?.totalItemsIngested ?? 0),
           },
         };
       } catch (error) {
@@ -209,6 +229,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(200).optional().default(50),
       }),
+      response: { 200: EtlResponseSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'ETL pipeline history' },
     },
   )
@@ -242,4 +263,208 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     { detail: { tags: ['Admin'], summary: 'Embedding coverage' } },
+  )
+
+  // ─── ETL failure summary ──────────────────────────────────────────────────────
+
+  .get(
+    '/etl/failure-summary',
+    async ({ query }) => {
+      const db = createDb();
+      const { limit = 20 } = query;
+
+      try {
+        const [rows, [total]] = await Promise.all([
+          db.execute<{ field: string; reason: string; count: number }>(
+            sql`
+              SELECT
+                err->>'field'  AS field,
+                err->>'reason' AS reason,
+                COUNT(*)::int  AS count
+              FROM ${invalidItemLogs},
+                   jsonb_array_elements(${invalidItemLogs.errors}) AS err
+              GROUP BY err->>'field', err->>'reason'
+              ORDER BY count DESC
+              LIMIT ${limit}
+            `,
+          ),
+          db.select({ n: count() }).from(invalidItemLogs),
+        ]);
+
+        return {
+          topErrors: rows.rows.map((r) => ({
+            field: r.field,
+            reason: r.reason,
+            count: r.count,
+          })),
+          totalInvalidItems: total?.n ?? 0,
+        };
+      } catch (error) {
+        console.error('ETL failure summary error:', error);
+        return status(500, {
+          error: 'Failed to fetch failure summary',
+          code: 'ETL_FAILURE_SUMMARY_ERROR',
+        });
+      }
+    },
+    {
+      query: z.object({
+        limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+      }),
+      response: { 200: EtlFailureSummarySchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Top ETL validation failure patterns' },
+    },
+  )
+
+  // ─── Per-job failure drill-down ───────────────────────────────────────────────
+
+  .get(
+    '/etl/:jobId/failures',
+    async ({ params, query }) => {
+      const db = createDb();
+      const { limit = 50 } = query;
+
+      try {
+        const [samples, breakdown] = await Promise.all([
+          db
+            .select()
+            .from(invalidItemLogs)
+            .where(eq(invalidItemLogs.jobId, params.jobId))
+            .orderBy(invalidItemLogs.rowIndex)
+            .limit(limit),
+          db.execute<{ field: string; reason: string; count: number }>(
+            sql`
+              SELECT
+                err->>'field'  AS field,
+                err->>'reason' AS reason,
+                COUNT(*)::int  AS count
+              FROM ${invalidItemLogs},
+                   jsonb_array_elements(${invalidItemLogs.errors}) AS err
+              WHERE ${invalidItemLogs.jobId} = ${params.jobId}
+              GROUP BY err->>'field', err->>'reason'
+              ORDER BY count DESC
+            `,
+          ),
+        ]);
+
+        return {
+          jobId: params.jobId,
+          errorBreakdown: breakdown.rows.map((r) => ({
+            field: r.field,
+            reason: r.reason,
+            count: r.count,
+          })),
+          samples: samples.map((s) => ({
+            rowIndex: s.rowIndex,
+            errors: s.errors,
+            rawData: s.rawData,
+          })),
+          totalShown: samples.length,
+        };
+      } catch (error) {
+        console.error('ETL job failures error:', error);
+        return status(500, {
+          error: 'Failed to fetch job failures',
+          code: 'ETL_JOB_FAILURES_ERROR',
+        });
+      }
+    },
+    {
+      params: z.object({ jobId: z.string().uuid() }),
+      query: z.object({
+        limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+      }),
+      response: { 200: EtlJobFailuresSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Validation failures for a specific ETL job' },
+    },
+  )
+
+  // ─── Reset stuck jobs ─────────────────────────────────────────────────────────
+
+  .post(
+    '/etl/reset-stuck',
+    async () => {
+      const db = createDb();
+
+      try {
+        // Jobs stuck in 'running' for more than 30 minutes are considered stalled
+        const stuckCutoff = new Date(Date.now() - 30 * 60 * 1000);
+
+        const reset = await db
+          .update(etlJobs)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(and(eq(etlJobs.status, 'running'), lt(etlJobs.startedAt, stuckCutoff)))
+          .returning();
+
+        return { reset: reset.length, ids: reset.map((r) => r.id) };
+      } catch (error) {
+        console.error('ETL reset stuck error:', error);
+        return status(500, { error: 'Failed to reset stuck jobs', code: 'ETL_RESET_STUCK_ERROR' });
+      }
+    },
+    {
+      response: { 200: EtlResetStuckSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Mark stuck running ETL jobs as failed' },
+    },
+  )
+
+  // ─── Retry a failed job ───────────────────────────────────────────────────────
+
+  .post(
+    '/etl/:jobId/retry',
+    async ({ params }) => {
+      const db = createDb();
+
+      try {
+        const [original] = await db
+          .select()
+          .from(etlJobs)
+          .where(eq(etlJobs.id, params.jobId))
+          .limit(1);
+
+        if (!original) return status(404, { error: 'ETL job not found' });
+        if (original.status !== 'failed')
+          return status(409, {
+            error:
+              original.status === 'running'
+                ? 'Job is still running — wait for it to complete or reset stuck jobs first'
+                : 'Only failed jobs can be retried',
+          });
+
+        const newJobId = crypto.randomUUID();
+        const objectKey = `v2/${original.source}/${original.filename}`;
+        const env = getEnv();
+
+        if (!env.ETL_QUEUE) return status(400, { error: 'ETL_QUEUE is not configured' });
+
+        await db.insert(etlJobs).values({
+          id: newJobId,
+          status: 'running',
+          source: original.source,
+          filename: original.filename,
+          scraperRevision: original.scraperRevision,
+          startedAt: new Date(),
+        });
+
+        try {
+          await queueCatalogETL({ queue: env.ETL_QUEUE, chunks: [{ objectKey }], jobId: newJobId });
+        } catch (enqueueErr) {
+          await db
+            .update(etlJobs)
+            .set({ status: 'failed', completedAt: new Date() })
+            .where(eq(etlJobs.id, newJobId));
+          throw enqueueErr;
+        }
+
+        return { success: true as const, newJobId, objectKey };
+      } catch (error) {
+        console.error('ETL retry error:', error);
+        return status(500, { error: 'Failed to retry ETL job', code: 'ETL_RETRY_ERROR' });
+      }
+    },
+    {
+      params: z.object({ jobId: z.string().uuid() }),
+      response: { 200: EtlRetrySchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Retry a failed ETL job' },
+    },
   );

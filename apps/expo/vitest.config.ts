@@ -14,6 +14,8 @@ export default defineConfig({
     alias: {
       // Mirror the tsconfig.json paths for the expo app
       'expo-app': resolve(__dirname, '.'),
+      '@packrat/units': resolve(__dirname, '../../packages/units/src/index.ts'),
+      '@packrat/guards': resolve(__dirname, '../../packages/guards/src/index.ts'),
     },
   },
   test: {

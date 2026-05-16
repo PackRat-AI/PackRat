@@ -10,12 +10,35 @@
  * through authenticated API endpoints.
  */
 
+import { isString } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
-import { getWeatherData, searchLocations } from 'expo-app/features/weather/lib/weatherService';
+import {
+  formatWeatherData,
+  getWeatherData,
+  searchLocations,
+} from 'expo-app/features/weather/lib/weatherService';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
+
+function trimCatalogItem(item: unknown) {
+  // safe-cast: items originate from the PackRat API which returns typed JSON objects
+  const obj = item as Record<string, unknown>;
+  const cats = Array.isArray(obj.categories) ? (obj.categories as string[]).slice(0, 2) : [];
+  return {
+    id: obj.id,
+    name: obj.name,
+    brand: obj.brand,
+    weight: obj.weight,
+    weightUnit: obj.weightUnit,
+    categories: cats,
+    price: obj.price,
+    ratingValue: obj.ratingValue,
+    description: isString(obj.description) ? obj.description.slice(0, 120) : undefined,
+  };
+}
 
 export function createLocalTools() {
   return {
@@ -99,6 +122,12 @@ export function createLocalTools() {
           .describe('Location to get weather for (city name, state, trail name, etc.)'),
       }),
       execute: async ({ location }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'getWeatherForLocation called',
+          level: 'info',
+          data: { location },
+        });
         try {
           const results = await searchLocations(location);
           if (!results.length) {
@@ -109,7 +138,7 @@ export function createLocalTools() {
             return { success: false, error: `No location found for "${location}"` };
           }
           const weatherData = await getWeatherData(first.id);
-          return { success: true, data: weatherData };
+          return { success: true, data: formatWeatherData(weatherData) };
         } catch (error) {
           return {
             success: false,
@@ -128,12 +157,13 @@ export function createLocalTools() {
         limit: z
           .number()
           .min(1)
-          .max(50)
+          .max(10)
           .optional()
-          .describe('Number of results to return (default 10)'),
+          .describe('Number of results to return (default 5, max 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, category, limit = 10, offset: _offset = 0 }) => {
+      execute: async ({ query, category, limit = 5, offset: _offset = 0 }) => {
+        console.log('getCatalogItems called with', { query, category, limit, offset: _offset });
         const { data, error } = await apiClient.catalog.get({
           query: {
             page: 1,
@@ -145,7 +175,10 @@ export function createLocalTools() {
         if (error) {
           return { success: false, error: error.value ?? 'Failed to retrieve catalog items' };
         }
-        return { success: true, data };
+        const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
+        const trimmedItems = items.map((item) => trimCatalogItem(item));
+        console.log('getCatalogItems returning', { items: trimmedItems });
+        return { success: true, data: { items: trimmedItems } };
       },
     }),
 
@@ -157,19 +190,23 @@ export function createLocalTools() {
         limit: z
           .number()
           .min(1)
-          .max(100)
+          .max(10)
           .optional()
-          .describe('Number of results to return (default 10)'),
+          .describe('Number of results to return (default 5, max 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, limit = 10, offset = 0 }) => {
+      execute: async ({ query, limit = 5, offset = 0 }) => {
         const { data, error } = await apiClient.catalog['vector-search'].get({
           query: { q: query, limit, offset },
         });
         if (error) {
           return { success: false, error: error.value ?? 'Failed to perform vector search' };
         }
-        return { success: true, data };
+        const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
+        return {
+          success: true,
+          data: { items: items.map((item) => trimCatalogItem(item)) },
+        };
       },
     }),
 

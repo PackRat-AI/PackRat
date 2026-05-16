@@ -10,7 +10,7 @@ Bun workspace monorepo with three apps and two packages:
 
 | Workspace | Stack | Purpose |
 |---|---|---|
-| `apps/expo` | React Native 0.81 / Expo 54 / Expo Router 6 | Mobile app (iOS + Android) |
+| `apps/expo` | React Native 0.83 / Expo 55 / Expo Router 55 | Mobile app (iOS + Android) |
 | `apps/guides` | Next.js 15 / React 19 / Radix UI / Shadcn | Content/guides site |
 | `apps/landing` | Next.js 15 / React 19 / Framer Motion | Marketing site |
 | `packages/api` | Elysia on Cloudflare Workers / Drizzle ORM / Neon PostgreSQL | Backend API |
@@ -96,11 +96,38 @@ features/{name}/
 - **Feature flags**: `apps/expo/config.ts` — `featureFlags` object, default new flags to `false`
 - **Animations**: React Native Reanimated 4
 
-### Web Apps (apps/guides, apps/landing)
+### Web Apps (apps/guides, apps/landing, apps/trails)
 
 - Radix UI + Shadcn components, Tailwind CSS
 - TanStack React Query for data fetching
 - Zod for form validation
+
+### API Client (`@packrat/api-client`)
+
+Use `createApiClient` from `@packrat/api-client` for all PackRat API calls in web apps. **Never write manual fetch wrappers for PackRat API endpoints.**
+
+```ts
+// apps/<name>/lib/apiClient.ts
+import { createApiClient } from '@packrat/api-client';
+import { clearTokens, clearUser, getAccessToken, getRefreshToken, setTokens } from './auth';
+
+export const apiClient = createApiClient({
+  baseUrl: typeof window !== 'undefined' ? window.location.origin : '',
+  auth: {
+    getAccessToken,
+    getRefreshToken,
+    onAccessTokenRefreshed: (token) => { /* persist new access token */ },
+    onRefreshTokenRefreshed: (token) => { /* persist new refresh token */ },
+    onNeedsReauth: () => { clearTokens(); clearUser(); },
+  },
+});
+```
+
+- `baseUrl` should be the same origin when routing through a CF Worker proxy (so rate limiting applies); use `EXPO_PUBLIC_API_URL` for the Expo app
+- `AuthHooks` wires your platform's token storage — the package is transport-only
+- The client handles 401 → refresh → retry automatically; `onNeedsReauth` fires only when refresh itself fails
+- Call via Treaty path syntax: `apiClient.auth.login.post(...)`, `apiClient.trails.search.get({ query: { q } })`
+- Responses are `{ data, error, status }` — check `if (error || !data)` before using `data`
 
 ## Private Package Auth
 

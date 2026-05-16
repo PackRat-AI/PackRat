@@ -10,7 +10,9 @@ import {
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { TouchableWithoutFeedback, View } from 'react-native';
+import { normalizeDescription } from '../lib/normalizeDescription';
 import type { CatalogItem } from '../types';
 import { CatalogItemImage } from './CatalogItemImage';
 
@@ -24,7 +26,11 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   const { t } = useTranslation();
 
   return (
-    <TouchableWithoutFeedback onPress={onPress} className="mb-3">
+    <TouchableWithoutFeedback
+      onPress={onPress}
+      className="mb-3"
+      testID={testIds.catalog.item(item.name)}
+    >
       <Card className="overflow-hidden">
         <View>
           <CatalogItemImage
@@ -52,7 +58,7 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
               {item.brand && <CardSubtitle className="text-xs">{item.brand}</CardSubtitle>}
 
               <CardDescription className="mt-1 text-xs" numberOfLines={2}>
-                {item.description}
+                {normalizeDescription(item.description)}
               </CardDescription>
             </View>
           </CardContent>

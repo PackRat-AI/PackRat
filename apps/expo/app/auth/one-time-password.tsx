@@ -15,7 +15,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TargetedEvent,
   type TextInput,
   type TextInputKeyPressEventData,
   View,
@@ -27,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
-const NUM_OF_CODE_CHARACTERS = 5;
+const NUM_OF_CODE_CHARACTERS = 6;
 const SCREEN_OPTIONS = {
   headerBackTitle: 'Back',
   headerTransparent: true,
@@ -266,12 +265,6 @@ function OTPField({
     }
   }
 
-  function onFocus(_e: NativeSyntheticEvent<TargetedEvent>) {
-    inputRef.current?.setNativeProps({
-      selection: { start: 0, end: value?.toString().length },
-    });
-  }
-
   function onChangeText(text: string) {
     setCodeValues((prev) => {
       const values = [...prev];
@@ -311,7 +304,6 @@ ios:border ios:border-border ios:rounded-lg "
       clearButtonMode="never"
       materialHideActionIcons
       materialRingColor={hasError ? colors.destructive : undefined}
-      onFocus={onFocus}
       onKeyPress={onKeyPress}
       onChangeText={onChangeText}
       onSubmitEditing={

@@ -8,9 +8,16 @@ function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unk
     SENTRY_DSN: 'https://test@test.ingest.sentry.io/123',
     NEON_DATABASE_URL: 'postgres://user:pass@host/db',
     NEON_DATABASE_URL_READONLY: 'postgres://user:pass@host/db',
-    JWT_SECRET: 'secret',
-    PASSWORD_RESET_SECRET: 'reset',
-    GOOGLE_CLIENT_ID: 'google',
+    OSM_DATABASE_URL: 'postgres://user:pass@host/osm_db',
+    BETTER_AUTH_SECRET: 'a-secret-that-is-at-least-32-characters-long!!',
+    BETTER_AUTH_URL: 'https://api.packrat.world',
+    GOOGLE_CLIENT_ID: 'google-client-id',
+    GOOGLE_CLIENT_SECRET: 'google-client-secret',
+    APPLE_CLIENT_ID: 'world.packrat.app',
+    APPLE_PRIVATE_KEY:
+      '-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hD2\ncX1rZiA9K2l8EkbSwoEiIEeL0kChRANCAAQNKQQ+T+oXp86AGGl2wBB6EEIQF34s\njHFh79djFhyFOlcCAa9x4OluRvCKmYPHSREjUkV4OFG10vB8y1mSHELl\n-----END PRIVATE KEY-----',
+    APPLE_KEY_ID: 'KEYID12345',
+    APPLE_TEAM_ID: 'TEAMID1234',
     ADMIN_USERNAME: 'admin',
     ADMIN_PASSWORD: 'pass',
     PACKRAT_API_KEY: 'key',
@@ -110,14 +117,14 @@ describe('env-validation', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'production';
       const rawEnv = makeRawEnv();
       const result = getEnv(rawEnv);
-      expect(result.JWT_SECRET).toBe('secret');
+      expect(result.BETTER_AUTH_SECRET).toBe('a-secret-that-is-at-least-32-characters-long!!');
       expect(result.ENVIRONMENT).toBe('production');
     });
 
     it('uses relaxed validation in test environment', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'test';
-      const result = getEnv({ JWT_SECRET: 'test-secret' });
-      expect(result.JWT_SECRET).toBe('test-secret');
+      const result = getEnv({ BETTER_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!' });
+      expect(result.BETTER_AUTH_SECRET).toBe('test-better-auth-secret-32-chars-long!!');
       expect(result.ENVIRONMENT).toBe('development');
       expect(result.SENTRY_DSN).toBe('https://test@test.ingest.sentry.io/test');
     });
@@ -164,7 +171,7 @@ describe('env-validation', () => {
     });
 
     it('throws on missing required variable', () => {
-      const invalid = makeRawEnv({ JWT_SECRET: undefined });
+      const invalid = makeRawEnv({ BETTER_AUTH_SECRET: undefined });
       expect(() => validateCloudflareApiEnv(invalid)).toThrow();
     });
   });

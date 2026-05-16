@@ -191,6 +191,9 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     '/search',
     async ({ query }) => {
       const { q, page, limit, category } = query;
+      if (!q || q.trim() === '') {
+        return status(400, { error: 'Search query parameter q is required' });
+      }
       const searchQuery = q.toLowerCase();
 
       try {

@@ -11,15 +11,26 @@ export const apiEnvSchema = z.object({
   // Database
   NEON_DATABASE_URL: z.string().url(),
   NEON_DATABASE_URL_READONLY: z.string().url(),
+  // Dedicated OSM/trail DB (separate from the main app DB).
+  // Optional: trail routes return 503 when absent. For Cloudflare Workers,
+  // set to env.OSM_HYPERDRIVE.connectionString (Hyperdrive binding).
+  OSM_DATABASE_URL: z.string().url().optional(),
 
-  // Authentication & Security
-  JWT_SECRET: z.string(),
-  PASSWORD_RESET_SECRET: z.string(),
+  // Better Auth
+  BETTER_AUTH_SECRET: z.string().min(32),
+  BETTER_AUTH_URL: z.string().url(), // API base URL e.g. https://api.packrat.world
+  // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(),
+  // Apple Sign In (Better Auth social provider)
+  APPLE_CLIENT_ID: z.string(), // bundle ID e.g. world.packrat.app
+  APPLE_PRIVATE_KEY: z.string(), // .p8 key contents — store via wrangler secret
+  APPLE_KEY_ID: z.string(),
+  APPLE_TEAM_ID: z.string(),
+  // Admin & API key auth (unchanged)
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
   PACKRAT_API_KEY: z.string(),
-  REFRESH_TOKEN_PEPPER: z.string().min(32).optional(),
 
   // Cloudflare Zero Trust / Access (optional — enables CF Access JWT verification for admin routes)
   CF_ACCESS_TEAM_DOMAIN: z.string().optional(), // e.g. "packrat.cloudflareaccess.com"
@@ -70,6 +81,11 @@ export const apiEnvSchema = z.object({
   APP_CONTAINER: z.unknown(),
   // Rate limiting binding (optional — not present in local dev/test)
   TOKEN_RATE_LIMITER: z.unknown().optional(),
+  // Hyperdrive binding for the dedicated OSM/trail Postgres instance.
+  // When present, its connectionString overrides OSM_DATABASE_URL at runtime.
+  OSM_HYPERDRIVE: z.unknown().optional(),
+  // Better Auth KV namespace for session storage and rate limiting
+  AUTH_KV: z.unknown(),
 });
 
 // Relaxed schema for test environments
@@ -78,7 +94,9 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
   NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
   NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
-  JWT_SECRET: z.string().optional().default('secret'),
+  OSM_DATABASE_URL: z.string().url().optional().default('postgres://user:pass@localhost/db'),
+  BETTER_AUTH_SECRET: z.string().optional().default('test-better-auth-secret-32-chars-long!!'),
+  BETTER_AUTH_URL: z.string().url().optional().default('http://localhost:8787'),
   CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
   AI: z.unknown().optional(),
   PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
@@ -88,6 +106,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   LOGS_QUEUE: z.unknown().optional(),
   EMBEDDINGS_QUEUE: z.unknown().optional(),
   APP_CONTAINER: z.unknown().optional(),
+  AUTH_KV: z.unknown().optional(),
 });
 
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
@@ -105,6 +124,7 @@ export type ValidatedEnv = Omit<
   | 'EMBEDDINGS_QUEUE'
   | 'APP_CONTAINER'
   | 'TOKEN_RATE_LIMITER'
+  | 'AUTH_KV'
 > & {
   CF_VERSION_METADATA: WorkerVersionMetadata;
   AI: Ai;
@@ -116,6 +136,8 @@ export type ValidatedEnv = Omit<
   EMBEDDINGS_QUEUE: Queue;
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
+  OSM_HYPERDRIVE?: Hyperdrive;
+  AUTH_KV: KVNamespace;
 };
 
 // Cache for validated envs keyed by the raw env reference.
@@ -155,6 +177,8 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
       Container<unknown>
     >,
     TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
+    OSM_HYPERDRIVE: rawEnv.OSM_HYPERDRIVE as Hyperdrive | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
+    AUTH_KV: rawEnv.AUTH_KV as KVNamespace, // safe-cast: Cloudflare Worker binding injected by runtime
   } as ValidatedEnv; // safe-cast: all fields have been individually assigned above with correct runtime binding types
 }
 

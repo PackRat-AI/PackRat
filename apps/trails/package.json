@@ -1,0 +1,48 @@
+{
+  "name": "packrat-trails-app",
+  "version": "2.0.24",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "clean": "bunx rimraf node_modules .next out",
+    "dev": "next dev",
+    "doctor:react": "bunx react-doctor",
+    "lint": "next lint",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@packrat/api-client": "workspace:*",
+    "@packrat/app": "workspace:*",
+    "@packrat/guards": "workspace:*",
+    "@packrat/overpass": "workspace:*",
+    "@packrat/web-ui": "workspace:*",
+    "@radix-ui/react-dialog": "catalog:",
+    "@radix-ui/react-label": "catalog:",
+    "@radix-ui/react-separator": "catalog:",
+    "@radix-ui/react-tabs": "catalog:",
+    "@radix-ui/react-toast": "catalog:",
+    "better-auth": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "input-otp": "catalog:",
+    "leaflet": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-leaflet": "catalog:",
+    "sonner": "catalog:",
+    "tailwind-merge": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/leaflet": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "postcss": "catalog:",
+    "postcss-import": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -29,7 +29,7 @@ import { buildPostImageUrl } from '../utils';
 
 interface PostDetailScreenProps {
   post: Post;
-  currentUserId?: number;
+  currentUserId?: string;
 }
 
 export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps) => {
