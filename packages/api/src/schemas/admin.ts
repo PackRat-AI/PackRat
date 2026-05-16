@@ -27,7 +27,7 @@ export const AdminStatsSchema = t.Object({
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const AdminUserItemSchema = t.Object({
-  id: t.Number(),
+  id: t.String(),
   email: t.String(),
   firstName: t.Nullable(t.String()),
   lastName: t.Nullable(t.String()),
@@ -46,7 +46,7 @@ export const AdminPackItemSchema = t.Object({
   description: t.Nullable(t.String()),
   category: t.String(),
   isPublic: t.Nullable(t.Boolean()),
-  isAIGenerated: t.Nullable(t.Boolean()),
+  isAIGenerated: t.Boolean(),
   tags: t.Nullable(t.Array(t.String())),
   image: t.Nullable(t.String()),
   createdAt: t.Nullable(t.String()),
@@ -63,15 +63,23 @@ export const AdminCatalogItemSchema = t.Object({
   categories: t.Nullable(t.Array(t.String())),
   brand: t.Nullable(t.String()),
   model: t.Nullable(t.String()),
+  sku: t.String(),
   price: t.Nullable(t.Number()),
   currency: t.Nullable(t.String()),
-  weight: t.Number(),
-  weightUnit: t.String(),
+  weight: t.Nullable(t.Number()),
+  weightUnit: t.Nullable(t.String()),
   availability: t.Nullable(t.String()),
   ratingValue: t.Nullable(t.Number()),
   reviewCount: t.Nullable(t.Number()),
-  productUrl: t.Nullable(t.String()),
+  color: t.Nullable(t.String()),
+  size: t.Nullable(t.String()),
+  material: t.Nullable(t.String()),
+  seller: t.Nullable(t.String()),
+  productUrl: t.String(),
   images: t.Nullable(t.Array(t.String())),
+  variants: t.Nullable(t.Array(t.Object({ attribute: t.String(), values: t.Array(t.String()) }))),
+  techs: t.Nullable(t.Record(t.String(), t.String())),
+  links: t.Nullable(t.Array(t.Object({ title: t.String(), url: t.String() }))),
   createdAt: t.Nullable(t.String()),
 });
 
@@ -166,6 +174,40 @@ export const EmbeddingStatsSchema = t.Object({
   withEmbedding: t.Number(),
   pending: t.Number(),
   coveragePct: t.Number(),
+});
+
+const EtlErrorRowSchema = t.Object({ field: t.String(), reason: t.String(), count: t.Number() });
+
+export const EtlFailureSummarySchema = t.Object({
+  topErrors: t.Array(EtlErrorRowSchema),
+  totalInvalidItems: t.Number(),
+});
+
+export const EtlJobFailuresSchema = t.Object({
+  jobId: t.String(),
+  errorBreakdown: t.Array(EtlErrorRowSchema),
+  samples: t.Array(
+    t.Object({
+      rowIndex: t.Number(),
+      errors: t.Array(
+        t.Object({
+          field: t.String(),
+          reason: t.String(),
+          value: t.Optional(t.Unknown()),
+        }),
+      ),
+      rawData: t.Unknown(),
+    }),
+  ),
+  totalShown: t.Number(),
+});
+
+export const EtlResetStuckSchema = t.Object({ reset: t.Number(), ids: t.Array(t.String()) });
+
+export const EtlRetrySchema = t.Object({
+  success: t.Literal(true),
+  newJobId: t.String(),
+  objectKey: t.String(),
 });
 
 // ─── Trails ───────────────────────────────────────────────────────────────────

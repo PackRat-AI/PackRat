@@ -684,7 +684,7 @@
     "downloadedModels": "Downloaded Models",
     "noDownloadedModels": "No models downloaded",
     "appleFoundationModel": "Apple Foundation Model",
-    "llamaModel": "SmolLM3 3B",
+    "llamaModel": "Qwen2.5 3B",
     "generateNewPacks": "Generate New Packs",
     "enterCount": "Enter count",
     "numberOfPacksToGenerate": "Number of packs to generate",
