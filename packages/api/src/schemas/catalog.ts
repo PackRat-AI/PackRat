@@ -345,3 +345,27 @@ export const VectorSearchResponseSchema = z.object({
   offset: z.number(),
   nextOffset: z.number(),
 });
+
+export const CatalogCompareRequestSchema = z.object({
+  ids: z.array(z.number().int()).min(2).max(10),
+});
+
+export const CatalogCompareRowSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  brand: z.string().nullable(),
+  weight: z.number().nullable(),
+  weightUnit: z.string().nullable(),
+  price: z.number().nullable(),
+  ratingValue: z.number().nullable(),
+  ratingCount: z.number().nullable(),
+  productUrl: z.string().nullable(),
+  categories: z.array(z.string()).nullable(),
+});
+
+export const CatalogCompareResponseSchema = z.object({
+  items: z.array(CatalogCompareRowSchema),
+  lightestId: z.number().int().nullable(),
+  cheapestId: z.number().int().nullable(),
+  highestRatedId: z.number().int().nullable(),
+});

@@ -172,61 +172,14 @@ export function registerCatalogTools(agent: AgentContext): void {
     'compare_gear_items',
     {
       description:
-        'Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–5 catalog item IDs.',
+        'Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.',
       inputSchema: {
-        item_ids: z.array(z.number().int()).min(2).max(5),
+        item_ids: z.array(z.number().int()).min(2).max(10),
       },
     },
-    async ({ item_ids }) => {
-      const responses = await Promise.all(
-        item_ids.map((id) => agent.api.user.catalog({ id: String(id) }).get()),
-      );
-      const firstError = responses.find((r) => r.error || !r.data);
-      if (firstError) {
-        return call(
-          Promise.resolve({
-            data: null,
-            error: firstError.error,
-            status: firstError.status,
-          }),
-          { action: 'compare catalog items' },
-        );
-      }
-      const comparison = responses.map((r) => {
-        // safe-cast: catalog item response is a JSON object; display only
-        const it = (r.data ?? {}) as Record<string, unknown>;
-        return {
-          id: it.id,
-          name: it.name,
-          brand: it.brand,
-          category: it.category,
-          weightGrams: it.weight,
-          priceCents: it.price,
-          rating: it.ratingValue,
-          reviewCount: it.ratingCount,
-          productUrl: it.productUrl,
-        };
-      });
-      comparison.sort(
-        (a, b) => (Number(a.weightGrams) || 999_999) - (Number(b.weightGrams) || 999_999),
-      );
-      return call(
-        Promise.resolve({
-          data: {
-            items: comparison,
-            lightest: comparison[0]?.name,
-            cheapest: [...comparison].sort(
-              (a, b) => (Number(a.priceCents) || 999_999) - (Number(b.priceCents) || 999_999),
-            )[0]?.name,
-            highestRated: [...comparison].sort(
-              (a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0),
-            )[0]?.name,
-          },
-          error: null,
-          status: 200,
-        }),
-        { action: 'compare catalog items' },
-      );
-    },
+    async ({ item_ids }) =>
+      call(agent.api.user.catalog.compare.post({ ids: item_ids }), {
+        action: 'compare catalog items',
+      }),
   );
 }

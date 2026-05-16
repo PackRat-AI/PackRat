@@ -2,6 +2,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs, packItems } from '@packrat/api/db/schema';
 import { apiKeyAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import {
+  CatalogCompareRequestSchema,
   CatalogItemsQuerySchema,
   CreateCatalogItemRequestSchema,
   UpdateCatalogItemRequestSchema,
@@ -22,6 +23,7 @@ import {
   eq,
   getTableColumns,
   gt,
+  inArray,
   isNotNull,
   isNull,
   ne,
@@ -127,6 +129,64 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       detail: {
         tags: ['Catalog'],
         summary: 'Get catalog categories',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  // -- Compare items side-by-side (static path, register before /:id)
+  .post(
+    '/compare',
+    async ({ body }) => {
+      const db = createDb();
+      const { ids } = body;
+      const items = await db
+        .select({
+          id: catalogItems.id,
+          name: catalogItems.name,
+          brand: catalogItems.brand,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          price: catalogItems.price,
+          ratingValue: catalogItems.ratingValue,
+          ratingCount: catalogItems.ratingCount,
+          productUrl: catalogItems.productUrl,
+          categories: catalogItems.categories,
+        })
+        .from(catalogItems)
+        .where(inArray(catalogItems.id, ids));
+
+      if (items.length === 0) {
+        return status(404, { error: 'No catalog items matched the supplied IDs' });
+      }
+
+      const rank = <K extends keyof (typeof items)[number]>(
+        key: K,
+        order: 'asc' | 'desc',
+      ): number | null => {
+        const ranked = [...items]
+          .filter((it) => it[key] != null)
+          .sort((a, b) => {
+            const av = Number(a[key]);
+            const bv = Number(b[key]);
+            return order === 'asc' ? av - bv : bv - av;
+          });
+        return ranked[0]?.id ?? null;
+      };
+
+      return {
+        items,
+        lightestId: rank('weight', 'asc'),
+        cheapestId: rank('price', 'asc'),
+        highestRatedId: rank('ratingValue', 'desc'),
+      };
+    },
+    {
+      body: CatalogCompareRequestSchema,
+      isAuthenticated: true,
+      detail: {
+        tags: ['Catalog'],
+        summary: 'Compare 2–10 catalog items side-by-side',
         security: [{ bearerAuth: [] }],
       },
     },
