@@ -43,38 +43,51 @@ const emptyConfig: CliConfig = {
   userId: null,
 };
 
-let cached: CliConfig | null = null;
+// Persisted state — exactly what's in (or will be in) ~/.packrat/config.json.
+let persisted: CliConfig | null = null;
 
-/** Read the config from disk (cached for the lifetime of the process). */
-export async function loadConfig(): Promise<CliConfig> {
-  if (cached) return cached;
+/** Load the persisted config from disk (cached for the lifetime of the process). */
+async function loadPersisted(): Promise<CliConfig> {
+  if (persisted) return persisted;
   try {
     const raw = await readFile(CONFIG_PATH, 'utf8');
     const parsed = CliConfigSchema.safeParse(JSON.parse(raw));
-    cached = parsed.success ? parsed.data : emptyConfig;
+    persisted = parsed.success ? parsed.data : emptyConfig;
   } catch (e) {
-    if (isNotFound(e)) cached = { ...emptyConfig };
+    if (isNotFound(e)) persisted = { ...emptyConfig };
     else throw e;
   }
-  // PACKRAT_API_URL env override always wins. Useful for local dev (e.g.
-  // pointing the CLI at `http://localhost:8787`).
+  return persisted;
+}
+
+/**
+ * Return the effective runtime config — the persisted state with the
+ * `PACKRAT_API_URL` env override layered on top. Callers that need to know
+ * the persisted baseUrl (e.g. a future `packrat config show`) should use
+ * `loadPersisted` directly; almost everyone wants the effective value.
+ */
+export async function loadConfig(): Promise<CliConfig> {
+  const base = await loadPersisted();
   const envOverride = nodeEnv.PACKRAT_API_URL?.trim();
-  if (envOverride) cached.baseUrl = envOverride;
-  return cached;
+  // Return a copy so accidental mutation can't leak back into the persisted
+  // cache and end up written to disk via saveConfig().
+  if (envOverride) return { ...base, baseUrl: envOverride };
+  return { ...base };
 }
 
 /** Merge a partial update into the config and persist atomically. */
 export async function saveConfig(patch: Partial<CliConfig>): Promise<CliConfig> {
-  const current = await loadConfig();
+  // Merge into the *persisted* state, not the effective config — otherwise a
+  // PACKRAT_API_URL env override would get written to disk and stick.
+  const current = await loadPersisted();
   const next: CliConfig = { ...current, ...patch };
   await mkdir(dirname(CONFIG_PATH), { recursive: true });
-  // Write to a tmp file then rename so partial writes can't corrupt config.
   const tmp = `${CONFIG_PATH}.tmp`;
   await writeFile(tmp, JSON.stringify(next, null, 2), { mode: 0o600 });
   const { rename } = await import('node:fs/promises');
   await rename(tmp, CONFIG_PATH);
-  cached = next;
-  return next;
+  persisted = next;
+  return loadConfig();
 }
 
 /** Clear all session-level tokens but keep `baseUrl`. */

@@ -41,7 +41,16 @@ export async function runApi<R extends TreatyLike>(
   promise: Promise<R>,
   opts: RunOptions,
 ): Promise<NonNullable<R['data']>> {
-  const result = await promise;
+  let result: R;
+  try {
+    result = await promise;
+  } catch (e) {
+    // fetch throws on DNS / refused / TLS / API down — surface a friendly
+    // message instead of an unhandled stack trace.
+    const message = e instanceof Error ? e.message : String(e);
+    consola.error(`${opts.action} failed: could not reach the PackRat API. ${chalk.dim(message)}`);
+    process.exit(1);
+  }
   if (result.error || result.data == null) {
     printError({ status: result.status, body: errorValue(result.error), opts });
     process.exit(1);
@@ -56,9 +65,20 @@ export async function runApi<R extends TreatyLike>(
 export async function tryApi<R extends TreatyLike>(
   promise: Promise<R>,
 ): Promise<
-  { ok: true; data: NonNullable<R['data']> } | { ok: false; status: number; value: unknown }
+  | { ok: true; data: NonNullable<R['data']> }
+  | { ok: false; status: number; value: unknown }
+  | { ok: false; status: 0; value: { networkError: string } }
 > {
-  const result = await promise;
+  let result: R;
+  try {
+    result = await promise;
+  } catch (e) {
+    return {
+      ok: false,
+      status: 0,
+      value: { networkError: e instanceof Error ? e.message : String(e) },
+    };
+  }
   if (result.error || result.data == null) {
     return { ok: false, status: result.status, value: errorValue(result.error) };
   }

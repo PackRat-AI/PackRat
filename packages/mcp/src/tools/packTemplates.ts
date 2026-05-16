@@ -215,7 +215,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     'generate_pack_template_from_url',
     {
       description:
-        'Generate a pack template from a TikTok or YouTube link (admin-only). Use admin_login first.',
+        'Generate a pack template from a TikTok or YouTube link. The server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user — the admin_login JWT does NOT authorize this call. Your signed-in PackRat account must be an admin.',
       inputSchema: {
         content_url: z.string().url(),
         is_app_template: z.boolean().default(false),
@@ -227,7 +227,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           contentUrl: content_url,
           isAppTemplate: is_app_template,
         }),
-        { action: 'generate pack template from URL', requiresAdmin: true },
+        { action: 'generate pack template from URL' },
       ),
   );
 }

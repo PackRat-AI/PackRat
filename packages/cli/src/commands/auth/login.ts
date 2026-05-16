@@ -4,6 +4,7 @@ import consola from 'consola';
 import { z } from 'zod';
 import { getBaseUrl } from '../../api/client';
 import { saveConfig } from '../../api/config';
+import { promptPassword } from '../../api/prompt';
 
 const SignInResponseSchema = z.object({
   session: z.object({ token: z.string() }).optional(),
@@ -23,8 +24,7 @@ export default defineCommand({
   },
   async run({ args }) {
     const email = args.email ?? (await consola.prompt('Email', { type: 'text' }));
-    const password =
-      args.password ?? (await consola.prompt('Password', { type: 'text', cancel: 'reject' }));
+    const password = args.password ?? (await promptPassword('Password'));
 
     if (!email || !password) {
       consola.error('Email and password are required.');

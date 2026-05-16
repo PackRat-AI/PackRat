@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
 import { saveConfig } from '../../api/config';
+import { promptPassword } from '../../api/prompt';
 import { runApi } from '../../api/run';
 
 export default defineCommand({
@@ -15,8 +16,7 @@ export default defineCommand({
   },
   async run({ args }) {
     const username = args.username ?? (await consola.prompt('Admin username', { type: 'text' }));
-    const password =
-      args.password ?? (await consola.prompt('Admin password', { type: 'text', cancel: 'reject' }));
+    const password = args.password ?? (await promptPassword('Admin password'));
 
     // The user-scope Treaty client is fine here — /admin/login is the
     // credential-exchange route and ignores any Bearer header.
