@@ -18,9 +18,10 @@ import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status, t } from 'elysia';
 import { z } from 'zod';
 
+// Defaults applied in handlers so Treaty types these as truly optional.
 const PeriodSchema = z.object({
-  period: z.enum(['day', 'week', 'month']).optional().default('month'),
-  range: z.coerce.number().int().min(1).max(365).optional().default(12),
+  period: z.enum(['day', 'week', 'month']).optional(),
+  range: z.coerce.number().int().min(1).max(365).optional(),
 });
 
 function getStartDate(period: 'day' | 'week' | 'month', range: number): Date {

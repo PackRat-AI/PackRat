@@ -127,8 +127,10 @@ const SortSchema = z.object({
 });
 
 export const CatalogItemsQuerySchema = z.object({
-  page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+  // Defaults applied in the handler so Treaty types these as truly optional
+  // rather than required-with-default (which forces every caller to pass them).
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
   q: z.string().optional(),
   category: z.string().optional(),
   // Eden Treaty serializes nested objects as JSON strings in query params.
@@ -327,8 +329,9 @@ export const CatalogCategoriesResponseSchema = z.array(z.string());
 
 export const VectorSearchQuerySchema = z.object({
   q: z.string().min(1),
-  limit: z.coerce.number().int().min(1).max(50).optional().default(10),
-  offset: z.coerce.number().int().min(0).optional().default(0),
+  // Defaults applied in the handler — see CatalogItemsQuerySchema for rationale.
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 export const SimilarItemSchema = CatalogItemSchema.extend({

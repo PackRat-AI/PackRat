@@ -275,7 +275,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
-        includeDeleted: z.string().optional(),
       }),
       response: { 200: AdminUsersListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List users' },
@@ -291,6 +290,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
+        const includeDeleted = query.includeDeleted ?? false;
         const searchFilter = search
           ? or(
               ilike(packs.name, `%${search}%`),
@@ -299,7 +299,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               ilike(users.email, `%${search}%`),
             )
           : undefined;
-        const whereClause = and(eq(packs.deleted, false), searchFilter);
+        const whereClause = includeDeleted
+          ? searchFilter
+          : and(eq(packs.deleted, false), searchFilter);
 
         const [packsList, [totalRow]] = await Promise.all([
           db
@@ -349,7 +351,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
-        includeDeleted: z.string().optional(),
+        includeDeleted: z.coerce.boolean().optional(),
       }),
       response: { 200: AdminPacksListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List packs' },

@@ -76,7 +76,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     },
     {
       query: z.object({
-        includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+        // Handler defaults this to 0; keep schema truly optional for clients.
+        includePublic: z.coerce.number().int().min(0).max(1).optional(),
       }),
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },

@@ -123,7 +123,8 @@ export const ItemSuggestionsResponseSchema = z.object({
 export const GapAnalysisRequestSchema = z.object({
   destination: z.string().optional(),
   tripType: z.string().optional(),
-  duration: z.string().optional(),
+  // Duration is days. Coerce so JSON numbers and string form-data both work.
+  duration: z.coerce.number().int().positive().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });

@@ -253,7 +253,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
       const limit = query.limit ?? 50;
       const offset = query.offset ?? 0;
       const search = query.q;
-      const includeDeleted = query.includeDeleted === 'true';
+      const includeDeleted = query.includeDeleted ?? false;
 
       try {
         const deletedFilter = includeDeleted ? undefined : eq(trailConditionReports.deleted, false);
@@ -310,9 +310,9 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
     {
       query: z.object({
         q: z.string().optional(),
-        limit: z.coerce.number().int().min(1).max(100).optional().default(50),
-        offset: z.coerce.number().int().min(0).optional().default(0),
-        includeDeleted: z.string().optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+        includeDeleted: z.coerce.boolean().optional(),
       }),
       response: { 200: TrailConditionsListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List all trail condition reports' },

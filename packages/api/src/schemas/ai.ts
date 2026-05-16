@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 export const RagSearchQuerySchema = z.object({
   q: z.string().min(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(5),
+  // Service applies its own default (5); keep schema truly optional.
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const WebSearchQuerySchema = z.object({

@@ -25,8 +25,9 @@ export const GuideDetailSchema = GuideSchema.extend({
 });
 
 export const GuidesQuerySchema = z.object({
-  page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().optional().default(20),
+  // Defaults applied in the handler so Treaty types these as truly optional.
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
   category: z.string().optional(),
   sort: z
     .object({
@@ -46,8 +47,9 @@ export const GuidesResponseSchema = z.object({
 
 export const GuideSearchQuerySchema = z.object({
   q: z.string().min(1),
-  page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().positive().optional().default(20),
+  // Defaults applied in the handler so Treaty types these as truly optional.
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
   category: z.string().optional(),
 });
 

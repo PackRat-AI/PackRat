@@ -45,7 +45,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .get(
     '/',
     async ({ query }) => {
-      const { page, limit, q, category: encodedCategory, sort } = query;
+      const { page = 1, limit = 20, q, category: encodedCategory, sort } = query;
       let category: string | undefined;
       if (isString(encodedCategory) && encodedCategory.length > 0) {
         try {
@@ -119,8 +119,9 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       return categories;
     },
     {
+      // Service applies its own default (10); keep schema truly optional.
       query: z.object({
-        limit: z.coerce.number().int().positive().optional().default(10),
+        limit: z.coerce.number().int().positive().optional(),
       }),
       isAuthenticated: true,
       detail: {
