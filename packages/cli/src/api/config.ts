@@ -14,7 +14,6 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { nodeEnv } from '@packrat/env/node';
-import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
 const DEFAULT_BASE_URL = 'https://packrat.world';
@@ -94,5 +93,9 @@ export async function clearSession(): Promise<void> {
 export const CONFIG_FILE_PATH = CONFIG_PATH;
 
 function isNotFound(error: unknown): boolean {
-  return isObject(error) && 'code' in error && (error as { code: string }).code === 'ENOENT';
+  // Node fs errors are Error instances (not plain objects), so isObject()
+  // from radash returns false. Check by instance.
+  return (
+    error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT'
+  );
 }
