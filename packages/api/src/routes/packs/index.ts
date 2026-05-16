@@ -103,7 +103,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           name: data.name,
           description: data.description,
           category: data.category,
-          isPublic: data.isPublic,
+          isPublic: data.isPublic ?? false,
           image: data.image,
           tags: data.tags,
           localCreatedAt: new Date(data.localCreatedAt as string),
