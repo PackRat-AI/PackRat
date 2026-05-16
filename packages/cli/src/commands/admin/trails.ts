@@ -56,7 +56,7 @@ const reportsCmd = defineCommand({
           q: args.q,
           limit: Number.parseInt(args.limit, 10),
           offset: Number.parseInt(args.offset, 10),
-          includeDeleted: args['include-deleted'] ? '1' : '0',
+          includeDeleted: args['include-deleted'],
         },
       }),
       { action: 'admin list trail reports', requiresAdmin: true },

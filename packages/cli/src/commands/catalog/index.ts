@@ -20,7 +20,7 @@ const searchCmd = defineCommand({
     const page = Number.parseInt(args.page, 10);
     const data = await runApi(
       client.catalog.get({
-        query: { q: args.q, category: args.category, limit, page, sort: undefined },
+        query: { q: args.q, category: args.category, limit, page },
       }),
       { action: 'search catalog' },
     );
