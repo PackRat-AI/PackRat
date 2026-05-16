@@ -66,7 +66,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ steps.bun-version.outputs.version }}
-          cache: true
 
       # Sanity-check that the runner satisfies the repo's engine constraints.
       - name: Verify runtime versions

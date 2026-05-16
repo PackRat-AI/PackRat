@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.25",
+  "version": "2.0.26",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -169,6 +169,9 @@
     "wrangler": "^4.21.2",
     "ws": "^8.18.1",
     "zod": "^3.24.2"
+  },
+  "patchedDependencies": {
+    "@packrat-ai/nativewindui@2.0.3": "patches/@packrat-ai%2Fnativewindui@2.0.3.patch"
   },
   "trustedDependencies": [
     "@sentry/cli"

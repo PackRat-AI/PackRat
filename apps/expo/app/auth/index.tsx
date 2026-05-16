@@ -119,7 +119,7 @@ export default function AuthIndexScreen() {
                   size={Platform.select({ ios: 'lg', default: 'md' })}
                   onPress={signInWithApple}
                 >
-                  <Text className="ios:text-foreground absolute left-4 text-[22px]"></Text>
+                  <Text className="ios:text-foreground absolute left-4 text-[22px]">{''}</Text>
                   <Text className="ios:text-foreground">{t('auth.continueWithApple')}</Text>
                 </Button>
               )}

@@ -26,6 +26,7 @@ interface AuthActions {
   resendVerification(): Promise<void>;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
+  forgotPassword(email: string): Promise<void>;
   openAuthGate(): void;
   closeAuthGate(): void;
   authGateOpen: boolean;
@@ -49,21 +50,22 @@ function parseAuthUser(user: {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [authGateOpen, setAuthGateOpen] = useState(false);
   const [state, setState] = useState<AuthState>({
     isAuthed: false,
     user: null,
     pendingEmail: null,
   });
-  const [authGateOpen, setAuthGateOpen] = useState(false);
 
-  // Hydrate from localStorage on mount
   useEffect(() => {
+    const storedUser = getUser();
     const token = getAccessToken();
-    const user = getUser();
-    if (token && user) {
-      setState({ isAuthed: true, user, pendingEmail: null });
+    if (storedUser && token) {
+      setState({ isAuthed: true, user: storedUser, pendingEmail: null });
     }
   }, []);
+
+  const { isAuthed, user, pendingEmail } = state;
 
   const register = useCallback(
     async (email: string, opts: { password: string; firstName?: string }) => {
@@ -75,7 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (error) throw new Error(error.message ?? 'Registration failed');
       if (data?.token) {
-        // autoSignIn: true succeeded — token is the Bearer session token
         const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
         if (!parsedUser) throw new Error('Registration failed: unexpected user shape');
         setTokens(data.token, '');
@@ -135,29 +136,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ isAuthed: false, user: null, pendingEmail: null });
   }, []);
 
+  const forgotPassword = useCallback(async (email: string) => {
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/reset-password`
+        : '/reset-password';
+    const { error } = await trailsAuthClient.requestPasswordReset({ email, redirectTo });
+    if (error) throw new Error(error.message ?? 'Failed to send reset email');
+  }, []);
+
   const openAuthGate = useCallback(() => setAuthGateOpen(true), []);
   const closeAuthGate = useCallback(() => setAuthGateOpen(false), []);
 
   const value = useMemo(
     () => ({
-      ...state,
+      isAuthed,
+      user,
+      pendingEmail,
       authGateOpen,
       register,
       verifyEmail,
       resendVerification,
       login,
       logout,
+      forgotPassword,
       openAuthGate,
       closeAuthGate,
     }),
     [
-      state,
+      isAuthed,
+      user,
+      pendingEmail,
       authGateOpen,
       register,
       verifyEmail,
       resendVerification,
       login,
       logout,
+      forgotPassword,
       openAuthGate,
       closeAuthGate,
     ],

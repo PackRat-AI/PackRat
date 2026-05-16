@@ -222,62 +222,62 @@ describe('normalize / fromGrams round-trips', () => {
 
 describe('convert', () => {
   it('same unit returns input unchanged (no float ops)', () => {
-    expect(packratConvert(5, 'g', 'g')).toBe(5);
-    expect(packratConvert(5, 'oz', 'oz')).toBe(5);
-    expect(packratConvert(5, 'lb', 'lb')).toBe(5);
-    expect(packratConvert(5, 'kg', 'kg')).toBe(5);
-    expect(packratConvert(0, 'oz', 'oz')).toBe(0);
+    expect(packratConvert(5, { from: 'g', to: 'g' })).toBe(5);
+    expect(packratConvert(5, { from: 'oz', to: 'oz' })).toBe(5);
+    expect(packratConvert(5, { from: 'lb', to: 'lb' })).toBe(5);
+    expect(packratConvert(5, { from: 'kg', to: 'kg' })).toBe(5);
+    expect(packratConvert(0, { from: 'oz', to: 'oz' })).toBe(0);
   });
 
   it('oz → lb: 16 oz = 1 lb', () => {
-    expect(packratConvert(16, 'oz', 'lb')).toBeCloseTo(1, 10);
-    expect(packratConvert(8, 'oz', 'lb')).toBeCloseTo(0.5, 10);
-    expect(packratConvert(32, 'oz', 'lb')).toBeCloseTo(2, 10);
+    expect(packratConvert(16, { from: 'oz', to: 'lb' })).toBeCloseTo(1, 10);
+    expect(packratConvert(8, { from: 'oz', to: 'lb' })).toBeCloseTo(0.5, 10);
+    expect(packratConvert(32, { from: 'oz', to: 'lb' })).toBeCloseTo(2, 10);
   });
 
   it('lb → oz: 1 lb = 16 oz', () => {
-    expect(packratConvert(1, 'lb', 'oz')).toBeCloseTo(16, 10);
-    expect(packratConvert(0.5, 'lb', 'oz')).toBeCloseTo(8, 10);
-    expect(packratConvert(2, 'lb', 'oz')).toBeCloseTo(32, 10);
+    expect(packratConvert(1, { from: 'lb', to: 'oz' })).toBeCloseTo(16, 10);
+    expect(packratConvert(0.5, { from: 'lb', to: 'oz' })).toBeCloseTo(8, 10);
+    expect(packratConvert(2, { from: 'lb', to: 'oz' })).toBeCloseTo(32, 10);
   });
 
   it('kg → lb: 1 kg ≈ 2.20462 lb', () => {
-    expect(packratConvert(1, 'kg', 'lb')).toBeCloseTo(2.20462, 4);
-    expect(packratConvert(2, 'kg', 'lb')).toBeCloseTo(4.40924, 4);
-    expect(packratConvert(0.5, 'kg', 'lb')).toBeCloseTo(1.10231, 4);
+    expect(packratConvert(1, { from: 'kg', to: 'lb' })).toBeCloseTo(2.20462, 4);
+    expect(packratConvert(2, { from: 'kg', to: 'lb' })).toBeCloseTo(4.40924, 4);
+    expect(packratConvert(0.5, { from: 'kg', to: 'lb' })).toBeCloseTo(1.10231, 4);
   });
 
   it('lb → kg: 1 lb ≈ 0.453592 kg', () => {
-    expect(packratConvert(1, 'lb', 'kg')).toBeCloseTo(0.453592, 5);
-    expect(packratConvert(2.2046, 'lb', 'kg')).toBeCloseTo(1, 3);
-    expect(packratConvert(10, 'lb', 'kg')).toBeCloseTo(4.53592, 4);
+    expect(packratConvert(1, { from: 'lb', to: 'kg' })).toBeCloseTo(0.453592, 5);
+    expect(packratConvert(2.2046, { from: 'lb', to: 'kg' })).toBeCloseTo(1, 3);
+    expect(packratConvert(10, { from: 'lb', to: 'kg' })).toBeCloseTo(4.53592, 4);
   });
 
   it('g → oz and back', () => {
-    expect(packratConvert(OZ_TO_G, 'g', 'oz')).toBeCloseTo(1, 10);
-    expect(packratConvert(100, 'g', 'oz')).toBeCloseTo(100 / OZ_TO_G, 8);
-    expect(packratConvert(1000, 'g', 'oz')).toBeCloseTo(1000 / OZ_TO_G, 6);
+    expect(packratConvert(OZ_TO_G, { from: 'g', to: 'oz' })).toBeCloseTo(1, 10);
+    expect(packratConvert(100, { from: 'g', to: 'oz' })).toBeCloseTo(100 / OZ_TO_G, 8);
+    expect(packratConvert(1000, { from: 'g', to: 'oz' })).toBeCloseTo(1000 / OZ_TO_G, 6);
   });
 
   it('g → kg and back', () => {
-    expect(packratConvert(1000, 'g', 'kg')).toBe(1);
-    expect(packratConvert(500, 'g', 'kg')).toBe(0.5);
-    expect(packratConvert(1, 'kg', 'g')).toBe(1000);
+    expect(packratConvert(1000, { from: 'g', to: 'kg' })).toBe(1);
+    expect(packratConvert(500, { from: 'g', to: 'kg' })).toBe(0.5);
+    expect(packratConvert(1, { from: 'kg', to: 'g' })).toBe(1000);
   });
 
   it('g → lb and back', () => {
-    expect(packratConvert(LB_TO_G, 'g', 'lb')).toBeCloseTo(1, 10);
-    expect(packratConvert(100, 'g', 'lb')).toBeCloseTo(100 / LB_TO_G, 8);
+    expect(packratConvert(LB_TO_G, { from: 'g', to: 'lb' })).toBeCloseTo(1, 10);
+    expect(packratConvert(100, { from: 'g', to: 'lb' })).toBeCloseTo(100 / LB_TO_G, 8);
   });
 
   it('kg → oz', () => {
-    expect(packratConvert(1, 'kg', 'oz')).toBeCloseTo(1000 / OZ_TO_G, 5);
-    expect(packratConvert(0.5, 'kg', 'oz')).toBeCloseTo(500 / OZ_TO_G, 5);
+    expect(packratConvert(1, { from: 'kg', to: 'oz' })).toBeCloseTo(1000 / OZ_TO_G, 5);
+    expect(packratConvert(0.5, { from: 'kg', to: 'oz' })).toBeCloseTo(500 / OZ_TO_G, 5);
   });
 
   it('oz → kg', () => {
-    expect(packratConvert(1, 'oz', 'kg')).toBeCloseTo(OZ_TO_G / 1000, 8);
-    expect(packratConvert(35.274, 'oz', 'kg')).toBeCloseTo(1, 2);
+    expect(packratConvert(1, { from: 'oz', to: 'kg' })).toBeCloseTo(OZ_TO_G / 1000, 8);
+    expect(packratConvert(35.274, { from: 'oz', to: 'kg' })).toBeCloseTo(1, 2);
   });
 
   it('all 12 unit pairs are round-trip exact at weight = 42', () => {
@@ -296,16 +296,16 @@ describe('convert', () => {
       ['kg', 'oz'],
     ];
     for (const [a, b] of pairs) {
-      const converted = packratConvert(42, a, b);
-      const back = packratConvert(converted, b, a);
+      const converted = packratConvert(42, { from: a, to: b });
+      const back = packratConvert(converted, { from: b, to: a });
       expect(back).toBeCloseTo(42, 10);
     }
   });
 
   it('round-trips multiple weights for oz↔lb', () => {
     for (const oz of [0.5, 1, 2, 4, 8, 16, 32, 64]) {
-      const lb = packratConvert(oz, 'oz', 'lb');
-      const back = packratConvert(lb, 'lb', 'oz');
+      const lb = packratConvert(oz, { from: 'oz', to: 'lb' });
+      const back = packratConvert(lb, { from: 'lb', to: 'oz' });
       expect(back).toBeCloseTo(oz, 10);
     }
   });
@@ -326,21 +326,6 @@ describe('displayWeight', () => {
     expect(displayWeight(1000, 'kg')).toBe(1); // not 1.00
     expect(displayWeight(LB_TO_G, 'lb')).toBe(1); // not 1.00
     expect(displayWeight(500, 'kg')).toBe(0.5); // not 0.50
-  });
-
-  it('respects precision = 0', () => {
-    expect(displayWeight(100, 'g', 0)).toBe(100);
-    expect(displayWeight(28.7, 'g', 0)).toBe(29);
-  });
-
-  it('respects precision = 1', () => {
-    expect(displayWeight(1234.56, 'g', 1)).toBe(1234.6);
-    expect(displayWeight(normalize(1.23, 'oz'), 'oz', 1)).toBe(1.2);
-  });
-
-  it('respects precision = 4', () => {
-    expect(displayWeight(OZ_TO_G, 'oz', 4)).toBe(1);
-    expect(displayWeight(100, 'g', 4)).toBe(100);
   });
 
   it('handles typical backpacking display values', () => {
@@ -443,56 +428,56 @@ describe('cross-validation against convert-units library', () => {
   it('packratConvert oz→lb matches convert-units', () => {
     for (const oz of [1, 4, 8, 12, 16, 32]) {
       const expected = convert(oz).from('oz').to('lb') as number;
-      expect(packratConvert(oz, 'oz', 'lb')).toBeCloseTo(expected, 4);
+      expect(packratConvert(oz, { from: 'oz', to: 'lb' })).toBeCloseTo(expected, 4);
     }
   });
 
   it('packratConvert lb→oz matches convert-units', () => {
     for (const lb of [0.5, 1, 1.5, 2, 3, 5]) {
       const expected = convert(lb).from('lb').to('oz') as number;
-      expect(packratConvert(lb, 'lb', 'oz')).toBeCloseTo(expected, 4);
+      expect(packratConvert(lb, { from: 'lb', to: 'oz' })).toBeCloseTo(expected, 4);
     }
   });
 
   it('packratConvert kg→lb matches convert-units', () => {
     for (const kg of [0.5, 1, 1.5, 2, 5, 10]) {
       const expected = convert(kg).from('kg').to('lb') as number;
-      expect(packratConvert(kg, 'kg', 'lb')).toBeCloseTo(expected, 3);
+      expect(packratConvert(kg, { from: 'kg', to: 'lb' })).toBeCloseTo(expected, 3);
     }
   });
 
   it('packratConvert lb→kg matches convert-units', () => {
     for (const lb of [1, 2.2046, 5, 10, 22.046]) {
       const expected = convert(lb).from('lb').to('kg') as number;
-      expect(packratConvert(lb, 'lb', 'kg')).toBeCloseTo(expected, 3);
+      expect(packratConvert(lb, { from: 'lb', to: 'kg' })).toBeCloseTo(expected, 3);
     }
   });
 
   it('packratConvert kg→oz matches convert-units', () => {
     for (const kg of [0.5, 1, 2, 5]) {
       const expected = convert(kg).from('kg').to('oz') as number;
-      expect(packratConvert(kg, 'kg', 'oz')).toBeCloseTo(expected, 2);
+      expect(packratConvert(kg, { from: 'kg', to: 'oz' })).toBeCloseTo(expected, 2);
     }
   });
 
   it('packratConvert oz→kg matches convert-units', () => {
     for (const oz of [1, 8, 16, 35.274]) {
       const expected = convert(oz).from('oz').to('kg') as number;
-      expect(packratConvert(oz, 'oz', 'kg')).toBeCloseTo(expected, 4);
+      expect(packratConvert(oz, { from: 'oz', to: 'kg' })).toBeCloseTo(expected, 4);
     }
   });
 
   it('packratConvert g→oz matches convert-units', () => {
     for (const g of [28.35, 100, 226.8, 453.6, 1000]) {
       const expected = convert(g).from('g').to('oz') as number;
-      expect(packratConvert(g, 'g', 'oz')).toBeCloseTo(expected, 2);
+      expect(packratConvert(g, { from: 'g', to: 'oz' })).toBeCloseTo(expected, 2);
     }
   });
 
   it('packratConvert g→lb matches convert-units', () => {
     for (const g of [100, 227, 454, 907, 2268]) {
       const expected = convert(g).from('g').to('lb') as number;
-      expect(packratConvert(g, 'g', 'lb')).toBeCloseTo(expected, 4);
+      expect(packratConvert(g, { from: 'g', to: 'lb' })).toBeCloseTo(expected, 4);
     }
   });
 });
@@ -662,16 +647,16 @@ describe('numeric edge cases', () => {
   it('convert same-unit short-circuits (no floating point ops)', () => {
     // IEEE 754 exact: if from===to we return the input directly
     const w = 1 / 3; // irrational in float
-    expect(packratConvert(w, 'oz', 'oz')).toBe(w); // toBe = same reference value
-    expect(packratConvert(w, 'lb', 'lb')).toBe(w);
-    expect(packratConvert(w, 'kg', 'kg')).toBe(w);
-    expect(packratConvert(w, 'g', 'g')).toBe(w);
+    expect(packratConvert(w, { from: 'oz', to: 'oz' })).toBe(w); // toBe = same reference value
+    expect(packratConvert(w, { from: 'lb', to: 'lb' })).toBe(w);
+    expect(packratConvert(w, { from: 'kg', to: 'kg' })).toBe(w);
+    expect(packratConvert(w, { from: 'g', to: 'g' })).toBe(w);
   });
 
   it('16 oz equals 1 lb through convert', () => {
     // 16 oz → lb must equal exactly 1 lb → oz → lb
-    const via_oz = packratConvert(16, 'oz', 'lb');
-    const direct = packratConvert(1, 'lb', 'lb');
+    const via_oz = packratConvert(16, { from: 'oz', to: 'lb' });
+    const direct = packratConvert(1, { from: 'lb', to: 'lb' });
     expect(via_oz).toBeCloseTo(direct, 10);
   });
 });

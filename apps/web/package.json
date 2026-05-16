@@ -9,6 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.170",
     "@packrat/api-client": "workspace:*",
     "@packrat/app": "workspace:*",
     "@packrat/env": "workspace:*",

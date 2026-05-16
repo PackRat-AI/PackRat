@@ -1,3 +1,4 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -188,19 +189,27 @@ export function useAuthActions() {
   };
 
   const forgotPassword = async (email: string) => {
-    const { error } = await authClient.requestPasswordReset({
-      email,
-      redirectTo: 'packrat://reset-password',
+    const res = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     });
-    if (error) throw new Error(error.message ?? 'Forgot password failed');
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error ?? 'Forgot password failed');
+    }
   };
 
-  const resetPassword = async (_email: string, opts: { token: string; newPassword: string }) => {
-    const { error } = await authClient.resetPassword({
-      token: opts.token,
-      newPassword: opts.newPassword,
+  const resetPassword = async (email: string, opts: { token: string; newPassword: string }) => {
+    const res = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code: opts.token, newPassword: opts.newPassword }),
     });
-    if (error) throw new Error(error.message ?? 'Reset password failed');
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error ?? 'Reset password failed');
+    }
   };
 
   const verifyEmail = async (_email: string, token: string) => {
