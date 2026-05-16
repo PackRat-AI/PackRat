@@ -29,6 +29,7 @@ import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { mintId } from '@packrat/api/utils/ids';
 import {
   and,
   cosineDistance,
@@ -44,14 +45,16 @@ import {
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
+// id is optional so server can mint for lean (MCP/CLI/web) callers while
+// offline-first stores (mobile) continue supplying their own client-side IDs.
 const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
+  id: z.string().optional(),
   localCreatedAt: z.string(),
   localUpdatedAt: z.string(),
 });
 
 const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
+  id: z.string().optional(),
 });
 
 // Lean payload for /items/from-catalog. Name/weight/weightUnit/category get
@@ -65,10 +68,6 @@ const AddPackItemFromCatalogSchema = z.object({
   // Optional override — usually the catalog category is fine.
   category: z.string().optional(),
 });
-
-const STRIP_HYPHENS = /-/g;
-const shortPackItemId = (): string =>
-  `i_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -111,8 +110,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
-      const packId = data.id as string;
-      if (!packId) return status(400, { error: 'Pack ID is required' });
+      const packId = data.id ?? mintId('p');
 
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
@@ -440,7 +438,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packWeightHistoryEntry = await db
           .insert(packWeightHistory)
           .values({
-            id: data.id,
+            id: data.id ?? mintId('w'),
             packId: params.packId,
             userId: user.userId,
             weight: data.weight,
@@ -460,7 +458,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     {
       params: z.object({ packId: z.string() }),
       body: z.object({
-        id: z.string(),
+        id: z.string().optional(),
         weight: z.number(),
         localCreatedAt: z.string().datetime(),
       }),
@@ -659,7 +657,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         getEnv();
 
       if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
-      if (!data.id) return status(400, { error: 'Item ID is required' });
+      const itemId = data.id ?? mintId('i');
 
       const embeddingText = getEmbeddingText(data);
       const embedding = await generateEmbedding({
@@ -674,7 +672,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const [newItem] = await db
         .insert(packItems)
         .values({
-          id: data.id,
+          id: itemId,
           packId,
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
@@ -737,7 +735,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         return status(404, { error: `Catalog item ${body.catalogItemId} not found` });
       }
 
-      const id = shortPackItemId();
+      const id = mintId('i');
       const now = new Date();
       const [newItem] = await db
         .insert(packItems)

@@ -1,6 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { type Trip, trips } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { mintId } from '@packrat/api/utils/ids';
 import { and, eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -15,7 +16,9 @@ const LocationSchema = z
   .optional();
 
 const CreateTripRequestSchema = z.object({
-  id: z.string(),
+  // id optional so server can mint for lean callers; offline-first stores
+  // (mobile) keep supplying client-side IDs for sync.
+  id: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional().nullable(),
   location: LocationSchema,
@@ -68,13 +71,13 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
       const data = body;
 
-      if (!data.id) return status(400, { error: 'Trip ID is required' });
+      const tripId = data.id ?? mintId('t');
 
       try {
         const [newTrip] = await db
           .insert(trips)
           .values({
-            id: data.id,
+            id: tripId,
             userId: user.userId,
             name: data.name,
             description: data.description ?? null,

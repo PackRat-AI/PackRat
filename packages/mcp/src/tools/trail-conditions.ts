@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { call, nowIso, shortId } from '../client';
+import { call, nowIso } from '../client';
 import { CrossingDifficulty, TrailCondition, TrailSurface } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -79,11 +79,9 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       photos,
       trip_id,
     }) => {
-      const id = shortId('tcr');
       const now = nowIso();
       return call(
         agent.api.user['trail-conditions'].post({
-          id,
           trailName: trail_name,
           trailRegion: trail_region ?? null,
           surface,

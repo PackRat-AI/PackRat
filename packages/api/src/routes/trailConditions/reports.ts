@@ -2,6 +2,7 @@ import { createDb } from '@packrat/api/db';
 import type { NewTrailConditionReport } from '@packrat/api/db/schema';
 import { trailConditionReports } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { mintId } from '@packrat/api/utils/ids';
 import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -12,7 +13,9 @@ const LIKE_ESCAPE_PERCENT = /%/g;
 const LIKE_ESCAPE_UNDERSCORE = /_/g;
 
 const CreateReportRequestSchema = z.object({
-  id: z.string().describe('Client-generated report ID'),
+  // id optional — server mints if absent (lean callers). Offline-first
+  // stores keep supplying client-side IDs for sync.
+  id: z.string().optional().describe('Client-generated report ID; server mints when absent'),
   trailName: z.string().min(1),
   trailRegion: z.string().optional().nullable(),
   surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),
@@ -101,12 +104,13 @@ export const trailConditionRoutes = new Elysia()
     async ({ body, user }) => {
       const db = createDb();
       const data = body;
+      const reportId = data.id ?? mintId('tcr');
 
       try {
         const [newReport] = await db
           .insert(trailConditionReports)
           .values({
-            id: data.id,
+            id: reportId,
             trailName: data.trailName,
             trailRegion: data.trailRegion ?? null,
             surface: data.surface,
@@ -129,7 +133,10 @@ export const trailConditionRoutes = new Elysia()
         return toReportResponse(newReport);
       } catch (error) {
         const pgCode = (error as { code?: string })?.code;
-        if (pgCode === '23505') {
+        // 23505 is the unique-violation path: client-supplied id already in
+        // use. Server-minted ids are statistically collision-free, so this
+        // only matters when the caller passed one.
+        if (pgCode === '23505' && data.id) {
           const existing = await db.query.trailConditionReports.findFirst({
             where: and(
               eq(trailConditionReports.id, data.id),

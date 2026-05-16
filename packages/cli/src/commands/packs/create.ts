@@ -2,7 +2,7 @@ import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
-import { nowIso, shortId } from '../../api/ids';
+import { nowIso } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 
 export default defineCommand({
@@ -22,7 +22,6 @@ export default defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const id = shortId('p');
     const now = nowIso();
     const tags = args.tags
       ? args.tags
@@ -32,7 +31,6 @@ export default defineCommand({
       : undefined;
     const pack = await runApi(
       client.packs.post({
-        id,
         name: args.name,
         description: args.description,
         category: args.category,
@@ -43,6 +41,6 @@ export default defineCommand({
       }),
       { action: 'create pack' },
     );
-    consola.success(`Created pack ${toRecord(pack).id ?? id}`);
+    consola.success(`Created pack ${toRecord(pack).id ?? '(server-minted id)'}`);
   },
 });

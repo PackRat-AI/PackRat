@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { call, nowIso, shortId } from '../client';
+import { call, nowIso } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -43,11 +43,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ name, description, category, image, tags, is_app_template }) => {
-      const id = shortId('pt');
       const now = nowIso();
       return call(
         agent.api.user['pack-templates'].post({
-          id,
           name,
           description,
           category,
@@ -147,11 +145,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       worn,
       image,
       notes,
-    }) => {
-      const id = shortId('pti');
-      return call(
+    }) =>
+      call(
         agent.api.user['pack-templates']({ templateId: template_id }).items.post({
-          id,
           name,
           description,
           weight,
@@ -164,8 +160,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           notes,
         }),
         { action: 'add template item', resourceHint: `template ${template_id}` },
-      );
-    },
+      ),
   );
 
   agent.server.registerTool(

@@ -54,7 +54,8 @@ export const PackTemplateWithItemsSchema = PackTemplateSchema.extend({
 });
 
 export const CreatePackTemplateRequestSchema = z.object({
-  id: z.string(),
+  // id optional so the server can mint for lean callers.
+  id: z.string().optional(),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   category: z.string().min(1),
@@ -77,7 +78,8 @@ export const UpdatePackTemplateRequestSchema = z.object({
 });
 
 export const CreatePackTemplateItemRequestSchema = z.object({
-  id: z.string(),
+  // id optional so the server can mint for lean callers.
+  id: z.string().optional(),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   weight: z.number().min(0),

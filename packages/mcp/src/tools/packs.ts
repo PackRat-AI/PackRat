@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { call, nowIso, shortId } from '../client';
+import { call, nowIso } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -61,11 +61,9 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ name, description, category, is_public, tags }) => {
-      const id = shortId('p');
       const now = nowIso();
       return call(
         agent.api.user.packs.post({
-          id,
           name,
           description,
           category,
@@ -191,12 +189,9 @@ export function registerPackTools(agent: AgentContext): void {
       is_consumable,
       is_worn,
       notes,
-    }) => {
-      const id = shortId('i');
-      const now = nowIso();
-      return call(
+    }) =>
+      call(
         agent.api.user.packs({ packId: pack_id }).items.post({
-          id,
           name,
           category,
           weight: weight_grams,
@@ -205,12 +200,9 @@ export function registerPackTools(agent: AgentContext): void {
           consumable: is_consumable,
           worn: is_worn,
           notes,
-          localCreatedAt: now,
-          localUpdatedAt: now,
         }),
         { action: 'add pack item', resourceHint: `pack ${pack_id}` },
-      );
-    },
+      ),
   );
 
   // ── Add a catalog item to a pack (lean) ──────────────────────────────────
@@ -357,15 +349,13 @@ export function registerPackTools(agent: AgentContext): void {
       description: 'Record a weight measurement for a pack at a specific point in time.',
       inputSchema: { pack_id: z.string(), weight_grams: z.number().min(0) },
     },
-    async ({ pack_id, weight_grams }) => {
-      const id = shortId('w');
-      return call(
+    async ({ pack_id, weight_grams }) =>
+      call(
         agent.api.user
           .packs({ packId: pack_id })
-          ['weight-history'].post({ id, weight: weight_grams, localCreatedAt: nowIso() }),
+          ['weight-history'].post({ weight: weight_grams, localCreatedAt: nowIso() }),
         { action: 'record pack weight', resourceHint: `pack ${pack_id}` },
-      );
-    },
+      ),
   );
 
   // ── Pack weight analysis (server-computed breakdown) ─────────────────────

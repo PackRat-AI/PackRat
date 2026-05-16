@@ -1,7 +1,7 @@
 import { toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { nowIso, shortId } from '../../api/ids';
+import { nowIso } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -57,11 +57,9 @@ const createCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const id = shortId('pt');
     const now = nowIso();
     const data = await runApi(
       client['pack-templates'].post({
-        id,
         name: args.name,
         description: args.description,
         category: args.category,

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { call, nowIso, shortId } from '../client';
+import { call, nowIso } from '../client';
 import type { AgentContext } from '../types';
 
 const LocationInput = z.object({
@@ -55,11 +55,9 @@ export function registerTripTools(agent: AgentContext): void {
       },
     },
     async ({ name, description, location, start_date, end_date, notes, pack_id }) => {
-      const id = shortId('t');
       const now = nowIso();
       return call(
         agent.api.user.trips.post({
-          id,
           name,
           description,
           location: location ?? null,

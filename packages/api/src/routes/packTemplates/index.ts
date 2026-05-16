@@ -12,6 +12,7 @@ import {
 } from '@packrat/api/schemas/packTemplates';
 import { CatalogService } from '@packrat/api/services/catalogService';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { mintId } from '@packrat/api/utils/ids';
 import { assertDefined } from '@packrat/guards';
 import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
@@ -24,7 +25,6 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 const QUERY_STRIP_RE = /[?&].*$/;
-const STRIP_HYPHENS = /-/g;
 
 function generateContentIdFromUrl(url: string): string {
   const normalizedUrl = url.toLowerCase().replace(QUERY_STRIP_RE, '');
@@ -174,7 +174,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const [newTemplate] = await db
         .insert(packTemplates)
         .values({
-          id: data.id,
+          id: data.id ?? mintId('pt'),
           userId: user.userId,
           name: data.name,
           description: data.description,
@@ -333,7 +333,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
             : { items: [] as never[] };
 
         const now = new Date();
-        const templateId = `pt_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 21)}`;
+        const templateId = mintId('pt');
 
         const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
           const [createdTemplate] = await tx
@@ -358,7 +358,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           const itemRecords = analysis.items.map((detected, index) => {
             const catalogMatches = batchResult.items[index] ?? [];
             const bestMatch = catalogMatches[0];
-            const itemId = `pti_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 21)}`;
+            const itemId = mintId('pti');
 
             return {
               id: itemId,
@@ -690,7 +690,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const [newItem] = await db
         .insert(packTemplateItems)
         .values({
-          id: data.id,
+          id: data.id ?? mintId('pti'),
           packTemplateId: templateId,
           name: data.name,
           description: data.description,

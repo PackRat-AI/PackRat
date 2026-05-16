@@ -1,7 +1,7 @@
 import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { nowIso, shortId } from '../../api/ids';
+import { nowIso } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary, printTable } from '../../shared';
 
@@ -78,7 +78,6 @@ const createCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const id = shortId('t');
     const now = nowIso();
     const lat = args.lat ? Number.parseFloat(args.lat) : null;
     const lon = args.lon ? Number.parseFloat(args.lon) : null;
@@ -88,7 +87,6 @@ const createCmd = defineCommand({
         : null;
     const trip = await runApi(
       client.trips.post({
-        id,
         name: args.name,
         description: args.description,
         location,
