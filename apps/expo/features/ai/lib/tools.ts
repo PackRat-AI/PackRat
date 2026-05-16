@@ -22,6 +22,21 @@ import {
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
+function trimCatalogItem(item: Record<string, unknown>) {
+  const cats = Array.isArray(item.categories) ? (item.categories as string[]).slice(0, 2) : [];
+  return {
+    id: item.id,
+    name: item.name,
+    brand: item.brand,
+    weight: item.weight,
+    weightUnit: item.weightUnit,
+    categories: cats,
+    price: item.price,
+    ratingValue: item.ratingValue,
+    description: typeof item.description === 'string' ? item.description.slice(0, 120) : undefined,
+  };
+}
+
 export function createLocalTools() {
   return {
     getPackDetails: tool({
@@ -139,12 +154,13 @@ export function createLocalTools() {
         limit: z
           .number()
           .min(1)
-          .max(50)
+          .max(10)
           .optional()
-          .describe('Number of results to return (default 10)'),
+          .describe('Number of results to return (default 5, max 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, category, limit = 10, offset: _offset = 0 }) => {
+      execute: async ({ query, category, limit = 5, offset: _offset = 0 }) => {
+        console.log('getCatalogItems called with', { query, category, limit, offset: _offset });
         const { data, error } = await apiClient.catalog.get({
           query: {
             page: 1,
@@ -156,7 +172,10 @@ export function createLocalTools() {
         if (error) {
           return { success: false, error: error.value ?? 'Failed to retrieve catalog items' };
         }
-        return { success: true, data };
+        const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
+        const trimmedItems = items.map((item) => trimCatalogItem(item as Record<string, unknown>));
+        console.log('getCatalogItems returning', { items: trimmedItems });
+        return { success: true, data: trimmedItems };
       },
     }),
 
@@ -168,19 +187,23 @@ export function createLocalTools() {
         limit: z
           .number()
           .min(1)
-          .max(100)
+          .max(10)
           .optional()
-          .describe('Number of results to return (default 10)'),
+          .describe('Number of results to return (default 5, max 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, limit = 10, offset = 0 }) => {
+      execute: async ({ query, limit = 5, offset = 0 }) => {
         const { data, error } = await apiClient.catalog['vector-search'].get({
           query: { q: query, limit, offset },
         });
         if (error) {
           return { success: false, error: error.value ?? 'Failed to perform vector search' };
         }
-        return { success: true, data };
+        const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
+        return {
+          success: true,
+          data: items.map((item) => trimCatalogItem(item as Record<string, unknown>)),
+        };
       },
     }),
 
