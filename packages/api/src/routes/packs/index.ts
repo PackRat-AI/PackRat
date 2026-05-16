@@ -54,6 +54,22 @@ const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
   id: z.string(),
 });
 
+// Lean payload for /items/from-catalog. Name/weight/weightUnit/category get
+// hydrated server-side from the catalog row.
+const AddPackItemFromCatalogSchema = z.object({
+  catalogItemId: z.number().int().positive(),
+  quantity: z.number().int().positive().optional(),
+  notes: z.string().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  // Optional override — usually the catalog category is fine.
+  category: z.string().optional(),
+});
+
+const STRIP_HYPHENS = /-/g;
+const shortPackItemId = (): string =>
+  `i_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
+
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
   .use(adminAuthPlugin)
@@ -696,6 +712,80 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       body: AddPackItemBodySchema,
       isAuthenticated: true,
       detail: { tags: ['Pack Items'], summary: 'Add item to pack', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Add item from catalog — server hydrates name/weight/category from the
+  // catalog row so the caller only supplies the link plus per-pack metadata
+  // (quantity, notes, worn, consumable).
+  .post(
+    '/:packId/items/from-catalog',
+    async ({ params, body, user }) => {
+      const db = createDb();
+      const packId = params.packId;
+
+      const pack = await db.query.packs.findFirst({
+        where: and(eq(packs.id, packId), eq(packs.userId, user.userId)),
+        columns: { id: true },
+      });
+      if (!pack) return status(404, { error: 'Pack not found' });
+
+      const catalog = await db.query.catalogItems.findFirst({
+        where: eq(catalogItems.id, body.catalogItemId),
+      });
+      if (!catalog) {
+        return status(404, { error: `Catalog item ${body.catalogItemId} not found` });
+      }
+
+      const id = shortPackItemId();
+      const now = new Date();
+      const [newItem] = await db
+        .insert(packItems)
+        .values({
+          id,
+          packId,
+          catalogItemId: catalog.id,
+          name: catalog.name,
+          description: catalog.description ?? null,
+          weight: catalog.weight ?? 0,
+          weightUnit: catalog.weightUnit ?? 'g',
+          quantity: body.quantity ?? 1,
+          category: body.category ?? catalog.categories?.[0] ?? 'Uncategorized',
+          consumable: body.consumable ?? false,
+          worn: body.worn ?? false,
+          image: catalog.images?.[0] ?? null,
+          notes: body.notes ?? null,
+          userId: user.userId,
+          embedding: catalog.embedding,
+          localCreatedAt: now,
+          localUpdatedAt: now,
+        } as NewPackItem) // safe-cast: object literal matches NewPackItem; embedding field uses the narrower type
+        .returning();
+
+      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+
+      if (!newItem) return status(400, { error: 'Failed to create item' });
+
+      return status(201, {
+        ...newItem,
+        consumable: newItem.consumable ?? false,
+        worn: newItem.worn ?? false,
+        deleted: newItem.deleted ?? false,
+        createdAt: newItem.createdAt.toISOString(),
+        updatedAt: newItem.updatedAt.toISOString(),
+        embedding: undefined,
+        templateItemId: newItem.templateItemId ?? null,
+      });
+    },
+    {
+      params: z.object({ packId: z.string() }),
+      body: AddPackItemFromCatalogSchema,
+      isAuthenticated: true,
+      detail: {
+        tags: ['Pack Items'],
+        summary: 'Add a catalog item to a pack',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
