@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
+import { pickArray } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -36,11 +37,8 @@ const searchCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const trails = Array.isArray((data as Record<string, unknown>).trails)
-      ? ((data as Record<string, unknown>).trails as Record<string, unknown>[])
-      : [];
     printTable(
-      trails.map((t) => ({
+      pickArray(data, 'trails').map((t) => ({
         osmId: t.osmId,
         name: t.name,
         sport: t.sport,

@@ -186,11 +186,13 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ item_id, ...fields }) => {
+      // Explicit snake→camel rename avoids a raw regex; keys are stable
+      // because the input schema is fixed at registration time.
+      const SNAKE_TO_CAMEL: Record<string, string> = { weight_unit: 'weightUnit' };
       const body: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(fields)) {
         if (v === undefined) continue;
-        const camel = k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-        body[camel] = v;
+        body[SNAKE_TO_CAMEL[k] ?? k] = v;
       }
       return call(agent.api.user['pack-templates'].items({ itemId: item_id }).patch(body), {
         action: 'update template item',

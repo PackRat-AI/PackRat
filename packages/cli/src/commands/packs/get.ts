@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
+import { asRecord } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary } from '../../shared';
 
@@ -20,7 +21,7 @@ export default defineCommand({
       process.stdout.write(`${JSON.stringify(pack, null, 2)}\n`);
       return;
     }
-    const p = pack as Record<string, unknown>;
+    const p = asRecord(pack);
     printSummary(
       {
         id: p.id,

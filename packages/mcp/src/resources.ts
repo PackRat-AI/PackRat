@@ -1,4 +1,5 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { isObject, isString } from '@packrat/guards';
 import type { AgentContext } from './types';
 
 type TreatyResult = {
@@ -9,12 +10,11 @@ type TreatyResult = {
 
 function resourceError(opts: { uri: string; context: string; status: number; value: unknown }) {
   const { uri, context, status, value } = opts;
-  const message =
-    typeof value === 'string'
-      ? value
-      : value && typeof value === 'object' && 'error' in value
-        ? String((value as { error: unknown }).error)
-        : `HTTP ${status}`;
+  const message = isString(value)
+    ? value
+    : isObject(value) && 'error' in value
+      ? String((value as { error: unknown }).error)
+      : `HTTP ${status}`;
   return { uri, context, status, error: message };
 }
 

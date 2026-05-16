@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
+import { asRecord, asRecordArray } from '../../api/format';
 import { nowIso, shortId } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary, printTable } from '../../shared';
@@ -15,18 +16,14 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(trips, null, 2)}\n`);
       return;
     }
-    const rows = Array.isArray(trips) ? trips : [];
     printTable(
-      rows.map((t) => {
-        const r = t as Record<string, unknown>;
-        return {
-          id: r.id,
-          name: r.name,
-          startDate: r.startDate,
-          endDate: r.endDate,
-          packId: r.packId,
-        };
-      }),
+      asRecordArray(trips).map((r) => ({
+        id: r.id,
+        name: r.name,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        packId: r.packId,
+      })),
       { title: 'Your trips' },
     );
   },
@@ -49,7 +46,7 @@ const getCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(trip, null, 2)}\n`);
       return;
     }
-    const t = trip as Record<string, unknown>;
+    const t = asRecord(trip);
     printSummary(
       {
         id: t.id,

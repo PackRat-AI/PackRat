@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
+import { asRecordArray, pickArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -29,11 +30,7 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const items = Array.isArray((data as Record<string, unknown>).items)
-      ? ((data as Record<string, unknown>).items as Record<string, unknown>[])
-      : Array.isArray(data)
-        ? (data as Record<string, unknown>[])
-        : [];
+    const items = Array.isArray(data) ? asRecordArray(data) : pickArray(data, 'items');
     printTable(
       items.map((u) => ({
         id: u.id,

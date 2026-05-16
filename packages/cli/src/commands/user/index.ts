@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
+import { asRecord } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary } from '../../shared';
 
@@ -9,7 +10,7 @@ const getCmd = defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const data = await runApi(client.user.profile.get(), { action: 'get profile' });
-    const r = data as Record<string, unknown>;
+    const r = asRecord(data);
     printSummary(
       {
         firstName: r.firstName,

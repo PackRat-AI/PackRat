@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
+import { asRecordArray, pickArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -26,11 +27,8 @@ const searchCmd = defineCommand({
       }),
       { action: 'admin search trails', requiresAdmin: true },
     );
-    const trails = Array.isArray((data as Record<string, unknown>).trails)
-      ? ((data as Record<string, unknown>).trails as Record<string, unknown>[])
-      : [];
     printTable(
-      trails.map((t) => ({ osmId: t.osmId, name: t.name, sport: t.sport })),
+      pickArray(data, 'trails').map((t) => ({ osmId: t.osmId, name: t.name, sport: t.sport })),
       { title: 'Trails (admin)' },
     );
   },
@@ -63,9 +61,8 @@ const reportsCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
     printTable(
-      rows.map((r) => ({
+      asRecordArray(data).map((r) => ({
         id: r.id,
         trailName: r.trailName,
         condition: r.overallCondition,

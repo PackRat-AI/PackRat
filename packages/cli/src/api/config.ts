@@ -13,6 +13,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
+import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
 const DEFAULT_BASE_URL = 'https://packrat.world';
@@ -57,7 +59,7 @@ export async function loadConfig(): Promise<CliConfig> {
   }
   // PACKRAT_API_URL env override always wins. Useful for local dev (e.g.
   // pointing the CLI at `http://localhost:8787`).
-  const envOverride = process.env.PACKRAT_API_URL?.trim();
+  const envOverride = nodeEnv.PACKRAT_API_URL?.trim();
   if (envOverride) cached.baseUrl = envOverride;
   return cached;
 }
@@ -92,10 +94,5 @@ export async function clearSession(): Promise<void> {
 export const CONFIG_FILE_PATH = CONFIG_PATH;
 
 function isNotFound(error: unknown): boolean {
-  return Boolean(
-    error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      (error as { code: string }).code === 'ENOENT',
-  );
+  return isObject(error) && 'code' in error && (error as { code: string }).code === 'ENOENT';
 }

@@ -194,6 +194,7 @@ export function registerCatalogTools(agent: AgentContext): void {
         );
       }
       const comparison = responses.map((r) => {
+        // safe-cast: catalog item response is a JSON object; display only
         const it = (r.data ?? {}) as Record<string, unknown>;
         return {
           id: it.id,

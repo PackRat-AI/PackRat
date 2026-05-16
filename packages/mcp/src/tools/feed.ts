@@ -98,7 +98,7 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: {
         post_id: z.string(),
         content: z.string().min(1),
-        parent_comment_id: z.string().optional(),
+        parent_comment_id: z.number().int().optional(),
       },
     },
     async ({ post_id, content, parent_comment_id }) =>

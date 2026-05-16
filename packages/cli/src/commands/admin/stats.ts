@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { getAdminClient } from '../../api/client';
+import { asRecord } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printSummary } from '../../shared';
 
@@ -12,6 +13,6 @@ export default defineCommand({
       action: 'admin stats',
       requiresAdmin: true,
     });
-    printSummary(data as Record<string, unknown>, 'Admin stats');
+    printSummary(asRecord(data), 'Admin stats');
   },
 });

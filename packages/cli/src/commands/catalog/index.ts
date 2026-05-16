@@ -1,5 +1,7 @@
+import { isString } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
+import { asRecord, pickArray } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary, printTable } from '../../shared';
 
@@ -27,13 +29,10 @@ const searchCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const items = Array.isArray((data as Record<string, unknown>).items)
-      ? ((data as Record<string, unknown>).items as Record<string, unknown>[])
-      : [];
     printTable(
-      items.map((it) => ({
+      pickArray(data, 'items').map((it) => ({
         id: it.id,
-        name: typeof it.name === 'string' ? it.name.slice(0, 60) : it.name,
+        name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
         weight: it.weight,
         price: it.price,
@@ -63,13 +62,10 @@ const semanticCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const items = Array.isArray((data as Record<string, unknown>).items)
-      ? ((data as Record<string, unknown>).items as Record<string, unknown>[])
-      : [];
     printTable(
-      items.map((it) => ({
+      pickArray(data, 'items').map((it) => ({
         id: it.id,
-        name: typeof it.name === 'string' ? it.name.slice(0, 60) : it.name,
+        name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
         score: it.score,
       })),
@@ -95,7 +91,7 @@ const getCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(item, null, 2)}\n`);
       return;
     }
-    const r = item as Record<string, unknown>;
+    const r = asRecord(item);
     printSummary(
       {
         id: r.id,

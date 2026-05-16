@@ -162,7 +162,7 @@ function extractErrorMessage(body: unknown): string | null {
   if (body == null) return null;
   if (isString(body)) return body;
   if (isObject(body)) {
-    const obj = body as Record<string, unknown>;
+    const obj = body as Record<string, unknown>; // safe-cast: isObject() guard above narrows body
     if (isString(obj.message)) return obj.message;
     if (isString(obj.error)) return obj.error;
     try {

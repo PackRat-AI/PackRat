@@ -1,3 +1,4 @@
+import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 import { call, errMessage } from '../client';
 import type { AgentContext } from '../types';
@@ -28,7 +29,7 @@ export function registerWeatherTools(agent: AgentContext): void {
         });
       }
       const first = Array.isArray(search.data) ? search.data[0] : null;
-      const id = first && typeof first === 'object' && 'id' in first ? first.id : null;
+      const id = isObject(first) && 'id' in first ? first.id : null;
       if (id == null) return errMessage(`No weather location found for: ${location}`);
       return call(agent.api.user.weather.forecast.get({ query: { id: String(id) } }), {
         action: 'fetch weather forecast',

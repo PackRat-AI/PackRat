@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
+import { asRecordArray } from '../../api/format';
 import { nowIso, shortId } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 import { printTable } from '../../shared';
@@ -15,17 +16,13 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const rows = Array.isArray(data) ? data : [];
     printTable(
-      rows.map((t) => {
-        const r = t as Record<string, unknown>;
-        return {
-          id: r.id,
-          name: r.name,
-          category: r.category,
-          isApp: r.isAppTemplate,
-        };
-      }),
+      asRecordArray(data).map((r) => ({
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        isApp: r.isAppTemplate,
+      })),
       { title: 'Pack templates' },
     );
   },

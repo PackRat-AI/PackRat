@@ -66,7 +66,7 @@ export async function tryApi<R extends TreatyLike>(
 }
 
 function errorValue(error: unknown): unknown {
-  if (error && typeof error === 'object' && 'value' in error) {
+  if (isObject(error) && 'value' in error) {
     return (error as { value: unknown }).value;
   }
   return error;
@@ -146,7 +146,7 @@ function extractMessage(body: unknown): string | null {
   if (body == null) return null;
   if (isString(body)) return body;
   if (isObject(body)) {
-    const obj = body as Record<string, unknown>;
+    const obj = body as Record<string, unknown>; // safe-cast: isObject() guard above narrows body
     if (isString(obj.message)) return obj.message;
     if (isString(obj.error)) return obj.error;
     try {

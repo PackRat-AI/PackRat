@@ -1,6 +1,8 @@
+import { isString } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
+import { asRecordArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -29,11 +31,10 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const items = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
     printTable(
-      items.map((it) => ({
+      asRecordArray(data).map((it) => ({
         id: it.id,
-        name: typeof it.name === 'string' ? it.name.slice(0, 60) : it.name,
+        name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
         weight: it.weight,
         price: it.price,
