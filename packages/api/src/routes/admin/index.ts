@@ -26,6 +26,13 @@ const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
 const ADMIN_JWT_AUDIENCE = 'packrat-admin';
 
+function checkAdminCredentials(username: string, password: string): boolean {
+  const env = getEnv();
+  const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
+  const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
+  return userOk && passOk;
+}
+
 function basicAuthGuard(request: Request): { authorized: true } | { authorized: false } {
   const header = request.headers.get('authorization') ?? '';
   if (!header.startsWith('Basic ')) return { authorized: false };
@@ -36,10 +43,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
     if (sep === -1) return { authorized: false };
     const username = decoded.slice(0, sep);
     const password = decoded.slice(sep + 1);
-    const env = getEnv();
-    const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
-    const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
-    if (userOk && passOk) return { authorized: true };
+    if (checkAdminCredentials(username, password)) return { authorized: true };
   } catch {
     return { authorized: false };
   }
@@ -131,6 +135,50 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       allowedHeaders: ['Authorization', 'Content-Type'],
     }),
   )
+  // Login (body-credential variant) — same credential semantics as /token,
+  // but takes `{ username, password }` in the JSON body. Typed clients (MCP,
+  // CLI, Eden Treaty) can hit this without overriding the Authorization
+  // header. The Basic-auth /token route remains for the admin SPA.
+  .post(
+    '/login',
+    async ({ body, request }) => {
+      const env = getEnv();
+      if (env.TOKEN_RATE_LIMITER) {
+        const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+        const { success } = await env.TOKEN_RATE_LIMITER.limit({ key: ip });
+        if (!success) return status(429, { error: 'Too many requests' });
+      }
+      const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+      if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+        const cfIdentity = await verifyCFAccessRequest(request, {
+          teamDomain: CF_ACCESS_TEAM_DOMAIN,
+          aud: CF_ACCESS_AUD,
+        });
+        if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
+      }
+      if (!checkAdminCredentials(body.username, body.password)) {
+        return status(401, { error: 'Invalid username or password' });
+      }
+      const token = await issueAdminJwt(body.username);
+      return { token, expiresIn: ADMIN_TOKEN_TTL_SECONDS };
+    },
+    {
+      body: z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+      }),
+      response: {
+        200: z.object({ token: z.string(), expiresIn: z.number() }),
+        401: z.object({ error: z.string() }),
+        429: z.object({ error: z.string() }),
+      },
+      detail: {
+        tags: ['Admin'],
+        summary: 'Exchange JSON credentials for a short-lived admin JWT',
+      },
+    },
+  )
+
   // Token exchange — must be registered BEFORE the auth guard so the admin
   // SPA can exchange Basic credentials for a short-lived JWT.
   .post(
@@ -180,7 +228,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
   )
   .onBeforeHandle(async ({ request, path }) => {
-    if (path === '/api/admin/token') return;
+    // Credential-exchange routes own their own auth gating (Basic for /token,
+    // JSON body for /login). Skip the bearer guard for both.
+    if (path === '/api/admin/token' || path === '/api/admin/login') return;
     if (request.method === 'OPTIONS') return;
     const ok = await adminAuthGuard(request);
     if (!ok) return status(401, { error: 'Unauthorized' });

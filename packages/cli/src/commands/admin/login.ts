@@ -1,19 +1,13 @@
-import chalk from 'chalk';
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { z } from 'zod';
-import { getBaseUrl } from '../../api/client';
+import { getUserClient } from '../../api/client';
 import { saveConfig } from '../../api/config';
-
-const TokenResponseSchema = z.object({
-  token: z.string(),
-  expiresIn: z.number(),
-});
+import { runApi } from '../../api/run';
 
 export default defineCommand({
   meta: {
     name: 'login',
-    description: 'Exchange admin Basic credentials for a short-lived admin JWT (60 min).',
+    description: 'Exchange admin credentials for a short-lived admin JWT (60 min).',
   },
   args: {
     username: { type: 'string', alias: 'u', description: 'Admin username' },
@@ -24,30 +18,15 @@ export default defineCommand({
     const password =
       args.password ?? (await consola.prompt('Admin password', { type: 'text', cancel: 'reject' }));
 
-    const baseUrl = await getBaseUrl();
-    const basic = Buffer.from(`${username}:${password}`).toString('base64');
-    const response = await fetch(`${baseUrl}/api/admin/token`, {
-      method: 'POST',
-      headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/json' },
-      body: '{}',
+    // The user-scope Treaty client is fine here — /admin/login is the
+    // credential-exchange route and ignores any Bearer header.
+    const client = await getUserClient();
+    const { token, expiresIn } = await runApi(client.admin.login.post({ username, password }), {
+      action: 'admin login',
     });
 
-    if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      consola.error(`Admin login failed (HTTP ${response.status}).`);
-      if (body) consola.error(chalk.dim(body));
-      process.exit(1);
-    }
-
-    const parsed = TokenResponseSchema.safeParse(await response.json().catch(() => null));
-    if (!parsed.success) {
-      consola.error('Token endpoint returned an unexpected payload.');
-      process.exit(1);
-    }
-    const expiresAt = Date.now() + parsed.data.expiresIn * 1000;
-    await saveConfig({ adminToken: parsed.data.token, adminTokenExpiresAt: expiresAt });
-    consola.success(
-      `Admin token stored (valid for ${Math.round(parsed.data.expiresIn / 60)} min).`,
-    );
+    const expiresAt = Date.now() + expiresIn * 1000;
+    await saveConfig({ adminToken: token, adminTokenExpiresAt: expiresAt });
+    consola.success(`Admin token stored (valid for ${Math.round(expiresIn / 60)} min).`);
   },
 });

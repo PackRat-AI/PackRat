@@ -11,6 +11,7 @@
  *  - `admin_logout` — clear the stored admin JWT.
  */
 
+import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 import { call, errMessage, ok } from '../client';
 import type { AgentContext } from '../types';
@@ -28,39 +29,29 @@ export function registerAuthTools(agent: AgentContext): void {
   );
 
   // ── Admin login ───────────────────────────────────────────────────────────
-  // POST /api/admin/token uses HTTP Basic auth — hit it via fetch rather than
-  // Treaty so we can attach the Basic header without disturbing the admin
-  // Treaty client's Bearer header.
+  // Uses the body-credential variant of /api/admin/token (POST /admin/login)
+  // so the call goes straight through Treaty — no Basic-header bypass.
 
   agent.server.registerTool(
     'admin_login',
     {
       description:
-        'Exchange admin Basic credentials (username + password) for a short-lived admin JWT and store it for the current MCP session. Required before calling any admin_* tool unless an admin JWT was already supplied via the X-PackRat-Admin-Token header.',
+        'Exchange admin credentials (username + password) for a short-lived admin JWT and store it for the current MCP session. Required before calling any admin_* tool unless an admin JWT was already supplied via the X-PackRat-Admin-Token header.',
       inputSchema: {
         username: z.string().min(1),
         password: z.string().min(1),
       },
     },
     async ({ username, password }) => {
-      const basic = btoa(`${username}:${password}`);
-      const response = await fetch(`${agent.apiBaseUrl}/api/admin/token`, {
-        method: 'POST',
-        headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/json' },
-        body: '{}',
-      });
-      const body = (await response.json().catch(() => null)) as {
-        token?: string;
-        expiresIn?: number;
-        error?: string;
-      } | null;
-      if (!response.ok || !body?.token) {
+      const result = await agent.api.user.admin.login.post({ username, password });
+      if (result.error || !result.data) {
+        const detail = isObject(result.error) ? (result.error.value ?? null) : null;
         return errMessage(
-          `Admin login failed (HTTP ${response.status})${body?.error ? `: ${body.error}` : ''}`,
+          `Admin login failed (HTTP ${result.status})${detail ? `: ${JSON.stringify(detail)}` : ''}`,
         );
       }
-      agent.setAdminToken(body.token);
-      return ok({ ok: true, expiresIn: body.expiresIn });
+      agent.setAdminToken(result.data.token);
+      return ok({ ok: true, expiresIn: result.data.expiresIn });
     },
   );
 
