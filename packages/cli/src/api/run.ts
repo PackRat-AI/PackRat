@@ -9,9 +9,18 @@ import chalk from 'chalk';
 import consola from 'consola';
 import { loadConfig } from './config';
 
-export type TreatyResponse<T> = {
-  data: T | null;
-  error: { status: number; value: unknown } | null;
+/**
+ * Treaty's actual return shape is a discriminated union:
+ *   `({ data: T; error: null } | { data: null; error: EdenFetchError })`
+ *   `& { status; response; headers }`.
+ *
+ * We don't try to recreate that here — the helpers below accept anything that
+ * structurally looks like a Treaty result and operate on `data`/`error`/`status`
+ * with light runtime checks. Callers get back the success-branch `data`.
+ */
+export type TreatyLike = {
+  data: unknown;
+  error: unknown;
   status: number;
 };
 
@@ -28,39 +37,46 @@ export type RunOptions = {
  * Await a Treaty call, return `data` on success, or print a friendly error and
  * `process.exit(1)`. Never returns null.
  */
-export async function runApi<T>(
-  promise: Promise<TreatyResponse<T>>,
+export async function runApi<R extends TreatyLike>(
+  promise: Promise<R>,
   opts: RunOptions,
-): Promise<T> {
+): Promise<NonNullable<R['data']>> {
   const result = await promise;
   if (result.error || result.data == null) {
-    printError(result.status, result.error?.value, opts);
+    printError({ status: result.status, body: errorValue(result.error), opts });
     process.exit(1);
   }
-  return result.data;
+  return result.data as NonNullable<R['data']>; // safe-cast: validated above
 }
 
 /**
  * Variant that does NOT exit on error — returns a discriminated union. Useful
  * when the command wants to react to a failure (e.g. retry, fallback).
  */
-export async function tryApi<T>(
-  promise: Promise<TreatyResponse<T>>,
-): Promise<{ ok: true; data: T } | { ok: false; status: number; value: unknown }> {
+export async function tryApi<R extends TreatyLike>(
+  promise: Promise<R>,
+): Promise<
+  { ok: true; data: NonNullable<R['data']> } | { ok: false; status: number; value: unknown }
+> {
   const result = await promise;
   if (result.error || result.data == null) {
-    return { ok: false, status: result.status, value: result.error?.value ?? null };
+    return { ok: false, status: result.status, value: errorValue(result.error) };
   }
-  return { ok: true, data: result.data };
+  return { ok: true, data: result.data as NonNullable<R['data']> };
+}
+
+function errorValue(error: unknown): unknown {
+  if (error && typeof error === 'object' && 'value' in error) {
+    return (error as { value: unknown }).value;
+  }
+  return error;
 }
 
 /** Confirm a user is signed in; exit with a helpful hint if not. */
 export async function requireAuth(): Promise<void> {
   const config = await loadConfig();
   if (!config.accessToken) {
-    consola.error(
-      `Not signed in. Run ${chalk.cyan('packrat auth login')} to authenticate first.`,
-    );
+    consola.error(`Not signed in. Run ${chalk.cyan('packrat auth login')} to authenticate first.`);
     process.exit(1);
   }
 }
@@ -82,7 +98,8 @@ export async function requireAdmin(): Promise<void> {
   }
 }
 
-function printError(status: number, body: unknown, opts: RunOptions): void {
+function printError(args: { status: number; body: unknown; opts: RunOptions }): void {
+  const { status, body, opts } = args;
   const action = opts.action;
   const resource = opts.resourceHint ? ` (${opts.resourceHint})` : '';
   const detail = extractMessage(body);

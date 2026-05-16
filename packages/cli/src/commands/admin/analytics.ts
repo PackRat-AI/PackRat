@@ -18,8 +18,8 @@ const growthCmd = defineCommand({
     const data = await runApi(
       client.admin.analytics.platform.growth.get({
         query: {
-          period: args.period as 'day' | 'week' | 'month' | undefined,
-          range: args.range ? Number.parseInt(args.range, 10) : undefined,
+          period: (args.period ?? 'month') as 'day' | 'week' | 'month',
+          range: args.range ? Number.parseInt(args.range, 10) : 12,
         },
       }),
       { action: 'admin growth analytics', requiresAdmin: true },
@@ -40,8 +40,8 @@ const activityCmd = defineCommand({
     const data = await runApi(
       client.admin.analytics.platform.activity.get({
         query: {
-          period: args.period as 'day' | 'week' | 'month' | undefined,
-          range: args.range ? Number.parseInt(args.range, 10) : undefined,
+          period: (args.period ?? 'month') as 'day' | 'week' | 'month',
+          range: args.range ? Number.parseInt(args.range, 10) : 12,
         },
       }),
       { action: 'admin activity analytics', requiresAdmin: true },

@@ -65,7 +65,10 @@ const schemaCmd = defineCommand({
 });
 
 export default defineCommand({
-  meta: { name: 'ai', description: 'AI / RAG / SQL / web-search helpers (renamed from analytics SQL).' },
+  meta: {
+    name: 'ai',
+    description: 'AI / RAG / SQL / web-search helpers (renamed from analytics SQL).',
+  },
   subCommands: {
     rag: () => Promise.resolve(ragCmd),
     web: () => Promise.resolve(webCmd),

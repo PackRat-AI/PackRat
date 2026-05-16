@@ -103,7 +103,7 @@ export async function call<T>(
   try {
     const result = await promise;
     if (result.error || result.data == null) {
-      return formatError(result.status, result.error?.value, options);
+      return formatError({ status: result.status, body: result.error?.value, opts: options });
     }
     return ok(result.data);
   } catch (e) {
@@ -112,7 +112,8 @@ export async function call<T>(
   }
 }
 
-function formatError(status: number, body: unknown, opts: CallOptions): McpToolResult {
+function formatError(args: { status: number; body: unknown; opts: CallOptions }): McpToolResult {
+  const { status, body, opts } = args;
   const action = opts.action ?? 'request';
   const resource = opts.resourceHint ? ` (${opts.resourceHint})` : '';
   const detail = extractErrorMessage(body);

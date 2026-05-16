@@ -281,8 +281,7 @@ export function registerPackTools(agent: AgentContext): void {
   agent.server.registerTool(
     'similar_pack_items',
     {
-      description:
-        'Find catalog gear similar to a specific item in a pack (semantic similarity).',
+      description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
       inputSchema: {
         pack_id: z.string(),
         item_id: z.string(),

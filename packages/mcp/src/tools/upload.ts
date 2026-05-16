@@ -11,7 +11,11 @@ export function registerUploadTools(agent: AgentContext): void {
       inputSchema: {
         file_name: z.string().min(1),
         content_type: z.string().min(1),
-        size: z.number().int().min(1).max(10 * 1024 * 1024),
+        size: z
+          .number()
+          .int()
+          .min(1)
+          .max(10 * 1024 * 1024),
       },
     },
     async ({ file_name, content_type, size }) =>

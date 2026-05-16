@@ -8,7 +8,7 @@ export function registerUserTools(agent: AgentContext): void {
   agent.server.registerTool(
     'get_profile',
     {
-      description: 'Get the authenticated user\'s profile (firstName, lastName, email, avatar).',
+      description: "Get the authenticated user's profile (firstName, lastName, email, avatar).",
       inputSchema: {},
     },
     async () => call(agent.api.user.user.profile.get(), { action: 'get profile' }),
@@ -17,7 +17,7 @@ export function registerUserTools(agent: AgentContext): void {
   agent.server.registerTool(
     'update_profile',
     {
-      description: 'Update the authenticated user\'s profile fields.',
+      description: "Update the authenticated user's profile fields.",
       inputSchema: {
         first_name: z.string().min(1).optional(),
         last_name: z.string().min(1).optional(),

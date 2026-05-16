@@ -118,13 +118,10 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: { post_id: z.string(), comment_id: z.string() },
     },
     async ({ post_id, comment_id }) =>
-      call(
-        agent.api.user
-          .feed({ postId: post_id })
-          .comments({ commentId: comment_id })
-          .delete(),
-        { action: 'delete feed comment', resourceHint: `comment ${comment_id}` },
-      ),
+      call(agent.api.user.feed({ postId: post_id }).comments({ commentId: comment_id }).delete(), {
+        action: 'delete feed comment',
+        resourceHint: `comment ${comment_id}`,
+      }),
   );
 
   agent.server.registerTool(
@@ -135,10 +132,7 @@ export function registerFeedTools(agent: AgentContext): void {
     },
     async ({ post_id, comment_id }) =>
       call(
-        agent.api.user
-          .feed({ postId: post_id })
-          .comments({ commentId: comment_id })
-          .like.post({}),
+        agent.api.user.feed({ postId: post_id }).comments({ commentId: comment_id }).like.post({}),
         { action: 'toggle feed comment like', resourceHint: `comment ${comment_id}` },
       ),
   );

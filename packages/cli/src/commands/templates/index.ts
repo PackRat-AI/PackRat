@@ -51,7 +51,11 @@ const createCmd = defineCommand({
     name: { type: 'positional', required: true },
     category: { type: 'string', default: 'general' },
     description: { type: 'string', alias: 'd' },
-    'app-template': { type: 'boolean', default: false, description: 'Mark as app template (admin)' },
+    'app-template': {
+      type: 'boolean',
+      default: false,
+      description: 'Mark as app template (admin)',
+    },
   },
   async run({ args }) {
     await requireAuth();

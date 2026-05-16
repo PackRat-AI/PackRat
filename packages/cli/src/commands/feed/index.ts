@@ -70,7 +70,7 @@ const commentCmd = defineCommand({
     const data = await runApi(
       client.feed({ postId: args.id }).comments.post({
         content: args.content,
-        parentCommentId: args.parent,
+        parentCommentId: args.parent ? Number.parseInt(args.parent, 10) : undefined,
       }),
       { action: 'create feed comment', resourceHint: `post ${args.id}` },
     );

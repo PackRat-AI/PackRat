@@ -56,10 +56,9 @@ const hardDeleteCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     if (!args.yes) {
-      const confirm = await consola.prompt(
-        `Hard-delete user ${args.id}? This is irreversible.`,
-        { type: 'confirm' },
-      );
+      const confirm = await consola.prompt(`Hard-delete user ${args.id}? This is irreversible.`, {
+        type: 'confirm',
+      });
       if (!confirm) {
         consola.info('Aborted.');
         return;

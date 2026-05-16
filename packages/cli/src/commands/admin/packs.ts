@@ -22,7 +22,7 @@ const listCmd = defineCommand({
           q: args.q,
           limit: Number.parseInt(args.limit, 10),
           offset: Number.parseInt(args.offset, 10),
-          includeDeleted: args['include-deleted'] ? 1 : 0,
+          includeDeleted: args['include-deleted'] ? '1' : '0',
         },
       }),
       { action: 'admin list packs', requiresAdmin: true },

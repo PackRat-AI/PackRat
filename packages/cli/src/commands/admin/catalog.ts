@@ -75,7 +75,10 @@ const updateCmd = defineCommand({
 
 const deleteCmd = defineCommand({
   meta: { name: 'delete', description: 'Delete a catalog item (admin).' },
-  args: { id: { type: 'positional', required: true }, yes: { type: 'boolean', alias: 'y', default: false } },
+  args: {
+    id: { type: 'positional', required: true },
+    yes: { type: 'boolean', alias: 'y', default: false },
+  },
   async run({ args }) {
     await requireAdmin();
     if (!args.yes) {

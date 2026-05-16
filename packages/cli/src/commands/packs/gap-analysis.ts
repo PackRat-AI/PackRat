@@ -30,7 +30,7 @@ export default defineCommand({
       client.packs({ packId: args.id })['gap-analysis'].post({
         destination: args.destination,
         tripType: args['trip-type'],
-        duration: Number.parseInt(args.duration, 10),
+        duration: args.duration,
         startDate: args.start,
         endDate: args.end,
       }),

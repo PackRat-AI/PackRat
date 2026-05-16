@@ -12,8 +12,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       description: 'List both user-owned and app-curated pack templates.',
       inputSchema: {},
     },
-    async () =>
-      call(agent.api.user['pack-templates'].get(), { action: 'list pack templates' }),
+    async () => call(agent.api.user['pack-templates'].get(), { action: 'list pack templates' }),
   );
 
   agent.server.registerTool(

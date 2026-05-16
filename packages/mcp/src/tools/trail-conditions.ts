@@ -145,10 +145,10 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       }
       if (notes !== undefined) body.notes = notes;
       if (photos !== undefined) body.photos = photos;
-      return call(
-        agent.api.user['trail-conditions']({ reportId: report_id }).put(body),
-        { action: 'update trail report', resourceHint: `report ${report_id}` },
-      );
+      return call(agent.api.user['trail-conditions']({ reportId: report_id }).put(body), {
+        action: 'update trail report',
+        resourceHint: `report ${report_id}`,
+      });
     },
   );
 

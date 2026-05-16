@@ -44,7 +44,6 @@ export function registerAiTools(agent: AgentContext): void {
       description: 'Get the PackRat DB schema — table names, columns, types.',
       inputSchema: {},
     },
-    async () =>
-      call(agent.api.user.ai['db-schema'].get(), { action: 'fetch DB schema' }),
+    async () => call(agent.api.user.ai['db-schema'].get(), { action: 'fetch DB schema' }),
   );
 }

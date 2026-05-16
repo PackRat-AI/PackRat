@@ -279,7 +279,7 @@
         "postcss-import": "catalog:",
         "tailwindcss": "catalog:",
         "typescript": "catalog:",
-        "vitest": "~3.1.4",
+        "vitest": "catalog:",
       },
     },
     "apps/landing": {
@@ -347,7 +347,7 @@
         "postcss-import": "catalog:",
         "tailwindcss": "catalog:",
         "typescript": "catalog:",
-        "vitest": "~3.1.4",
+        "vitest": "catalog:",
       },
     },
     "apps/trails": {
@@ -547,6 +547,7 @@
       "dependencies": {
         "@duckdb/node-api": "catalog:",
         "@packrat/analytics": "workspace:*",
+        "@packrat/api-client": "workspace:*",
         "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
         "chalk": "catalog:",

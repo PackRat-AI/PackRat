@@ -21,9 +21,12 @@ export function registerTrailTools(agent: AgentContext): void {
       },
     },
     async ({ q, lat, lon, radius, sport, limit, offset }) =>
-      call(agent.api.user.trails.search.get({ query: { q, lat, lon, radius, sport, limit, offset } }), {
-        action: 'search trails',
-      }),
+      call(
+        agent.api.user.trails.search.get({ query: { q, lat, lon, radius, sport, limit, offset } }),
+        {
+          action: 'search trails',
+        },
+      ),
   );
 
   // ── Get trail metadata ────────────────────────────────────────────────────

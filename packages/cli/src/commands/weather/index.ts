@@ -4,7 +4,10 @@ import { getUserClient } from '../../api/client';
 import { requireAuth, runApi, tryApi } from '../../api/run';
 
 const forecastCmd = defineCommand({
-  meta: { name: 'forecast', description: 'Get a 10-day forecast for a location (name or lat,lon).' },
+  meta: {
+    name: 'forecast',
+    description: 'Get a 10-day forecast for a location (name or lat,lon).',
+  },
   args: {
     location: { type: 'positional', required: true, description: 'Location string' },
   },
@@ -22,10 +25,9 @@ const forecastCmd = defineCommand({
       consola.error(`No matching weather location for "${args.location}".`);
       process.exit(1);
     }
-    const forecast = await runApi(
-      client.weather.forecast.get({ query: { id: String(id) } }),
-      { action: 'get weather forecast' },
-    );
+    const forecast = await runApi(client.weather.forecast.get({ query: { id: String(id) } }), {
+      action: 'get weather forecast',
+    });
     process.stdout.write(`${JSON.stringify(forecast, null, 2)}\n`);
   },
 });
@@ -36,10 +38,9 @@ const searchCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client.weather.search.get({ query: { q: args.q } }),
-      { action: 'search weather' },
-    );
+    const data = await runApi(client.weather.search.get({ query: { q: args.q } }), {
+      action: 'search weather',
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });

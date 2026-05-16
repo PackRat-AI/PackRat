@@ -19,7 +19,7 @@ const searchCmd = defineCommand({
     const page = Number.parseInt(args.page, 10);
     const data = await runApi(
       client.catalog.get({
-        query: { q: args.q, category: args.category, limit, page },
+        query: { q: args.q, category: args.category, limit, page, sort: undefined },
       }),
       { action: 'search catalog' },
     );
@@ -56,7 +56,7 @@ const semanticCmd = defineCommand({
     const client = await getUserClient();
     const limit = Number.parseInt(args.limit, 10);
     const data = await runApi(
-      client.catalog['vector-search'].get({ query: { q: args.q, limit } }),
+      client.catalog['vector-search'].get({ query: { q: args.q, limit, offset: 0 } }),
       { action: 'semantic catalog search' },
     );
     if (args.json) {
@@ -117,7 +117,7 @@ const categoriesCmd = defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.catalog.categories.get({ query: {} }), {
+    const data = await runApi(client.catalog.categories.get({ query: { limit: 50 } }), {
       action: 'list catalog categories',
     });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);

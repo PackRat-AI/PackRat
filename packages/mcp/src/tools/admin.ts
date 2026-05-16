@@ -168,10 +168,10 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ q, sport, limit, offset }) =>
-      call(
-        agent.api.admin.admin.trails.search.get({ query: { q, sport, limit, offset } }),
-        { action: 'admin search trails', ...ADMIN },
-      ),
+      call(agent.api.admin.admin.trails.search.get({ query: { q, sport, limit, offset } }), {
+        action: 'admin search trails',
+        ...ADMIN,
+      }),
   );
 
   agent.registerAdminTool(
@@ -229,14 +229,11 @@ export function registerAdminTools(agent: AgentContext): void {
       inputSchema: { report_id: z.string() },
     },
     async ({ report_id }) =>
-      call(
-        agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(),
-        {
-          action: 'admin delete trail report',
-          resourceHint: `report ${report_id}`,
-          ...ADMIN,
-        },
-      ),
+      call(agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(), {
+        action: 'admin delete trail report',
+        resourceHint: `report ${report_id}`,
+        ...ADMIN,
+      }),
   );
 
   // ── Analytics: platform ───────────────────────────────────────────────────
@@ -251,10 +248,10 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ period, range }) =>
-      call(
-        agent.api.admin.admin.analytics.platform.growth.get({ query: { period, range } }),
-        { action: 'admin analytics growth', ...ADMIN },
-      ),
+      call(agent.api.admin.admin.analytics.platform.growth.get({ query: { period, range } }), {
+        action: 'admin analytics growth',
+        ...ADMIN,
+      }),
   );
 
   agent.registerAdminTool(
@@ -267,10 +264,10 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ period, range }) =>
-      call(
-        agent.api.admin.admin.analytics.platform.activity.get({ query: { period, range } }),
-        { action: 'admin analytics activity', ...ADMIN },
-      ),
+      call(agent.api.admin.admin.analytics.platform.activity.get({ query: { period, range } }), {
+        action: 'admin analytics activity',
+        ...ADMIN,
+      }),
   );
 
   agent.registerAdminTool(
@@ -417,9 +414,10 @@ export function registerAdminTools(agent: AgentContext): void {
       inputSchema: { job_id: z.string() },
     },
     async ({ job_id }) =>
-      call(
-        agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).retry.post({}),
-        { action: 'admin ETL retry job', resourceHint: `job ${job_id}`, ...ADMIN },
-      ),
+      call(agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).retry.post({}), {
+        action: 'admin ETL retry job',
+        resourceHint: `job ${job_id}`,
+        ...ADMIN,
+      }),
   );
 }
