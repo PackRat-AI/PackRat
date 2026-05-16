@@ -1,7 +1,7 @@
+import { toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
-import { asRecordArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -33,7 +33,7 @@ const listCmd = defineCommand({
       return;
     }
     printTable(
-      asRecordArray(data).map((p) => ({
+      toRecordArray(data).map((p) => ({
         id: p.id,
         name: p.name,
         userId: p.userId,

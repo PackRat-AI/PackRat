@@ -1,6 +1,6 @@
+import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { asRecord } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary } from '../../shared';
 
@@ -21,7 +21,7 @@ export default defineCommand({
       process.stdout.write(`${JSON.stringify(pack, null, 2)}\n`);
       return;
     }
-    const p = asRecord(pack);
+    const p = toRecord(pack);
     printSummary(
       {
         id: p.id,

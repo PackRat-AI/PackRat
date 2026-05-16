@@ -1,7 +1,7 @@
+import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
-import { asRecordArray, pickArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -28,7 +28,11 @@ const searchCmd = defineCommand({
       { action: 'admin search trails', requiresAdmin: true },
     );
     printTable(
-      pickArray(data, 'trails').map((t) => ({ osmId: t.osmId, name: t.name, sport: t.sport })),
+      toRecordArray(toRecord(data).trails).map((t) => ({
+        osmId: t.osmId,
+        name: t.name,
+        sport: t.sport,
+      })),
       { title: 'Trails (admin)' },
     );
   },
@@ -62,7 +66,7 @@ const reportsCmd = defineCommand({
       return;
     }
     printTable(
-      asRecordArray(data).map((r) => ({
+      toRecordArray(data).map((r) => ({
         id: r.id,
         trailName: r.trailName,
         condition: r.overallCondition,

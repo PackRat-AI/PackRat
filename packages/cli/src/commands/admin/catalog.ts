@@ -1,8 +1,7 @@
-import { isString } from '@packrat/guards';
+import { isString, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
-import { asRecordArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -32,7 +31,7 @@ const listCmd = defineCommand({
       return;
     }
     printTable(
-      asRecordArray(data).map((it) => ({
+      toRecordArray(data).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,

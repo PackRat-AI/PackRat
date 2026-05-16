@@ -1,7 +1,7 @@
+import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getAdminClient } from '../../api/client';
-import { asRecordArray, pickArray } from '../../api/format';
 import { requireAdmin, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -30,7 +30,7 @@ const listCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    const items = Array.isArray(data) ? asRecordArray(data) : pickArray(data, 'items');
+    const items = Array.isArray(data) ? toRecordArray(data) : toRecordArray(toRecord(data).items);
     printTable(
       items.map((u) => ({
         id: u.id,

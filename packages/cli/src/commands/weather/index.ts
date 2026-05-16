@@ -1,7 +1,7 @@
+import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
-import { asRecord } from '../../api/format';
 import { requireAuth, runApi, tryApi } from '../../api/run';
 
 const forecastCmd = defineCommand({
@@ -20,7 +20,7 @@ const forecastCmd = defineCommand({
       consola.error(`Could not search for "${args.location}" (HTTP ${search.status})`);
       process.exit(1);
     }
-    const first = Array.isArray(search.data) ? asRecord(search.data[0]) : null;
+    const first = Array.isArray(search.data) ? toRecord(search.data[0]) : null;
     const id = first && 'id' in first ? first.id : null;
     if (id == null) {
       consola.error(`No matching weather location for "${args.location}".`);

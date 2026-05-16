@@ -1,7 +1,7 @@
+import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
-import { asRecord } from '../../api/format';
 import { nowIso, shortId } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 
@@ -43,6 +43,6 @@ export default defineCommand({
       }),
       { action: 'create pack' },
     );
-    consola.success(`Created pack ${asRecord(pack).id ?? id}`);
+    consola.success(`Created pack ${toRecord(pack).id ?? id}`);
   },
 });

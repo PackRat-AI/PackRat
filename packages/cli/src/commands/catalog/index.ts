@@ -1,7 +1,6 @@
-import { isString } from '@packrat/guards';
+import { isString, toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { asRecord, pickArray } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary, printTable } from '../../shared';
 
@@ -30,7 +29,7 @@ const searchCmd = defineCommand({
       return;
     }
     printTable(
-      pickArray(data, 'items').map((it) => ({
+      toRecordArray(toRecord(data).items).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
@@ -63,7 +62,7 @@ const semanticCmd = defineCommand({
       return;
     }
     printTable(
-      pickArray(data, 'items').map((it) => ({
+      toRecordArray(toRecord(data).items).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
@@ -91,7 +90,7 @@ const getCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(item, null, 2)}\n`);
       return;
     }
-    const r = asRecord(item);
+    const r = toRecord(item);
     printSummary(
       {
         id: r.id,

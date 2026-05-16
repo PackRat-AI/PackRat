@@ -1,6 +1,6 @@
+import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { asRecord, asRecordArray } from '../../api/format';
 import { nowIso, shortId } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary, printTable } from '../../shared';
@@ -17,7 +17,7 @@ const listCmd = defineCommand({
       return;
     }
     printTable(
-      asRecordArray(trips).map((r) => ({
+      toRecordArray(trips).map((r) => ({
         id: r.id,
         name: r.name,
         startDate: r.startDate,
@@ -46,7 +46,7 @@ const getCmd = defineCommand({
       process.stdout.write(`${JSON.stringify(trip, null, 2)}\n`);
       return;
     }
-    const t = asRecord(trip);
+    const t = toRecord(trip);
     printSummary(
       {
         id: t.id,

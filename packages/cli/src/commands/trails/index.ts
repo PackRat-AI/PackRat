@@ -1,6 +1,6 @@
+import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { pickArray } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printTable } from '../../shared';
 
@@ -38,7 +38,7 @@ const searchCmd = defineCommand({
       return;
     }
     printTable(
-      pickArray(data, 'trails').map((t) => ({
+      toRecordArray(toRecord(data).trails).map((t) => ({
         osmId: t.osmId,
         name: t.name,
         sport: t.sport,

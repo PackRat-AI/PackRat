@@ -1,8 +1,8 @@
+import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
 import { CONFIG_FILE_PATH, loadConfig } from '../../api/config';
-import { asRecord } from '../../api/format';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary } from '../../shared';
 
@@ -11,7 +11,7 @@ export default defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const profile = asRecord(await runApi(client.user.profile.get(), { action: 'fetch profile' }));
+    const profile = toRecord(await runApi(client.user.profile.get(), { action: 'fetch profile' }));
     const config = await loadConfig();
     printSummary(
       {
