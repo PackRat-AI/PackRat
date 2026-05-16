@@ -71,7 +71,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableTrailConditions]: false,
     [FeatureFlag.EnableFeed]: false,
     [FeatureFlag.EnableWildlifeIdentification]: false,
-    [FeatureFlag.EnableLocalAI]: false,
+    [FeatureFlag.EnableLocalAI]: true,
     [FeatureFlag.EnableTrails]: false,
   },
   dashboard: {

@@ -93,7 +93,7 @@ export default function SettingsScreen() {
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
                   {isApple
                     ? 'Built into iOS 26+ · no download required'
-                    : `SmolLM3-Q4_K_M.gguf · ${LLAMA_MODEL_SIZE}`}
+                    : `qwen2.5-3b-instruct-q3_k_m.gguf · ${LLAMA_MODEL_SIZE}`}
                 </Text>
 
                 {/* Status + action row */}
