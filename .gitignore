@@ -46,6 +46,9 @@ apps/landing/public/og-image.png
 apps/guides/public/og-image.png
 apps/guides/public/og/
 
+# Lighthouse CI output (produced by `lhci autorun`)
+.lighthouseci/
+
 # Git worktrees
 .worktrees/
 .worktrees

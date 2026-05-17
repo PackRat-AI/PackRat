@@ -73,6 +73,46 @@ jobs:
         # artifact is uploaded so reviewers see the failure on the PR check.
         run: bun run --cwd apps/guides test:og-meta
 
+      - name: Lighthouse CI
+        # Runs `lhci autorun` against the already-built `out/` directory
+        # (staticDistDir in .lighthouserc.js). Surfaces perf/a11y/seo
+        # scores in the PR check but does not fail the workflow — perf
+        # regressions in guides are common after content drops and we
+        # don't want them blocking merges. Reviewers see scores via the
+        # Step Summary below.
+        id: lhci
+        continue-on-error: true
+        run: bun run --cwd apps/guides lighthouse:ci 2>&1 | tee /tmp/guides-lhci.log
+
+      - name: Summarize Lighthouse scores
+        if: always()
+        run: |
+          set -euo pipefail
+          LOG=/tmp/guides-lhci.log
+          {
+            echo ""
+            echo "## Guides Lighthouse CI"
+            echo ""
+            if [ -f "$LOG" ]; then
+              if grep -q "All results processed!" "$LOG" 2>/dev/null; then
+                echo '<details><summary>LHCI output (tail)</summary>'
+                echo ''
+                echo '```'
+                tail -n 80 "$LOG"
+                echo '```'
+                echo '</details>'
+              else
+                echo '> LHCI did not finish cleanly — see job log.'
+                echo ''
+                echo '```'
+                tail -n 60 "$LOG" 2>/dev/null || echo '(no log)'
+                echo '```'
+              fi
+            else
+              echo '> No LHCI log captured.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Summarize build output
         if: always()
         run: |
@@ -165,6 +205,53 @@ jobs:
         run: |
           set -o pipefail
           bun run --cwd apps/landing build 2>&1 | tee /tmp/landing-build.log
+
+      - name: Validate OG meta in built HTML
+        # Parse every out/*.html + out/<slug>/index.html and assert the
+        # OG / Twitter meta tags every social previewer (LinkedIn, FB,
+        # microlink, Slack) expects. Catches relative og:image URLs,
+        # missing twitter:card, and similar regressions before the
+        # artifact is uploaded.
+        run: bun run --cwd apps/landing test:og-meta
+
+      - name: Lighthouse CI
+        # Runs `lhci autorun` against the already-built `out/` directory.
+        # See .lighthouserc.js for budgets (perf >=0.8, a11y/best-practices/
+        # seo >=0.9, LCP <2500ms, CLS <0.1). Marked continue-on-error so
+        # perf regressions surface as a yellow check rather than blocking
+        # the PR — the Step Summary makes scores visible to reviewers.
+        id: lhci
+        continue-on-error: true
+        run: bun run --cwd apps/landing lighthouse:ci 2>&1 | tee /tmp/landing-lhci.log
+
+      - name: Summarize Lighthouse scores
+        if: always()
+        run: |
+          set -euo pipefail
+          LOG=/tmp/landing-lhci.log
+          {
+            echo ""
+            echo "## Landing Lighthouse CI"
+            echo ""
+            if [ -f "$LOG" ]; then
+              if grep -q "All results processed!" "$LOG" 2>/dev/null; then
+                echo '<details><summary>LHCI output (tail)</summary>'
+                echo ''
+                echo '```'
+                tail -n 80 "$LOG"
+                echo '```'
+                echo '</details>'
+              else
+                echo '> LHCI did not finish cleanly — see job log.'
+                echo ''
+                echo '```'
+                tail -n 60 "$LOG" 2>/dev/null || echo '(no log)'
+                echo '```'
+              fi
+            else
+              echo '> No LHCI log captured.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize build output
         if: always()

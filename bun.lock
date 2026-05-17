@@ -351,6 +351,8 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
+        "cheerio": "^1.0.0",
+        "open-graph-scraper": "^6.10.0",
         "postcss": "catalog:",
         "postcss-import": "catalog:",
         "tailwindcss": "catalog:",

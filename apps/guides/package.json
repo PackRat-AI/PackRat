@@ -12,6 +12,7 @@
     "enhance-content": "bun run scripts/enhance-content.ts",
     "generate-og-images": "bun run scripts/generate-og-images.ts",
     "lighthouse": "bun run build && bunx lhci autorun",
+    "lighthouse:ci": "lhci autorun",
     "lint": "next lint",
     "start": "next start",
     "sync-to-r2": "bun run scripts/sync-to-r2.ts",

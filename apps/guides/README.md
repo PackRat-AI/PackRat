@@ -61,6 +61,15 @@ Guards against re-inverting the order:
 
 ## Open Graph metadata validation
 
+All PackRat web apps (`apps/guides`, `apps/landing`) share the same OG
+validation pattern, with per-app shapes:
+
+- **Guides** has per-post images (`/og/<slug>.png`) and `og:type=article`.
+- **Landing** has a single site-wide image (`/og-image.png`) and
+  `og:type=website`.
+
+See [`apps/landing/README.md`](../landing/README.md) for the landing variant.
+
 We do three layers of OG validation:
 
 1. **Image generation** — `test:og` verifies one PNG per post in `public/og/`.
@@ -92,5 +101,27 @@ For one-off checks after a deploy, paste the URL into one of these:
 - [microlink.io](https://microlink.io/) — JSON view of every OG / Twitter tag
 - [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) — also flushes FB's cache for the URL
 - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) — also flushes LI's cache
+
+## Lighthouse CI
+
+`.lighthouserc.js` (desktop) and `.lighthouserc.mobile.js` (mobile) drive
+LHCI against the static `out/` directory. Budgets:
+
+- Performance ≥ 0.8
+- Accessibility / Best Practices / SEO ≥ 0.9
+- LCP < 2500 ms (desktop) / 4000 ms (mobile)
+- CLS < 0.1
+- TBT < 300 ms (desktop) / 600 ms (mobile)
+
+The `Builds` GitHub Actions workflow runs `lighthouse:ci` after the OG
+meta test on every PR and surfaces the scores in the GitHub Step Summary.
+The step is marked `continue-on-error: true` so perf regressions appear
+as a yellow check on the PR rather than a hard block — keeps the cadence
+fast while still surfacing the numbers to reviewers.
+
+```
+bun run --cwd apps/guides lighthouse        # full: build + LHCI
+bun run --cwd apps/guides lighthouse:ci     # CI mode: requires out/ to exist
+```
 
 [ogs]: https://github.com/jshemas/openGraphScraper
