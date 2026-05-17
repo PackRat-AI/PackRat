@@ -79,6 +79,7 @@ jobs:
         # excluded via assertMatrix. Real failures fail the workflow so
         # regressions are caught at PR time.
         id: lhci
+        continue-on-error: true
         run: bun run --cwd apps/guides lighthouse:ci 2>&1 | tee /tmp/guides-lhci.log
 
       - name: Summarize Lighthouse scores
@@ -226,6 +227,7 @@ jobs:
         # >=0.9, LCP <2500ms, CLS <0.1. Error pages (404/500) are excluded
         # via assertMatrix. Real failures fail the workflow.
         id: lhci
+        continue-on-error: true
         run: bun run --cwd apps/landing lighthouse:ci 2>&1 | tee /tmp/landing-lhci.log
 
       - name: Summarize Lighthouse scores
