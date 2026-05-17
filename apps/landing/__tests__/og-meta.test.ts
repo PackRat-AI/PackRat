@@ -107,8 +107,27 @@ describe('landing built HTML OG meta', () => {
     }
   }, 240_000);
 
+  const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
   it('root out/index.html exists', () => {
     expect(fs.existsSync(ROOT_INDEX), 'expected out/index.html to exist after build').toBe(true);
+  });
+
+  it('out/og-image.png is present in the static export', () => {
+    const ogPath = path.join(OUT_DIR, 'og-image.png');
+    expect(
+      fs.existsSync(ogPath),
+      'og-image.png must be copied from public/ into the out/ static export by next build. ' +
+        'If missing, run scripts/generate-og-images.ts before building.',
+    ).toBe(true);
+  });
+
+  it('out/og-image.png is a valid 1200×630 PNG', () => {
+    const buf = fs.readFileSync(path.join(OUT_DIR, 'og-image.png'));
+    expect(buf.subarray(0, 8), 'PNG signature').toEqual(PNG_SIGNATURE);
+    expect(buf.readUInt32BE(16), 'width').toBe(1200);
+    expect(buf.readUInt32BE(20), 'height').toBe(630);
+    expect(buf.length, 'file size').toBeGreaterThan(1024);
   });
 
   it('discovers at least one landing HTML page beyond root', () => {
