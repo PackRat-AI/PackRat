@@ -88,6 +88,10 @@ const ALL_CHECKS: CheckDef[] = [
     script: join(ROOT, 'scripts', 'lint', 'no-unauth-routes.ts'),
   },
   {
+    name: 'check-drizzle-migrations',
+    script: join(ROOT, 'scripts', 'lint', 'check-drizzle-migrations.ts'),
+  },
+  {
     name: 'check-type-casts',
     script: join(ROOT, 'packages', 'checks', 'src', 'check-type-casts.ts'),
     args: ['--strict'],
