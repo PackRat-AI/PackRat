@@ -85,12 +85,16 @@ describe('queryOverpass', () => {
   describe('error handling', () => {
     it('throws when response status is not ok (429)', async () => {
       mockFetch.mockResolvedValue(makeResponse({}, false, 429));
-      await expect(queryOverpass('ql')).rejects.toThrow('Overpass request failed: 429');
+      await expect(queryOverpass('ql')).rejects.toThrow(
+        'Overpass request failed: 429 Service Unavailable',
+      );
     });
 
     it('throws when response status is not ok (500)', async () => {
       mockFetch.mockResolvedValue(makeResponse({}, false, 500));
-      await expect(queryOverpass('ql')).rejects.toThrow('Overpass request failed: 500');
+      await expect(queryOverpass('ql')).rejects.toThrow(
+        'Overpass request failed: 500 Service Unavailable',
+      );
     });
 
     it('throws when response JSON does not match expected schema', async () => {

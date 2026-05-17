@@ -254,7 +254,13 @@ describe('computePackBreakdown', () => {
 
   it('builds item strings in the expected format', () => {
     const items = [
-      makePackItem({ name: 'Tent', weight: 1000, weightUnit: 'g', quantity: 1, category: 'Shelter' }),
+      makePackItem({
+        name: 'Tent',
+        weight: 1000,
+        weightUnit: 'g',
+        quantity: 1,
+        category: 'Shelter',
+      }),
     ];
     const result = computePackBreakdown(makePack({ items }));
     expect(result.byCategory[0]?.items[0]).toBe('Tent (1000g × 1)');
@@ -262,7 +268,12 @@ describe('computePackBreakdown', () => {
 
   it('uses "g" as fallback unit in item string when weightUnit is null', () => {
     const items = [
-      makePackItem({ name: 'Snack', weight: 50, weightUnit: null as unknown as 'g', category: 'Food' }),
+      makePackItem({
+        name: 'Snack',
+        weight: 50,
+        weightUnit: null as unknown as 'g',
+        category: 'Food',
+      }),
     ];
     const result = computePackBreakdown(makePack({ items }));
     expect(result.byCategory[0]?.items[0]).toBe('Snack (50g × 1)');

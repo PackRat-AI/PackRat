@@ -116,56 +116,88 @@ describe('call()', () => {
   });
 
   it('formats 401 error with auth guidance', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 401, value: null }, status: 401 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 401, value: null },
+      status: 401,
+    });
     const result = await call(mockPromise, { action: 'list packs' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('authentication');
   });
 
   it('formats 401 admin error with admin guidance when requiresAdmin is set', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 401, value: null }, status: 401 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 401, value: null },
+      status: 401,
+    });
     const result = await call(mockPromise, { action: 'list packs', requiresAdmin: true });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('admin');
   });
 
   it('formats 403 error', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 403, value: null }, status: 403 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 403, value: null },
+      status: 403,
+    });
     const result = await call(mockPromise, { action: 'delete pack' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('forbidden');
   });
 
   it('formats 404 error', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 404, value: null }, status: 404 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 404, value: null },
+      status: 404,
+    });
     const result = await call(mockPromise, { action: 'get pack', resourceHint: 'pack p_123' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('404');
   });
 
   it('formats 409 conflict error', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 409, value: null }, status: 409 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 409, value: null },
+      status: 409,
+    });
     const result = await call(mockPromise, { action: 'create pack' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('conflict');
   });
 
   it('formats 422 validation error', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 422, value: null }, status: 422 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 422, value: null },
+      status: 422,
+    });
     const result = await call(mockPromise, { action: 'update pack' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('validation');
   });
 
   it('formats 429 rate limit error', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 429, value: null }, status: 429 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 429, value: null },
+      status: 429,
+    });
     const result = await call(mockPromise, { action: 'search' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('rate limit');
   });
 
   it('formats generic HTTP error for unknown status codes', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 503, value: null }, status: 503 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 503, value: null },
+      status: 503,
+    });
     const result = await call(mockPromise, { action: 'fetch data' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('503');
@@ -189,7 +221,11 @@ describe('call()', () => {
   });
 
   it('formats 403 admin error when requiresAdmin is set', async () => {
-    const mockPromise = Promise.resolve({ data: null, error: { status: 403, value: null }, status: 403 });
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 403, value: null },
+      status: 403,
+    });
     const result = await call(mockPromise, { action: 'delete user', requiresAdmin: true });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('admin');
@@ -257,7 +293,11 @@ describe('createMcpClients()', () => {
     const mod = await import('@packrat/api-client');
     const spy = vi.mocked(mod.createApiClient);
     spy.mockClear();
-    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => null, getAdminToken: () => null });
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => null,
+      getAdminToken: () => null,
+    });
     const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
     expect(auth.getAccessToken()).toBeNull();
   });
@@ -266,7 +306,11 @@ describe('createMcpClients()', () => {
     const mod = await import('@packrat/api-client');
     const spy = vi.mocked(mod.createApiClient);
     spy.mockClear();
-    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => 'my-token', getAdminToken: () => null });
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => 'my-token',
+      getAdminToken: () => null,
+    });
     const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
     expect(auth.getAccessToken()).toBe('my-token');
   });
@@ -275,7 +319,11 @@ describe('createMcpClients()', () => {
     const mod = await import('@packrat/api-client');
     const spy = vi.mocked(mod.createApiClient);
     spy.mockClear();
-    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => 'tok', getAdminToken: () => null });
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => 'tok',
+      getAdminToken: () => null,
+    });
     const auth = (spy.mock.calls[0]?.[0] as { auth: { getRefreshToken: () => null } }).auth;
     expect(auth.getRefreshToken()).toBeNull();
   });
@@ -284,10 +332,16 @@ describe('createMcpClients()', () => {
     const mod = await import('@packrat/api-client');
     const spy = vi.mocked(mod.createApiClient);
     spy.mockClear();
-    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => null, getAdminToken: () => null });
-    const auth = (spy.mock.calls[0]?.[0] as {
-      auth: { onAccessTokenRefreshed: () => void; onNeedsReauth: () => void };
-    }).auth;
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => null,
+      getAdminToken: () => null,
+    });
+    const auth = (
+      spy.mock.calls[0]?.[0] as {
+        auth: { onAccessTokenRefreshed: () => void; onNeedsReauth: () => void };
+      }
+    ).auth;
     expect(() => auth.onAccessTokenRefreshed()).not.toThrow();
     expect(() => auth.onNeedsReauth()).not.toThrow();
   });

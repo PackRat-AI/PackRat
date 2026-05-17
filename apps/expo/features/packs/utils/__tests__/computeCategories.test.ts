@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { Pack, PackItem } from 'expo-app/features/packs/types';
+import { describe, expect, it, vi } from 'vitest';
 import { computeCategorySummaries } from '../computeCategories';
 
 vi.mock('expo-app/features/auth/store', () => ({
@@ -10,7 +10,9 @@ vi.mock('expo-app/features/auth/store', () => ({
   },
 }));
 
-function makeItem(overrides: Partial<PackItem> & Pick<PackItem, 'weight' | 'weightUnit'>): PackItem {
+function makeItem(
+  overrides: Partial<PackItem> & Pick<PackItem, 'weight' | 'weightUnit'>,
+): PackItem {
   return {
     id: 'item-1',
     name: 'Test Item',

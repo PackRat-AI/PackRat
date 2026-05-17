@@ -50,8 +50,11 @@ export default defineConfig({
         'src/containers/**',
         // Index files (just exports, no business logic)
         'src/**/index.ts',
-        // CLI stub — connects to a stub DB for drizzle-kit and is not testable
-        'src/auth/**',
+        // CLI stub — connects to a stub DB for drizzle-kit; not production logic
+        'src/auth/auth.config.ts',
+        // Better Auth instance factory — requires live Neon DB, KV, and OAuth
+        // provider credentials; not unit-testable without the full CF runtime
+        'src/auth/index.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
         'src/utils/ai/**',

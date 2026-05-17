@@ -101,25 +101,21 @@ describe('UserService', () => {
     it('sets passwordHash to null when no password is provided', async () => {
       mocks.returningFn.mockResolvedValue([{ id: 'u5', email: 'test@example.com' }]);
       await service.create({ email: 'test@example.com' });
-      expect(mocks.valuesFn).toHaveBeenCalledWith(
-        expect.objectContaining({ passwordHash: null }),
-      );
+      expect(mocks.valuesFn).toHaveBeenCalledWith(expect.objectContaining({ passwordHash: null }));
     });
 
     it('defaults role to USER when not specified', async () => {
       mocks.returningFn.mockResolvedValue([{ id: 'u6', email: 'test@example.com', role: 'USER' }]);
       await service.create({ email: 'test@example.com' });
-      expect(mocks.valuesFn).toHaveBeenCalledWith(
-        expect.objectContaining({ role: 'USER' }),
-      );
+      expect(mocks.valuesFn).toHaveBeenCalledWith(expect.objectContaining({ role: 'USER' }));
     });
 
     it('accepts an explicit ADMIN role', async () => {
-      mocks.returningFn.mockResolvedValue([{ id: 'u7', email: 'admin@example.com', role: 'ADMIN' }]);
+      mocks.returningFn.mockResolvedValue([
+        { id: 'u7', email: 'admin@example.com', role: 'ADMIN' },
+      ]);
       await service.create({ email: 'admin@example.com', role: 'ADMIN' });
-      expect(mocks.valuesFn).toHaveBeenCalledWith(
-        expect.objectContaining({ role: 'ADMIN' }),
-      );
+      expect(mocks.valuesFn).toHaveBeenCalledWith(expect.objectContaining({ role: 'ADMIN' }));
     });
 
     it('defaults emailVerified to false', async () => {
@@ -133,9 +129,7 @@ describe('UserService', () => {
     it('accepts an explicit emailVerified: true', async () => {
       mocks.returningFn.mockResolvedValue([{ id: 'u9', email: 'test@example.com' }]);
       await service.create({ email: 'test@example.com', emailVerified: true });
-      expect(mocks.valuesFn).toHaveBeenCalledWith(
-        expect.objectContaining({ emailVerified: true }),
-      );
+      expect(mocks.valuesFn).toHaveBeenCalledWith(expect.objectContaining({ emailVerified: true }));
     });
 
     it('throws "Failed to create user" when insert returns no rows', async () => {
