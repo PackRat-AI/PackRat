@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const apiEnvSchema = z.object({
   // Environment & Deployment
   ENVIRONMENT: z.enum(['development', 'production']).default('production'),
-  SENTRY_DSN: z.string().url(),
+  SENTRY_DSN: z.string().url().optional(),
 
   // Database
   NEON_DATABASE_URL: z.string().url(),
