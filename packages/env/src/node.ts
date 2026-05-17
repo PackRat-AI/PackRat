@@ -66,6 +66,9 @@ export const nodeEnvSchema = z.object({
   // ── Test runner flags ─────────────────────────────────────────────
   VITEST: z.string().optional(),
 
+  // ── PackRat API (CLI base URL override) ───────────────────────────
+  PACKRAT_API_URL: z.string().url().optional(),
+
   // ── Debug / verbose ───────────────────────────────────────────────
   DEBUG: z.string().optional(),
 
@@ -104,6 +107,7 @@ export const nodeEnv = nodeEnvSchema.parse({
   CLOUDFLARE_CONTAINER_ID: process.env.CLOUDFLARE_CONTAINER_ID,
   PORT: process.env.PORT,
   VITEST: process.env.VITEST,
+  PACKRAT_API_URL: process.env.PACKRAT_API_URL,
   DEBUG: process.env.DEBUG,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,

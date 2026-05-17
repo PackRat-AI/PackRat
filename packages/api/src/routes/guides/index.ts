@@ -25,7 +25,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
   .get(
     '/',
     async ({ query, request }) => {
-      const { page, limit, category } = query;
+      const { page = 1, limit = 20, category } = query;
 
       // Manually parse `sort[field]` / `sort[order]` from the raw query string.
       // Elysia's query parser leaves bracketed keys as-is rather than
@@ -199,7 +199,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
   .get(
     '/search',
     async ({ query }) => {
-      const { q, page, limit, category } = query;
+      const { q, page = 1, limit = 20, category } = query;
       if (!q || q.trim() === '') {
         return status(400, { error: 'Search query parameter q is required' });
       }

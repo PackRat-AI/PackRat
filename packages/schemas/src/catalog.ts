@@ -113,8 +113,10 @@ const SortSchema = z.object({
 export type CatalogItem = z.infer<typeof CatalogItemSchema>;
 
 export const CatalogItemsQuerySchema = z.object({
-  page: z.coerce.number().int().positive().optional().default(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+  // Defaults applied in the handler so Treaty types these as truly optional
+  // rather than required-with-default (which forces every caller to pass them).
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
   q: z.string().optional(),
   category: z.string().optional(),
   // Eden Treaty serializes nested objects as JSON strings in query params.
@@ -313,8 +315,9 @@ export const CatalogCategoriesResponseSchema = z.array(z.string());
 
 export const VectorSearchQuerySchema = z.object({
   q: z.string().min(1),
-  limit: z.coerce.number().int().min(1).max(50).optional().default(10),
-  offset: z.coerce.number().int().min(0).optional().default(0),
+  // Defaults applied in the handler — see CatalogItemsQuerySchema for rationale.
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
 export const SimilarItemSchema = CatalogItemSchema.extend({
@@ -327,6 +330,29 @@ export const VectorSearchResponseSchema = z.object({
   limit: z.number(),
   offset: z.number(),
   nextOffset: z.number(),
+});
+
+export const CatalogCompareRequestSchema = z.object({
+  ids: z.array(z.number().int()).min(2).max(10),
+});
+
+export const CatalogCompareRowSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  brand: z.string().nullable(),
+  weight: z.number().nullable(),
+  weightUnit: z.string().nullable(),
+  price: z.number().nullable(),
+  ratingValue: z.number().nullable(),
+  productUrl: z.string().nullable(),
+  categories: z.array(z.string()).nullable(),
+});
+
+export const CatalogCompareResponseSchema = z.object({
+  items: z.array(CatalogCompareRowSchema),
+  lightestId: z.number().int().nullable(),
+  cheapestId: z.number().int().nullable(),
+  highestRatedId: z.number().int().nullable(),
 });
 
 export const CatalogETLSchema = z.object({

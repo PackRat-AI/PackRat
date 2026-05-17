@@ -131,7 +131,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: z.object({
-        limit: z.coerce.number().int().min(1).max(100).optional().default(25),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       response: { 200: z.array(BrandRowSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top gear brands' },
@@ -227,7 +227,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: z.object({
-        limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+        limit: z.coerce.number().int().min(1).max(200).optional(),
       }),
       response: { 200: EtlResponseSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'ETL pipeline history' },
@@ -309,7 +309,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: z.object({
-        limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       response: { 200: EtlFailureSummarySchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top ETL validation failure patterns' },
@@ -372,7 +372,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
     {
       params: z.object({ jobId: z.string().uuid() }),
       query: z.object({
-        limit: z.coerce.number().int().min(1).max(200).optional().default(50),
+        limit: z.coerce.number().int().min(1).max(200).optional(),
       }),
       response: { 200: EtlJobFailuresSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Validation failures for a specific ETL job' },

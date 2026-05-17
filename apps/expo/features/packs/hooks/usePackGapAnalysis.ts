@@ -4,7 +4,7 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 export interface GapAnalysisRequest {
   destination?: string;
   tripType?: string;
-  duration?: string;
+  duration?: number;
   startDate?: string;
   endDate?: string;
 }

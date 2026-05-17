@@ -68,7 +68,8 @@ export const trailConditionRoutes = new Elysia()
     {
       query: z.object({
         trailName: z.string().optional(),
-        limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+        // Handler defaults to 50 via `?? 50`; keep schema truly optional.
+        limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       isAuthenticated: true,
       detail: {
