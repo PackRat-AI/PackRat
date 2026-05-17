@@ -7,7 +7,7 @@ export interface Guide {
   description: string;
   content?: string;
   author?: string;
-  readingTime?: string;
+  readingTime?: number;
   difficulty?: string;
   createdAt: string;
   updatedAt: string;

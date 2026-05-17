@@ -1,7 +1,7 @@
 import { Pool as NeonPool, neon } from '@neondatabase/serverless';
-import * as schema from '@packrat/api/db/schema';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import * as schema from '@packrat/db/schema';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';

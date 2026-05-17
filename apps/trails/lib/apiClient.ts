@@ -1,7 +1,7 @@
 'use client';
 
 import { createApiClient } from '@packrat/api-client';
-import { authClient } from 'trails-app/lib/auth-client';
+import { trailsAuthClient as authClient } from 'trails-app/lib/auth-client';
 import { trailsEnv } from 'trails-app/lib/env';
 
 export class AuthExpiredError extends Error {

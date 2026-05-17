@@ -1,4 +1,7 @@
+import { WEIGHT_UNITS, type WeightUnit } from '@packrat/constants';
 import { isString } from '@packrat/guards';
+
+export { WEIGHT_UNITS, type WeightUnit };
 
 // Exact avoirdupois values per NIST. These constants are the single source of
 // truth for all weight math in the monorepo — do not inline elsewhere.
@@ -8,10 +11,6 @@ const TO_GRAMS = {
   oz: 28.349523125,
   lb: 453.59237,
 } as const;
-
-export const WEIGHT_UNITS = Object.freeze(['g', 'oz', 'kg', 'lb'] as const);
-
-export type WeightUnit = keyof typeof TO_GRAMS;
 
 /**
  * Normalize a weight value to grams.

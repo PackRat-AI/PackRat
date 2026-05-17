@@ -140,6 +140,8 @@ export type ValidatedEnv = Omit<
   AUTH_KV: KVNamespace;
 };
 
+export type Env = ValidatedEnv;
+
 // Cache for validated envs keyed by the raw env reference.
 const envCache = new WeakMap<object, ValidatedEnv>();
 
