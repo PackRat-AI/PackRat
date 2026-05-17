@@ -3,97 +3,152 @@ import type { ReactElement } from 'react';
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
 export const OG_IMAGE_CONTENT_TYPE = 'image/png' as const;
 
-/** Returns the JSX element for the root Guides Open Graph / Twitter card image. */
+const MARK =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 5 40 37'%3E%3Cpath fill='white' fill-rule='evenodd' d='m7.839 40.783 16.03-28.054L20 6 0 40.783h7.839Zm8.214 0H40L27.99 19.894l-4.02 7.032 3.976 6.914H20.02l-3.967 6.943Z' clip-rule='evenodd'/%3E%3C/svg%3E";
+
 export function getGuidesOgImageElement(): ReactElement {
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, #1E3A5F 0%, #1a56a0 60%, #0284C7 100%)',
         width: '100%',
         height: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        padding: '60px',
+        background: '#09090B',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+        position: 'relative',
       }}
     >
+      {/* Blue glow — top right */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -160,
+          right: -100,
+          width: 620,
+          height: 620,
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(0,122,255,0.18) 0%, rgba(0,122,255,0.05) 50%, transparent 70%)',
+          display: 'flex',
+        }}
+      />
+
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: '24px',
-          marginBottom: '32px',
+          flexDirection: 'column',
+          padding: '60px 72px',
+          width: '100%',
+          height: '100%',
+          position: 'relative',
         }}
       >
+        {/* Logo — stacked "PackRat / GUIDES" wordmark */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <img src={MARK} width={38} height={35} alt="" />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: '#FFFFFF',
+                letterSpacing: '-0.3px',
+                lineHeight: 1,
+              }}
+            >
+              PackRat
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#007AFF',
+                letterSpacing: '2px',
+                lineHeight: 1.4,
+              }}
+            >
+              GUIDES
+            </span>
+          </div>
+        </div>
+
+        {/* Main content */}
         <div
           style={{
-            width: '76px',
-            height: '76px',
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: '20px',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
+            flex: 1,
             justifyContent: 'center',
+            gap: 22,
           }}
         >
-          <div
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span
+              style={{
+                fontSize: 72,
+                fontWeight: 800,
+                color: '#FFFFFF',
+                letterSpacing: '-3px',
+                lineHeight: 1,
+              }}
+            >
+              Expert hiking
+            </span>
+            <span
+              style={{
+                fontSize: 72,
+                fontWeight: 800,
+                color: 'rgba(255,255,255,0.65)',
+                letterSpacing: '-3px',
+                lineHeight: 1,
+              }}
+            >
+              & outdoor guides.
+            </span>
+          </div>
+
+          <span
             style={{
-              width: '0',
-              height: '0',
-              borderLeft: '20px solid transparent',
-              borderRight: '20px solid transparent',
-              borderBottom: '34px solid white',
-              opacity: 0.9,
-            }}
-          />
-        </div>
-        <div
-          style={{
-            fontSize: '60px',
-            fontWeight: 700,
-            color: 'white',
-            letterSpacing: '-2px',
-          }}
-        >
-          PackRat Guides
-        </div>
-      </div>
-      <div
-        style={{
-          fontSize: '30px',
-          color: 'rgba(255,255,255,0.9)',
-          textAlign: 'center',
-          maxWidth: '760px',
-          lineHeight: 1.4,
-          fontWeight: 500,
-        }}
-      >
-        Expert hiking and outdoor guides for your next adventure
-      </div>
-      <div
-        style={{
-          marginTop: '40px',
-          display: 'flex',
-          gap: '48px',
-        }}
-      >
-        {['Trail Guides', 'Gear Reviews', 'Survival Skills'].map((tag) => (
-          <div
-            key={tag}
-            style={{
-              color: 'rgba(255,255,255,0.75)',
-              fontSize: '20px',
-              fontWeight: 500,
-              background: 'rgba(255,255,255,0.12)',
-              padding: '8px 20px',
-              borderRadius: '100px',
+              fontSize: 25,
+              color: 'rgba(255,255,255,0.42)',
+              fontWeight: 400,
+              lineHeight: 1.4,
             }}
           >
-            {tag}
+            Gear tips, trip planning, and trail skills.
+          </span>
+        </div>
+
+        {/* Category tags + domain */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 10 }}>
+            {['Trail Guides', 'Gear Reviews', 'Survival Skills'].map((tag) => (
+              <div
+                key={tag}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 100,
+                  padding: '8px 18px',
+                  color: 'rgba(255,255,255,0.55)',
+                  fontSize: 16,
+                  fontWeight: 500,
+                }}
+              >
+                {tag}
+              </div>
+            ))}
           </div>
-        ))}
+          <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.22)', fontWeight: 500 }}>
+            guides.packratai.com
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -105,105 +160,130 @@ export interface PostOgImageProps {
   categories?: string[];
 }
 
-/** Returns the JSX element for a per-guide-post Open Graph image. */
 export function getPostOgImageElement({
   title,
   description,
   categories = [],
 }: PostOgImageProps): ReactElement {
+  const titleSize = title.length > 60 ? 46 : title.length > 40 ? 56 : 64;
+
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, #1E3A5F 0%, #1a56a0 60%, #0284C7 100%)',
         width: '100%',
         height: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        padding: '64px',
+        background: '#09090B',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+        position: 'relative',
       }}
     >
+      {/* Blue glow — top right */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -180,
+          right: -80,
+          width: 560,
+          height: 560,
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(0,122,255,0.15) 0%, rgba(0,122,255,0.04) 50%, transparent 70%)',
+          display: 'flex',
+        }}
+      />
+
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '56px 72px',
+          width: '100%',
+          height: '100%',
+          position: 'relative',
         }}
       >
-        <div
-          style={{
-            width: '0',
-            height: '0',
-            borderLeft: '9px solid transparent',
-            borderRight: '9px solid transparent',
-            borderBottom: '16px solid rgba(255,255,255,0.7)',
-          }}
-        />
-        <div
-          style={{
-            fontSize: '26px',
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.8)',
-          }}
-        >
-          PackRat Guides
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {categories.length > 0 && (
-          <div style={{ display: 'flex', gap: '12px' }}>
-            {categories.slice(0, 3).map((cat) => (
-              <div
-                key={cat}
-                style={{
-                  background: 'rgba(255,255,255,0.18)',
-                  color: 'rgba(255,255,255,0.9)',
-                  fontSize: '18px',
-                  fontWeight: 500,
-                  padding: '6px 16px',
-                  borderRadius: '100px',
-                }}
-              >
-                {cat}
-              </div>
-            ))}
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src={MARK} width={28} height={26} alt="" />
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.8)',
+                letterSpacing: '-0.3px',
+              }}
+            >
+              PackRat
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#007AFF',
+                letterSpacing: '2px',
+              }}
+            >
+              GUIDES
+            </span>
           </div>
-        )}
-        <div
-          style={{
-            fontSize: title.length > 50 ? '44px' : '56px',
-            fontWeight: 700,
-            color: 'white',
-            lineHeight: 1.15,
-            letterSpacing: '-1px',
-            maxWidth: '900px',
-          }}
-        >
-          {title}
         </div>
-        <div
-          style={{
-            fontSize: '24px',
-            color: 'rgba(255,255,255,0.8)',
-            lineHeight: 1.4,
-            maxWidth: '820px',
-          }}
-        >
-          {description.length > 120 ? `${description.slice(0, 117)}...` : description}
-        </div>
-      </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          color: 'rgba(255,255,255,0.6)',
-          fontSize: '18px',
-        }}
-      >
-        guides.packratai.com
+        {/* Post content */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: '960px' }}>
+          {categories.length > 0 && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              {categories.slice(0, 3).map((cat) => (
+                <div
+                  key={cat}
+                  style={{
+                    background: 'rgba(0,122,255,0.12)',
+                    border: '1px solid rgba(0,122,255,0.25)',
+                    borderRadius: 100,
+                    padding: '5px 16px',
+                    color: '#5EB0FF',
+                    fontSize: 15,
+                    fontWeight: 600,
+                  }}
+                >
+                  {cat}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <span
+            style={{
+              fontSize: titleSize,
+              fontWeight: 800,
+              color: '#FFFFFF',
+              lineHeight: 1.1,
+              letterSpacing: '-2px',
+            }}
+          >
+            {title}
+          </span>
+
+          <span
+            style={{
+              fontSize: 22,
+              color: 'rgba(255,255,255,0.48)',
+              lineHeight: 1.4,
+              fontWeight: 400,
+            }}
+          >
+            {description.length > 120 ? `${description.slice(0, 117)}...` : description}
+          </span>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.2)', fontWeight: 500 }}>
+            guides.packratai.com
+          </span>
+        </div>
       </div>
     </div>
   );
