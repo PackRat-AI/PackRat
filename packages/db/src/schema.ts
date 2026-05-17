@@ -109,6 +109,7 @@ export const jwks = pgTable('jwks', {
 // Packs table
 export const packs = pgTable('packs', {
   id: text('id').primaryKey(),
+  clientUuid: text('client_uuid').unique().notNull(),
   name: text('name').notNull(),
   description: text('description'),
   category: text('category').notNull().$type<PackCategory>(),
@@ -226,6 +227,7 @@ export const packItems = pgTable(
   'pack_items',
   {
     id: text('id').primaryKey(),
+    clientUuid: text('client_uuid').unique().notNull(),
     name: text('name').notNull(),
     description: text('description'),
     weight: real('weight').notNull(),
@@ -260,6 +262,7 @@ export const packItems = pgTable(
 
 export const packWeightHistory = pgTable('weight_history', {
   id: text('id').primaryKey(),
+  clientUuid: text('client_uuid').unique().notNull(),
   userId: text('user_id')
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
@@ -273,6 +276,7 @@ export const packWeightHistory = pgTable('weight_history', {
 
 export const packTemplates = pgTable('pack_templates', {
   id: text('id').primaryKey(),
+  clientUuid: text('client_uuid').unique().notNull(),
   name: text('name').notNull(),
   description: text('description'),
   category: text('category').notNull(),
@@ -295,6 +299,7 @@ export const packTemplates = pgTable('pack_templates', {
 
 export const packTemplateItems = pgTable('pack_template_items', {
   id: text('id').primaryKey(),
+  clientUuid: text('client_uuid').unique().notNull(),
   name: text('name').notNull(),
   description: text('description'),
   weight: real('weight').notNull(),
@@ -323,6 +328,7 @@ export const trailConditionReports = pgTable(
   'trail_condition_reports',
   {
     id: text('id').primaryKey(),
+    clientUuid: text('client_uuid').unique().notNull(),
     trailName: text('trail_name').notNull(),
     trailRegion: text('trail_region'),
     surface: text('surface').notNull(),
@@ -357,6 +363,7 @@ export const trailConditionReports = pgTable(
 
 export const trips = pgTable('trips', {
   id: text('id').primaryKey(),
+  clientUuid: text('client_uuid').unique().notNull(),
   name: text('name').notNull(),
   description: text('description'),
   startDate: timestamp('start_date'),
