@@ -75,13 +75,10 @@ jobs:
 
       - name: Lighthouse CI
         # Runs `lhci autorun` against the already-built `out/` directory
-        # (staticDistDir in .lighthouserc.js). Surfaces perf/a11y/seo
-        # scores in the PR check but does not fail the workflow — perf
-        # regressions in guides are common after content drops and we
-        # don't want them blocking merges. Reviewers see scores via the
-        # Step Summary below.
+        # (staticDistDir in .lighthouserc.js). Error pages (404/500) are
+        # excluded via assertMatrix. Real failures fail the workflow so
+        # regressions are caught at PR time.
         id: lhci
-        continue-on-error: true
         run: bun run --cwd apps/guides lighthouse:ci 2>&1 | tee /tmp/guides-lhci.log
 
       - name: Summarize Lighthouse scores
@@ -166,6 +163,15 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload Lighthouse reports (guides)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: guides-lighthouse
+          path: apps/guides/.lighthouseci
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Upload guides static export
         if: always()
         uses: actions/upload-artifact@v7
@@ -216,12 +222,10 @@ jobs:
 
       - name: Lighthouse CI
         # Runs `lhci autorun` against the already-built `out/` directory.
-        # See .lighthouserc.js for budgets (perf >=0.8, a11y/best-practices/
-        # seo >=0.9, LCP <2500ms, CLS <0.1). Marked continue-on-error so
-        # perf regressions surface as a yellow check rather than blocking
-        # the PR — the Step Summary makes scores visible to reviewers.
+        # Budgets in .lighthouserc.js: perf >=0.8, a11y/best-practices/seo
+        # >=0.9, LCP <2500ms, CLS <0.1. Error pages (404/500) are excluded
+        # via assertMatrix. Real failures fail the workflow.
         id: lhci
-        continue-on-error: true
         run: bun run --cwd apps/landing lighthouse:ci 2>&1 | tee /tmp/landing-lhci.log
 
       - name: Summarize Lighthouse scores
@@ -277,6 +281,15 @@ jobs:
             echo "| \`out/\` directory size | $out_size |"
             echo "| Root \`public/og-image.png\` | $root_og |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Lighthouse reports (landing)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: landing-lighthouse
+          path: apps/landing/.lighthouseci
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload landing static export
         if: always()
