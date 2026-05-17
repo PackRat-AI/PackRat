@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@packrat/api-client": "workspace:*",
+    "@packrat/schemas": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "jotai": "catalog:",
     "react": "catalog:",

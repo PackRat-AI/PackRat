@@ -32,7 +32,8 @@ export default defineConfig({
         'utils/**/*.test.ts',
         'lib/utils/**/*.test.ts',
         'features/**/utils/**/*.test.ts',
-        'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
+        'utils/polyfills.ts',
+        '**/*.web.ts', // Browser-API files; not runnable in Node vitest environment
       ],
       thresholds: {
         statements: 75,

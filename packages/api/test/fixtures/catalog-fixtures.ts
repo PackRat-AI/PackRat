@@ -1,5 +1,5 @@
+import type { catalogItems } from '@packrat/db';
 import type { InferInsertModel } from 'drizzle-orm';
-import type { catalogItems } from '../../src/db/schema';
 
 /**
  * Test fixture for creating a minimal valid catalog item

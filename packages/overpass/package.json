@@ -9,8 +9,8 @@
       "default": "./src/index.ts"
     },
     "./*": {
-      "types": "./src/*",
-      "default": "./src/*"
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
     }
   },
   "scripts": {

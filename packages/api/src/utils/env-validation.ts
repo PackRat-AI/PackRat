@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const apiEnvSchema = z.object({
   // Environment & Deployment
   ENVIRONMENT: z.enum(['development', 'production']).default('production'),
-  SENTRY_DSN: z.string().url(),
+  SENTRY_DSN: z.string().url().optional(),
 
   // Database
   NEON_DATABASE_URL: z.string().url(),
@@ -139,6 +139,8 @@ export type ValidatedEnv = Omit<
   OSM_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
 };
+
+export type Env = ValidatedEnv;
 
 // Cache for validated envs keyed by the raw env reference.
 const envCache = new WeakMap<object, ValidatedEnv>();

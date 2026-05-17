@@ -1,4 +1,4 @@
-import { PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import { PackWithWeightsSchema } from '@packrat/schemas/packs';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';

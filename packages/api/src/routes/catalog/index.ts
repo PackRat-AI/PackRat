@@ -1,19 +1,25 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs, packItems } from '@packrat/api/db/schema';
 import { apiKeyAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import {
-  CatalogItemsQuerySchema,
-  CreateCatalogItemRequestSchema,
-  UpdateCatalogItemRequestSchema,
-  VectorSearchQuerySchema,
-} from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, etlJobs, packItems } from '@packrat/db';
 import { isString } from '@packrat/guards';
+import {
+  CatalogCategoriesResponseSchema,
+  CatalogCompareRequestSchema,
+  CatalogETLSchema,
+  CatalogItemSchema,
+  CatalogItemsQuerySchema,
+  CatalogItemsResponseSchema,
+  CreateCatalogItemRequestSchema,
+  UpdateCatalogItemRequestSchema,
+  VectorSearchQuerySchema,
+} from '@packrat/schemas/catalog';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -22,20 +28,14 @@ import {
   eq,
   getTableColumns,
   gt,
+  inArray,
   isNotNull,
   isNull,
   ne,
   sql,
 } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const catalogETLSchema = z.object({
-  filename: z.string().min(1, 'Filename is required'),
-  chunks: z.array(z.string()).min(1, 'At least one object key is required'),
-  source: z.string().min(1, 'Source name is required'),
-  scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
-});
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
@@ -45,7 +45,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .get(
     '/',
     async ({ query }) => {
-      const { page, limit, q, category: encodedCategory, sort } = query;
+      const { page = 1, limit = 20, q, category: encodedCategory, sort } = query;
       let category: string | undefined;
       if (isString(encodedCategory) && encodedCategory.length > 0) {
         try {
@@ -68,16 +68,17 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
 
       const totalPages = Math.ceil(result.total / limit);
 
-      return {
+      return CatalogItemsResponseSchema.parse({
         items: result.items,
         totalCount: result.total,
         page,
         limit,
         totalPages,
-      };
+      });
     },
     {
       query: CatalogItemsQuerySchema,
+      response: { 200: CatalogItemsResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -102,11 +103,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: VectorSearchQuerySchema,
-      isValidApiKey: true,
+      isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
         summary: 'Vector search catalog items',
-        security: [{ apiKey: [] }],
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -116,16 +117,86 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     '/categories',
     async ({ query }) => {
       const categories = await new CatalogService().getCategories(query.limit);
-      return categories;
+      return CatalogCategoriesResponseSchema.parse(categories);
     },
     {
+      // Service applies its own default (10); keep schema truly optional.
       query: z.object({
-        limit: z.coerce.number().int().positive().optional().default(10),
+        limit: z.coerce.number().int().positive().optional(),
       }),
+      response: { 200: CatalogCategoriesResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
         summary: 'Get catalog categories',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  // -- Compare items side-by-side (static path, register before /:id)
+  .post(
+    '/compare',
+    async ({ body }) => {
+      const db = createDb();
+      const { ids } = body;
+      const uniqueIds = Array.from(new Set(ids));
+      // `ids.min(2)` accepts [1, 1] which collapses to 1 unique ID after
+      // dedupe; enforce the 2+ floor on the deduped set so the response
+      // actually contains a comparison.
+      if (uniqueIds.length < 2) {
+        return status(400, { error: 'Compare requires at least 2 distinct catalog IDs' });
+      }
+      const items = await db
+        .select({
+          id: catalogItems.id,
+          name: catalogItems.name,
+          brand: catalogItems.brand,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          price: catalogItems.price,
+          ratingValue: catalogItems.ratingValue,
+          productUrl: catalogItems.productUrl,
+          categories: catalogItems.categories,
+        })
+        .from(catalogItems)
+        .where(inArray(catalogItems.id, uniqueIds));
+
+      const foundIds = new Set(items.map((it) => it.id));
+      const missing = uniqueIds.filter((id) => !foundIds.has(id));
+      if (missing.length > 0) {
+        return status(404, {
+          error: `Catalog item(s) not found: ${missing.join(', ')}`,
+        });
+      }
+
+      const rank = <K extends keyof (typeof items)[number]>(
+        key: K,
+        order: 'asc' | 'desc',
+      ): number | null => {
+        const ranked = [...items]
+          .filter((it) => it[key] != null)
+          .sort((a, b) => {
+            const av = Number(a[key]);
+            const bv = Number(b[key]);
+            return order === 'asc' ? av - bv : bv - av;
+          });
+        return ranked[0]?.id ?? null;
+      };
+
+      return {
+        items,
+        lightestId: rank('weight', 'asc'),
+        cheapestId: rank('price', 'asc'),
+        highestRatedId: rank('ratingValue', 'desc'),
+      };
+    },
+    {
+      body: CatalogCompareRequestSchema,
+      isAuthenticated: true,
+      detail: {
+        tags: ['Catalog'],
+        summary: 'Compare 2–10 catalog items side-by-side',
         security: [{ bearerAuth: [] }],
       },
     },
@@ -212,7 +283,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       };
     },
     {
-      body: catalogETLSchema,
+      body: CatalogETLSchema,
       isValidApiKey: true,
       detail: {
         tags: ['Catalog'],
@@ -241,17 +312,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
-      if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
-        return status(400, { error: 'name, weight, and weightUnit are required' });
-      }
-      if (data.weight <= 0) {
-        return status(400, { error: 'weight must be a positive number' });
-      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        return status(500, { error: 'OpenAI API key not configured' });
+        // Configuration error: surface as a 500 with a clear message
+        throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
       const embeddingText = getEmbeddingText(data);
@@ -294,10 +360,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         })
         .returning();
 
-      return newItem;
+      return CatalogItemSchema.parse(newItem);
     },
     {
       body: CreateCatalogItemRequestSchema,
+      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -319,7 +386,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         itemId <= 0 ||
         itemId > 2147483647
       ) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
 
       const item = await db.query.catalogItems.findFirst({
@@ -333,15 +400,16 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       });
 
       if (!item) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
 
       const usageCount = item.packItems?.length || 0;
       const { packItems: _packItems, ...itemData } = item;
-      return { ...itemData, usageCount };
+      return CatalogItemSchema.parse({ ...itemData, usageCount });
     },
     {
       params: z.object({ id: z.string() }),
+      response: { 200: CatalogItemSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -429,17 +497,15 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         itemId <= 0 ||
         itemId > 2147483647
       ) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
       const data = body;
-      if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
-        return status(400, { error: 'weight must be a positive number' });
-      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        return status(500, { error: 'OpenAI API key not configured' });
+        // Configuration error: surface as a 500 with a clear message
+        throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
@@ -447,7 +513,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       });
 
       if (!existingItem) {
-        return status(404, { error: 'Catalog item not found' });
+        throw new NotFoundError('Catalog item not found');
       }
 
       let embedding: number[] | null = null;
@@ -475,11 +541,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .where(eq(catalogItems.id, itemId))
         .returning();
 
-      return updatedItem;
+      return CatalogItemSchema.parse(updatedItem);
     },
     {
       params: z.object({ id: z.string() }),
       body: UpdateCatalogItemRequestSchema,
+      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],

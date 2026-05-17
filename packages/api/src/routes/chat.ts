@@ -1,14 +1,14 @@
 import { createDb } from '@packrat/api/db';
-import { reportedContent } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
+import { createTools } from '@packrat/api/utils/ai/tools';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { reportedContent } from '@packrat/db';
 import {
   ChatRequestSchema,
   CreateReportRequestSchema,
   UpdateReportStatusRequestSchema,
-} from '@packrat/api/schemas/chat';
-import { createAIProvider } from '@packrat/api/utils/ai/provider';
-import { createTools } from '@packrat/api/utils/ai/tools';
-import { getEnv } from '@packrat/api/utils/env-validation';
+} from '@packrat/schemas/chat';
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -22,7 +22,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
   // Chat streaming
   .post(
     '/',
-    async ({ body, user }) => {
+    async ({ body, user, request }) => {
       const typedBody = body as {
         messages?: UIMessage[] | undefined;
         contextType?: string;
@@ -66,8 +66,23 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         systemPrompt += `\n- The current location of the user is: ${location}.`;
       }
 
-      const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
+      const {
+        AI_PROVIDER,
+        OPENAI_API_KEY,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        AI,
+        TOKEN_RATE_LIMITER,
+      } = getEnv();
+
+      if (TOKEN_RATE_LIMITER) {
+        const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+        const rateLimitKey = `chat:${user.userId}:${ip}`;
+        const { success } = await TOKEN_RATE_LIMITER.limit({ key: rateLimitKey });
+        if (!success) {
+          return status(429, { error: 'Too many chat requests, please try again shortly.' });
+        }
+      }
 
       const aiProvider = createAIProvider({
         openAiApiKey: OPENAI_API_KEY,

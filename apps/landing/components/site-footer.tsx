@@ -1,21 +1,9 @@
-'use client';
-
 import { siteConfig } from 'landing-app/config/site';
 import { LucideIcon, TikTokIcon } from 'landing-app/lib/icons';
 import { Backpack } from 'lucide-react';
 import Link from 'next/link';
-import type React from 'react';
 
 export default function SiteFooter() {
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const targetId = href.substring(1);
-    const element = document.getElementById(targetId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <footer className="border-t border-border/40 py-10 md:py-14 lg:py-16 bg-apple-gray-light dark:bg-gray-900/20">
       <div className="container">
@@ -58,7 +46,6 @@ export default function SiteFooter() {
                 <li key={item.title}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
                     className="text-sm text-muted-foreground hover:text-apple-blue transition-colors"
                   >
                     {item.title}
@@ -76,7 +63,6 @@ export default function SiteFooter() {
                 <li key={item.title}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
                     className="text-sm text-muted-foreground hover:text-apple-blue transition-colors"
                   >
                     {item.title}
@@ -94,7 +80,6 @@ export default function SiteFooter() {
                 <li key={item.title}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
                     className="text-sm text-muted-foreground hover:text-apple-blue transition-colors"
                   >
                     {item.title}

@@ -49,10 +49,21 @@ const ALLOWED: string[] = [
   'packages/api/scripts/validate-cloudflare-api-env.ts',
   // One-off sync script, not app code
   'apps/guides/scripts/sync-to-r2.ts',
+  // Test-only gate flag: reads RUN_OG_PIPELINE_TEST to opt into the heavy
+  // OG-image pipeline test from `bun run --cwd apps/guides test:og`.
+  'apps/guides/__tests__/og-images.test.ts',
+  // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
+  // validation against a deployed guides URL.
+  'apps/guides/__tests__/og-meta.test.ts',
+  // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
+  // validation against a deployed landing URL.
+  'apps/landing/__tests__/og-meta.test.ts',
   // Test files that mutate process.env to exercise env-validation logic
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
+  'apps/expo/playwright/',
   // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)
   // to Bun.spawn via { ...process.env, ... }. App-level vars (IMPORT_MODE etc.) use nodeEnv.
   'packages/osm-import/import.ts',

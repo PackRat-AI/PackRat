@@ -1,6 +1,7 @@
-import type { NewCatalogItem } from '@packrat/api/db/schema';
-import type { ValidatedCatalogItem, ValidationError } from '@packrat/api/types/etl';
+import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
+import type { NewCatalogItem } from '@packrat/db';
 import { isNumber, isString } from '@packrat/guards';
+import type { ValidationError } from '@packrat/schemas/validation';
 
 export class CatalogItemValidator {
   validateItem(item: Partial<NewCatalogItem>): ValidatedCatalogItem {

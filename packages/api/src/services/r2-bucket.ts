@@ -12,7 +12,7 @@ import {
   S3Client,
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { isDate, isFunction, isNumber, isObject, isString } from '@packrat/guards';
 
 // ── ETag normalization ────────────────────────────────────────────────

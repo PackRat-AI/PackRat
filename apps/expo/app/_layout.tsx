@@ -1,7 +1,7 @@
 import '../polyfills';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
-import 'expo-dev-client';
+import 'expo-app/lib/devClient';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
@@ -20,6 +20,8 @@ Sentry.init({
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
+  // Disable Sentry in local development or when no DSN is configured.
+  enabled: clientEnvs.NODE_ENV !== 'development' && !!clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
 });
 
 const user = userStore.peek();
