@@ -5,6 +5,10 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
   # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
@@ -14,6 +18,10 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
   workflow_dispatch:
@@ -36,8 +44,11 @@ jobs:
     name: iOS E2E Tests
     runs-on: macos-15
     timeout-minutes: 120
-    # Skip on forked PRs — secrets are not available in forks
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Skip on forked PRs and when E2E secrets are not configured
+    if: >
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+      secrets.E2E_TEST_EMAIL != '' &&
+      secrets.NEON_DEV_DATABASE_URL != ''
 
     env:
       # The E2E user is upserted into the dev DB by the seed step below,
@@ -271,8 +282,11 @@ jobs:
     name: Android E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    # Skip on forked PRs — secrets are not available in forks
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Skip on forked PRs and when E2E secrets are not configured
+    if: >
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+      secrets.E2E_TEST_EMAIL != '' &&
+      secrets.NEON_DEV_DATABASE_URL != ''
 
     env:
       # The E2E user is upserted into the dev DB by the seed step below,
