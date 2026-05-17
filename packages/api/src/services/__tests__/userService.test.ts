@@ -142,8 +142,9 @@ describe('UserService', () => {
     it('generates a UUID for the user id', async () => {
       mocks.returningFn.mockResolvedValue([{ id: 'u10', email: 'test@example.com' }]);
       await service.create({ email: 'test@example.com' });
-      const [insertArg] = mocks.valuesFn.mock.calls[0];
-      expect(insertArg.id).toMatch(
+      const insertCalls = mocks.valuesFn.mock.calls as unknown as Array<[{ id: string }]>;
+      const insertArg = insertCalls[0]?.[0];
+      expect(insertArg?.id).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
       );
     });

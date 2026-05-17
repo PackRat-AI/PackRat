@@ -108,22 +108,28 @@ describe('requestPasswordReset()', () => {
   it('sends a 6-digit OTP in the email', async () => {
     mocks.findFirstUser.mockResolvedValue({ id: 'u1', email: 'user@example.com' });
     await requestPasswordReset('user@example.com');
-    const emailArg = mocks.sendPasswordResetEmail.mock.calls[0][0];
-    expect(emailArg.code).toMatch(/^\d{6}$/);
+    const emailCalls = mocks.sendPasswordResetEmail.mock.calls as Array<
+      [{ to: string; code: string }]
+    >;
+    const emailArg = emailCalls[0]?.[0];
+    expect(emailArg?.code).toMatch(/^\d{6}$/);
   });
 
   it('stores the OTP value in the verification record', async () => {
     mocks.findFirstUser.mockResolvedValue({ id: 'u1', email: 'user@example.com' });
     await requestPasswordReset('user@example.com');
-    const insertArg = mocks.insertValues.mock.calls[0][0];
-    expect(insertArg.value).toMatch(/^\d{6}$/);
+    const insertCalls = mocks.insertValues.mock.calls as Array<[{ value: string }]>;
+    const insertArg = insertCalls[0]?.[0];
+    expect(insertArg?.value).toMatch(/^\d{6}$/);
   });
 
   it('stores the same OTP in both the record and the email', async () => {
     mocks.findFirstUser.mockResolvedValue({ id: 'u1', email: 'user@example.com' });
     await requestPasswordReset('user@example.com');
-    const insertedCode = mocks.insertValues.mock.calls[0][0].value;
-    const emailedCode = mocks.sendPasswordResetEmail.mock.calls[0][0].code;
+    const insertCalls = mocks.insertValues.mock.calls as Array<[{ value: string }]>;
+    const emailCalls = mocks.sendPasswordResetEmail.mock.calls as Array<[{ code: string }]>;
+    const insertedCode = insertCalls[0]?.[0]?.value;
+    const emailedCode = emailCalls[0]?.[0]?.code;
     expect(insertedCode).toBe(emailedCode);
   });
 
@@ -131,8 +137,11 @@ describe('requestPasswordReset()', () => {
     mocks.findFirstUser.mockResolvedValue({ id: 'u1', email: 'user@example.com' });
     const before = Date.now();
     await requestPasswordReset('user@example.com');
-    const insertArg = mocks.insertValues.mock.calls[0][0];
-    expect(insertArg.expiresAt.getTime()).toBeGreaterThan(before);
+    const insertCalls = mocks.insertValues.mock.calls as Array<
+      [{ value: string; expiresAt: Date }]
+    >;
+    const insertArg = insertCalls[0]?.[0];
+    expect(insertArg?.expiresAt.getTime()).toBeGreaterThan(before);
   });
 });
 
