@@ -36,8 +36,11 @@ jobs:
     name: Web E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Skip on forked PRs — secrets are not available in forks
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Skip on forked PRs (secrets unavailable) and when E2E secrets are not configured
+    if: >
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) &&
+      secrets.E2E_TEST_EMAIL != '' &&
+      secrets.NEON_DEV_DATABASE_URL != ''
 
     env:
       # The E2E user is upserted into the dev DB by the seed step below,
