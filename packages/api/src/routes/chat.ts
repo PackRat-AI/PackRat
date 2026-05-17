@@ -1,14 +1,14 @@
 import { createDb } from '@packrat/api/db';
-import { reportedContent } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
+import { createTools } from '@packrat/api/utils/ai/tools';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { reportedContent } from '@packrat/db';
 import {
   ChatRequestSchema,
   CreateReportRequestSchema,
   UpdateReportStatusRequestSchema,
-} from '@packrat/api/schemas/chat';
-import { createAIProvider } from '@packrat/api/utils/ai/provider';
-import { createTools } from '@packrat/api/utils/ai/tools';
-import { getEnv } from '@packrat/api/utils/env-validation';
+} from '@packrat/schemas/chat';
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';

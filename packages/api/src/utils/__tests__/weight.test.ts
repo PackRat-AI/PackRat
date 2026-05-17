@@ -1,4 +1,4 @@
-import type { PackItem } from '@packrat/api/types';
+import type { PackItem } from '@packrat/types';
 import { describe, expect, it } from 'vitest';
 import {
   calculateBaseWeight,
@@ -17,17 +17,24 @@ function makeItem(
   return {
     id: 'item-1',
     name: 'Test Item',
-    weight: overrides.weight,
-    weightUnit: overrides.weightUnit,
+    description: null,
     quantity: overrides.quantity ?? 1,
+    category: null,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
+    image: null,
+    notes: null,
     packId: 'pack-1',
-    userId: 1,
-    category: 'tools',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+    catalogItemId: null,
+    userId: 'user-1',
+    deleted: false,
+    isAIGenerated: false,
+    templateItemId: null,
+    embedding: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  } as PackItem;
 }
 
 // ---------------------------------------------------------------------------

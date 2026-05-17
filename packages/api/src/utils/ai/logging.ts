@@ -1,4 +1,4 @@
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { extractCloudflareLogId } from './provider';
 
 export interface AIRequestLog {

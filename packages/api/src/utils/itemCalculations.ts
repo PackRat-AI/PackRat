@@ -1,4 +1,5 @@
-import type { CatalogItem, PackItem, WeightUnit } from '@packrat/api/types';
+import type { WeightUnit } from '@packrat/constants';
+import type { CatalogItem, PackItem } from '@packrat/types';
 
 /**
  * Checks if an item is a pack item
@@ -32,7 +33,7 @@ export function getWeightUnit(item: CatalogItem | PackItem): WeightUnit {
 }
 
 /** Gets the notes of an item */
-export function getNotes(item: CatalogItem | PackItem): string | undefined {
+export function getNotes(item: CatalogItem | PackItem): string | null | undefined {
   return isPackItem(item) ? item.notes : undefined;
 }
 
@@ -68,5 +69,5 @@ export function isWorn(item: CatalogItem | PackItem): boolean {
  * Check if the item has a notes field
  */
 export function hasNotes(item: CatalogItem | PackItem): boolean {
-  return 'notes' in item && item.notes !== undefined && item.notes !== '';
+  return 'notes' in item && item.notes != null && item.notes !== '';
 }

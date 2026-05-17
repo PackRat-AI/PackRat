@@ -1,36 +1,10 @@
 import { createOsmDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
+import { RouteDetailRowSchema, RouteSearchRowSchema } from '@packrat/schemas/trails';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-// ── Zod schemas ─────────────────────────────────────────────────────────────
-
-const OsmMemberSchema = z.object({
-  type: z.string(),
-  ref: z.coerce.bigint(),
-  role: z.string(),
-});
-
-const RouteBaseRowSchema = z.object({
-  osm_id: z.string(),
-  name: z.string().nullable(),
-  sport: z.string().nullable(),
-  network: z.string().nullable(),
-  distance: z.string().nullable(),
-  difficulty: z.string().nullable(),
-  description: z.string().nullable(),
-});
-
-const RouteSearchRowSchema = RouteBaseRowSchema.extend({
-  bbox: z.string().nullable(),
-});
-
-const RouteDetailRowSchema = RouteBaseRowSchema.extend({
-  members: z.array(OsmMemberSchema).nullable(),
-  geojson: z.string().nullable(),
-});
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 

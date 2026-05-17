@@ -1,14 +1,15 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import {
   type WeatherAPICurrentResponse,
   type WeatherAPIForecastResponse,
+  WeatherAPIForecastResponseSchema,
   type WeatherAPISearchResponse,
   WeatherCoordinateQuerySchema,
   WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
-} from '@packrat/api/schemas/weather';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { isString } from '@packrat/guards';
+} from '@packrat/schemas/weather';
 import { Elysia, status } from 'elysia';
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
@@ -144,19 +145,16 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
         if (!response.ok) throw new Error(`API error: ${response.status}`);
 
         const data = (await response.json()) as WeatherAPIForecastResponse; // safe-cast: WeatherAPI.com response shape matches this type
-        return {
+        return WeatherAPIForecastResponseSchema.parse({
           ...data,
           location: {
             ...data.location,
             id: Number(id),
           },
-        };
+        });
       } catch (error) {
         console.error('Error fetching weather forecast:', error);
-        return status(500, {
-          error: 'Internal server error',
-          code: 'WEATHER_FORECAST_ERROR',
-        });
+        return status(500, { error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' });
       }
     },
     {
