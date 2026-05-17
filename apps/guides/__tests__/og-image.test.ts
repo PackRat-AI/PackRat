@@ -145,7 +145,8 @@ describe('guides per-slug page metadata', () => {
     const images = (meta.openGraph as { images?: unknown })?.images;
     const first = Array.isArray(images) ? images[0] : images;
     const url = typeof first === 'string' ? first : (first as { url: string })?.url;
-    const filePath = path.resolve(APP_DIR, 'public', url.replace(/^\//, ''));
+    const pathname = new URL(url, siteConfig.url).pathname;
+    const filePath = path.resolve(APP_DIR, 'public', pathname.replace(/^\//, ''));
     expect(
       fs.existsSync(filePath),
       `per-post og:image points to ${url} but ${filePath} was not generated. ` +
