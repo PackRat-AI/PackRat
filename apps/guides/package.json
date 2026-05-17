@@ -16,6 +16,7 @@
     "start": "next start",
     "sync-to-r2": "bun run scripts/sync-to-r2.ts",
     "test": "vitest run --config vitest.config.ts",
+    "test:og": "bun run build-content && bun run generate-og-images && RUN_OG_PIPELINE_TEST=1 vitest run --config vitest.config.ts __tests__/og-images.test.ts",
     "test-enhancement": "bun run scripts/test-enhancement.ts",
     "update-authors": "bun run scripts/update-authors.ts"
   },
