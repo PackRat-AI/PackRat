@@ -23,6 +23,12 @@ export default defineConfig({
       reportsDirectory: resolve(__dirname, 'coverage'),
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/index.ts'],
+      thresholds: {
+        statements: 30,
+        branches: 25,
+        functions: 30,
+        lines: 30,
+      },
     },
   },
 });

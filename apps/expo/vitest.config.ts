@@ -36,7 +36,10 @@ export default defineConfig({
         '**/*.web.ts', // Browser-API files; not runnable in Node vitest environment
       ],
       thresholds: {
-        statements: 75,
+        statements: 85,
+        branches: 90,
+        functions: 93,
+        lines: 85,
       },
     },
   },

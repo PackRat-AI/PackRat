@@ -72,7 +72,10 @@ export default defineConfig({
         'src/utils/openapi.ts',
       ],
       thresholds: {
-        statements: 65,
+        statements: 80,
+        branches: 88,
+        functions: 95,
+        lines: 80,
       },
     },
   },
