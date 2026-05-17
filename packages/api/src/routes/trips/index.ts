@@ -130,6 +130,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         if ('packId' in data) updateData.packId = data.packId ?? null;
         if ('localUpdatedAt' in data)
           updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : null;
+        if ('deleted' in data) updateData.deleted = data.deleted;
 
         updateData.updatedAt = new Date();
 
