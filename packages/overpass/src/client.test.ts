@@ -63,23 +63,26 @@ describe('queryOverpass', () => {
       mockFetch.mockResolvedValue(makeResponse(validResponse));
       const ql = '[out:json];relation(42);out geom;';
       await queryOverpass(ql);
-      const [, init] = mockFetch.mock.calls[0];
-      expect(init.body).toBe(`data=${encodeURIComponent(ql)}`);
+      const firstCall = mockFetch.mock.calls.at(0) as [string, RequestInit] | undefined;
+      const init = firstCall?.[1];
+      expect(init?.body).toBe(`data=${encodeURIComponent(ql)}`);
     });
 
     it('sets Content-Type to application/x-www-form-urlencoded', async () => {
       mockFetch.mockResolvedValue(makeResponse(validResponse));
       await queryOverpass('ql');
-      const [, init] = mockFetch.mock.calls[0];
-      expect(init.headers['Content-Type']).toBe('application/x-www-form-urlencoded');
+      const firstCall = mockFetch.mock.calls.at(0) as [string, RequestInit] | undefined;
+      const headers = firstCall?.[1]?.headers as Record<string, string> | undefined;
+      expect(headers?.['Content-Type']).toBe('application/x-www-form-urlencoded');
     });
 
     it('sets a User-Agent header', async () => {
       mockFetch.mockResolvedValue(makeResponse(validResponse));
       await queryOverpass('ql');
-      const [, init] = mockFetch.mock.calls[0];
-      expect(init.headers['User-Agent']).toBeDefined();
-      expect(typeof init.headers['User-Agent']).toBe('string');
+      const firstCall = mockFetch.mock.calls.at(0) as [string, RequestInit] | undefined;
+      const headers = firstCall?.[1]?.headers as Record<string, string> | undefined;
+      expect(headers?.['User-Agent']).toBeDefined();
+      expect(typeof headers?.['User-Agent']).toBe('string');
     });
   });
 

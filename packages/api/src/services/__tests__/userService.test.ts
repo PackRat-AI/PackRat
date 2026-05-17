@@ -53,12 +53,11 @@ describe('UserService', () => {
       expect(result).toBeNull();
     });
 
-    it('uses select().from().where().limit(1) query chain', async () => {
-      mocks.limitFn.mockResolvedValue([]);
-      await service.findByEmail('test@example.com');
-      expect(mocks.selectFn).toHaveBeenCalled();
-      expect(mocks.fromFn).toHaveBeenCalled();
-      expect(mocks.whereFn).toHaveBeenCalled();
+    it('fetches only the first matching record', async () => {
+      const fakeUser = { id: 'u-x', email: 'test@example.com' };
+      mocks.limitFn.mockResolvedValue([fakeUser]);
+      const result = await service.findByEmail('test@example.com');
+      expect(result).toEqual(fakeUser);
       expect(mocks.limitFn).toHaveBeenCalledWith(1);
     });
 

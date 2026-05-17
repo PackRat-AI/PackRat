@@ -84,6 +84,10 @@ describe('requestPasswordReset()', () => {
     await requestPasswordReset('user@example.com');
     expect(mocks.deleteFn).toHaveBeenCalled();
     expect(mocks.deleteWhere).toHaveBeenCalled();
+    expect(mocks.insertValues).toHaveBeenCalled();
+    expect(mocks.deleteWhere.mock.invocationCallOrder[0] ?? 0).toBeLessThan(
+      mocks.insertValues.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it('inserts a new verification record for a known user', async () => {
@@ -134,14 +138,20 @@ describe('requestPasswordReset()', () => {
   });
 
   it('sets an expiry date in the future on the verification record', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
     mocks.findFirstUser.mockResolvedValue({ id: 'u1', email: 'user@example.com' });
-    const before = Date.now();
-    await requestPasswordReset('user@example.com');
-    const insertCalls = mocks.insertValues.mock.calls as Array<
-      [{ value: string; expiresAt: Date }]
-    >;
-    const insertArg = insertCalls[0]?.[0];
-    expect(insertArg?.expiresAt.getTime()).toBeGreaterThan(before);
+    try {
+      const before = Date.now();
+      await requestPasswordReset('user@example.com');
+      const insertCalls = mocks.insertValues.mock.calls as Array<
+        [{ value: string; expiresAt: Date }]
+      >;
+      const insertArg = insertCalls[0]?.[0];
+      expect(insertArg?.expiresAt.getTime()).toBeGreaterThan(before);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
