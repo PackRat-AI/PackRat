@@ -7,10 +7,19 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "types": ["bun", "@cloudflare/workers-types/2022-10-31"],
     "baseUrl": ".",
     "paths": {
       "@packrat/analytics": ["../analytics/src"],
-      "@packrat/analytics/*": ["../analytics/src/*"]
+      "@packrat/analytics/*": ["../analytics/src/*"],
+      "@packrat/api-client": ["../api-client/src/index.ts"],
+      "@packrat/api-client/*": ["../api-client/src/*"],
+      "@packrat/api": ["../api/src/index.ts"],
+      "@packrat/api/*": ["../api/src/*"],
+      "@packrat/env": ["../env/src"],
+      "@packrat/env/*": ["../env/src/*"],
+      "@packrat/guards": ["../guards/src"],
+      "@packrat/guards/*": ["../guards/src/*"]
     }
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts"],

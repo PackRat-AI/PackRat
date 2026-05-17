@@ -28,12 +28,14 @@ function assertValidPng(filePath: string): void {
 }
 
 describe('guides OG image generation', () => {
+  // Generating per-post PNGs takes ~30-60s for the full set;
+  // default vitest hook timeout is 5s.
   beforeAll(() => {
     execSync('bun run scripts/generate-og-images.ts', {
       cwd: APP_DIR,
       stdio: 'inherit',
     });
-  });
+  }, 180_000);
 
   it('generates public/og-image.png', () => {
     expect(fs.existsSync(ROOT_OG_PATH)).toBe(true);

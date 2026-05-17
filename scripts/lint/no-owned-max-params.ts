@@ -31,6 +31,10 @@ const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/']
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
+  // These build scripts override globalThis.fetch with a shim that must
+  // match the runtime's (input, init) signature.
+  'apps/landing/scripts/generate-og-images.ts',
+  'apps/guides/scripts/generate-og-images.ts',
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
 const EXTERNAL_CALLBACK_NAMES = new Set([

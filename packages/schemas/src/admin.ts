@@ -113,9 +113,11 @@ export const CatalogUpdateSchema = z.object({ id: z.number(), name: z.string() }
 
 // ─── Analytics — Platform ─────────────────────────────────────────────────────
 
+// Handler defaults period to 'month' and range to 12; keep schema truly
+// optional so the Treaty type doesn't mark these as required-with-default.
 export const AnalyticsPeriodSchema = z.object({
-  period: z.enum(['day', 'week', 'month']).optional().default('month'),
-  range: z.coerce.number().int().min(1).max(365).optional().default(12),
+  period: z.enum(['day', 'week', 'month']).optional(),
+  range: z.coerce.number().int().min(1).max(365).optional(),
 });
 
 export const GrowthPointSchema = z.object({

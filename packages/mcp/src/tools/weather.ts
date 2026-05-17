@@ -1,57 +1,27 @@
 import { z } from 'zod';
-import { err, ok } from '../client';
+import { call } from '../client';
 import type { AgentContext } from '../types';
 
 export function registerWeatherTools(agent: AgentContext): void {
-  // ── Get weather ───────────────────────────────────────────────────────────
-  // The PackRat weather API is a two-step flow:
-  //   1. GET /weather/search?q=<location> → returns location matches with IDs
-  //   2. GET /weather/forecast?id=<locationId> → returns the actual forecast
-  // This tool combines both steps for a seamless experience.
-
+  // ── Get weather (single API call) ─────────────────────────────────────────
   agent.server.registerTool(
     'get_weather',
     {
       description:
-        'Get current weather conditions and multi-day forecast for any location. Returns temperature, precipitation, wind, humidity, and outdoor conditions relevant to trip planning. Works with city names, trail names, park names, or coordinates.',
+        'Get current weather conditions and multi-day forecast for any location. Returns temperature, precipitation, wind, humidity, and outdoor conditions relevant to trip planning.',
       inputSchema: {
         location: z
           .string()
           .min(2)
-          .describe(
-            'Location to get weather for. Examples: "Yosemite Valley, CA", "Mt. Whitney Summit", "Seattle, WA", "37.8651,-119.5383"',
-          ),
+          .describe('Location to get weather for (city, trail, park, etc.)'),
       },
     },
-    async ({ location }) => {
-      try {
-        // Step 1: search for the location to get its ID
-        const searchResults = await agent.api.get<Record<string, unknown>>({
-          path: '/weather/search',
-          params: {
-            q: location,
-          },
-        });
-
-        const locationId =
-          searchResults.id ?? (searchResults.results as Array<{ id: string }>)?.[0]?.id;
-
-        if (!locationId) {
-          return err(new Error(`No weather location found for: ${location}`));
-        }
-
-        // Step 2: fetch the forecast for that location
-        const forecast = await agent.api.get({
-          path: '/weather/forecast',
-          params: {
-            id: String(locationId),
-          },
-        });
-        return ok(forecast);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ location }) =>
+      call({
+        promise: agent.api.user.weather['by-name'].get({ query: { q: location } }),
+        action: 'fetch weather forecast',
+        resourceHint: location,
+      }),
   );
 
   // ── Search weather location ───────────────────────────────────────────────
@@ -59,45 +29,51 @@ export function registerWeatherTools(agent: AgentContext): void {
   agent.server.registerTool(
     'search_weather_location',
     {
-      description:
-        'Search for weather locations by name. Returns matching locations with their IDs. Use get_weather instead for a combined search+forecast in one call — use this only if you need to pick from multiple location matches.',
-      inputSchema: {
-        query: z.string().min(2).describe('Location search query (e.g. "Yosemite", "Seattle, WA")'),
-      },
+      description: 'Search for weather locations by name. Returns matching locations with IDs.',
+      inputSchema: { query: z.string().min(2) },
     },
-    async ({ query }) => {
-      try {
-        const data = await agent.api.get({ path: '/weather/search', params: { q: query } });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ query }) =>
+      call({
+        promise: agent.api.user.weather.search.get({ query: { q: query } }),
+        action: 'search weather location',
+        resourceHint: query,
+      }),
   );
 
-  // ── Season suggestion ─────────────────────────────────────────────────────
+  // ── Search weather location by coordinates ────────────────────────────────
 
   agent.server.registerTool(
-    'get_season_suggestions',
+    'search_weather_by_coordinates',
     {
-      description:
-        'Get AI-powered suggestions for the best seasons to visit a destination and recommended activities per season. Useful for trip planning.',
+      description: 'Find weather locations near a latitude/longitude pair.',
       inputSchema: {
-        destination: z
-          .string()
-          .min(2)
-          .describe(
-            'Destination to get season suggestions for (e.g. "Patagonia", "Zion National Park")',
-          ),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
       },
     },
-    async ({ destination }) => {
-      try {
-        const data = await agent.api.post({ path: '/season-suggestions', body: { destination } });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
+    async ({ latitude, longitude }) =>
+      call({
+        promise: agent.api.user.weather['search-by-coordinates'].get({
+          query: { lat: latitude, lon: longitude },
+        }),
+        action: 'search weather by coordinates',
+      }),
+  );
+
+  // ── Forecast by location id ───────────────────────────────────────────────
+
+  agent.server.registerTool(
+    'get_weather_forecast',
+    {
+      description:
+        'Fetch a 10-day forecast given a WeatherAPI location ID (returned by search_weather_location).',
+      inputSchema: { location_id: z.union([z.string(), z.number()]) },
     },
+    async ({ location_id }) =>
+      call({
+        promise: agent.api.user.weather.forecast.get({ query: { id: String(location_id) } }),
+        action: 'get weather forecast',
+        resourceHint: `location ${location_id}`,
+      }),
   );
 }

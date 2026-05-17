@@ -106,8 +106,12 @@ export async function getUsers({
   q?: string;
   includeDeleted?: boolean;
 } = {}): Promise<PaginatedResponse<AdminUser>> {
+  // users-list no longer accepts includeDeleted — Better Auth doesn't support
+  // user soft-delete, so the field was dead code. Caller-supplied value is
+  // ignored.
+  void includeDeleted;
   const { data, error } = await adminClient['users-list'].get({
-    query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
+    query: { limit, offset, q },
   });
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'users' });
@@ -153,7 +157,7 @@ export async function getPacks({
   includeDeleted?: boolean;
 } = {}): Promise<PaginatedResponse<AdminPack>> {
   const { data, error } = await adminClient['packs-list'].get({
-    query: { limit, offset, q, includeDeleted: includeDeleted ? 'true' : undefined },
+    query: { limit, offset, q, includeDeleted },
   });
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'packs' });
@@ -339,7 +343,7 @@ export async function getTrailConditions({
   includeDeleted?: boolean;
 } = {}): Promise<PaginatedResponse<TrailConditionReport>> {
   const { data, error } = await adminClient.trails.conditions.get({
-    query: { q, limit, offset, includeDeleted: includeDeleted ? 'true' : undefined },
+    query: { q, limit, offset, includeDeleted },
   });
   if (error) throwOnError({ error });
   return unwrap({ data, name: 'trailConditions' });
