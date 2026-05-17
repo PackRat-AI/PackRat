@@ -1,8 +1,10 @@
-name: Web Builds
+name: Builds
 
-# Build the static Next.js exports for the guides and landing apps on every
-# PR. This gives us inspectable build signal (post counts, OG image counts,
-# `out/` artifact) independent of the Cloudflare Pages dashboard, so a stale
+# Build packrat apps on every PR. Currently web only (guides + landing); native
+# builds (Expo / macOS) may slot in here later under the same workflow.
+#
+# Gives us inspectable build signal (post counts, OG image counts, `out/`
+# artifact) independent of the Cloudflare Pages dashboard, so a stale
 # `lib/content.ts` or a missing OG image surfaces directly in PR checks.
 #
 # Each job:
@@ -21,7 +23,7 @@ on:
       - 'packages/web-ui/**'
       - 'package.json'
       - 'bun.lock'
-      - '.github/workflows/web-builds.yml'
+      - '.github/workflows/builds.yml'
   push:
     branches: ['main', 'development']
     paths:
@@ -30,7 +32,7 @@ on:
       - 'packages/web-ui/**'
       - 'package.json'
       - 'bun.lock'
-      - '.github/workflows/web-builds.yml'
+      - '.github/workflows/builds.yml'
   workflow_dispatch:
 
 concurrency:
@@ -42,7 +44,7 @@ permissions:
 
 jobs:
   guides:
-    name: Web Builds (guides)
+    name: Builds (guides)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -135,7 +137,7 @@ jobs:
           if-no-files-found: ignore
 
   landing:
-    name: Web Builds (landing)
+    name: Builds (landing)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

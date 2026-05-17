@@ -39,8 +39,8 @@ Guards against re-inverting the order:
    bun run --cwd apps/guides test:og
    ```
 
-4. The `Web Builds` GitHub Actions workflow
-   (`.github/workflows/web-builds.yml`) builds the app on every PR and
+4. The `Builds` GitHub Actions workflow
+   (`.github/workflows/builds.yml`) builds the app on every PR and
    surfaces the post / OG image counts in the GitHub Step Summary so
    regressions are visible without depending on the Cloudflare Pages
    dashboard.
