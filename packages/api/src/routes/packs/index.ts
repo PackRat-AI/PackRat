@@ -25,6 +25,7 @@ import {
 import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
   AddPackItemBodySchema,
+  AddPackItemFromCatalogBodySchema,
   CreatePackBodySchema,
   GapAnalysisRequestSchema,
   PackItemSchema,
@@ -47,18 +48,6 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-// Lean payload for /items/from-catalog. Name/weight/weightUnit/category get
-// hydrated server-side from the catalog row.
-const AddPackItemFromCatalogSchema = z.object({
-  catalogItemId: z.number().int().positive(),
-  quantity: z.number().int().positive().optional(),
-  notes: z.string().optional(),
-  consumable: z.boolean().optional(),
-  worn: z.boolean().optional(),
-  // Optional override — usually the catalog category is fine.
-  category: z.string().optional(),
-});
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -777,7 +766,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     },
     {
       params: z.object({ packId: z.string() }),
-      body: AddPackItemFromCatalogSchema,
+      body: AddPackItemFromCatalogBodySchema,
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

@@ -180,6 +180,18 @@ export const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
   id: z.string().trim().min(1).optional(),
 });
 
+// Lean payload for /items/from-catalog. Name/weight/weightUnit/category get
+// hydrated server-side from the catalog row.
+export const AddPackItemFromCatalogBodySchema = z.object({
+  catalogItemId: z.number().int().positive(),
+  quantity: z.number().int().positive().optional(),
+  notes: z.string().optional(),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
+  // Optional override — usually the catalog category is fine.
+  category: z.string().optional(),
+});
+
 export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({
   localUpdatedAt: z.string().datetime().optional(),
 });
