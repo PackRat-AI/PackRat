@@ -29,7 +29,7 @@ export const guidesMetadata: Metadata = {
     description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
     images: [
       {
-        url: new URL('/opengraph-image.png', siteConfig.url).toString(),
+        url: new URL('/og-image.png', siteConfig.url).toString(),
         width: 1200,
         height: 630,
         alt: 'PackRat Guides | Hiking & Outdoor Adventures',
@@ -41,7 +41,7 @@ export const guidesMetadata: Metadata = {
     title: 'PackRat Guides | Hiking & Outdoor Adventures',
     description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
     creator: '@packratai',
-    images: [new URL('/twitter-image.png', siteConfig.url).toString()],
+    images: [new URL('/og-image.png', siteConfig.url).toString()],
   },
   icons: {
     icon: [{ url: '/PackRatGuides.ico', type: 'image/x-icon' }],

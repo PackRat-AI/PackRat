@@ -87,14 +87,14 @@ function isAbsoluteHttps(url: string | undefined): boolean {
 }
 
 /**
- * Landing's site-wide image is either the static `/og-image.png` written by
- * `scripts/generate-og-images.ts` or Next.js's auto-generated
- * `/opengraph-image` route (whichever wins in the metadata graph). A per-post
- * shape doesn't apply here — landing has no per-post images.
+ * Landing's site-wide image must be the static `/og-image.png` written by
+ * `scripts/generate-og-images.ts`. With `output: 'export'`, the Next.js
+ * `/opengraph-image` metadata route does NOT produce a plain PNG file that a
+ * CDN can serve — only `og-image.png` (pre-generated at build time) is valid.
  */
 function isLandingOgImageUrl(url: string | undefined): boolean {
   if (!url) return false;
-  return /\/(og-image\.png|opengraph-image)(\?|$)/.test(url);
+  return /\/og-image\.png(\?|$)/.test(url);
 }
 
 describe('landing built HTML OG meta', () => {
