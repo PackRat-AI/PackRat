@@ -15,6 +15,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { isString } from '@packrat/guards';
 import { ImageResponse } from 'next/og';
 import { createElement } from 'react';
 import { getLandingOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
@@ -25,7 +26,7 @@ import { getLandingOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
 // so loadGoogleFont gives up cleanly and ImageResponse falls back to bundled.
 const originalFetch = globalThis.fetch;
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const url = isString(input) ? input : input instanceof URL ? input.href : input.url;
   if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
     return new Response(null, { status: 404 });
   }
