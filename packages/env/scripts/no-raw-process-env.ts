@@ -49,6 +49,9 @@ const ALLOWED: string[] = [
   'packages/api/scripts/validate-cloudflare-api-env.ts',
   // One-off sync script, not app code
   'apps/guides/scripts/sync-to-r2.ts',
+  // Test-only gate flag: reads RUN_OG_PIPELINE_TEST to opt into the heavy
+  // OG-image pipeline test from `bun run --cwd apps/guides test:og`.
+  'apps/guides/__tests__/og-images.test.ts',
   // Test files that mutate process.env to exercise env-validation logic
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
