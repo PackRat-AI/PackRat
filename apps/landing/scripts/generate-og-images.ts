@@ -24,11 +24,16 @@ import { getLandingOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
 // bundled Latin coverage. CF Pages' build network occasionally returns 4xx for
 // fonts.googleapis.com, killing the build. Intercept and return an empty 404
 // so loadGoogleFont gives up cleanly and ImageResponse falls back to bundled.
+const FONT_HOSTS = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
 const originalFetch = globalThis.fetch;
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url = isString(input) ? input : input instanceof URL ? input.href : input.url;
-  if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
-    return new Response(null, { status: 404 });
+  const href = isString(input) ? input : input instanceof URL ? input.href : input.url;
+  try {
+    if (FONT_HOSTS.has(new URL(href).hostname)) {
+      return new Response(null, { status: 404 });
+    }
+  } catch {
+    // Not a parseable absolute URL — fall through to the real fetch.
   }
   return originalFetch(input, init);
 }) as typeof fetch;
