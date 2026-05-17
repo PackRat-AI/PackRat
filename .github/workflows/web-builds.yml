@@ -1,0 +1,200 @@
+name: Web Builds
+
+# Build the static Next.js exports for the guides and landing apps on every
+# PR. This gives us inspectable build signal (post counts, OG image counts,
+# `out/` artifact) independent of the Cloudflare Pages dashboard, so a stale
+# `lib/content.ts` or a missing OG image surfaces directly in PR checks.
+#
+# Each job:
+#   1. Installs deps with the private @packrat-ai/nativewindui token.
+#   2. Runs `bun run --cwd apps/<name> build`.
+#   3. Surfaces post count + OG image count + `out/` size as a GitHub Step
+#      Summary so reviewers see it without clicking through to logs.
+#   4. Uploads `out/` as a downloadable artifact (7-day retention).
+
+on:
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'apps/guides/**'
+      - 'apps/landing/**'
+      - 'packages/web-ui/**'
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/web-builds.yml'
+  push:
+    branches: ['main', 'development']
+    paths:
+      - 'apps/guides/**'
+      - 'apps/landing/**'
+      - 'packages/web-ui/**'
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/web-builds.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  guides:
+    name: Web Builds (guides)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Build guides app
+        id: build
+        run: |
+          set -o pipefail
+          bun run --cwd apps/guides build 2>&1 | tee /tmp/guides-build.log
+
+      - name: Summarize build output
+        if: always()
+        run: |
+          set -euo pipefail
+          GUIDES_DIR="apps/guides"
+          OUT_DIR="${GUIDES_DIR}/out"
+          OG_DIR="${GUIDES_DIR}/public/og"
+          CONTENT_FILE="${GUIDES_DIR}/lib/content.ts"
+          POSTS_DIR="${GUIDES_DIR}/content/posts"
+
+          mdx_count=$(find "$POSTS_DIR" -maxdepth 1 -name '*.mdx' 2>/dev/null | wc -l | tr -d ' ')
+          content_count=0
+          if [ -f "$CONTENT_FILE" ]; then
+            # Tolerate both `slug:` and `"slug":` shapes — build-content has emitted both.
+            content_count=$(grep -cE '^[[:space:]]+"?slug"?[[:space:]]*:' "$CONTENT_FILE" || true)
+          fi
+          og_count=0
+          if [ -d "$OG_DIR" ]; then
+            og_count=$(find "$OG_DIR" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+          fi
+          out_size="(missing)"
+          out_html=0
+          if [ -d "$OUT_DIR" ]; then
+            out_size=$(du -sh "$OUT_DIR" 2>/dev/null | cut -f1)
+            out_html=$(find "$OUT_DIR" -maxdepth 3 -name '*.html' 2>/dev/null | wc -l | tr -d ' ')
+          fi
+          root_og="missing"
+          if [ -f "${GUIDES_DIR}/public/og-image.png" ]; then
+            root_og="ok ($(stat -c%s "${GUIDES_DIR}/public/og-image.png" 2>/dev/null || stat -f%z "${GUIDES_DIR}/public/og-image.png") bytes)"
+          fi
+
+          {
+            echo "## Guides build summary"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|---|---|"
+            echo "| MDX source files (\`content/posts/*.mdx\`) | $mdx_count |"
+            echo "| Posts in \`lib/content.ts\` | $content_count |"
+            echo "| Per-post OG PNGs (\`public/og/*.png\`) | $og_count |"
+            echo "| Root \`public/og-image.png\` | $root_og |"
+            echo "| Static HTML pages in \`out/\` | $out_html |"
+            echo "| \`out/\` directory size | $out_size |"
+            echo ""
+            if [ "$mdx_count" -gt 0 ] && [ "$content_count" -lt "$mdx_count" ]; then
+              echo "> WARNING: \`lib/content.ts\` reports fewer posts than there are MDX files on disk."
+              echo "> This indicates \`build-content\` did not run (or ran before MDX changes were committed)."
+              echo "> See PR #2436."
+            fi
+            if [ "$mdx_count" -gt 0 ] && [ "$og_count" -lt "$mdx_count" ]; then
+              echo "> WARNING: fewer OG images than MDX files — \`generate-og-images\` may have read a stale \`lib/content.ts\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload guides static export
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: guides-out
+          path: apps/guides/out
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload guides build log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: guides-build-log
+          path: /tmp/guides-build.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+  landing:
+    name: Web Builds (landing)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Build landing app
+        id: build
+        run: |
+          set -o pipefail
+          bun run --cwd apps/landing build 2>&1 | tee /tmp/landing-build.log
+
+      - name: Summarize build output
+        if: always()
+        run: |
+          set -euo pipefail
+          OUT_DIR="apps/landing/out"
+          out_size="(missing)"
+          out_html=0
+          if [ -d "$OUT_DIR" ]; then
+            out_size=$(du -sh "$OUT_DIR" 2>/dev/null | cut -f1)
+            out_html=$(find "$OUT_DIR" -maxdepth 3 -name '*.html' 2>/dev/null | wc -l | tr -d ' ')
+          fi
+          root_og="missing"
+          if [ -f "apps/landing/public/og-image.png" ]; then
+            root_og="ok ($(stat -c%s apps/landing/public/og-image.png 2>/dev/null || stat -f%z apps/landing/public/og-image.png) bytes)"
+          fi
+          {
+            echo "## Landing build summary"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|---|---|"
+            echo "| Static HTML pages in \`out/\` | $out_html |"
+            echo "| \`out/\` directory size | $out_size |"
+            echo "| Root \`public/og-image.png\` | $root_og |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload landing static export
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: landing-out
+          path: apps/landing/out
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload landing build log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: landing-build-log
+          path: /tmp/landing-build.log
+          retention-days: 7
+          if-no-files-found: ignore
