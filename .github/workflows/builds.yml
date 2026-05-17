@@ -65,6 +65,51 @@ jobs:
           set -o pipefail
           bun run --cwd apps/guides build 2>&1 | tee /tmp/guides-build.log
 
+      - name: Validate OG meta in built HTML
+        # Parse out/index.html + every out/guide/<slug>.html and assert the
+        # OG / Twitter meta tags expected by social previewers (LinkedIn,
+        # FB, microlink). A regression here — missing meta tag, relative
+        # og:image, wrong twitter:card — fails the workflow before the
+        # artifact is uploaded so reviewers see the failure on the PR check.
+        run: bun run --cwd apps/guides test:og-meta
+
+      - name: Lighthouse CI
+        # Runs `lhci autorun` against the already-built `out/` directory
+        # (staticDistDir in .lighthouserc.js). Error pages (404/500) are
+        # excluded via assertMatrix. Real failures fail the workflow so
+        # regressions are caught at PR time.
+        id: lhci
+        run: bun run --cwd apps/guides lighthouse:ci 2>&1 | tee /tmp/guides-lhci.log
+
+      - name: Summarize Lighthouse scores
+        if: always()
+        run: |
+          set -euo pipefail
+          LOG=/tmp/guides-lhci.log
+          {
+            echo ""
+            echo "## Guides Lighthouse CI"
+            echo ""
+            if [ -f "$LOG" ]; then
+              if grep -q "All results processed!" "$LOG" 2>/dev/null; then
+                echo '<details><summary>LHCI output (tail)</summary>'
+                echo ''
+                echo '```'
+                tail -n 80 "$LOG"
+                echo '```'
+                echo '</details>'
+              else
+                echo '> LHCI did not finish cleanly — see job log.'
+                echo ''
+                echo '```'
+                tail -n 60 "$LOG" 2>/dev/null || echo '(no log)'
+                echo '```'
+              fi
+            else
+              echo '> No LHCI log captured.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Summarize build output
         if: always()
         run: |
@@ -118,6 +163,15 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload Lighthouse reports (guides)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: guides-lighthouse
+          path: apps/guides/.lighthouseci
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Upload guides static export
         if: always()
         uses: actions/upload-artifact@v7
@@ -158,6 +212,51 @@ jobs:
           set -o pipefail
           bun run --cwd apps/landing build 2>&1 | tee /tmp/landing-build.log
 
+      - name: Validate OG meta in built HTML
+        # Parse every out/*.html + out/<slug>/index.html and assert the
+        # OG / Twitter meta tags every social previewer (LinkedIn, FB,
+        # microlink, Slack) expects. Catches relative og:image URLs,
+        # missing twitter:card, and similar regressions before the
+        # artifact is uploaded.
+        run: bun run --cwd apps/landing test:og-meta
+
+      - name: Lighthouse CI
+        # Runs `lhci autorun` against the already-built `out/` directory.
+        # Budgets in .lighthouserc.js: perf >=0.8, a11y/best-practices/seo
+        # >=0.9, LCP <2500ms, CLS <0.1. Error pages (404/500) are excluded
+        # via assertMatrix. Real failures fail the workflow.
+        id: lhci
+        run: bun run --cwd apps/landing lighthouse:ci 2>&1 | tee /tmp/landing-lhci.log
+
+      - name: Summarize Lighthouse scores
+        if: always()
+        run: |
+          set -euo pipefail
+          LOG=/tmp/landing-lhci.log
+          {
+            echo ""
+            echo "## Landing Lighthouse CI"
+            echo ""
+            if [ -f "$LOG" ]; then
+              if grep -q "All results processed!" "$LOG" 2>/dev/null; then
+                echo '<details><summary>LHCI output (tail)</summary>'
+                echo ''
+                echo '```'
+                tail -n 80 "$LOG"
+                echo '```'
+                echo '</details>'
+              else
+                echo '> LHCI did not finish cleanly — see job log.'
+                echo ''
+                echo '```'
+                tail -n 60 "$LOG" 2>/dev/null || echo '(no log)'
+                echo '```'
+              fi
+            else
+              echo '> No LHCI log captured.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Summarize build output
         if: always()
         run: |
@@ -182,6 +281,15 @@ jobs:
             echo "| \`out/\` directory size | $out_size |"
             echo "| Root \`public/og-image.png\` | $root_og |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Lighthouse reports (landing)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: landing-lighthouse
+          path: apps/landing/.lighthouseci
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload landing static export
         if: always()

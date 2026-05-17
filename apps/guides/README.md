@@ -55,5 +55,73 @@ Guards against re-inverting the order:
 | `bun run build` | Full static build (`out/`) |
 | `bun run test` | Lightweight vitest suite |
 | `bun run test:og` | End-to-end OG image pipeline test (slow) |
+| `bun run test:og-meta` | Parse built `out/**/index.html` and assert OG / Twitter meta tags |
 | `bun run lighthouse` | Build + run LHCI assertions |
 | `bun run sync-to-r2` | Sync content to `packrat-guides` R2 bucket |
+
+## Open Graph metadata validation
+
+All PackRat web apps (`apps/guides`, `apps/landing`) share the same OG
+validation pattern, with per-app shapes:
+
+- **Guides** has per-post images (`/og/<slug>.png`) and `og:type=article`.
+- **Landing** has a single site-wide image (`/og-image.png`) and
+  `og:type=website`.
+
+See [`apps/landing/README.md`](../landing/README.md) for the landing variant.
+
+We do three layers of OG validation:
+
+1. **Image generation** — `test:og` verifies one PNG per post in `public/og/`.
+   This catches the build-order bug (#2436) where OG images get generated
+   from a stale `lib/content.ts`.
+2. **Static meta in built HTML** — `test:og-meta` runs `bun run build`
+   (if `out/` is missing) and then parses every `out/guide/<slug>.html`
+   plus the root `out/index.html` with cheerio. It asserts the required
+   tags (`og:title`, `og:description`, `og:image`, `og:image:width`,
+   `og:image:height`, `og:type`, `og:url`, `og:site_name`, `twitter:card`,
+   `twitter:title`, `twitter:description`, `twitter:image`) are present
+   on a 3-post random sample and that **every** post has an absolute
+   `https://` `og:image` URL pointing at `/og/<slug>.png`. The root page
+   gets the same shape with the site-wide image (`/og-image.png` or the
+   Next.js auto-generated `/opengraph-image` route — whichever wins).
+   This step runs in the `Builds` workflow on every PR.
+3. **Live OG meta on a deployed URL** — opt-in via
+   `OG_LIVE_CHECK_URL=https://guides.packratai.com bun run test:og-meta`.
+   Hits the live origin via [`open-graph-scraper`][ogs] (the same parser
+   most platforms use under the hood) and asserts the same shape. Useful
+   after a deploy when you want to confirm CF transforms / caches didn't
+   eat any meta tags. Skipped by default.
+
+### Manual validators
+
+For one-off checks after a deploy, paste the URL into one of these:
+
+- [opengraph.xyz](https://www.opengraph.xyz/) — quick visual preview
+- [microlink.io](https://microlink.io/) — JSON view of every OG / Twitter tag
+- [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) — also flushes FB's cache for the URL
+- [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) — also flushes LI's cache
+
+## Lighthouse CI
+
+`.lighthouserc.js` (desktop) and `.lighthouserc.mobile.js` (mobile) drive
+LHCI against the static `out/` directory. Budgets:
+
+- Performance ≥ 0.8
+- Accessibility / Best Practices / SEO ≥ 0.9
+- LCP < 2500 ms (desktop) / 4000 ms (mobile)
+- CLS < 0.1
+- TBT < 300 ms (desktop) / 600 ms (mobile)
+
+The `Builds` GitHub Actions workflow runs `lighthouse:ci` after the OG
+meta test on every PR and surfaces the scores in the GitHub Step Summary.
+The step is marked `continue-on-error: true` so perf regressions appear
+as a yellow check on the PR rather than a hard block — keeps the cadence
+fast while still surfacing the numbers to reviewers.
+
+```
+bun run --cwd apps/guides lighthouse        # full: build + LHCI
+bun run --cwd apps/guides lighthouse:ci     # CI mode: requires out/ to exist
+```
+
+[ogs]: https://github.com/jshemas/openGraphScraper
