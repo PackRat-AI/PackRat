@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // autoSignIn: true succeeded — token is the Bearer session token
         const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
         if (!parsedUser) throw new Error('Registration failed: unexpected user shape');
-        setTokens(data.token, '');
+        setTokens({ accessToken: data.token, refreshToken: '' });
         setUser(parsedUser);
         setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
         setAuthGateOpen(false);
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const parsedUser = parseAuthUser(sessionRes.data.user as Parameters<typeof parseAuthUser>[0]);
       if (!parsedUser) throw new Error('Verification failed: unexpected user shape');
-      setTokens(sessionRes.data.session.token, '');
+      setTokens({ accessToken: sessionRes.data.session.token, refreshToken: '' });
       setUser(parsedUser);
       setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
       setAuthGateOpen(false);
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error || !data) throw new Error(error?.message ?? 'Login failed');
     const parsedUser = parseAuthUser(data.user as Parameters<typeof parseAuthUser>[0]);
     if (!parsedUser) throw new Error('Login failed: unexpected user shape');
-    setTokens(data.token, '');
+    setTokens({ accessToken: data.token, refreshToken: '' });
     setUser(parsedUser);
     setState({ isAuthed: true, user: parsedUser, pendingEmail: null });
     setAuthGateOpen(false);

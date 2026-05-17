@@ -10,7 +10,7 @@ export function usePackWeightAnalysis(packId: string) {
     .reduce((sum, item) => {
       const unit = item.weightUnit || 'g';
       const weight = item.weight || 0;
-      return sum + convertToGrams(weight * item.quantity, unit);
+      return sum + convertToGrams({ weight: weight * item.quantity, unit: unit });
     }, 0);
 
   const wornWeightInGrams = pack.items
@@ -18,7 +18,7 @@ export function usePackWeightAnalysis(packId: string) {
     .reduce((sum, item) => {
       const unit = item.weightUnit || 'g';
       const weight = item.weight || 0;
-      return sum + convertToGrams(weight * item.quantity, unit);
+      return sum + convertToGrams({ weight: weight * item.quantity, unit: unit });
     }, 0);
 
   const categorySummaries = computeCategorySummaries(pack);
@@ -26,11 +26,14 @@ export function usePackWeightAnalysis(packId: string) {
   return {
     data: {
       baseWeight: pack.baseWeight,
-      consumableWeight: convertFromGrams(
-        consumableWeightInGrams,
-        userStore.preferredWeightUnit.peek() ?? 'g',
-      ),
-      wornWeight: convertFromGrams(wornWeightInGrams, userStore.preferredWeightUnit.peek() ?? 'g'),
+      consumableWeight: convertFromGrams({
+        grams: consumableWeightInGrams,
+        unit: userStore.preferredWeightUnit.peek() ?? 'g',
+      }),
+      wornWeight: convertFromGrams({
+        grams: wornWeightInGrams,
+        unit: userStore.preferredWeightUnit.peek() ?? 'g',
+      }),
       totalWeight: pack.totalWeight,
       categories: categorySummaries,
     },

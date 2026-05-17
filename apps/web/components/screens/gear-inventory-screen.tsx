@@ -58,7 +58,8 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
   const totalWeight = useMemo(
     () =>
       filtered.reduce(
-        (sum, item) => sum + toGrams(item.weight, item.weightUnit) * item.quantity,
+        (sum, item) =>
+          sum + toGrams({ weight: item.weight, unit: item.weightUnit }) * item.quantity,
         0,
       ),
     [filtered],
@@ -111,7 +112,7 @@ export function GearInventoryScreen({ onBack: _onBack }: { onBack?: () => void }
           </div>
         ) : (
           filtered.map((item) => {
-            const itemWeightG = toGrams(item.weight, item.weightUnit);
+            const itemWeightG = toGrams({ weight: item.weight, unit: item.weightUnit });
             return (
               <div
                 key={item.id}

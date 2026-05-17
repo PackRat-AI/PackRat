@@ -35,7 +35,10 @@ export const CachedImage: React.FC<CachedImageProps> = ({
         if (localUri) {
           setImageLocalUri(localUri);
         } else {
-          const localUri = await ImageCacheManager.cacheRemoteImage(imageObjectKey, imageRemoteUrl);
+          const localUri = await ImageCacheManager.cacheRemoteImage({
+            fileName: imageObjectKey,
+            remoteUrl: imageRemoteUrl,
+          });
           setImageLocalUri(localUri);
         }
       } catch (error) {

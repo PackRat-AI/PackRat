@@ -17,8 +17,8 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin['packs-list'].get({
+    const data = await runApi({
+      promise: client.admin['packs-list'].get({
         query: {
           q: args.q,
           limit: Number.parseInt(args.limit, 10),
@@ -26,22 +26,23 @@ const listCmd = defineCommand({
           includeDeleted: args['include-deleted'],
         },
       }),
-      { action: 'admin list packs', requiresAdmin: true },
-    );
+      action: 'admin list packs',
+      requiresAdmin: true,
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
     // Endpoint returns { data: [...], total, limit, offset }
-    printTable(
-      toRecordArray(toRecord(data).data).map((p) => ({
+    printTable({
+      rows: toRecordArray(toRecord(data).data).map((p) => ({
         id: p.id,
         name: p.name,
         userId: p.userId,
         deleted: p.deleted,
       })),
-      { title: 'Packs (admin)' },
-    );
+      options: { title: 'Packs (admin)' },
+    });
   },
 });
 
@@ -58,7 +59,8 @@ const deleteCmd = defineCommand({
       if (!confirm) return consola.info('Aborted.');
     }
     const client = await getAdminClient();
-    await runApi(client.admin.packs({ id: args.id }).delete(), {
+    await runApi({
+      promise: client.admin.packs({ id: args.id }).delete(),
       action: 'admin delete pack',
       resourceHint: `pack ${args.id}`,
       requiresAdmin: true,

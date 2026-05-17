@@ -1,7 +1,13 @@
 import type { FC } from 'react';
 import { isAuthed } from '../store';
 
-export function withAuthWall<P extends object>(Component: FC<P>, AuthWall: FC): FC<P> {
+export function withAuthWall<P extends object>({
+  Component,
+  AuthWall,
+}: {
+  Component: FC<P>;
+  AuthWall: FC;
+}): FC<P> {
   return function WrappedComponent(props: P) {
     const isAuthenticated = isAuthed.peek();
 

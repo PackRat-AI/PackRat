@@ -13,7 +13,8 @@ const forecastCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const forecast = await runApi(client.weather['by-name'].get({ query: { q: args.location } }), {
+    const forecast = await runApi({
+      promise: client.weather['by-name'].get({ query: { q: args.location } }),
       action: 'get weather forecast',
       resourceHint: args.location,
     });
@@ -27,7 +28,8 @@ const searchCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.weather.search.get({ query: { q: args.q } }), {
+    const data = await runApi({
+      promise: client.weather.search.get({ query: { q: args.q } }),
       action: 'search weather',
     });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);

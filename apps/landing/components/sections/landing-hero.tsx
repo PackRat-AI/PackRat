@@ -1,9 +1,45 @@
+'use client';
+
+import { motion } from 'framer-motion';
 import DeviceMockup from 'landing-app/components/ui/device-mockup';
 import { siteConfig } from 'landing-app/config/site';
 import { ArrowRight, Download, Star } from 'lucide-react';
 import Link from 'next/link';
+import type React from 'react';
 
 export default function LandingHero() {
+  const scrollToSection = ({
+    e,
+    href,
+  }: {
+    e: React.MouseEvent<HTMLAnchorElement>;
+    href: string;
+  }) => {
+    e.preventDefault();
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: 'spring' as const, stiffness: 100, damping: 10 },
+    },
+  };
+
   return (
     <section className="relative py-24 overflow-hidden">
       {/* Subtle gradient background – Apple style */}
@@ -12,35 +48,47 @@ export default function LandingHero() {
       <div className="container">
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
           {/* Text column */}
-          <div className="space-y-6 max-w-2xl mx-auto lg:mx-0 text-center lg:text-left">
+          <motion.div
+            className="space-y-6 max-w-2xl mx-auto lg:mx-0 text-center lg:text-left"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {/* Badge */}
-            <div className="animate-fade-up" style={{ animationDelay: '0.2s' }}>
+            <motion.div variants={itemVariants}>
               <div className="apple-badge mx-auto lg:mx-0 w-fit">
                 <span className="mr-1.5 h-2 w-2 rounded-full bg-apple-blue animate-pulse inline-block" />
                 {siteConfig.hero.badge}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Heading — rendered immediately for LCP */}
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+            {/* Heading */}
+            <motion.h1
+              className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl"
+              variants={itemVariants}
+            >
               <span className="block text-foreground">{siteConfig.hero.titleLine1}</span>
               <span className="block mt-1 bg-clip-text text-transparent bg-gradient-to-r from-apple-blue to-blue-400">
                 {siteConfig.hero.titleLine2}
               </span>
-            </h1>
+            </motion.h1>
 
-            {/* Subtitle — rendered immediately for LCP */}
-            <p className="text-xl text-muted-foreground font-medium max-w-xl mx-auto lg:mx-0">
+            {/* Subtitle */}
+            <motion.p
+              className="text-xl text-muted-foreground font-medium max-w-xl mx-auto lg:mx-0"
+              variants={itemVariants}
+            >
               {siteConfig.hero.subtitle}
-            </p>
+            </motion.p>
 
             {/* CTA buttons */}
-            <div
-              className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 animate-fade-up"
-              style={{ animationDelay: '0.3s' }}
+            <motion.div
+              className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3"
+              variants={itemVariants}
             >
               <Link
                 href={siteConfig.cta.primary.href}
+                onClick={(e) => scrollToSection({ e, href: siteConfig.cta.primary.href })}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue text-white px-8 h-12 text-sm font-medium hover:bg-apple-blue/90 transition-colors"
               >
                 <Download className="h-4 w-4" />
@@ -50,27 +98,28 @@ export default function LandingHero() {
 
               <Link
                 href={siteConfig.cta.secondary.href}
+                onClick={(e) => scrollToSection({ e, href: siteConfig.cta.secondary.href })}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-8 h-12 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               >
                 {siteConfig.cta.secondary.text}
               </Link>
-            </div>
+            </motion.div>
 
             {/* Social proof */}
             {siteConfig.hero.socialProof && (
-              <p
-                className="text-xs text-muted-foreground flex items-center justify-center lg:justify-start gap-1 animate-fade-up"
-                style={{ animationDelay: '0.4s' }}
+              <motion.p
+                className="text-xs text-muted-foreground flex items-center justify-center lg:justify-start gap-1"
+                variants={itemVariants}
               >
                 <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
                 {siteConfig.hero.socialProof}
-              </p>
+              </motion.p>
             )}
 
             {/* Stats */}
-            <div
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4 animate-fade-up"
-              style={{ animationDelay: '0.5s' }}
+            <motion.div
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4"
+              variants={itemVariants}
             >
               <div className="flex -space-x-2">
                 {siteConfig.testimonials.items.slice(0, 4).map((user) => (
@@ -91,13 +140,15 @@ export default function LandingHero() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Device mockup column */}
-          <div
-            className="relative mx-auto lg:mx-0 animate-scale-in"
-            style={{ animationDelay: '0.2s' }}
+          <motion.div
+            className="relative mx-auto lg:mx-0"
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <DeviceMockup
               image="/images/app/dashboard.png"
@@ -108,9 +159,11 @@ export default function LandingHero() {
             />
 
             {/* Floating cards – Apple style: clean card with subtle shadow */}
-            <div
-              className="absolute top-[10%] -left-16 hidden lg:block animate-slide-in-left"
-              style={{ animationDelay: '0.6s' }}
+            <motion.div
+              className="absolute top-[10%] -left-16 hidden lg:block"
+              initial={{ x: -20 }}
+              animate={{ x: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
             >
               <div className="apple-card p-3">
                 <div className="flex items-center gap-2">
@@ -127,11 +180,13 @@ export default function LandingHero() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div
-              className="absolute bottom-[15%] -right-10 hidden lg:block animate-slide-in-right"
-              style={{ animationDelay: '0.8s' }}
+            <motion.div
+              className="absolute bottom-[15%] -right-10 hidden lg:block"
+              initial={{ x: 20 }}
+              animate={{ x: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
             >
               <div className="apple-card p-3">
                 <div className="flex items-center gap-2">
@@ -144,8 +199,8 @@ export default function LandingHero() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

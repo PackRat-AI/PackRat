@@ -17,7 +17,7 @@ export default function App() {
   return (
     <WeightProvider>
       <AppShell>
-        {(screen, navigate) => {
+        {({ screen, navigate }) => {
           switch (screen) {
             case 'home':
               return <HomeScreen navigate={navigate} />;

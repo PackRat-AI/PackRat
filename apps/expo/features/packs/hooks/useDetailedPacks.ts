@@ -11,7 +11,7 @@ export function useDetailedPacks(): Pack[] {
     for (const pack of packsArray) {
       if (pack.deleted) continue;
       const items = getPackItems(pack.id);
-      const packWithWeights = computePackWeights({ ...pack, items });
+      const packWithWeights = computePackWeights({ pack: { ...pack, items } });
       filteredPacks.push(packWithWeights);
     }
 

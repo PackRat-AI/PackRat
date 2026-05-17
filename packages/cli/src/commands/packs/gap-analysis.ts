@@ -32,16 +32,17 @@ export default defineCommand({
       process.exit(1);
     }
     const client = await getUserClient();
-    const result = await runApi(
-      client.packs({ packId: args.id })['gap-analysis'].post({
+    const result = await runApi({
+      promise: client.packs({ packId: args.id })['gap-analysis'].post({
         destination: args.destination,
         tripType: args['trip-type'],
         duration,
         startDate: args.start,
         endDate: args.end,
       }),
-      { action: 'analyze pack gaps', resourceHint: `pack ${args.id}` },
-    );
+      action: 'analyze pack gaps',
+      resourceHint: `pack ${args.id}`,
+    });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   },
 });

@@ -15,7 +15,7 @@ import type {
 
 // ── Weight helpers ───────────────────────────────────────────────────────────
 
-export function toGrams(weight: number, unit: WeightUnit): number {
+export function toGrams({ weight, unit }: { weight: number; unit: WeightUnit }): number {
   switch (unit) {
     case 'oz':
       return Math.round(weight * 28.3495);
@@ -28,7 +28,7 @@ export function toGrams(weight: number, unit: WeightUnit): number {
   }
 }
 
-export function fromGrams(grams: number, unit: WeightUnit): number {
+export function fromGrams({ grams, unit }: { grams: number; unit: WeightUnit }): number {
   switch (unit) {
     case 'oz':
       return Math.round((grams / 28.3495) * 10) / 10;
@@ -41,8 +41,8 @@ export function fromGrams(grams: number, unit: WeightUnit): number {
   }
 }
 
-export function formatWeight(grams: number, unit: WeightUnit): string {
-  const value = fromGrams(grams, unit);
+export function formatWeight({ grams, unit }: { grams: number; unit: WeightUnit }): string {
+  const value = fromGrams({ grams, unit });
   return `${value}${unit}`;
 }
 
@@ -369,7 +369,7 @@ function calcWeights(items: PackItem[]): { totalWeight: number; baseWeight: numb
   let total = 0;
   let base = 0;
   for (const item of items) {
-    const w = toGrams(item.weight, item.weightUnit) * item.quantity;
+    const w = toGrams({ weight: item.weight, unit: item.weightUnit }) * item.quantity;
     total += w;
     if (!item.consumable && !item.worn) {
       base += w;
@@ -1219,7 +1219,13 @@ export async function fetchCurrentUser(): Promise<User> {
 
 // ── Packs ────────────────────────────────────────────────────────────────────
 
-export async function fetchPacks(page = 1, limit = 10): Promise<PackListResponse> {
+export async function fetchPacks({
+  page = 1,
+  limit = 10,
+}: {
+  page?: number;
+  limit?: number;
+} = {}): Promise<PackListResponse> {
   await delay(300);
   const packs = mockPacks.filter((p) => !p.deleted);
   return {

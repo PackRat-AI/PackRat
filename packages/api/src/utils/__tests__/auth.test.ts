@@ -22,11 +22,13 @@ describe('auth utilities', () => {
     });
 
     it('verifies a matching password', async () => {
-      expect(await verifyPassword('password123', 'hashed_password123')).toBe(true);
+      expect(await verifyPassword({ password: 'password123', hash: 'hashed_password123' })).toBe(
+        true,
+      );
     });
 
     it('rejects a non-matching password', async () => {
-      expect(await verifyPassword('password123', 'hashed_wrong')).toBe(false);
+      expect(await verifyPassword({ password: 'password123', hash: 'hashed_wrong' })).toBe(false);
     });
   });
 

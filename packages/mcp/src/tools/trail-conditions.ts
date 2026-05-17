@@ -17,12 +17,12 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       },
     },
     async ({ trail_name, limit }) =>
-      call(
-        agent.api.user['trail-conditions'].get({
+      call({
+        promise: agent.api.user['trail-conditions'].get({
           query: { trailName: trail_name, limit },
         }),
-        { action: 'list trail conditions' },
-      ),
+        action: 'list trail conditions',
+      }),
   );
 
   // ── List user's own trail reports ─────────────────────────────────────────
@@ -39,12 +39,12 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       },
     },
     async ({ updated_since }) =>
-      call(
-        agent.api.user['trail-conditions'].mine.get({
+      call({
+        promise: agent.api.user['trail-conditions'].mine.get({
           query: updated_since ? { updatedAt: updated_since } : {},
         }),
-        { action: 'list my trail reports' },
-      ),
+        action: 'list my trail reports',
+      }),
   );
 
   // ── Submit trail condition ────────────────────────────────────────────────
@@ -80,8 +80,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       trip_id,
     }) => {
       const now = nowIso();
-      return call(
-        agent.api.user['trail-conditions'].post({
+      return call({
+        promise: agent.api.user['trail-conditions'].post({
           trailName: trail_name,
           trailRegion: trail_region ?? null,
           surface,
@@ -95,8 +95,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
-        { action: 'submit trail condition report' },
-      );
+        action: 'submit trail condition report',
+      });
     },
   );
 
@@ -143,7 +143,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       }
       if (notes !== undefined) body.notes = notes;
       if (photos !== undefined) body.photos = photos;
-      return call(agent.api.user['trail-conditions']({ reportId: report_id }).put(body), {
+      return call({
+        promise: agent.api.user['trail-conditions']({ reportId: report_id }).put(body),
         action: 'update trail report',
         resourceHint: `report ${report_id}`,
       });
@@ -159,7 +160,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       inputSchema: { report_id: z.string() },
     },
     async ({ report_id }) =>
-      call(agent.api.user['trail-conditions']({ reportId: report_id }).delete(), {
+      call({
+        promise: agent.api.user['trail-conditions']({ reportId: report_id }).delete(),
         action: 'delete trail report',
         resourceHint: `report ${report_id}`,
       }),

@@ -12,13 +12,20 @@ export interface TrailSummaryWithCoords {
   center: [number, number] | null;
 }
 
-export async function loadNearbyTrails(
-  lat: number,
-  lon: number,
-): Promise<TrailSummaryWithCoords[]> {
-  const ql = new TrailQueryBuilder().sport('hiking').around(lat, lon, 15_000).timeout(30).build();
+export async function loadNearbyTrails({
+  lat,
+  lon,
+}: {
+  lat: number;
+  lon: number;
+}): Promise<TrailSummaryWithCoords[]> {
+  const ql = new TrailQueryBuilder()
+    .sport('hiking')
+    .around({ lat, lon, radiusM: 15_000 })
+    .timeout(30)
+    .build();
 
-  const result = await queryOverpass(ql);
+  const result = await queryOverpass({ ql });
 
   return result.elements.map((el) => {
     const summary = toTrailSummary(el);

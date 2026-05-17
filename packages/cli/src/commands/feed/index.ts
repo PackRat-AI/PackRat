@@ -11,12 +11,12 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client.feed.get({
+    const data = await runApi({
+      promise: client.feed.get({
         query: { page: Number.parseInt(args.page, 10), limit: Number.parseInt(args.limit, 10) },
       }),
-      { action: 'list feed' },
-    );
+      action: 'list feed',
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -36,7 +36,8 @@ const postCmd = defineCommand({
           .map((s) => s.trim())
           .filter(Boolean)
       : [];
-    const data = await runApi(client.feed.post({ caption: args.caption, images }), {
+    const data = await runApi({
+      promise: client.feed.post({ caption: args.caption, images }),
       action: 'create feed post',
     });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
@@ -49,7 +50,8 @@ const likeCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.feed({ postId: args.id }).like.post({}), {
+    const data = await runApi({
+      promise: client.feed({ postId: args.id }).like.post({}),
       action: 'toggle post like',
       resourceHint: `post ${args.id}`,
     });
@@ -67,13 +69,14 @@ const commentCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client.feed({ postId: args.id }).comments.post({
+    const data = await runApi({
+      promise: client.feed({ postId: args.id }).comments.post({
         content: args.content,
         parentCommentId: args.parent ? Number.parseInt(args.parent, 10) : undefined,
       }),
-      { action: 'create feed comment', resourceHint: `post ${args.id}` },
-    );
+      action: 'create feed comment',
+      resourceHint: `post ${args.id}`,
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });

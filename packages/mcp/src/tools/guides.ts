@@ -17,8 +17,8 @@ export function registerGuidesTools(agent: AgentContext): void {
       },
     },
     async ({ page, limit, category, sort_field, sort_order }) =>
-      call(
-        agent.api.user.guides.get({
+      call({
+        promise: agent.api.user.guides.get({
           query: {
             page,
             limit,
@@ -27,8 +27,8 @@ export function registerGuidesTools(agent: AgentContext): void {
             'sort[order]': sort_order,
           },
         }),
-        { action: 'list guides' },
-      ),
+        action: 'list guides',
+      }),
   );
 
   agent.server.registerTool(
@@ -37,7 +37,8 @@ export function registerGuidesTools(agent: AgentContext): void {
       description: 'List all guide categories.',
       inputSchema: {},
     },
-    async () => call(agent.api.user.guides.categories.get(), { action: 'list guide categories' }),
+    async () =>
+      call({ promise: agent.api.user.guides.categories.get(), action: 'list guide categories' }),
   );
 
   agent.server.registerTool(
@@ -52,7 +53,8 @@ export function registerGuidesTools(agent: AgentContext): void {
       },
     },
     async ({ query, page, limit, category }) =>
-      call(agent.api.user.guides.search.get({ query: { q: query, page, limit, category } }), {
+      call({
+        promise: agent.api.user.guides.search.get({ query: { q: query, page, limit, category } }),
         action: 'search guides',
       }),
   );
@@ -64,7 +66,8 @@ export function registerGuidesTools(agent: AgentContext): void {
       inputSchema: { guide_id: z.string() },
     },
     async ({ guide_id }) =>
-      call(agent.api.user.guides({ id: guide_id }).get(), {
+      call({
+        promise: agent.api.user.guides({ id: guide_id }).get(),
         action: 'get guide',
         resourceHint: `guide ${guide_id}`,
       }),

@@ -300,7 +300,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
         const batchResult =
           searchQueries.length > 0
-            ? await catalogService.batchVectorSearch(searchQueries, 1)
+            ? await catalogService.batchVectorSearch({ queries: searchQueries, limit: 1 })
             : { items: [] as never[] };
 
         const now = new Date();
