@@ -1,9 +1,9 @@
 import { createDbClient } from '@packrat/api/db';
-import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
 import { parse } from 'csv-parse';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
 import { processLogsBatch } from './processLogsBatch';
@@ -152,49 +152,31 @@ export async function processCatalogETL({
 
       rowIndex++;
 
-      // Flush valid batch to DB every BATCH_SIZE rows to avoid Worker OOM on large files
+      // Flush valid batch to DB every BATCH_SIZE rows to avoid Worker OOM on large files.
+      // totalProcessed is incremented atomically inside processValidItemsBatch via updateEtlJobProgress.
       if (validItemsBatch.length >= BATCH_SIZE) {
         await processValidItemsBatch({ jobId, items: [...validItemsBatch], env });
-        await db
-          .update(etlJobs)
-          .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${BATCH_SIZE}` })
-          .where(eq(etlJobs.id, jobId));
         validItemsBatch.length = 0;
       }
-      // Flush invalid batch to DB every BATCH_SIZE rows
+      // Flush invalid batch to DB every BATCH_SIZE rows.
+      // totalProcessed is incremented atomically inside processLogsBatch via updateEtlJobProgress.
       if (invalidItemsBatch.length >= BATCH_SIZE) {
         await processLogsBatch({ jobId, logs: [...invalidItemsBatch], env });
-        await db
-          .update(etlJobs)
-          .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${BATCH_SIZE}` })
-          .where(eq(etlJobs.id, jobId));
         invalidItemsBatch.length = 0;
       }
     }
 
     console.log(`🔍 [TRACE] Streaming complete - processing remaining batches`);
 
-    // Flush remaining items BEFORE updating totalProcessed so that if a flush throws,
-    // totalProcessed isn't inflated while valid/invalid counts stay null.
-    const remainingValid = validItemsBatch.length;
-    const remainingInvalid = invalidItemsBatch.length;
-
-    if (remainingValid > 0) {
-      console.log(`🔍 [TRACE] Processing valid items batch - size: ${remainingValid}`);
+    // Flush remaining items. totalProcessed is updated atomically inside each batch function.
+    if (validItemsBatch.length > 0) {
+      console.log(`🔍 [TRACE] Processing valid items batch - size: ${validItemsBatch.length}`);
       await processValidItemsBatch({ jobId, items: validItemsBatch, env });
     }
 
-    if (remainingInvalid > 0) {
-      console.log(`🔍 [TRACE] Processing invalid items batch - size: ${remainingInvalid}`);
+    if (invalidItemsBatch.length > 0) {
+      console.log(`🔍 [TRACE] Processing invalid items batch - size: ${invalidItemsBatch.length}`);
       await processLogsBatch({ jobId, logs: invalidItemsBatch, env });
-    }
-
-    const remainingItems = remainingValid + remainingInvalid;
-    if (remainingItems > 0) {
-      await db
-        .update(etlJobs)
-        .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${remainingItems}` })
-        .where(eq(etlJobs.id, jobId));
     }
 
     const totalRows = rowIndex;

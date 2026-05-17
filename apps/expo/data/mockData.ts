@@ -1,12 +1,20 @@
-import type { User } from '@packrat/api/types/constants';
+export type MockUser = {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  experience: string;
+  joinedAt: string;
+  bio: string;
+};
 
 // --- Users ---
-export const mockUsers: [User, ...User[]] = [
+export const mockUsers: [MockUser, ...MockUser[]] = [
   {
     id: '1',
     name: 'Alex Hiker',
     email: 'alex@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=1',
+    avatarUrl: 'https://i.pravatar.cc/150?img=1',
     experience: 'expert',
     joinedAt: '2023-01-15T00:00:00.000Z',
     bio: 'Thru-hiker with 5,000+ miles under my feet. PCT, AT, and CDT completed.',
@@ -15,7 +23,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '2',
     name: 'Sam Backpacker',
     email: 'sam@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=2',
+    avatarUrl: 'https://i.pravatar.cc/150?img=2',
     experience: 'intermediate',
     joinedAt: '2023-03-22T00:00:00.000Z',
     bio: 'Weekend warrior trying to lighten my load.',
@@ -24,7 +32,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '3',
     name: 'Jamie Newbie',
     email: 'jamie@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=3',
+    avatarUrl: 'https://i.pravatar.cc/150?img=3',
     experience: 'beginner',
     joinedAt: '2023-06-10T00:00:00.000Z',
     bio: 'Just getting started with hiking and camping.',
@@ -33,7 +41,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '4',
     name: 'Taylor Trailblazer',
     email: 'taylor@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=4',
+    avatarUrl: 'https://i.pravatar.cc/150?img=4',
     experience: 'expert',
     joinedAt: '2022-11-05T00:00:00.000Z',
     bio: 'Explorer with a passion for the unbeaten path.',
@@ -42,7 +50,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '5',
     name: 'Chris Camper',
     email: 'chris@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=5',
+    avatarUrl: 'https://i.pravatar.cc/150?img=5',
     experience: 'intermediate',
     joinedAt: '2023-02-28T00:00:00.000Z',
     bio: 'Camping enthusiast and nature lover.',
@@ -51,7 +59,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '6',
     name: 'Morgan Mountaineer',
     email: 'morgan@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=6',
+    avatarUrl: 'https://i.pravatar.cc/150?img=6',
     experience: 'expert',
     joinedAt: '2023-01-20T00:00:00.000Z',
     bio: 'Scaling peaks and chasing horizons.',
@@ -60,7 +68,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '7',
     name: 'Jordan Explorer',
     email: 'jordan@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=7',
+    avatarUrl: 'https://i.pravatar.cc/150?img=7',
     experience: 'beginner',
     joinedAt: '2023-04-15T00:00:00.000Z',
     bio: 'New to outdoor adventures, learning every step.',
@@ -69,7 +77,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '8',
     name: 'Riley Ranger',
     email: 'riley@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=8',
+    avatarUrl: 'https://i.pravatar.cc/150?img=8',
     experience: 'intermediate',
     joinedAt: '2023-03-30T00:00:00.000Z',
     bio: 'Always ready for a spontaneous trip.',
@@ -78,7 +86,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '9',
     name: 'Casey Climber',
     email: 'casey@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=9',
+    avatarUrl: 'https://i.pravatar.cc/150?img=9',
     experience: 'expert',
     joinedAt: '2022-12-10T00:00:00.000Z',
     bio: 'Rock climbing is life.',
@@ -87,7 +95,7 @@ export const mockUsers: [User, ...User[]] = [
     id: '10',
     name: 'Peyton Paddler',
     email: 'peyton@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=10',
+    avatarUrl: 'https://i.pravatar.cc/150?img=10',
     experience: 'intermediate',
     joinedAt: '2023-05-01T00:00:00.000Z',
     bio: 'Loves exploring rivers and lakes.',

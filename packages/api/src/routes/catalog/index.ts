@@ -1,22 +1,24 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs, packItems } from '@packrat/api/db/schema';
 import { apiKeyAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import {
-  CatalogCategoriesResponseSchema,
-  CatalogItemSchema,
-  CatalogItemsQuerySchema,
-  CatalogItemsResponseSchema,
-  CreateCatalogItemRequestSchema,
-  UpdateCatalogItemRequestSchema,
-  VectorSearchQuerySchema,
-} from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, etlJobs, packItems } from '@packrat/db';
 import { isString } from '@packrat/guards';
+import {
+  CatalogCategoriesResponseSchema,
+  CatalogETLSchema,
+  CatalogItemSchema,
+  CatalogItemsQuerySchema,
+  CatalogItemsResponseSchema,
+  CreateCatalogItemRequestSchema,
+  UpdateCatalogItemRequestSchema,
+  VectorSearchQuerySchema,
+} from '@packrat/schemas/catalog';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -32,13 +34,6 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const catalogETLSchema = z.object({
-  filename: z.string().min(1, 'Filename is required'),
-  chunks: z.array(z.string()).min(1, 'At least one object key is required'),
-  source: z.string().min(1, 'Source name is required'),
-  scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
-});
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
@@ -106,11 +101,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: VectorSearchQuerySchema,
-      isValidApiKey: true,
+      isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
         summary: 'Vector search catalog items',
-        security: [{ apiKey: [] }],
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -217,7 +212,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       };
     },
     {
-      body: catalogETLSchema,
+      body: CatalogETLSchema,
       isValidApiKey: true,
       detail: {
         tags: ['Catalog'],
@@ -298,7 +293,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       body: CreateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema },
+      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -480,7 +475,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     {
       params: z.object({ id: z.string() }),
       body: UpdateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema },
+      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],

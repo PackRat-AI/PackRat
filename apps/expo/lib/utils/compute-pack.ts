@@ -1,8 +1,16 @@
-import type { Pack } from '@packrat/api/types/constants';
+import type { PackWithItems } from '@packrat/types';
 import type { WeightUnit } from '@packrat/units';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 
-export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = 'g'): Pack => {
+export type ComputedPack = PackWithItems & {
+  baseWeight: number;
+  totalWeight: number;
+};
+
+export const computePackWeights = (
+  pack: PackWithItems,
+  preferredUnit: WeightUnit = 'g',
+): ComputedPack => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }
@@ -26,5 +34,7 @@ export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = 'g'):
   };
 };
 
-export const computePacksWeights = (packs: Pack[], preferredUnit: WeightUnit = 'g'): Pack[] =>
-  packs.map((pack) => computePackWeights(pack, preferredUnit));
+export const computePacksWeights = (
+  packs: PackWithItems[],
+  preferredUnit: WeightUnit = 'g',
+): ComputedPack[] => packs.map((pack) => computePackWeights(pack, preferredUnit));

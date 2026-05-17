@@ -3,4 +3,4 @@ export {
   PackListResponseSchema,
   PackSchema,
   PackWithWeightsSchema,
-} from '@packrat/api/schemas/packs';
+} from '@packrat/schemas/packs';

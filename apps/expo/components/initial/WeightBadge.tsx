@@ -1,4 +1,4 @@
-import type { WeightUnit } from '@packrat/api/types/constants';
+import type { WeightUnit } from '@packrat/constants';
 import { isString } from '@packrat/guards';
 import { cn } from 'expo-app/lib/cn';
 import { formatWeight } from 'expo-app/utils/weight';

@@ -1,7 +1,7 @@
 // ── Auth / User ──────────────────────────────────────────────────────────────
 
 export type User = {
-  id: number;
+  id: string;
   email: string;
   firstName: string | null;
   lastName: string | null;
@@ -54,7 +54,7 @@ export type PackItem = {
   notes: string | null;
   packId: string;
   catalogItemId: number | null;
-  userId: number;
+  userId: string;
   deleted: boolean;
   isAIGenerated: boolean;
   createdAt: string; // ISO datetime
@@ -63,7 +63,7 @@ export type PackItem = {
 
 export type PackWithWeights = {
   id: string;
-  userId: number;
+  userId: string;
   name: string;
   description: string | null;
   category: PackCategory | null;
@@ -103,7 +103,7 @@ export type Trip = {
   location?: TripLocation | null;
   startDate?: string | null; // ISO date string
   endDate?: string | null;
-  userId?: number;
+  userId?: string;
   packId?: string | null; // linked pack (optional)
   deleted: boolean;
   createdAt?: string;

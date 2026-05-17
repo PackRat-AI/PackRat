@@ -1,11 +1,8 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import {
-  PresignedUploadQuerySchema,
-  PresignedUploadResponseSchema,
-} from '@packrat/api/schemas/upload';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { PresignedUploadQuerySchema, PresignedUploadResponseSchema } from '@packrat/schemas/upload';
 import { Elysia, status } from 'elysia';
 
 const ALLOWED_IMAGE_TYPES = [

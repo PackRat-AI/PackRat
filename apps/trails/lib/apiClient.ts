@@ -1,42 +1,8 @@
 'use client';
 
 import { createApiClient } from '@packrat/api-client';
-import {
-  clearTokens,
-  clearUser,
-  getAccessToken,
-  getRefreshToken,
-  setTokens,
-} from 'trails-app/lib/auth';
+import { trailsAuthClient as authClient } from 'trails-app/lib/auth-client';
 import { trailsEnv } from 'trails-app/lib/env';
-
-export const apiClient = createApiClient({
-  baseUrl: trailsEnv.NEXT_PUBLIC_API_URL,
-  auth: {
-    getAccessToken,
-    getRefreshToken,
-    onAccessTokenRefreshed: (token) => {
-      const refresh = getRefreshToken();
-      if (refresh) setTokens(token, refresh);
-      else {
-        clearTokens();
-        clearUser();
-      }
-    },
-    onRefreshTokenRefreshed: (token) => {
-      const access = getAccessToken();
-      if (access) setTokens(access, token);
-      else {
-        clearTokens();
-        clearUser();
-      }
-    },
-    onNeedsReauth: () => {
-      clearTokens();
-      clearUser();
-    },
-  },
-});
 
 export class AuthExpiredError extends Error {
   constructor() {
@@ -44,3 +10,17 @@ export class AuthExpiredError extends Error {
     this.name = 'AuthExpiredError';
   }
 }
+
+export const apiClient = createApiClient({
+  baseUrl: trailsEnv.NEXT_PUBLIC_API_URL,
+  auth: {
+    getAccessToken: async () => {
+      const { data } = await authClient.getSession();
+      return data?.session?.token ?? null;
+    },
+    // Better Auth manages session refresh internally via cookies
+    getRefreshToken: async () => null,
+    onAccessTokenRefreshed: () => {},
+    onNeedsReauth: () => {},
+  },
+});

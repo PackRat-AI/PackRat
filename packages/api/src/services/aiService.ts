@@ -1,6 +1,6 @@
 import { createPerplexity } from '@ai-sdk/perplexity';
-import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isFunction } from '@packrat/guards';
 import { generateText } from 'ai';

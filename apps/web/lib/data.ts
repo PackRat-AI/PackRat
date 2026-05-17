@@ -69,7 +69,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // ── Mock Current User ────────────────────────────────────────────────────────
 
 export const currentUser: User = {
-  id: 1,
+  id: '1',
   email: 'alex@packrat.app',
   firstName: 'Alex',
   lastName: 'Rivera',
@@ -94,7 +94,7 @@ function createPackItem(
     image: null,
     notes: null,
     catalogItemId: null,
-    userId: 1,
+    userId: '1',
     deleted: false,
     isAIGenerated: false,
     createdAt: now,
@@ -385,7 +385,7 @@ const alpineWeights = calcWeights(alpineItems);
 export const mockPacks: PackWithWeights[] = [
   {
     id: 'pack-1',
-    userId: 1,
+    userId: '1',
     name: '3-Season PCT Thru-Hike',
     description:
       'Optimized for the Pacific Crest Trail, spring through fall. Sub-10lb base weight.',
@@ -402,7 +402,7 @@ export const mockPacks: PackWithWeights[] = [
   },
   {
     id: 'pack-2',
-    userId: 1,
+    userId: '1',
     name: 'Weekend Backpacking',
     description: 'Comfortable 3-day base for Sierra trips. Prioritizes comfort over weight.',
     category: 'backpacking',
@@ -418,7 +418,7 @@ export const mockPacks: PackWithWeights[] = [
   },
   {
     id: 'pack-3',
-    userId: 1,
+    userId: '1',
     name: 'Alpine Summit Push',
     description: 'Fast and light mountaineering kit for technical approaches and summit pushes.',
     category: 'climbing',
@@ -439,7 +439,7 @@ export const mockPacks: PackWithWeights[] = [
 export const mockTemplates: PackWithWeights[] = [
   {
     id: 'tmpl-1',
-    userId: 0,
+    userId: '0',
     name: 'Desert Thru-Hike Starter',
     description:
       'Minimal kit optimized for hot, dry conditions. Focus on sun protection and water capacity.',
@@ -457,7 +457,7 @@ export const mockTemplates: PackWithWeights[] = [
   },
   {
     id: 'tmpl-2',
-    userId: 0,
+    userId: '0',
     name: 'Winter Mountaineering',
     description:
       'Cold weather alpine setup for sub-freezing conditions. Includes insulation layers.',
@@ -475,7 +475,7 @@ export const mockTemplates: PackWithWeights[] = [
   },
   {
     id: 'tmpl-3',
-    userId: 0,
+    userId: '0',
     name: 'Ultralight Day Hike',
     description: 'Minimal essentials for a fast day on the trail. 10 essentials coverage.',
     category: 'hiking',
@@ -508,7 +508,7 @@ export const mockTrips: Trip[] = [
     },
     startDate: '2024-08-10',
     endDate: '2024-08-17',
-    userId: 1,
+    userId: '1',
     packId: 'pack-1',
     deleted: false,
     createdAt: '2024-06-15T09:00:00Z',
@@ -526,7 +526,7 @@ export const mockTrips: Trip[] = [
     },
     startDate: '2024-09-22',
     endDate: '2024-09-25',
-    userId: 1,
+    userId: '1',
     packId: 'pack-3',
     deleted: false,
     createdAt: '2024-07-01T14:00:00Z',
@@ -544,7 +544,7 @@ export const mockTrips: Trip[] = [
     },
     startDate: '2024-10-05',
     endDate: '2024-10-08',
-    userId: 1,
+    userId: '1',
     packId: 'pack-2',
     deleted: false,
     createdAt: '2024-08-01T11:30:00Z',

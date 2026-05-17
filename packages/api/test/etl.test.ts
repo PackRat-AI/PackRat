@@ -1,8 +1,8 @@
 import { createDbClient } from '@packrat/api/db';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
 import { processCatalogETL } from '@packrat/api/services/etl/processCatalogEtl';
 import { processValidItemsBatch } from '@packrat/api/services/etl/processValidItemsBatch';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
 import { count, eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -162,6 +162,20 @@ describe('processCatalogETL', () => {
     const job = await getJob(jobId);
     expect(job?.status).toBe('completed');
     expect(job?.totalProcessed).toBe(250);
+  });
+
+  it('totalProcessed never exceeds totalValid + totalInvalid after completion', async () => {
+    const jobId = crypto.randomUUID();
+    await insertJob(jobId);
+    mockR2WithCsv(makeCsv(10));
+
+    await processCatalogETL({ message: makeMessage(jobId) as any, env: TEST_ENV });
+
+    const job = await getJob(jobId);
+    const processed = job?.totalProcessed ?? 0;
+    const valid = job?.totalValid ?? 0;
+    const invalid = job?.totalInvalid ?? 0;
+    expect(processed).toBe(valid + invalid);
   });
 
   it('marks job as completed even when items have no weight', async () => {

@@ -1,4 +1,4 @@
-import type { NewCatalogItem } from '@packrat/api/db/schema';
+import type { NewCatalogItem } from '@packrat/db';
 
 /**
  * Merges all occurrences of each SKU into a single item

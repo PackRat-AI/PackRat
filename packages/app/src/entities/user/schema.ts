@@ -1,1 +1,1 @@
-export { UserProfileSchema, UserSchema } from '@packrat/api/schemas/users';
+export { UserProfileSchema, UserSchema } from '@packrat/schemas/users';

@@ -1,10 +1,7 @@
 import { observable, syncState } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import {
-  PackTemplateSchema,
-  PackTemplateWithItemsSchema,
-} from '@packrat/api/schemas/packTemplates';
+import { PackTemplateSchema, PackTemplateWithItemsSchema } from '@packrat/schemas/packTemplates';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';

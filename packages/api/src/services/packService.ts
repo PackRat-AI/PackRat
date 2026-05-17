@@ -1,15 +1,9 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import {
-  type NewPack,
-  type NewPackItem,
-  type PackWithItems,
-  packItems,
-  packs,
-} from '@packrat/api/db/schema';
-import { PACK_CATEGORIES } from '@packrat/api/types/constants';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { PACK_CATEGORIES } from '@packrat/constants';
+import { type NewPack, type NewPackItem, type PackWithItems, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';

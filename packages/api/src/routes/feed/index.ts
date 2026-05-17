@@ -1,11 +1,11 @@
 import { createDb } from '@packrat/api/db';
-import { commentLikes, postComments, postLikes, posts, users } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { commentLikes, postComments, postLikes, posts, users } from '@packrat/db';
 import {
   CreateCommentRequestSchema,
   CreatePostRequestSchema,
   FeedResponseSchema,
-} from '@packrat/api/schemas/feed';
+} from '@packrat/schemas/feed';
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';

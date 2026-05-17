@@ -3,4 +3,4 @@ export {
   FeedResponseSchema,
   PostAuthorSchema,
   PostSchema,
-} from '@packrat/api/schemas/feed';
+} from '@packrat/schemas/feed';

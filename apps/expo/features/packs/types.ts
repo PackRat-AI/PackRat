@@ -1,4 +1,4 @@
-import type { PackCategory, WeightUnit } from '@packrat/api/types/constants';
+import type { PackCategory, WeightUnit } from '@packrat/constants';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
 

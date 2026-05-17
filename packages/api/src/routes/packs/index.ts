@@ -1,5 +1,13 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { ImageDetectionService, PackService } from '@packrat/api/services';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
+import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 import {
   catalogItems,
   type NewPack,
@@ -8,25 +16,18 @@ import {
   packItems,
   packs,
   packWeightHistory,
-} from '@packrat/api/db/schema';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import { AnalyzeImageRequestSchema } from '@packrat/api/schemas/imageDetection';
+} from '@packrat/db';
+import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
-  CreatePackItemRequestSchema,
-  CreatePackRequestSchema,
+  AddPackItemBodySchema,
+  CreatePackBodySchema,
   GapAnalysisRequestSchema,
   PackItemSchema,
   PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
-} from '@packrat/api/schemas/packs';
-import { ImageDetectionService, PackService } from '@packrat/api/services';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
-import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+} from '@packrat/schemas/packs';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -41,16 +42,6 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
-  localCreatedAt: z.string(),
-  localUpdatedAt: z.string(),
-});
-
-const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
-});
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -94,7 +85,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const data = body;
 
       const packId = data.id as string;
-      if (!packId) throw new Error('Pack ID is required');
+      if (!packId) return status(400, { error: 'Pack ID is required' });
 
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
@@ -114,14 +105,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         } as typeof packs.$inferInsert)
         .returning();
 
-      if (!newPack) throw new Error('Failed to create pack');
+      if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
       return PackWithWeightsSchema.parse(computePackWeights(packWithItems));
     },
     {
       body: CreatePackBodySchema,
-      response: { 200: PackWithWeightsSchema },
+      response: { 200: PackWithWeightsSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -671,7 +662,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const item = await db.query.packItems.findFirst({
         where: eq(packItems.id, params.itemId),
-        with: { catalogItem: true, pack: true },
+        with: { pack: true },
       });
 
       if (!item) throw new NotFoundError('Item not found');
@@ -704,7 +695,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
-      if (!OPENAI_API_KEY) throw new Error('OpenAI API key not configured');
+      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
@@ -773,7 +764,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
-      response: { 200: PackItemSchema },
+      response: { 200: PackItemSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

@@ -1,6 +1,6 @@
-import type { NewCatalogItem } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import type { Env } from '@packrat/api/utils/env-validation';
+import type { NewCatalogItem } from '@packrat/db';
 import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
 import { mergeItemsBySku } from './mergeItemsBySku';
@@ -42,10 +42,12 @@ export async function processValidItemsBatch({
     const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);
     // Track the ETL job that processed these items
     await catalogService.trackEtlJob(upsertedItems, jobId);
-    // Update the ETL job progress
+    // Update the ETL job progress — processed is incremented atomically with valid to prevent
+    // totalValid > totalProcessed if the Worker dies between two separate DB updates.
     await updateEtlJobProgress(env, {
       jobId,
       valid: items.length,
+      processed: items.length,
     });
   } catch (error) {
     console.error(`Error generating embeddings for batch ${jobId}:`, error);
@@ -55,6 +57,7 @@ export async function processValidItemsBatch({
     await updateEtlJobProgress(env, {
       jobId,
       valid: items.length,
+      processed: items.length,
     });
   } finally {
     console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);

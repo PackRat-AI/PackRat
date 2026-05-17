@@ -1,18 +1,19 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
-import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { CatalogService } from '@packrat/api/services/catalogService';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
+import { assertDefined } from '@packrat/guards';
 import {
+  AIPackAnalysisSchema,
   CreatePackTemplateItemRequestSchema,
   CreatePackTemplateRequestSchema,
   GenerateFromOnlineContentRequestSchema,
   UpdatePackTemplateItemRequestSchema,
   UpdatePackTemplateRequestSchema,
-} from '@packrat/api/schemas/packTemplates';
-import { CatalogService } from '@packrat/api/services/catalogService';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertDefined } from '@packrat/guards';
+} from '@packrat/schemas/packTemplates';
 import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -106,33 +107,6 @@ function getYouTubeId(url: string): string | null {
     return null;
   }
 }
-
-const analysisSchema = z.object({
-  templateName: z.string(),
-  templateCategory: z.enum([
-    'hiking',
-    'backpacking',
-    'camping',
-    'climbing',
-    'winter',
-    'desert',
-    'custom',
-    'water sports',
-    'skiing',
-  ]),
-  templateDescription: z.string(),
-  items: z.array(
-    z.object({
-      name: z.string(),
-      description: z.string(),
-      quantity: z.number().int().positive().default(1),
-      category: z.string(),
-      weightGrams: z.number().nonnegative().default(0),
-      consumable: z.boolean().default(false),
-      worn: z.boolean().default(false),
-    }),
-  ),
-});
 
 // ---------------------------------------------------------------------------
 // Routes
@@ -313,7 +287,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
         const { object: analysis } = await generateObject({
           model: google('gemini-3-flash-preview'),
-          schema: analysisSchema,
+          schema: AIPackAnalysisSchema,
           system: SYSTEM_PROMPT,
           prompt: [{ role: 'user', content: contentParts }],
           temperature: 0.2,

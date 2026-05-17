@@ -1,4 +1,4 @@
-import type { PackItem } from '@packrat/api/types/constants';
+import type { PackItem } from '@packrat/types';
 import type { WeightUnit } from '@packrat/units';
 import { convert, displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 

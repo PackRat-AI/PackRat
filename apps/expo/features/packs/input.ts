@@ -1,4 +1,4 @@
-import type { WeightUnit } from '@packrat/api/types/constants';
+import type { WeightUnit } from '@packrat/constants';
 
 export interface PackItemInput {
   name: string;

@@ -1,4 +1,6 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { isString } from '@packrat/guards';
 import {
   type WeatherAPICurrentResponse,
   type WeatherAPIForecastResponse,
@@ -7,9 +9,7 @@ import {
   WeatherCoordinateQuerySchema,
   WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
-} from '@packrat/api/schemas/weather';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { isString } from '@packrat/guards';
+} from '@packrat/schemas/weather';
 import { Elysia, status } from 'elysia';
 import { ZodError } from 'zod';
 
@@ -160,7 +160,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           throw new Error(`Weather forecast response failed schema validation at: ${invalidPaths}`);
         }
         console.error('Error fetching weather forecast:', error);
-        throw error;
+        return status(500, { error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' });
       }
     },
     {

@@ -1,13 +1,14 @@
 import { createDb } from '@packrat/api/db';
-import { users } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { users } from '@packrat/db';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   UpdateUserRequestSchema,
   UpdateUserResponseSchema,
   UserProfileSchema,
-} from '@packrat/api/schemas/users';
+} from '@packrat/schemas/users';
 import { eq } from 'drizzle-orm';
-import { Elysia, NotFoundError, status } from 'elysia';
+import { Elysia, status } from 'elysia';
 
 export const userRoutes = new Elysia({ prefix: '/user' })
   .use(authPlugin)
@@ -35,7 +36,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           .limit(1);
 
         if (!userRecord) {
-          throw new NotFoundError('User not found');
+          return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
         }
 
         return UserProfileSchema.parse({
@@ -52,7 +53,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       }
     },
     {
-      response: { 200: UserProfileSchema },
+      response: { 200: UserProfileSchema, 404: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Get user profile', security: [{ bearerAuth: [] }] },
     },
@@ -96,7 +97,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           .returning();
 
         if (!updatedUser) {
-          throw new NotFoundError('User not found');
+          return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
         }
 
         const message = email

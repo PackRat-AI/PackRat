@@ -1,4 +1,7 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { asNumber, asString, isArray } from '@packrat/guards';
 import {
   GuideCategoriesResponseSchema,
   GuideDetailSchema,
@@ -6,10 +9,7 @@ import {
   GuideSearchResponseSchema,
   GuidesQuerySchema,
   GuidesResponseSchema,
-} from '@packrat/api/schemas/guides';
-import { R2BucketService } from '@packrat/api/services/r2-bucket';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { asNumber, asString, isArray } from '@packrat/guards';
+} from '@packrat/schemas/guides';
 
 const MDX_EXT_RE = /\.(mdx?|md)$/;
 const DASH_RE = /-/g;
