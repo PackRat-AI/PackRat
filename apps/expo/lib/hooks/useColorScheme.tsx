@@ -18,7 +18,7 @@ function useColorScheme() {
   }
 
   function toggleColorScheme() {
-    return setColorScheme(colorScheme === 'light' ? 'dark' : 'light');
+    return setColorScheme((colorScheme ?? 'light') === 'light' ? 'dark' : 'light');
   }
 
   return {

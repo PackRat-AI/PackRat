@@ -21,6 +21,7 @@
     "@radix-ui/react-separator": "catalog:",
     "@radix-ui/react-tabs": "catalog:",
     "@radix-ui/react-toast": "catalog:",
+    "better-auth": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "input-otp": "catalog:",

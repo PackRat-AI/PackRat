@@ -104,11 +104,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: VectorSearchQuerySchema,
-      isValidApiKey: true,
+      isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
         summary: 'Vector search catalog items',
-        security: [{ apiKey: [] }],
+        security: [{ bearerAuth: [] }],
       },
     },
   )

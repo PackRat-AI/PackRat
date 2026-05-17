@@ -34,7 +34,7 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts",
+    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
     "mcp": "bun run --cwd packages/mcp dev",
@@ -169,6 +169,9 @@
     "wrangler": "^4.21.2",
     "ws": "^8.18.1",
     "zod": "^3.24.2"
+  },
+  "patchedDependencies": {
+    "@packrat-ai/nativewindui@2.0.3": "patches/@packrat-ai%2Fnativewindui@2.0.3.patch"
   },
   "trustedDependencies": [
     "@sentry/cli"

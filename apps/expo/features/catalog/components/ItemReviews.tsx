@@ -44,10 +44,10 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
         </Text>
       </View>
 
-      {reviews.map((review, idx) => {
-        const reviewKey = review.title ?? String(idx);
+      {reviews.map((review, i) => {
+        const reviewKey = review.title ?? String(i);
         const isExpanded = expandedReviews[reviewKey] || false;
-        const shouldTruncate = (review.text?.length ?? 0) > 150;
+        const shouldTruncate = (review.text ?? '').length > 150;
 
         return (
           <View key={reviewKey} className="mb-3 rounded-lg bg-card p-3 shadow-sm">
@@ -64,9 +64,9 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   <Text className="font-medium text-foreground">
                     {review.user_name || t('catalog.anonymous')}
                   </Text>
-                  {review.date && (
-                    <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
-                  )}
+                  <Text className="text-xs text-muted-foreground">
+                    {review.date ? formatDate(review.date) : ''}
+                  </Text>
                 </View>
               </View>
               <View className="flex-row items-center">

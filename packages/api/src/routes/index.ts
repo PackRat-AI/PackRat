@@ -9,6 +9,7 @@ import { guidesRoutes } from './guides';
 import { knowledgeBaseRoutes } from './knowledgeBase';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
+import { passwordResetRoutes } from './passwordReset';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { trailsRoutes } from './trails';
@@ -35,6 +36,7 @@ export const routes = new Elysia({ prefix: '/api' })
   .use(weatherRoutes)
   .use(packTemplatesRoutes)
   .use(seasonSuggestionsRoutes)
+  .use(passwordResetRoutes)
   .use(userRoutes)
   .use(uploadRoutes)
   .use(trailConditionsRoutes)

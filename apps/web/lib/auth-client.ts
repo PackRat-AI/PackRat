@@ -1,10 +1,10 @@
 'use client';
 
+import { webEnv } from '@packrat/env/web';
 import { nextCookies } from 'better-auth/next-js';
 import { createAuthClient } from 'better-auth/react';
-import { trailsEnv } from 'trails-app/lib/env';
 
 export const authClient = createAuthClient({
-  baseURL: trailsEnv.NEXT_PUBLIC_API_URL,
+  baseURL: webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787',
   plugins: [nextCookies()],
 });

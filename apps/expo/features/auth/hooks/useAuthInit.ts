@@ -1,6 +1,5 @@
 import { when } from '@legendapp/state';
 import { clientEnvs } from '@packrat/env/expo-client';
-import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { userStore, userSyncState } from 'expo-app/features/auth/store';
@@ -24,17 +23,20 @@ async function runVersionGateMigration() {
 }
 
 function applySessionUser(sessionUser: Record<string, unknown>) {
-  const name = asString(sessionUser.name) ?? '';
   userStore.set({
-    id: asString(sessionUser.id) ?? '',
-    email: asString(sessionUser.email) ?? '',
-    firstName: name.split(' ')[0] ?? '',
-    lastName: name.split(' ').slice(1).join(' ') ?? '',
-    role: asString(sessionUser.role) ?? 'USER',
-    emailVerified: asBoolean(sessionUser.emailVerified) ?? null,
-    avatarUrl: asString(sessionUser.image) ?? null,
-    createdAt: asString(sessionUser.createdAt) ?? null,
-    updatedAt: asString(sessionUser.updatedAt) ?? null,
+    id: String(sessionUser.id ?? ''),
+    email: String(sessionUser.email ?? ''),
+    firstName: String(sessionUser.name ?? '').split(' ')[0] ?? '',
+    lastName:
+      String(sessionUser.name ?? '')
+        .split(' ')
+        .slice(1)
+        .join(' ') ?? '',
+    role: (sessionUser.role as 'USER' | 'ADMIN') ?? 'USER', // safe-cast: Better Auth client type omits additionalFields; role is present at runtime
+    emailVerified: (sessionUser.emailVerified as boolean | null) ?? null,
+    avatarUrl: (sessionUser.image as string | null) ?? null,
+    createdAt: (sessionUser.createdAt as string | null) ?? null,
+    updatedAt: (sessionUser.updatedAt as string | null) ?? null,
     preferredWeightUnit: 'g',
   });
 }

@@ -44,6 +44,7 @@ export default function LocationSearchScreen() {
         )}&key=${GOOGLE_MAPS_API_KEY}`,
       );
 
+      if (!response.ok) throw new Error(`Geocode request failed: ${response.status}`);
       const data = await response.json();
 
       if (data.status === 'OK' && data.results.length > 0) {

@@ -28,34 +28,34 @@ function makeItem(
 // ---------------------------------------------------------------------------
 describe('convertWeight', () => {
   it('returns the same value when from === to', () => {
-    expect(convertWeight(100, 'g', 'g')).toBe(100);
-    expect(convertWeight(5, 'oz', 'oz')).toBe(5);
-    expect(convertWeight(2, 'kg', 'kg')).toBe(2);
-    expect(convertWeight(1, 'lb', 'lb')).toBe(1);
+    expect(convertWeight(100, { from: 'g', to: 'g' })).toBe(100);
+    expect(convertWeight(5, { from: 'oz', to: 'oz' })).toBe(5);
+    expect(convertWeight(2, { from: 'kg', to: 'kg' })).toBe(2);
+    expect(convertWeight(1, { from: 'lb', to: 'lb' })).toBe(1);
   });
 
   it('converts grams to ounces', () => {
-    expect(convertWeight(100, 'g', 'oz')).toBeCloseTo(3.53, 1);
+    expect(convertWeight(100, { from: 'g', to: 'oz' })).toBeCloseTo(3.53, 1);
   });
 
   it('converts ounces to grams', () => {
-    expect(convertWeight(1, 'oz', 'g')).toBeCloseTo(28.349523125, 8);
+    expect(convertWeight(1, { from: 'oz', to: 'g' })).toBeCloseTo(28.349523125, 8);
   });
 
   it('converts grams to kilograms', () => {
-    expect(convertWeight(1000, 'g', 'kg')).toBe(1);
+    expect(convertWeight(1000, { from: 'g', to: 'kg' })).toBe(1);
   });
 
   it('converts kilograms to grams', () => {
-    expect(convertWeight(1, 'kg', 'g')).toBe(1000);
+    expect(convertWeight(1, { from: 'kg', to: 'g' })).toBe(1000);
   });
 
   it('converts grams to pounds', () => {
-    expect(convertWeight(453.59, 'g', 'lb')).toBeCloseTo(1, 1);
+    expect(convertWeight(453.59, { from: 'g', to: 'lb' })).toBeCloseTo(1, 1);
   });
 
   it('converts pounds to grams', () => {
-    expect(convertWeight(1, 'lb', 'g')).toBeCloseTo(453.59237, 4);
+    expect(convertWeight(1, { from: 'lb', to: 'g' })).toBeCloseTo(453.59237, 4);
   });
 });
 
