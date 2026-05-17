@@ -20,7 +20,7 @@ export const landingMetadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: new URL('/opengraph-image.png', siteConfig.url).toString(),
+        url: new URL('/og-image.png', siteConfig.url).toString(),
         width: 1200,
         height: 630,
         alt: siteConfig.name,
@@ -32,7 +32,7 @@ export const landingMetadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     creator: siteConfig.twitterHandle,
-    images: [new URL('/twitter-image.png', siteConfig.url).toString()],
+    images: [new URL('/og-image.png', siteConfig.url).toString()],
   },
   icons: {
     icon: '/PackRat.ico',

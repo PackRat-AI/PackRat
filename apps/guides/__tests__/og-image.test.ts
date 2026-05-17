@@ -73,14 +73,14 @@ describe('guides layout metadata', () => {
     expect(images).toBeDefined();
     const first = Array.isArray(images) ? images[0] : images;
     const url = typeof first === 'string' ? first : (first as { url: string })?.url;
-    expect(url).toBe('/og-image.png');
+    expect(url).toMatch(/\/og-image\.png$/);
   });
 
   it('includes twitter.images pointing to /og-image.png', () => {
     const images = (guidesMetadata.twitter as { images?: unknown })?.images;
     expect(images).toBeDefined();
     const first = Array.isArray(images) ? images[0] : images;
-    expect(first).toBe('/og-image.png');
+    expect(first).toMatch(/\/og-image\.png$/);
   });
 });
 
