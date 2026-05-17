@@ -19,6 +19,19 @@ import { ImageResponse } from 'next/og';
 import { createElement } from 'react';
 import { getLandingOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
 
+// @vercel/og auto-fetches Google Fonts when it encounters glyphs outside its
+// bundled Latin coverage. CF Pages' build network occasionally returns 4xx for
+// fonts.googleapis.com, killing the build. Intercept and return an empty 404
+// so loadGoogleFont gives up cleanly and ImageResponse falls back to bundled.
+const originalFetch = globalThis.fetch;
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+    return new Response(null, { status: 404 });
+  }
+  return originalFetch(input, init);
+}) as typeof fetch;
+
 const PUBLIC_DIR = path.join(import.meta.dir, '..', 'public');
 
 async function generateOgImages(): Promise<void> {

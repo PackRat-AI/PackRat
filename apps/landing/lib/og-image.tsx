@@ -78,7 +78,7 @@ export function getLandingOgImageElement(): ReactElement {
           gap: '48px',
         }}
       >
-        {['10K+ Users', '4.8★ Rating', '100% Free'].map((stat) => (
+        {['10K+ Users', '4.8/5 Rating', '100% Free'].map((stat) => (
           <div
             key={stat}
             style={{
