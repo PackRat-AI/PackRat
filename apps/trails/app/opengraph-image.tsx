@@ -1,5 +1,9 @@
-import { getTrailsOgImageElement, OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE } from 'trails-app/lib/og-image';
 import { ImageResponse } from 'next/og';
+import {
+  OG_IMAGE_CONTENT_TYPE,
+  OG_IMAGE_SIZE,
+  getTrailsOgImageElement,
+} from 'trails-app/lib/og-image';
 
 export const dynamic = 'force-static';
 export const size = OG_IMAGE_SIZE;

@@ -100,7 +100,8 @@ describe('guides layout metadata', () => {
     const images = (guidesMetadata.twitter as { images?: unknown })?.images;
     expect(images).toBeDefined();
     const first = Array.isArray(images) ? images[0] : images;
-    const twitterUrl = typeof first === 'string' ? first : (first as { url?: string })?.url ?? first;
+    const twitterUrl =
+      typeof first === 'string' ? first : ((first as { url?: string })?.url ?? first);
     expect(twitterUrl).toBe(EXPECTED_OG_URL);
   });
 });

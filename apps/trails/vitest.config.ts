@@ -11,6 +11,6 @@ export default defineConfig({
     name: 'trails-og',
     environment: 'node',
     globals: true,
-    include: [resolve(__dirname, '__tests__/**/*.test.ts')],
+    include: ['__tests__/**/*.test.ts'],
   },
 });

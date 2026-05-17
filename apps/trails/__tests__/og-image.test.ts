@@ -2,13 +2,11 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { OG_IMAGE_URL, trailsMetadata } from '../lib/metadata';
 
 const APP_DIR = path.resolve(__dirname, '..');
 const OG_IMAGE_PATH = path.resolve(APP_DIR, 'public/og-image.png');
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-
-const SITE_URL = 'https://trails.packratai.com';
-const EXPECTED_OG_URL = `${SITE_URL}/og-image.png`;
 
 function readUint32BE(buf: Buffer, offset: number): number {
   return buf.readUInt32BE(offset);
@@ -43,10 +41,7 @@ describe('trails OG image generation', () => {
   });
 
   it('metadata og:image URL references the generated file', () => {
-    // Inline import to avoid JSX issues in test runner
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { metadata } = require('../app/layout');
-    const images = (metadata.openGraph as { images?: unknown })?.images;
+    const images = (trailsMetadata.openGraph as { images?: unknown })?.images;
     const first = Array.isArray(images) ? images[0] : images;
     const url = typeof first === 'string' ? first : (first as { url: string })?.url;
     const pathname = new URL(url).pathname;
@@ -60,29 +55,23 @@ describe('trails OG image generation', () => {
 
 describe('trails layout metadata', () => {
   it('openGraph.images[0].url is the absolute og-image.png URL', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { metadata } = require('../app/layout');
-    const images = (metadata.openGraph as { images?: unknown })?.images;
+    const images = (trailsMetadata.openGraph as { images?: unknown })?.images;
     expect(images).toBeDefined();
     const first = Array.isArray(images) ? images[0] : images;
     const url = typeof first === 'string' ? first : (first as { url: string })?.url;
-    expect(url).toBe(EXPECTED_OG_URL);
+    expect(url).toBe(OG_IMAGE_URL);
   });
 
   it('twitter.images[0] is the absolute og-image.png URL', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { metadata } = require('../app/layout');
-    const images = (metadata.twitter as { images?: unknown })?.images;
+    const images = (trailsMetadata.twitter as { images?: unknown })?.images;
     expect(images).toBeDefined();
     const first = Array.isArray(images) ? images[0] : images;
     const twitterUrl =
-      typeof first === 'string' ? first : (first as { url?: string })?.url ?? first;
-    expect(twitterUrl).toBe(EXPECTED_OG_URL);
+      typeof first === 'string' ? first : ((first as { url?: string })?.url ?? first);
+    expect(twitterUrl).toBe(OG_IMAGE_URL);
   });
 
   it('twitter.card is summary_large_image', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { metadata } = require('../app/layout');
-    expect((metadata.twitter as { card?: string })?.card).toBe('summary_large_image');
+    expect((trailsMetadata.twitter as { card?: string })?.card).toBe('summary_large_image');
   });
 });

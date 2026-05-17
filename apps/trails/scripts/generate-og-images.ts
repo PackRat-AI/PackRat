@@ -53,7 +53,8 @@ async function generateOgImages(): Promise<void> {
   const outputPath = path.join(PUBLIC_DIR, 'og-image.png');
   fs.writeFileSync(outputPath, buffer);
 
-  console.log(`✓ Generated ${path.relative(process.cwd(), outputPath)} (${buffer.length} bytes)`);
+  const rel = path.relative(process.cwd(), outputPath);
+  console.log(`✓ Generated ${rel} (${buffer.length} bytes)`);
 }
 
 generateOgImages().catch((err) => {
