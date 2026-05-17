@@ -27,14 +27,21 @@ export const guidesMetadata: Metadata = {
     siteName: 'PackRat Guides',
     title: 'PackRat Guides | Hiking & Outdoor Adventures',
     description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PackRat Guides' }],
+    images: [
+      {
+        url: new URL('/opengraph-image.png', siteConfig.url).toString(),
+        width: 1200,
+        height: 630,
+        alt: 'PackRat Guides | Hiking & Outdoor Adventures',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'PackRat Guides | Hiking & Outdoor Adventures',
     description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
     creator: '@packratai',
-    images: ['/og-image.png'],
+    images: [new URL('/twitter-image.png', siteConfig.url).toString()],
   },
   icons: {
     icon: [{ url: '/PackRatGuides.ico', type: 'image/x-icon' }],
