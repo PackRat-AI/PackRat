@@ -25,8 +25,7 @@ import { getTrailsOgImageElement, OG_IMAGE_SIZE } from '../lib/og-image';
 const FONT_HOSTS = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
 const originalFetch = globalThis.fetch;
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-  const href =
-    typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const href = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   try {
     if (FONT_HOSTS.has(new URL(href).hostname)) {
       return new Response(null, { status: 404 });

@@ -1,5 +1,5 @@
-import { OG_IMAGE_SIZE } from 'trails-app/lib/og-image';
 import type { Metadata } from 'next';
+import { OG_IMAGE_SIZE } from 'trails-app/lib/og-image';
 
 export const SITE_URL = 'https://trails.packratai.com';
 export const OG_IMAGE_URL = `${SITE_URL}/og-image.png`;

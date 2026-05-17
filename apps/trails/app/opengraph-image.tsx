@@ -1,8 +1,8 @@
 import { ImageResponse } from 'next/og';
 import {
+  getTrailsOgImageElement,
   OG_IMAGE_CONTENT_TYPE,
   OG_IMAGE_SIZE,
-  getTrailsOgImageElement,
 } from 'trails-app/lib/og-image';
 
 export const dynamic = 'force-static';
