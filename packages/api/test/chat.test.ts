@@ -49,7 +49,7 @@ describe('Chat Routes', () => {
 
   // Rate limiting is not implemented on /chat yet — keeping a placeholder for
   // when it is so we don't forget to cover it. Skip for now to avoid noise.
-  describe.skip('Rate Limiting (TODO: once implemented)', () => {
+  describe('Rate Limiting', () => {
     it('caps concurrent requests', async () => {
       const requests = Array(5)
         .fill(null)
