@@ -58,6 +58,9 @@ const ALLOWED: string[] = [
   // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
   // validation against a deployed landing URL.
   'apps/landing/__tests__/og-meta.test.ts',
+  // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
+  // validation against a deployed trails URL.
+  'apps/trails/__tests__/og-meta.test.ts',
   // Test files that mutate process.env to exercise env-validation logic
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load

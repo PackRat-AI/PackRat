@@ -1,14 +1,14 @@
+import { ImageResponse } from 'next/og';
 import {
-  getGuidesOgImageElement,
+  getTrailsOgImageElement,
   OG_IMAGE_CONTENT_TYPE,
   OG_IMAGE_SIZE,
-} from 'guides-app/lib/og-image';
-import { ImageResponse } from 'next/og';
+} from 'trails-app/lib/og-image';
 
 export const dynamic = 'force-static';
 export const size = OG_IMAGE_SIZE;
 export const contentType = OG_IMAGE_CONTENT_TYPE;
 
 export default function Image() {
-  return new ImageResponse(getGuidesOgImageElement(), { ...size });
+  return new ImageResponse(getTrailsOgImageElement(), { ...size });
 }

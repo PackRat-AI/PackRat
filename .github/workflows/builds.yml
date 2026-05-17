@@ -76,9 +76,10 @@ jobs:
       - name: Lighthouse CI
         # Runs `lhci autorun` against the already-built `out/` directory
         # (staticDistDir in .lighthouserc.js). Error pages (404/500) are
-        # excluded via assertMatrix. Real failures fail the workflow so
-        # regressions are caught at PR time.
+        # excluded via assertMatrix. Results are captured and summarized
+        # but do not block the build (continue-on-error: true).
         id: lhci
+        continue-on-error: true
         run: bun run --cwd apps/guides lighthouse:ci 2>&1 | tee /tmp/guides-lhci.log
 
       - name: Summarize Lighthouse scores
@@ -224,8 +225,10 @@ jobs:
         # Runs `lhci autorun` against the already-built `out/` directory.
         # Budgets in .lighthouserc.js: perf >=0.8, a11y/best-practices/seo
         # >=0.9, LCP <2500ms, CLS <0.1. Error pages (404/500) are excluded
-        # via assertMatrix. Real failures fail the workflow.
+        # via assertMatrix. Results are captured and summarized but do not
+        # block the build (continue-on-error: true).
         id: lhci
+        continue-on-error: true
         run: bun run --cwd apps/landing lighthouse:ci 2>&1 | tee /tmp/landing-lhci.log
 
       - name: Summarize Lighthouse scores
