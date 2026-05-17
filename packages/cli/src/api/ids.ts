@@ -1,13 +1,12 @@
 /**
- * ID helpers for client-side creation. The API mostly expects the client to
- * supply IDs (so offline-first stores can write before sync). Match the format
- * used by the mobile app / MCP: `<prefix>_<12-hex>`.
+ * ID helpers for client-side creation. The API expects the client to supply
+ * IDs (so offline-first stores can write before sync). The CLI runs under
+ * Bun, so we use the native UUIDv7 generator — time-ordered for good B-tree
+ * locality if/when the id becomes the actual PK on disk.
  */
 
-const STRIP_HYPHENS = /-/g;
-
 export function shortId(prefix: string): string {
-  return `${prefix}_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 12)}`;
+  return `${prefix}_${Bun.randomUUIDv7()}`;
 }
 
 export function nowIso(): string {

@@ -25,6 +25,7 @@ import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
   AddPackItemBodySchema,
   CreatePackBodySchema,
+  CreatePackWeightHistoryBodySchema,
   GapAnalysisRequestSchema,
   PackItemSchema,
   PackWithWeightsSchema,
@@ -434,11 +435,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     },
     {
       params: z.object({ packId: z.string() }),
-      body: z.object({
-        id: z.string().optional(),
-        weight: z.number(),
-        localCreatedAt: z.string().datetime(),
-      }),
+      body: CreatePackWeightHistoryBodySchema,
       isAuthenticated: true,
       detail: {
         tags: ['Packs'],
