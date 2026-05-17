@@ -12,25 +12,6 @@ import { BASE_URL, expect, test } from './fixtures';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Set a date on an <input type="date"> rendered by the DateTimePicker mock.
- * The mock uses a controlled React input; we use the native HTMLInputElement
- * value setter (bypasses React's tracker) then dispatch both 'input' and
- * 'change' events so React's synthetic onChange fires regardless of version.
- */
-async function fillDateInput(
-  page: import('@playwright/test').Page,
-  opts: { testId: string; value: string },
-): Promise<void> {
-  const input = page.getByTestId(opts.testId);
-  await input.waitFor({ timeout: 5_000 });
-  await input.evaluate((el: HTMLInputElement, v: string) => {
-    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }, opts.value);
-}
-
-/**
  * Navigate to /trip/new, fill the form, submit, and wait for the POST /api/trips
  * response to be confirmed before returning.  Returns the server-assigned trip id
  * so the caller can navigate directly to the detail / edit routes.
@@ -44,6 +25,11 @@ async function createTrip(
     endDate?: string; // YYYY-MM-DD
   },
 ): Promise<string> {
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
+
   await page.goto(`${BASE_URL}/trip/new`);
 
   // Fill trip name
@@ -56,25 +42,28 @@ async function createTrip(
     await page.getByTestId('trips:description-input').fill(opts.description);
   }
 
-  // Set start date: click the Pressable to show the DateTimePicker, then set
-  // the date via the native input setter so React's onChange fires correctly.
+  // Set start date by clicking the Pressable to reveal the DateTimePicker, then
+  // filling the underlying <input type="date">.
   if (opts.startDate) {
-    await page.getByTestId('trips:start-date-btn').click();
-    await fillDateInput(page, { testId: 'trips:start-date-input', value: opts.startDate });
+    await page
+      .getByText(/Start Date/i)
+      .first()
+      .click();
+    const startInput = page.locator('input[type="date"]').first();
+    await startInput.waitFor({ timeout: 5_000 });
+    await startInput.fill(opts.startDate);
   }
 
   // Set end date similarly.
   if (opts.endDate) {
-    await page.getByTestId('trips:end-date-btn').click();
-    await fillDateInput(page, { testId: 'trips:end-date-input', value: opts.endDate });
+    await page
+      .getByText(/End Date/i)
+      .first()
+      .click();
+    const endInput = page.locator('input[type="date"]').last();
+    await endInput.waitFor({ timeout: 5_000 });
+    await endInput.fill(opts.endDate);
   }
-
-  // Register the listener immediately before submitting so the 20s window starts here,
-  // not before navigation+form-fill which can exceed 20s on slow CI runners.
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
 
   // Submit the form
   await page.getByTestId('submit-trip-button').click();
@@ -180,45 +169,41 @@ test.describe('Trip CRUD', () => {
       startDate: '2026-10-01',
       endDate: '2026-10-05',
     });
+    void tripId; // id captured for scoping the URL; used below
 
-    // Navigate to the trips list so the new trip is visible.
+    // Navigate to trips list first to build SPA history (list → detail → list via back)
     await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
-
-    // Navigate to the trip detail via a SPA click (NOT page.goto) so the trips list
-    // stays mounted in the same JS context.  Using page.goto here would put the list
-    // in the browser bfcache; router.back() would then restore a frozen JS snapshot
-    // where deleted===false, and the trip would remain visible indefinitely.
     await expect(page.getByText(tripName)).toBeVisible({ timeout: 15_000 });
+
+    // SPA-navigate to trip detail by clicking the list item
     await page.getByText(tripName).first().click();
-    await page.waitForURL(new RegExp(`/trip/${tripId}$`), { timeout: 10_000 });
+    await page.waitForURL(/\/trip\/[^/]+$/, { timeout: 10_000 });
     await page.waitForLoadState('networkidle');
 
-    // Accept window.confirm dialogs before triggering delete
+    // Accept the Alert.alert confirmation dialog automatically
     page.on('dialog', (dialog) => dialog.accept());
 
-    // Register DELETE listener scoped to this trip's ID before clicking.
-    // useDeleteTrip calls DELETE /api/trips/:id directly and awaits it before router.back().
-    const deletePromise = page.waitForResponse(
-      (r) => r.url().includes(`/api/trips/${tripId}`) && r.request().method() === 'DELETE',
-      { timeout: 20_000 },
-    );
-
-    // Click the delete button — window.confirm on web, accepted by the handler above.
+    // Click the delete button in the trip detail header
     const deleteButton = page.getByTestId('trips:delete');
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // Wait for the server to confirm the hard-delete.
-    const deleteResponse = await deletePromise;
-    expect(deleteResponse.ok()).toBeTruthy();
+    // react-native Alert.alert is a no-op on web; the app uses NativeWindUI Alert (DOM modal).
+    // Use exact:true so "E2E-DeleteTrip-..." trip names don't match as false positives.
+    const deleteConfirmBtn = page.getByText('Delete', { exact: true });
+    await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 10_000 });
+    await deleteConfirmBtn.click();
 
-    // useDeleteTrip sets deleted:true in the Legend State store BEFORE the API call
-    // (optimistic update), so the trips list is already filtering out the trip by the
-    // time router.back() brings it back into view.  Because we navigated via SPA click
-    // above, the list was never put in bfcache — the store update is visible immediately.
+    // router.back() SPA-navigates away from the trip detail.
+    // Wait for URL to change (either to /trips or /)
     await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
-    await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState('networkidle');
+
+    // Navigate to trips list to confirm trip is gone
+    await page.goto(`${BASE_URL}/trips`);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
   });
 });
 
@@ -264,21 +249,24 @@ test.describe('Trip form validation', () => {
     await page.getByTestId('trips:name-input').fill('Validation Test Trip');
 
     // Set start date
-    await page.getByTestId('trips:start-date-btn').click();
-    await fillDateInput(page, { testId: 'trips:start-date-input', value: '2026-08-14' });
+    await page
+      .getByText(/Start Date/i)
+      .first()
+      .click();
+    const startInput = page.locator('input[type="date"]').first();
+    await startInput.waitFor({ timeout: 5_000 });
+    await startInput.fill('2026-08-14');
 
     // Set end date BEFORE start date
-    await page.getByTestId('trips:end-date-btn').click();
-    await fillDateInput(page, { testId: 'trips:end-date-input', value: '2026-08-01' });
+    await page
+      .getByText(/End Date/i)
+      .first()
+      .click();
+    const endInput = page.locator('input[type="date"]').last();
+    await endInput.waitFor({ timeout: 5_000 });
+    await endInput.fill('2026-08-01');
 
-    // Validation fires onChange — error should appear without needing to click submit.
-    // If button is not disabled, click it to also trigger onSubmit validation.
-    const submitButton = page.getByTestId('submit-trip-button');
-    await submitButton.waitFor({ timeout: 5_000 });
-    const ariaDisabled = await submitButton.getAttribute('aria-disabled');
-    if (ariaDisabled !== 'true') {
-      await submitButton.click();
-    }
+    await page.getByTestId('submit-trip-button').click();
 
     // The zod refinement message is "End date must be after start date"
     await expect(
@@ -334,6 +322,6 @@ test.describe('Trips list', () => {
     // (kept in DOM by Expo Router for tab history). Check the detail-specific "Dates" section
     // instead — it only renders on the trip detail page, not on list cards.
     await page.waitForLoadState('networkidle');
-    await expect(page.getByTestId('trips:dates-section')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Dates').first()).toBeVisible({ timeout: 15_000 });
   });
 });

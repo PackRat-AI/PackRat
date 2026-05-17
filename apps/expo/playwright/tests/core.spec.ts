@@ -23,7 +23,6 @@ test('packs tab loads and shows create button', async ({ authedPage: page }) => 
 });
 
 test('create a pack end-to-end', async ({ authedPage: page }) => {
-  test.setTimeout(60_000);
   const packName = `E2E-Pack-${Date.now()}`;
 
   // Use waitForResponse to capture the created pack ID.
@@ -33,19 +32,16 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
+      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
 
   expect(packResponse.ok()).toBeTruthy();
 
-  // Verify pack appears in the list (scope to visible elements only — Expo Router
-  // keeps hidden tab panels in the DOM, so the name may appear in multiple places)
+  // Verify pack appears in the list
   await page.goto(`${BASE_URL}/packs`);
-  await expect(page.locator(`:text("${packName}"):visible`).first()).toBeVisible({
-    timeout: 10_000,
-  });
+  await expect(page.getByText(packName)).toBeVisible({ timeout: 10_000 });
 });
 
 // ─── Pack Detail — add items ─────────────────────────────────────────────────
@@ -58,7 +54,7 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
+      await page.getByTestId('packs:name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -92,7 +88,6 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
 });
 
 test('add item from catalog to a pack', async ({ authedPage: page }) => {
-  test.setTimeout(60_000);
   const packName = `E2E-Catalog-${Date.now()}`;
 
   // Create a pack and capture the ID
@@ -100,32 +95,23 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
+      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
 
   const { id: packId } = (await packResponse.json()) as { id: number };
 
-  // Navigate directly to pack detail (skip networkidle — continuous sync keeps requests open)
+  // Navigate to pack detail and open "Add from Catalog" sheet
   await page.goto(`${BASE_URL}/pack/${packId}`);
-
-  // Open the "Add item" actions sheet (BottomSheet), then click add-from-catalog inside it
-  const addItemButton = page.getByTestId('add-item-button');
-  await addItemButton.waitFor({ timeout: 10_000 });
-  await addItemButton.click();
-
-  // add-from-catalog-option is rendered inside the BottomSheet only after it's presented
-  const addFromCatalogBtn = page.getByTestId('add-from-catalog-option');
-  await addFromCatalogBtn.waitFor({ state: 'visible', timeout: 10_000 });
-  await addFromCatalogBtn.click();
+  await page.getByTestId('add-from-catalog-option').last().click();
 
   // Dialog with catalog items should appear
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });
 
   // Wait for catalog items to load, then click the first one
   const firstCard = page.getByTestId(/^catalog-item-card-/).first();
-  await firstCard.waitFor({ timeout: 25_000 });
+  await firstCard.waitFor({ timeout: 15_000 });
   await firstCard.click();
 
   // Confirm "Add N item(s)" panel appears and click it
@@ -148,38 +134,34 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
 
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
+
   await page.goto(`${BASE_URL}/trip/new`);
   const nameInput = page.getByTestId('trips:name-input');
   await nameInput.waitFor({ timeout: 10_000 });
   await nameInput.fill(tripName);
 
-  // Open start date picker via testID, then set the date using the native input
-  // setter so React's onChange fires correctly (Playwright fill() doesn't
-  // reliably trigger onChange on input[type="date"] in Chromium).
-  await page.getByTestId('trips:start-date-btn').click();
-  const startInput = page.getByTestId('trips:start-date-input');
+  // Open start date picker and set via native input
+  await page
+    .getByText(/Start Date/i)
+    .first()
+    .click();
+  const startInput = page.locator('input[type="date"]').first();
   await startInput.waitFor({ timeout: 5_000 });
-  await startInput.evaluate((el: HTMLInputElement, v: string) => {
-    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }, '2026-08-01');
+  await startInput.fill('2026-08-01');
 
-  // Open end date picker and set end date
-  await page.getByTestId('trips:end-date-btn').click();
-  const endInput = page.getByTestId('trips:end-date-input');
+  // Open end date picker
+  await page
+    .getByText(/End Date/i)
+    .first()
+    .click();
+  const endInput = page.locator('input[type="date"]').last();
   await endInput.waitFor({ timeout: 5_000 });
-  await endInput.evaluate((el: HTMLInputElement, v: string) => {
-    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(el, v);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }, '2026-08-14');
+  await endInput.fill('2026-08-14');
 
-  // Register the listener immediately before submitting so the 20s window starts here
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
   await page.getByTestId('submit-trip-button').click();
 
   // Wait for the POST to complete so the trip is persisted before navigating
@@ -196,26 +178,23 @@ test('create a trip with dates', async ({ authedPage: page }) => {
 
 test('catalog tab loads items', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for the items count element (has testID to avoid matching hidden tab panels)
-  await expect(page.getByTestId('catalog:total-items-count')).toBeVisible({ timeout: 15_000 });
+  // Wait for items to load — at least one item name visible
+  await expect(page.locator('text=/\\d+,?\\d+ items/i').first()).toBeVisible({ timeout: 15_000 });
 });
 
 test('catalog search filters results', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for the search button — avoids networkidle which may never settle on a live catalog
-  const searchBtn = page.getByTestId('catalog:search-btn');
-  await searchBtn.waitFor({ timeout: 15_000 });
-  await searchBtn.click();
+  // Wait for initial load
+  await page.waitForLoadState('networkidle');
+
+  // The search box is revealed by clicking the search icon
+  await page.getByText('󰍉').first().click();
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });
-  await searchBox.fill('backpack');
-  // Results should update — wait for any result item card to appear inside the search overlay.
-  // Don't assert on a specific term: live catalog data drifts, but any non-empty result set
-  // proves search wired through to the API and rendered.
-  await expect(page.locator('[data-testid^="catalog:item-"]').first()).toBeVisible({
-    timeout: 15_000,
-  });
+  await searchBox.fill('sleeping bag');
+  // Results should update — check item names
+  await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 10_000 });
 });
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -253,7 +232,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
+      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
