@@ -13,7 +13,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero Section */}
+      {/* Hero Section — server-rendered for fast LCP */}
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-background" />
         <div className="container relative text-center">
@@ -38,7 +38,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section — server-rendered */}
       <section className="py-20">
         <div className="container">
           <div className="grid gap-10 md:grid-cols-3">
@@ -55,7 +55,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Guides */}
+      {/* Featured Guides — server-rendered */}
       <section className="py-20 bg-apple-gray-light dark:bg-gray-900/20">
         <div className="container">
           <h2 className="mb-10 text-3xl font-semibold tracking-tight text-center">
@@ -65,7 +65,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Filterable guides grid (client component handles search params) */}
+      {/* Filterable guides grid — client component for search/filter UI only */}
       <FilterableGuides allPosts={allPosts} categories={categories} />
     </div>
   );
