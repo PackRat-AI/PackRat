@@ -3,7 +3,7 @@
   "version": "2.0.25",
   "private": true,
   "scripts": {
-    "build": "bun run generate-og-images && bun run build-content && next build",
+    "build": "bun run build-content && bun run generate-og-images && next build",
     "build-content": "bun run scripts/build-content.ts",
     "clean": "bunx rimraf .next node_modules out",
     "demo-enhancement": "bun run scripts/demo-enhancement.ts",
