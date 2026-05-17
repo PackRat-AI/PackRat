@@ -1,3 +1,4 @@
+import type { PackItem } from '@packrat/types';
 import {
   Avatar,
   AvatarFallback,
@@ -12,7 +13,6 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
-import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { ScrollView, View } from 'react-native';

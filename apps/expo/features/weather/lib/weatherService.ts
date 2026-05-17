@@ -1,9 +1,9 @@
+import { assertDefined } from '@packrat/guards';
 import {
   LocationSearchResponseSchema,
   type WeatherAPIForecastResponse,
   WeatherAPIForecastResponseSchema,
-} from '@packrat/api/schemas/weather';
-import { assertDefined } from '@packrat/guards';
+} from '@packrat/schemas/weather';
 import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';

@@ -1,14 +1,9 @@
 import type { createOsmDb } from '@packrat/api/db';
+import type { OsmMember } from '@packrat/schemas/trails';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-const OsmMemberSchema = z.object({
-  type: z.string(),
-  ref: z.coerce.bigint(),
-  role: z.string(),
-});
-
-export type OsmMember = z.infer<typeof OsmMemberSchema>;
+export type { OsmMember };
 
 /**
  * Stitches a MultiLineString geometry from member way IDs using ST_LineMerge.

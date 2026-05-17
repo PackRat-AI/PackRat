@@ -1,6 +1,6 @@
-import type { NewCatalogItem } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import type { Env } from '@packrat/api/utils/env-validation';
+import type { NewCatalogItem } from '@packrat/db';
 import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
 import { mergeItemsBySku } from './mergeItemsBySku';

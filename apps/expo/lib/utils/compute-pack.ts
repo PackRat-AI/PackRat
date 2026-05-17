@@ -1,14 +1,19 @@
+import type { PackWithItems } from '@packrat/types';
 import type { WeightUnit } from '@packrat/units';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
-import type { Pack } from 'expo-app/types';
+
+export type ComputedPack = PackWithItems & {
+  baseWeight: number;
+  totalWeight: number;
+};
 
 export const computePackWeights = ({
   pack,
   preferredUnit = 'g',
 }: {
-  pack: Pack;
+  pack: PackWithItems;
   preferredUnit?: WeightUnit;
-}): Pack => {
+}): ComputedPack => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }
@@ -37,6 +42,6 @@ export const computePacksWeights = ({
   packs,
   preferredUnit = 'g',
 }: {
-  packs: Pack[];
+  packs: PackWithItems[];
   preferredUnit?: WeightUnit;
-}): Pack[] => packs.map((pack) => computePackWeights({ pack, preferredUnit }));
+}): ComputedPack[] => packs.map((pack) => computePackWeights({ pack, preferredUnit }));

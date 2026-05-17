@@ -9,8 +9,8 @@
       "default": "./src/index.ts"
     },
     "./*": {
-      "types": "./src/*",
-      "default": "./src/*"
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
     }
   },
   "main": "./src/index.ts",
@@ -42,9 +42,13 @@
     "@elysiajs/openapi": "catalog:",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "catalog:",
+    "@packrat/constants": "workspace:*",
+    "@packrat/db": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/overpass": "workspace:*",
+    "@packrat/schemas": "workspace:*",
+    "@packrat/types": "workspace:*",
     "@packrat/units": "workspace:*",
     "@sinclair/typebox": "^0.34.15",
     "@types/nodemailer": "^6.4.17",
@@ -53,7 +57,7 @@
     "csv-parse": "^6.2.1",
     "drizzle-kit": "catalog:",
     "drizzle-orm": "catalog:",
-    "drizzle-zod": "^0.8.3",
+    "drizzle-zod": "catalog:",
     "elysia": "catalog:",
     "google-auth-library": "catalog:",
     "gray-matter": "catalog:",

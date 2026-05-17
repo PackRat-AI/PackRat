@@ -1,5 +1,5 @@
 import { createDb, createOsmDb } from '@packrat/api/db';
-import { trailConditionReports, users } from '@packrat/api/db/schema';
+import { trailConditionReports, users } from '@packrat/db';
 import {
   AdminErrorResponses,
   SuccessSchema,
@@ -7,21 +7,11 @@ import {
   TrailGeometrySchema,
   TrailSearchItemSchema,
   TrailSearchResultSchema,
-} from '@packrat/api/schemas/admin';
+} from '@packrat/schemas/admin';
+import { RouteSearchRowSchema } from '@packrat/schemas/trails';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-const RouteSearchRowSchema = z.object({
-  osm_id: z.string(),
-  name: z.string().nullable(),
-  sport: z.string().nullable(),
-  network: z.string().nullable(),
-  distance: z.string().nullable(),
-  difficulty: z.string().nullable(),
-  description: z.string().nullable(),
-  bbox: z.string().nullable(),
-});
 
 export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 

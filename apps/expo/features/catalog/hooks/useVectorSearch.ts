@@ -1,4 +1,4 @@
-import { VectorSearchResponseSchema } from '@packrat/api/schemas/catalog';
+import { VectorSearchResponseSchema } from '@packrat/schemas/catalog';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';

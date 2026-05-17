@@ -1,4 +1,4 @@
-import type { WeatherAPIForecastResponse } from '@packrat/api/schemas/weather';
+import type { WeatherAPIForecastResponse } from '@packrat/schemas/weather';
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import {

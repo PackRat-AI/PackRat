@@ -1,4 +1,4 @@
-import { clientEnvs } from '@packrat/env/expo-client';
+import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -33,18 +33,18 @@ function redirect(route: string) {
 }
 
 function mapToUser(raw: Record<string, unknown>): User {
-  const name = String(raw.name ?? '');
+  const name = asString(raw.name) ?? '';
   const spaceIdx = name.indexOf(' ');
   return {
-    id: String(raw.id ?? ''),
-    email: String(raw.email ?? ''),
+    id: asString(raw.id) ?? '',
+    email: asString(raw.email) ?? '',
     firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
     lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
-    role: (raw.role as 'USER' | 'ADMIN') ?? 'USER',
-    emailVerified: (raw.emailVerified as boolean | null) ?? null,
-    avatarUrl: (raw.image as string | null) ?? null,
-    createdAt: (raw.createdAt as string | null) ?? null,
-    updatedAt: (raw.updatedAt as string | null) ?? null,
+    role: asString(raw.role) ?? 'USER',
+    emailVerified: asBoolean(raw.emailVerified) ?? null,
+    avatarUrl: asString(raw.image) ?? null,
+    createdAt: asString(raw.createdAt) ?? null,
+    updatedAt: asString(raw.updatedAt) ?? null,
     preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
   };
 }
@@ -188,33 +188,24 @@ export function useAuthActions() {
   };
 
   const forgotPassword = async (email: string) => {
-    const res = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: 'packrat://reset-password',
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { error?: string };
-      throw new Error(data.error ?? 'Forgot password failed');
-    }
+    if (error) throw new Error(error.message ?? 'Forgot password failed');
   };
 
   const resetPassword = async ({
-    email,
     opts,
   }: {
-    email: string;
+    email?: string;
     opts: { token: string; newPassword: string };
   }) => {
-    const res = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code: opts.token, newPassword: opts.newPassword }),
+    const { error } = await authClient.resetPassword({
+      token: opts.token,
+      newPassword: opts.newPassword,
     });
-    if (!res.ok) {
-      const data = (await res.json()) as { error?: string };
-      throw new Error(data.error ?? 'Reset password failed');
-    }
+    if (error) throw new Error(error.message ?? 'Reset password failed');
   };
 
   const verifyEmail = async ({ token }: { _email?: string; token: string }) => {

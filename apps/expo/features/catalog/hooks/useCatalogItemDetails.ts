@@ -1,4 +1,4 @@
-import { CatalogItemSchema } from '@packrat/api/schemas/catalog';
+import { CatalogItemSchema } from '@packrat/schemas/catalog';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';

@@ -1,5 +1,7 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/api/db/schema';
+import { queueCatalogETL } from '@packrat/api/services/etl/queue';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
 import {
   AdminErrorResponses,
   BrandRowSchema,
@@ -10,11 +12,9 @@ import {
   EtlResponseSchema,
   EtlRetrySchema,
   PriceBucketSchema,
-} from '@packrat/api/schemas/admin';
-import { queueCatalogETL } from '@packrat/api/services/etl/queue';
-import { getEnv } from '@packrat/api/utils/env-validation';
+} from '@packrat/schemas/admin';
 import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
-import { Elysia, status, t } from 'elysia';
+import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
@@ -133,7 +133,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().min(1).max(100).optional().default(25),
       }),
-      response: { 200: t.Array(BrandRowSchema), ...AdminErrorResponses },
+      response: { 200: z.array(BrandRowSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Top gear brands' },
     },
   )
@@ -170,7 +170,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       }
     },
     {
-      response: { 200: t.Array(PriceBucketSchema), ...AdminErrorResponses },
+      response: { 200: z.array(PriceBucketSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Price distribution' },
     },
   )

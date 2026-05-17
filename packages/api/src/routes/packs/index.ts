@@ -1,5 +1,13 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { ImageDetectionService, PackService } from '@packrat/api/services';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
+import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 import {
   catalogItems,
   type NewPack,
@@ -8,23 +16,18 @@ import {
   packItems,
   packs,
   packWeightHistory,
-} from '@packrat/api/db/schema';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import { AnalyzeImageRequestSchema } from '@packrat/api/schemas/imageDetection';
+} from '@packrat/db';
+import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
-  CreatePackItemRequestSchema,
-  CreatePackRequestSchema,
+  AddPackItemBodySchema,
+  CreatePackBodySchema,
   GapAnalysisRequestSchema,
+  PackItemSchema,
+  PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
-} from '@packrat/api/schemas/packs';
-import { ImageDetectionService, PackService } from '@packrat/api/services';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
-import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+} from '@packrat/schemas/packs';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -37,18 +40,8 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
-  localCreatedAt: z.string(),
-  localUpdatedAt: z.string(),
-});
-
-const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
-});
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -72,12 +65,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return computePacksWeights({ packs: result });
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
         includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
       }),
+      response: { 200: z.array(PackWithWeightsSchema) },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },
     },
@@ -111,13 +105,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         } as typeof packs.$inferInsert)
         .returning();
 
-      if (!newPack) return status(400, { error: 'Failed to create pack' });
+      if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return computePacksWeights({ packs: [packWithItems] })[0];
+      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
       body: CreatePackBodySchema,
+      response: { 200: PackWithWeightsSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -227,21 +222,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/:packId',
     async ({ params }) => {
       const db = createDb();
-      try {
-        const pack = await db.query.packs.findFirst({
-          where: eq(packs.id, params.packId),
-          with: { items: { where: eq(packItems.deleted, false) } },
-        });
+      const pack = await db.query.packs.findFirst({
+        where: eq(packs.id, params.packId),
+        with: { items: { where: eq(packItems.deleted, false) } },
+      });
 
-        if (!pack) return status(404, { error: 'Pack not found' });
-        return computePackWeights({ pack });
-      } catch (error) {
-        console.error('Error fetching pack:', error);
-        return status(500, { error: 'Failed to fetch pack' });
-      }
+      if (!pack) throw new NotFoundError('Pack not found');
+      return PackWithWeightsSchema.parse(computePackWeights({ pack }));
     },
     {
       params: z.object({ packId: z.string() }),
+      response: { 200: PackWithWeightsSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
     },
@@ -671,17 +662,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const item = await db.query.packItems.findFirst({
         where: eq(packItems.id, params.itemId),
-        with: { catalogItem: true, pack: true },
+        with: { pack: true },
       });
 
-      if (!item) return status(404, { error: 'Item not found' });
+      if (!item) throw new NotFoundError('Item not found');
 
       const isOwner = item.userId === user.userId;
       const isPublic = item.pack.isPublic;
 
-      if (!isOwner && !isPublic) return status(403, { error: 'Unauthorized' });
+      if (!isOwner && !isPublic) return status(403, { error: 'Forbidden' });
 
-      return item;
+      return PackItemSchema.parse(item);
     },
     {
       params: z.object({ itemId: z.string() }),
@@ -710,7 +701,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
-      if (!existingItem) return status(404, { error: 'Pack item not found' });
+      if (!existingItem) throw new NotFoundError('Pack item not found');
 
       const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
       const oldEmbeddingText = getEmbeddingText({ item: existingItem });
@@ -763,16 +754,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         .where(and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)))
         .returning();
 
-      if (!updatedItem) return status(404, { error: 'Pack item not found' });
+      if (!updatedItem) throw new NotFoundError('Pack item not found');
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
       updatedItem.embedding = null;
-      return updatedItem;
+      return PackItemSchema.parse(updatedItem);
     },
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
+      response: { 200: PackItemSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

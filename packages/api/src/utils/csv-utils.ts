@@ -1,6 +1,6 @@
+import type { NewCatalogItem } from '@packrat/db';
 import { isString } from '@packrat/guards';
-import type { NewCatalogItem } from '../db/schema';
-import { AvailabilitySchema, WeightUnitSchema } from '../types';
+import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
 
 // ── CSV sanitization regex constants ──
 const NEWLINE_CHARS = /[\r\n]+/g;
