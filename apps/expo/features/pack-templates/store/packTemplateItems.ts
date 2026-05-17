@@ -4,7 +4,7 @@ import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import {
   PackTemplateItemSchema,
   PackTemplateWithItemsSchema,
-} from '@packrat/api/schemas/packTemplates';
+} from '@packrat/schemas/packTemplates';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';

@@ -1,8 +1,8 @@
-import { ForgotPasswordRequestSchema, ResetPasswordRequestSchema } from '@packrat/api/schemas/auth';
 import {
   requestPasswordReset,
   verifyOtpAndResetPassword,
 } from '@packrat/api/services/passwordResetService';
+import { ForgotPasswordRequestSchema, ResetPasswordRequestSchema } from '@packrat/schemas/auth';
 import { Elysia, status } from 'elysia';
 
 export const passwordResetRoutes = new Elysia({ prefix: '/password-reset' })

@@ -1,8 +1,8 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { PresignedUploadQuerySchema } from '@packrat/api/schemas/upload';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { PresignedUploadQuerySchema, PresignedUploadResponseSchema } from '@packrat/schemas/upload';
 import { Elysia, status } from 'elysia';
 
 const ALLOWED_IMAGE_TYPES = [
@@ -65,11 +65,11 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' }).use(authPlugin).ge
       }
     })();
 
-    return {
+    return PresignedUploadResponseSchema.parse({
       url: presignedUrl,
       objectKey: fileName,
       publicUrl,
-    };
+    });
   },
   {
     query: PresignedUploadQuerySchema,

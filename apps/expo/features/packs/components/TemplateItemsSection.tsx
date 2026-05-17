@@ -1,9 +1,9 @@
+import type { WeightUnit } from '@packrat/constants';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
-import type { WeightUnit } from 'expo-app/types';
 import { Image, ScrollView, Text, View } from 'react-native';
 
 export interface PackTemplateItem {

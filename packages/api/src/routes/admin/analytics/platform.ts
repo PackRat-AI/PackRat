@@ -1,28 +1,16 @@
 import { createDb } from '@packrat/api/db';
-import {
-  catalogItems,
-  packs,
-  posts,
-  trailConditionReports,
-  trips,
-  users,
-} from '@packrat/api/db/schema';
+import { catalogItems, packs, posts, trailConditionReports, trips, users } from '@packrat/db';
 import {
   ActiveUsersSchema,
   ActivityPointSchema,
   AdminErrorResponses,
+  AnalyticsPeriodSchema,
   BreakdownItemSchema,
   GrowthPointSchema,
-} from '@packrat/api/schemas/admin';
+} from '@packrat/schemas/admin';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-import { Elysia, status, t } from 'elysia';
+import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-// Defaults applied in handlers so Treaty types these as truly optional.
-const PeriodSchema = z.object({
-  period: z.enum(['day', 'week', 'month']).optional(),
-  range: z.coerce.number().int().min(1).max(365).optional(),
-});
 
 function getStartDate(period: 'day' | 'week' | 'month', range: number): Date {
   const d = new Date();
@@ -106,8 +94,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
-      response: { 200: t.Array(GrowthPointSchema), ...AdminErrorResponses },
+      query: AnalyticsPeriodSchema,
+      response: { 200: z.array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
   )
@@ -183,8 +171,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
-      response: { 200: t.Array(ActivityPointSchema), ...AdminErrorResponses },
+      query: AnalyticsPeriodSchema,
+      response: { 200: z.array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
     },
   )
@@ -239,7 +227,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      response: { 200: t.Array(BreakdownItemSchema), ...AdminErrorResponses },
+      response: { 200: z.array(BreakdownItemSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' },
     },
   );

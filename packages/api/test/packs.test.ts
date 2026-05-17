@@ -1,4 +1,4 @@
-import type { Pack } from '@packrat/api/db/schema';
+import type { Pack } from '@packrat/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   seedAndLoginTestUser,

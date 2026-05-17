@@ -1,8 +1,12 @@
 import { createDb } from '@packrat/api/db';
-import type { NewTrailConditionReport } from '@packrat/api/db/schema';
-import { trailConditionReports } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { mintId } from '@packrat/api/utils/ids';
+import type { NewTrailConditionReport } from '@packrat/db';
+import { trailConditionReports } from '@packrat/db';
+import {
+  CreateTrailConditionReportRequestSchema,
+  UpdateTrailConditionReportRequestSchema,
+} from '@packrat/schemas/trailConditions';
 import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -11,34 +15,6 @@ import { z } from 'zod';
 const LIKE_ESCAPE_BACKSLASH = /\\/g;
 const LIKE_ESCAPE_PERCENT = /%/g;
 const LIKE_ESCAPE_UNDERSCORE = /_/g;
-
-const CreateReportRequestSchema = z.object({
-  // id optional — server mints if absent (lean callers). Offline-first
-  // stores keep supplying client-side IDs for sync.
-  id: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .describe('Client-generated report ID; server mints when absent'),
-  trailName: z.string().min(1),
-  trailRegion: z.string().optional().nullable(),
-  surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),
-  overallCondition: z.enum(['excellent', 'good', 'fair', 'poor']),
-  hazards: z.array(z.string()).optional().default([]),
-  waterCrossings: z.number().int().min(0).max(20).optional().default(0),
-  waterCrossingDifficulty: z.enum(['easy', 'moderate', 'difficult']).optional().nullable(),
-  notes: z.string().optional().nullable(),
-  photos: z.array(z.string()).optional().default([]),
-  tripId: z.string().optional().nullable(),
-  localCreatedAt: z.string().datetime(),
-  localUpdatedAt: z.string().datetime(),
-});
-
-const UpdateReportRequestSchema = CreateReportRequestSchema.omit({
-  id: true,
-  localCreatedAt: true,
-}).partial();
 
 function toReportResponse(row: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -156,7 +132,7 @@ export const trailConditionRoutes = new Elysia()
       }
     },
     {
-      body: CreateReportRequestSchema,
+      body: CreateTrailConditionReportRequestSchema,
       isAuthenticated: true,
       detail: {
         tags: ['Trail Conditions'],
@@ -249,7 +225,7 @@ export const trailConditionRoutes = new Elysia()
     },
     {
       params: z.object({ reportId: z.string() }),
-      body: UpdateReportRequestSchema,
+      body: UpdateTrailConditionReportRequestSchema,
       isAuthenticated: true,
       detail: {
         tags: ['Trail Conditions'],

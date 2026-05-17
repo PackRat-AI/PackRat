@@ -1,7 +1,10 @@
 import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
+import { timingSafeEqual } from '@packrat/api/utils/auth';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, packs, users } from '@packrat/db';
+import { assertAllDefined, queryBoolean } from '@packrat/guards';
 import {
   AdminCatalogListSchema,
   AdminErrorResponses,
@@ -11,10 +14,7 @@ import {
   CatalogUpdateSchema,
   HardDeleteSuccessSchema,
   SuccessSchema,
-} from '@packrat/api/schemas/admin';
-import { timingSafeEqual } from '@packrat/api/utils/auth';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertAllDefined, queryBoolean } from '@packrat/guards';
+} from '@packrat/schemas/admin';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';

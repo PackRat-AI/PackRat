@@ -1,19 +1,19 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
-import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/api/db/schema';
-import { authPlugin } from '@packrat/api/middleware/auth';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { CatalogService } from '@packrat/api/services/catalogService';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
+import { assertDefined } from '@packrat/guards';
 import {
+  AIPackAnalysisSchema,
   CreatePackTemplateItemRequestSchema,
   CreatePackTemplateRequestSchema,
   GenerateFromOnlineContentRequestSchema,
   UpdatePackTemplateItemRequestSchema,
   UpdatePackTemplateRequestSchema,
-} from '@packrat/api/schemas/packTemplates';
-import { CatalogService } from '@packrat/api/services/catalogService';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { mintId } from '@packrat/api/utils/ids';
-import { assertDefined } from '@packrat/guards';
+} from '@packrat/schemas/packTemplates';
 import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -25,6 +25,7 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 const QUERY_STRIP_RE = /[?&].*$/;
+const STRIP_HYPHENS = /-/g;
 
 function generateContentIdFromUrl(url: string): string {
   const normalizedUrl = url.toLowerCase().replace(QUERY_STRIP_RE, '');
@@ -107,39 +108,13 @@ function getYouTubeId(url: string): string | null {
   }
 }
 
-const analysisSchema = z.object({
-  templateName: z.string(),
-  templateCategory: z.enum([
-    'hiking',
-    'backpacking',
-    'camping',
-    'climbing',
-    'winter',
-    'desert',
-    'custom',
-    'water sports',
-    'skiing',
-  ]),
-  templateDescription: z.string(),
-  items: z.array(
-    z.object({
-      name: z.string(),
-      description: z.string(),
-      quantity: z.number().int().positive().default(1),
-      category: z.string(),
-      weightGrams: z.number().nonnegative().default(0),
-      consumable: z.boolean().default(false),
-      worn: z.boolean().default(false),
-    }),
-  ),
-});
-
 // ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
 
 export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
   .use(authPlugin)
+  .use(adminAuthPlugin)
 
   // List all templates
   .get(
@@ -174,7 +149,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const [newTemplate] = await db
         .insert(packTemplates)
         .values({
-          id: data.id ?? mintId('pt'),
+          id: data.id,
           userId: user.userId,
           name: data.name,
           description: data.description,
@@ -213,10 +188,6 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     async ({ body, user }) => {
       let contentUrl: string | undefined;
       try {
-        if (user.role !== 'ADMIN') {
-          return status(403, { error: 'Forbidden: Admin access required' });
-        }
-
         const { isAppTemplate } = body;
         contentUrl = body.contentUrl;
 
@@ -316,7 +287,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
         const { object: analysis } = await generateObject({
           model: google('gemini-3-flash-preview'),
-          schema: analysisSchema,
+          schema: AIPackAnalysisSchema,
           system: SYSTEM_PROMPT,
           prompt: [{ role: 'user', content: contentParts }],
           temperature: 0.2,
@@ -333,7 +304,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
             : { items: [] as never[] };
 
         const now = new Date();
-        const templateId = mintId('pt');
+        const templateId = `pt_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 21)}`;
 
         const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
           const [createdTemplate] = await tx
@@ -358,7 +329,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           const itemRecords = analysis.items.map((detected, index) => {
             const catalogMatches = batchResult.items[index] ?? [];
             const bestMatch = catalogMatches[0];
-            const itemId = mintId('pti');
+            const itemId = `pti_${crypto.randomUUID().replace(STRIP_HYPHENS, '').slice(0, 21)}`;
 
             return {
               id: itemId,
@@ -413,10 +384,10 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       body: GenerateFromOnlineContentRequestSchema,
-      isAuthenticated: true,
+      isAdmin: true,
       detail: {
         tags: ['Pack Templates'],
-        summary: 'Generate a pack template from an online content URL',
+        summary: 'Generate a pack template from an online content URL (Admin only)',
         security: [{ bearerAuth: [] }],
       },
     },
@@ -690,7 +661,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       const [newItem] = await db
         .insert(packTemplateItems)
         .values({
-          id: data.id ?? mintId('pti'),
+          id: data.id,
           packTemplateId: templateId,
           name: data.name,
           description: data.description,

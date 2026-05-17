@@ -1,5 +1,5 @@
 import { createDb, createOsmDb } from '@packrat/api/db';
-import { trailConditionReports, users } from '@packrat/api/db/schema';
+import { trailConditionReports, users } from '@packrat/db';
 import {
   AdminErrorResponses,
   SuccessSchema,
@@ -7,22 +7,11 @@ import {
   TrailGeometrySchema,
   TrailSearchItemSchema,
   TrailSearchResultSchema,
-} from '@packrat/api/schemas/admin';
-import { queryBoolean } from '@packrat/guards';
+} from '@packrat/schemas/admin';
+import { RouteSearchRowSchema } from '@packrat/schemas/trails';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-const RouteSearchRowSchema = z.object({
-  osm_id: z.string(),
-  name: z.string().nullable(),
-  sport: z.string().nullable(),
-  network: z.string().nullable(),
-  distance: z.string().nullable(),
-  difficulty: z.string().nullable(),
-  description: z.string().nullable(),
-  bbox: z.string().nullable(),
-});
 
 export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
 
@@ -254,7 +243,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
       const limit = query.limit ?? 50;
       const offset = query.offset ?? 0;
       const search = query.q;
-      const includeDeleted = query.includeDeleted ?? false;
+      const includeDeleted = query.includeDeleted === 'true';
 
       try {
         const deletedFilter = includeDeleted ? undefined : eq(trailConditionReports.deleted, false);
@@ -311,10 +300,9 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
     {
       query: z.object({
         q: z.string().optional(),
-        limit: z.coerce.number().int().min(1).max(100).optional(),
-        offset: z.coerce.number().int().min(0).optional(),
-        // queryBoolean() — see admin/index.ts for why we avoid z.coerce.boolean
-        includeDeleted: queryBoolean(),
+        limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+        offset: z.coerce.number().int().min(0).optional().default(0),
+        includeDeleted: z.string().optional(),
       }),
       response: { 200: TrailConditionsListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List all trail condition reports' },

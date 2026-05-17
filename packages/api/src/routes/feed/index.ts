@@ -1,7 +1,11 @@
 import { createDb } from '@packrat/api/db';
-import { commentLikes, postComments, postLikes, posts, users } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { CreateCommentRequestSchema, CreatePostRequestSchema } from '@packrat/api/schemas/feed';
+import { commentLikes, postComments, postLikes, posts, users } from '@packrat/db';
+import {
+  CreateCommentRequestSchema,
+  CreatePostRequestSchema,
+  FeedResponseSchema,
+} from '@packrat/schemas/feed';
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -44,8 +48,10 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
 
       const total = totalResult[0]?.count ?? 0;
 
+      const totalPages = Math.ceil(total / limit);
+
       if (items.length === 0) {
-        return { items: [], page, limit, total, totalPages: Math.ceil(total / limit) };
+        return FeedResponseSchema.parse({ items: [], page, limit, total, totalPages });
       }
 
       const postIds = items.map((p) => p.id);
@@ -84,7 +90,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         likedByMe: myLikeSet.has(p.id),
       }));
 
-      return { items: result, page, limit, total, totalPages: Math.ceil(total / limit) };
+      return FeedResponseSchema.parse({ items: result, page, limit, total, totalPages });
     },
     {
       query: z.object({
@@ -92,6 +98,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(50).optional(),
       }),
+      response: { 200: FeedResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'List social feed posts', security: [{ bearerAuth: [] }] },
     },
