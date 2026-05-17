@@ -5,6 +5,10 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
       - ".github/workflows/web-e2e-tests.yml"
   # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
   # CI feedback on their own code.  Secrets are unavailable for forks, so
@@ -13,6 +17,10 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
       - ".github/workflows/web-e2e-tests.yml"
   workflow_dispatch:
 
