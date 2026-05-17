@@ -104,7 +104,7 @@ jobs:
           path: |
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
-          key: cocoapods-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'apps/expo/app.config.ts', 'bun.lock') }}
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'apps/expo/app.config.ts') }}
           restore-keys: |
             cocoapods-${{ runner.os }}-
 

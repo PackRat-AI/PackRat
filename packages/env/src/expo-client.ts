@@ -18,7 +18,7 @@ export const clientEnvSchema = z.object({
   EXPO_PUBLIC_API_URL: z.string().url(),
   EXPO_PUBLIC_R2_PUBLIC_URL: z.string().url(),
   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: z.string(),
-  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: z.string(),
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: z.string().optional(),
   EXPO_PUBLIC_SENTRY_DSN: z.string().optional(),
   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional(),
 });

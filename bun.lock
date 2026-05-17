@@ -694,7 +694,7 @@
       "name": "@packrat/ui",
       "version": "2.0.25",
       "dependencies": {
-        "@packrat-ai/nativewindui": "2.0.3-2",
+        "@packrat-ai/nativewindui": "^2.0.6",
       },
     },
     "packages/units": {

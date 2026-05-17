@@ -15,7 +15,7 @@ import {
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PackItemImage } from '../components/PackItemImage';
 import { SimilarItemsForPackItem } from '../components/SimilarItemsForPackItem';
@@ -136,7 +136,12 @@ export function ItemDetailScreen() {
   return (
     <SafeAreaView edges={['bottom']} className="flex-1">
       <ScrollView>
-        <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
+        <PackItemImage
+          item={item}
+          className="h-64 w-full"
+          resizeMode="contain"
+          style={Platform.select({ web: { width: '100%', height: 256 } })}
+        />
 
         <View className="p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>

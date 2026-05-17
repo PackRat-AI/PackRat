@@ -96,6 +96,7 @@ export default function LoginScreen() {
               source={LOGO_SOURCE}
               className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
+              style={Platform.select({ web: { width: 32, height: 32 } })}
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
@@ -113,7 +114,7 @@ export default function LoginScreen() {
             <Form className="gap-2">
               <FormSection className="ios:bg-background">
                 <FormItem>
-                  <View testID={testIds.auth.emailInput}>
+                  <View testID={Platform.OS === 'web' ? undefined : testIds.auth.emailInput}>
                     <form.Field name="email">
                       {(field) => (
                         <TextField
@@ -233,7 +234,7 @@ export default function LoginScreen() {
                     accessible={true}
                     disabled={!canSubmit || loading}
                     onPress={() => {
-                      if (focusedTextField === 'email') {
+                      if (Platform.OS !== 'web' && focusedTextField === 'email') {
                         KeyboardController.setFocusTo('next');
                         return;
                       }

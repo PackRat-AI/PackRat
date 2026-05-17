@@ -33,8 +33,8 @@ export const testIds = Object.freeze({
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
     cancelBtn: 'cancel-pack-form-button', // keep Maestro value
-    nameInput: 'packs:name-input',
-    descriptionInput: 'packs:description-input',
+    nameInput: 'pack-name-input', // keep Playwright + Maestro value
+    descriptionInput: 'pack-description-input', // keep Playwright + Maestro value
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
     editBtn: 'packs:edit',
@@ -74,15 +74,19 @@ export const testIds = Object.freeze({
     submitBtn: 'submit-trip-button', // keep Maestro value
     deleteBtn: 'trips:delete',
     editBtn: 'trips:edit',
-    listItem: (id: string | number) => `trips:list-item-${id}`,
+    datesSection: 'trips:dates-section',
+    startDateBtn: 'trips:start-date-btn',
+    endDateBtn: 'trips:end-date-btn',
     startDateInput: 'trips:start-date-input',
     endDateInput: 'trips:end-date-input',
+    listItem: (id: string | number) => `trips:list-item-${id}`,
   }),
 
   // ── Catalog ───────────────────────────────────────────────────────────────
   catalog: Object.freeze({
     searchBtn: 'catalog:search-btn',
     searchInput: 'catalog:search-input',
+    totalItemsCount: 'catalog:total-items-count',
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
     item: (id: string | number) => `catalog:item-${id}`,
