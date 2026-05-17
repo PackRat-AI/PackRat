@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import consola from 'consola';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
 
@@ -25,12 +26,17 @@ export default defineCommand({
   },
   async run({ args }) {
     await requireAuth();
+    const duration = Number.parseInt(args.duration, 10);
+    if (!Number.isInteger(duration) || duration < 1) {
+      consola.error(`Invalid --duration "${args.duration}" — must be a positive integer (days).`);
+      process.exit(1);
+    }
     const client = await getUserClient();
     const result = await runApi(
       client.packs({ packId: args.id })['gap-analysis'].post({
         destination: args.destination,
         tripType: args['trip-type'],
-        duration: Number.parseInt(args.duration, 10),
+        duration,
         startDate: args.start,
         endDate: args.end,
       }),

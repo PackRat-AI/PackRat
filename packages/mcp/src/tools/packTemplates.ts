@@ -177,6 +177,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         category: z.nativeEnum(ItemCategory).optional(),
         consumable: z.boolean().optional(),
         worn: z.boolean().optional(),
+        image: z.string().optional(),
         notes: z.string().optional(),
       },
     },

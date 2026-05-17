@@ -66,7 +66,7 @@ const semanticCmd = defineCommand({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
-        score: it.score,
+        similarity: it.similarity,
       })),
       { title: `Semantic: "${args.q}"` },
     );
@@ -99,7 +99,7 @@ const getCmd = defineCommand({
         weight: r.weight,
         price: r.price,
         rating: r.ratingValue,
-        reviewCount: r.ratingCount,
+        reviewCount: r.reviewCount,
         productUrl: r.productUrl,
       },
       `Item ${r.id}`,

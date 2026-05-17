@@ -168,7 +168,12 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     const nextAuth = userToken || this.state.authToken;
     const nextAdmin = adminToken || this.state.adminToken;
     if (nextAuth !== this.state.authToken || nextAdmin !== this.state.adminToken) {
+      const adminChanged = nextAdmin !== this.state.adminToken;
       this.setState({ ...this.state, authToken: nextAuth, adminToken: nextAdmin });
+      // Mirror setAdminToken: when the header path swaps the admin JWT, the
+      // tools/list visibility must follow. Without this the model can't see
+      // admin tools even after a valid header was supplied.
+      if (adminChanged) this.syncAdminToolVisibility();
     }
 
     return super.fetch(request);

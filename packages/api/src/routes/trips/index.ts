@@ -17,8 +17,9 @@ const LocationSchema = z
 
 const CreateTripRequestSchema = z.object({
   // id optional so server can mint for lean callers; offline-first stores
-  // (mobile) keep supplying client-side IDs for sync.
-  id: z.string().optional(),
+  // (mobile) keep supplying client-side IDs for sync. min(1) rejects ''
+  // and whitespace that would otherwise slip past `?? mintId(…)`.
+  id: z.string().trim().min(1).optional(),
   name: z.string().min(1),
   description: z.string().optional().nullable(),
   location: LocationSchema,

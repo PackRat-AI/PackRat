@@ -71,7 +71,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset, include_deleted }) =>
       call(
         agent.api.admin.admin['packs-list'].get({
-          query: { q, limit, offset, includeDeleted: include_deleted ? 1 : 0 },
+          query: { q, limit, offset, includeDeleted: include_deleted },
         }),
         { action: 'list packs (admin)', ...ADMIN },
       ),
@@ -216,7 +216,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset, include_deleted }) =>
       call(
         agent.api.admin.admin.trails.conditions.get({
-          query: { q, limit, offset, includeDeleted: include_deleted ? 1 : 0 },
+          query: { q, limit, offset, includeDeleted: include_deleted },
         }),
         { action: 'list trail condition reports (admin)', ...ADMIN },
       ),

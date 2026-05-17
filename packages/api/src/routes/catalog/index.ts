@@ -141,6 +141,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const db = createDb();
       const { ids } = body;
       const uniqueIds = Array.from(new Set(ids));
+      // `ids.min(2)` accepts [1, 1] which collapses to 1 unique ID after
+      // dedupe; enforce the 2+ floor on the deduped set so the response
+      // actually contains a comparison.
+      if (uniqueIds.length < 2) {
+        return status(400, { error: 'Compare requires at least 2 distinct catalog IDs' });
+      }
       const items = await db
         .select({
           id: catalogItems.id,

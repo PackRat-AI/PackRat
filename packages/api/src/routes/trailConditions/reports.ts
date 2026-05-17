@@ -15,7 +15,12 @@ const LIKE_ESCAPE_UNDERSCORE = /_/g;
 const CreateReportRequestSchema = z.object({
   // id optional — server mints if absent (lean callers). Offline-first
   // stores keep supplying client-side IDs for sync.
-  id: z.string().optional().describe('Client-generated report ID; server mints when absent'),
+  id: z
+    .string()
+    .trim()
+    .min(1)
+    .optional()
+    .describe('Client-generated report ID; server mints when absent'),
   trailName: z.string().min(1),
   trailRegion: z.string().optional().nullable(),
   surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),

@@ -179,10 +179,9 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
     '/by-name',
     async ({ query }) => {
       const { WEATHER_API_KEY } = getEnv();
+      // Schema enforces z.string().min(2); Elysia rejects shorter values
+      // before the handler runs.
       const q = query.q;
-      if (!q || q.length < 2) {
-        return status(400, { error: 'Query parameter q (≥ 2 chars) is required' });
-      }
       try {
         const searchResponse = await fetch(
           `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(q)}`,

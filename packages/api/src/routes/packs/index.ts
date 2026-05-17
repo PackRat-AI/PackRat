@@ -737,6 +737,14 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if (!catalog) {
         return status(404, { error: `Catalog item ${body.catalogItemId} not found` });
       }
+      // `name` is NOT NULL in pack_items; a catalog row missing it would
+      // produce a Postgres `23502 not_null_violation` deep in the insert.
+      // Fail fast with a 422 so the caller sees the misconfigured row.
+      if (!catalog.name || catalog.name.trim().length === 0) {
+        return status(422, {
+          error: `Catalog item ${body.catalogItemId} has no name and cannot be added to a pack`,
+        });
+      }
 
       const id = mintId('i');
       const now = new Date();

@@ -96,13 +96,16 @@ export const computePackBreakdown = (pack: PackWithItems): PackWeightBreakdown =
     entry.totalLbs = Math.round((entry.totalGrams / GRAMS_PER_LB) * 100) / 100;
   }
 
+  // Quantity-aware so the top-level total matches the sum of byCategory
+  // itemCount values (a pack with `qty: 3` of a single row counts as 3).
+  const itemCount = pack.items.reduce((sum, item) => sum + item.quantity, 0);
   return {
     packId: pack.id,
     totalGrams: Math.round(totalGrams),
     baseGrams: Math.round(baseGrams),
     wornGrams: Math.round(wornGrams),
     consumableGrams: Math.round(consumableGrams),
-    itemCount: pack.items.length,
+    itemCount,
     byCategory: Object.values(byCategory).sort((a, b) => b.totalGrams - a.totalGrams),
   };
 };
