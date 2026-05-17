@@ -94,6 +94,7 @@ function Profile() {
     {
       id: 'name',
       title: t('common.name'),
+      testID: testIds.profile.nameEditBtn,
       onPress: () => router.push('/(app)/(tabs)/profile/name'),
       ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
     },
@@ -146,6 +147,7 @@ function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
   return (
     <ListItem
       titleClassName="text-lg"
+      testID={info.item.testID}
       onPress={info.item.onPress}
       rightView={
         <View className="flex-1 flex-row items-center gap-0.5 px-2">
@@ -331,4 +333,5 @@ type DataItem =
       value?: string;
       subTitle?: string;
       onPress?: () => void;
+      testID?: string;
     };

@@ -27,7 +27,7 @@ const EXCLUDED_DIRS = new Set([
   'coverage',
 ]);
 
-const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/'];
+const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',

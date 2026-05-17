@@ -36,6 +36,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
       onPress={isSelectable ? () => restProps.onSelect(item) : restProps.onPress}
     >
       <View
+        testID={`catalog-item-card-${item.id}`}
         className={`rounded-lg flex-row gap-3 border p-4 bg-red
            ${
              isSelectable && restProps.selected

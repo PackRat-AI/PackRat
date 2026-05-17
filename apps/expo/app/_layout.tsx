@@ -1,7 +1,7 @@
 import '../polyfills';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
-import 'expo-dev-client';
+import 'expo-app/lib/devClient';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
