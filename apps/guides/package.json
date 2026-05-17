@@ -17,6 +17,7 @@
     "sync-to-r2": "bun run scripts/sync-to-r2.ts",
     "test": "vitest run --config vitest.config.ts",
     "test:og": "bun run build-content && bun run generate-og-images && RUN_OG_PIPELINE_TEST=1 vitest run --config vitest.config.ts __tests__/og-images.test.ts",
+    "test:og-meta": "vitest run --config vitest.config.ts __tests__/og-meta.test.ts",
     "test-enhancement": "bun run scripts/test-enhancement.ts",
     "update-authors": "bun run scripts/update-authors.ts"
   },
@@ -96,6 +97,8 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "cheerio": "^1.0.0",
+    "open-graph-scraper": "^6.10.0",
     "postcss": "catalog:",
     "postcss-import": "catalog:",
     "tailwindcss": "catalog:",

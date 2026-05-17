@@ -65,6 +65,14 @@ jobs:
           set -o pipefail
           bun run --cwd apps/guides build 2>&1 | tee /tmp/guides-build.log
 
+      - name: Validate OG meta in built HTML
+        # Parse out/index.html + every out/guide/<slug>.html and assert the
+        # OG / Twitter meta tags expected by social previewers (LinkedIn,
+        # FB, microlink). A regression here — missing meta tag, relative
+        # og:image, wrong twitter:card — fails the workflow before the
+        # artifact is uploaded so reviewers see the failure on the PR check.
+        run: bun run --cwd apps/guides test:og-meta
+
       - name: Summarize build output
         if: always()
         run: |
