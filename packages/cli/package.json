@@ -20,9 +20,11 @@
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",
     "consola": "catalog:",
+    "uuid": "^11.0.5",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@types/bun": "catalog:",
+    "@types/uuid": "^11.0.0"
   }
 }
