@@ -78,10 +78,10 @@ export const CreatePackTemplateItemRequestSchema = z.object({
   description: z.string().optional(),
   weight: z.number().min(0),
   weightUnit: z.enum(['g', 'kg', 'lb', 'oz']),
-  quantity: z.number().int().min(1).optional().default(1),
+  quantity: z.number().int().min(1).optional(),
   category: z.string().optional(),
-  consumable: z.boolean().optional().default(false),
-  worn: z.boolean().optional().default(false),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
   image: z.string().nullish(),
   notes: z.string().optional(),
 });
@@ -102,7 +102,7 @@ export const UpdatePackTemplateItemRequestSchema = z.object({
 
 export const GenerateFromOnlineContentRequestSchema = z.object({
   contentUrl: z.string().url(),
-  isAppTemplate: z.boolean().optional().default(true),
+  isAppTemplate: z.boolean().optional(),
 });
 
 export const GenerateFromOnlineContentResponseSchema = PackTemplateWithItemsSchema;

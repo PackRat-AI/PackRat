@@ -19,7 +19,7 @@ export const DetectedItemWithMatchesSchema = z.object({
 
 export const AnalyzeImageRequestSchema = z.object({
   image: z.string(),
-  matchLimit: z.number().int().min(1).max(10).optional().default(3),
+  matchLimit: z.number().int().min(1).max(10).optional(),
 });
 
 export const AnalyzeImageResponseSchema = z.array(DetectedItemWithMatchesSchema);
