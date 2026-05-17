@@ -1,6 +1,5 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { mintId } from '@packrat/api/utils/ids';
 import type { NewTrailConditionReport } from '@packrat/db';
 import { trailConditionReports } from '@packrat/db';
 import {
@@ -85,13 +84,12 @@ export const trailConditionRoutes = new Elysia()
     async ({ body, user }) => {
       const db = createDb();
       const data = body;
-      const reportId = data.id ?? mintId('tcr');
 
       try {
         const [newReport] = await db
           .insert(trailConditionReports)
           .values({
-            id: reportId,
+            id: data.id,
             trailName: data.trailName,
             trailRegion: data.trailRegion ?? null,
             surface: data.surface,
@@ -114,10 +112,7 @@ export const trailConditionRoutes = new Elysia()
         return toReportResponse(newReport);
       } catch (error) {
         const pgCode = (error as { code?: string })?.code;
-        // 23505 is the unique-violation path: client-supplied id already in
-        // use. Server-minted ids are statistically collision-free, so this
-        // only matters when the caller passed one.
-        if (pgCode === '23505' && data.id) {
+        if (pgCode === '23505') {
           const existing = await db.query.trailConditionReports.findFirst({
             where: and(
               eq(trailConditionReports.id, data.id),

@@ -32,9 +32,7 @@ export const TripSchema = z.object({
 export type Trip = z.infer<typeof TripSchema>;
 
 export const CreateTripBodySchema = z.object({
-  // id optional — server mints if absent (lean callers). Offline-first
-  // stores keep supplying client-side IDs for sync. min(1) rejects ''.
-  id: z.string().trim().min(1).optional(),
+  id: z.string(),
   name: z.string().min(1).max(255),
   description: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),

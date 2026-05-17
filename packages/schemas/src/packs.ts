@@ -168,28 +168,14 @@ export const GapAnalysisResponseSchema = z.object({
 
 // Body schemas mirroring the inline route schemas (exported so stores/clients
 // can use ApiBody<> or direct z.infer<> without importing from route files).
-// id optional — server mints if absent (lean callers). Offline-first
-// stores (mobile) keep supplying client-side IDs for sync.
 export const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string().trim().min(1).optional(),
+  id: z.string(),
   localCreatedAt: z.string().datetime(),
   localUpdatedAt: z.string().datetime(),
 });
 
 export const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string().trim().min(1).optional(),
-});
-
-// Lean payload for /items/from-catalog. Name/weight/weightUnit/category get
-// hydrated server-side from the catalog row.
-export const AddPackItemFromCatalogBodySchema = z.object({
-  catalogItemId: z.number().int().positive(),
-  quantity: z.number().int().positive().optional(),
-  notes: z.string().optional(),
-  consumable: z.boolean().optional(),
-  worn: z.boolean().optional(),
-  // Optional override — usually the catalog category is fine.
-  category: z.string().optional(),
+  id: z.string(),
 });
 
 export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({

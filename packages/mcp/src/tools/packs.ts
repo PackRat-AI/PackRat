@@ -205,38 +205,6 @@ export function registerPackTools(agent: AgentContext): void {
       ),
   );
 
-  // ── Add a catalog item to a pack (lean) ──────────────────────────────────
-  // Server hydrates name/weight/weightUnit/category from the catalog row.
-
-  agent.server.registerTool(
-    'add_pack_item_from_catalog',
-    {
-      description:
-        'Add a catalog item to a pack. Server copies name/weight/category from the catalog row; you just supply the catalog ID and per-pack metadata (quantity, notes, worn, consumable).',
-      inputSchema: {
-        pack_id: z.string(),
-        catalog_item_id: z.number().int().positive(),
-        quantity: z.number().int().min(1).optional(),
-        notes: z.string().optional(),
-        is_consumable: z.boolean().optional(),
-        is_worn: z.boolean().optional(),
-        category: z.string().optional().describe('Override catalog category if needed'),
-      },
-    },
-    async ({ pack_id, catalog_item_id, quantity, notes, is_consumable, is_worn, category }) =>
-      call(
-        agent.api.user.packs({ packId: pack_id }).items['from-catalog'].post({
-          catalogItemId: catalog_item_id,
-          quantity,
-          notes,
-          consumable: is_consumable,
-          worn: is_worn,
-          category,
-        }),
-        { action: 'add catalog item to pack', resourceHint: `pack ${pack_id}` },
-      ),
-  );
-
   // ── Update pack item ──────────────────────────────────────────────────────
 
   agent.server.registerTool(

@@ -1,6 +1,5 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { mintId } from '@packrat/api/utils/ids';
 import { trips } from '@packrat/db';
 import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/schemas/trips';
 import { and, eq } from 'drizzle-orm';
@@ -46,13 +45,11 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
       const data = body;
 
-      const tripId = data.id ?? mintId('t');
-
       try {
         const [newTrip] = await db
           .insert(trips)
           .values({
-            id: tripId,
+            id: data.id,
             userId: user.userId,
             name: data.name,
             description: data.description ?? null,

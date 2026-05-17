@@ -12,7 +12,6 @@ import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
-import { mintId } from '@packrat/api/utils/ids';
 import {
   catalogItems,
   type NewPack,
@@ -25,7 +24,6 @@ import {
 import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
   AddPackItemBodySchema,
-  AddPackItemFromCatalogBodySchema,
   CreatePackBodySchema,
   GapAnalysisRequestSchema,
   PackItemSchema,
@@ -91,14 +89,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
-      const packId = data.id ?? mintId('p');
-
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
       const [newPack] = await db
         .insert(packs)
         .values({
-          id: packId,
+          id: data.id,
           userId: user.userId,
           name: data.name,
           description: data.description,
@@ -419,7 +415,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packWeightHistoryEntry = await db
           .insert(packWeightHistory)
           .values({
-            id: data.id ?? mintId('w'),
+            id: data.id,
             packId: params.packId,
             userId: user.userId,
             weight: data.weight,
@@ -638,7 +634,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         getEnv();
 
       if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
-      const itemId = data.id ?? mintId('i');
+      const itemId = data.id;
 
       const embeddingText = getEmbeddingText(data);
       const embedding = await generateEmbedding({
@@ -691,88 +687,6 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       body: AddPackItemBodySchema,
       isAuthenticated: true,
       detail: { tags: ['Pack Items'], summary: 'Add item to pack', security: [{ bearerAuth: [] }] },
-    },
-  )
-
-  // Add item from catalog — server hydrates name/weight/category from the
-  // catalog row so the caller only supplies the link plus per-pack metadata
-  // (quantity, notes, worn, consumable).
-  .post(
-    '/:packId/items/from-catalog',
-    async ({ params, body, user }) => {
-      const db = createDb();
-      const packId = params.packId;
-
-      const pack = await db.query.packs.findFirst({
-        where: and(eq(packs.id, packId), eq(packs.userId, user.userId)),
-        columns: { id: true },
-      });
-      if (!pack) return status(404, { error: 'Pack not found' });
-
-      const catalog = await db.query.catalogItems.findFirst({
-        where: eq(catalogItems.id, body.catalogItemId),
-      });
-      if (!catalog) {
-        return status(404, { error: `Catalog item ${body.catalogItemId} not found` });
-      }
-      // `name` is NOT NULL in pack_items; a catalog row missing it would
-      // produce a Postgres `23502 not_null_violation` deep in the insert.
-      // Fail fast with a 422 so the caller sees the misconfigured row.
-      if (!catalog.name || catalog.name.trim().length === 0) {
-        return status(422, {
-          error: `Catalog item ${body.catalogItemId} has no name and cannot be added to a pack`,
-        });
-      }
-
-      const id = mintId('i');
-      const now = new Date();
-      const [newItem] = await db
-        .insert(packItems)
-        .values({
-          id,
-          packId,
-          catalogItemId: catalog.id,
-          name: catalog.name,
-          description: catalog.description ?? null,
-          weight: catalog.weight ?? 0,
-          weightUnit: catalog.weightUnit ?? 'g',
-          quantity: body.quantity ?? 1,
-          category: body.category ?? catalog.categories?.[0] ?? 'Uncategorized',
-          consumable: body.consumable ?? false,
-          worn: body.worn ?? false,
-          image: catalog.images?.[0] ?? null,
-          notes: body.notes ?? null,
-          userId: user.userId,
-          embedding: catalog.embedding,
-          localCreatedAt: now,
-          localUpdatedAt: now,
-        } as NewPackItem) // safe-cast: object literal matches NewPackItem; embedding field uses the narrower type
-        .returning();
-
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
-
-      if (!newItem) return status(400, { error: 'Failed to create item' });
-
-      return status(201, {
-        ...newItem,
-        consumable: newItem.consumable ?? false,
-        worn: newItem.worn ?? false,
-        deleted: newItem.deleted ?? false,
-        createdAt: newItem.createdAt.toISOString(),
-        updatedAt: newItem.updatedAt.toISOString(),
-        embedding: undefined,
-        templateItemId: newItem.templateItemId ?? null,
-      });
-    },
-    {
-      params: z.object({ packId: z.string() }),
-      body: AddPackItemFromCatalogBodySchema,
-      isAuthenticated: true,
-      detail: {
-        tags: ['Pack Items'],
-        summary: 'Add a catalog item to a pack',
-        security: [{ bearerAuth: [] }],
-      },
     },
   )
 

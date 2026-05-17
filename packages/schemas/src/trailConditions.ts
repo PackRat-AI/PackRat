@@ -32,14 +32,7 @@ export const TrailConditionReportSchema = z.object({
 export type TrailConditionReport = z.infer<typeof TrailConditionReportSchema>;
 
 export const CreateTrailConditionReportRequestSchema = z.object({
-  // id optional — server mints if absent (lean callers). Offline-first
-  // stores keep supplying client-side IDs for sync. min(1) rejects ''.
-  id: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .describe('Client-generated report ID; server mints when absent'),
+  id: z.string().describe('Client-generated report ID'),
   trailName: z.string().min(1),
   trailRegion: z.string().optional().nullable(),
   surface: TrailSurfaceSchema,
