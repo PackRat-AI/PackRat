@@ -211,5 +211,73 @@ describe('embeddingHelper', () => {
       expect(lines[1]).toBe('Description');
       expect(lines[2]).toBe('Brand');
     });
+
+    it('falls back to existingItem for techs when item has none', () => {
+      const item = { name: 'Gadget' };
+      const existingItem = {
+        techs: { Waterproof: 'IPX8', Weight: '150g' },
+      };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Waterproof: IPX8');
+      expect(result).toContain('Weight: 150g');
+    });
+
+    it('falls back to existingItem for reviews when item has none', () => {
+      const item = { name: 'Boots' };
+      const existingItem = {
+        reviews: [{ title: 'Solid boot', text: 'Great grip on wet rock' }],
+      };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Solid boot Great grip on wet rock');
+    });
+
+    it('falls back to existingItem for qas when item has none', () => {
+      const item = { name: 'Stove' };
+      const existingItem = {
+        qas: [
+          {
+            question: 'Does it work at altitude?',
+            answers: [{ a: 'Yes, up to 5000m' }],
+          },
+        ],
+      };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Does it work at altitude?');
+      expect(result).toContain('Yes, up to 5000m');
+    });
+
+    it('falls back to existingItem for faqs when item has none', () => {
+      const item = { name: 'Bottle' };
+      const existingItem = {
+        faqs: [{ question: 'BPA free?', answer: 'Yes, completely BPA-free' }],
+      };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('BPA free? Yes, completely BPA-free');
+    });
+
+    it('falls back to existingItem for variants when item has none', () => {
+      const item = { name: 'Jacket' };
+      const existingItem = {
+        variants: [{ attribute: 'Color', values: ['Navy', 'Olive'] }],
+      };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Color: Navy, Olive');
+    });
+
+    it('falls back to existingItem for color, size, and material', () => {
+      const item = { name: 'Glove' };
+      const existingItem = { color: 'Black', size: 'L', material: 'Fleece' };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Black');
+      expect(result).toContain('L');
+      expect(result).toContain('Fleece');
+    });
+
+    it('falls back to existingItem category when item has none', () => {
+      const item = { name: 'Hat' };
+      const existingItem = { category: 'Headwear' };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Headwear');
+    });
   });
 });

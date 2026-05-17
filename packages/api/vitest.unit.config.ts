@@ -38,6 +38,8 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/index.ts',
         'src/db/migrations/**',
+        // Test infrastructure stubs (not production code)
+        'src/__test-stubs__/**',
         // Pure type/schema definitions (no runtime logic to test)
         'src/schemas/**',
         'src/types/**',
@@ -48,6 +50,8 @@ export default defineConfig({
         'src/containers/**',
         // Index files (just exports, no business logic)
         'src/**/index.ts',
+        // CLI stub — connects to a stub DB for drizzle-kit and is not testable
+        'src/auth/**',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
         'src/utils/ai/**',
@@ -58,6 +62,10 @@ export default defineConfig({
         'src/services/catalogService.ts',
         'src/services/packService.ts',
         'src/services/imageDetectionService.ts',
+        // PostGIS-dependent service (requires live DB with PostGIS extension)
+        'src/services/trails.ts',
+        // Intentionally thin pass-through (no business logic to unit-test)
+        'src/services/refreshTokenService.ts',
         // Database utilities (require complex mocking, covered by integration tests)
         'src/utils/DbUtils.ts',
         // External service utilities (better tested via integration tests)
@@ -72,10 +80,10 @@ export default defineConfig({
         'src/utils/openapi.ts',
       ],
       thresholds: {
-        statements: 80,
-        branches: 88,
-        functions: 95,
-        lines: 80,
+        statements: 95,
+        branches: 92,
+        functions: 97,
+        lines: 95,
       },
     },
   },

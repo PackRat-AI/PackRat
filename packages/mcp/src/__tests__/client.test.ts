@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { call, errMessage, nowIso, ok, shortId } from '../client';
+import { call, createMcpClients, errMessage, nowIso, ok, shortId } from '../client';
+
+vi.mock('@packrat/api-client', () => ({
+  createApiClient: vi.fn((opts: unknown) => ({ _opts: opts })),
+}));
 
 describe('ok()', () => {
   it('wraps data as pretty-printed JSON in MCP text content', () => {
@@ -182,5 +186,109 @@ describe('call()', () => {
     const result = await call(mockPromise);
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('string error');
+  });
+
+  it('formats 403 admin error when requiresAdmin is set', async () => {
+    const mockPromise = Promise.resolve({ data: null, error: { status: 403, value: null }, status: 403 });
+    const result = await call(mockPromise, { action: 'delete user', requiresAdmin: true });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('admin');
+    expect(result.content[0].text.toLowerCase()).toContain('forbidden');
+  });
+
+  it('extracts error body from obj.error field when obj.message is absent', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 400, value: { error: 'bad request detail' } },
+      status: 400,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('bad request detail');
+  });
+
+  it('JSON-stringifies error body object when no message/error field present', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 400, value: { code: 42, detail: 'some info' } },
+      status: 400,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('42');
+  });
+
+  it('converts numeric error body to string', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 500, value: 12345 },
+      status: 500,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('12345');
+  });
+});
+
+describe('createMcpClients()', () => {
+  it('returns user and admin clients', () => {
+    const clients = createMcpClients({
+      baseUrl: 'https://api.example.com',
+      getUserToken: () => 'user-token',
+      getAdminToken: () => 'admin-token',
+    });
+    expect(clients).toHaveProperty('user');
+    expect(clients).toHaveProperty('admin');
+  });
+
+  it('passes the base URL to each client', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => null,
+      getAdminToken: () => null,
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+    for (const c of spy.mock.calls) {
+      expect((c[0] as { baseUrl: string }).baseUrl).toBe('https://api.test.com');
+    }
+  });
+
+  it('noopHooks getAccessToken returns null when token provider returns null', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => null, getAdminToken: () => null });
+    const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
+    expect(auth.getAccessToken()).toBeNull();
+  });
+
+  it('noopHooks getAccessToken returns the token when provider returns one', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => 'my-token', getAdminToken: () => null });
+    const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
+    expect(auth.getAccessToken()).toBe('my-token');
+  });
+
+  it('noopHooks getRefreshToken always returns null', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => 'tok', getAdminToken: () => null });
+    const auth = (spy.mock.calls[0]?.[0] as { auth: { getRefreshToken: () => null } }).auth;
+    expect(auth.getRefreshToken()).toBeNull();
+  });
+
+  it('noopHooks lifecycle callbacks are no-ops', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({ baseUrl: 'https://api.test.com', getUserToken: () => null, getAdminToken: () => null });
+    const auth = (spy.mock.calls[0]?.[0] as {
+      auth: { onAccessTokenRefreshed: () => void; onNeedsReauth: () => void };
+    }).auth;
+    expect(() => auth.onAccessTokenRefreshed()).not.toThrow();
+    expect(() => auth.onNeedsReauth()).not.toThrow();
   });
 });
