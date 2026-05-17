@@ -14,7 +14,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function makeResponse(body: unknown, ok = true, status = 200) {
+function makeResponse(body: unknown, status = 200) {
+  const ok = status < 400;
   return {
     ok,
     status,
@@ -84,14 +85,14 @@ describe('queryOverpass', () => {
 
   describe('error handling', () => {
     it('throws when response status is not ok (429)', async () => {
-      mockFetch.mockResolvedValue(makeResponse({}, false, 429));
+      mockFetch.mockResolvedValue(makeResponse({}, 429));
       await expect(queryOverpass('ql')).rejects.toThrow(
         'Overpass request failed: 429 Service Unavailable',
       );
     });
 
     it('throws when response status is not ok (500)', async () => {
-      mockFetch.mockResolvedValue(makeResponse({}, false, 500));
+      mockFetch.mockResolvedValue(makeResponse({}, 500));
       await expect(queryOverpass('ql')).rejects.toThrow(
         'Overpass request failed: 500 Service Unavailable',
       );
