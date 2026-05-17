@@ -7,12 +7,12 @@ import {
 } from '@packrat/ui/nativewindui';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
+import type { PackItem } from 'expo-app/features/packs/types';
 import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
-import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { ScrollView, View } from 'react-native';
@@ -192,10 +192,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => (
-              // safe-cast: Treaty response type has createdAt?: string but PackItem schema requires string
-              <ItemRow item={item as unknown as PackItem} index={index} />
-            )}
+            renderItem={(item, index) => <ItemRow item={item} index={index} />}
           />
         </View>
       </ScrollView>

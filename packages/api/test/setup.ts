@@ -1,9 +1,9 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { isFunction, isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
-import * as schema from '../src/db/schema';
 import { clearCurrentTestUsers } from './utils/test-helpers';
 
 // ── Setup regex constants ──

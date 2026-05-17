@@ -1,9 +1,9 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import type { CatalogItem } from '@packrat/db';
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import type { CatalogItem } from '../db/schema';
 import { CatalogService } from './catalogService';
 
 const ITEM_DETECTION_SYSTEM_PROMPT = `You are an expert gear identification assistant specializing in outdoor and adventure equipment. 

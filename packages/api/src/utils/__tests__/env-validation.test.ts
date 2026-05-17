@@ -79,6 +79,10 @@ describe('env-validation', () => {
       expect(apiEnvSchema.shape.SENTRY_DSN.safeParse('not-a-url').success).toBe(false);
     });
 
+    it('accepts missing SENTRY_DSN for local development', () => {
+      expect(apiEnvSchema.shape.SENTRY_DSN.safeParse(undefined).success).toBe(true);
+    });
+
     it('validates OPENAI_API_KEY starts with sk-', () => {
       expect(apiEnvSchema.shape.OPENAI_API_KEY.safeParse('sk-test123').success).toBe(true);
     });
