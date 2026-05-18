@@ -132,7 +132,7 @@ export class PackService {
 
   private async getItems(
     packItemConcepts: PackItemConceptSchema[],
-  ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
+  ): Promise<Omit<NewPackItem, 'id' | 'clientUuid' | 'userId' | 'packId'>[]> {
     const catalogService = new CatalogService();
     const searchResults = await catalogService.batchVectorSearch(
       packItemConcepts.map((item) => item.item),

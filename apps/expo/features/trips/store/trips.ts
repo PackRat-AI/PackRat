@@ -7,10 +7,17 @@ import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { TripInStore } from '../types';
 
+// The mobile `Trip` / `TripInStore` interface (apps/expo/features/trips/types.ts)
+// pre-dates the @packrat/schemas TripSchema and drifts from it (description is
+// not-nullable locally, nullable in schema). Aligning the two is part of PR 3
+// of the client-uuid-split (docs/design/client-uuid-split.md §9). For now, the
+// schema-parsed return is `unknown`-cast through `TripInStore[]` to keep
+// syncedCrud's generic happy.
 const listTrips = async () => {
   const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
   if (error) throw new Error(`Failed to list trips: ${error.value}`);
-  return TripSchema.array().parse(data);
+  // safe-cast: mobile TripInStore drifts from TripSchema (description nullability); aligned in PR 3.
+  return TripSchema.array().parse(data) as unknown as TripInStore[];
 };
 
 const createTrip = async (tripData: TripInStore) => {
@@ -30,7 +37,8 @@ const createTrip = async (tripData: TripInStore) => {
     localUpdatedAt: tripData.localUpdatedAt ?? new Date().toISOString(),
   });
   if (error) throw new Error(`Failed to create trip: ${error.value}`);
-  return TripSchema.parse(data);
+  // safe-cast: mobile TripInStore drifts from TripSchema; aligned in PR 3.
+  return TripSchema.parse(data) as unknown as TripInStore;
 };
 
 const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
@@ -45,7 +53,8 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update trip: ${error.value}`);
-  return TripSchema.parse(result);
+  // safe-cast: mobile TripInStore drifts from TripSchema; aligned in PR 3.
+  return TripSchema.parse(result) as unknown as TripInStore;
 };
 
 // Observable trips store
