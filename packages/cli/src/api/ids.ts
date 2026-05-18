@@ -1,9 +1,14 @@
 /**
- * ID helpers for client-side creation. The API expects the client to supply
- * IDs (so offline-first stores can write before sync). UUIDv7 is time-ordered
- * for good B-tree locality if/when the id becomes the actual PK on disk.
- * Using the `uuid` npm package (not Bun.randomUUIDv7) so the same helper
- * works in any JS runtime — useful if this ever moves to MCP / Workers.
+ * Client-side ID helpers. Reserved for callers that want to supply their own
+ * `clientUuid` for idempotent retries (e.g., a future `--client-uuid` flag).
+ *
+ * After Phase 1 of the client/server ID split, lean callers (this CLI, MCP,
+ * web) generally let the server mint both `id` and `clientUuid` — see
+ * docs/design/client-uuid-split.md §8 Q4. So `shortId` is intentionally
+ * unused by current create commands; keep it available rather than reinvent.
+ *
+ * UUIDv7 is time-ordered for B-tree locality. The `uuid` npm package works
+ * in any JS runtime — useful if this helper ever moves to MCP / Workers.
  */
 import { v7 as uuidv7 } from 'uuid';
 

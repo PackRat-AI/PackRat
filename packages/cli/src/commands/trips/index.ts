@@ -1,7 +1,7 @@
 import { toRecord, toRecordArray } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
-import { nowIso, shortId } from '../../api/ids';
+import { nowIso } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 import { printSummary, printTable } from '../../shared';
 
@@ -87,7 +87,7 @@ const createCmd = defineCommand({
         : null;
     const trip = await runApi(
       client.trips.post({
-        id: shortId('t'),
+        // No clientUuid: lean callers let the server mint.
         name: args.name,
         description: args.description,
         location,

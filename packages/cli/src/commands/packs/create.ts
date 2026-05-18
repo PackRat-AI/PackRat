@@ -2,7 +2,7 @@ import { toRecord } from '@packrat/guards';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
-import { nowIso, shortId } from '../../api/ids';
+import { nowIso } from '../../api/ids';
 import { requireAuth, runApi } from '../../api/run';
 
 export default defineCommand({
@@ -31,7 +31,8 @@ export default defineCommand({
       : undefined;
     const pack = await runApi(
       client.packs.post({
-        id: shortId('p'),
+        // No clientUuid: lean callers let the server mint per Phase 1 of the
+        // client/server ID split (docs/design/client-uuid-split.md §8 Q4).
         name: args.name,
         description: args.description,
         category: args.category,
