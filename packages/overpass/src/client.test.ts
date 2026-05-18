@@ -121,7 +121,8 @@ describe('queryOverpass', () => {
       mockFetch.mockResolvedValue(makeResponse(validResponse));
       const result = await queryOverpass('[out:json];relation(12345);out geom;');
       expect(result.elements).toHaveLength(1);
-      expect(result.elements[0].id).toBe(12345);
+      const [firstElement] = result.elements;
+      expect(firstElement?.id).toBe(12345);
     });
 
     it('returns empty elements array for no results', async () => {

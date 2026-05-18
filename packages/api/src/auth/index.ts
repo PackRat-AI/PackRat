@@ -15,7 +15,7 @@ import * as schema from '@packrat/db';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { generateAppleClientSecret, verifyPasswordCompat } from './auth.helpers';
+import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
