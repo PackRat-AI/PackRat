@@ -50,10 +50,11 @@ export default defineConfig({
         'src/containers/**',
         // Index files (just exports, no business logic)
         'src/**/index.ts',
-        // CLI stub — connects to a stub DB for drizzle-kit; not production logic
+        // CLI stub for `bunx auth generate` — not production logic
         'src/auth/auth.config.ts',
-        // Better Auth instance factory — requires live Neon DB, KV, and OAuth
-        // provider credentials; not unit-testable without the full CF runtime
+        // getAuth() factory requires live Neon DB, CF KV, and OAuth credentials;
+        // not unit-testable without the full CF runtime. Pure helpers live in
+        // auth.helpers.ts and are covered by their own unit tests.
         'src/auth/index.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
