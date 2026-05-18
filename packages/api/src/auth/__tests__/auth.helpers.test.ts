@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  bcryptCompare: vi.fn<[string, string], Promise<boolean>>(),
-  verifyPassword: vi.fn<[string, string], Promise<boolean>>(),
+  bcryptCompare: vi.fn<(hash: string, data: string | Buffer) => Promise<boolean>>(),
+  verifyPassword: vi.fn<(hash: string, password: string) => Promise<boolean>>(),
   importPKCS8: vi.fn(),
   signJwt: vi.fn(),
 }));
