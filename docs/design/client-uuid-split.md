@@ -1,9 +1,8 @@
 # Design: Client/Server ID split for offline-first tables
 
-**Status:** Draft — for review, no code yet.
+**Status:** Phase 1 PR 1 + 2 in progress — see [plan](../plans/2026-05-17-001-feat-client-uuid-split-phase1-plan.md).
 **Author:** Architecture follow-up to [PR #2433](https://github.com/PackRat-AI/PackRat/pull/2433) ("T9: server-side ID minting").
 **Scope:** `packs`, `pack_items`, `weight_history`, `trips`, `pack_templates`, `pack_template_items`, `trail_condition_reports`.
-**Decision needed before implementation:** see [Open questions](#8-open-questions).
 
 ---
 
@@ -565,7 +564,7 @@ These need Andrew's call before implementation starts:
 
 Six shippable PRs, in order. Each PR is independently revertable and leaves the system in a consistent state.
 
-### PR 1 — Schema shim (Phase 1 DB)
+### PR 1 — Schema shim (Phase 1 DB)  *[shipping in plan 2026-05-17-001]*
 
 - Add `client_uuid` column to seven tables.
 - Backfill from existing `id`.
@@ -575,7 +574,7 @@ Six shippable PRs, in order. Each PR is independently revertable and leaves the 
 **Risk:** Low. Reversible by dropping the column.
 **Touches:** `packages/api/drizzle/00XX_add_client_uuid.sql`, `packages/api/src/db/schema.ts`.
 
-### PR 2 — API: accept and return `clientUuid`
+### PR 2 — API: accept and return `clientUuid`  *[shipping in plan 2026-05-17-001]*
 
 - Update Zod request schemas to accept optional `clientUuid`.
 - Update handlers to use `data.clientUuid ?? data.id ?? mintId(prefix)`.
@@ -586,7 +585,7 @@ Six shippable PRs, in order. Each PR is independently revertable and leaves the 
 **Risk:** Low. Additive on the wire.
 **Touches:** `packages/api/src/routes/{packs,trips,packTemplates,trailConditions}/*.ts`, `packages/api/src/schemas/*.ts`, `packages/api/src/utils/ids.ts` (rename `mintId` semantics in comments).
 
-### PR 3 — Mobile: persisted store migration + read by `clientUuid`
+### PR 3 — Mobile: persisted store migration + read by `clientUuid`  *[deferred — own plan]*
 
 - `persistPlugin` migration: copy `id → clientUuid`, re-key store records.
 - Update `PackInStore`, `PackItem`, `TripInStore`, etc. types to include `clientUuid`.
@@ -597,7 +596,7 @@ Six shippable PRs, in order. Each PR is independently revertable and leaves the 
 **Risk:** Medium. Persisted-store migration is one-way. Test on a representative dataset.
 **Touches:** `apps/expo/features/packs/store/*.ts`, `apps/expo/features/packs/hooks/*.ts`, `apps/expo/features/{trips,trail-conditions,pack-templates}/store/*.ts`, `apps/expo/lib/persist-plugin/*.ts`, `apps/expo/features/packs/types.ts` and siblings.
 
-### PR 4 — Mobile: switch sync wire format to `clientUuid`
+### PR 4 — Mobile: switch sync wire format to `clientUuid`  *[deferred — own plan]*
 
 - Update `createPack`, `createPackItem`, `createTrip`, etc. in the stores to send `clientUuid` on the wire.
 - Update `updatePack`, `updatePackItem`, etc. to throw-and-retry when local row has no server `id` yet.
@@ -606,7 +605,7 @@ Six shippable PRs, in order. Each PR is independently revertable and leaves the 
 **Risk:** Medium. Watch for retry storms in telemetry.
 **Touches:** Same files as PR 3.
 
-### PR 5 — API: drop the `id`-on-create compatibility shim
+### PR 5 — API: drop the `id`-on-create compatibility shim  *[deferred — waits on PR 4 + 30 days clean telemetry]*
 
 - Remove `data.id ?? data.clientUuid` fallback.
 - Force `clientUuid` (server can still mint).

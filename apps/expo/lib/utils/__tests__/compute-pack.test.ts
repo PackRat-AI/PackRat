@@ -12,6 +12,7 @@ function makePackItem(
 ): PackItem {
   return {
     id: 'item-1',
+    clientUuid: 'item-1',
     name: 'Test Item',
     description: null,
     quantity: overrides.quantity ?? 1,
@@ -36,6 +37,7 @@ function makePackItem(
 function makePack(items: PackItem[] = [], overrides: Partial<PackWithItems> = {}): PackWithItems {
   return {
     id: 'pack-1',
+    clientUuid: 'pack-1',
     name: 'Test Pack',
     description: null,
     category: 'hiking',
