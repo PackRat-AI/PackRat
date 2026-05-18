@@ -58,6 +58,11 @@ describe('getContextualSuggestions', () => {
     const suggestions = getContextualSuggestions({ contextType: 'pack' });
     expect(suggestions.length).toBeGreaterThan(0);
   });
+
+  it('returns empty array for item context without an item name', () => {
+    const suggestions = getContextualSuggestions({ contextType: 'item' });
+    expect(suggestions).toEqual([]);
+  });
 });
 
 describe('getContextualGreeting', () => {
@@ -81,5 +86,10 @@ describe('getContextualGreeting', () => {
     const greeting = getContextualGreeting({ contextType: 'pack' });
     expect(typeof greeting).toBe('string');
     expect(greeting.length).toBeGreaterThan(0);
+  });
+
+  it('includes the pack name in the greeting when packName is provided', () => {
+    const greeting = getContextualGreeting({ contextType: 'pack', packName: 'My Hiking Pack' });
+    expect(greeting).toContain('My Hiking Pack');
   });
 });
