@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { mintId } from '@packrat/api/utils/ids';
 import type { NewTrailConditionReport } from '@packrat/db';
 import { trailConditionReports } from '@packrat/db';
 import {
@@ -85,11 +86,16 @@ export const trailConditionRoutes = new Elysia()
       const db = createDb();
       const data = body;
 
+      // Phase 1 ID split (docs/design/client-uuid-split.md §5.4).
+      const clientUuid = data.clientUuid ?? data.id ?? mintId('tcr');
+      const reportId = data.clientUuid || !data.id ? mintId('tcr') : data.id;
+
       try {
-        const [newReport] = await db
+        const [inserted] = await db
           .insert(trailConditionReports)
           .values({
-            id: data.id,
+            id: reportId,
+            clientUuid,
             trailName: data.trailName,
             trailRegion: data.trailRegion ?? null,
             surface: data.surface,
@@ -105,23 +111,22 @@ export const trailConditionRoutes = new Elysia()
             localCreatedAt: new Date(data.localCreatedAt),
             localUpdatedAt: new Date(data.localUpdatedAt),
           })
+          .onConflictDoNothing({ target: trailConditionReports.clientUuid })
           .returning();
 
-        if (!newReport) return status(400, { error: 'Failed to submit report' });
+        const newReport =
+          inserted ??
+          (await db.query.trailConditionReports.findFirst({
+            where: and(
+              eq(trailConditionReports.clientUuid, clientUuid),
+              eq(trailConditionReports.userId, user.userId),
+            ),
+          }));
+
+        if (!newReport) return status(500, { error: 'Failed to submit report' });
 
         return toReportResponse(newReport);
       } catch (error) {
-        const pgCode = (error as { code?: string })?.code;
-        if (pgCode === '23505') {
-          const existing = await db.query.trailConditionReports.findFirst({
-            where: and(
-              eq(trailConditionReports.id, data.id),
-              eq(trailConditionReports.userId, user.userId),
-            ),
-          });
-          if (existing) return toReportResponse(existing);
-          return status(409, { error: 'Report ID already in use by another user' });
-        }
         console.error('Error creating trail condition report:', error);
         return status(500, { error: 'Failed to submit trail condition report' });
       }

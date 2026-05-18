@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ClientUuidSchema } from './packs';
 import { datetimeString } from './utils';
 
 export const PackTemplateErrorResponseSchema = z.object({
@@ -9,6 +10,7 @@ export const PackTemplateErrorResponseSchema = z.object({
 
 export const PackTemplateSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   category: z.string(),
@@ -27,6 +29,7 @@ export const PackTemplateSchema = z.object({
 
 export const PackTemplateItemSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   weight: z.number(),
@@ -49,8 +52,11 @@ export const PackTemplateWithItemsSchema = PackTemplateSchema.extend({
   items: z.array(PackTemplateItemSchema),
 });
 
+// `id` is legacy (Phase 1 compat shim — docs/design/client-uuid-split.md §5.4).
+// `clientUuid` is the new idempotency token. Both optional; server mints.
 export const CreatePackTemplateRequestSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
+  clientUuid: ClientUuidSchema.optional(),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   category: z.string().min(1),
@@ -73,7 +79,8 @@ export const UpdatePackTemplateRequestSchema = z.object({
 });
 
 export const CreatePackTemplateItemRequestSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
+  clientUuid: ClientUuidSchema.optional(),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   weight: z.number().min(0),

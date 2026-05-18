@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { mintId } from '@packrat/api/utils/ids';
 import { trips } from '@packrat/db';
 import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/schemas/trips';
 import { and, eq } from 'drizzle-orm';
@@ -45,11 +46,17 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
       const data = body;
 
+      // Phase 1 ID split — see packages/api/src/routes/packs/index.ts POST handler
+      // for the caller-shape breakdown.
+      const clientUuid = data.clientUuid ?? data.id ?? mintId('t');
+      const tripId = data.clientUuid || !data.id ? mintId('t') : data.id;
+
       try {
-        const [newTrip] = await db
+        const [inserted] = await db
           .insert(trips)
           .values({
-            id: data.id,
+            id: tripId,
+            clientUuid,
             userId: user.userId,
             name: data.name,
             description: data.description ?? null,
@@ -62,7 +69,14 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
             localCreatedAt: new Date(data.localCreatedAt),
             localUpdatedAt: new Date(data.localUpdatedAt),
           })
+          .onConflictDoNothing({ target: trips.clientUuid })
           .returning();
+
+        const newTrip =
+          inserted ??
+          (await db.query.trips.findFirst({
+            where: and(eq(trips.clientUuid, clientUuid), eq(trips.userId, user.userId)),
+          }));
 
         if (!newTrip) throw new Error('Failed to create trip');
 

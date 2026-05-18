@@ -12,6 +12,7 @@ import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { mintId } from '@packrat/api/utils/ids';
 import {
   catalogItems,
   type NewPack,
@@ -90,12 +91,23 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
+      // Phase 1 of the client/server ID split (docs/design/client-uuid-split.md).
+      // Three caller shapes coexist on this route:
+      //   - Legacy mobile sends `id` only → id round-trips (clientUuid = id).
+      //     Existing builds keep working unchanged; their reconciliation layer
+      //     keys local rows by `id`.
+      //   - New mobile / web (post-PR 3) sends `clientUuid` → server owns id.
+      //   - Lean callers (MCP / CLI) send neither → server mints both.
+      const clientUuid = data.clientUuid ?? data.id ?? mintId('p');
+      const id = data.clientUuid || !data.id ? mintId('p') : data.id;
+
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
-      const [newPack] = await db
+      const [inserted] = await db
         .insert(packs)
         .values({
-          id: data.id,
+          id,
+          clientUuid,
           userId: user.userId,
           name: data.name,
           description: data.description,
@@ -106,7 +118,16 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           localCreatedAt: new Date(data.localCreatedAt as string),
           localUpdatedAt: new Date(data.localUpdatedAt as string),
         } as typeof packs.$inferInsert)
+        .onConflictDoNothing({ target: packs.clientUuid })
         .returning();
+
+      // Idempotent retry: if conflict on clientUuid, fetch the existing row
+      // (user-scoped to prevent cross-user namespace probing).
+      const newPack =
+        inserted ??
+        (await db.query.packs.findFirst({
+          where: and(eq(packs.clientUuid, clientUuid), eq(packs.userId, user.userId)),
+        }));
 
       if (!newPack) return status(500, { error: 'Failed to create pack' });
 
@@ -413,21 +434,34 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       try {
         const data = body;
-        const packWeightHistoryEntry = await db
+        // Phase 1 ID split (see POST /packs comment for caller-shape breakdown).
+        const clientUuid = data.clientUuid ?? data.id ?? mintId('w');
+        const id = data.clientUuid || !data.id ? mintId('w') : data.id;
+        const [inserted] = await db
           .insert(packWeightHistory)
           .values({
-            id: data.id,
+            id,
+            clientUuid,
             packId: params.packId,
             userId: user.userId,
             weight: data.weight,
             localCreatedAt: new Date(data.localCreatedAt),
           })
+          .onConflictDoNothing({ target: packWeightHistory.clientUuid })
           .returning();
 
-        return packWeightHistoryEntry.map((entry) => ({
-          ...entry,
-          updatedAt: entry.createdAt,
-        }));
+        const entry =
+          inserted ??
+          (await db.query.packWeightHistory.findFirst({
+            where: and(
+              eq(packWeightHistory.clientUuid, clientUuid),
+              eq(packWeightHistory.userId, user.userId),
+            ),
+          }));
+
+        if (!entry) return status(500, { error: 'Failed to create weight history entry' });
+
+        return { ...entry, updatedAt: entry.createdAt };
       } catch (error) {
         console.error('Pack weight history API error:', error);
         return status(500, { error: 'Failed to create weight history entry' });
@@ -631,7 +665,10 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         getEnv();
 
       if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
-      const itemId = data.id;
+
+      // Phase 1 ID split (see POST /packs comment for caller-shape breakdown).
+      const clientUuid = data.clientUuid ?? data.id ?? mintId('i');
+      const itemId = data.clientUuid || !data.id ? mintId('i') : data.id;
 
       const embeddingText = getEmbeddingText(data);
       const embedding = await generateEmbedding({
@@ -643,10 +680,11 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         cloudflareAiBinding: AI,
       });
 
-      const [newItem] = await db
+      const [inserted] = await db
         .insert(packItems)
         .values({
           id: itemId,
+          clientUuid,
           packId,
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
@@ -662,11 +700,18 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           userId: user.userId,
           embedding,
         } as NewPackItem) // safe-cast: object literal matches NewPackItem shape; cast required because embedding field type is narrower in the inferred type
+        .onConflictDoNothing({ target: packItems.clientUuid })
         .returning();
 
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+      const newItem =
+        inserted ??
+        (await db.query.packItems.findFirst({
+          where: and(eq(packItems.clientUuid, clientUuid), eq(packItems.userId, user.userId)),
+        }));
 
       if (!newItem) return status(400, { error: 'Failed to create item' });
+
+      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
       return status(201, {
         ...newItem,

@@ -1897,6 +1897,7 @@ async function seed() {
       // Insert template
       await seedDb.insert(schema.packTemplates).values({
         id: templateDef.id,
+        clientUuid: templateDef.id,
         name: templateDef.name,
         description: templateDef.description,
         category: templateDef.category,
@@ -1914,6 +1915,7 @@ async function seed() {
       for (const item of templateDef.items) {
         await seedDb.insert(schema.packTemplateItems).values({
           id: item.id,
+          clientUuid: item.id,
           name: item.name,
           description: item.description,
           weight: item.weight,

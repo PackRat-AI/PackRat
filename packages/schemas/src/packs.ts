@@ -2,8 +2,12 @@ import { PACK_CATEGORIES, WEIGHT_UNITS } from '@packrat/constants';
 import { z } from 'zod';
 import { datetimeString } from './utils';
 
+// URL-safe nanoid charset, ≤ 64 chars. Matches the DB CHECK on `client_uuid`.
+export const ClientUuidSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+
 export const PackItemSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   name: z.string(),
   description: z.string().nullable(),
   weight: z.number(),
@@ -26,6 +30,7 @@ export const PackItemSchema = z.object({
 
 export const PackSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   userId: z.string(),
   name: z.string(),
   description: z.string().nullable(),
@@ -168,14 +173,22 @@ export const GapAnalysisResponseSchema = z.object({
 
 // Body schemas mirroring the inline route schemas (exported so stores/clients
 // can use ApiBody<> or direct z.infer<> without importing from route files).
+//
+// `id` is the legacy client-supplied identifier and is accepted as a
+// compatibility shim during Phase 1 of the client/server ID split
+// (docs/design/client-uuid-split.md §5.4). New callers should send
+// `clientUuid` instead. Both are optional — the server mints when neither
+// is supplied.
 export const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
+  id: z.string().optional(),
+  clientUuid: ClientUuidSchema.optional(),
   localCreatedAt: z.string().datetime(),
   localUpdatedAt: z.string().datetime(),
 });
 
 export const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
+  id: z.string().optional(),
+  clientUuid: ClientUuidSchema.optional(),
 });
 
 export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({
@@ -184,6 +197,7 @@ export const UpdatePackBodySchema = UpdatePackRequestSchema.extend({
 
 export const PackWeightHistoryResponseSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   packId: z.string(),
   userId: z.string(),
   weight: z.number(),
@@ -193,7 +207,8 @@ export const PackWeightHistoryResponseSchema = z.object({
 });
 
 export const CreatePackWeightHistoryBodySchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
+  clientUuid: ClientUuidSchema.optional(),
   weight: z.number(),
   localCreatedAt: z.string().datetime(),
 });

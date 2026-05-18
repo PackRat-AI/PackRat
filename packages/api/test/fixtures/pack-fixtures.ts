@@ -10,8 +10,10 @@ type PackItemOverrides = Partial<InferInsertModel<typeof packItems>> & { userId:
  */
 export const createTestPack = (overrides: PackOverrides): InferInsertModel<typeof packs> => {
   const now = new Date();
+  const id = overrides.id ?? `pack_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   return {
-    id: overrides.id ?? `pack_test_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+    id,
+    clientUuid: overrides.clientUuid ?? id,
     name: overrides.name ?? 'Test Backpacking Pack',
     description: overrides.description ?? 'A test pack for backpacking trips',
     category: overrides.category ?? 'backpacking',
@@ -31,8 +33,10 @@ export const createTestPackItem = (
   packId: string,
   overrides: PackItemOverrides,
 ): InferInsertModel<typeof packItems> => {
+  const id = overrides.id ?? `item_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   return {
-    id: overrides.id ?? `item_test_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+    id,
+    clientUuid: overrides.clientUuid ?? id,
     name: overrides.name ?? 'Test Backpack',
     description: overrides.description ?? 'A test item for the pack',
     weight: overrides.weight ?? 1200,

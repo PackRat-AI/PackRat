@@ -79,6 +79,7 @@ export class PackService {
         const packId = crypto.randomUUID();
         packsToInsert.push({
           id: packId,
+          clientUuid: packId,
           userId: this.userId,
           name: pack.name,
           description: pack.description,
@@ -91,13 +92,17 @@ export class PackService {
         });
 
         itemsToInsert.push(
-          ...pack.items.map((item) => ({
-            ...item,
-            id: crypto.randomUUID(),
-            packId,
-            isAIGenerated: true,
-            userId: this.userId,
-          })),
+          ...pack.items.map((item) => {
+            const itemId = crypto.randomUUID();
+            return {
+              ...item,
+              id: itemId,
+              clientUuid: itemId,
+              packId,
+              isAIGenerated: true,
+              userId: this.userId,
+            };
+          }),
         );
       }
 

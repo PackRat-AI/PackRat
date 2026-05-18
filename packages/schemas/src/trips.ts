@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ClientUuidSchema } from './packs';
 import { datetimeString } from './utils';
 
 const nullableDateString = z.preprocess(
@@ -14,6 +15,7 @@ export const TripLocationSchema = z.object({
 
 export const TripSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   name: z.string(),
   description: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -31,8 +33,11 @@ export const TripSchema = z.object({
 
 export type Trip = z.infer<typeof TripSchema>;
 
+// `id` is legacy (Phase 1 compat shim — see docs/design/client-uuid-split.md).
+// `clientUuid` is the new idempotency token. Both optional; server mints.
 export const CreateTripBodySchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
+  clientUuid: ClientUuidSchema.optional(),
   name: z.string().min(1).max(255),
   description: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),

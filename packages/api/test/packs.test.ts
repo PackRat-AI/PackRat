@@ -38,8 +38,10 @@ vi.mock('@packrat/api/services/packService', async () => {
       async generatePacks(count: number) {
         const mockPacks: Pack[] = [];
         for (let i = 0; i < count; i++) {
+          const id = `generated-pack-${i}-${Date.now()}`;
           mockPacks.push({
-            id: `generated-pack-${i}-${Date.now()}`,
+            id,
+            clientUuid: id,
             userId: this._userId,
             name: `Generated Test Pack ${i + 1}`,
             description: `AI-generated pack for testing purposes ${i + 1}`,

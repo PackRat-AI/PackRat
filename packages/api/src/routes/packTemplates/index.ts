@@ -4,6 +4,7 @@ import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { CatalogService } from '@packrat/api/services/catalogService';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { mintId } from '@packrat/api/utils/ids';
 import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
 import { assertDefined } from '@packrat/guards';
 import {
@@ -146,10 +147,15 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
       const isAppTemplate = user.role === 'ADMIN' ? data.isAppTemplate : false;
 
-      const [newTemplate] = await db
+      // Phase 1 ID split (docs/design/client-uuid-split.md §5.4).
+      const clientUuid = data.clientUuid ?? data.id ?? mintId('pt');
+      const templateId = data.clientUuid || !data.id ? mintId('pt') : data.id;
+
+      const [inserted] = await db
         .insert(packTemplates)
         .values({
-          id: data.id,
+          id: templateId,
+          clientUuid,
           userId: user.userId,
           name: data.name,
           description: data.description,
@@ -160,7 +166,17 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           localCreatedAt: new Date(data.localCreatedAt),
           localUpdatedAt: new Date(data.localUpdatedAt),
         })
+        .onConflictDoNothing({ target: packTemplates.clientUuid })
         .returning();
+
+      const newTemplate =
+        inserted ??
+        (await db.query.packTemplates.findFirst({
+          where: and(
+            eq(packTemplates.clientUuid, clientUuid),
+            eq(packTemplates.userId, user.userId),
+          ),
+        }));
 
       assertDefined(newTemplate, 'Failed to create pack template');
 
@@ -658,10 +674,15 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         return status(403, { error: 'Not allowed' });
       }
 
-      const [newItem] = await db
+      // Phase 1 ID split (docs/design/client-uuid-split.md §5.4).
+      const clientUuid = data.clientUuid ?? data.id ?? mintId('pti');
+      const itemId = data.clientUuid || !data.id ? mintId('pti') : data.id;
+
+      const [inserted] = await db
         .insert(packTemplateItems)
         .values({
-          id: data.id,
+          id: itemId,
+          clientUuid,
           packTemplateId: templateId,
           name: data.name,
           description: data.description,
@@ -675,7 +696,19 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           notes: data.notes,
           userId: user.userId,
         })
+        .onConflictDoNothing({ target: packTemplateItems.clientUuid })
         .returning();
+
+      const newItem =
+        inserted ??
+        (await db.query.packTemplateItems.findFirst({
+          where: and(
+            eq(packTemplateItems.clientUuid, clientUuid),
+            eq(packTemplateItems.userId, user.userId),
+          ),
+        }));
+
+      if (!newItem) return status(500, { error: 'Failed to create template item' });
 
       await db
         .update(packTemplates)

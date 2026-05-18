@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ClientUuidSchema } from './packs';
 
 const datetimeString = z.preprocess(
   (v) => (v instanceof Date ? v.toISOString() : v),
@@ -11,6 +12,7 @@ export const WaterCrossingDifficultySchema = z.enum(['easy', 'moderate', 'diffic
 
 export const TrailConditionReportSchema = z.object({
   id: z.string(),
+  clientUuid: z.string(),
   trailName: z.string(),
   trailRegion: z.string().nullable().optional(),
   surface: TrailSurfaceSchema,
@@ -31,8 +33,11 @@ export const TrailConditionReportSchema = z.object({
 
 export type TrailConditionReport = z.infer<typeof TrailConditionReportSchema>;
 
+// `id` is legacy (Phase 1 compat shim — docs/design/client-uuid-split.md §5.4).
+// `clientUuid` is the new idempotency token. Both optional; server mints.
 export const CreateTrailConditionReportRequestSchema = z.object({
-  id: z.string().describe('Client-generated report ID'),
+  id: z.string().optional().describe('Legacy client-supplied report ID'),
+  clientUuid: ClientUuidSchema.optional(),
   trailName: z.string().min(1),
   trailRegion: z.string().optional().nullable(),
   surface: TrailSurfaceSchema,
@@ -50,6 +55,7 @@ export const CreateTrailConditionReportRequestSchema = z.object({
 export const UpdateTrailConditionReportRequestSchema = CreateTrailConditionReportRequestSchema.omit(
   {
     id: true,
+    clientUuid: true,
     localCreatedAt: true,
   },
 ).partial();
