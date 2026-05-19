@@ -515,6 +515,7 @@ function Composer({
     >
       <View className="flex-row items-end gap-2 px-4 py-2">
         <TextInput
+          testID="ai-chat:input"
           placeholder={placeholder}
           style={TEXT_INPUT_STYLE}
           className="ios:pt-[7px] ios:pb-1 min-h-9 flex-1 rounded-[18px] border border-border bg-background py-1 pl-3 pr-8 text-base leading-5 text-foreground"
@@ -531,6 +532,7 @@ function Composer({
             </Button>
           ) : (
             <Button
+              testID="ai-chat:send"
               onPress={handleSubmit}
               disabled={!input.length}
               size="icon"

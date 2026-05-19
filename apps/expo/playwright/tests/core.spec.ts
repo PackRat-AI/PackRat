@@ -32,7 +32,7 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
+      await page.getByTestId('packs:name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -95,7 +95,7 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
+      await page.getByTestId('packs:name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -178,8 +178,8 @@ test('create a trip with dates', async ({ authedPage: page }) => {
 
 test('catalog tab loads items', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for items to load — at least one item name visible
-  await expect(page.locator('text=/\\d+,?\\d+ items/i').first()).toBeVisible({ timeout: 15_000 });
+  // Wait for items to load — at least one item count visible
+  await expect(page.locator('text=/\\d[\\d,]* items/i').first()).toBeVisible({ timeout: 15_000 });
 });
 
 test('catalog search filters results', async ({ authedPage: page }) => {
@@ -187,11 +187,9 @@ test('catalog search filters results', async ({ authedPage: page }) => {
   // Wait for initial load
   await page.waitForLoadState('networkidle');
 
-  // The search box is revealed by clicking the search icon
-  await page.getByText('󰍉').first().click();
-
+  // On web the search bar is always visible in the header (no icon tap needed)
   const searchBox = page.locator('input[placeholder*="Search"]');
-  await searchBox.waitFor({ timeout: 5_000 });
+  await searchBox.waitFor({ state: 'visible', timeout: 5_000 });
   await searchBox.fill('sleeping bag');
   // Results should update — check item names
   await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 10_000 });
@@ -232,7 +230,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
     page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
     (async () => {
       await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByRole('textbox', { name: /Pack Name/i }).fill(packName);
+      await page.getByTestId('packs:name-input').fill(packName);
       await page.getByTestId('submit-pack-button').click();
     })(),
   ]);
@@ -247,9 +245,8 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   await expect(page.getByText(/working with your/i).first()).toBeVisible();
 
   // Send a message
-  await page.getByRole('textbox', { name: /Ask about this pack/i }).fill('List 3 essential items.');
-  // Send button is icon-only with no accessible name; use the arrow-up icon character
-  await page.getByText('󰁝').click();
+  await page.getByTestId('ai-chat:input').fill('List 3 essential items.');
+  await page.getByTestId('ai-chat:send').click();
 
   // Wait for AI response (streaming may take a while)
   await expect(page.getByText(/item/i).nth(1)).toBeVisible({ timeout: 30_000 });
