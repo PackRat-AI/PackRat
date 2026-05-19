@@ -95,4 +95,25 @@ describe('getRelativeTime', () => {
     const result = getRelativeTime({ dateValue: '2024-01-01T12:00:00Z' });
     expect(result).toBe('12 months ago');
   });
+
+  it('calls translate with unit key and count when diff >= 1 unit', () => {
+    vi.setSystemTime(new Date('2024-01-01T12:05:00Z'));
+    const t = vi.fn((key: string, opts?: Record<string, unknown>) => `${key}:${opts?.count}`);
+    const result = getRelativeTime('2024-01-01T12:00:00Z', t as never);
+    expect(t).toHaveBeenCalledWith('common.timeAgo.minutes', { count: 5 });
+    expect(result).toBe('common.timeAgo.minutes:5');
+  });
+
+  it('calls translate for justNow when diff is less than 1 minute', () => {
+    vi.setSystemTime(new Date('2024-01-01T12:00:30Z'));
+    const t = vi.fn((key: string) => key);
+    getRelativeTime('2024-01-01T12:00:00Z', t as never);
+    expect(t).toHaveBeenCalledWith('common.timeAgo.justNow');
+  });
+
+  it('calls translate for justNow when date is invalid', () => {
+    const t = vi.fn((key: string) => key);
+    getRelativeTime('not-a-date', t as never);
+    expect(t).toHaveBeenCalledWith('common.timeAgo.justNow');
+  });
 });

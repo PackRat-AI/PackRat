@@ -1,6 +1,6 @@
 import type { PackItem, PackWithItems } from '@packrat/db';
 import { describe, expect, it } from 'vitest';
-import { computePacksWeights, computePackWeights } from '../compute-pack';
+import { computePackBreakdown, computePacksWeights, computePackWeights } from '../compute-pack';
 
 // ---------------------------------------------------------------------------
 // Minimal factory helpers
@@ -167,5 +167,137 @@ describe('computePacksWeights', () => {
     const results = computePacksWeights({ packs });
     expect(results[0]?.totalWeight).toBe(500);
     expect(results[1]?.totalWeight).toBe(1000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computePackBreakdown
+// ---------------------------------------------------------------------------
+describe('computePackBreakdown', () => {
+  it('throws when items is undefined', () => {
+    const pack = makePack({ items: undefined as unknown as PackItem[] });
+    expect(() => computePackBreakdown(pack)).toThrow('Pack with ID pack-1 has no items');
+  });
+
+  it('returns zero totals and empty byCategory for an empty pack', () => {
+    const result = computePackBreakdown(makePack({ items: [] }));
+    expect(result.packId).toBe('pack-1');
+    expect(result.totalGrams).toBe(0);
+    expect(result.baseGrams).toBe(0);
+    expect(result.wornGrams).toBe(0);
+    expect(result.consumableGrams).toBe(0);
+    expect(result.itemCount).toBe(0);
+    expect(result.byCategory).toEqual([]);
+  });
+
+  it('computes base, worn, and consumable grams correctly', () => {
+    const items = [
+      makePackItem({ id: 'i1', weight: 500, weightUnit: 'g' }), // base
+      makePackItem({ id: 'i2', weight: 200, weightUnit: 'g', worn: true }),
+      makePackItem({ id: 'i3', weight: 100, weightUnit: 'g', consumable: true }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.totalGrams).toBe(800);
+    expect(result.baseGrams).toBe(500);
+    expect(result.wornGrams).toBe(200);
+    expect(result.consumableGrams).toBe(100);
+  });
+
+  it('groups items into a single category entry', () => {
+    const items = [
+      makePackItem({ id: 'i1', weight: 300, weightUnit: 'g', category: 'Shelter' }),
+      makePackItem({ id: 'i2', weight: 200, weightUnit: 'g', category: 'Shelter' }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory).toHaveLength(1);
+    expect(result.byCategory[0]?.category).toBe('Shelter');
+    expect(result.byCategory[0]?.totalGrams).toBe(500);
+  });
+
+  it('falls back to "Uncategorized" when category is null', () => {
+    const items = [makePackItem({ weight: 100, weightUnit: 'g', category: null })];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.category).toBe('Uncategorized');
+  });
+
+  it('sorts byCategory heaviest first', () => {
+    const items = [
+      makePackItem({ id: 'i1', weight: 100, weightUnit: 'g', category: 'Light' }),
+      makePackItem({ id: 'i2', weight: 500, weightUnit: 'g', category: 'Heavy' }),
+      makePackItem({ id: 'i3', weight: 300, weightUnit: 'g', category: 'Medium' }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory.map((c) => c.category)).toEqual(['Heavy', 'Medium', 'Light']);
+  });
+
+  it('computes totalLbs from totalGrams (rounded to 2 decimals)', () => {
+    const items = [makePackItem({ weight: 453.592, weightUnit: 'g', category: 'Pack' })];
+    const result = computePackBreakdown(makePack({ items }));
+    // 453.592 g = 1 lb exactly
+    expect(result.byCategory[0]?.totalLbs).toBe(1);
+  });
+
+  it('counts items by quantity for itemCount', () => {
+    const items = [
+      makePackItem({ id: 'i1', weight: 100, weightUnit: 'g', quantity: 3 }),
+      makePackItem({ id: 'i2', weight: 200, weightUnit: 'g', quantity: 2 }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.itemCount).toBe(5);
+  });
+
+  it('counts itemCount in byCategory by quantity', () => {
+    const items = [makePackItem({ weight: 100, weightUnit: 'g', quantity: 4, category: 'Food' })];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.itemCount).toBe(4);
+  });
+
+  it('builds item strings in the expected format', () => {
+    const items = [
+      makePackItem({
+        name: 'Tent',
+        weight: 1000,
+        weightUnit: 'g',
+        quantity: 1,
+        category: 'Shelter',
+      }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.items[0]).toBe('Tent (1000g × 1)');
+  });
+
+  it('uses "g" as fallback unit in item string when weightUnit is null', () => {
+    const items = [
+      makePackItem({
+        name: 'Snack',
+        weight: 50,
+        weightUnit: null as unknown as 'g',
+        category: 'Food',
+      }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.byCategory[0]?.items[0]).toBe('Snack (50g × 1)');
+  });
+
+  it('converts weights across units (kg → g) before accumulating', () => {
+    const items = [makePackItem({ weight: 1, weightUnit: 'kg', category: 'Pack' })];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.totalGrams).toBe(1000);
+  });
+
+  it('multiplies item weight by quantity before accumulating', () => {
+    const items = [makePackItem({ weight: 100, weightUnit: 'g', quantity: 5, category: 'Food' })];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(result.totalGrams).toBe(500);
+    expect(result.byCategory[0]?.totalGrams).toBe(500);
+  });
+
+  it('rounds totalGrams to the nearest integer', () => {
+    // 0.1 oz ≈ 2.835 g — repeated accumulation can introduce floating-point noise
+    const items = [
+      makePackItem({ id: 'i1', weight: 0.1, weightUnit: 'oz', quantity: 1, category: 'Misc' }),
+    ];
+    const result = computePackBreakdown(makePack({ items }));
+    expect(Number.isInteger(result.totalGrams)).toBe(true);
   });
 });
