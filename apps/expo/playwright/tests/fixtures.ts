@@ -32,9 +32,23 @@ function loadCachedAuth(): CachedAuth {
 async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
   const { accessToken, refreshToken, user } = loadCachedAuth();
 
+  // On web, expo-secure-store falls back to localStorage. The api client reads the
+  // Better Auth session token from localStorage['packrat_cookie'] via SecureStore.
+  // Seed both the legacy access_token key (for any direct reads) and the
+  // packrat_cookie key (for apiClient.getAccessToken via parseSessionToken).
+  const cookiePayload = JSON.stringify({
+    'better-auth.session_token': { value: accessToken },
+    '__Secure-better-auth.session_token': { value: accessToken },
+  });
+
   const localStorage = [
     { name: 'access_token', value: accessToken },
     { name: 'refresh_token', value: refreshToken },
+    // Seed the SecureStore key used by apiClient (expo-secure-store → localStorage on web)
+    { name: 'packrat_cookie', value: cookiePayload },
+    // Prevent useAuthInit's version-gate migration from clearing the tokens above.
+    // On web AsyncStorage is shimmed to raw localStorage (mocks/async-storage.ts).
+    { name: 'auth_version', value: 'v2' },
   ];
 
   if (user) {

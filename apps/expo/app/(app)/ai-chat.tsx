@@ -7,6 +7,7 @@ import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
+import { testIds } from 'expo-app/lib/testIds';
 import { featureFlags } from 'expo-app/config';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
@@ -535,6 +536,7 @@ function Composer({
               disabled={!input.length}
               size="icon"
               className="ios:rounded-full h-7 w-7 rounded-full"
+              testID={testIds.aiChat.sendBtn}
             >
               <Icon name="arrow-up" size={18} color="white" />
             </Button>

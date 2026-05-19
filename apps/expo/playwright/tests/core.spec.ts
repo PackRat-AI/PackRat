@@ -4,6 +4,7 @@
  * Each test navigates to a route after seeding auth tokens in localStorage.
  * TestIds match the constants in lib/testIds.ts and the Maestro iOS flows.
  */
+import { testIds } from '../../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
@@ -187,10 +188,9 @@ test('catalog search filters results', async ({ authedPage: page }) => {
   // Wait for initial load
   await page.waitForLoadState('networkidle');
 
-  // The search box is revealed by clicking the search icon
-  await page.getByText('󰍉').first().click();
-
-  const searchBox = page.locator('input[placeholder*="Search"]');
+  // On web the LargeTitleHeader renders the search bar as an always-visible input.
+  // Locate it directly rather than clicking a font-icon button (which only exists on native).
+  const searchBox = page.locator('input[placeholder*="Search catalog"]');
   await searchBox.waitFor({ timeout: 5_000 });
   await searchBox.fill('sleeping bag');
   // Results should update — check item names
@@ -248,8 +248,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
 
   // Send a message
   await page.getByRole('textbox', { name: /Ask about this pack/i }).fill('List 3 essential items.');
-  // Send button is icon-only with no accessible name; use the arrow-up icon character
-  await page.getByText('󰁝').click();
+  await page.getByTestId(testIds.aiChat.sendBtn).click();
 
   // Wait for AI response (streaming may take a while)
   await expect(page.getByText(/item/i).nth(1)).toBeVisible({ timeout: 30_000 });

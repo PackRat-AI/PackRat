@@ -23,10 +23,11 @@ export const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
 async function setup() {
   // Priority 1: pre-minted tokens provided directly
   if (process.env.TEST_ACCESS_TOKEN && process.env.TEST_REFRESH_TOKEN) {
-    const meRes = await fetch(`${API_URL}/api/auth/me`, {
+    const meRes = await fetch(`${API_URL}/api/auth/get-session`, {
       headers: { Authorization: `Bearer ${process.env.TEST_ACCESS_TOKEN}` },
     });
-    const user = meRes.ok ? ((await meRes.json()) as { user: Record<string, unknown> }).user : null;
+    const body = meRes.ok ? ((await meRes.json()) as { user?: Record<string, unknown> }) : null;
+    const user = body?.user ?? null;
     fs.writeFileSync(
       TOKENS_FILE,
       JSON.stringify({
@@ -41,7 +42,7 @@ async function setup() {
 
   // Priority 2: log in with the seeded E2E user (CI path, matches iOS/Android pattern)
   if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
-    const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+    const loginRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: process.env.TEST_EMAIL, password: process.env.TEST_PASSWORD }),
@@ -50,12 +51,16 @@ async function setup() {
       const body = await loginRes.text();
       throw new Error(`Login failed ${loginRes.status}: ${body}`);
     }
-    const { accessToken, refreshToken, user } = (await loginRes.json()) as {
-      accessToken: string;
-      refreshToken: string;
+    // Better Auth sign-in returns { user, session: { token } }.
+    // The bearer() plugin also surfaces the token at the top-level { token } field.
+    const body = (await loginRes.json()) as {
+      token?: string;
       user: Record<string, unknown>;
+      session?: { token?: string };
     };
-    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
+    const token = body.token ?? body.session?.token;
+    if (!token) throw new Error('No session token in sign-in response');
+    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken: token, refreshToken: token, user: body.user }));
     console.log(`[globalSetup] Logged in as ${process.env.TEST_EMAIL}`);
     return;
   }
@@ -65,10 +70,10 @@ async function setup() {
   const password = 'E2eTest1!';
 
   // 1. Register
-  const registerRes = await fetch(`${API_URL}/api/auth/register`, {
+  const registerRes = await fetch(`${API_URL}/api/auth/sign-up/email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, firstName: 'E2E', lastName: 'User' }),
+    body: JSON.stringify({ email, password, name: 'E2E User' }),
   });
   if (!registerRes.ok) {
     const body = await registerRes.text();
@@ -101,14 +106,26 @@ async function setup() {
     const body = await verifyRes.text();
     throw new Error(`Verify failed ${verifyRes.status}: ${body}`);
   }
-  const { accessToken, refreshToken, user } = (await verifyRes.json()) as {
-    accessToken: string;
-    refreshToken: string;
+  // After verification, sign in to obtain a session token
+  const signInRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!signInRes.ok) {
+    const body = await signInRes.text();
+    throw new Error(`Post-verify sign-in failed ${signInRes.status}: ${body}`);
+  }
+  const signInBody = (await signInRes.json()) as {
+    token?: string;
     user: Record<string, unknown>;
+    session?: { token?: string };
   };
+  const token = signInBody.token ?? signInBody.session?.token;
+  if (!token) throw new Error('No session token in post-verify sign-in response');
   console.log('[globalSetup] Email verified, tokens obtained');
 
-  fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
+  fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken: token, refreshToken: token, user: signInBody.user }));
 }
 
 export default setup;
