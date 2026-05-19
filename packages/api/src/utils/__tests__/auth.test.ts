@@ -58,5 +58,9 @@ describe('auth utilities', () => {
       } as never);
       expect(isValidApiKey(new Headers({ 'x-api-key': 'anything' }))).toBe(false);
     });
+
+    it('accepts a plain header map with uppercase X-API-Key', () => {
+      expect(isValidApiKey({ 'X-API-Key': 'test-api-key' })).toBe(true);
+    });
   });
 });

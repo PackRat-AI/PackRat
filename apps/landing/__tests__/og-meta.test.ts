@@ -87,14 +87,14 @@ function isAbsoluteHttps(url: string | undefined): boolean {
 }
 
 /**
- * Landing's site-wide image is either the static `/og-image.png` written by
- * `scripts/generate-og-images.ts` or Next.js's auto-generated
- * `/opengraph-image` route (whichever wins in the metadata graph). A per-post
- * shape doesn't apply here — landing has no per-post images.
+ * Landing's site-wide image must be the static `/og-image.png` written by
+ * `scripts/generate-og-images.ts`. With `output: 'export'`, the Next.js
+ * `/opengraph-image` metadata route does NOT produce a plain PNG file that a
+ * CDN can serve — only `og-image.png` (pre-generated at build time) is valid.
  */
 function isLandingOgImageUrl(url: string | undefined): boolean {
   if (!url) return false;
-  return /\/(og-image\.png|opengraph-image)(\?|$)/.test(url);
+  return /\/og-image\.png(\?|$)/.test(url);
 }
 
 describe('landing built HTML OG meta', () => {
@@ -107,8 +107,27 @@ describe('landing built HTML OG meta', () => {
     }
   }, 240_000);
 
+  const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
   it('root out/index.html exists', () => {
     expect(fs.existsSync(ROOT_INDEX), 'expected out/index.html to exist after build').toBe(true);
+  });
+
+  it('out/og-image.png is present in the static export', () => {
+    const ogPath = path.join(OUT_DIR, 'og-image.png');
+    expect(
+      fs.existsSync(ogPath),
+      'og-image.png must be copied from public/ into the out/ static export by next build. ' +
+        'If missing, run scripts/generate-og-images.ts before building.',
+    ).toBe(true);
+  });
+
+  it('out/og-image.png is a valid 1200×630 PNG', () => {
+    const buf = fs.readFileSync(path.join(OUT_DIR, 'og-image.png'));
+    expect(buf.subarray(0, 8), 'PNG signature').toEqual(PNG_SIGNATURE);
+    expect(buf.readUInt32BE(16), 'width').toBe(1200);
+    expect(buf.readUInt32BE(20), 'height').toBe(630);
+    expect(buf.length, 'file size').toBeGreaterThan(1024);
   });
 
   it('discovers at least one landing HTML page beyond root', () => {
