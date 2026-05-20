@@ -23,17 +23,26 @@ function loadCachedAuth(): CachedAuth {
 
 /**
  * Creates a browser context with auth pre-seeded in localStorage:
- *   - access_token / refresh_token  → read by expo-sqlite kv-store stub + tokenAtom
- *   - user                         → read by ObservablePersistLocalStorage to hydrate userStore
+ *   - access_token / refresh_token  → read by expo-sqlite kv-store stub
+ *   - user                         → read by observablePersistAsyncStorage to hydrate userStore
  *                                     (isAuthed is computed from userStore !== null)
+ *   - auth_version = 'v2'          → skips the runVersionGateMigration that would otherwise
+ *                                     delete access_token / refresh_token on first app boot
  *
  * Using storageState guarantees the values are present before ANY page JS runs.
+ *
+ * A context-level route intercept mocks /api/auth/get-session so the background
+ * session check in useAuthInit does not redirect to /auth.  On web the expoClient
+ * plugin uses browser cookies (not SecureStore) for getSession, and the test
+ * browser has no valid session cookie, so without the intercept every test fails.
  */
 async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
   const { accessToken, refreshToken, user } = loadCachedAuth();
 
   const localStorage: { name: string; value: string }[] = [
     { name: 'access_token', value: accessToken },
+    // Skip the auth version migration that clears access_token / refresh_token.
+    { name: 'auth_version', value: 'v2' },
   ];
 
   if (refreshToken) {
@@ -44,12 +53,43 @@ async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
     localStorage.push({ name: 'user', value: JSON.stringify(user) });
   }
 
-  return browser.newContext({
+  const context = await browser.newContext({
     storageState: {
       cookies: [],
       origins: [{ origin: BASE_URL, localStorage }],
     },
   });
+
+  // Mock the Better Auth session endpoint so useAuthInit stays authenticated.
+  // On web, @better-auth/expo skips its SecureStore cookie handling (isWeb guard)
+  // and relies on browser cookies instead.  The test browser has no valid
+  // session cookie, so without this intercept getSession() returns null and the
+  // auth init redirects every page to /auth.
+  if (user) {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
+    await context.route('**/api/auth/get-session', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          session: {
+            id: 'e2e-session',
+            userId: String(user.id),
+            token: accessToken,
+            expiresAt,
+            createdAt: now,
+            updatedAt: now,
+            ipAddress: null,
+            userAgent: null,
+          },
+          user,
+        }),
+      }),
+    );
+  }
+
+  return context;
 }
 
 export type AuthFixtures = { authedPage: Page };
