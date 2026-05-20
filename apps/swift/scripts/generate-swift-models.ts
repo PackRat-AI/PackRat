@@ -76,13 +76,13 @@ function refName(ref: string): string {
   return ref.replace('#/components/schemas/', '');
 }
 
-function swiftType(prop: OAPIProperty, required: boolean): string {
+function swiftType({ prop, required }: { prop: OAPIProperty; required: boolean }): string {
   let base: string;
 
   if (prop.$ref) {
     base = refName(prop.$ref);
   } else if (prop.type === 'array') {
-    const itemType = prop.items ? swiftType(prop.items, true) : 'AnyCodable';
+    const itemType = prop.items ? swiftType({ prop: prop.items, required: true }) : 'AnyCodable';
     base = `[${itemType}]`;
   } else if (prop.type === 'integer') {
     base = 'Int';
@@ -105,7 +105,7 @@ function hasId(properties: Record<string, OAPIProperty>): boolean {
 
 // ── Enum generation ───────────────────────────────────────────────────────────
 
-function generateEnum(name: string, values: string[]): string {
+function generateEnum({ name, values }: { name: string; values: string[] }): string {
   const cases = values
     .map((v) => {
       // turn "water sports" → case waterSports = "water sports"
@@ -113,7 +113,9 @@ function generateEnum(name: string, values: string[]): string {
       const identifier = v
         .replace(NON_ALPHANUMERIC_SPACE, '')
         .split(WHITESPACE)
-        .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+        .map((w, i) =>
+          i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
+        )
         .join('');
       const needsRaw = identifier !== v;
       return needsRaw ? `    case ${identifier} = "${raw}"` : `    case ${identifier}`;
@@ -125,7 +127,7 @@ function generateEnum(name: string, values: string[]): string {
 
 // ── Struct generation ─────────────────────────────────────────────────────────
 
-function generateStruct(name: string, schema: OAPISchema): string {
+function generateStruct({ name, schema }: { name: string; schema: OAPISchema }): string {
   const props = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
 
@@ -135,7 +137,7 @@ function generateStruct(name: string, schema: OAPISchema): string {
 
   const fields = Object.entries(props)
     .map(([key, prop]) => {
-      const type = swiftType(prop, required.has(key));
+      const type = swiftType({ prop, required: required.has(key) });
       return `    let ${key}: ${type}`;
     })
     .join('\n');
@@ -155,9 +157,9 @@ for (const [name, schema] of Object.entries(schemas)) {
   if (SKIP_SCHEMAS.has(name)) continue;
 
   if (schema.enum && schema.type === 'string') {
-    sections.push(generateEnum(name, schema.enum));
+    sections.push(generateEnum({ name, values: schema.enum }));
   } else if (schema.type === 'object' || schema.properties) {
-    sections.push(generateStruct(name, schema));
+    sections.push(generateStruct({ name, schema }));
   }
   // skip anything else (e.g. inline primitives)
 }
@@ -172,4 +174,4 @@ ${sections.join('\n\n')}
 `;
 
 writeFileSync(outPath, output, 'utf8');
-console.log(`✓ Generated ${sections.length} types → ${outPath.replace(process.cwd() + '/', '')}`);
+console.log(`✓ Generated ${sections.length} types → ${outPath.replace(`${process.cwd()}/`, '')}`);

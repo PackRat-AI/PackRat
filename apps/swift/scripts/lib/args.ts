@@ -41,6 +41,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   let plan: TestPlanName | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
+    if (!a) continue;
     if (a === '--plan') {
       const next = argv[i + 1];
       if (!next || next.startsWith('-')) {

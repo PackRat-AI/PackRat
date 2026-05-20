@@ -56,7 +56,7 @@ export function listBooted(): string[] {
   return listBootedFromJson(runSimctl(['list', 'devices', '-j']));
 }
 
-export function findDeviceUDIDFromJson(json: string, name: string): string {
+export function findDeviceUDIDFromJson({ json, name }: { json: string; name: string }): string {
   const devices = parseDeviceListJson(json);
   const match = devices.find((d) => d.name === name);
   if (!match) {
@@ -69,7 +69,7 @@ export function findDeviceUDIDFromJson(json: string, name: string): string {
 }
 
 export function findDeviceUDID(name: string): string {
-  return findDeviceUDIDFromJson(runSimctl(['list', 'devices', '-j']), name);
+  return findDeviceUDIDFromJson({ json: runSimctl(['list', 'devices', '-j']), name });
 }
 
 export function isUDID(value: string): boolean {
@@ -92,7 +92,8 @@ export function shutdown(udid: string): void {
 
 export function ensureBooted(name: string): string {
   const booted = listBooted();
-  if (booted.length > 0) return booted[0];
+  const first = booted[0];
+  if (first !== undefined) return first;
   const udid = findDeviceUDID(name);
   boot(udid);
   return udid;
