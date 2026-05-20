@@ -113,7 +113,9 @@ function generateEnum(name: string, values: string[]): string {
       const identifier = v
         .replace(NON_ALPHANUMERIC_SPACE, '')
         .split(WHITESPACE)
-        .map((w, i) => (i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+        .map((w, i) =>
+          i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
+        )
         .join('');
       const needsRaw = identifier !== v;
       return needsRaw ? `    case ${identifier} = "${raw}"` : `    case ${identifier}`;
@@ -172,4 +174,4 @@ ${sections.join('\n\n')}
 `;
 
 writeFileSync(outPath, output, 'utf8');
-console.log(`✓ Generated ${sections.length} types → ${outPath.replace(process.cwd() + '/', '')}`);
+console.log(`✓ Generated ${sections.length} types → ${outPath.replace(`${process.cwd()}/`, '')}`);

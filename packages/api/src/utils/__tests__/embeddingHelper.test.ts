@@ -226,7 +226,7 @@ describe('embeddingHelper', () => {
       const item = { name: 'Boots' };
       const existingItem = {
         reviews: [{ title: 'Solid boot', text: 'Great grip on wet rock' }],
-      };
+      } as unknown as Parameters<typeof getEmbeddingText>[0]['existingItem'];
       const result = getEmbeddingText({ item, existingItem });
       expect(result).toContain('Solid boot Great grip on wet rock');
     });
@@ -240,7 +240,7 @@ describe('embeddingHelper', () => {
             answers: [{ a: 'Yes, up to 5000m' }],
           },
         ],
-      };
+      } as unknown as Parameters<typeof getEmbeddingText>[0]['existingItem'];
       const result = getEmbeddingText({ item, existingItem });
       expect(result).toContain('Does it work at altitude?');
       expect(result).toContain('Yes, up to 5000m');

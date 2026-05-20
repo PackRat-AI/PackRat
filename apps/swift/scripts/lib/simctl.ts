@@ -92,7 +92,8 @@ export function shutdown(udid: string): void {
 
 export function ensureBooted(name: string): string {
   const booted = listBooted();
-  if (booted.length > 0) return booted[0];
+  const first = booted[0];
+  if (first !== undefined) return first;
   const udid = findDeviceUDID(name);
   boot(udid);
   return udid;
