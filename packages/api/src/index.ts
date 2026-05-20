@@ -19,7 +19,8 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { withSentry } from '@sentry/cloudflare';
+import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
@@ -36,6 +37,20 @@ const ALLOWED_ORIGIN_PATTERNS = [
 
 function isAllowedOrigin(origin: string | null): origin is string {
   return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+
+// Sentry options for both the Worker handlers and the workflow class.
+// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
+// defaults to 10% — observable enough for prod debugging without
+// overwhelming the Sentry quota.
+function sentryOptions(env: Env) {
+  return {
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT ?? 'production',
+    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
+    sendDefaultPii: false,
+    release: env.SENTRY_RELEASE ?? env.CF_VERSION_METADATA?.id,
+  };
 }
 
 export const app = new Elysia({ adapter: CloudflareAdapter })
@@ -108,7 +123,13 @@ export type App = typeof app;
 
 export { AppContainer };
 
-export { CatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+// Wrap the workflow class with Sentry instrumentation so each step.do span
+// + any uncaught throw inside a step lands in Sentry with workflow/instance
+// context attached automatically.
+export const CatalogEtlWorkflow = instrumentWorkflowWithSentry(
+  sentryOptions,
+  RawCatalogEtlWorkflow,
+);
 
 type CfFetchFn = (
   request: Request,
@@ -209,13 +230,7 @@ const workerHandler = {
   },
 } satisfies ExportedHandler<Env>;
 
-export default withSentry<Env>(
-  (env) => ({
-    dsn: env.SENTRY_DSN,
-    environment: env.ENVIRONMENT ?? 'production',
-    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
-    sendDefaultPii: false,
-    release: env.SENTRY_RELEASE,
-  }),
-  workerHandler,
-);
+// withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
+// on first invocation and forward uncaught exceptions to Sentry. The
+// instrumented workflow class is exported separately above.
+export default withSentry(sentryOptions, workerHandler);

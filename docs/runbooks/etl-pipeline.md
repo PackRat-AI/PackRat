@@ -299,6 +299,31 @@ Document each one-off recovery here for the audit trail.
 wall-clock sweep mid-flight. Job IDs and recovery procedure documented
 above. To be executed after this PR deploys to production.
 
+## Sentry observability
+
+`@sentry/cloudflare` wraps the worker default export via `withSentry()` and
+the `CatalogEtlWorkflow` class via `instrumentWorkflowWithSentry()` —
+configured in `packages/api/src/index.ts`. Initialization uses
+`env.SENTRY_DSN`, `env.ENVIRONMENT`, and `env.CF_VERSION_METADATA.id`
+(release tag) with a 10% trace sample rate.
+
+The structured logger (`packages/api/src/utils/logger.ts`) forwards:
+- `logger.info(event, ctx)` → `Sentry.addBreadcrumb(level=info)`
+- `logger.warn(event, ctx)` → `Sentry.addBreadcrumb(level=warning)`
+- `logger.error(event, { err })` → `Sentry.captureException(err)` with `event` + ctx fields as tags
+- `logger.error(event)` without err → `Sentry.captureMessage(event, level=error)`
+
+ctx fields become Sentry tags (strings/numbers/booleans) or extras (objects).
+
+Source maps:
+- `upload_source_maps: true` in `wrangler.jsonc` uploads sourcemaps to
+  Cloudflare on every `wrangler deploy` — unminified stack traces in
+  `wrangler tail` and the Workers dashboard
+- For Sentry-side symbolication (unminified frames in the Sentry UI),
+  run `bunx @sentry/cli sourcemaps upload --release=$(git rev-parse HEAD) packages/api/dist`
+  after deploy. Not wired into CI because there's no automated deploy
+  pipeline today; run manually post-deploy until that changes.
+
 ## References
 
 - [Audit (2026-05-16)](../audits/2026-05-16-etl-audit.md) — the source-of-truth list of pre-migration issues
@@ -306,3 +331,4 @@ above. To be executed after this PR deploys to production.
 - [Superseded plan](../plans/2026-05-19-001-fix-etl-pipeline-audit-remediation-plan.md) — the original Queues + outbox attempt (why we pivoted)
 - [Cloudflare Workflows docs](https://developers.cloudflare.com/workflows/)
 - [Cloudflare Workflows JS API](https://developers.cloudflare.com/workflows/build/workers-api/)
+- [Sentry on Cloudflare Workers](https://docs.sentry.io/platforms/javascript/guides/cloudflare/)

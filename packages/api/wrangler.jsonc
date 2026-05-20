@@ -5,9 +5,15 @@
   // Elysia 1.4+ CloudflareAdapter requires compatibility_date >= 2025-06-01.
   "compatibility_date": "2025-06-01",
   // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
-  "compatibility_flags": ["nodejs_compat"],
+  // nodejs_als is required by @sentry/cloudflare for AsyncLocalStorage-based
+  // request/workflow context propagation across awaits.
+  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
   "keep_vars": true,
   "logpush": true,
+  // Generate + upload source maps to Cloudflare so Workers logs show
+  // unminified stack traces. Sentry symbolication uses a separate
+  // @sentry/cli sourcemaps upload step in CI (see deploy workflow).
+  "upload_source_maps": true,
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
