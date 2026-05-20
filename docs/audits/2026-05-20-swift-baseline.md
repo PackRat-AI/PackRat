@@ -57,7 +57,25 @@ _To be populated by U6._
 
 ## API client drift (U7)
 
-_To be populated by U7._
+**Two blockers surfaced during the ce-work parallel pass; U7 cannot proceed as written without addressing both first:**
+
+1. **`bun generate:openapi` is broken on the swift branch.**
+
+   ```text
+   $ bun generate:openapi
+   error: Cannot find package 'cloudflare:workers' from
+     'node_modules/@cloudflare/containers/dist/lib/container.js'
+   ```
+
+   Root cause: `packages/api/src/routes/packTemplates/index.ts` imports `getContainer` from `@cloudflare/containers`, whose `container.js` imports the virtual `cloudflare:workers` module. The module is only resolvable inside the Workers runtime. Vitest's unit config aliases it to `packages/api/src/__test-stubs__/cloudflare-workers.ts`; the bun-driven script has no equivalent alias.
+
+   Fix options: (a) add a Bun preload that registers the stub via `--preload`, (b) refactor `@cloudflare/containers` imports to lazy / dynamic so the spec-build path doesn't hit them, or (c) generate the spec from a running `bun api` dev server (curl `/doc`) instead.
+
+2. **The two swift OpenAPI YAML siblings disagree.**
+
+   `apps/swift/openapi.yaml` and `apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/openapi.yaml` differ — but `generate-openapi.ts` writes both atomically, so they should be byte-identical. One was likely hand-edited after regen, breaking the build-plugin invariant. U7 must reconcile (likely "regenerate both") before relying on either.
+
+**Implication:** U7's "drop new spec into swift package, run `bun swift:codegen`" approach assumes generate-openapi works. Until blocker 1 is resolved, U7's path is either (a) fix generate-openapi first as a sub-task, (b) curl `/doc` from `bun api` and write the spec manually, or (c) hand-author the spec — which is fragile and reverts what generate-openapi was meant to mechanize.
 
 ## URL realignment (U8)
 

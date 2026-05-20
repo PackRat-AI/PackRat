@@ -184,6 +184,10 @@ schemes:
         PackRatTests: [test]
         PackRatUITests: [test]
     test:
+      testPlans:
+        - path: TestPlans/iOS-Full.xctestplan
+          defaultPlan: true
+        - path: TestPlans/iOS-Smoke.xctestplan
       targets:
         - PackRatTests
         - PackRatUITests

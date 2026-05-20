@@ -3,8 +3,10 @@ import { spawnSync } from 'node:child_process';
 /**
  * Run PackRat Swift XCUITests with credentials loaded from .env.local.
  *
- * Usage:  bun e2e:swift                           (run all UI tests)
- *         bun e2e:swift -only-testing:<id>        (run a specific test method)
+ * Usage:  bun e2e:swift                           (run iOS-Full plan — all UI tests)
+ *         bun e2e:swift --plan smoke              (run iOS-Smoke plan — Auth + Navigation)
+ *         bun e2e:swift --plan full               (run iOS-Full plan explicitly)
+ *         bun e2e:swift -only-testing:<id>        (narrow to a specific test)
  *
  * Required env vars (in .env.local):
  *   E2E_EMAIL
@@ -19,6 +21,7 @@ import { spawnSync } from 'node:child_process';
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { ArgsError, parseArgs } from './lib/args';
 import { listBooted } from './lib/simctl';
 import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
@@ -131,6 +134,19 @@ function allocateResultBundle(): string {
   return path;
 }
 
+// ── Parse args ───────────────────────────────────────────────────────────────
+
+let parsed: ReturnType<typeof parseArgs>;
+try {
+  parsed = parseArgs(process.argv.slice(2));
+} catch (err) {
+  if (err instanceof ArgsError) {
+    console.error(`❌ ${err.message}`);
+    process.exit(1);
+  }
+  throw err;
+}
+
 // ── Run xcodebuild ───────────────────────────────────────────────────────────
 
 injectScheme(E2E_EMAIL, E2E_PASSWORD);
@@ -139,7 +155,10 @@ console.log('✓ Injected E2E credentials into scheme');
 const dest = pickDestination();
 const resultBundle = allocateResultBundle();
 console.log(`→ Destination: ${dest}`);
+if (parsed.plan) console.log(`→ Test plan: ${parsed.plan}`);
 console.log(`→ Result bundle: ${resultBundle}`);
+
+const planArgs = parsed.plan ? ['-testPlan', parsed.plan] : [];
 
 const args = [
   'test',
@@ -147,10 +166,10 @@ const args = [
   'PackRat-iOS',
   '-destination',
   dest,
-  '-only-testing:PackRatUITests',
+  ...planArgs,
   '-resultBundlePath',
   resultBundle,
-  ...process.argv.slice(2),
+  ...parsed.passthrough,
 ];
 
 const result = spawnSync('xcodebuild', args, {
