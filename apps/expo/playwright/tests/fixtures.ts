@@ -9,7 +9,7 @@ const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
 
 interface CachedAuth {
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   user: Record<string, unknown> | null;
 }
 
@@ -32,10 +32,13 @@ function loadCachedAuth(): CachedAuth {
 async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
   const { accessToken, refreshToken, user } = loadCachedAuth();
 
-  const localStorage = [
+  const localStorage: { name: string; value: string }[] = [
     { name: 'access_token', value: accessToken },
-    { name: 'refresh_token', value: refreshToken },
   ];
+
+  if (refreshToken) {
+    localStorage.push({ name: 'refresh_token', value: refreshToken });
+  }
 
   if (user) {
     localStorage.push({ name: 'user', value: JSON.stringify(user) });
