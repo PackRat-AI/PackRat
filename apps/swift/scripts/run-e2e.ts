@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 /**
  * Run PackRat Swift XCUITests with credentials loaded from .env.local.
  *
@@ -17,8 +17,10 @@ import { execSync, spawnSync } from 'node:child_process';
  *   regenerated from project.yml on every `bun swift`, so this edit is
  *   ephemeral and safe.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { listBooted } from './lib/simctl';
+import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
@@ -26,11 +28,11 @@ const SCHEME_PATH = resolve(
   SWIFT_DIR,
   'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-iOS.xcscheme',
 );
+const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
 
 const QUOTE_RE = /^["']|["']$/g;
 const ENV_BLOCK_RE = /\s*<EnvironmentVariables>[\s\S]*?<\/EnvironmentVariables>/g;
 const TEST_ACTION_INHERIT_RE = /(<TestAction[^>]*?)shouldUseLaunchSchemeArgsEnv\s*=\s*"YES"/;
-const SIMCTL_BOOTED_RE = /iPhone[^()]+\(([0-9A-F-]{36})\)/;
 const AMP_RE = /&/g;
 const LT_RE = /</g;
 const GT_RE = />/g;
@@ -112,11 +114,21 @@ function injectScheme(email: string, password: string): void {
 
 function pickDestination(): string {
   try {
-    const out = execSync('xcrun simctl list devices booted', { encoding: 'utf8' });
-    const match = out.match(SIMCTL_BOOTED_RE);
-    if (match) return `platform=iOS Simulator,id=${match[1]}`;
+    const booted = listBooted();
+    if (booted.length > 0) return `platform=iOS Simulator,id=${booted[0]}`;
   } catch {}
-  return 'platform=iOS Simulator,name=iPhone 16';
+  return 'platform=iOS Simulator,name=iPhone 17 Pro';
+}
+
+// ── Allocate result bundle ───────────────────────────────────────────────────
+
+function allocateResultBundle(): string {
+  if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const path = resolve(RESULTS_DIR, `${stamp}.xcresult`);
+  // xcresulttool refuses to overwrite — make sure the slot is clean (matters on tight clock skew).
+  if (existsSync(path)) rmSync(path, { recursive: true, force: true });
+  return path;
 }
 
 // ── Run xcodebuild ───────────────────────────────────────────────────────────
@@ -125,7 +137,9 @@ injectScheme(E2E_EMAIL, E2E_PASSWORD);
 console.log('✓ Injected E2E credentials into scheme');
 
 const dest = pickDestination();
+const resultBundle = allocateResultBundle();
 console.log(`→ Destination: ${dest}`);
+console.log(`→ Result bundle: ${resultBundle}`);
 
 const args = [
   'test',
@@ -134,6 +148,8 @@ const args = [
   '-destination',
   dest,
   '-only-testing:PackRatUITests',
+  '-resultBundlePath',
+  resultBundle,
   ...process.argv.slice(2),
 ];
 
@@ -142,5 +158,25 @@ const result = spawnSync('xcodebuild', args, {
   stdio: 'inherit',
   env: process.env,
 });
+
+// xcodebuild test exits non-zero on test failure but the result bundle is still valid;
+// always try to summarize, then propagate the original exit code.
+try {
+  const summary = readSummary(resultBundle);
+  console.log('');
+  console.log(formatSummaryLine(summary));
+  if (summary.failingTests.length > 0) {
+    console.log('  Failing tests:');
+    for (const t of summary.failingTests) {
+      console.log(`    • ${t.identifier}`);
+    }
+  }
+} catch (err) {
+  if (err instanceof XcResultError) {
+    console.error(`⚠️  ${err.message}`);
+  } else {
+    throw err;
+  }
+}
 
 process.exit(result.status ?? 1);

@@ -1,0 +1,18 @@
+{
+  "devices": {
+    "com.apple.CoreSimulator.SimRuntime.iOS-26-5": [
+      {
+        "udid": "626B2C47-CC06-46AF-8132-70E9D866AEA8",
+        "name": "iPhone 17 Pro",
+        "state": "Booted",
+        "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"
+      },
+      {
+        "udid": "80CB45AB-289A-49C9-BCF6-DC2FEE265A68",
+        "name": "iPhone 17 Pro Max",
+        "state": "Shutdown",
+        "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max"
+      }
+    ]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Test - PackRat-iOS",
+  "environmentDescription": "PackRat-iOS · Built with Xcode 26.5 · iPhone 17 Pro - iOS 26.5",
+  "topInsights": [],
+  "result": "Failed",
+  "totalTestCount": 74,
+  "passedTests": 71,
+  "failedTests": 2,
+  "skippedTests": 1,
+  "expectedFailures": 0,
+  "statistics": [],
+  "devicesAndConfigurations": {
+    "device": { "deviceName": "iPhone 17 Pro" },
+    "expectedFailures": 0,
+    "failedTests": 2,
+    "passedTests": 71,
+    "skippedTests": 1,
+    "testPlanConfiguration": { "configurationName": "Test Scheme Action" }
+  },
+  "testFailures": [
+    {
+      "testName": "testLoginWithValidCredentials",
+      "targetName": "PackRatUITests",
+      "failureText": "XCTAssertEqual failed: (\"Welcome\") is not equal to (\"Home\")",
+      "testIdentifierString": "AuthTests/testLoginWithValidCredentials()",
+      "className": "AuthTests"
+    },
+    {
+      "testName": "testCatalogSearchEmptyState",
+      "targetName": "PackRatUITests",
+      "failureText": "Failed to find element matching predicate",
+      "testIdentifierString": "CatalogTests/testCatalogSearchEmptyState()",
+      "className": "CatalogTests"
+    }
+  ]
+}
