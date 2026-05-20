@@ -69,11 +69,31 @@ This is not a product defect — it's a test-environment routing issue. Two vali
 
 Until the test-build env routes to a reachable API with valid test credentials, every UI test downstream of `AppUITestCase` is uninformative — failure is environmental, not behavioral. **The "all 74 e2e tests passing" claim on the latest commit (`04bf85d6d`) is unreproducible on a fresh setup unless `localhost:8787` happens to be served by a working dev API at test time** — an undocumented implicit dependency.
 
-Recommended remediation before any meaningful U4-U13 progress is gated on test signal:
+#### 2026-05-20 deeper finding: deployed APIs lack user auth
 
-- Land U8's `PACKRAT_ENV=dev` flip for Debug + Test builds (or wire a small `wrangler dev` orchestration into `run-e2e.ts` that boots a fresh local server before tests).
-- Re-run the baseline to get a true product-failure signal.
-- Use that re-run as the actual ship-readiness baseline.
+Initial fix (`PACKRAT_ENV=dev`) did not unblock — a fresh iOS-Full run at 21:12 UTC produced the same 4/74 failure profile against `packrat-api-dev.orange-frost-d665.workers.dev`. Direct probing showed:
+
+| Endpoint | Result |
+|---|---|
+| `POST /api/auth/login` (dev workers.dev) | `404 Not Found` |
+| `POST /api/auth/login` (production workers.dev) | `404 Not Found` |
+| `POST /api/auth/sign-in/email` (better-auth default — both URLs) | `404 Not Found` |
+| `GET /doc` (dev) | `200`, lists only `/api/admin/login` for any auth-shaped route |
+| `GET /doc` (production) | `200`, identical to dev — only `/api/admin/login` |
+
+The main-branch API source at `packages/api/src/routes/auth/index.ts` registers `/api/auth/login`, `/api/auth/register`, `/api/auth/verify-email`, `/api/auth/refresh`, `/api/auth/logout`, etc. — but they are not deployed to either workers.dev URL. The deployed APIs predate the auth refactor.
+
+**This is a separate ship-readiness blocker from the audit's scope:**
+
+- The Swift app **cannot authenticate against the currently-deployed dev or production APIs**. Neither environment has user auth.
+- Local `wrangler dev` on `:8787` (running latest main source) is the only environment where `/api/auth/login` exists.
+- The audit's `PACKRAT_ENV=local` default points there, but **a local wrangler dev must be running** for any auth-dependent test to pass.
+
+#### Recommended remediation
+
+- **Short term**: keep `PACKRAT_ENV=local` (reverted from the brief `dev` flip), run e2e against a fresh local wrangler. Document this in the swift-app README.
+- **Medium term**: deploy the current main API (with `/api/auth/*` routes) to the workers.dev dev URL — outside this audit's scope but a hard precondition for any meaningful "ship readiness" claim. Until this happens, the Swift app and the Expo iOS app are both unship-against-deployed-API.
+- **Long term**: stand up `api.packrat.app` as a Worker custom domain and migrate clients off `workers.dev`.
 
 ### Failing tests (70)
 

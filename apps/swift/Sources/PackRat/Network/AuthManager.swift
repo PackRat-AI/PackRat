@@ -32,6 +32,7 @@ final class AuthManager {
         KeychainService.shared.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
         await MainActor.run { currentUser = response.user }
         persistUser(response.user)
+        SentryConfig.setUser(id: String(response.user.id), email: response.user.email)
     }
 
     func register(email: String, password: String, firstName: String, lastName: String) async throws {
@@ -96,6 +97,7 @@ final class AuthManager {
         KeychainService.shared.clearTokens()
         UserDefaults.standard.removeObject(forKey: "current_user")
         currentUser = nil
+        SentryConfig.clearUser()
     }
 
     // MARK: - Persistence
@@ -112,5 +114,6 @@ final class AuthManager {
               let user = try? JSONDecoder().decode(User.self, from: data)
         else { return }
         currentUser = user
+        SentryConfig.setUser(id: String(user.id), email: user.email)
     }
 }

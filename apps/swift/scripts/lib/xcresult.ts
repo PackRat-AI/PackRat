@@ -28,9 +28,12 @@ export class XcResultError extends Error {
 }
 
 type RawSummaryFailure = {
-  testIdentifier?: string;
+  // `testIdentifier` is a deprecated int64 in the Xcode 26 schema (formerly the row index).
+  // Modern bundles populate `testIdentifierString` with the qualified name.
+  testIdentifier?: number | string;
   testIdentifierString?: string;
   testName?: string;
+  targetName?: string;
   className?: string;
 };
 
@@ -51,11 +54,21 @@ export function parseSummaryJson(json: string): TestSummary {
   } catch {
     throw new XcResultError('xcresulttool summary output was not valid JSON');
   }
-  const failingTests: TestRef[] = (raw.testFailures ?? []).map((f) => ({
-    identifier: f.testIdentifier ?? f.testIdentifierString ?? f.testName ?? '<unknown>',
-    testName: f.testName,
-    className: f.className,
-  }));
+  const failingTests: TestRef[] = (raw.testFailures ?? []).map((f) => {
+    // Prefer the stable string identifier. Fall back to assembling one from
+    // target+className+testName so we never surface a meaningless deprecated
+    // int row index as the identifier the user sees in CI logs.
+    const stringId = f.testIdentifierString;
+    const assembled = f.testName
+      ? [f.targetName, f.className, f.testName].filter(Boolean).join('/')
+      : undefined;
+    const numericFallback = typeof f.testIdentifier === 'string' ? f.testIdentifier : undefined;
+    return {
+      identifier: stringId ?? assembled ?? numericFallback ?? '<unknown>',
+      testName: f.testName,
+      className: f.className,
+    };
+  });
   const passed = raw.passedTests ?? 0;
   const failed = raw.failedTests ?? 0;
   const skipped = raw.skippedTests ?? 0;

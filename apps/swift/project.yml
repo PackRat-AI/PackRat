@@ -43,6 +43,9 @@ packages:
   Defaults:
     url: https://github.com/sindresorhus/Defaults
     from: "9.0.0"
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: "8.40.0"
 
 targets:
   PackRat-iOS:
@@ -70,6 +73,7 @@ targets:
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
+        SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
@@ -100,6 +104,8 @@ targets:
         product: Collections
       - package: Defaults
         product: Defaults
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -132,6 +138,7 @@ targets:
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
         PACKRAT_ENV: $(PACKRAT_ENV)
+        SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     dependencies:
@@ -151,6 +158,8 @@ targets:
         product: Collections
       - package: Defaults
         product: Defaults
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         SWIFT_VERSION: "5.9"
