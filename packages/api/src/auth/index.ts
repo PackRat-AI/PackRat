@@ -51,7 +51,12 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
           get: async (key: string) => env.AUTH_KV.get(key),
           // biome-ignore lint/complexity/useMaxParams: Better Auth secondaryStorage.set interface requires 3 params
           set: async (key: string, value: string, ttl?: number) => {
-            await env.AUTH_KV.put(key, value, ttl ? { expirationTtl: ttl } : undefined);
+            // KV requires a minimum expirationTtl of 60 seconds.
+            await env.AUTH_KV.put(
+              key,
+              value,
+              ttl ? { expirationTtl: Math.max(60, ttl) } : undefined,
+            );
           },
           delete: async (key: string) => env.AUTH_KV.delete(key),
         }
