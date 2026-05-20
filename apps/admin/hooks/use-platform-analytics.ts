@@ -7,14 +7,14 @@ import { queryKeys } from 'admin-app/lib/queryKeys';
 export function usePlatformGrowth(period: 'day' | 'week' | 'month') {
   return useQuery({
     queryKey: queryKeys.platform.growth(period),
-    queryFn: () => getPlatformGrowth(period),
+    queryFn: () => getPlatformGrowth({ period }),
   });
 }
 
 export function usePlatformActivity(period: 'day' | 'week' | 'month') {
   return useQuery({
     queryKey: queryKeys.platform.activity(period),
-    queryFn: () => getPlatformActivity(period),
+    queryFn: () => getPlatformActivity({ period }),
   });
 }
 

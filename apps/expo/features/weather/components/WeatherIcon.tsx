@@ -25,10 +25,10 @@ export function WeatherIcon({
 
   if (code !== undefined) {
     // If we have a code, use that for mapping
-    iconName = getWeatherIconName(code, isDay);
+    iconName = getWeatherIconName({ code, isDay });
   } else if (condition) {
     // If we have condition text, use that for mapping
-    iconName = getWeatherIconByCondition(condition, isDay);
+    iconName = getWeatherIconByCondition({ condition, isDay });
   } else {
     // Default fallback
     iconName = isDay ? 'weather-sunny' : 'weather-night';

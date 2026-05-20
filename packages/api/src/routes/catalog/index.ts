@@ -10,6 +10,7 @@ import { catalogItems, etlJobs, packItems } from '@packrat/db';
 import { isString } from '@packrat/guards';
 import {
   CatalogCategoriesResponseSchema,
+  CatalogCompareRequestSchema,
   CatalogETLSchema,
   CatalogItemSchema,
   CatalogItemsQuerySchema,
@@ -27,6 +28,7 @@ import {
   eq,
   getTableColumns,
   gt,
+  inArray,
   isNotNull,
   isNull,
   ne,
@@ -43,7 +45,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .get(
     '/',
     async ({ query }) => {
-      const { page, limit, q, category: encodedCategory, sort } = query;
+      const { page = 1, limit = 20, q, category: encodedCategory, sort } = query;
       let category: string | undefined;
       if (isString(encodedCategory) && encodedCategory.length > 0) {
         try {
@@ -93,7 +95,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       try {
         const { q: searchQuery, limit = 10, offset = 0 } = query;
         const catalogService = new CatalogService();
-        return await catalogService.vectorSearch(searchQuery, { limit, offset });
+        return await catalogService.vectorSearch({ q: searchQuery, opts: { limit, offset } });
       } catch (error) {
         console.error('Vector search error:', error);
         return status(500, { error: 'Failed to search catalog items' });
@@ -118,14 +120,86 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       return CatalogCategoriesResponseSchema.parse(categories);
     },
     {
+      // Service applies its own default (10); keep schema truly optional.
       query: z.object({
-        limit: z.coerce.number().int().positive().optional().default(10),
+        limit: z.coerce.number().int().positive().optional(),
       }),
       response: { 200: CatalogCategoriesResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
         summary: 'Get catalog categories',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  // -- Compare items side-by-side (static path, register before /:id)
+  .post(
+    '/compare',
+    async ({ body }) => {
+      const db = createDb();
+      const { ids } = body;
+      const uniqueIds = Array.from(new Set(ids));
+      // `ids.min(2)` accepts [1, 1] which collapses to 1 unique ID after
+      // dedupe; enforce the 2+ floor on the deduped set so the response
+      // actually contains a comparison.
+      if (uniqueIds.length < 2) {
+        return status(400, { error: 'Compare requires at least 2 distinct catalog IDs' });
+      }
+      const items = await db
+        .select({
+          id: catalogItems.id,
+          name: catalogItems.name,
+          brand: catalogItems.brand,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          price: catalogItems.price,
+          ratingValue: catalogItems.ratingValue,
+          productUrl: catalogItems.productUrl,
+          categories: catalogItems.categories,
+        })
+        .from(catalogItems)
+        .where(inArray(catalogItems.id, uniqueIds));
+
+      const foundIds = new Set(items.map((it) => it.id));
+      const missing = uniqueIds.filter((id) => !foundIds.has(id));
+      if (missing.length > 0) {
+        return status(404, {
+          error: `Catalog item(s) not found: ${missing.join(', ')}`,
+        });
+      }
+
+      const rank = <K extends keyof (typeof items)[number]>({
+        key,
+        order,
+      }: {
+        key: K;
+        order: 'asc' | 'desc';
+      }): number | null => {
+        const ranked = [...items]
+          .filter((it) => it[key] != null)
+          .sort((a, b) => {
+            const av = Number(a[key]);
+            const bv = Number(b[key]);
+            return order === 'asc' ? av - bv : bv - av;
+          });
+        return ranked[0]?.id ?? null;
+      };
+
+      return {
+        items,
+        lightestId: rank({ key: 'weight', order: 'asc' }),
+        cheapestId: rank({ key: 'price', order: 'asc' }),
+        highestRatedId: rank({ key: 'ratingValue', order: 'desc' }),
+      };
+    },
+    {
+      body: CatalogCompareRequestSchema,
+      isAuthenticated: true,
+      detail: {
+        tags: ['Catalog'],
+        summary: 'Compare 2–10 catalog items side-by-side',
         security: [{ bearerAuth: [] }],
       },
     },
@@ -241,20 +315,15 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
-      if (!data.name || data.weight === undefined || data.weight === null || !data.weightUnit) {
-        return status(400, { error: 'name, weight, and weightUnit are required' });
-      }
-      if (data.weight <= 0) {
-        return status(400, { error: 'weight must be a positive number' });
-      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        return status(500, { error: 'OpenAI API key not configured' });
+        // Configuration error: surface as a 500 with a clear message
+        throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
@@ -434,14 +503,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
       const data = body;
-      if (data.weight !== undefined && data.weight !== null && data.weight <= 0) {
-        return status(400, { error: 'weight must be a positive number' });
-      }
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
       if (!OPENAI_API_KEY) {
-        return status(500, { error: 'OpenAI API key not configured' });
+        // Configuration error: surface as a 500 with a clear message
+        throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
@@ -453,8 +520,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
 
       let embedding: number[] | null = null;
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       if (newEmbeddingText !== oldEmbeddingText) {
         embedding = await generateEmbedding({

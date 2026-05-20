@@ -3,7 +3,11 @@ import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { ImageDetectionService, PackService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
+import {
+  computePackBreakdown,
+  computePacksWeights,
+  computePackWeights,
+} from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -21,6 +25,7 @@ import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
   AddPackItemBodySchema,
   CreatePackBodySchema,
+  CreatePackWeightHistoryBodySchema,
   GapAnalysisRequestSchema,
   PackItemSchema,
   PackWithWeightsSchema,
@@ -65,11 +70,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return z.array(PackWithWeightsSchema).parse(computePacksWeights(result));
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
-        includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+        // Handler defaults this to 0; keep schema truly optional for clients.
+        includePublic: z.coerce.number().int().min(0).max(1).optional(),
       }),
       response: { 200: z.array(PackWithWeightsSchema) },
       isAuthenticated: true,
@@ -84,20 +90,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
-      const packId = data.id as string;
-      if (!packId) return status(400, { error: 'Pack ID is required' });
-
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
       const [newPack] = await db
         .insert(packs)
         .values({
-          id: packId,
+          id: data.id,
           userId: user.userId,
           name: data.name,
           description: data.description,
           category: data.category,
-          isPublic: data.isPublic,
+          isPublic: data.isPublic ?? false,
           image: data.image,
           tags: data.tags,
           localCreatedAt: new Date(data.localCreatedAt as string),
@@ -108,7 +111,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return PackWithWeightsSchema.parse(computePackWeights(packWithItems));
+      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
       body: CreatePackBodySchema,
@@ -186,7 +189,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         const imageDetectionService = new ImageDetectionService();
-        const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
+        const result = await imageDetectionService.detectAndMatchItems({ imageUrl, matchLimit });
 
         await PACKRAT_BUCKET.delete(image);
 
@@ -228,13 +231,46 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       });
 
       if (!pack) throw new NotFoundError('Pack not found');
-      return PackWithWeightsSchema.parse(computePackWeights(pack));
+      return PackWithWeightsSchema.parse(computePackWeights({ pack }));
     },
     {
       params: z.object({ packId: z.string() }),
       response: { 200: PackWithWeightsSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Weight breakdown — total/base/worn/consumable + per-category aggregation.
+  // Edge apps were computing this by walking pack.items locally; centralising
+  // here keeps MCP/CLI tools as one-line passthroughs. Matches the
+  // owner-or-public access pattern used by GET /:packId/items.
+  .get(
+    '/:packId/weight-breakdown',
+    async ({ params, user }) => {
+      const db = createDb();
+      try {
+        const pack = await db.query.packs.findFirst({
+          where: eq(packs.id, params.packId),
+          with: { items: { where: eq(packItems.deleted, false) } },
+        });
+        if (!pack) return status(404, { error: 'Pack not found' });
+        const canAccess = pack.isPublic || pack.userId === user.userId;
+        if (!canAccess) return status(403, { error: 'Unauthorized' });
+        return computePackBreakdown(pack);
+      } catch (error) {
+        console.error('Error computing pack breakdown:', error);
+        return status(500, { error: 'Failed to compute breakdown' });
+      }
+    },
+    {
+      params: z.object({ packId: z.string() }),
+      isAuthenticated: true,
+      detail: {
+        tags: ['Packs'],
+        summary: 'Per-category weight breakdown',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
@@ -270,7 +306,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return computePackWeights({ pack: updatedPack });
       } catch (error) {
         console.error('Error updating pack:', error);
         return status(500, { error: 'Failed to update pack' });
@@ -399,11 +435,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     },
     {
       params: z.object({ packId: z.string() }),
-      body: z.object({
-        id: z.string(),
-        weight: z.number(),
-        localCreatedAt: z.string().datetime(),
-      }),
+      body: CreatePackWeightHistoryBodySchema,
       isAuthenticated: true,
       detail: {
         tags: ['Packs'],
@@ -426,7 +458,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packDetails = await getPackDetails({ packId: params.packId });
         if (!packDetails) return status(404, { error: 'Pack not found' });
 
-        const pack = computePackWeights(packDetails);
+        const pack = computePackWeights({ pack: packDetails });
 
         if (pack.userId !== user.userId) {
           return status(403, { error: 'Forbidden' });
@@ -599,9 +631,9 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         getEnv();
 
       if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
-      if (!data.id) return status(400, { error: 'Item ID is required' });
+      const itemId = data.id;
 
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
@@ -614,7 +646,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const [newItem] = await db
         .insert(packItems)
         .values({
-          id: data.id,
+          id: itemId,
           packId,
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
@@ -703,8 +735,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!existingItem) throw new NotFoundError('Pack item not found');
 
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       const updateData: Partial<typeof packItems.$inferInsert> = {};
       if ('name' in data) updateData.name = data.name;

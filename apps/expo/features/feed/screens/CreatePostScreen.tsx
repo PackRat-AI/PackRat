@@ -97,7 +97,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
             ? (photo.fileName.split('.').pop()?.toLowerCase() ?? 'jpg')
             : 'jpg';
           const uniqueName = `${nanoid()}.${ext}`;
-          return uploadImage(uniqueName, photo.uri);
+          return uploadImage({ fileName: uniqueName, uri: photo.uri });
         }),
       );
 

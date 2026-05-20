@@ -32,7 +32,7 @@ export function WeightBadge({
 
   const safeWeight = Number(weight) || 0;
   const safeUnit = isString(unit) ? unit : 'g';
-  const formattedWeight = formatWeight(safeWeight, safeUnit);
+  const formattedWeight = formatWeight({ weight: safeWeight, unit: safeUnit });
 
   return (
     <View className={cn('rounded-full px-2 py-1', getColorClass()[0], containerClassName)}>

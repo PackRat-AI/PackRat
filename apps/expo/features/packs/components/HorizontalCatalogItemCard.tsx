@@ -18,12 +18,12 @@ type HorizontalCatalogItemCardProps = {
     }
 );
 
-const formatPrice = (price?: number | null, currency?: string | null) => {
+const formatPrice = ({ price, currency }: { price?: number | null; currency?: string | null }) => {
   if (!price) return '';
   return `${currency || '$'}${price.toFixed(2)}`;
 };
 
-const formatWeight = (weight?: number | null, unit?: string | null) => {
+const formatWeight = ({ weight, unit }: { weight?: number | null; unit?: string | null }) => {
   if (!weight) return '';
   return `${weight}${unit || 'g'}`;
 };
@@ -63,13 +63,13 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
             <Text>
               {item.price && (
                 <Text className="text-sm font-medium text-foreground">
-                  {formatPrice(item.price, item.currency)}
+                  {formatPrice({ price: item.price, currency: item.currency })}
                 </Text>
               )}
             </Text>
             {item.weight && (
               <Text className="text-sm text-muted-foreground">
-                {formatWeight(item.weight, item.weightUnit)}
+                {formatWeight({ weight: item.weight, unit: item.weightUnit })}
               </Text>
             )}
             {item.ratingValue && (

@@ -158,7 +158,10 @@ export function ItemsScanScreen() {
   const handleCatalogItemsSelected = async () => {
     router.back();
     try {
-      await addItemsToPackTemplate(packTemplateId as string, selectedCatalogItemsList);
+      await addItemsToPackTemplate({
+        packTemplateId: packTemplateId as string,
+        catalogItems: selectedCatalogItemsList,
+      });
       const itemWord =
         selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Burnt.toast({

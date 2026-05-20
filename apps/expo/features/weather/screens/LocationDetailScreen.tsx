@@ -48,7 +48,7 @@ export default function LocationDetailScreen() {
       if (location.details) {
         const weatherCode = location.details.weatherCode || 1000;
         const isNight = location.details.isDay === 0;
-        setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
+        setGradientColors(getWeatherBackgroundColors({ code: weatherCode, isNight }));
       }
     }
   };

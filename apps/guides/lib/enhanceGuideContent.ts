@@ -38,10 +38,13 @@ export interface EnhancedContentResult {
  * This is the main programmatic API for content enhancement
  */
 
-export async function enhanceGuideContent(
-  content: string,
-  options: ContentEnhancementOptions = {},
-): Promise<EnhancedContentResult> {
+export async function enhanceGuideContent({
+  content,
+  options = {},
+}: {
+  content: string;
+  options?: ContentEnhancementOptions;
+}): Promise<EnhancedContentResult> {
   const {
     temperature = 0.3,
     maxSearchResults = 5,
@@ -186,16 +189,19 @@ export async function enhanceGuideContent(
  * Batch enhance multiple content pieces
  */
 
-export async function batchEnhanceContent(
-  contentPieces: Array<{ id: string; content: string }>,
-  options: ContentEnhancementOptions = {},
-): Promise<Array<{ id: string; result: EnhancedContentResult }>> {
+export async function batchEnhanceContent({
+  contentPieces,
+  options = {},
+}: {
+  contentPieces: Array<{ id: string; content: string }>;
+  options?: ContentEnhancementOptions;
+}): Promise<Array<{ id: string; result: EnhancedContentResult }>> {
   const results: Array<{ id: string; result: EnhancedContentResult }> = [];
 
   for (const piece of contentPieces) {
     try {
       console.log(`🔄 Enhancing content piece: ${piece.id}`);
-      const result = await enhanceGuideContent(piece.content, options);
+      const result = await enhanceGuideContent({ content: piece.content, options });
       results.push({ id: piece.id, result });
 
       // Add delay between requests to avoid rate limiting

@@ -7,7 +7,13 @@ import { atom } from 'jotai';
  * fallback for web; sensitive flows should use server-side sessions on web.
  * Metro automatically picks this file over atomWithSecureStorage.ts for web builds.
  */
-export const atomWithSecureStorage = <T>(key: string, initialValue: T) => {
+export const atomWithSecureStorage = <T>({
+  key,
+  initialValue,
+}: {
+  key: string;
+  initialValue: T;
+}) => {
   const baseAtom = atom(initialValue);
 
   baseAtom.onMount = (setValue) => {

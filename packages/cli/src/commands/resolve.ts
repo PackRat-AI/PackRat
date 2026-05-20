@@ -27,22 +27,25 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const conn = cache.getConnection();
-    const limit = parsePositiveIntArg(args.limit, '--limit');
+    const limit = parsePositiveIntArg({ value: args.limit, argName: '--limit' });
 
-    const resolver = new EntityResolver(conn);
+    const resolver = new EntityResolver({ conn });
 
     if (args.build) {
-      const minConfidence = parseConfidenceArg(args['min-confidence'], '--min-confidence');
+      const minConfidence = parseConfidenceArg({
+        value: args['min-confidence'],
+        argName: '--min-confidence',
+      });
       consola.start('Running entity resolution (this may take a while)...');
       const stats = await resolver.build(minConfidence);
-      printSummary(
-        {
+      printSummary({
+        data: {
           'Total listings': stats.total,
           'Unique products': stats.entities,
           'Dedup ratio': `${stats.dedupRatio}%`,
         },
-        'Entity Resolution Complete',
-      );
+        title: 'Entity Resolution Complete',
+      });
       return;
     }
 
@@ -51,14 +54,14 @@ export default defineCommand({
       return;
     }
 
-    const matches = await resolver.identifyProduct(args.product, limit);
+    const matches = await resolver.identifyProduct({ query: args.product, limit });
     if (matches.length === 0) {
       consola.warn('No matches. Run `packrat resolve --build` first.');
       return;
     }
 
-    printTable(
-      matches.map((m) => ({
+    printTable({
+      rows: matches.map((m) => ({
         'Canonical ID': String(m.canonical_id).slice(0, 8),
         Site: m.site,
         Name: String(m.name).slice(0, 35),
@@ -67,7 +70,7 @@ export default defineCommand({
         Confidence: m.confidence,
         Method: m.match_method,
       })),
-      { title: `Cross-site listings: "${args.product}"` },
-    );
+      options: { title: `Cross-site listings: "${args.product}"` },
+    });
   },
 });

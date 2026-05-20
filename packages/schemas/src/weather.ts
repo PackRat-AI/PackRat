@@ -26,6 +26,10 @@ export const WeatherSearchQuerySchema = z.object({
   q: z.string().optional(),
 });
 
+export const WeatherByNameQuerySchema = z.object({
+  q: z.string().min(2),
+});
+
 export const WeatherCoordinateQuerySchema = z.object({
   lat: z.string(),
   lon: z.string(),

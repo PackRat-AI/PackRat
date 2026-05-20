@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 export function useDeleteTrip() {
   const deleteTrip = useCallback(async (id: string) => {
     // Optimistically mark as deleted in the local store so the UI updates immediately
-    const tripObs = obs(tripsStore, id);
+    const tripObs = obs({ store: tripsStore, id });
     if (tripObs) {
       tripObs.deleted.set(true);
     }

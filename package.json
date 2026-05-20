@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.25",
+  "version": "2.0.26",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -34,7 +34,7 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts",
+    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run scripts/lint/no-owned-max-params.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
     "mcp": "bun run --cwd packages/mcp dev",
@@ -71,10 +71,10 @@
     "semver": "catalog:",
     "sort-package-json": "^3.6.1"
   },
-  "packageManager": "bun@1.3.10",
+  "packageManager": "bun@1.3.14",
   "engines": {
-    "bun": ">=1.3.10",
-    "node": ">=24.0.0"
+    "bun": ">=1.3.14",
+    "node": "^24.0.0"
   },
   "catalog": {
     "@ai-sdk/openai": "^3.0.53",

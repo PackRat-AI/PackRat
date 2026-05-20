@@ -47,7 +47,7 @@ export default function LoginScreen() {
     onSubmit: async ({ value }) => {
       try {
         setIsLoading(true);
-        await signIn(value.email, value.password);
+        await signIn({ email: value.email, password: value.password });
         // Navigation is handled in function after successful login
       } catch (error) {
         setIsLoading(false);

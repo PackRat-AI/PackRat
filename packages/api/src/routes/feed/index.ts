@@ -22,7 +22,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
   .get(
     '/',
     async ({ query, user }) => {
-      const { page, limit } = query;
+      const { page = 1, limit = 20 } = query;
       const db = createDb();
       const offset = (page - 1) * limit;
 
@@ -94,8 +94,9 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     },
     {
       query: z.object({
-        page: z.coerce.number().int().min(1).optional().default(1),
-        limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+        // Defaults applied in handler so Treaty types these as truly optional.
+        page: z.coerce.number().int().min(1).optional(),
+        limit: z.coerce.number().int().min(1).max(50).optional(),
       }),
       response: { 200: FeedResponseSchema },
       isAuthenticated: true,
@@ -249,7 +250,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     '/:postId/comments',
     async ({ params, query, user }) => {
       const postId = Number(params.postId);
-      const { page, limit } = query;
+      const { page = 1, limit = 20 } = query;
       const db = createDb();
 
       const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
@@ -322,8 +323,9 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     {
       params: z.object({ postId: z.coerce.number().int() }),
       query: z.object({
-        page: z.coerce.number().int().min(1).optional().default(1),
-        limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+        // Defaults applied in handler so Treaty types these as truly optional.
+        page: z.coerce.number().int().min(1).optional(),
+        limit: z.coerce.number().int().min(1).max(50).optional(),
       }),
       isAuthenticated: true,
       detail: {

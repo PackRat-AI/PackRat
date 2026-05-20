@@ -300,7 +300,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
 
         const batchResult =
           searchQueries.length > 0
-            ? await catalogService.batchVectorSearch(searchQueries, 1)
+            ? await catalogService.batchVectorSearch({ queries: searchQueries, limit: 1 })
             : { items: [] as never[] };
 
         const now = new Date();
@@ -669,8 +669,8 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           weightUnit: data.weightUnit,
           quantity: data.quantity || 1,
           category: data.category,
-          consumable: data.consumable,
-          worn: data.worn,
+          consumable: data.consumable ?? false,
+          worn: data.worn ?? false,
           image: data.image,
           notes: data.notes,
           userId: user.userId,

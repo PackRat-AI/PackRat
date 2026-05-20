@@ -25,7 +25,13 @@ export interface GenerateOptions {
 }
 
 export class MockLLMProvider {
-  async generate(_prompt: string, options?: GenerateOptions): Promise<string> {
+  async generate({
+    _prompt,
+    options,
+  }: {
+    _prompt: string;
+    options?: GenerateOptions;
+  }): Promise<string> {
     const context = options?.context;
 
     // If no context provided, return default greeting

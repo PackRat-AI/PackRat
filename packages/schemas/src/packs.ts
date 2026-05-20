@@ -61,7 +61,7 @@ export const CreatePackRequestSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   category: z.string().optional(),
-  isPublic: z.boolean().optional().default(false),
+  isPublic: z.boolean().optional(),
   image: z.string().nullish(),
   tags: z.array(z.string()).optional(),
 });
@@ -83,8 +83,8 @@ export const CreatePackItemRequestSchema = z.object({
   weightUnit: z.enum(WEIGHT_UNITS).default('g'),
   quantity: z.number().int().min(1).default(1),
   category: z.string().optional(),
-  consumable: z.boolean().optional().default(false),
-  worn: z.boolean().optional().default(false),
+  consumable: z.boolean().optional(),
+  worn: z.boolean().optional(),
   image: z.string().nullish(),
   notes: z.string().nullish(),
   catalogItemId: z.number().int().nullish(),
@@ -125,10 +125,29 @@ export const ItemSuggestionsResponseSchema = z.object({
   ),
 });
 
+export const PackCategoryBreakdownSchema = z.object({
+  category: z.string(),
+  totalGrams: z.number(),
+  totalLbs: z.number(),
+  itemCount: z.number(),
+  items: z.array(z.string()),
+});
+
+export const PackWeightBreakdownSchema = z.object({
+  packId: z.string(),
+  totalGrams: z.number(),
+  baseGrams: z.number(),
+  wornGrams: z.number(),
+  consumableGrams: z.number(),
+  itemCount: z.number(),
+  byCategory: z.array(PackCategoryBreakdownSchema),
+});
+
 export const GapAnalysisRequestSchema = z.object({
   destination: z.string().optional(),
   tripType: z.string().optional(),
-  duration: z.string().optional(),
+  // Duration is days. Coerce so JSON numbers and string form-data both work.
+  duration: z.coerce.number().int().positive().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });

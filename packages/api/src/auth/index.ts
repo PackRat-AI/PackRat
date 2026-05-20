@@ -9,61 +9,13 @@
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { expo } from '@better-auth/expo';
-import { verifyPassword } from '@better-auth/utils/password';
 import { neon } from '@neondatabase/serverless';
+import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
-import * as bcrypt from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { importPKCS8, SignJWT } from 'jose';
-
-// Matches bcrypt hashes ($2a$, $2b$, $2y$) left over from pre-migration auth.
-const BCRYPT_HASH_RE = /^\$2[aby]\$/;
-
-async function verifyPasswordCompat({
-  hash,
-  password,
-}: {
-  hash: string;
-  password: string;
-}): Promise<boolean> {
-  if (BCRYPT_HASH_RE.test(hash)) {
-    return bcrypt.compare(password, hash);
-  }
-  return verifyPassword(hash, password);
-}
-
-// ─── Apple client-secret generation ──────────────────────────────────────────
-// Apple requires a JWT as the OAuth2 client secret.  It is valid for up to
-// 6 months, so we regenerate it once per isolate (WeakMap cache below
-// handles the per-request dedup).
-// Returns null when Apple credentials are not configured (e.g., in tests).
-async function generateAppleClientSecret(env: ValidatedEnv): Promise<string | null> {
-  if (!env.APPLE_PRIVATE_KEY) return null;
-  try {
-    const privateKey = await importPKCS8(env.APPLE_PRIVATE_KEY, 'ES256');
-    const now = Math.floor(Date.now() / 1000);
-    return await new SignJWT({})
-      .setProtectedHeader({ alg: 'ES256', kid: env.APPLE_KEY_ID })
-      .setIssuer(env.APPLE_TEAM_ID)
-      .setSubject(env.APPLE_CLIENT_ID)
-      .setAudience('https://appleid.apple.com')
-      .setIssuedAt(now)
-      .setExpirationTime(now + 60 * 60 * 24 * 180) // 180 days
-      .sign(privateKey);
-  } catch (err) {
-    // Malformed or placeholder key — log so the issue is visible, then fall
-    // through so the provider is still registered for the native id-token flow
-    // (which verifies against Apple's public JWKS and does not use this secret).
-    console.warn(
-      '[auth] Apple client-secret generation failed; web OAuth flow will be unavailable:',
-      err,
-    );
-    return null;
-  }
-}
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here

@@ -250,7 +250,7 @@ export default function AIChat() {
     }
 
     const timeoutId = setTimeout(() => {
-      saveChatMessages(context, messages);
+      saveChatMessages({ context, messages });
     }, 500);
 
     return () => clearTimeout(timeoutId);
