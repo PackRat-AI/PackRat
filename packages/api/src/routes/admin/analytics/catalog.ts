@@ -21,6 +21,157 @@ import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'dri
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
+type ReingestResult =
+  | {
+      success: true;
+      newJobId: string;
+      objectKey: string;
+      workflowInstanceId: string;
+    }
+  | {
+      _statusCode: 400 | 404 | 409 | 500;
+      error: string;
+      code?: string;
+    };
+
+/**
+ * Shared body for retry + repair-from-scratch admin endpoints.
+ *
+ * mode:
+ *   - 'retry'  — only `status='failed'` jobs are eligible (defensive).
+ *   - 'repair' — any job is eligible; always sets supersededByJobId.
+ *
+ * force=true skips the etag fail-closed check. Use when:
+ *   - The original job has no source_etag (legacy queue-era rows, or the
+ *     2026-05-14 false-failure rows).
+ *   - The operator has manually verified the R2 source content.
+ */
+async function reingestJob(args: {
+  originalJobId: string;
+  mode: 'retry' | 'repair';
+  force: boolean;
+}): Promise<ReingestResult> {
+  const { originalJobId, mode, force } = args;
+  const db = createDb();
+
+  try {
+    const [original] = await db
+      .select()
+      .from(etlJobs)
+      .where(eq(etlJobs.id, originalJobId))
+      .limit(1);
+
+    if (!original) {
+      return { _statusCode: 404, error: 'ETL job not found' };
+    }
+
+    if (mode === 'retry' && original.status !== 'failed') {
+      return {
+        _statusCode: 409,
+        error:
+          original.status === 'running'
+            ? 'Job is still running — wait for it to complete or use repair-from-scratch'
+            : 'Only failed jobs can be retried — use repair-from-scratch for completed jobs',
+      };
+    }
+
+    if (mode === 'repair' && original.status === 'running') {
+      return {
+        _statusCode: 409,
+        error: 'Job is still running — wait for it to complete before repair',
+      };
+    }
+
+    const newJobId = crypto.randomUUID();
+    const objectKey = `v2/${original.source}/${original.filename}`;
+    const env = getEnv();
+
+    if (!env.ETL_WORKFLOW) {
+      return { _statusCode: 400, error: 'ETL_WORKFLOW is not configured' };
+    }
+
+    const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+    const head = await r2.head(objectKey);
+    if (!head) {
+      return { _statusCode: 404, error: `R2 source not found at ${objectKey}` };
+    }
+
+    // ETag fail-closed: if we have a stored etag and the live etag has
+    // drifted, refuse unless the operator explicitly forces. This is the
+    // guard that stops a scraper overwrite from being silently re-applied
+    // to an old (source, filename) under the wrong audit record.
+    if (!force && original.sourceEtag !== null && original.sourceEtag !== head.etag) {
+      return {
+        _statusCode: 409,
+        error:
+          `R2 source etag has drifted (stored=${original.sourceEtag}, ` +
+          `live=${head.etag}). Pass ?force=true to re-ingest the current content.`,
+        code: 'ETL_ETAG_MISMATCH',
+      };
+    }
+
+    const {
+      etag: liveEtag,
+      lastModified: liveLastModified,
+      chunks,
+    } = await chunkCsvForR2({
+      r2,
+      objectKey,
+    });
+    const totalChunks = chunks.length;
+    const indexedChunks: ChunkSpec[] = chunks.map((c, i) => ({
+      ...c,
+      chunkIndex: i,
+      chunksTotal: totalChunks,
+    }));
+
+    // Suffix the instance ID with the new jobId so duplicate retries
+    // don't collide with the original instance or with each other.
+    const suffix = mode === 'retry' ? 'retry' : 'repair';
+    const workflowInstanceId = `${original.source}-${original.filename}-${suffix}-${newJobId}`;
+
+    await db.insert(etlJobs).values({
+      id: newJobId,
+      status: 'running',
+      source: original.source,
+      filename: original.filename,
+      scraperRevision: original.scraperRevision,
+      startedAt: new Date(),
+      workflowInstanceId,
+      sourceEtag: liveEtag,
+      sourceLastModified: liveLastModified,
+      supersededByJobId: originalJobId,
+      supersededAt: new Date(),
+    });
+
+    const workflowParams: CatalogEtlWorkflowParams = {
+      jobId: newJobId,
+      source: original.source,
+      scraperRevision: original.scraperRevision,
+      chunks: indexedChunks,
+    };
+
+    try {
+      await env.ETL_WORKFLOW.create({ id: workflowInstanceId, params: workflowParams });
+    } catch (enqueueErr) {
+      await db
+        .update(etlJobs)
+        .set({ status: 'failed', completedAt: new Date() })
+        .where(eq(etlJobs.id, newJobId));
+      throw enqueueErr;
+    }
+
+    return { success: true, newJobId, objectKey, workflowInstanceId };
+  } catch (error) {
+    console.error(`ETL ${mode} error:`, error);
+    return {
+      _statusCode: 500,
+      error: `Failed to ${mode === 'retry' ? 'retry' : 'repair'} ETL job`,
+      code: mode === 'retry' ? 'ETL_RETRY_ERROR' : 'ETL_REPAIR_ERROR',
+    };
+  }
+}
+
 export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
   .get(
     '/overview',
@@ -421,81 +572,57 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
 
   .post(
     '/etl/:jobId/retry',
-    async ({ params }) => {
-      const db = createDb();
-
-      try {
-        const [original] = await db
-          .select()
-          .from(etlJobs)
-          .where(eq(etlJobs.id, params.jobId))
-          .limit(1);
-
-        if (!original) return status(404, { error: 'ETL job not found' });
-        if (original.status !== 'failed')
-          return status(409, {
-            error:
-              original.status === 'running'
-                ? 'Job is still running — wait for it to complete or reset stuck jobs first'
-                : 'Only failed jobs can be retried',
-          });
-
-        const newJobId = crypto.randomUUID();
-        const objectKey = `v2/${original.source}/${original.filename}`;
-        const env = getEnv();
-
-        if (!env.ETL_WORKFLOW) return status(400, { error: 'ETL_WORKFLOW is not configured' });
-
-        const r2 = new R2BucketService({ env, bucketType: 'catalog' });
-        const { chunks } = await chunkCsvForR2({ r2, objectKey });
-        const totalChunks = chunks.length;
-        const indexedChunks: ChunkSpec[] = chunks.map((c, i) => ({
-          ...c,
-          chunkIndex: i,
-          chunksTotal: totalChunks,
-        }));
-
-        // Suffix the instance ID with the new jobId so duplicate retries
-        // don't collide with the original instance or with each other.
-        const workflowInstanceId = `${original.source}-${original.filename}-retry-${newJobId}`;
-
-        await db.insert(etlJobs).values({
-          id: newJobId,
-          status: 'running',
-          source: original.source,
-          filename: original.filename,
-          scraperRevision: original.scraperRevision,
-          startedAt: new Date(),
-          workflowInstanceId,
-        });
-
-        const workflowParams: CatalogEtlWorkflowParams = {
-          jobId: newJobId,
-          source: original.source,
-          scraperRevision: original.scraperRevision,
-          chunks: indexedChunks,
-        };
-
-        try {
-          await env.ETL_WORKFLOW.create({ id: workflowInstanceId, params: workflowParams });
-        } catch (enqueueErr) {
-          await db
-            .update(etlJobs)
-            .set({ status: 'failed', completedAt: new Date() })
-            .where(eq(etlJobs.id, newJobId));
-          throw enqueueErr;
-        }
-
-        return { success: true as const, newJobId, objectKey, workflowInstanceId };
-      } catch (error) {
-        console.error('ETL retry error:', error);
-        return status(500, { error: 'Failed to retry ETL job', code: 'ETL_RETRY_ERROR' });
+    async ({ params, query }) => {
+      const result = await reingestJob({
+        originalJobId: params.jobId,
+        mode: 'retry',
+        force: query.force === true,
+      });
+      if ('_statusCode' in result) {
+        const { _statusCode, ...body } = result;
+        return status(_statusCode, body);
       }
+      return result;
     },
     {
       params: z.object({ jobId: z.string().uuid() }),
+      query: z.object({ force: z.coerce.boolean().optional() }),
       response: { 200: EtlRetrySchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Retry a failed ETL job via the workflow path' },
+    },
+  )
+
+  // ─── Repair-from-scratch (works on completed jobs too) ──────────────────────
+  //
+  // Same shape as retry but accepts `completed` jobs — for cases where an
+  // operator suspects the original ingest under-counted (e.g., the
+  // 2026-05-14 false-failures whose counters might be wrong even after
+  // status was correctly `completed`). Always sets superseded_by_job_id
+  // for full audit trail.
+
+  .post(
+    '/etl/:jobId/repair-from-scratch',
+    async ({ params, query }) => {
+      const result = await reingestJob({
+        originalJobId: params.jobId,
+        mode: 'repair',
+        force: query.force === true,
+      });
+      if ('_statusCode' in result) {
+        const { _statusCode, ...body } = result;
+        return status(_statusCode, body);
+      }
+      return result;
+    },
+    {
+      params: z.object({ jobId: z.string().uuid() }),
+      query: z.object({ force: z.coerce.boolean().optional() }),
+      response: { 200: EtlRetrySchema, ...AdminErrorResponses },
+      detail: {
+        tags: ['Admin'],
+        summary:
+          'Re-ingest a job from scratch via the workflow path (works on completed jobs; always supersedes)',
+      },
     },
   )
 

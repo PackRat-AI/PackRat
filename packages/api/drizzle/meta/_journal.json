@@ -351,6 +351,13 @@
       "when": 1779314381952,
       "tag": "0049_etl_verification_cols",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1779318663090,
+      "tag": "0050_etl_etag_and_supersession",
+      "breakpoints": true
     }
   ]
 }

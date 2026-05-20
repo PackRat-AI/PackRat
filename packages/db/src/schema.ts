@@ -4,6 +4,7 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -484,10 +485,30 @@ export const etlJobs = pgTable(
     // the R2 source; mismatches against totalProcessed indicate data drift.
     verifiedAt: timestamp('verified_at'),
     verifiedRowCount: integer('verified_row_count'),
+    // R2 source provenance captured at ingest time. Repair-from-scratch
+    // refuses to re-ingest when the live R2 etag no longer matches the
+    // stored value (unless overridden with ?force=true) so a scraper
+    // overwrite mid-flight can't be silently re-applied under the old
+    // (source, filename).
+    sourceEtag: text('source_etag'),
+    sourceLastModified: timestamp('source_last_modified'),
+    // Audit trail for repair-from-scratch / retry. supersededByJobId
+    // points at the ORIGINAL job (the new repair-job row carries the
+    // pointer); supersededAt is the time of supersession. CHECK
+    // constraint prevents self-reference.
+    supersededByJobId: text('superseded_by_job_id').references((): AnyPgColumn => etlJobs.id, {
+      onDelete: 'set null',
+    }),
+    supersededAt: timestamp('superseded_at'),
   },
   (table) => ({
     scraperRevisionIdx: index('etl_jobs_scraper_revision_idx').on(table.scraperRevision),
     workflowInstanceIdIdx: index('etl_jobs_workflow_instance_id_idx').on(table.workflowInstanceId),
+    supersededByIdx: index('etl_jobs_superseded_by_idx').on(table.supersededByJobId),
+    noSelfSupersede: check(
+      'etl_jobs_no_self_supersede',
+      sql`${table.supersededByJobId} IS NULL OR ${table.supersededByJobId} <> ${table.id}`,
+    ),
   }),
 );
 
