@@ -77,6 +77,24 @@ _To be populated by U6._
 
 **Implication:** U7's "drop new spec into swift package, run `bun swift:codegen`" approach assumes generate-openapi works. Until blocker 1 is resolved, U7's path is either (a) fix generate-openapi first as a sub-task, (b) curl `/doc` from `bun api` and write the spec manually, or (c) hand-author the spec — which is fragile and reverts what generate-openapi was meant to mechanize.
 
+3. **The swift YAML specs are hand-curated, not generator output.**
+
+   While unblocking via `bun api` on port 8788 + `curl /doc`, the deeper structural issue surfaced:
+
+   - The `/doc` endpoint returns JSON with **0 component schemas** (90 paths). Elysia's OpenAPI plugin uses inline schemas at every route definition, not extracted component refs.
+   - The two swift `openapi.yaml` files are **real YAML** starting with `openapi: "3.1.0"` and contain extracted `components.schemas` — hand-curated, more structured than what Elysia emits.
+   - `generate-openapi.ts` writes `JSON.stringify(spec, null, 2)` to files named `.yaml`. Those files would not match the format the swift YAML files use.
+
+   **What this means:** the existing `generate-openapi.ts` does not actually produce the YAML files swift consumes. Someone has been hand-authoring or transforming the spec. The "regen" U7 imagines may not exist — U7 is asking to regenerate something that has no clean source-of-truth path.
+
+   **Resolution path for a focused U7 session (not this ce-work session):**
+   - Decide canonical authorship: is the swift YAML hand-curated (and stays so), or does generate-openapi need to be rewritten to emit a swift-compatible YAML with extracted component schemas?
+   - If hand-curated: rename `generate-openapi.ts` or scope it to JSON-only, and treat the swift YAML as a separately-maintained artifact that the audit must reconcile against the live route surface manually.
+   - If auto-generated: rewrite generate-openapi to (a) extract inline schemas into `components.schemas`, (b) emit YAML (not JSON), (c) match the existing swift YAML's structural conventions.
+   - Either way, the live `/doc` spec at `localhost:8788/doc` is the source-of-truth of route surface. A diff between that and `apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/openapi.yaml` enumerates the API drift that U8 / decision-artifact need to score.
+
+   **Status:** U7 punted from this session — needs user input on the canonical-authorship direction before further work makes sense.
+
 ## URL realignment (U8)
 
 **Precondition check failed.** Per a P1 doc-review finding, U1 probed the URLs the plan commits to:
