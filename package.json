@@ -16,6 +16,8 @@
     "check:casts:strict": "bun run --cwd packages/checks check:casts:strict",
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
     "check:circular": "bun scripts/lint/no-circular-deps.ts",
+    "check:coverage": "bun run scripts/lint/coverage-ratchet.ts",
+    "check:coverage:update": "bun run scripts/lint/coverage-baseline-update.ts",
     "check:deps": "manypkg check",
     "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
