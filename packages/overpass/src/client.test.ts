@@ -14,7 +14,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function makeResponse(body: unknown, status = 200) {
+function makeResponse({ body, status = 200 }: { body: unknown; status?: number }) {
   const ok = status < 400;
   return {
     ok,
@@ -45,7 +45,7 @@ const validResponse = {
 describe('queryOverpass', () => {
   describe('HTTP request construction', () => {
     it('sends a POST to the default Overpass endpoint', async () => {
-      mockFetch.mockResolvedValue(makeResponse(validResponse));
+      mockFetch.mockResolvedValue(makeResponse({ body: validResponse }));
       await queryOverpass('[out:json];relation(12345);out geom;');
       expect(mockFetch).toHaveBeenCalledWith(
         'https://overpass-api.de/api/interpreter',
@@ -54,13 +54,13 @@ describe('queryOverpass', () => {
     });
 
     it('uses a custom endpoint when provided', async () => {
-      mockFetch.mockResolvedValue(makeResponse(validResponse));
+      mockFetch.mockResolvedValue(makeResponse({ body: validResponse }));
       await queryOverpass('ql', { endpoint: 'https://custom.example.com/api' });
       expect(mockFetch).toHaveBeenCalledWith('https://custom.example.com/api', expect.any(Object));
     });
 
     it('encodes the QL query as form-urlencoded body', async () => {
-      mockFetch.mockResolvedValue(makeResponse(validResponse));
+      mockFetch.mockResolvedValue(makeResponse({ body: validResponse }));
       const ql = '[out:json];relation(42);out geom;';
       await queryOverpass(ql);
       const firstCall = mockFetch.mock.calls.at(0) as [string, RequestInit] | undefined;
@@ -69,7 +69,7 @@ describe('queryOverpass', () => {
     });
 
     it('sets Content-Type to application/x-www-form-urlencoded', async () => {
-      mockFetch.mockResolvedValue(makeResponse(validResponse));
+      mockFetch.mockResolvedValue(makeResponse({ body: validResponse }));
       await queryOverpass('ql');
       const firstCall = mockFetch.mock.calls.at(0) as [string, RequestInit] | undefined;
       const headers = firstCall?.[1]?.headers as Record<string, string> | undefined;
@@ -77,7 +77,7 @@ describe('queryOverpass', () => {
     });
 
     it('sets a User-Agent header', async () => {
-      mockFetch.mockResolvedValue(makeResponse(validResponse));
+      mockFetch.mockResolvedValue(makeResponse({ body: validResponse }));
       await queryOverpass('ql');
       const firstCall = mockFetch.mock.calls.at(0) as [string, RequestInit] | undefined;
       const headers = firstCall?.[1]?.headers as Record<string, string> | undefined;
@@ -88,28 +88,28 @@ describe('queryOverpass', () => {
 
   describe('error handling', () => {
     it('throws when response status is not ok (429)', async () => {
-      mockFetch.mockResolvedValue(makeResponse({}, 429));
+      mockFetch.mockResolvedValue(makeResponse({ body: {}, status: 429 }));
       await expect(queryOverpass('ql')).rejects.toThrow(
         'Overpass request failed: 429 Service Unavailable',
       );
     });
 
     it('throws when response status is not ok (500)', async () => {
-      mockFetch.mockResolvedValue(makeResponse({}, 500));
+      mockFetch.mockResolvedValue(makeResponse({ body: {}, status: 500 }));
       await expect(queryOverpass('ql')).rejects.toThrow(
         'Overpass request failed: 500 Service Unavailable',
       );
     });
 
     it('throws when response JSON does not match expected schema', async () => {
-      mockFetch.mockResolvedValue(makeResponse({ unexpected: 'data' }));
+      mockFetch.mockResolvedValue(makeResponse({ body: { unexpected: 'data' } }));
       await expect(queryOverpass('ql')).rejects.toThrow(
         'Overpass response did not match expected schema',
       );
     });
 
     it('throws when response is missing elements field', async () => {
-      mockFetch.mockResolvedValue(makeResponse({ version: 0.6 }));
+      mockFetch.mockResolvedValue(makeResponse({ body: { version: 0.6 } }));
       await expect(queryOverpass('ql')).rejects.toThrow(
         'Overpass response did not match expected schema',
       );
@@ -118,7 +118,7 @@ describe('queryOverpass', () => {
 
   describe('successful response', () => {
     it('returns the parsed response data', async () => {
-      mockFetch.mockResolvedValue(makeResponse(validResponse));
+      mockFetch.mockResolvedValue(makeResponse({ body: validResponse }));
       const result = await queryOverpass('[out:json];relation(12345);out geom;');
       expect(result.elements).toHaveLength(1);
       const [firstElement] = result.elements;
@@ -126,7 +126,7 @@ describe('queryOverpass', () => {
     });
 
     it('returns empty elements array for no results', async () => {
-      mockFetch.mockResolvedValue(makeResponse({ ...validResponse, elements: [] }));
+      mockFetch.mockResolvedValue(makeResponse({ body: { ...validResponse, elements: [] } }));
       const result = await queryOverpass('ql');
       expect(result.elements).toHaveLength(0);
     });

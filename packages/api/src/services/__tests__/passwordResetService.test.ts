@@ -36,7 +36,7 @@ const mocks = vi.hoisted(() => {
       update: updateFn,
     })),
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
-    timingSafeEqual: vi.fn((a: string, b: string) => a === b),
+    timingSafeEqual: vi.fn(({ a, b }: { a: string; b: string }) => a === b),
     hashPassword: vi.fn((p: string) => Promise.resolve(`hashed_${p}`)),
   };
 });
@@ -171,7 +171,7 @@ describe('verifyOtpAndResetPassword()', () => {
 
   it('throws when the OTP does not match', async () => {
     mocks.findFirstVerification.mockResolvedValue({ value: '999999' });
-    // timingSafeEqual is mocked as strict equality; '999999' !== '123456'
+    // timingSafeEqual is mocked as strict equality; '999999' !== '123456'  (object arg)
     await expect(
       verifyOtpAndResetPassword({ email: 'user@example.com', code: '123456', newPassword: 'new' }),
     ).rejects.toThrow('Invalid or expired reset code');

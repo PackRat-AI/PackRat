@@ -35,6 +35,7 @@ const EXCLUDED_FILES = new Set([
   // match the runtime's (input, init) signature.
   'apps/landing/scripts/generate-og-images.ts',
   'apps/guides/scripts/generate-og-images.ts',
+  'apps/trails/scripts/generate-og-images.ts',
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
