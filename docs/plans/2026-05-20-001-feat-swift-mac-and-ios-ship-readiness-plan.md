@@ -1,6 +1,6 @@
 ---
 title: "feat: SwiftUI macOS + iOS ship-readiness audit and hardening stack"
-status: active
+status: completed
 created: 2026-05-20
 type: feat
 plan_depth: deep
