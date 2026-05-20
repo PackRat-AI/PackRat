@@ -2,7 +2,11 @@ import { nodeEnv } from '@packrat/env/node';
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  schema: './src/db/schema.ts',
+  // Schema lives in the shared @packrat/db package; this config path points at it
+  // relative to packages/api. The previous in-app schema was extracted in merge
+  // b14f4dbd5 ("refactor/extract-db-schemas-packages") but the drizzle.config.ts
+  // pointer was left pointing at the now-deleted location.
+  schema: '../db/src/schema.ts',
   out: './drizzle',
   dialect: 'postgresql',
   // Exclude OSM tables — they are managed by osm2pgsql, not Drizzle.
