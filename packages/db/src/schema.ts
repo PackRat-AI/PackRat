@@ -478,6 +478,11 @@ export const etlJobs = pgTable(
     // observable degradation signal for the embedding service.
     workflowInstanceId: text('workflow_instance_id'),
     totalEmbeddingFailures: integer('total_embedding_failures').default(0).notNull(),
+    // Post-ingestion row-count verification, written by the admin reconcile
+    // endpoint. verifiedRowCount is the logical CSV row count parsed from
+    // the R2 source; mismatches against totalProcessed indicate data drift.
+    verifiedAt: timestamp('verified_at'),
+    verifiedRowCount: integer('verified_row_count'),
   },
   (table) => ({
     scraperRevisionIdx: index('etl_jobs_scraper_revision_idx').on(table.scraperRevision),

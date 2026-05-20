@@ -230,6 +230,15 @@ export const EtlRetrySchema = z.object({
   success: z.literal(true),
   newJobId: z.string(),
   objectKey: z.string(),
+  workflowInstanceId: z.string().nullable(),
+});
+
+export const EtlReconcileSchema = z.object({
+  success: z.literal(true),
+  jobId: z.string(),
+  expectedRowCount: z.number().int(),
+  actualRowCount: z.number().int().nullable(),
+  delta: z.number().int().nullable(),
 });
 
 // ─── Trails ───────────────────────────────────────────────────────────────────
