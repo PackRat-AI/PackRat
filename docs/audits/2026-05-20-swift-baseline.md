@@ -39,17 +39,121 @@ The first three are signals that the generated OpenAPI types have tightened null
 
 | Metric | Value |
 |---|---|
-| Test plan invoked | _U3 has not added test plans yet; U2 runs the full default scheme_ |
-| Tests collected | _pending_ |
-| Pass | _pending_ |
-| Fail | _pending_ |
-| Skipped | _pending_ |
-| Wall clock | _pending_ |
-| `xcresult` bundle | _pending_ |
+| Test plan invoked | none — U2 ran the scheme's default test action (pre-U3 layout) |
+| Tests collected | 74 |
+| Pass | 4 |
+| Fail | 70 |
+| Skipped | 0 |
+| Wall clock | ~36 minutes |
+| `xcresult` bundle | malformed — only `Staging/` subdir written (Xcode 26 in-progress format; bundle never finalized because U2 didn't pass `-resultBundlePath`, so the runner streams to DerivedData and the final-write step did not complete cleanly) |
 
-### Failing tests
+### Root-cause hypothesis
 
-_To be populated by U2._
+Only 4 tests passed — all from `AuthTests` that don't extend `AppUITestCase` and don't require login:
+
+- `testLoginScreenAppears`
+- `testLoginWithBadCredentialShowsError`
+- `testLoginButtonDisabledWithEmptyFields`
+- `testNavigateToRegisterAndBack`
+
+The single auth-requiring test in `AuthTests` (`testSuccessfulLogin`) **failed**, and every other test failed via the cascade — `AppUITestCase.setUpWithError` calls `loginIfNeeded()`, which throws when the tab bar doesn't appear within 20s, which is exactly what happens when login fails.
+
+**Why login fails on the current setup:** Debug builds in `apps/swift/xcconfig/Config-Debug.xcconfig` set `PACKRAT_ENV=local`, and `APIClient.swift`'s environments dict resolves that to `http://localhost:8787`. The iOS simulator's `localhost` is the host Mac's `localhost`. At test time, port 8787 was bound by a **17-hour-old hung wrangler dev** (PID 58516, started 2026-05-19 21:40, completely unresponsive to HTTP). Every login attempt connected then hung until timeout.
+
+This is not a product defect — it's a test-environment routing issue. Two valid fixes:
+
+1. Kill the hung wrangler on port 8787, start a fresh one (matches `PACKRAT_ENV=local`).
+2. Change the test-build config to `PACKRAT_ENV=dev` so it points at `https://packrat-api-dev.orange-frost-d665.workers.dev` — no local dev needed. **This is what the user's earlier "point to our dev api - or spin up local" guidance recommends and what U8 will codify when it lands.**
+
+### Implication for "ship readiness" claim
+
+Until the test-build env routes to a reachable API with valid test credentials, every UI test downstream of `AppUITestCase` is uninformative — failure is environmental, not behavioral. **The "all 74 e2e tests passing" claim on the latest commit (`04bf85d6d`) is unreproducible on a fresh setup unless `localhost:8787` happens to be served by a working dev API at test time** — an undocumented implicit dependency.
+
+Recommended remediation before any meaningful U4-U13 progress is gated on test signal:
+
+- Land U8's `PACKRAT_ENV=dev` flip for Debug + Test builds (or wire a small `wrangler dev` orchestration into `run-e2e.ts` that boots a fresh local server before tests).
+- Re-run the baseline to get a true product-failure signal.
+- Use that re-run as the actual ship-readiness baseline.
+
+### Failing tests (70)
+
+<details>
+<summary>Full list — every cascading login-dependent failure</summary>
+
+```text
+AuthTests.testSuccessfulLogin
+CatalogTests.testCatalogSearchClearable
+CatalogTests.testCatalogSearchReturnsResults
+CatalogTests.testCatalogShowsEmptySearchPrompt
+CatalogTests.testCatalogTabReachable
+ChatTests.testChatShowsWelcomeAndInputBar
+ChatTests.testChatTabReachable
+ChatTests.testClearChatHistoryButton
+ChatTests.testSendMessageDisabledWhenEmpty
+ChatTests.testSendQuickMessage
+FeedTests.testCharacterCounterPresent
+FeedTests.testFeedTabReachable
+FeedTests.testNewPostButtonOpensComposer
+FeedTests.testPostButtonDisabledWithoutCaption
+FeedTests.testTypingCaptionEnablesPost
+MoreTabsTests.testGearInventoryTabReachable
+MoreTabsTests.testGuidesTabReachable
+MoreTabsTests.testHomeShowsDashboardSubtitle
+MoreTabsTests.testHomeShowsGreeting
+MoreTabsTests.testHomeTabReachable
+MoreTabsTests.testWildlifeTabReachable
+NavigationTests.testAllPrimaryTabsReachable
+NavigationTests.testPacksCategoryFilterBarVisible
+NavigationTests.testPacksExploreModeToggle
+NavigationTests.testPacksNewPackButtonPresent
+NavigationTests.testPacksSearchable
+NavigationTests.testPacksTabShowsListOrEmpty
+NavigationTests.testTripsTabShowsListOrEmpty
+NavigationTests.testWeatherTabShowsSearchField
+PackSubFlowTests.testGapAnalysisMenuItem
+PackSubFlowTests.testPackContextMenuAndCategoryFilter
+PackSubFlowTests.testRecentPacksReachableFromPacksToolbar
+PackSubFlowTests.testWeightAnalysisReachableFromPackDetailMenu
+PackTemplateTests.testCreateTemplate
+PackTemplateTests.testNewTemplateButtonOpensForm
+PackTemplateTests.testOpenTemplateDetail
+PackTemplateTests.testTemplateCategoryPicker
+PackTemplateTests.testTemplatesSearchable
+PackTemplateTests.testTemplatesTabReachable
+PackTests.testAddItemToPack
+PackTests.testAddMultipleItems
+PackTests.testCreatePack
+PackTests.testCreatePackWithCategory
+PackTests.testDeletePack
+PackTests.testEditPackName
+PackTests.testOpenPackShowsDetail
+SeasonSuggestionsTests.testGetSuggestionsButtonDisabledWithEmptyLocation
+SeasonSuggestionsTests.testOpenSeasonSuggestionsFromHome
+SeasonSuggestionsTests.testSeasonSuggestionsHasLocationField
+TrailConditionTests.testReportFormHasHazardToggles
+TrailConditionTests.testReportFormSubmitDisabledWithoutTrailName
+TrailConditionTests.testSubmitReportButtonOpensForm
+TrailConditionTests.testSubmitTrailReport
+TrailConditionTests.testTrailConditionsTabReachable
+TripTests.testCreateTrip
+TripTests.testCreateTripWithDates
+TripTests.testDeleteTripViaSwipe
+TripTests.testOpenTripDetail
+TripTests.testPlanTripButtonOpensForm
+TripTests.testTripsSearchable
+TripTests.testTripsTabShowsListOrEmpty
+WeatherSubFlowTests.testAlertPreferencesReachableFromWeatherToolbar
+WeatherSubFlowTests.testAlertPreferencesShowsToggles
+WeatherSubFlowTests.testToggleAlertPreference
+WeatherTests.testForecastShowsDailyRows
+WeatherTests.testLocationSearchReturnsResults
+WeatherTests.testSavedLocationAppearsAsChip
+WeatherTests.testSearchClearButtonRemovesResults
+WeatherTests.testSelectLocationLoadsForecast
+WeatherTests.testWeatherAlertsButtonAppearsWithForecast
+```
+
+</details>
 
 ## macOS runtime audit (U6)
 
