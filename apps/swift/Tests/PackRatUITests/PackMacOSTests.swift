@@ -1,0 +1,246 @@
+import XCTest
+
+#if os(macOS)
+/// macOS variant of `PackTests`. On macOS the Packs feature is a 3-column
+/// NavigationSplitView: sidebar ("Packs") -> content (List<Pack>) -> detail
+/// (PackDetailView). Selecting a pack populates the detail column rather than
+/// navigating, so the assertions check detail-column landmarks.
+final class PackMacOSTests: AppUITestCase {
+    private var createdPackName: String?
+
+    override func tearDownWithError() throws {
+        if let name = createdPackName {
+            cleanupPack(named: name)
+        }
+        createdPackName = nil
+        try super.tearDownWithError()
+    }
+
+    // MARK: - Create
+
+    func testCreatePack() throws {
+        let packName = uniqueName("E2E Pack")
+        createdPackName = packName
+
+        createPack(named: packName)
+
+        XCTAssertTrue(
+            app.staticTexts[packName].waitForExistence(timeout: 5),
+            "Created pack '\(packName)' must appear in the list"
+        )
+    }
+
+    func testCreatePackWithCategory() throws {
+        let packName = uniqueName("E2E Hiking Pack")
+        createdPackName = packName
+
+        createPack(named: packName)
+
+        XCTAssertTrue(
+            app.staticTexts[packName].waitForExistence(timeout: 5),
+            "Pack with category must appear in list"
+        )
+
+        XCTAssertTrue(
+            app.staticTexts["Hiking"].firstMatch.exists,
+            "Hiking category label must appear on the pack row"
+        )
+    }
+
+    // MARK: - Open / Detail
+
+    func testOpenPackShowsDetail() throws {
+        let packName = uniqueName("E2E Detail Pack")
+        createdPackName = packName
+
+        createPack(named: packName)
+
+        let packCell = waitFor(app.staticTexts[packName])
+        packCell.click()
+
+        // On macOS the detail column shows the pack name in its content. The
+        // "Total" weight card label is a stable landmark for the PackDetailView.
+        XCTAssertTrue(
+            app.staticTexts["Total"].waitForExistence(timeout: 10)
+            || app.buttons["Add Item"].waitForExistence(timeout: 5),
+            "Pack detail content must appear in the trailing column"
+        )
+    }
+
+    // MARK: - Add Item
+
+    func testAddItemToPack() throws {
+        let packName = uniqueName("E2E Item Pack")
+        createdPackName = packName
+        let itemName = "Tent \(Int(Date().timeIntervalSince1970))"
+
+        createPack(named: packName)
+        openPack(named: packName)
+
+        let addButton = app.buttons["Add Item"].firstMatch
+        waitFor(addButton, message: "Add Item button must be visible")
+        addButton.click()
+
+        let itemNameField = app.textFields["Name"]
+        waitFor(itemNameField, message: "Item Name field must appear")
+        itemNameField.click()
+        itemNameField.typeText(itemName)
+
+        let weightField = app.textFields["item_weight"]
+        if weightField.waitForExistence(timeout: 3) {
+            weightField.click()
+            weightField.typeText("500")
+        }
+
+        app.buttons["Add"].click()
+
+        XCTAssertTrue(
+            app.staticTexts[itemName].waitForExistence(timeout: 15),
+            "Added item '\(itemName)' must appear in pack detail"
+        )
+    }
+
+    func testAddMultipleItems() throws {
+        let packName = uniqueName("E2E Multi Item Pack")
+        createdPackName = packName
+
+        createPack(named: packName)
+        openPack(named: packName)
+
+        let itemNames = ["Sleeping Bag", "Rain Jacket", "Water Filter"]
+        for item in itemNames {
+            let uniqueItem = "\(item) \(Int(Date().timeIntervalSince1970))"
+            addItem(named: uniqueItem)
+        }
+
+        for item in itemNames {
+            XCTAssertTrue(
+                app.staticTexts.matching(NSPredicate(format: "label CONTAINS '\(item)'")).firstMatch
+                    .waitForExistence(timeout: 5),
+                "Item '\(item)' should appear in pack"
+            )
+        }
+    }
+
+    // MARK: - Edit Pack
+
+    func testEditPackName() throws {
+        let originalName = uniqueName("E2E Edit Pack")
+        let updatedName = "\(originalName) UPDATED"
+        createdPackName = updatedName
+
+        createPack(named: originalName)
+        openPack(named: originalName)
+
+        // Open the detail-column ••• overflow menu. On macOS the toolbar lives
+        // in the detail column window chrome; the menu icon is the
+        // "ellipsis.circle" image button.
+        let menuButton = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")
+        ).firstMatch
+        waitFor(menuButton, timeout: 5)
+        menuButton.click()
+
+        let editButton = app.buttons["Edit Pack"]
+        waitFor(editButton, timeout: 3)
+        editButton.click()
+
+        let nameField = app.textFields["Pack Name"]
+        waitFor(nameField)
+        nameField.clearAndTypeText(updatedName)
+
+        app.buttons["Save"].click()
+
+        XCTAssertTrue(
+            app.staticTexts[updatedName].waitForExistence(timeout: 10),
+            "Detail column should reflect updated pack name"
+        )
+    }
+
+    // MARK: - Delete
+
+    func testDeletePack() throws {
+        let packName = uniqueName("E2E Delete Pack")
+
+        createPack(named: packName)
+        goToSidebar("Packs")
+
+        let cell = waitFor(app.staticTexts[packName])
+        // Right-click invokes the context menu on macOS.
+        cell.rightClick()
+
+        let deleteButton = app.buttons["Delete"]
+        waitFor(deleteButton, timeout: 5)
+        deleteButton.click()
+
+        waitForAbsence(app.staticTexts[packName], timeout: 10)
+    }
+
+    // MARK: - Helpers
+
+    private func createPack(named name: String) {
+        goToSidebar("Packs")
+        waitFor(app.buttons["New Pack"]).click()
+
+        let nameField = app.textFields["Pack Name"]
+        waitFor(nameField)
+        nameField.click()
+        nameField.typeText(name)
+
+        // The API requires a non-null category for create; pick Hiking.
+        let categoryButton = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'Category' OR label == 'None'")
+        ).firstMatch
+        if categoryButton.waitForExistence(timeout: 3) {
+            categoryButton.click()
+            let hiking = app.buttons["Hiking"].firstMatch
+            if hiking.waitForExistence(timeout: 3) { hiking.click() }
+        }
+
+        app.buttons["Create"].click()
+        waitFor(app.staticTexts[name], timeout: 15)
+    }
+
+    private func openPack(named name: String) {
+        goToSidebar("Packs")
+        let cell = waitFor(app.staticTexts[name])
+        cell.click()
+        // Detail column shows the weight summary "Total" label once loaded.
+        waitFor(app.staticTexts["Total"], timeout: 10)
+    }
+
+    private func addItem(named name: String) {
+        let addButton = app.buttons["Add Item"].firstMatch
+        waitFor(addButton).click()
+
+        let nameField = app.textFields["Name"]
+        waitFor(nameField)
+        nameField.click()
+        nameField.typeText(name)
+
+        let weightField = app.textFields["item_weight"]
+        if weightField.waitForExistence(timeout: 3) {
+            weightField.click()
+            weightField.typeText("100")
+        }
+
+        app.buttons["Add"].click()
+
+        // Wait for the form sheet to dismiss (Add Item button visible again).
+        waitFor(app.buttons["Add Item"].firstMatch, timeout: 10)
+
+        let target = app.staticTexts[name]
+        waitFor(target, timeout: 10, message: "Item '\(name)' must appear in pack detail")
+    }
+
+    private func cleanupPack(named name: String) {
+        goToSidebar("Packs")
+        let cell = app.staticTexts[name]
+        guard cell.waitForExistence(timeout: 5) else { return }
+        cell.rightClick()
+        let deleteButton = app.buttons["Delete"]
+        guard deleteButton.waitForExistence(timeout: 3) else { return }
+        deleteButton.click()
+    }
+}
+#endif

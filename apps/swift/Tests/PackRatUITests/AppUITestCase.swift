@@ -84,7 +84,42 @@ class AppUITestCase: XCTestCase {
         #endif
     }
 
-    // MARK: - Navigation helpers (iOS-only — macOS uses sidebar)
+    // MARK: - Navigation helpers
+
+    #if os(macOS)
+    /// Navigates to a sidebar entry by label on macOS. The NavigationSplitView
+    /// sidebar is a SwiftUI `List` of `Label(...)` rows — each row's accessibility
+    /// label is the NavItem label. They surface as both `staticTexts` and rows
+    /// inside `outlines`; this helper tries both.
+    func goToSidebar(_ label: String) {
+        // Try the outline (the macOS NavigationSplitView sidebar is rendered as
+        // an outline view). Iterate outline rows looking for one whose label
+        // matches.
+        let outline = app.outlines.firstMatch
+        if outline.waitForExistence(timeout: 5) {
+            let outlineRow = outline.staticTexts[label]
+            if outlineRow.waitForExistence(timeout: 2) {
+                outlineRow.tap()
+                return
+            }
+            // Some labels are exposed at the cell level rather than the static
+            // text level; try outline cells directly.
+            let cell = outline.cells.containing(.staticText, identifier: label).firstMatch
+            if cell.exists {
+                cell.tap()
+                return
+            }
+        }
+        // Fallback: the first staticText match in the whole window. The sidebar
+        // appears in the leading column and is the most likely target.
+        let any = app.staticTexts[label]
+        XCTAssertTrue(
+            any.waitForExistence(timeout: 5),
+            "Sidebar entry '\(label)' not found in macOS sidebar"
+        )
+        any.tap()
+    }
+    #endif
 
     #if os(iOS)
     /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
