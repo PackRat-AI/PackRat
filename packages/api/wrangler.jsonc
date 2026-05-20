@@ -207,6 +207,13 @@
       "ai": {
         "binding": "AI"
       },
+      "workflows": [
+        {
+          "name": "packrat-catalog-etl-dev",
+          "binding": "ETL_WORKFLOW",
+          "class_name": "CatalogEtlWorkflow"
+        }
+      ],
       "containers": [
         {
           "name": "packrat-api-container-dev",
