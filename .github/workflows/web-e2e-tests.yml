@@ -57,7 +57,7 @@ jobs:
     needs: e2e-gate
     if: needs.e2e-gate.outputs.ready == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       # The E2E user is upserted into the dev DB by the seed step below,

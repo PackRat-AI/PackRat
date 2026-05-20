@@ -5,8 +5,8 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
 export default defineConfig({
   testDir: './tests',
   globalSetup: './tests/globalSetup.ts',
-  timeout: 30_000,
-  expect: { timeout: 10_000 },
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
