@@ -307,10 +307,17 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       // Chunk every source object up front so the workflow params carry the
       // full plan. Single-file is the dominant case in prod (scrapers
       // produce one CSV per run); multi-object requests bundle into one
-      // workflow instance.
+      // workflow instance. ETag from the first object is captured for the
+      // repair-from-scratch fail-closed verification (U5 follow-up).
       const allChunks: ChunkSpec[] = [];
+      let firstEtag: string | null = null;
+      let firstLastModified: Date | null = null;
       for (const objectKey of chunks) {
-        const { chunks: chunkSpecs } = await chunkCsvForR2({ r2, objectKey });
+        const { etag, lastModified, chunks: chunkSpecs } = await chunkCsvForR2({ r2, objectKey });
+        if (firstEtag === null) {
+          firstEtag = etag;
+          firstLastModified = lastModified;
+        }
         allChunks.push(...chunkSpecs);
       }
 
@@ -333,6 +340,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         scraperRevision,
         startedAt: new Date(),
         workflowInstanceId: instanceId,
+        sourceEtag: firstEtag,
+        sourceLastModified: firstLastModified,
       });
 
       const params: CatalogEtlWorkflowParams = {

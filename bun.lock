@@ -479,7 +479,7 @@
         "@packrat/schemas": "workspace:*",
         "@packrat/types": "workspace:*",
         "@packrat/units": "workspace:*",
-        "@sentry/cloudflare": "^10.0.0",
+        "@sentry/cloudflare": "^10.37.0",
         "@sinclair/typebox": "^0.34.15",
         "@types/nodemailer": "^6.4.17",
         "ai": "catalog:",
