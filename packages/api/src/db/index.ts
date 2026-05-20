@@ -27,7 +27,17 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
   if (isStandardPostgresUrl(url)) {
     let pool = pgPools.get(url);
     if (!pool) {
-      pool = new Pool({ connectionString: url });
+      pool = new Pool({
+        connectionString: url,
+        max: 5,
+        // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
+        // which is not supported in the Cloudflare Workers runtime (miniflare).
+        idleTimeoutMillis: 0,
+        connectionTimeoutMillis: 10000,
+      });
+      pool.on('error', () => {
+        pgPools.delete(url);
+      });
       pgPools.set(url, pool);
     }
     return drizzlePg(pool, { schema });
