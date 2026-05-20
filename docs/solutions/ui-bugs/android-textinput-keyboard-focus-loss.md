@@ -325,7 +325,7 @@ const inputRef = useRef(null);
 ## Cross References
 
 - **Architecture**: [CLAUDE.md](../../../CLAUDE.md#L79-L96) - Mobile app architecture patterns
-- **Testing**: [TESTING.md](../../../TESTING.md#L57-L61) - Mobile component testing patterns
+- **Testing**: [testing.md](../../testing.md) - Mobile component testing patterns
 - **Component Patterns**: Enhanced component pattern can be applied to other third-party UI components
 
 ## Verification
