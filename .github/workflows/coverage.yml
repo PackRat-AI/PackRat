@@ -47,11 +47,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # `summary_path` / `final_path` are repo-relative (used by artifact
+          # upload + ratchet restore). `summary_relative` / `final_relative`
+          # are relative to `working_directory` (used by the coverage report
+          # action, which joins them with working_directory internally).
           - name: packages/api
             artifact_slug: packages-api
             test_command: bun run --cwd packages/api test:unit:coverage
             summary_path: packages/api/coverage/unit/coverage-summary.json
             final_path: packages/api/coverage/unit/coverage-final.json
+            summary_relative: ./coverage/unit/coverage-summary.json
+            final_relative: ./coverage/unit/coverage-final.json
             vite_config_path: ./vitest.unit.config.ts
             working_directory: ./packages/api
           - name: apps/expo
@@ -59,6 +65,8 @@ jobs:
             test_command: bun run --cwd apps/expo test:coverage
             summary_path: apps/expo/coverage/unit/coverage-summary.json
             final_path: apps/expo/coverage/unit/coverage-final.json
+            summary_relative: ./coverage/unit/coverage-summary.json
+            final_relative: ./coverage/unit/coverage-final.json
             vite_config_path: ./vitest.config.ts
             working_directory: ./apps/expo
           - name: packages/mcp
@@ -66,6 +74,8 @@ jobs:
             test_command: bun run --cwd packages/mcp test --coverage
             summary_path: packages/mcp/coverage/coverage-summary.json
             final_path: packages/mcp/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
             vite_config_path: ./vitest.config.ts
             working_directory: ./packages/mcp
           - name: packages/analytics
@@ -73,6 +83,8 @@ jobs:
             test_command: bun run --cwd packages/analytics test --coverage
             summary_path: packages/analytics/coverage/coverage-summary.json
             final_path: packages/analytics/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
             vite_config_path: ./vitest.config.ts
             working_directory: ./packages/analytics
           - name: packages/overpass
@@ -80,6 +92,8 @@ jobs:
             test_command: bun run --cwd packages/overpass test --coverage
             summary_path: packages/overpass/coverage/coverage-summary.json
             final_path: packages/overpass/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
             vite_config_path: ./vitest.config.ts
             working_directory: ./packages/overpass
           - name: packages/units
@@ -87,6 +101,8 @@ jobs:
             test_command: bun run --cwd packages/units test --coverage
             summary_path: packages/units/coverage/coverage-summary.json
             final_path: packages/units/coverage/coverage-final.json
+            summary_relative: ./coverage/coverage-summary.json
+            final_relative: ./coverage/coverage-final.json
             vite_config_path: ./vitest.config.ts
             working_directory: ./packages/units
     steps:
@@ -109,8 +125,8 @@ jobs:
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           name: ${{ matrix.name }}
-          json-summary-path: ./${{ matrix.summary_path }}
-          json-final-path: ./${{ matrix.final_path }}
+          json-summary-path: ${{ matrix.summary_relative }}
+          json-final-path: ${{ matrix.final_relative }}
           vite-config-path: ${{ matrix.vite_config_path }}
           working-directory: ${{ matrix.working_directory }}
 
