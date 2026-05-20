@@ -1,6 +1,7 @@
 import type { PackCategory, WeightUnit } from '@packrat/constants';
 import { type InferInsertModel, type InferSelectModel, relations, sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   index,

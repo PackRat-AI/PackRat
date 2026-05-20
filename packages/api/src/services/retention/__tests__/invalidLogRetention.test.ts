@@ -9,42 +9,35 @@ import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLog
 import type { Env } from '@packrat/api/utils/env-validation';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const FAKE_ROW = { id: 1 } as const;
+type FakeRow = { id: number };
+
+// Hoisted state shared between the mock factory and the tests. `vi.mock` calls
+// hoist above imports, so this declaration uses `vi.hoisted` to ensure the
+// mock factory and the test code reference the same array.
+const mockState = vi.hoisted(() => ({
+  batches: [] as FakeRow[][],
+  callCount: 0,
+}));
 
 vi.mock('@packrat/api/db', () => {
-  const state = {
-    batches: [] as Array<(typeof FAKE_ROW)[]>,
-    callCount: 0,
-  };
-
   const mockDb = {
-    select: () => ({ from: () => ({ where: () => ({ limit: () => state }) }) }),
+    select: () => ({ from: () => ({ where: () => ({ limit: () => mockState }) }) }),
     delete: () => ({
       where: () => ({
         returning: async () => {
-          const batch = state.batches[state.callCount] ?? [];
-          state.callCount += 1;
+          const batch = mockState.batches[mockState.callCount] ?? [];
+          mockState.callCount += 1;
           return batch;
         },
       }),
     }),
-    __state: state,
   };
-
-  return {
-    createDbClient: () => mockDb,
-    __mockDb: mockDb,
-  };
+  return { createDbClient: () => mockDb };
 });
 
-import { __mockDb } from '@packrat/api/db';
-
-type MockDb = { __state: { batches: (typeof FAKE_ROW)[][]; callCount: number } };
-
-function setBatches(batches: (typeof FAKE_ROW)[][]) {
-  const db = __mockDb as unknown as MockDb;
-  db.__state.batches = batches;
-  db.__state.callCount = 0;
+function setBatches(batches: FakeRow[][]) {
+  mockState.batches = batches;
+  mockState.callCount = 0;
 }
 
 describe('sweepInvalidItemLogs', () => {
@@ -62,8 +55,8 @@ describe('sweepInvalidItemLogs', () => {
   });
 
   it('accumulates deletions across batches until an empty one stops the loop', async () => {
-    const fullBatch = Array.from({ length: 10_000 }, () => FAKE_ROW);
-    setBatches([fullBatch, fullBatch, [FAKE_ROW], []]);
+    const fullBatch: FakeRow[] = Array.from({ length: 10_000 }, () => ({ id: 1 }));
+    setBatches([fullBatch, fullBatch, [{ id: 1 }], []]);
 
     const result = await sweepInvalidItemLogs({} as Env);
 
@@ -73,7 +66,7 @@ describe('sweepInvalidItemLogs', () => {
   });
 
   it('caps at maxIterations and reports capped=true', async () => {
-    const fullBatch = Array.from({ length: 100 }, () => FAKE_ROW);
+    const fullBatch: FakeRow[] = Array.from({ length: 100 }, () => ({ id: 1 }));
     setBatches([fullBatch, fullBatch, fullBatch, fullBatch, fullBatch]);
 
     const result = await sweepInvalidItemLogs({} as Env, { maxIterations: 3 });
