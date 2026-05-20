@@ -123,7 +123,7 @@ export async function processChunk({
     }
     parser.end();
   })().catch((err) => {
-    parser.destroy(err as Error);
+    parser.destroy(err instanceof Error ? err : new Error(String(err)));
     throw err;
   });
 
@@ -220,7 +220,7 @@ async function reconcileSourceRowCount({
     }
     parser.end();
   })().catch((err) => {
-    parser.destroy(err as Error);
+    parser.destroy(err instanceof Error ? err : new Error(String(err)));
     throw err;
   });
 
