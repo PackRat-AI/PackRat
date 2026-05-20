@@ -5,7 +5,7 @@ import Foundation
 // MARK: - Helpers
 
 private func mockPack(id: String = "p1", name: String = "Test Pack", items: [PackItem] = []) -> Pack {
-    Pack(id: id, userId: 1, name: name, description: nil, category: .hiking,
+    Pack(id: id, userId: "u1", name: name, description: nil, category: .hiking,
          isPublic: false, image: nil, tags: nil, templateId: nil, deleted: false,
          isAIGenerated: nil, items: items, totalWeight: nil, baseWeight: nil,
          wornWeight: nil, consumableWeight: nil, createdAt: nil, updatedAt: nil)
@@ -21,7 +21,7 @@ private func mockItem(id: String = "i1", packId: String = "p1") -> PackItem {
 
 private func mockTrip(id: String = "t1", name: String = "Test Trip", startDate: String? = nil) -> Trip {
     Trip(id: id, name: name, description: nil, notes: nil, location: nil,
-         startDate: startDate, endDate: nil, userId: 1, packId: nil,
+         startDate: startDate, endDate: nil, userId: "u1", packId: nil,
          deleted: false, createdAt: nil, updatedAt: nil)
 }
 
@@ -230,7 +230,7 @@ struct PackTemplatesViewModelTests {
             PackTemplate(id: "1", userId: nil, name: "Official", description: nil,
                          category: nil, image: nil, tags: nil, isAppTemplate: true,
                          contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
-            PackTemplate(id: "2", userId: 2, name: "Mine", description: nil,
+            PackTemplate(id: "2", userId: "u2", name: "Mine", description: nil,
                          category: nil, image: nil, tags: nil, isAppTemplate: false,
                          contentSource: nil, items: nil, createdAt: nil, updatedAt: nil),
         ]

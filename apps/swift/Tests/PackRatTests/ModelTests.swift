@@ -8,7 +8,7 @@ import Foundation
 struct UserModelTests {
     @Test("displayName joins first and last name")
     func displayNameJoinsNames() {
-        let user = User(id: 1, email: "a@b.com", firstName: "Jane", lastName: "Doe",
+        let user = User(id: "u1", email: "a@b.com", name: nil, firstName: "Jane", lastName: "Doe",
                         role: "USER", emailVerified: true, avatarUrl: nil,
                         createdAt: nil, updatedAt: nil)
         #expect(user.displayName == "Jane Doe")
@@ -16,7 +16,7 @@ struct UserModelTests {
 
     @Test("displayName falls back to email when names are empty")
     func displayNameFallback() {
-        let user = User(id: 1, email: "a@b.com", firstName: nil, lastName: nil,
+        let user = User(id: "u1", email: "a@b.com", name: nil, firstName: nil, lastName: nil,
                         role: "USER", emailVerified: true, avatarUrl: nil,
                         createdAt: nil, updatedAt: nil)
         #expect(user.displayName == "a@b.com")
@@ -24,7 +24,7 @@ struct UserModelTests {
 
     @Test("displayName ignores blank first name")
     func displayNameIgnoresBlank() {
-        let user = User(id: 1, email: "a@b.com", firstName: "", lastName: "Doe",
+        let user = User(id: "u1", email: "a@b.com", name: nil, firstName: "", lastName: "Doe",
                         role: "USER", emailVerified: true, avatarUrl: nil,
                         createdAt: nil, updatedAt: nil)
         #expect(user.displayName == "Doe")
@@ -32,7 +32,7 @@ struct UserModelTests {
 
     @Test("initials are uppercased first letters")
     func initials() {
-        let user = User(id: 1, email: "a@b.com", firstName: "Jane", lastName: "Doe",
+        let user = User(id: "u1", email: "a@b.com", name: nil, firstName: "Jane", lastName: "Doe",
                         role: "USER", emailVerified: true, avatarUrl: nil,
                         createdAt: nil, updatedAt: nil)
         #expect(user.initials == "JD")
@@ -40,10 +40,10 @@ struct UserModelTests {
 
     @Test("isAdmin true for ADMIN role")
     func isAdmin() {
-        let admin = User(id: 1, email: "a@b.com", firstName: nil, lastName: nil,
+        let admin = User(id: "u1", email: "a@b.com", name: nil, firstName: nil, lastName: nil,
                          role: "ADMIN", emailVerified: true, avatarUrl: nil,
                          createdAt: nil, updatedAt: nil)
-        let user = User(id: 2, email: "b@b.com", firstName: nil, lastName: nil,
+        let user = User(id: "u2", email: "b@b.com", name: nil, firstName: nil, lastName: nil,
                         role: "USER", emailVerified: true, avatarUrl: nil,
                         createdAt: nil, updatedAt: nil)
         #expect(admin.isAdmin == true)
@@ -56,7 +56,7 @@ struct UserModelTests {
 @Suite("Pack model")
 struct PackModelTests {
     private func makePack(items: [PackItem] = []) -> Pack {
-        Pack(id: "p1", userId: 1, name: "Test Pack", description: nil, category: .hiking,
+        Pack(id: "p1", userId: "u1", name: "Test Pack", description: nil, category: .hiking,
              isPublic: false, image: nil, tags: nil, templateId: nil, deleted: false,
              isAIGenerated: nil, items: items, totalWeight: 2000, baseWeight: 1500,
              wornWeight: 300, consumableWeight: 200, createdAt: nil, updatedAt: nil)
@@ -146,7 +146,7 @@ struct TripModelTests {
         let trip = Trip(id: "1", name: "PCT", description: nil,
                         notes: nil, location: nil,
                         startDate: "2025-06-01T00:00:00Z", endDate: "2025-06-07T00:00:00Z",
-                        userId: 1, packId: nil, deleted: false, createdAt: nil, updatedAt: nil)
+                        userId: "u1", packId: nil, deleted: false, createdAt: nil, updatedAt: nil)
         #expect(!trip.dateRange.isEmpty)
         #expect(trip.dateRange.contains("–"))
     }

@@ -8,27 +8,25 @@ import Foundation
 struct KeychainServiceTests {
     let keychain = KeychainService.shared
 
-    @Test("saves and reads access token")
-    func saveAndReadAccessToken() {
-        keychain.saveTokens(accessToken: "test-access", refreshToken: "test-refresh")
-        #expect(keychain.accessToken == "test-access")
-        #expect(keychain.refreshToken == "test-refresh")
+    @Test("saves and reads session token")
+    func saveAndReadSessionToken() {
+        keychain.saveSessionToken("test-session")
+        #expect(keychain.sessionToken == "test-session")
         keychain.clearTokens()
     }
 
-    @Test("clearTokens removes both tokens")
+    @Test("clearTokens removes the session token")
     func clearTokens() {
-        keychain.saveTokens(accessToken: "a", refreshToken: "b")
+        keychain.saveSessionToken("abc")
         keychain.clearTokens()
-        #expect(keychain.accessToken == nil)
-        #expect(keychain.refreshToken == nil)
+        #expect(keychain.sessionToken == nil)
     }
 
     @Test("overwriting a token replaces the old value")
     func overwriteToken() {
-        keychain.saveTokens(accessToken: "first", refreshToken: "r")
-        keychain.saveTokens(accessToken: "second", refreshToken: "r2")
-        #expect(keychain.accessToken == "second")
+        keychain.saveSessionToken("first")
+        keychain.saveSessionToken("second")
+        #expect(keychain.sessionToken == "second")
         keychain.clearTokens()
     }
 }
@@ -71,10 +69,9 @@ struct EndpointTests {
         #expect(ep.queryItems?.count == 1)
     }
 
-    @Test("isRefresh endpoint bypasses auth")
-    func refreshEndpoint() {
-        let ep = Endpoint(.post, "/api/auth/refresh", requiresAuth: false, isRefresh: true)
+    @Test("unauthenticated endpoint opts out via requiresAuth: false")
+    func unauthenticatedEndpoint() {
+        let ep = Endpoint(.post, "/api/auth/sign-in/email", requiresAuth: false)
         #expect(ep.requiresAuth == false)
-        #expect(ep.isRefresh == true)
     }
 }
