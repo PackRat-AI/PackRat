@@ -6,13 +6,14 @@
  * Elysia-native so Eden Treaty gets full end-to-end type safety.
  */
 
-import type { MessageBatch } from '@cloudflare/workers-types';
+import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
 import { getAuth } from '@packrat/api/auth';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
+import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
@@ -123,5 +124,27 @@ export default {
     } else {
       throw new Error(`Unknown queue: ${batch.queue}`);
     }
+  },
+
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
+
+    if (controller.cron === '0 9 * * *') {
+      const result = await sweepInvalidItemLogs(env);
+      console.log(
+        `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
+          `iterations=${result.iterations} capped=${result.capped} ` +
+          `retentionDays=${result.retentionDays}`,
+      );
+      if (result.capped) {
+        console.warn(
+          `[retention] invalid_item_logs sweep hit max-iterations cap; ` +
+            `remaining expired rows will be swept on the next run`,
+        );
+      }
+      return;
+    }
+
+    throw new Error(`Unknown cron: ${controller.cron}`);
   },
 } satisfies ExportedHandler<Env>;
