@@ -1,6 +1,8 @@
 import { createDb } from '@packrat/api/db';
-import { queueCatalogETL } from '@packrat/api/services/etl/queue';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
+import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
 import {
   AdminErrorResponses,
@@ -8,11 +10,13 @@ import {
   CatalogOverviewSchema,
   EtlFailureSummarySchema,
   EtlJobFailuresSchema,
+  EtlReconcileSchema,
   EtlResetStuckSchema,
   EtlResponseSchema,
   EtlRetrySchema,
   PriceBucketSchema,
 } from '@packrat/schemas/admin';
+import { parse } from 'csv-parse';
 import { and, avg, count, desc, eq, gt, isNotNull, lt, max, min, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -409,6 +413,11 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
   )
 
   // ─── Retry a failed job ───────────────────────────────────────────────────────
+  //
+  // Re-ingests via the workflow path regardless of the original engine.
+  // Works for both legacy queue-era failures and workflow-era failures —
+  // the new instance carries chunks computed by chunkCsvForR2 so the
+  // re-ingest is row-boundary-aligned.
 
   .post(
     '/etl/:jobId/retry',
@@ -435,7 +444,20 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         const objectKey = `v2/${original.source}/${original.filename}`;
         const env = getEnv();
 
-        if (!env.ETL_QUEUE) return status(400, { error: 'ETL_QUEUE is not configured' });
+        if (!env.ETL_WORKFLOW) return status(400, { error: 'ETL_WORKFLOW is not configured' });
+
+        const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+        const { chunks } = await chunkCsvForR2({ r2, objectKey });
+        const totalChunks = chunks.length;
+        const indexedChunks: ChunkSpec[] = chunks.map((c, i) => ({
+          ...c,
+          chunkIndex: i,
+          chunksTotal: totalChunks,
+        }));
+
+        // Suffix the instance ID with the new jobId so duplicate retries
+        // don't collide with the original instance or with each other.
+        const workflowInstanceId = `${original.source}-${original.filename}-retry-${newJobId}`;
 
         await db.insert(etlJobs).values({
           id: newJobId,
@@ -444,10 +466,18 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           filename: original.filename,
           scraperRevision: original.scraperRevision,
           startedAt: new Date(),
+          workflowInstanceId,
         });
 
+        const workflowParams: CatalogEtlWorkflowParams = {
+          jobId: newJobId,
+          source: original.source,
+          scraperRevision: original.scraperRevision,
+          chunks: indexedChunks,
+        };
+
         try {
-          await queueCatalogETL({ queue: env.ETL_QUEUE, chunks: [{ objectKey }], jobId: newJobId });
+          await env.ETL_WORKFLOW.create({ id: workflowInstanceId, params: workflowParams });
         } catch (enqueueErr) {
           await db
             .update(etlJobs)
@@ -456,7 +486,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           throw enqueueErr;
         }
 
-        return { success: true as const, newJobId, objectKey };
+        return { success: true as const, newJobId, objectKey, workflowInstanceId };
       } catch (error) {
         console.error('ETL retry error:', error);
         return status(500, { error: 'Failed to retry ETL job', code: 'ETL_RETRY_ERROR' });
@@ -465,6 +495,101 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
     {
       params: z.object({ jobId: z.string().uuid() }),
       response: { 200: EtlRetrySchema, ...AdminErrorResponses },
-      detail: { tags: ['Admin'], summary: 'Retry a failed ETL job' },
+      detail: { tags: ['Admin'], summary: 'Retry a failed ETL job via the workflow path' },
+    },
+  )
+
+  // ─── Reconcile a job's row count against its R2 source ───────────────────────
+  //
+  // Synchronous — counts logical CSV rows (csv-parse, not raw \n counting
+  // since quoted multi-line fields skew that) and persists the result on
+  // etl_jobs.verified_at + verified_row_count. For very large files this
+  // can be slow; an async-via-workflow path is a follow-up if needed.
+
+  .post(
+    '/etl/:jobId/reconcile',
+    async ({ params }) => {
+      const db = createDb();
+
+      try {
+        const [job] = await db.select().from(etlJobs).where(eq(etlJobs.id, params.jobId)).limit(1);
+
+        if (!job) return status(404, { error: 'ETL job not found' });
+
+        const objectKey = `v2/${job.source}/${job.filename}`;
+        const env = getEnv();
+        const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+        const obj = await r2.get(objectKey);
+        if (!obj) return status(404, { error: `R2 source not found at ${objectKey}` });
+
+        const parser = parse({ relax_column_count: true, skip_empty_lines: true });
+        let totalRows = 0;
+        let isHeaderProcessed = false;
+
+        const writerPromise = (async () => {
+          const reader = obj.body.getReader();
+          const decoder = new TextDecoder();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const ok = parser.write(decoder.decode(value, { stream: true }));
+              if (!ok) {
+                await new Promise<void>((resolve) => parser.once('drain', resolve));
+              }
+            }
+          } finally {
+            reader.releaseLock();
+            parser.end();
+          }
+        })().catch((err) => {
+          parser.destroy(err instanceof Error ? err : new Error(String(err)));
+          throw err;
+        });
+
+        for await (const _record of parser) {
+          if (!isHeaderProcessed) {
+            isHeaderProcessed = true;
+            continue;
+          }
+          totalRows++;
+        }
+
+        await writerPromise;
+
+        const expectedRowCount = totalRows;
+        const actualRowCount = job.totalProcessed;
+        const delta = actualRowCount === null ? null : expectedRowCount - actualRowCount;
+
+        await db
+          .update(etlJobs)
+          .set({
+            verifiedAt: new Date(),
+            verifiedRowCount: expectedRowCount,
+          })
+          .where(eq(etlJobs.id, params.jobId));
+
+        return {
+          success: true as const,
+          jobId: params.jobId,
+          expectedRowCount,
+          actualRowCount,
+          delta,
+        };
+      } catch (error) {
+        console.error('ETL reconcile error:', error);
+        return status(500, {
+          error: 'Failed to reconcile ETL job',
+          code: 'ETL_RECONCILE_ERROR',
+        });
+      }
+    },
+    {
+      params: z.object({ jobId: z.string().uuid() }),
+      response: { 200: EtlReconcileSchema, ...AdminErrorResponses },
+      detail: {
+        tags: ['Admin'],
+        summary: 'Count R2 source rows and persist verified_row_count on etl_jobs',
+      },
     },
   );
