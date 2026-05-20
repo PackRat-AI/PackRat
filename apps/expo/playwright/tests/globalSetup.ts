@@ -39,7 +39,45 @@ async function setup() {
     return;
   }
 
-  // Priority 2: log in with the seeded E2E user (CI path, matches iOS/Android pattern)
+  // Priority 2: create a session directly in the DB (CI path — avoids HTTP auth issues
+  // when EXPO_PUBLIC_API_URL is a same-origin URL that doesn't serve /api/auth locally)
+  if (process.env.TEST_EMAIL && DB_URL && DB_URL !== '***REDACTED_DB_URL***') {
+    const sql = neon(DB_URL);
+    const rows = await sql`
+      SELECT id, email, name, role, first_name AS "firstName", last_name AS "lastName"
+      FROM users
+      WHERE email = ${process.env.TEST_EMAIL.toLowerCase()}
+      LIMIT 1
+    `;
+    const dbUser = rows[0] as
+      | {
+          id: string;
+          email: string;
+          name: string;
+          role: string;
+          firstName: string | null;
+          lastName: string | null;
+        }
+      | undefined;
+    if (dbUser) {
+      const token = crypto.randomUUID();
+      const sessionId = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await sql`
+        INSERT INTO session (id, expires_at, token, user_id, created_at, updated_at)
+        VALUES (${sessionId}, ${expiresAt.toISOString()}, ${token}, ${dbUser.id}, NOW(), NOW())
+        ON CONFLICT (token) DO NOTHING
+      `;
+      fs.writeFileSync(
+        TOKENS_FILE,
+        JSON.stringify({ accessToken: token, refreshToken: null, user: dbUser }),
+      );
+      console.log(`[globalSetup] Created DB session for ${process.env.TEST_EMAIL}`);
+      return;
+    }
+  }
+
+  // Priority 3: log in with the seeded E2E user via HTTP API
   if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
     const loginRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
       method: 'POST',
