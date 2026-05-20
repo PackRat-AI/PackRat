@@ -8,8 +8,6 @@ struct AuthGateView: View {
         Group {
             if authManager.isAuthenticated {
                 AppNavigation()
-            } else if authManager.needsEmailVerification, let email = authManager.pendingVerificationEmail {
-                VerifyEmailView(email: email)
             } else if showRegister {
                 RegisterView(onLoginTapped: { showRegister = false })
             } else {
@@ -17,7 +15,6 @@ struct AuthGateView: View {
             }
         }
         .animation(.spring(duration: 0.3), value: authManager.isAuthenticated)
-        .animation(.spring(duration: 0.3), value: authManager.needsEmailVerification)
         .animation(.spring(duration: 0.3), value: showRegister)
         .onOpenURL { url in
             let link = DeepLink.parse(url)

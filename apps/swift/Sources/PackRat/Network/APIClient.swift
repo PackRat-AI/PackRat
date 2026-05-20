@@ -4,12 +4,6 @@ actor APIClient {
     static let shared = APIClient()
 
     private let session: URLSession
-    private var refreshTask: Task<Tokens, Error>?
-
-    struct Tokens: Sendable {
-        let accessToken: String
-        let refreshToken: String
-    }
 
     init() {
         let config = URLSessionConfiguration.default
@@ -20,8 +14,13 @@ actor APIClient {
     // xcconfig files treat // as a comment, so full URLs can't be stored there.
     // We store an environment name (PACKRAT_ENV) in xcconfig → Info.plist instead,
     // and map that to a URL here. UserDefaults lets you override at runtime via Preferences.
+    //
+    // `local` points at the default `wrangler dev -e=dev` port (8787). The
+    // orchestrator pipeline boots a parallel wrangler on 8791 to avoid
+    // colliding with a developer's own wrangler — use `dev-local` to target it.
     static let environments: [String: String] = [
         "local":      "http://localhost:8787",
+        "dev-local":  "http://localhost:8791",
         "dev":        "https://packrat-api-dev.orange-frost-d665.workers.dev",
         "production": "https://packrat-api.orange-frost-d665.workers.dev",
     ]
@@ -45,13 +44,14 @@ actor APIClient {
     // MARK: - Public
 
     func send<T: Decodable>(_ endpoint: some APIEndpoint, as _: T.Type = T.self) async throws -> T {
-        let request = try buildRequest(endpoint, accessToken: KeychainService.shared.accessToken)
-        return try await execute(request, endpoint: endpoint, as: T.self, isRetry: false)
+        let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
+        return try await execute(request, as: T.self)
     }
 
     func sendDiscarding(_ endpoint: some APIEndpoint) async throws {
-        let request = try buildRequest(endpoint, accessToken: KeychainService.shared.accessToken)
+        let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
         let (data, response) = try await session.data(for: request)
+        captureSessionTokenIfPresent(response)
         try validateStatus(response, data: data)
     }
 
@@ -59,8 +59,8 @@ actor APIClient {
         AsyncThrowingStream { continuation in
             Task {
                 do {
-                    let token = KeychainService.shared.accessToken
-                    let request = try self.buildRequest(endpoint, accessToken: token)
+                    let token = KeychainService.shared.sessionToken
+                    let request = try self.buildRequest(endpoint, sessionToken: token)
                     let (bytes, response) = try await self.session.bytes(for: request)
                     guard let http = response as? HTTPURLResponse,
                           (200...299).contains(http.statusCode)
@@ -92,9 +92,7 @@ actor APIClient {
 
     private func execute<T: Decodable>(
         _ request: URLRequest,
-        endpoint: some APIEndpoint,
-        as _: T.Type,
-        isRetry: Bool
+        as _: T.Type
     ) async throws -> T {
         #if DEBUG
         let method = request.httpMethod ?? "?"
@@ -114,59 +112,28 @@ actor APIClient {
         print("← \(status) \(url)\n  body: \(raw)")
         #endif
 
-        if let http = response as? HTTPURLResponse,
-           http.statusCode == 401,
-           !isRetry,
-           !endpoint.isRefresh
-        {
-            let tokens = try await refreshTokens()
-            let retryRequest = try buildRequest(endpoint, accessToken: tokens.accessToken)
-            return try await execute(retryRequest, endpoint: endpoint, as: T.self, isRetry: true)
-        }
+        // Better Auth sets `set-auth-token` on the response for sign-in /
+        // sign-up. Capture it before validating status so even error paths
+        // can't lose a freshly-rotated token (Better Auth rotates server-side).
+        captureSessionTokenIfPresent(response)
 
         try validateStatus(response, data: data)
         return try decode(data, as: T.self)
     }
 
-    private func refreshTokens() async throws -> Tokens {
-        if let existing = refreshTask {
-            return try await existing.value
-        }
-
-        let task = Task<Tokens, Error> {
-            defer { Task { await self.clearRefreshTask() } }
-
-            guard let refreshToken = KeychainService.shared.refreshToken else {
-                throw PackRatError.unauthorized
-            }
-
-            struct RefreshBody: Encodable { let refreshToken: String }
-            struct RefreshResponse: Decodable { let accessToken: String; let refreshToken: String }
-
-            let endpoint = Endpoint(
-                .post,
-                "/api/auth/refresh",
-                body: RefreshBody(refreshToken: refreshToken),
-                requiresAuth: false,
-                isRefresh: true
-            )
-            let response: RefreshResponse = try await self.send(endpoint)
-            KeychainService.shared.saveTokens(
-                accessToken: response.accessToken,
-                refreshToken: response.refreshToken
-            )
-            return Tokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
-        }
-
-        refreshTask = task
-        return try await task.value
+    /// Better Auth returns the session token in the `set-auth-token` response
+    /// header on sign-in, sign-up, and any time the server rotates the token.
+    /// Persist it so subsequent requests can use `Authorization: Bearer <token>`.
+    private func captureSessionTokenIfPresent(_ response: URLResponse) {
+        guard let http = response as? HTTPURLResponse else { return }
+        // HTTPURLResponse header lookup is case-insensitive on Apple platforms.
+        guard let token = http.value(forHTTPHeaderField: "set-auth-token"),
+              !token.isEmpty
+        else { return }
+        KeychainService.shared.saveSessionToken(token)
     }
 
-    private func clearRefreshTask() {
-        refreshTask = nil
-    }
-
-    private func buildRequest(_ endpoint: some APIEndpoint, accessToken: String?) throws -> URLRequest {
+    private func buildRequest(_ endpoint: some APIEndpoint, sessionToken: String?) throws -> URLRequest {
         var components = URLComponents(
             url: baseURL.appendingPathComponent(endpoint.path),
             resolvingAgainstBaseURL: false
@@ -183,7 +150,7 @@ actor APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        if endpoint.requiresAuth, let token = accessToken {
+        if endpoint.requiresAuth, let token = sessionToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 

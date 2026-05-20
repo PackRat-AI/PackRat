@@ -32,7 +32,7 @@ final class WildlifeService: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        if let token = KeychainService.shared.accessToken {
+        if let token = KeychainService.shared.sessionToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         request.httpBody = body
