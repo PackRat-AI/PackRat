@@ -107,6 +107,9 @@ export type App = typeof app;
 
 export { AppContainer };
 
+// U1 spike (throwaway — delete after Workflows GO/NO-GO).
+export { SpikeEtlWorkflow } from '@packrat/api/workflows/spike-etl-workflow';
+
 type CfFetchFn = (
   request: Request,
   env: Env,

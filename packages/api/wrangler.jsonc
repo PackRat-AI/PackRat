@@ -90,6 +90,16 @@
   "ai": {
     "binding": "AI"
   },
+  // U1 spike — Cloudflare Workflows binding for the ETL migration POC.
+  // Remove after Workflows GO/NO-GO decision; replace with the production
+  // CatalogEtlWorkflow binding defined in U3.
+  "workflows": [
+    {
+      "name": "spike-etl-workflow",
+      "binding": "SPIKE_ETL_WORKFLOW",
+      "class_name": "SpikeEtlWorkflow"
+    }
+  ],
   // OSM / trail database — dedicated Postgres instance with PostGIS.
   // Add a Hyperdrive binding when ready:
   //   wrangler hyperdrive create osm-db --connection-string="postgresql://..."
