@@ -147,7 +147,7 @@ function injectScheme(email: string, password: string): void {
 
 function allocateResultBundle(): string {
   if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const stamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
   const path = resolve(RESULTS_DIR, `macOS-${stamp}.xcresult`);
   if (existsSync(path)) rmSync(path, { recursive: true, force: true });
   return path;

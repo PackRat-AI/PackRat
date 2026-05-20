@@ -95,6 +95,30 @@ The main-branch API source at `packages/api/src/routes/auth/index.ts` registers 
 - **Medium term**: deploy the current main API (with `/api/auth/*` routes) to the workers.dev dev URL — outside this audit's scope but a hard precondition for any meaningful "ship readiness" claim. Until this happens, the Swift app and the Expo iOS app are both unship-against-deployed-API.
 - **Long term**: stand up `api.packrat.app` as a Worker custom domain and migrate clients off `workers.dev`.
 
+#### Even-deeper finding: swift-branch API source ≠ dev DB schema
+
+A fresh local `wrangler dev` started from the swift-branch source on `:8787` does have `/api/auth/login` mounted — the route exists. But hitting it with valid creds returns:
+
+```text
+POST /api/auth/login 500 Internal Server Error
+PostgreSQL error: 42P01 (undefined_table)
+  at issueRefreshToken (services/refreshTokenService.ts:71)
+  at /api/auth/login handler (routes/auth/index.ts:81)
+```
+
+The swift-branch's auth handler queries a table that does not exist in the current Neon dev database. This is a manifestation of the **92-ahead / 904-behind divergence** between `claude/swift-mac-app-effort-tTGd7` and `main`:
+
+- The swift branch's `packages/api/src/db/schema.ts` references tables (probably the refresh-token table) that have either been renamed/dropped on main or migrated to a different shape that the swift code doesn't reflect.
+- Even running the swift branch's API locally cannot satisfy auth.
+
+**This is the deepest layer of the same finding:** the swift branch isn't merely cosmetically behind — its API surface is structurally incompatible with the live database. **Rebasing the swift branch onto main (or merging main into it) is a hard precondition for any auth-dependent path to work in this codebase.** Without that rebase:
+
+- Every e2e test that requires login will fail.
+- The Swift app cannot be smoke-tested for ship readiness.
+- The audit's parity matrix (U13) loses much of its value because the comparison is "Expo iOS that works" vs "Swift iOS that can't authenticate" — apples to broken.
+
+The 904-commit rebase was previously deferred at the top of this plan as an explicit `Deferred to Follow-Up Work` item. That deferral now reads differently — the rebase is not a hygiene task; it is the gating dependency for everything else in the stack. Surface this to U13's decision artifact prominently.
+
 ### Failing tests (70)
 
 <details>

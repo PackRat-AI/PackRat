@@ -21,8 +21,14 @@ export class ArgsError extends Error {
   }
 }
 
+function isKnownPlan(name: string): name is TestPlanName {
+  // safe-cast: KNOWN_PLANS is a literal TestPlanName[]; widening to readonly string[] is
+  // the canonical "string-in-set" predicate and the cast back is justified by the includes() check.
+  return (KNOWN_PLANS as readonly string[]).includes(name);
+}
+
 function resolvePlan(name: string): TestPlanName {
-  if (KNOWN_PLANS.includes(name as TestPlanName)) return name as TestPlanName;
+  if (isKnownPlan(name)) return name;
   const alias = ALIASES[name.toLowerCase()];
   if (alias) return alias;
   throw new ArgsError(

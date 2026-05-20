@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { isString } from '@packrat/guards';
 
 export type TestRef = {
   identifier: string;
@@ -50,7 +51,7 @@ type RawSummary = {
 export function parseSummaryJson(json: string): TestSummary {
   let raw: RawSummary;
   try {
-    raw = JSON.parse(json) as RawSummary;
+    raw = JSON.parse(json) as RawSummary; // safe-cast: parseSummaryJson's RawSummary uses all-optional fields and downstream code defends against missing/wrong-typed keys; runtime payload shape is checked by the per-field guards in the failingTests map() below.
   } catch {
     throw new XcResultError('xcresulttool summary output was not valid JSON');
   }
@@ -62,7 +63,7 @@ export function parseSummaryJson(json: string): TestSummary {
     const assembled = f.testName
       ? [f.targetName, f.className, f.testName].filter(Boolean).join('/')
       : undefined;
-    const numericFallback = typeof f.testIdentifier === 'string' ? f.testIdentifier : undefined;
+    const numericFallback = isString(f.testIdentifier) ? f.testIdentifier : undefined;
     return {
       identifier: stringId ?? assembled ?? numericFallback ?? '<unknown>',
       testName: f.testName,

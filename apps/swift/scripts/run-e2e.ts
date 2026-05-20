@@ -127,7 +127,7 @@ function pickDestination(): string {
 
 function allocateResultBundle(): string {
   if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const stamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
   const path = resolve(RESULTS_DIR, `${stamp}.xcresult`);
   // xcresulttool refuses to overwrite — make sure the slot is clean (matters on tight clock skew).
   if (existsSync(path)) rmSync(path, { recursive: true, force: true });
