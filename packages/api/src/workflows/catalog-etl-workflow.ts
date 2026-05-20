@@ -196,46 +196,6 @@ export async function processChunk({
   };
 }
 
-async function reconcileSourceRowCount({
-  objectKey,
-  env,
-}: {
-  objectKey: string;
-  env: Env;
-}): Promise<number> {
-  const r2 = new R2BucketService({ env, bucketType: 'catalog' });
-  const obj = await r2.get(objectKey);
-  if (!obj) throw new Error(`R2 reconcile read returned null for ${objectKey}`);
-
-  const parser = parse({ relax_column_count: true, skip_empty_lines: true });
-  let totalRows = 0;
-  let isHeaderProcessed = false;
-
-  const writerPromise = (async () => {
-    for await (const text of streamToText(obj.body)) {
-      const ok = parser.write(text);
-      if (!ok) {
-        await new Promise<void>((resolve) => parser.once('drain', resolve));
-      }
-    }
-    parser.end();
-  })().catch((err) => {
-    parser.destroy(err instanceof Error ? err : new Error(String(err)));
-    throw err;
-  });
-
-  for await (const _record of parser) {
-    if (!isHeaderProcessed) {
-      isHeaderProcessed = true;
-      continue;
-    }
-    totalRows++;
-  }
-
-  await writerPromise;
-  return totalRows;
-}
-
 export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkflowParams> {
   async run(
     event: Readonly<WorkflowEvent<CatalogEtlWorkflowParams>>,
@@ -273,6 +233,9 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
     // Aggregate step writes the canonical totals — any over-counts from chunk
     // retries (the inner processValidItemsBatch increments are non-idempotent
     // on retry) get overridden here. This is the authoritative count.
+    if (chunks.length === 0) {
+      throw new Error(`Workflow ${jobId} received empty chunks array`);
+    }
     await step.do('aggregate', async () => {
       const db = createDbClient(this.env);
       await db
@@ -281,32 +244,6 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
           totalProcessed: totals.rowsProcessed,
           totalValid: totals.rowsValid,
           totalInvalid: totals.rowsInvalid,
-        })
-        .where(eq(etlJobs.id, jobId));
-    });
-
-    // Reconciliation — count R2 source rows with csv-parse (NOT raw \n
-    // counting; quoted multi-line fields would skew that) and compare to the
-    // aggregated total. Mismatches beyond the threshold surface as a warning
-    // (sentry wiring lands in U6); for now the value is persisted so admin
-    // queries can display it.
-    const firstChunk = chunks[0];
-    if (!firstChunk) {
-      throw new Error(`Workflow ${jobId} received empty chunks array`);
-    }
-    const reconcileCount = await step.do(
-      'reconcile',
-      { retries: { limit: 2, delay: '30 seconds', backoff: 'exponential' } },
-      async () => reconcileSourceRowCount({ objectKey: firstChunk.objectKey, env: this.env }),
-    );
-
-    await step.do('reconcile-write', async () => {
-      const db = createDbClient(this.env);
-      await db
-        .update(etlJobs)
-        .set({
-          verifiedAt: new Date(),
-          verifiedRowCount: reconcileCount,
         })
         .where(eq(etlJobs.id, jobId));
     });

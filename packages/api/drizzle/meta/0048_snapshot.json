@@ -1,5 +1,5 @@
 {
-  "id": "edab58e7-10ab-437c-b96a-d2ee5fc3113d",
+  "id": "eaf00886-b21e-48ad-a913-ff982b8c6562",
   "prevId": "1f086d6d-055d-4b37-a5d6-32b1141d2043",
   "version": "7",
   "dialect": "postgresql",
@@ -159,29 +159,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "catalog_item_etl_jobs_catalog_job_idx": {
-          "name": "catalog_item_etl_jobs_catalog_job_idx",
-          "columns": [
-            {
-              "expression": "catalog_item_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "etl_job_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "catalog_item_etl_jobs_catalog_item_id_catalog_items_id_fk": {
           "name": "catalog_item_etl_jobs_catalog_item_id_catalog_items_id_fk",
@@ -567,48 +545,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "verified_at": {
-          "name": "verified_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "verified_row_count": {
-          "name": "verified_row_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "total_embedding_failures": {
           "name": "total_embedding_failures",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "superseded_by_job_id": {
-          "name": "superseded_by_job_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "superseded_at": {
-          "name": "superseded_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "source_etag": {
-          "name": "source_etag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "source_last_modified": {
-          "name": "source_last_modified",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -641,43 +583,13 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "etl_jobs_superseded_by_idx": {
-          "name": "etl_jobs_superseded_by_idx",
-          "columns": [
-            {
-              "expression": "superseded_by_job_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
-      "foreignKeys": {
-        "etl_jobs_superseded_by_job_id_etl_jobs_id_fk": {
-          "name": "etl_jobs_superseded_by_job_id_etl_jobs_id_fk",
-          "tableFrom": "etl_jobs",
-          "tableTo": "etl_jobs",
-          "columnsFrom": ["superseded_by_job_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "etl_jobs_no_self_supersede": {
-          "name": "etl_jobs_no_self_supersede",
-          "value": "\"etl_jobs\".\"superseded_by_job_id\" IS NULL OR \"etl_jobs\".\"superseded_by_job_id\" <> \"etl_jobs\".\"id\""
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.invalid_item_logs": {

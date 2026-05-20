@@ -305,25 +305,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const r2 = new R2BucketService({ env, bucketType: 'catalog' });
 
       // Chunk every source object up front so the workflow params carry the
-      // full plan. For multi-object requests, the etag captured is the
-      // first object's etag (single-file is the dominant case in prod —
-      // scrapers produce one CSV per run).
+      // full plan. Single-file is the dominant case in prod (scrapers
+      // produce one CSV per run); multi-object requests bundle into one
+      // workflow instance.
       const allChunks: ChunkSpec[] = [];
-      let firstEtag: string | null = null;
-      let firstLastModified: Date | null = null;
       for (const objectKey of chunks) {
-        const {
-          etag,
-          lastModified,
-          chunks: chunkSpecs,
-        } = await chunkCsvForR2({
-          r2,
-          objectKey,
-        });
-        if (firstEtag === null) {
-          firstEtag = etag;
-          firstLastModified = lastModified;
-        }
+        const { chunks: chunkSpecs } = await chunkCsvForR2({ r2, objectKey });
         allChunks.push(...chunkSpecs);
       }
 
@@ -346,8 +333,6 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         scraperRevision,
         startedAt: new Date(),
         workflowInstanceId: instanceId,
-        sourceEtag: firstEtag,
-        sourceLastModified: firstLastModified,
       });
 
       const params: CatalogEtlWorkflowParams = {
