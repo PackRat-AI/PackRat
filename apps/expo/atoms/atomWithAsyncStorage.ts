@@ -2,7 +2,13 @@ import { isFunction } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { atom } from 'jotai';
 
-export const atomWithAsyncStorage = <T>(key: string, initialValue: T) => {
+export const atomWithAsyncStorage = <T>({
+  key,
+  initialValue,
+}: {
+  key: string;
+  initialValue: T;
+}) => {
   const baseAtom = atom(initialValue);
 
   baseAtom.onMount = (setValue) => {

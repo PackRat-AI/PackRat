@@ -1,9 +1,7 @@
 import { clientEnvs } from '@packrat/env/expo-client';
 import { isString } from '@packrat/guards';
-import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
-  Alert as AlertComponent,
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -18,6 +16,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
+import { isLoadingAtom, suppressSignOutNavAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -29,12 +28,12 @@ import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Link, router, Stack } from 'expo-router';
-import * as Updates from 'expo-updates';
-import { useRef, useState } from 'react';
+import { useSetAtom } from 'jotai';
+import { useState } from 'react';
 import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -95,6 +94,7 @@ function Profile() {
     {
       id: 'name',
       title: t('common.name'),
+      testID: testIds.profile.nameEditBtn,
       onPress: () => router.push('/(app)/(tabs)/profile/name'),
       ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
     },
@@ -134,7 +134,7 @@ function Profile() {
   );
 }
 
-export default withAuthWall(Profile, ProfileAuthWall);
+export default withAuthWall({ Component: Profile, AuthWall: ProfileAuthWall });
 
 function renderItem(info: ListRenderItemInfo<DataItem>) {
   return <Item info={info} />;
@@ -147,6 +147,7 @@ function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
   return (
     <ListItem
       titleClassName="text-lg"
+      testID={info.item.testID}
       onPress={info.item.onPress}
       rightView={
         <View className="flex-1 flex-row items-center gap-0.5 px-2">
@@ -193,7 +194,7 @@ function ListHeaderComponent() {
       }
 
       setIsUploading(true);
-      const remoteFileName = await uploadImage(image.fileName, image.uri);
+      const remoteFileName = await uploadImage({ fileName: image.fileName, uri: image.uri });
       if (remoteFileName) {
         const success = await updateProfile({ avatarUrl: remoteFileName });
         if (!success) {
@@ -246,70 +247,64 @@ function ListHeaderComponent() {
 
 function ListFooterComponent() {
   const { signOut } = useAuth();
-  const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const setIsLoading = useSetAtom(isLoadingAtom);
+  const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
-  const alertRef = useRef<AlertMethods>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    try {
-      setIsSigningOut(true);
-      await signOut();
-      alertRef.current?.alert({
-        title: t('auth.loggedOut'),
-        message: t('auth.loggedOutMessage'),
-        materialIcon: { name: 'check-circle-outline', color: colors.green },
-        buttons: [
-          {
-            text: t('auth.stayLoggedOut'),
-            style: 'cancel',
-            onPress: async () => {
-              await AsyncStorage.setItem('skipped_login', 'true');
-              await Updates.reloadAsync();
-            },
+    setIsSigningOut(true);
+    await signOut();
+    setIsSigningOut(false);
+
+    // signOut() has completed: auth cleared, spinner showing, auto-navigation
+    // suppressed. Ask the user what to do next.
+    Alert.alert(
+      t('auth.loggedOut'),
+      t('auth.loggedOutMessage'),
+      [
+        {
+          text: t('auth.stayLoggedOut'),
+          onPress: async () => {
+            // Clear spinner first so AppLayout doesn't show auth screen,
+            // then release the suppress flag and navigate home as guest.
+            setIsLoading(false);
+            setSuppressSignOutNav(false);
+            await AsyncStorage.setItem('skipped_login', 'true');
+            router.replace('/');
           },
-          {
-            text: t('auth.signInAgain'),
-            style: 'default',
-            onPress: async () => {
-              await AsyncStorage.setItem('skipped_login', 'false');
-              await Updates.reloadAsync();
-            },
+        },
+        {
+          text: t('auth.signInAgain'),
+          style: 'destructive',
+          onPress: () => {
+            // Release suppress while isLoadingAtom is still true — AppLayout's
+            // useEffect sees isLoadingGlobal=true && !isAuthed and navigates to
+            // /auth via the NativeTabs-safe useEffect path.
+            setSuppressSignOutNav(false);
           },
-        ],
-      });
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      setIsSigningOut(false);
-    }
+        },
+      ],
+      { cancelable: false },
+    );
   };
 
   return (
     <>
       <View className="ios:px-0 px-4 pt-8">
         <Button
-          testID={TestIds.SignOutButton}
+          testID={testIds.profile.signOutBtn}
           disabled={isSigningOut}
           onPress={() => {
             if (hasUnsyncedChanges()) {
-              alertRef.current?.alert({
-                title: t('profile.syncInProgress'),
-                message: t('profile.syncMessage'),
-                materialIcon: { name: 'repeat' },
-                buttons: [
-                  {
-                    text: t('common.cancel'),
-                    style: 'cancel',
-                  },
-                  {
-                    text: t('auth.logOut'),
-                    style: 'destructive',
-                    onPress: handleSignOut,
-                  },
-                ],
-              });
+              // Use native Alert on both platforms so the dialog buttons are
+              // accessible to automated testing tools (custom portal-based
+              // dialogs are not surfaced in XCTest/UIAutomator accessibility trees).
+              Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
+              ]);
               return;
             }
             handleSignOut();
@@ -324,7 +319,6 @@ function ListFooterComponent() {
             <Text className="text-destructive">{t('auth.logOut')}</Text>
           )}
         </Button>
-        <AlertComponent title="" buttons={[]} ref={alertRef} />
       </View>
       <AndroidTabBarInsetFix />
     </>
@@ -339,4 +333,5 @@ type DataItem =
       value?: string;
       subTitle?: string;
       onPress?: () => void;
+      testID?: string;
     };

@@ -48,24 +48,28 @@ function OverviewSkeleton() {
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: queryKeys.admin.stats,
+    queryKey: queryKeys.admin.stats(),
     queryFn: getStats,
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: queryKeys.admin.users(5),
+  const { data: usersResult, isLoading: usersLoading } = useQuery({
+    queryKey: queryKeys.admin.users.list({ limit: 5 }),
     queryFn: () => getUsers({ limit: 5 }),
   });
 
-  const { data: packs = [], isLoading: packsLoading } = useQuery({
-    queryKey: queryKeys.admin.packs(5),
+  const { data: packsResult, isLoading: packsLoading } = useQuery({
+    queryKey: queryKeys.admin.packs.list({ limit: 5 }),
     queryFn: () => getPacks({ limit: 5 }),
   });
 
-  const { data: catalog = [], isLoading: catalogLoading } = useQuery({
-    queryKey: queryKeys.admin.catalog(5),
+  const { data: catalogResult, isLoading: catalogLoading } = useQuery({
+    queryKey: queryKeys.admin.catalog.list({ limit: 5 }),
     queryFn: () => getCatalogItems({ limit: 5 }),
   });
+
+  const users = usersResult?.data ?? [];
+  const packs = packsResult?.data ?? [];
+  const catalog = catalogResult?.data ?? [];
 
   const isLoading = statsLoading || usersLoading || packsLoading || catalogLoading;
   const isError = !isLoading && !stats;

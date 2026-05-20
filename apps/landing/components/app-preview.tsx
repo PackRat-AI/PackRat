@@ -1,7 +1,5 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { assertDefined } from 'landing-app/lib/typeAssertions';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
@@ -29,28 +27,24 @@ export default function AppPreview() {
     return () => clearInterval(interval);
   }, [screens.length]);
 
-  assertDefined(screens[currentScreen]);
-
   return (
     <>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentScreen}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="absolute inset-0"
+      {screens.map((screen, index) => (
+        <div
+          key={screen.src}
+          className={`absolute inset-0 transition-opacity duration-500 ${
+            index === currentScreen ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           <Image
-            src={screens[currentScreen].src || '/placeholder.svg'}
-            alt={screens[currentScreen].alt}
+            src={screen.src}
+            alt={screen.alt}
             fill
             className="object-cover"
-            priority
+            priority={index === 0}
           />
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      ))}
       <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-10">
         {screens.map((_, index) => (
           <button

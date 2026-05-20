@@ -121,79 +121,74 @@ function makeRequest(headers: Record<string, string> = {}): Request {
 // Tests
 // ---------------------------------------------------------------------------
 describe('verifyCFAccessRequest', () => {
+  const opts = { teamDomain: TEAM_DOMAIN, aud: AUD };
+
   it('returns { email } for a valid RS256 JWT with correct iss + aud', async () => {
     const token = await makeCFJwt({ privateKey });
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-jwt-assertion': token }),
+      opts,
+    });
     expect(result).toEqual({ email: 'admin@example.com' });
   });
 
   it('returns null when the cf-access-jwt-assertion header is absent', async () => {
-    const result = await verifyCFAccessRequest(makeRequest(), TEAM_DOMAIN, AUD);
+    const result = await verifyCFAccessRequest({ request: makeRequest(), opts });
     expect(result).toBeNull();
   });
 
   it('returns null for a JWT with a wrong audience', async () => {
     const token = await makeCFJwt({ privateKey, aud: 'wrong-audience' });
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-jwt-assertion': token }),
+      opts,
+    });
     expect(result).toBeNull();
   });
 
   it('returns null for a JWT with a wrong issuer', async () => {
     const token = await makeCFJwt({ privateKey, iss: 'https://attacker.cloudflareaccess.com' });
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-jwt-assertion': token }),
+      opts,
+    });
     expect(result).toBeNull();
   });
 
   it('returns null for a JWT signed by an untrusted key', async () => {
     const token = await makeCFJwt({ privateKey: untrustedPrivateKey });
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-jwt-assertion': token }),
+      opts,
+    });
     expect(result).toBeNull();
   });
 
   it('returns null when the JWT payload is missing the email field', async () => {
     const token = await makeCFJwt({ privateKey, omitEmail: true });
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-jwt-assertion': token }),
+      opts,
+    });
     expect(result).toBeNull();
   });
 
   it('returns null when the JWT payload has an empty string email', async () => {
     const token = await makeCFJwt({ privateKey, email: '' });
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-jwt-assertion': token }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-jwt-assertion': token }),
+      opts,
+    });
     expect(result).toBeNull();
   });
 
   it('returns null when only CF-Access-Authenticated-User-Email header is present (old spoofable vector)', async () => {
     // The pre-PR code trusted this header directly. The new code requires a
     // cryptographically verified JWT in cf-access-jwt-assertion.
-    const result = await verifyCFAccessRequest(
-      makeRequest({ 'cf-access-authenticated-user-email': 'admin@example.com' }),
-      TEAM_DOMAIN,
-      AUD,
-    );
+    const result = await verifyCFAccessRequest({
+      request: makeRequest({ 'cf-access-authenticated-user-email': 'admin@example.com' }),
+      opts,
+    });
     expect(result).toBeNull();
   });
 });

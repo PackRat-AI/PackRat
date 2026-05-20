@@ -57,7 +57,7 @@ function getAllPosts(): PostMetadata[] {
 }
 
 // Update author in a specific post
-function updatePostAuthor(post: PostMetadata, newAuthor: string): boolean {
+function updatePostAuthor({ post, newAuthor }: { post: PostMetadata; newAuthor: string }): boolean {
   try {
     const fileContent = fs.readFileSync(post.filePath, 'utf8');
     const { data, content } = matter(fileContent);
@@ -116,7 +116,7 @@ function listAvailableAuthors(): void {
 }
 
 // Update a specific post by slug
-function updatePostBySlug(slug: string, newAuthor: string): void {
+function updatePostBySlug({ slug, newAuthor }: { slug: string; newAuthor: string }): void {
   const posts = getAllPosts();
   const post = posts.find((p) => p.slug === slug);
 
@@ -129,7 +129,7 @@ function updatePostBySlug(slug: string, newAuthor: string): void {
     return;
   }
 
-  updatePostAuthor(post, newAuthor);
+  updatePostAuthor({ post, newAuthor });
 }
 
 // Find posts by title (fuzzy search)
@@ -141,7 +141,13 @@ function findPostsByTitle(searchTitle: string): PostMetadata[] {
 }
 
 // Update posts by title search
-function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
+function updatePostsByTitle({
+  searchTitle,
+  newAuthor,
+}: {
+  searchTitle: string;
+  newAuthor: string;
+}): void {
   const matchingPosts = findPostsByTitle(searchTitle);
 
   if (matchingPosts.length === 0) {
@@ -160,11 +166,17 @@ function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
 
   const post = matchingPosts[0];
   assertDefined(post);
-  updatePostAuthor(post, newAuthor);
+  updatePostAuthor({ post, newAuthor });
 }
 
 // Update all posts by current author name
-function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
+function updatePostsByAuthor({
+  currentAuthor,
+  newAuthor,
+}: {
+  currentAuthor: string;
+  newAuthor: string;
+}): void {
   const posts = getAllPosts();
   const matchingPosts = posts.filter((post) => post.author === currentAuthor);
 
@@ -182,7 +194,7 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
 
   let updatedCount = 0;
   for (const post of matchingPosts) {
-    if (updatePostAuthor(post, newAuthor)) {
+    if (updatePostAuthor({ post, newAuthor })) {
       updatedCount++;
     }
   }
@@ -265,7 +277,7 @@ function rebalanceAuthors(): void {
     );
 
     if (authorWithLeast !== post.author) {
-      if (updatePostAuthor(post, authorWithLeast)) {
+      if (updatePostAuthor({ post, newAuthor: authorWithLeast })) {
         authorCounts[authorWithLeast] = (authorCounts[authorWithLeast] ?? 0) + 1;
         updatedCount++;
       }
@@ -330,7 +342,7 @@ if (isMainModule()) {
         }
         assertDefined(args[1]);
         assertDefined(args[2]);
-        updatePostBySlug(args[1], args[2]);
+        updatePostBySlug({ slug: args[1], newAuthor: args[2] });
         break;
 
       case 'update-title':
@@ -342,7 +354,7 @@ if (isMainModule()) {
         }
         assertDefined(args[1]);
         assertDefined(args[2]);
-        updatePostsByTitle(args[1], args[2]);
+        updatePostsByTitle({ searchTitle: args[1], newAuthor: args[2] });
         break;
 
       case 'update-by-author':
@@ -356,7 +368,7 @@ if (isMainModule()) {
         }
         assertDefined(args[1]);
         assertDefined(args[2]);
-        updatePostsByAuthor(args[1], args[2]);
+        updatePostsByAuthor({ currentAuthor: args[1], newAuthor: args[2] });
         break;
 
       case 'find': {

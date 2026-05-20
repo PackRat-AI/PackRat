@@ -157,7 +157,13 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
       const [item] = payload;
       assertDefined(item);
       const key = `${labelKey ?? item?.dataKey ?? item?.name ?? 'value'}`;
-      const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
+      const itemConfig = getPayloadConfigFromPayload({
+        config,
+        opts: {
+          payload: item,
+          key,
+        },
+      });
       const value =
         !labelKey && isString(label)
           ? (config[label as keyof typeof config]?.label ?? label)
@@ -194,7 +200,13 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
         <div className="grid gap-1.5">
           {payload.map((item, index) => {
             const key = `${nameKey ?? item.name ?? item.dataKey ?? 'value'}`;
-            const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
+            const itemConfig = getPayloadConfigFromPayload({
+              config,
+              opts: {
+                payload: item,
+                key,
+              },
+            });
             const indicatorColor = color ?? item.payload?.fill ?? item.color;
 
             return (
@@ -297,7 +309,13 @@ const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentPr
       >
         {payload.map((item, index) => {
           const key = `${nameKey ?? item.dataKey ?? 'value'}`;
-          const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
+          const itemConfig = getPayloadConfigFromPayload({
+            config,
+            opts: {
+              payload: item,
+              key,
+            },
+          });
 
           return (
             <div
@@ -327,7 +345,13 @@ const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentPr
 ChartLegendContent.displayName = 'ChartLegendContent';
 
 // Helper to extract item config from a payload.
-function getPayloadConfigFromPayload(config: ChartConfig, opts: { payload: unknown; key: string }) {
+function getPayloadConfigFromPayload({
+  config,
+  opts,
+}: {
+  config: ChartConfig;
+  opts: { payload: unknown; key: string };
+}) {
   const { payload, key } = opts;
   if (!isObject(payload)) {
     return undefined;

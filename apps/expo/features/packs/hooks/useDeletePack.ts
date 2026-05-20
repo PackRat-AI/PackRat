@@ -6,9 +6,9 @@ export function useDeletePack() {
   const deletePack = useCallback((id: string) => {
     // Soft delete by setting deleted flag
     for (const item of getPackItems(id)) {
-      obs(packItemsStore, item.id).deleted.set(true);
+      obs({ store: packItemsStore, id: item.id }).deleted.set(true);
     }
-    obs(packsStore, id).deleted.set(true);
+    obs({ store: packsStore, id: id }).deleted.set(true);
   }, []);
 
   return deletePack;

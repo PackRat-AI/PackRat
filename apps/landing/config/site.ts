@@ -12,7 +12,7 @@ export const siteConfig = {
   name: 'PackRat',
   description:
     'Your ultimate outdoor adventure companion. Plan, pack, and explore with confidence.',
-  url: 'https://getpackrat.com',
+  url: 'https://packratai.com',
   ogImage: '/og-image.jpg',
   author: 'PackRat Team',
   twitterHandle: '@packratai',

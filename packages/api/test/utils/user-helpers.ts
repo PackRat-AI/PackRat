@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
-import { users } from '@packrat/api/db/schema';
 import { hashPassword } from '@packrat/api/utils/auth';
+import { users } from '@packrat/db';
 import type { InferInsertModel } from 'drizzle-orm';
 
 /**
@@ -13,11 +13,13 @@ export async function createTestUser(
 ) {
   const db = createDb();
 
-  const { password = 'Password123!', ...userData } = overrides;
+  const { password = 'Password123!', id: overrideId, ...userData } = overrides;
 
   const passwordHash = await hashPassword(password);
 
   const finalUserData: InferInsertModel<typeof users> = {
+    id: overrideId ?? crypto.randomUUID(),
+    name: 'Test User',
     email: `test-${Date.now()}@example.com`,
     firstName: 'Test',
     lastName: 'User',

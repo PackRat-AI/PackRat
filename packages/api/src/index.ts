@@ -2,41 +2,46 @@
  * Cloudflare Worker entry point.
  *
  * Elysia-based Worker using the official `CloudflareAdapter` (Elysia 1.4.x).
- * Every route is Elysia-native so Eden Treaty gets full end-to-end type
- * safety and @elysiajs/openapi generates a complete OpenAPI/Scalar UI.
+ * Better Auth handles all /api/auth/** requests; all other routes are
+ * Elysia-native so Eden Treaty gets full end-to-end type safety.
  */
 
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
+import { getAuth } from '@packrat/api/auth';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
-import type { Env } from '@packrat/api/types/env';
-import { setWorkerEnv } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
 
-/**
- * Root Elysia application – exported so Eden Treaty can infer the full route
- * surface.
- */
 export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(
     cors({
-      // Reflect-origin is intentional: PackRat has many consumer origins
-      // (Expo dev, web, landing, admin panel, preview deploys) and maintaining
-      // an explicit allowlist would be operational overhead. Bearer-token auth
-      // (not cookies) limits the CSRF blast radius; revisit if cookie-auth
-      // is ever added.
-      //
-      // Reflect the requested headers rather than hard-coding an allowlist so
-      // clients can send browser/Sentry/feature-flag headers without requiring
-      // a server deploy. Matches dev's bare `cors()` behavior.
-      credentials: false,
-      allowedHeaders: '*',
+      // Better Auth uses cookies — credentials must be true and origins must
+      // be explicit (not wildcard) so the browser sends cookies cross-origin.
+      credentials: true,
+      origin: (request) => {
+        const origin = request.headers.get('Origin');
+        if (!origin) return false;
+        // Allow the API base URL and any subdomain of packrat.world
+        const allowed = [
+          /^https:\/\/(www\.)?packrat\.world$/,
+          /^https:\/\/[\w-]+\.packrat\.world$/,
+          /^https:\/\/[\w-]+\.packratai\.com$/,
+          /^https?:\/\/[\w-]+\.workers\.dev$/,
+          /^http:\/\/localhost:\d+$/,
+          /^exp:\/\//,
+        ];
+        return allowed.some((re) => re.test(origin));
+      },
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   )
   .use(packratOpenApi)
@@ -68,10 +73,6 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(routes)
   .compile();
 
-/**
- * End-to-end type exported for the Eden Treaty client (see
- * `apps/expo/lib/api/client.ts`).
- */
 export type App = typeof app;
 
 export { AppContainer };
@@ -82,29 +83,43 @@ type CfFetchFn = (
   ctx: ExecutionContext,
 ) => Response | Promise<Response>;
 
+function enrichEnv(env: Env): Env {
+  if (env.OSM_HYPERDRIVE) {
+    return { ...env, OSM_DATABASE_URL: env.OSM_HYPERDRIVE.connectionString };
+  }
+  return env;
+}
+
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
-    setWorkerEnv(env as unknown as Record<string, unknown>); // safe-cast: Cloudflare Worker entry point — env is a plain bindings object at runtime
-    return (app.fetch as unknown as CfFetchFn)(request, env, ctx); // safe-cast: Elysia's fetch matches the CfFetchFn signature at runtime; unknown intermediate required for variance
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const e = enrichEnv(env);
+    setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
+
+    // Route /api/auth/** to Better Auth before Elysia sees it.
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/auth')) {
+      const validatedEnv = getEnv();
+      const auth = await getAuth(validatedEnv);
+      return auth.handler(request);
+    }
+
+    return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
   },
+
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    setWorkerEnv(env as unknown as Record<string, unknown>); // safe-cast: Cloudflare Worker entry point — env is a plain bindings object at runtime
+    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
-      if (!env.ETL_QUEUE) {
-        throw new Error('ETL_QUEUE is not configured');
-      }
-      // The queue name check above is the runtime guard; the Worker runtime delivers
-      // correctly-typed messages for this queue binding.
-      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: queue name guard above confirms this batch carries CatalogETLMessage payloads
+      if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
+      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
     } else if (
       batch.queue === 'packrat-embeddings-queue' ||
       batch.queue === 'packrat-embeddings-queue-dev'
     ) {
-      if (!env.EMBEDDINGS_QUEUE) {
-        throw new Error('EMBEDDINGS_QUEUE is not configured');
-      }
-      await new CatalogService(env, true).handleEmbeddingsBatch(batch);
+      if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
+      await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
+        batch,
+      );
     } else {
       throw new Error(`Unknown queue: ${batch.queue}`);
     }

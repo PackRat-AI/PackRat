@@ -1,5 +1,5 @@
-import { WeightUnitSchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
 import * as Burnt from 'burnt';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
@@ -11,10 +11,13 @@ export function useAddCatalogItem() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  const addItemToPack = async (
-    packId: string,
-    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> },
-  ) => {
+  const addItemToPack = async ({
+    packId,
+    opts,
+  }: {
+    packId: string;
+    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> };
+  }) => {
     const { catalogItem, data } = opts;
     setIsLoading(true);
     const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);

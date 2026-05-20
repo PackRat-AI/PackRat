@@ -1,14 +1,14 @@
 import { assertDefined, isString } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import { useForm } from '@tanstack/react-form';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { Picker } from 'expo-app/lib/Picker';
+import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
@@ -170,6 +170,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.trips.nameInput}
                     placeholder={t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
@@ -190,6 +191,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.trips.descriptionInput}
                     placeholder={t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
@@ -302,6 +304,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 return (
                   <FormItem>
                     <Pressable
+                      testID={testIds.trips.startDateInput}
                       onPress={() => setShowStartPicker(true)}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
@@ -345,6 +348,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       onPress={() => setShowEndPicker(true)}
+                      testID={testIds.trips.endDateInput}
                       className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
                         field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
                       }`}
@@ -386,7 +390,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
-              testID={TestIds.SubmitTripButton}
+              testID={testIds.trips.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

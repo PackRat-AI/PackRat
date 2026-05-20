@@ -1,6 +1,6 @@
 {
   "name": "@packrat/env",
-  "version": "2.0.24",
+  "version": "2.0.26",
   "private": true,
   "type": "module",
   "exports": {
@@ -9,7 +9,8 @@
     "./next": "./src/next.ts",
     "./expo-client": "./src/expo-client.ts",
     "./expo-server": "./src/expo-server.ts",
-    "./analytics": "./src/analytics.ts"
+    "./analytics": "./src/analytics.ts",
+    "./web": "./src/web.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",

@@ -4,7 +4,7 @@ import { z } from 'zod';
 const ALLTRAILS_HOSTNAME_RE = /^(?:[a-z0-9-]+\.)?alltrails\.com$/;
 const UA = 'Mozilla/5.0 (compatible; PackRat/1.0; +https://packrat.world)';
 
-function extractOgTag(html: string, property: string): string | null {
+function extractOgTag({ html, property }: { html: string; property: string }): string | null {
   const match =
     html.match(
       new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i'),
@@ -78,15 +78,27 @@ export const alltrailsRoutes = new Elysia({ prefix: '/alltrails' }).post(
       return status(502, { error: `AllTrails returned status ${response.status}` });
     }
 
+    // Verify the final URL is still within alltrails.com (guards against redirects followed by fetch)
+    if (response.url) {
+      try {
+        const finalUrl = new URL(response.url);
+        if (finalUrl.protocol !== 'https:' || !ALLTRAILS_HOSTNAME_RE.test(finalUrl.hostname)) {
+          return status(400, { error: 'URL redirected outside alltrails.com' });
+        }
+      } catch {
+        // Non-parseable response.url — proceed
+      }
+    }
+
     const html = await response.text();
 
-    const title = extractOgTag(html, 'og:title');
+    const title = extractOgTag({ html, property: 'og:title' });
     if (!title) {
       return status(422, { error: 'No og:title found in AllTrails page' });
     }
 
-    const description = extractOgTag(html, 'og:description');
-    const image = extractOgTag(html, 'og:image');
+    const description = extractOgTag({ html, property: 'og:description' });
+    const image = extractOgTag({ html, property: 'og:image' });
 
     return { title, description, image, url: response.url || url };
   },

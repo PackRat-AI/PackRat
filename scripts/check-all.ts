@@ -4,6 +4,7 @@
 //
 // Runs the following checks in parallel and prints a unified summary table:
 //   - scripts/lint/no-raw-regex.ts
+//   - scripts/lint/no-owned-max-params.ts
 //   - scripts/lint/no-raw-typeof.ts
 //   - packages/env/scripts/no-raw-process-env.ts
 //   - scripts/lint/no-circular-deps.ts
@@ -59,6 +60,10 @@ const ALL_CHECKS: CheckDef[] = [
     script: join(ROOT, 'scripts', 'lint', 'no-raw-regex.ts'),
   },
   {
+    name: 'no-owned-max-params',
+    script: join(ROOT, 'scripts', 'lint', 'no-owned-max-params.ts'),
+  },
+  {
     name: 'no-raw-typeof',
     script: join(ROOT, 'scripts', 'lint', 'no-raw-typeof.ts'),
   },
@@ -81,6 +86,10 @@ const ALL_CHECKS: CheckDef[] = [
   {
     name: 'no-unauth-routes',
     script: join(ROOT, 'scripts', 'lint', 'no-unauth-routes.ts'),
+  },
+  {
+    name: 'check-drizzle-migrations',
+    script: join(ROOT, 'scripts', 'lint', 'check-drizzle-migrations.ts'),
   },
   {
     name: 'check-type-casts',

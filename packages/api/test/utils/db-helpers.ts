@@ -1,9 +1,5 @@
 import { createDb } from '@packrat/api/db';
 import { hashPassword } from '@packrat/api/utils/auth';
-import { assertDefined } from '@packrat/guards';
-import type { InferInsertModel } from 'drizzle-orm';
-
-import * as schema from '../../src/db/schema';
 import {
   catalogItems,
   packItems,
@@ -11,7 +7,10 @@ import {
   packTemplateItems,
   packTemplates,
   type users,
-} from '../../src/db/schema';
+} from '@packrat/db';
+import * as schema from '@packrat/db/schema';
+import { assertDefined } from '@packrat/guards';
+import type { InferInsertModel } from 'drizzle-orm';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
 import { createTestPack, createTestPackItem } from '../fixtures/pack-fixtures';
 import {
@@ -52,13 +51,18 @@ export async function seedTestUser(
   const email =
     overrides?.email ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
+  const firstName = overrides?.firstName ?? 'Test';
+  const lastName = overrides?.lastName ?? 'User';
+
   const [user] = await db
     .insert(schema.users)
     .values({
+      id: overrides?.id ?? crypto.randomUUID(),
       email,
       passwordHash,
-      firstName: overrides?.firstName ?? 'Test',
-      lastName: overrides?.lastName ?? 'User',
+      name: overrides?.name ?? `${firstName} ${lastName}`,
+      firstName,
+      lastName,
       role: overrides?.role ?? 'USER',
       emailVerified: overrides?.emailVerified ?? true,
     })
@@ -147,7 +151,7 @@ export async function seedCatalogItems(
  * @returns The created pack template with id
  */
 export async function seedPackTemplate(
-  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: number },
+  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: string },
 ) {
   const db = createDb();
 
@@ -167,7 +171,7 @@ export async function seedPackTemplate(
 
 export async function seedPackTemplates(
   count: number,
-  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: number },
+  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: string },
 ) {
   const db = createDb();
 
@@ -190,7 +194,7 @@ export async function seedPackTemplates(
 
 export async function seedPackTemplateItem(
   packTemplateId: string,
-  overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: number },
+  overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: string },
 ) {
   const db = createDb();
 
@@ -212,7 +216,7 @@ export async function seedPackTemplateItems(
   packTemplateId: string,
   opts: {
     count: number;
-    overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: number };
+    overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: string };
   },
 ) {
   const { count, overrides } = opts;
@@ -235,7 +239,7 @@ export async function seedPackTemplateItems(
  * @returns The created pack with id
  */
 export async function seedPack(
-  overrides: Partial<InferInsertModel<typeof packs>> & { userId: number },
+  overrides: Partial<InferInsertModel<typeof packs>> & { userId: string },
 ) {
   const db = createDb();
 
@@ -255,7 +259,7 @@ export async function seedPack(
 
 export async function seedPacks(
   count: number,
-  overrides: Partial<InferInsertModel<typeof packs>> & { userId: number },
+  overrides: Partial<InferInsertModel<typeof packs>> & { userId: string },
 ) {
   const db = createDb();
 
@@ -278,7 +282,7 @@ export async function seedPacks(
 
 export async function seedPackItem(
   packId: string,
-  overrides: Partial<InferInsertModel<typeof packItems>> & { userId: number },
+  overrides: Partial<InferInsertModel<typeof packItems>> & { userId: string },
 ) {
   const db = createDb();
 
@@ -300,7 +304,7 @@ export async function seedPackItems(
   packId: string,
   opts: {
     count: number;
-    overrides: Partial<InferInsertModel<typeof packItems>> & { userId: number };
+    overrides: Partial<InferInsertModel<typeof packItems>> & { userId: string };
   },
 ) {
   const { count, overrides } = opts;

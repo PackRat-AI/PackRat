@@ -1,12 +1,9 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import { type PackItem, packItems } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import {
-  SeasonSuggestionsRequestSchema,
-  SeasonSuggestionsResponseSchema,
-} from '@packrat/api/schemas/seasonSuggestions';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { type PackItem, packItems } from '@packrat/db';
+import { SeasonSuggestionsRequestSchema } from '@packrat/schemas/seasonSuggestions';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -116,7 +113,6 @@ ${inventoryFormatted}`;
     },
     {
       body: SeasonSuggestionsRequestSchema,
-      response: { 200: SeasonSuggestionsResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Season Suggestions'],

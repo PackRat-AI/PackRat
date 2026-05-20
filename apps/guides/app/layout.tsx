@@ -3,6 +3,7 @@ import Footer from 'guides-app/components/footer';
 import Header from 'guides-app/components/header';
 import { QueryProvider } from 'guides-app/components/providers/query-provider';
 import { ThemeProvider } from 'guides-app/components/theme-provider';
+import { guidesMetadata } from 'guides-app/lib/metadata';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
 import './globals.css';
@@ -13,15 +14,7 @@ const fontSans = FontSans({
   weight: ['400', '500', '600', '700'],
 });
 
-export const metadata = {
-  title: 'PackRat Guides | Hiking & Outdoor Adventures',
-  description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
-  icons: {
-    icon: [{ url: '/PackRatGuides.ico', type: 'image/x-icon' }],
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  },
-};
+export const metadata = guidesMetadata;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

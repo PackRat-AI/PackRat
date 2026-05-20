@@ -85,7 +85,7 @@ export default function ForgotPasswordScreen() {
           <View className="items-center pb-1">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">

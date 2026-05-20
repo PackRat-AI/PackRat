@@ -52,10 +52,13 @@ export type WeatherApiData = {
 
 type ActiveLocation = { name?: string } | null;
 
-export function generateAlerts(
-  data: WeatherApiData | undefined,
-  activeLocation: ActiveLocation,
-): WeatherAlert[] {
+export function generateAlerts({
+  data,
+  activeLocation,
+}: {
+  data: WeatherApiData | undefined;
+  activeLocation: ActiveLocation;
+}): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
 
@@ -247,9 +250,11 @@ export function useWeatherAlerts() {
 
       try {
         const data = await getWeatherData(locationId);
-        // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a
-        // structural subset of that type used only by this alert generator.
-        const formatted = generateAlerts(data as unknown as WeatherApiData, activeLocation);
+        const formatted = generateAlerts({
+          // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a structural subset used only by this alert generator.
+          data: data as unknown as WeatherApiData,
+          activeLocation,
+        });
         setAlerts(formatted);
       } catch (err) {
         console.error('Weather alerts error:', err);

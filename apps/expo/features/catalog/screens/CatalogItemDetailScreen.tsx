@@ -8,7 +8,7 @@ import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
@@ -18,6 +18,7 @@ import { Linking, Text as RNText, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
+import { normalizeDescription } from '../lib/normalizeDescription';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -109,7 +110,7 @@ export function CatalogItemDetailScreen() {
           )}
 
           <View className="mb-4">
-            <Text className="mb-2 text-foreground">{item.description}</Text>
+            <Text className="mb-2 text-foreground">{normalizeDescription(item.description)}</Text>
           </View>
 
           <View className="mb-4 flex-row flex-wrap gap-1">
@@ -187,13 +188,13 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 gap-2 flex-row justify-between">
             <View>
-              <Button testID={TestIds.AddToPackButton} onPress={handleAddToPack}>
+              <Button testID={testIds.catalog.addToPackBtn} onPress={handleAddToPack}>
                 <Text>{t('catalog.addToPack')}</Text>
               </Button>
             </View>
             <View>
               <Button
-                testID={TestIds.ViewRetailerButton}
+                testID={testIds.catalog.viewRetailerBtn}
                 variant="secondary"
                 onPress={() => Linking.openURL(item.productUrl as string)}
               >

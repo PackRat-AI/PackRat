@@ -1,6 +1,6 @@
-import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { embed, embedMany } from 'ai';
 
 // ── Embedding text normalization ──────────────────────────────────────
@@ -24,7 +24,7 @@ export const generateEmbedding = async (
   const { value, ...providerConfig } = params;
 
   // Guard: skip if no text or only whitespace
-  if (!value || !value.trim()) {
+  if (!value?.trim()) {
     return null;
   }
 

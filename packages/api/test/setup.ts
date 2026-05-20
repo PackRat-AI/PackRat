@@ -1,8 +1,9 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
+import { isFunction, isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
-import * as schema from '../src/db/schema';
 import { clearCurrentTestUsers } from './utils/test-helpers';
 
 // ── Setup regex constants ──
@@ -25,9 +26,12 @@ const testEnv = {
   NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/packrat_test',
   NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5432/packrat_test',
 
-  JWT_SECRET: 'secret',
-  PASSWORD_RESET_SECRET: 'secret',
+  // Better Auth (replaces JWT_SECRET)
+  BETTER_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!',
+  BETTER_AUTH_URL: 'http://localhost:8787',
   GOOGLE_CLIENT_ID: 'test-client-id',
+  GOOGLE_CLIENT_SECRET: 'test-client-secret',
+
   ADMIN_USERNAME: 'admin',
   ADMIN_PASSWORD: 'admin-password',
   PACKRAT_API_KEY: 'test-api-key',
@@ -51,6 +55,7 @@ const testEnv = {
   PACKRAT_BUCKET_R2_BUCKET_NAME: 'test-bucket',
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: 'test-guides-bucket',
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: 'test-scrapy-bucket',
+  R2_PUBLIC_URL: 'https://r2.test.example.com',
 
   PACKRAT_GUIDES_RAG_NAME: 'test-rag',
   PACKRAT_GUIDES_BASE_URL: 'https://guides.test.com',
@@ -74,9 +79,23 @@ vi.mock('elysia', async (importOriginal) => {
     construct(target, args, newTarget) {
       const instance = Reflect.construct(target, args, newTarget) as {
         config: { aot: boolean };
+        onBeforeHandle: (fn: (ctx: Record<string, unknown>) => void) => unknown;
       };
       // Force dynamic (no-eval) handler path for all instances in workerd.
       instance.config.aot = false;
+      // Fix: in non-AOT mode Elysia wraps Decode output in { value: … } for
+      // query and params but never unwraps them before calling the handler
+      // (unlike body, which does `decoded?.value ?? decoded`).
+      // Unwrap both here before every handler fires.
+      instance.onBeforeHandle((ctx) => {
+        const unwrap = (val: unknown): unknown => {
+          if (isObject(val) && 'value' in val && Object.keys(val).length === 1)
+            return (val as { value: unknown }).value;
+          return val;
+        };
+        ctx.query = unwrap(ctx.query);
+        ctx.params = unwrap(ctx.params);
+      });
       return instance;
     },
   });
@@ -95,6 +114,44 @@ vi.mock('elysia/adapter/cloudflare-worker', async (importOriginal) => {
       ...original.CloudflareAdapter,
       beforeCompile: () => {},
     },
+  };
+});
+
+// Mock Better Auth's getAuth so integration tests don't need a real Better Auth
+// instance. The mock validates the HS256 JWTs that test-helpers issues, mapping
+// the JWT payload to a Better Auth-shaped session object.
+vi.mock('@packrat/api/auth', async () => {
+  const { jwtVerify } = await import('jose');
+  const testJwtSecret = new TextEncoder().encode('secret');
+
+  return {
+    getAuth: vi.fn(async () => ({
+      api: {
+        getSession: vi.fn(async ({ headers }: { headers: Headers }) => {
+          const authHeader = isFunction(headers.get)
+            ? headers.get('authorization')
+            : (headers as unknown as Record<string, string>)?.authorization;
+          if (!authHeader?.startsWith('Bearer ')) return null;
+          const token = authHeader.slice(7).trim();
+          if (!token) return null;
+          try {
+            const { payload } = await jwtVerify(token, testJwtSecret, { algorithms: ['HS256'] });
+            const userId = String(payload.userId ?? '');
+            if (!userId) return null;
+            return {
+              user: {
+                id: userId,
+                email: 'test@example.com',
+                name: 'Test User',
+                role: (payload.role as string) ?? 'USER',
+              },
+            };
+          } catch {
+            return null;
+          }
+        }),
+      },
+    })),
   };
 });
 
@@ -285,10 +342,13 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      async batchVectorSearch(
-        queries: string[],
-        _limit?: number,
-      ): Promise<BatchVectorSearchResult> {
+      async batchVectorSearch({
+        queries,
+        limit: _limit,
+      }: {
+        queries: string[];
+        limit?: number;
+      }): Promise<BatchVectorSearchResult> {
         return {
           items: queries.map(() => [
             {
@@ -518,6 +578,7 @@ vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
+  createOsmDb: vi.fn(() => testDb),
 }));
 
 vi.mock('youtube-transcript', () => ({
@@ -599,6 +660,34 @@ beforeAll(async () => {
     console.error('❌ Failed to connect to test database:', error);
     throw error;
   }
+
+  // Create OSM tables in the test DB so trails tests can seed them.
+  // createOsmDb() is mocked to return testDb, so both table families live here.
+  await testPool.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
+  await testPool.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+  await testPool.query(`
+    CREATE TABLE IF NOT EXISTS osm_ways (
+      osm_id   bigint PRIMARY KEY,
+      name     text,
+      sport    text,
+      surface  text,
+      difficulty text,
+      geometry geometry(LineString,4326)
+    )
+  `);
+  await testPool.query(`
+    CREATE TABLE IF NOT EXISTS osm_routes (
+      osm_id      bigint PRIMARY KEY,
+      name        text,
+      sport       text,
+      network     text,
+      distance    text,
+      difficulty  text,
+      description text,
+      members     jsonb,
+      geometry    geometry(MultiLineString,4326)
+    )
+  `);
 });
 
 beforeEach(async () => {
@@ -610,9 +699,9 @@ beforeEach(async () => {
   // testPool.query, so cleanup and tests share one path. Surface errors rather
   // than swallowing them.
   const tablesToClean = [
-    'one_time_passwords',
-    'refresh_tokens',
-    'auth_providers',
+    'session',
+    'account',
+    'verification',
     'weight_history',
     'pack_items',
     'pack_template_items',
@@ -630,6 +719,8 @@ beforeEach(async () => {
     'posts',
     'trips',
     'users',
+    'osm_ways',
+    'osm_routes',
   ];
 
   const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');

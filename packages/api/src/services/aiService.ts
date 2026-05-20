@@ -1,6 +1,6 @@
 import { createPerplexity } from '@ai-sdk/perplexity';
-import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isFunction } from '@packrat/guards';
 import { generateText } from 'ai';
@@ -44,10 +44,13 @@ export class AIService {
     }
   }
 
-  async searchPackratOutdoorGuidesRAG(
-    query: string,
-    limit: number = 5,
-  ): Promise<
+  async searchPackratOutdoorGuidesRAG({
+    query,
+    limit = 5,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<
     Omit<AutoRagSearchResponse, 'data'> & {
       data: (AutoRagSearchResponse['data'][0] & { url: string })[];
     }

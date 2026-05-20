@@ -17,7 +17,7 @@ import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, Share, TouchableOpacity, View } from 'react-native';
@@ -40,7 +40,7 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    obs(packingModeStore, id).get() || {},
+    obs({ store: packingModeStore, id: id }).get() || {},
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
@@ -103,7 +103,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    obs(packingModeStore, id).set({ ...packedItems });
+    obs({ store: packingModeStore, id: id }).set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
     Burnt.toast({
@@ -116,10 +116,10 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      setPackedItems(obs(packingModeStore, id).get() || {});
+      setPackedItems(obs({ store: packingModeStore, id: id }).get() || {});
     };
 
-    const packingState = obs(packingModeStore, id).get() || {};
+    const packingState = obs({ store: packingModeStore, id: id }).get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>
@@ -553,13 +553,13 @@ export function PackDetailScreen() {
               variant="secondary"
               onPress={handleAskAI}
               className="flex-1"
-              testID={TestIds.AskAIButton}
+              testID={testIds.packs.askAIBtn}
             >
               <Text>Ask AI</Text>
             </Button>
 
             {isOwnedByUser && (
-              <Button variant="secondary" onPress={handleAddItem} testID={TestIds.AddItemButton}>
+              <Button variant="secondary" onPress={handleAddItem} testID={testIds.packs.addItemBtn}>
                 <Text>Add Item</Text>
               </Button>
             )}
@@ -569,7 +569,7 @@ export function PackDetailScreen() {
                 variant="secondary"
                 size="icon"
                 onPress={handleMoreActionsPress}
-                testID={TestIds.PackMoreActions}
+                testID={testIds.packs.moreActionsBtn}
               >
                 <Icon name="dots-horizontal" size={20} color={colors.grey2} />
               </Button>

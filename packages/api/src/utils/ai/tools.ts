@@ -9,7 +9,7 @@ import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { tool } from 'ai';
 import { z } from 'zod';
 
-export function createTools(userId: number) {
+export function createTools(userId: string) {
   const packService = new PackService(userId);
   const packItemService = new PackItemService(userId);
   const weatherService = new WeatherService();
@@ -132,9 +132,12 @@ export function createTools(userId: number) {
       }),
       execute: async ({ query, limit, offset }) => {
         try {
-          const data = await catalogService.vectorSearch(query, {
-            limit: limit || 10,
-            offset: offset || 0,
+          const data = await catalogService.vectorSearch({
+            q: query,
+            opts: {
+              limit: limit || 10,
+              offset: offset || 0,
+            },
           });
           return { success: true, data };
         } catch (error) {
@@ -161,7 +164,10 @@ export function createTools(userId: number) {
       }),
       execute: async ({ query, limit }) => {
         try {
-          const results = await aiService.searchPackratOutdoorGuidesRAG(query, limit || 5);
+          const results = await aiService.searchPackratOutdoorGuidesRAG({
+            query,
+            limit: limit || 5,
+          });
           return { success: true, data: results };
         } catch (error) {
           console.error('searchPackratOutdoorGuidesRAG', error);

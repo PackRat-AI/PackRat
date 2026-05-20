@@ -2,23 +2,21 @@ appId: ${APP_ID}
 ---
 # Catalog Browse Flow: Verify catalog tab loads items and categories
 - waitForAnimationToEnd
-
-# Navigate to Catalog tab
 - tapOn:
     text: "Catalog"
 - waitForAnimationToEnd
-
-# Assert catalog loaded with items
 - assertVisible:
     text: "Catalog"
-
-# Scroll to verify items render
+- assertVisible:
+    text: "All"
+- assertVisible:
+    text: ".*items.*"
 - scrollUntilVisible:
     element:
-      text: ".*\\$.*"
+      text: "Showing.*items"
     direction: DOWN
-
-# Go back to a stable state
+    timeout: 10000
+    speed: 20
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd

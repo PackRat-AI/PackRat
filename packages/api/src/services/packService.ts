@@ -1,15 +1,9 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import {
-  type NewPack,
-  type NewPackItem,
-  type PackWithItems,
-  packItems,
-  packs,
-} from '@packrat/api/db/schema';
-import { PACK_CATEGORIES } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { PACK_CATEGORIES } from '@packrat/constants';
+import { type NewPack, type NewPackItem, type PackWithItems, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -40,9 +34,9 @@ type PackItemConceptSchema = z.infer<typeof packItemConceptSchema>;
 
 export class PackService {
   private db;
-  private userId: number;
+  private userId: string;
 
-  constructor(userId: number) {
+  constructor(userId: string) {
     this.userId = userId;
     this.db = createDb();
   }
@@ -61,7 +55,7 @@ export class PackService {
     });
 
     if (!pack) return null;
-    return computePackWeights(pack);
+    return computePackWeights({ pack });
   }
 
   async generatePacks(count: number) {
@@ -135,10 +129,10 @@ export class PackService {
     packItemConcepts: PackItemConceptSchema[],
   ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
     const catalogService = new CatalogService();
-    const searchResults = await catalogService.batchVectorSearch(
-      packItemConcepts.map((item) => item.item),
-      1,
-    );
+    const searchResults = await catalogService.batchVectorSearch({
+      queries: packItemConcepts.map((item) => item.item),
+      limit: 1,
+    });
 
     return packItemConcepts
       .map((item, idx) => {
@@ -150,8 +144,8 @@ export class PackService {
           catalogItemId: catalogItem.id,
           name: catalogItem.name,
           description: catalogItem.description,
-          weight: catalogItem.weight,
-          weightUnit: catalogItem.weightUnit,
+          weight: catalogItem.weight ?? 0,
+          weightUnit: catalogItem.weightUnit ?? 'g',
           image: catalogItem.images?.[0],
         };
       })

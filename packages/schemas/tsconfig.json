@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@packrat/db": ["../db/src/index.ts"],
+      "@packrat/db/*": ["../db/src/*"],
+      "@packrat/guards": ["../guards/src/index.ts"],
+      "@packrat/guards/*": ["../guards/src/*"]
+    }
+  },
+  "include": ["src"]
+}

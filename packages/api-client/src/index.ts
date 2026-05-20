@@ -82,7 +82,13 @@ export function createApiClient(config: ApiClientConfig) {
    * refreshes + retries once on a 401 response (unless the 401 came from the
    * refresh endpoint itself, in which case the user must re-auth).
    */
-  const authFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const authFetcher = async ({
+    input,
+    init,
+  }: {
+    input: RequestInfo | URL;
+    init?: RequestInit;
+  }): Promise<Response> => {
     const url = isString(input) ? input : input instanceof URL ? input.toString() : input.url;
     let pathname = '';
     try {
@@ -92,12 +98,35 @@ export function createApiClient(config: ApiClientConfig) {
     }
     const isRefreshPath = pathname === '/api/auth/refresh';
 
-    const buildRequest = (
-      token: string | null,
-      base: RequestInfo | URL,
-    ): [RequestInfo | URL, RequestInit | undefined] => {
+    const buildRequest = ({
+      token,
+      base,
+    }: {
+      token: string | null;
+      base: RequestInfo | URL;
+    }): [RequestInfo | URL, RequestInit | undefined] => {
       if (!token) return [base, init];
-      const headers = new Headers(init?.headers ?? {});
+      const headers = new Headers();
+      const existing = init?.headers;
+      if (existing instanceof Headers) {
+        existing.forEach((v, k) => {
+          headers.set(k, v);
+        });
+      } else if (Array.isArray(existing)) {
+        for (const entry of existing) {
+          if (
+            Array.isArray(entry) &&
+            typeof entry[0] === 'string' &&
+            typeof entry[1] === 'string'
+          ) {
+            headers.set(entry[0], entry[1]);
+          }
+        }
+      } else if (isObject(existing)) {
+        for (const [k, v] of Object.entries(existing)) {
+          if (isString(v)) headers.set(k, v);
+        }
+      }
       headers.set('Authorization', `Bearer ${token}`);
       return [base, { ...init, headers }];
     };
@@ -107,7 +136,7 @@ export function createApiClient(config: ApiClientConfig) {
     const firstBase = input instanceof Request ? input.clone() : input;
 
     const firstToken = isRefreshPath ? null : await config.auth.getAccessToken();
-    const [firstInput, firstInit] = buildRequest(firstToken, firstBase);
+    const [firstInput, firstInit] = buildRequest({ token: firstToken, base: firstBase });
     const response = await baseFetcher(firstInput, firstInit);
 
     if (response.status !== 401 || isRefreshPath) return response;
@@ -116,7 +145,7 @@ export function createApiClient(config: ApiClientConfig) {
     if (!newToken) return response;
 
     // `input` (the original) was never passed to fetch, so its body is still intact.
-    const [retryInput, retryInit] = buildRequest(newToken, input);
+    const [retryInput, retryInit] = buildRequest({ token: newToken, base: input });
     return baseFetcher(retryInput, retryInit);
   };
 
@@ -127,7 +156,13 @@ export function createApiClient(config: ApiClientConfig) {
   // Treaty only uses the callable form of `fetch`; the globalThis.fetch type
   // includes a `preconnect` method our wrapper doesn't need. Cast through
   // unknown to bridge the two shapes without pulling preconnect into scope.
-  return treaty<App>(config.baseUrl, { fetcher: authFetcher as unknown as typeof fetch }).api;
+  // parseDate:false disables Eden Treaty's JSON reviver that silently converts
+  // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
+  // this, every Zod z.string().datetime() field in API response schemas fails.
+  return treaty<App>(config.baseUrl, {
+    fetcher: ((input, init) => authFetcher({ input, init })) as unknown as typeof fetch,
+    parseDate: false,
+  }).api;
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;
@@ -165,21 +200,24 @@ export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
 
-  constructor(message: string, options: ApiErrorOptions) {
+  constructor({ message, status, body }: { message: string; status: number; body: unknown }) {
     super(message);
     this.name = 'ApiError';
-    this.status = options.status;
-    this.body = options.body;
+    this.status = status;
+    this.body = body;
   }
 }
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
 
 export class PackRatApiClient {
-  constructor(
-    private readonly baseUrl: string,
-    private readonly getAuthToken: () => string,
-  ) {}
+  constructor({ baseUrl, getAuthToken }: { baseUrl: string; getAuthToken: () => string }) {
+    this.baseUrl = baseUrl;
+    this.getAuthToken = getAuthToken;
+  }
+
+  private readonly baseUrl: string;
+  private readonly getAuthToken: () => string;
 
   private get headers(): Record<string, string> {
     const token = this.getAuthToken();
@@ -191,7 +229,7 @@ export class PackRatApiClient {
     return base;
   }
 
-  async get<T = unknown>(path: string, params?: QueryParams): Promise<T> {
+  async get<T = unknown>({ path, params }: { path: string; params?: QueryParams }): Promise<T> {
     const url = new URL(`${this.baseUrl}${path}`);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
@@ -202,7 +240,7 @@ export class PackRatApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async post<T = unknown>(path: string, body?: unknown): Promise<T> {
+  async post<T = unknown>({ path, body }: { path: string; body?: unknown }): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
@@ -211,7 +249,7 @@ export class PackRatApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async put<T = unknown>(path: string, body?: unknown): Promise<T> {
+  async put<T = unknown>({ path, body }: { path: string; body?: unknown }): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
@@ -220,7 +258,7 @@ export class PackRatApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async patch<T = unknown>(path: string, body?: unknown): Promise<T> {
+  async patch<T = unknown>({ path, body }: { path: string; body?: unknown }): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
@@ -229,7 +267,7 @@ export class PackRatApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async delete<T = unknown>(path: string): Promise<T> {
+  async delete<T = unknown>({ path }: { path: string }): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
@@ -244,14 +282,20 @@ export class PackRatApiClient {
         isObject(body) && 'error' in body
           ? String((body as Record<string, unknown>).error) // safe-cast: isObject() guard confirms body is a non-null object; error field access is safe
           : `HTTP ${response.status}`;
-      throw new ApiError(errorMessage, { status: response.status, body });
+      throw new ApiError({ message: errorMessage, status: response.status, body });
     }
     return body as T; // safe-cast: caller-provided generic boundary — T is verified at each typed call-site
   }
 }
 
-export function createPackRatClient(baseUrl: string, getAuthToken: () => string): PackRatApiClient {
-  return new PackRatApiClient(baseUrl, getAuthToken);
+export function createPackRatClient({
+  baseUrl,
+  getAuthToken,
+}: {
+  baseUrl: string;
+  getAuthToken: () => string;
+}): PackRatApiClient {
+  return new PackRatApiClient({ baseUrl, getAuthToken });
 }
 
 // ── MCP tool result helpers ───────────────────────────────────────────────────

@@ -29,7 +29,13 @@ export function useLocations() {
     setBaseLocations(locations.filter((loc) => loc.id !== locationId));
   };
 
-  const updateLocation = (locationId: number, updates: Partial<WeatherLocation>) => {
+  const updateLocation = ({
+    locationId,
+    updates,
+  }: {
+    locationId: number;
+    updates: Partial<WeatherLocation>;
+  }) => {
     if (locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;

@@ -21,7 +21,7 @@ interface PostCardProps {
   post: Post;
   onLike: (postId: number) => void;
   onDelete?: (postId: number) => void;
-  currentUserId?: number;
+  currentUserId?: string;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, currentUserId }) => {
@@ -49,7 +49,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
           <View>
             <Text className="font-semibold text-sm">{formatAuthorName(post)}</Text>
             <Text className="text-xs text-muted-foreground">
-              {formatRelativeDate(post.createdAt)}
+              {formatRelativeDate({ dateValue: post.createdAt })}
             </Text>
           </View>
         </View>

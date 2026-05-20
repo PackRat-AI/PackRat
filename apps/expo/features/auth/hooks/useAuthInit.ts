@@ -1,16 +1,52 @@
+import { when } from '@legendapp/state';
 import { clientEnvs } from '@packrat/env/expo-client';
+import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { userStore, userSyncState } from 'expo-app/features/auth/store';
+import { authClient } from 'expo-app/lib/auth-client';
 import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { isAuthed } from '../store';
+
+const AUTH_VERSION_KEY = 'auth_version';
+const CURRENT_AUTH_VERSION = 'v2';
+
+async function runVersionGateMigration() {
+  const authVersion = await AsyncStorage.getItem(AUTH_VERSION_KEY);
+  if (authVersion === CURRENT_AUTH_VERSION) return;
+
+  // Clear legacy integer-ID tokens from v1 auth system
+  await Storage.removeItem('access_token');
+  await Storage.removeItem('refresh_token');
+  await AsyncStorage.setItem(AUTH_VERSION_KEY, CURRENT_AUTH_VERSION);
+}
+
+function applySessionUser(sessionUser: Record<string, unknown>) {
+  const name = asString(sessionUser.name) ?? '';
+  userStore.set({
+    id: asString(sessionUser.id) ?? '',
+    email: asString(sessionUser.email) ?? '',
+    firstName: name.split(' ')[0] ?? '',
+    lastName: name.split(' ').slice(1).join(' ') ?? '',
+    role: asString(sessionUser.role) ?? 'USER',
+    emailVerified: asBoolean(sessionUser.emailVerified) ?? null,
+    avatarUrl: asString(sessionUser.image) ?? null,
+    createdAt: asString(sessionUser.createdAt) ?? null,
+    updatedAt: asString(sessionUser.updatedAt) ?? null,
+    preferredWeightUnit: 'g',
+  });
+}
+
+function isDefinitiveAuthFailure(error: unknown): boolean {
+  const status = (error as { status?: number })?.status;
+  return status === 401 || status === 403;
+}
 
 export function useAuthInit() {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize Google Sign-In
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: clientEnvs.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
@@ -23,32 +59,72 @@ export function useAuthInit() {
     });
   }, []);
 
-  // Check for existing session or skipped login on app load
   useEffect(() => {
     const initializeAuth = async () => {
-      try {
-        setIsLoading(true);
+      await runVersionGateMigration();
 
-        // Check if user has skipped login before
-        const hasSkippedLogin = await AsyncStorage.getItem('skipped_login');
+      // Wait for SQLite persist to hydrate userStore before reading cached user
+      await when(userSyncState.isPersistLoaded);
 
-        // Get stored token
-        const accessToken = await Storage.getItem('access_token');
+      const cachedUser = userStore.get();
+      const hasSkippedLogin = await AsyncStorage.getItem('skipped_login');
 
-        // If user has session or hasSkippedLogin before, continue to app
-        if (accessToken || hasSkippedLogin === 'true') {
-          if (accessToken) isAuthed.set(true);
-          setIsLoading(false);
-          return;
-        } else {
-          // No tokens and hasn't skipped login. It's first time - show auth screen
-          router.replace({
-            pathname: '/auth',
-            params: { showSkipLoginBtn: 'true', redirectTo: '/' },
+      if (cachedUser || hasSkippedLogin === 'true') {
+        // Unblock UI immediately — the app is offline-first
+        setIsLoading(false);
+
+        // Guests have no session to refresh; skip the check entirely
+        if (!cachedUser) return;
+
+        // Refresh session in the background; only sign out on a definitive auth
+        // rejection (401/403), never on network failures (user may be offline)
+        authClient
+          .getSession()
+          .then(({ data: session, error }) => {
+            if (error) {
+              if (isDefinitiveAuthFailure(error)) {
+                userStore.set(null);
+                router.replace('/auth');
+              }
+              return;
+            }
+            if (session?.user) {
+              // safe-cast: widening Better Auth User to Record<string, unknown> for runtime additional-field access
+              applySessionUser(session.user as Record<string, unknown>);
+            } else {
+              // Server confirmed the session is gone
+              userStore.set(null);
+              router.replace('/auth');
+            }
+          })
+          .catch((error) => {
+            if (isDefinitiveAuthFailure(error)) {
+              userStore.set(null);
+              router.replace('/auth');
+            }
+            // Network/transient error — keep cached user silently
           });
+        return;
+      }
+
+      // No cached user — must reach the server to establish a session
+      try {
+        const { data: session, error } = await authClient
+          .getSession()
+          .catch((err) => ({ data: null, error: err as unknown }));
+
+        if (!error && session?.user) {
+          // safe-cast: widening Better Auth User to Record<string, unknown> for runtime additional-field access
+          applySessionUser(session.user as Record<string, unknown>);
+          return;
         }
+
+        router.replace({
+          pathname: '/auth',
+          params: { showSkipLoginBtn: 'true', redirectTo: '/' },
+        });
       } catch (error) {
-        console.error('Failed to load user session:', error);
+        console.error('Failed to initialize auth:', error);
         router.replace('/auth');
       } finally {
         setIsLoading(false);

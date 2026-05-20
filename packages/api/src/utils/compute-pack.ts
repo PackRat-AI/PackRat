@@ -1,83 +1,120 @@
-import type { PackWithItems } from '@packrat/api/db/schema';
-import type { WeightUnit } from '@packrat/api/types';
+import type { PackWithItems } from '@packrat/db';
+import type { WeightUnit } from '@packrat/units';
+import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 
-// Convert weights to a standard unit (grams) for calculations
-const convertToGrams = (weight: number, unit: WeightUnit): number => {
-  switch (unit) {
-    case 'g':
-      return weight;
-    case 'oz':
-      return weight * 28.35;
-    case 'kg':
-      return weight * 1000;
-    case 'lb':
-      return weight * 453.59;
-    default:
-      return weight;
-  }
-};
-
-// Convert from grams back to the desired unit
-const convertFromGrams = (grams: number, unit: WeightUnit): number => {
-  switch (unit) {
-    case 'g':
-      return grams;
-    case 'oz':
-      return grams / 28.35;
-    case 'kg':
-      return grams / 1000;
-    case 'lb':
-      return grams / 453.59;
-    default:
-      return grams;
-  }
-};
-
-export const computePackWeights = (
-  pack: PackWithItems,
-  preferredUnit: WeightUnit = 'g',
-): PackWithItems & {
-  baseWeight: number;
-  totalWeight: number;
-} => {
+export const computePackWeights = ({
+  pack,
+  preferredUnit = 'g',
+}: {
+  pack: PackWithItems;
+  preferredUnit?: WeightUnit;
+}): PackWithItems & { baseWeight: number; totalWeight: number } => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }
 
-  // Initialize weights
   let baseWeightGrams = 0;
   let totalWeightGrams = 0;
 
-  // Calculate weights based on items
   for (const item of pack.items) {
-    const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
-
+    const itemWeightInGrams =
+      normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+      item.quantity;
     totalWeightGrams += itemWeightInGrams;
-
     if (!item.consumable && !item.worn) {
       baseWeightGrams += itemWeightInGrams;
     }
   }
 
-  // Convert back to preferred unit
-  const baseWeight = convertFromGrams(baseWeightGrams, preferredUnit);
-  const totalWeight = convertFromGrams(totalWeightGrams, preferredUnit);
-
-  // Return updated pack with computed weights
   return {
     ...pack,
-    baseWeight: Number(baseWeight.toFixed(2)),
-    totalWeight: Number(totalWeight.toFixed(2)),
+    baseWeight: displayWeight({ grams: baseWeightGrams, unit: preferredUnit }),
+    totalWeight: displayWeight({ grams: totalWeightGrams, unit: preferredUnit }),
   };
 };
 
-// Helper function to compute weights for a list of packs
-export const computePacksWeights = (
-  packs: PackWithItems[],
-  preferredUnit: WeightUnit = 'g',
-): (PackWithItems & {
-  baseWeight: number;
-  totalWeight: number;
-})[] => {
-  return packs.map((pack) => computePackWeights(pack, preferredUnit));
+export const computePacksWeights = ({
+  packs,
+  preferredUnit = 'g',
+}: {
+  packs: PackWithItems[];
+  preferredUnit?: WeightUnit;
+}): (PackWithItems & { baseWeight: number; totalWeight: number })[] =>
+  packs.map((pack) => computePackWeights({ pack, preferredUnit }));
+
+export interface PackCategoryBreakdown {
+  category: string;
+  totalGrams: number;
+  totalLbs: number;
+  itemCount: number;
+  items: string[];
+}
+
+export interface PackWeightBreakdown {
+  packId: string;
+  totalGrams: number;
+  baseGrams: number;
+  wornGrams: number;
+  consumableGrams: number;
+  itemCount: number;
+  byCategory: PackCategoryBreakdown[];
+}
+
+const GRAMS_PER_LB = 453.592;
+
+/**
+ * Full weight breakdown including worn/consumable totals and a per-category
+ * grouping sorted heaviest first. Replaces ad-hoc breakdowns the edge apps
+ * were computing client-side.
+ */
+export const computePackBreakdown = (pack: PackWithItems): PackWeightBreakdown => {
+  if (!pack.items) {
+    throw new Error(`Pack with ID ${pack.id} has no items`);
+  }
+
+  let totalGrams = 0;
+  let baseGrams = 0;
+  let wornGrams = 0;
+  let consumableGrams = 0;
+  const byCategory: Record<string, PackCategoryBreakdown> = {};
+
+  for (const item of pack.items) {
+    const itemGrams =
+      normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+      item.quantity;
+    totalGrams += itemGrams;
+    if (item.worn) wornGrams += itemGrams;
+    if (item.consumable) consumableGrams += itemGrams;
+    if (!item.worn && !item.consumable) baseGrams += itemGrams;
+
+    const cat = item.category || 'Uncategorized';
+    const entry = byCategory[cat] ?? {
+      category: cat,
+      totalGrams: 0,
+      totalLbs: 0,
+      itemCount: 0,
+      items: [],
+    };
+    entry.totalGrams += itemGrams;
+    entry.itemCount += item.quantity;
+    entry.items.push(`${item.name} (${item.weight}${item.weightUnit ?? 'g'} × ${item.quantity})`);
+    byCategory[cat] = entry;
+  }
+
+  for (const entry of Object.values(byCategory)) {
+    entry.totalLbs = Math.round((entry.totalGrams / GRAMS_PER_LB) * 100) / 100;
+  }
+
+  // Quantity-aware so the top-level total matches the sum of byCategory
+  // itemCount values (a pack with `qty: 3` of a single row counts as 3).
+  const itemCount = pack.items.reduce((sum, item) => sum + item.quantity, 0);
+  return {
+    packId: pack.id,
+    totalGrams: Math.round(totalGrams),
+    baseGrams: Math.round(baseGrams),
+    wornGrams: Math.round(wornGrams),
+    consumableGrams: Math.round(consumableGrams),
+    itemCount,
+    byCategory: Object.values(byCategory).sort((a, b) => b.totalGrams - a.totalGrams),
+  };
 };

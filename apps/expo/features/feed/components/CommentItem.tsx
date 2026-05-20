@@ -9,7 +9,7 @@ interface CommentItemProps {
   comment: Comment;
   onLike: (commentId: number) => void;
   onDelete?: (commentId: number) => void;
-  currentUserId?: number;
+  currentUserId?: string;
 }
 
 export const CommentItem: React.FC<CommentItemProps> = ({
@@ -30,7 +30,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
         <View className="flex-row items-center gap-2 flex-wrap">
           <Text className="font-semibold text-sm">{formatAuthorName(comment)}</Text>
           <Text className="text-xs text-muted-foreground">
-            {formatRelativeDate(comment.createdAt)}
+            {formatRelativeDate({ dateValue: comment.createdAt })}
           </Text>
         </View>
         <Text className="text-sm mt-0.5">{comment.content}</Text>

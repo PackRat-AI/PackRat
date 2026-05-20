@@ -37,16 +37,18 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.24',
+      version: '2.0.26',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
-        output: 'static',
+        output: 'single',
         favicon: './assets/favicon.png',
       },
       plugins: [
         'expo-router',
         'expo-sqlite',
+        'expo-font',
+        'expo-image',
         [
           '@react-native-google-signin/google-signin',
           {
@@ -66,6 +68,7 @@ export default (): ExpoConfig =>
             enableOpenCLAndHexagon: false,
           },
         ],
+        ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
       ],

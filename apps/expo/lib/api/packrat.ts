@@ -1,39 +1,48 @@
 import { createApiClient } from '@packrat/api-client';
 import { clientEnvs } from '@packrat/env/expo-client';
+import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
-import {
-  needsReauthAtom,
-  refreshTokenAtom,
-  tokenAtom,
-} from 'expo-app/features/auth/atoms/authAtoms';
-import Storage from 'expo-sqlite/kv-store';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { authClient } from 'expo-app/lib/auth-client';
+import * as SecureStore from 'expo-secure-store';
+import { z } from 'zod';
 
-/**
- * Typed Treaty-backed PackRat API client for the Expo app.
- *
- * Session state (token persistence, reauth signal) lives here — the
- * `@packrat/api-client` package is transport-only and accepts injected
- * auth hooks so guides and landing can reuse it with their own storage
- * layers.
- *
- * Usage:
- * ```ts
- * import { apiClient } from 'expo-app/lib/api/packrat';
- * const { data, error } = await apiClient.catalog.get({ query: { limit: 10 } });
- * ```
- */
+// The expoClient plugin serialises all cookies into SecureStore under this key.
+// Parsing it locally avoids a network round-trip on every API request.
+const COOKIE_STORE_KEY = 'packrat_cookie';
+
+const CookieStoreSchema = z.record(z.object({ value: z.string() }));
+
+// expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
+// HTTPS servers (remote dev/prod) prefix the cookie name with __Secure-; HTTP (local) does not.
+function parseSessionToken(cookieJson: string | null): string | null {
+  if (!cookieJson) return null;
+  const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
+  if (!cookies) return null;
+  return (
+    cookies['better-auth.session_token']?.value ??
+    cookies['__Secure-better-auth.session_token']?.value ??
+    null
+  );
+}
+
 export const apiClient = createApiClient({
   baseUrl: clientEnvs.EXPO_PUBLIC_API_URL,
   auth: {
-    getAccessToken: () => Storage.getItem('access_token'),
-    getRefreshToken: () => Storage.getItem('refresh_token'),
-    onAccessTokenRefreshed: async (accessToken) => {
-      await store.set(tokenAtom, accessToken);
+    // Read the token from SecureStore — no network call on every API request.
+    getAccessToken: async () => {
+      const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
+      return parseSessionToken(cookieStr);
     },
-    onRefreshTokenRefreshed: async (refreshToken) => {
-      await store.set(refreshTokenAtom, refreshToken);
-    },
-    onNeedsReauth: () => {
+    // Better Auth has no separate refresh-token endpoint; the 7-day session
+    // token is the only credential. Returning null here is intentional.
+    getRefreshToken: () => null,
+    onAccessTokenRefreshed: () => {},
+    onNeedsReauth: async () => {
+      // A 401 can be transient (e.g. the server briefly returned an error).
+      // Verify the session is actually gone before alarming the user.
+      const { data } = await authClient.getSession();
+      if (data?.session) return;
       store.set(needsReauthAtom, true);
     },
   },
