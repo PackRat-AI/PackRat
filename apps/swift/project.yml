@@ -73,7 +73,15 @@ targets:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
-          - CFBundleURLSchemes:
+          # Primary deep-link scheme — matches Expo's `scheme: 'packrat'` in app.config.ts
+          # so deep links survive an iOS-to-Swift swap without re-issuing existing universal
+          # links / partner-shared URLs.
+          - CFBundleURLName: world.packrat.deeplinks
+            CFBundleURLSchemes:
+              - packrat
+          # Reverse-DNS scheme retained for Google Sign-In OAuth callback parity with Expo.
+          - CFBundleURLName: world.packrat.oauth
+            CFBundleURLSchemes:
               - com.andrewbierman.packrat
     dependencies:
       - package: Nuke
