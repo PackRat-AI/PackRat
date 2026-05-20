@@ -284,7 +284,9 @@ Scheduled (CF Cron Trigger or scheduled workflow):
 
 ---
 
-### U2. Drizzle migration 0048: workflow_instance_id, verification columns, supersession, embedding-failure counter, etag capture
+### U2. Drizzle migration 0048: workflow_instance_id + embedding-failure counter (slimmed during implementation)
+
+> **Scope adjustment (2026-05-20):** During PR review the schema additions were narrowed from 8 columns to 2. Rationale: most of the originally-scoped columns (`verified_at`, `verified_row_count`, `superseded_by_job_id`, `superseded_at`, `source_etag`, `source_last_modified`) exist to support audit findings whose consumers (U5 repair endpoint, U6 Sentry observability, the reconcile UI) ship in later PRs. Adding them now creates dead schema. Each follow-up unit adds the column it needs when it lands. The two columns kept are the ones with value from day one: `workflow_instance_id` links every new `etl_jobs` row to its CF Workflows instance for admin debugging, and `total_embedding_failures` makes embedding-fallback degradation observable in admin queries without code changes elsewhere. The text below describes the originally-scoped 8 columns for context; what actually ships is the slim version.
 
 **Goal:** Add the minimal schema columns Workflows-based execution needs for DB-side denormalization (admin queries continue to work without hitting the Workflows API for every list).
 
