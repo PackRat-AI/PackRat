@@ -41,7 +41,7 @@ async function setup() {
 
   // Priority 2: log in with the seeded E2E user (CI path, matches iOS/Android pattern)
   if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
-    const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+    const loginRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: process.env.TEST_EMAIL, password: process.env.TEST_PASSWORD }),
@@ -50,12 +50,15 @@ async function setup() {
       const body = await loginRes.text();
       throw new Error(`Login failed ${loginRes.status}: ${body}`);
     }
-    const { accessToken, refreshToken, user } = (await loginRes.json()) as {
-      accessToken: string;
-      refreshToken: string;
+    const { session, refreshToken, user } = (await loginRes.json()) as {
+      session: { token: string };
+      refreshToken?: string;
       user: Record<string, unknown>;
     };
-    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
+    fs.writeFileSync(
+      TOKENS_FILE,
+      JSON.stringify({ accessToken: session.token, refreshToken: refreshToken ?? null, user }),
+    );
     console.log(`[globalSetup] Logged in as ${process.env.TEST_EMAIL}`);
     return;
   }
