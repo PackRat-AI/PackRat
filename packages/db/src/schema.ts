@@ -4,6 +4,7 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -14,6 +15,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   vector,
 } from 'drizzle-orm/pg-core';
 import type { ValidationError } from './validation';
@@ -472,9 +474,27 @@ export const etlJobs = pgTable(
     totalValid: integer('total_valid'),
     totalInvalid: integer('total_invalid'),
     scraperRevision: text('scraper_revision').notNull(),
+    // Workflows-aware columns (added in migration 0048; see plan U2 in
+    // docs/plans/2026-05-20-001-fix-etl-pipeline-workflows-migration-plan.md).
+    workflowInstanceId: text('workflow_instance_id'),
+    verifiedAt: timestamp('verified_at'),
+    verifiedRowCount: integer('verified_row_count'),
+    totalEmbeddingFailures: integer('total_embedding_failures').default(0).notNull(),
+    supersededByJobId: text('superseded_by_job_id').references((): AnyPgColumn => etlJobs.id, {
+      onDelete: 'set null',
+    }),
+    supersededAt: timestamp('superseded_at'),
+    sourceEtag: text('source_etag'),
+    sourceLastModified: timestamp('source_last_modified'),
   },
   (table) => ({
     scraperRevisionIdx: index('etl_jobs_scraper_revision_idx').on(table.scraperRevision),
+    workflowInstanceIdIdx: index('etl_jobs_workflow_instance_id_idx').on(table.workflowInstanceId),
+    supersededByIdx: index('etl_jobs_superseded_by_idx').on(table.supersededByJobId),
+    noSelfSupersede: check(
+      'etl_jobs_no_self_supersede',
+      sql`${table.supersededByJobId} IS NULL OR ${table.supersededByJobId} <> ${table.id}`,
+    ),
   }),
 );
 
@@ -490,16 +510,28 @@ export const invalidItemLogsRelations = relations(invalidItemLogs, ({ one }) => 
   job: one(etlJobs, { fields: [invalidItemLogs.jobId], references: [etlJobs.id] }),
 }));
 
-export const catalogItemEtlJobs = pgTable('catalog_item_etl_jobs', {
-  id: serial('id').primaryKey(),
-  catalogItemId: integer('catalog_item_id')
-    .references(() => catalogItems.id, { onDelete: 'cascade' })
-    .notNull(),
-  etlJobId: text('etl_job_id')
-    .references(() => etlJobs.id, { onDelete: 'cascade' })
-    .notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+export const catalogItemEtlJobs = pgTable(
+  'catalog_item_etl_jobs',
+  {
+    id: serial('id').primaryKey(),
+    catalogItemId: integer('catalog_item_id')
+      .references(() => catalogItems.id, { onDelete: 'cascade' })
+      .notNull(),
+    etlJobId: text('etl_job_id')
+      .references(() => etlJobs.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    // Prevents duplicate provenance rows when a workflow step is retried and
+    // re-upserts the same SKU under the same job. Upserts can use
+    // ON CONFLICT (catalog_item_id, etl_job_id) DO NOTHING.
+    catalogJobUnique: uniqueIndex('catalog_item_etl_jobs_catalog_job_idx').on(
+      table.catalogItemId,
+      table.etlJobId,
+    ),
+  }),
+);
 
 export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one }) => ({
   catalogItem: one(catalogItems, {
