@@ -31,6 +31,13 @@
     {
       "target" : {
         "containerPath" : "container:PackRat.xcodeproj",
+        "identifier" : "PackRatTests",
+        "name" : "PackRatTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:PackRat.xcodeproj",
         "identifier" : "PackRatUITests",
         "name" : "PackRatUITests"
       }
