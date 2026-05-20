@@ -25,17 +25,21 @@ describe('listBootedFromJson', () => {
 
 describe('findDeviceUDIDFromJson', () => {
   it('returns the UDID of the named device', () => {
-    expect(findDeviceUDIDFromJson(FIXTURE, 'iPhone 17 Pro Max')).toBe(
+    expect(findDeviceUDIDFromJson({ json: FIXTURE, name: 'iPhone 17 Pro Max' })).toBe(
       '80CB45AB-289A-49C9-BCF6-DC2FEE265A68',
     );
   });
 
   it('throws a SimctlError listing available device names when no match exists', () => {
-    expect(() => findDeviceUDIDFromJson(FIXTURE, 'iPhone 99')).toThrow(/iPhone 17 Pro/);
+    expect(() => findDeviceUDIDFromJson({ json: FIXTURE, name: 'iPhone 99' })).toThrow(
+      /iPhone 17 Pro/,
+    );
   });
 
   it('throws SimctlError on malformed JSON', () => {
-    expect(() => findDeviceUDIDFromJson('not json', 'iPhone 17 Pro')).toThrow(SimctlError);
+    expect(() => findDeviceUDIDFromJson({ json: 'not json', name: 'iPhone 17 Pro' })).toThrow(
+      SimctlError,
+    );
   });
 });
 

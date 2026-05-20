@@ -82,7 +82,7 @@ function escapeXml(s: string): string {
     .replace(SQUOTE_RE, '&apos;');
 }
 
-function injectScheme(email: string, password: string): void {
+function injectScheme({ email, password }: { email: string; password: string }): void {
   let content = readFileSync(SCHEME_PATH, 'utf8');
 
   // Strip any prior EnvironmentVariables block (idempotent re-runs).
@@ -149,7 +149,7 @@ try {
 
 // ── Run xcodebuild ───────────────────────────────────────────────────────────
 
-injectScheme(E2E_EMAIL, E2E_PASSWORD);
+injectScheme({ email: E2E_EMAIL, password: E2E_PASSWORD });
 console.log('✓ Injected E2E credentials into scheme');
 
 const dest = pickDestination();
