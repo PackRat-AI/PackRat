@@ -21,6 +21,7 @@
 // boundary unpacks it into errorName/errorMessage/errorStack fields and
 // forwards to Sentry.
 
+import { isBoolean, isNumber, isString } from '@packrat/guards';
 import { addBreadcrumb, captureException, captureMessage, isInitialized } from '@sentry/cloudflare';
 
 export type LogContext = Record<string, unknown> & { err?: unknown };
@@ -44,7 +45,7 @@ function forwardToSentry({ level, event, ctx }: EmitArgs): void {
         err = v;
         continue;
       }
-      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+      if (isString(v) || isNumber(v) || isBoolean(v)) {
         sentryTags[k] = String(v);
       } else {
         sentryExtras[k] = v;
