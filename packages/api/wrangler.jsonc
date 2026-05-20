@@ -90,14 +90,16 @@
   "ai": {
     "binding": "AI"
   },
-  // U1 spike — Cloudflare Workflows binding for the ETL migration POC.
-  // Remove after Workflows GO/NO-GO decision; replace with the production
-  // CatalogEtlWorkflow binding defined in U3.
+  // Catalog ETL workflow — the durable execution engine for catalog ingests.
+  // The producer endpoint at POST /catalog/etl triggers a new instance per
+  // source CSV; each chunk is a step.do call inside the workflow. Replaces
+  // the previous Queues-based path (which remains available during the
+  // coexistence window via ?engine=queue on the producer endpoint).
   "workflows": [
     {
-      "name": "spike-etl-workflow",
-      "binding": "SPIKE_ETL_WORKFLOW",
-      "class_name": "SpikeEtlWorkflow"
+      "name": "packrat-catalog-etl",
+      "binding": "ETL_WORKFLOW",
+      "class_name": "CatalogEtlWorkflow"
     }
   ],
   // OSM / trail database — dedicated Postgres instance with PostGIS.
