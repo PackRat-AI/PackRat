@@ -1,3 +1,4 @@
+import { mintId } from '@packrat/api/utils/ids';
 import type { packTemplateItems, packTemplates } from '@packrat/db';
 import type { InferInsertModel } from 'drizzle-orm';
 
@@ -11,7 +12,7 @@ export const createTestPackTemplate = (
   overrides: PackTemplateOverrides,
 ): InferInsertModel<typeof packTemplates> => {
   const now = new Date();
-  const id = overrides.id ?? `pt_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const id = overrides.id ?? mintId('pt_test');
   return {
     id,
     clientUuid: overrides.clientUuid ?? id,
@@ -40,7 +41,7 @@ export const createTestPackTemplateItem = (
   packTemplateId: string,
   overrides: PackTemplateItemOverrides,
 ): InferInsertModel<typeof packTemplateItems> => {
-  const id = overrides.id ?? `pti_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const id = overrides.id ?? mintId('pti_test');
   return {
     id,
     clientUuid: overrides.clientUuid ?? id,

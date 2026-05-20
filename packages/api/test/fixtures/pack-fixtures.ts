@@ -1,3 +1,4 @@
+import { mintId } from '@packrat/api/utils/ids';
 import type { packItems, packs } from '@packrat/db';
 import type { InferInsertModel } from 'drizzle-orm';
 
@@ -10,7 +11,7 @@ type PackItemOverrides = Partial<InferInsertModel<typeof packItems>> & { userId:
  */
 export const createTestPack = (overrides: PackOverrides): InferInsertModel<typeof packs> => {
   const now = new Date();
-  const id = overrides.id ?? `pack_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const id = overrides.id ?? mintId('pack_test');
   return {
     id,
     clientUuid: overrides.clientUuid ?? id,
@@ -33,7 +34,7 @@ export const createTestPackItem = (
   packId: string,
   overrides: PackItemOverrides,
 ): InferInsertModel<typeof packItems> => {
-  const id = overrides.id ?? `item_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const id = overrides.id ?? mintId('item_test');
   return {
     id,
     clientUuid: overrides.clientUuid ?? id,
