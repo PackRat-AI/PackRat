@@ -3,7 +3,7 @@
  *
  * getAuth(env) is called per-request so each isolate invocation picks up the
  * correct KV binding, credentials, and DB connection.  The result is cached
- * in a WeakMap keyed by the raw env object so the instance is reused across
+ * in a Map keyed by NEON_DATABASE_URL so the same instance is reused across
  * requests within the same isolate lifetime.
  */
 
@@ -17,12 +17,15 @@ import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
+// Keyed by NEON_DATABASE_URL so the same instance is reused across requests
+// within the same isolate — miniflare creates a new env object per request,
+// so a WeakMap would never hit and every request would re-initialize auth.
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
-const authCache = new WeakMap<object, any>();
+const authCache = new Map<string, any>();
 
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cached = authCache.get(env as object);
+  const cached = authCache.get(env.NEON_DATABASE_URL);
   if (cached) return cached;
 
   const appleClientSecret = await generateAppleClientSecret(env);
@@ -157,7 +160,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
     trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
   });
 
-  authCache.set(env as object, auth);
+  authCache.set(env.NEON_DATABASE_URL, auth);
   return auth;
 }
 
