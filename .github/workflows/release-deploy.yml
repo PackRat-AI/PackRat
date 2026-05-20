@@ -1,0 +1,80 @@
+name: Release Deploy
+
+# Triggers automatically when a release/* branch is merged into main.
+# This is the second half of the release pipeline for the "API changed" path:
+# once the team has reviewed and merged the release PR (which may include API
+# changes whose Cloudflare Worker deployment is handled separately), this
+# workflow queues the EAS production build and store submissions, then creates
+# the Sentry release.
+#
+# For the "API unchanged" path, builds are queued directly by release-cut.yml.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+concurrency:
+  group: release-deploy-${{ github.event.pull_request.head.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  eas-build:
+    name: EAS Production Build + Submit
+    # Only runs when a release/* branch is merged (not just closed).
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Resolve release ref
+        id: ref
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          # branch is release/vX.Y.Z → strip prefix to get the tag
+          TAG="${BRANCH#release/}"
+          VERSION="${TAG#v}"
+          echo "branch=$BRANCH"   >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.tag }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build + Submit · iOS
+        working-directory: apps/expo
+        run: eas build --platform ios --profile production --non-interactive --auto-submit
+
+      - name: EAS Build + Submit · Android
+        working-directory: apps/expo
+        run: eas build --platform android --profile production --non-interactive --auto-submit
+
+      - name: Create Sentry release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          bunx @sentry/cli releases new "${{ steps.ref.outputs.version }}"
+          bunx @sentry/cli releases set-commits "${{ steps.ref.outputs.version }}" --auto
+          bunx @sentry/cli releases finalize "${{ steps.ref.outputs.version }}"
