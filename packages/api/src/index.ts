@@ -17,9 +17,24 @@ import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLog
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
+import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
+
+// Sentry options for both the Worker handlers and the workflow class.
+// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
+// defaults to 10% — observable enough for prod debugging without
+// overwhelming the Sentry quota.
+function sentryOptions(env: Env) {
+  return {
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT,
+    tracesSampleRate: 0.1,
+    release: env.CF_VERSION_METADATA?.id,
+  };
+}
 
 export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(
@@ -78,7 +93,13 @@ export type App = typeof app;
 
 export { AppContainer };
 
-export { CatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+// Wrap the workflow class with Sentry instrumentation so each step.do span
+// + any uncaught throw inside a step lands in Sentry with workflow/instance
+// context attached automatically.
+export const CatalogEtlWorkflow = instrumentWorkflowWithSentry(
+  sentryOptions,
+  RawCatalogEtlWorkflow,
+);
 
 type CfFetchFn = (
   request: Request,
@@ -93,7 +114,7 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
-export default {
+const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
@@ -147,4 +168,9 @@ export default {
 
     throw new Error(`Unknown cron: ${controller.cron}`);
   },
-} satisfies ExportedHandler<Env>;
+};
+
+// withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
+// on first invocation and forward uncaught exceptions to Sentry. The
+// instrumented workflow class is exported separately above.
+export default withSentry(sentryOptions, handler);
