@@ -9,13 +9,12 @@
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { expo } from '@better-auth/expo';
-import { neon } from '@neondatabase/serverless';
 import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
+import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
-import { drizzle } from 'drizzle-orm/neon-http';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
@@ -28,8 +27,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
 
   const appleClientSecret = await generateAppleClientSecret(env);
 
-  // Use the HTTP Neon driver — no long-lived connections inside a Worker.
-  const db = drizzle(neon(env.NEON_DATABASE_URL), { schema });
+  const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
 
   const auth = betterAuth({
     baseURL: env.BETTER_AUTH_URL,

@@ -23,7 +23,7 @@ const isStandardPostgresUrl = (url: string) => {
 
 const pgPools = new Map<string, Pool>();
 
-const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
+export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
     let pool = pgPools.get(url);
     if (!pool) {
