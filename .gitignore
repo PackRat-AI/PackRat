@@ -64,3 +64,5 @@ apps/swift/Package.resolved
 apps/swift/PackRatAPIClient/.build/
 apps/swift/PackRatAPIClient/.swiftpm/
 apps/swift/TestResults/
+
+apps/swift/build/
