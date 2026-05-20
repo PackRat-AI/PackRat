@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// E2E tests for AI Chat: input, send, response streaming.
 final class ChatTests: AppUITestCase {
 
@@ -77,3 +80,5 @@ final class ChatTests: AppUITestCase {
         }
     }
 }
+
+#endif

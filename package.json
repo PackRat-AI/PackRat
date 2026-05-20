@@ -25,6 +25,7 @@
     "clean": "bun run .github/scripts/clean.ts",
     "configure:deps": "bun run .github/scripts/configure-deps.ts",
     "e2e:swift": "bun run apps/swift/scripts/run-e2e.ts",
+    "e2e:swift:macos": "bun run apps/swift/scripts/run-e2e-macos.ts",
     "env": "bun run .github/scripts/env.ts",
     "expo": "cd apps/expo && bun start",
     "fix:deps": "bun manypkg fix",

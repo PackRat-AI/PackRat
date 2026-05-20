@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "5E1A1F00-0001-4001-A000-000000000001",
+      "id" : "5E1A1F00-0003-4001-A000-000000000001",
       "name" : "Default",
       "options" : {
 
@@ -9,7 +9,6 @@
     }
   ],
   "defaultOptions" : {
-    "areLocalizationScreenshotsEnabled" : false,
     "codeCoverage" : false,
     "diagnosticCollectionPolicy" : "Never",
     "environmentVariableEntries" : [
@@ -31,8 +30,15 @@
     {
       "target" : {
         "containerPath" : "container:PackRat.xcodeproj",
-        "identifier" : "PackRatUITests",
-        "name" : "PackRatUITests"
+        "identifier" : "PackRatMacOSTests",
+        "name" : "PackRatMacOSTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:PackRat.xcodeproj",
+        "identifier" : "PackRatMacOSUITests",
+        "name" : "PackRatMacOSUITests"
       }
     }
   ],

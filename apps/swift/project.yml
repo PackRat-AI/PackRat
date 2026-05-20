@@ -151,6 +151,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 7WV9JYCW55
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac
+        # Match iOS target so @testable import PackRat resolves on both platforms.
+        PRODUCT_MODULE_NAME: PackRat
 
   PackRatTests:
     type: bundle.unit-test
@@ -171,6 +173,30 @@ targets:
       - Tests/PackRatUITests
     dependencies:
       - target: PackRat-iOS
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+
+  PackRatMacOSTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/PackRatTests
+    dependencies:
+      - target: PackRat-macOS
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+
+  PackRatMacOSUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - Tests/PackRatUITests
+    dependencies:
+      - target: PackRat-macOS
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -199,6 +225,16 @@ schemes:
     build:
       targets:
         PackRat-macOS: all
+        PackRatMacOSTests: [test]
+        PackRatMacOSUITests: [test]
+    test:
+      testPlans:
+        - path: TestPlans/macOS-Full.xctestplan
+          defaultPlan: true
+        - path: TestPlans/macOS-Smoke.xctestplan
+      targets:
+        - PackRatMacOSTests
+        - PackRatMacOSUITests
     run:
       config: Debug
     archive:

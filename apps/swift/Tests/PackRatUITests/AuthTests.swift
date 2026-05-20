@@ -88,10 +88,19 @@ final class AuthTests: XCTestCase {
 
         app.buttons["login_submit"].tap()
 
+        // Logged-in landmark: tab bar on iOS, sidebar Home row on macOS.
+        #if os(iOS)
         XCTAssertTrue(
             app.tabBars.firstMatch.waitForExistence(timeout: 20),
             "Tab bar must appear after successful login"
         )
+        #elseif os(macOS)
+        XCTAssertTrue(
+            app.staticTexts["Home"].waitForExistence(timeout: 20)
+                || app.outlines.firstMatch.waitForExistence(timeout: 1),
+            "Sidebar / outline must appear after successful login"
+        )
+        #endif
         XCTAssertFalse(app.textFields["login_email"].exists, "Login form should be dismissed")
     }
 }

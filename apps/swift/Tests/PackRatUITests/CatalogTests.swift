@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// E2E tests for Gear Catalog search and item detail.
 final class CatalogTests: AppUITestCase {
 
@@ -70,3 +73,5 @@ final class CatalogTests: AppUITestCase {
         }
     }
 }
+
+#endif

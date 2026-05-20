@@ -24,9 +24,25 @@ class AppUITestCase: XCTestCase {
 
     // MARK: - Login helper
 
+    /// Best-effort cross-platform "is the user logged in?" detector.
+    ///
+    /// iOS: tab bar is the unmistakable signal. macOS uses a NavigationSplitView
+    /// sidebar — looks for the "Home" sidebar entry by accessibility label.
+    var isLoggedIn: Bool {
+        #if os(iOS)
+        return app.tabBars.firstMatch.waitForExistence(timeout: 2)
+        #elseif os(macOS)
+        // The macOS sidebar exposes nav rows as static texts with the section label.
+        if app.staticTexts["Home"].waitForExistence(timeout: 2) { return true }
+        return app.outlines.firstMatch.exists
+        #else
+        return false
+        #endif
+    }
+
     func loginIfNeeded() throws {
         // Already logged in from a previous test (app not relaunched between classes)
-        if app.tabBars.firstMatch.waitForExistence(timeout: 2) { return }
+        if isLoggedIn { return }
 
         let email = ProcessInfo.processInfo.environment["E2E_EMAIL"] ?? ""
         let password = ProcessInfo.processInfo.environment["E2E_PASSWORD"] ?? ""
@@ -48,13 +64,29 @@ class AppUITestCase: XCTestCase {
         app.buttons["login_submit"].tap()
 
         XCTAssertTrue(
-            app.tabBars.firstMatch.waitForExistence(timeout: 20),
-            "Tab bar must appear after login — check credentials or network"
+            waitForLoggedIn(timeout: 20),
+            "Logged-in landmark must appear after login — check credentials or network"
         )
     }
 
-    // MARK: - Navigation helpers
+    /// Cross-platform "is the user logged in NOW?" wait with an explicit timeout.
+    /// Distinct from `isLoggedIn` (which has a short fixed wait) so login flow
+    /// can wait longer than the warm-cache short-circuit check.
+    @discardableResult
+    func waitForLoggedIn(timeout: TimeInterval) -> Bool {
+        #if os(iOS)
+        return app.tabBars.firstMatch.waitForExistence(timeout: timeout)
+        #elseif os(macOS)
+        return app.staticTexts["Home"].waitForExistence(timeout: timeout)
+            || app.outlines.firstMatch.waitForExistence(timeout: 1)
+        #else
+        return false
+        #endif
+    }
 
+    // MARK: - Navigation helpers (iOS-only — macOS uses sidebar)
+
+    #if os(iOS)
     /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
     /// the rest behind a "More" overflow tab — this helper handles both cases.
     func goToTab(_ label: String) {
@@ -95,6 +127,7 @@ class AppUITestCase: XCTestCase {
         )
         direct.tap()
     }
+    #endif
 
     // MARK: - Wait helpers
 
@@ -153,8 +186,13 @@ extension XCUIElement {
         if selectAll.waitForExistence(timeout: 0.5) {
             selectAll.tap()
         } else {
-            // Fallback: move to end and backspace
+            // Fallback: move to end and backspace.
+            // XCUIKeyboardKey.delete only exists on iOS; on macOS we use "\u{8}" (backspace).
+            #if os(iOS)
             let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count)
+            #else
+            let deleteString = String(repeating: "\u{8}", count: existing.count)
+            #endif
             typeText(deleteString)
         }
         typeText(text)

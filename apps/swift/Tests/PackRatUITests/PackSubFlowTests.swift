@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// Sub-flows reachable from Packs: Weight Analysis, Recent Packs.
 final class PackSubFlowTests: AppUITestCase {
     private var createdPackName: String?
@@ -137,3 +140,5 @@ final class PackSubFlowTests: AppUITestCase {
         deleteButton.tap()
     }
 }
+
+#endif

@@ -4,4 +4,9 @@
 
 // NOTE: xcconfig files treat // as a comment, so full URLs can't be stored here.
 // Use PACKRAT_ENV to select an environment; URLs live in APIClient.swift.
-PACKRAT_ENV = local
+//
+// Default = dev so a clean Debug build reaches a working API. Active local-dev
+// workflows that want http://localhost:8787 should drop the override:
+//   echo "PACKRAT_ENV = local" > xcconfig/Config-Debug.local.xcconfig
+// The .local.xcconfig file is gitignored and picked up via the #include? above.
+PACKRAT_ENV = dev

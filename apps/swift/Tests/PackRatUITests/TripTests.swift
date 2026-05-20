@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// End-to-end tests for Trips: planning, viewing, editing, deleting.
 final class TripTests: AppUITestCase {
     private var createdTripName: String?
@@ -139,3 +142,5 @@ final class TripTests: AppUITestCase {
         deleteButton.tap()
     }
 }
+
+#endif

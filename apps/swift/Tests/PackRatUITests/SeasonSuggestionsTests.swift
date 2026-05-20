@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// E2E tests for Season Suggestions — opens from the Home tab.
 final class SeasonSuggestionsTests: AppUITestCase {
 
@@ -63,3 +66,5 @@ final class SeasonSuggestionsTests: AppUITestCase {
         app.buttons["Done"].tapIfExists()
     }
 }
+
+#endif
