@@ -102,6 +102,11 @@
       "class_name": "CatalogEtlWorkflow"
     }
   ],
+  // Daily 09:00 UTC retention sweep of invalid_item_logs (>90 days old).
+  // Handled by the `scheduled` arm in src/index.ts.
+  "triggers": {
+    "crons": ["0 9 * * *"]
+  },
   // OSM / trail database — dedicated Postgres instance with PostGIS.
   // Add a Hyperdrive binding when ready:
   //   wrangler hyperdrive create osm-db --connection-string="postgresql://..."
@@ -221,6 +226,9 @@
           "class_name": "CatalogEtlWorkflow"
         }
       ],
+      "triggers": {
+        "crons": ["0 9 * * *"]
+      },
       "containers": [
         {
           "name": "packrat-api-container-dev",
