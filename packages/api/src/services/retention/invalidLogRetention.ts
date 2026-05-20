@@ -74,7 +74,7 @@ export async function sweepInvalidItemLogs(
     const removed = await db
       .delete(invalidItemLogs)
       .where(inArray(invalidItemLogs.id, selectExpired))
-      .returning({ id: invalidItemLogs.id });
+      .returning();
 
     const rowCount = removed.length;
     deleted += rowCount;
