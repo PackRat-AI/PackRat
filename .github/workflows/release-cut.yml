@@ -163,6 +163,11 @@ jobs:
         # script works; neither is pushed without the push step below.
         run: bun bump ${{ steps.norm.outputs.version }}
 
+      - name: Validate bump output
+        run: |
+          git tag --list '${{ steps.norm.outputs.tag }}' | grep -q . || \
+            { echo "ERROR: bun bump did not create tag ${{ steps.norm.outputs.tag }}"; exit 1; }
+
       - name: Refresh lockfile after version bump
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
@@ -171,6 +176,15 @@ jobs:
           if ! git diff --quiet bun.lock; then
             git add bun.lock
             git commit -m "chore: update lockfile for ${{ steps.norm.outputs.tag }}"
+          fi
+
+      - name: Retag HEAD after lockfile refresh
+        # If the lockfile refresh created a new commit, the tag from bun bump
+        # points at the pre-lockfile commit. Force-move it to HEAD so the tag
+        # and the release branch tip always refer to the same SHA.
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse ${{ steps.norm.outputs.tag }})" ]; then
+            git tag -f ${{ steps.norm.outputs.tag }} HEAD
           fi
 
       - name: Push release branch and tag
@@ -191,7 +205,7 @@ jobs:
         id: api_check
         run: |
           # New tag is first in the sorted list; previous release is second.
-          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p')
+          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p' || true)
           echo "Previous release tag: ${PREV_TAG:-<none>}"
           if [ -z "$PREV_TAG" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -206,7 +220,7 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p')
+          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p' || true)
           RANGE="${PREV_TAG:+${PREV_TAG}..HEAD}"
 
           FEATS=$(git log ${RANGE} --pretty=format:"%s (%h)" --no-merges \

@@ -24,10 +24,12 @@ permissions:
 jobs:
   eas-build:
     name: EAS Production Build + Submit
-    # Only runs when a release/* branch is merged (not just closed).
+    # Only runs when a release/* branch is merged (not just closed), and only
+    # from the canonical repo (prevents fork PRs from attempting secret access).
     if: |
       github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/')
+      startsWith(github.event.pull_request.head.ref, 'release/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

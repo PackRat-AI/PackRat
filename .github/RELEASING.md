@@ -38,7 +38,7 @@ Confirm these secrets exist in the repo's GitHub Settings → Secrets and variab
 | API changed flag is correct | Summary — API changed row; cross-check with `git diff <prev-tag> development -- packages/api/` locally |
 | All remote actions unchecked | Summary — Remote actions section shows `[ ]` for all |
 | No branch created on origin | `git branch -r \| grep release` returns nothing |
-| No tag pushed | `git tag --list 'v2.0.27'` on origin returns nothing |
+| No tag pushed | `git ls-remote --tags origin 'refs/tags/v2.0.27'` returns nothing |
 | No GitHub Release created | Releases page on GitHub shows no new entry |
 | No PR opened | Pull Requests tab shows no release PR |
 | `eas-build-dryrun` job shows correct commands | Job log shows both platforms, correct profile and submit targets |
