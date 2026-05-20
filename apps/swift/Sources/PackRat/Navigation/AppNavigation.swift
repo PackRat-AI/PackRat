@@ -4,7 +4,7 @@ enum NavItem: String, CaseIterable, Identifiable {
     // Order matters: first 4 appear in iPhone tab bar, rest in "More"
     case home, packs, trips, weather, chat
     case catalog, templates, trailConditions, feed
-    case guides, gearInventory, wildlife
+    case guides, gearInventory, wildlife, aiPacks
 
     var id: String { rawValue }
     var label: String {
@@ -21,6 +21,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .guides:        return "Guides"
         case .gearInventory: return "Gear Inventory"
         case .wildlife:      return "Wildlife"
+        case .aiPacks:       return "AI Packs"
         }
     }
     var symbol: String {
@@ -37,6 +38,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .guides:        return "book"
         case .gearInventory: return "shippingbox"
         case .wildlife:      return "pawprint"
+        case .aiPacks:       return "sparkles"
         }
     }
 
@@ -149,6 +151,8 @@ struct AppNavigation: View {
             GearInventoryView().environment(appState)
         case .wildlife:
             WildlifeView()
+        case .aiPacks:
+            AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         }
     }
 
@@ -224,6 +228,7 @@ struct AppNavigation: View {
         case .guides:          GuidesView()
         case .gearInventory:   GearInventoryView().environment(appState)
         case .wildlife:        WildlifeView()
+        case .aiPacks:         AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
         }
     }
     #endif
