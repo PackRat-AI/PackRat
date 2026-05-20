@@ -1,6 +1,9 @@
+import { createDbClient } from '@packrat/api/db';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import type { Env } from '@packrat/api/utils/env-validation';
-import type { NewCatalogItem } from '@packrat/db';
+import { logger } from '@packrat/api/utils/logger';
+import { etlJobs, type NewCatalogItem } from '@packrat/db';
+import { eq, sql } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
 import { mergeItemsBySku } from './mergeItemsBySku';
@@ -50,8 +53,16 @@ export async function processValidItemsBatch({
       processed: items.length,
     });
   } catch (error) {
-    console.error(`Error generating embeddings for batch ${jobId}:`, error);
-    // Fall back to processing without embeddings
+    // Embedding-fallback path. The upsert still happens (catalog gets the
+    // items minus their vectors), but we record the degradation on
+    // etl_jobs.total_embedding_failures so operators see the count via
+    // the admin endpoint without trawling logs. Closes audit P2 #3.
+    logger.warn('etl.embedding.fallback', {
+      jobId,
+      skuCount: items.length,
+      errorName: error instanceof Error ? error.name : 'unknown',
+    });
+
     const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
     await catalogService.trackEtlJob(upsertedItems, jobId);
     await updateEtlJobProgress(env, {
@@ -59,7 +70,15 @@ export async function processValidItemsBatch({
       valid: items.length,
       processed: items.length,
     });
+
+    const db = createDbClient(env);
+    await db
+      .update(etlJobs)
+      .set({
+        totalEmbeddingFailures: sql`COALESCE(${etlJobs.totalEmbeddingFailures}, 0) + ${items.length}`,
+      })
+      .where(eq(etlJobs.id, jobId));
   } finally {
-    console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
+    logger.info('etl.valid_items.batch_complete', { jobId, count: items.length });
   }
 }
