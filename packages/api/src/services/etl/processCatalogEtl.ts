@@ -192,7 +192,7 @@ export async function processCatalogETL({
         relax_quotes: true,
         skip_empty_lines: true,
         skip_records_with_error: true,
-        on_skip: (err: Error) => {
+        on_skip: (err) => {
           const parserLine = (err as { lines?: number }).lines ?? rowIndex;
           const parseErrorLog: NewInvalidItemLog = {
             jobId,
