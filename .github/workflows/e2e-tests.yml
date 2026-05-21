@@ -99,6 +99,9 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
 
+      - name: Add node_modules bin to PATH
+        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
+
       # ── Local API stack ────────────────────────────────────────────────────
 
       - name: Start local Postgres with pgvector
@@ -108,16 +111,37 @@ jobs:
           PG_BIN="${BREW_PREFIX}/opt/postgresql@${PG_VER}/bin"
           PG_DATA="$HOME/pgdata-e2e"
 
-          brew install "postgresql@${PG_VER}" pgvector
+          # Free port 5432 in case a pre-installed postgres is running
+          brew services stop postgresql@14 2>/dev/null || true
+          brew services stop "postgresql@${PG_VER}" 2>/dev/null || true
+
+          brew install "postgresql@${PG_VER}"
+
+          # Build pgvector from source against postgresql@16's pg_config.
+          # Brew's pgvector formula targets whichever PG version its formula
+          # depends on (may not be @16), so we compile directly to be certain.
+          git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+          make -C /tmp/pgvector-build PG_CONFIG="$PG_BIN/pg_config"
+          make -C /tmp/pgvector-build install PG_CONFIG="$PG_BIN/pg_config"
 
           "$PG_BIN/initdb" -D "$PG_DATA" --encoding=UTF8 --auth=trust
-          printf 'port = 5432\nlisten_addresses = '"'"'127.0.0.1'"'"'\n' \
+          printf '\nport = 5432\nlisten_addresses = '"'"'127.0.0.1'"'"'\n' \
             >> "$PG_DATA/postgresql.conf"
           "$PG_BIN/pg_ctl" -D "$PG_DATA" -l "$HOME/pg.log" start
 
+          READY=false
           for i in $(seq 1 30); do
-            "$PG_BIN/pg_isready" -h 127.0.0.1 -p 5432 && break || sleep 2
+            if "$PG_BIN/pg_isready" -h 127.0.0.1 -p 5432 > /dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 2
           done
+          if [ "$READY" != "true" ]; then
+            echo "::error::PostgreSQL did not become ready"
+            cat "$HOME/pg.log"
+            exit 1
+          fi
 
           "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
             -c "CREATE USER e2e_user WITH PASSWORD 'e2e_pass';"
@@ -473,6 +497,9 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
+
+      - name: Add node_modules bin to PATH
+        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
 
       # ── Local API stack ────────────────────────────────────────────────────
       # Postgres with pgvector runs as a job-level service container (see services: above).
