@@ -3,33 +3,48 @@
  *
  * getAuth(env) is called per-request so each isolate invocation picks up the
  * correct KV binding, credentials, and DB connection.  The result is cached
- * in a WeakMap keyed by the raw env object so the instance is reused across
+ * in a Map keyed by NEON_DATABASE_URL so the same instance is reused across
  * requests within the same isolate lifetime.
  */
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { expo } from '@better-auth/expo';
-import { neon } from '@neondatabase/serverless';
 import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
+import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
-import { drizzle } from 'drizzle-orm/neon-http';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
+// Stores the in-flight Promise so concurrent requests that arrive before the
+// first initialization completes all await the same Promise rather than each
+// kicking off a redundant build. Evicted on rejection so the next call retries.
+// Keyed by NEON_DATABASE_URL|BETTER_AUTH_URL — miniflare creates a new env
+// object per request, so a WeakMap never hits; the URL composite key is stable
+// within an isolate lifetime and distinguishes different env configurations.
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
-const authCache = new WeakMap<object, any>();
+const authCache = new Map<string, Promise<any>>();
 
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cached = authCache.get(env as object);
+  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}`;
+  const cached = authCache.get(cacheKey);
   if (cached) return cached;
 
+  const promise = buildAuth(env).catch((err) => {
+    authCache.delete(cacheKey);
+    throw err;
+  });
+  authCache.set(cacheKey, promise);
+  return promise;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
+async function buildAuth(env: ValidatedEnv): Promise<any> {
   const appleClientSecret = await generateAppleClientSecret(env);
 
-  // Use the HTTP Neon driver — no long-lived connections inside a Worker.
-  const db = drizzle(neon(env.NEON_DATABASE_URL), { schema });
+  const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
 
   const auth = betterAuth({
     baseURL: env.BETTER_AUTH_URL,
@@ -53,7 +68,12 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
           get: async (key: string) => env.AUTH_KV.get(key),
           // biome-ignore lint/complexity/useMaxParams: Better Auth secondaryStorage.set interface requires 3 params
           set: async (key: string, value: string, ttl?: number) => {
-            await env.AUTH_KV.put(key, value, ttl ? { expirationTtl: ttl } : undefined);
+            // KV requires a minimum expirationTtl of 60 seconds.
+            await env.AUTH_KV.put(
+              key,
+              value,
+              ttl !== undefined ? { expirationTtl: Math.max(60, ttl) } : undefined,
+            );
           },
           delete: async (key: string) => env.AUTH_KV.delete(key),
         }
@@ -154,7 +174,6 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
     trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
   });
 
-  authCache.set(env as object, auth);
   return auth;
 }
 
