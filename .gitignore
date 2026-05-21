@@ -66,3 +66,6 @@ apps/swift/PackRatAPIClient/.swiftpm/
 apps/swift/TestResults/
 
 apps/swift/build/
+
+# Quicktype reference output — generated for inspection, not compiled into the app.
+apps/swift/Generated/
