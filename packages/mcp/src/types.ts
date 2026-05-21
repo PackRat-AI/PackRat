@@ -24,10 +24,10 @@ export type RegisterFlaggedToolFn = <
   // The TS types here mirror McpServer['registerTool']; we accept any args after
   // the flag name and rely on the SDK to validate downstream.
   TArgs extends Parameters<RegisterToolFn>,
->(
-  flag: string,
-  ...args: TArgs
-) => ReturnType<RegisterToolFn>;
+>(args: {
+  flag: string;
+  args: TArgs;
+}) => ReturnType<RegisterToolFn>;
 
 export interface AgentContext {
   server: McpServer;
@@ -38,7 +38,7 @@ export interface AgentContext {
   /** Replace the per-session admin token (set by `admin_login`). */
   setAdminToken: (token: string) => void;
   /** Toggle a feature flag at runtime (debug / admin-set). */
-  setFeatureFlag: (flag: string, enabled: boolean) => void;
+  setFeatureFlag: (args: { flag: string; enabled: boolean }) => void;
   /**
    * Register a tool that's only visible when the session holds an admin JWT.
    * Has the same signature as `server.registerTool`. The MCP SDK's

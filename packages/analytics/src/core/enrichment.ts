@@ -153,10 +153,16 @@ const REVIEWS_TABLE = 'product_reviews';
 const ENTITIES_TABLE = 'product_entities';
 
 export class Enrichment {
-  constructor(
-    private readonly conn: DuckDBConnection,
-    private readonly sourceTable = 'gear_data',
-  ) {}
+  private readonly conn: DuckDBConnection;
+  private readonly sourceTable: string;
+
+  constructor({
+    conn,
+    sourceTable = 'gear_data',
+  }: { conn: DuckDBConnection; sourceTable?: string }) {
+    this.conn = conn;
+    this.sourceTable = sourceTable;
+  }
 
   private async hasEntities(): Promise<boolean> {
     try {
@@ -260,7 +266,13 @@ export class Enrichment {
   }
 
   /** Get images for a product by keyword. */
-  async getProductImages(query: string, limit = 20): Promise<ProductImage[]> {
+  async getProductImages({
+    query,
+    limit = 20,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<ProductImage[]> {
     try {
       await this.conn.runAndReadAll(`SELECT 1 FROM ${IMAGES_TABLE} LIMIT 1`);
     } catch {
@@ -289,7 +301,13 @@ export class Enrichment {
   }
 
   /** Get review aggregation with weighted average for a product. */
-  async getProductReviews(query: string, limit = 20): Promise<ProductReview[]> {
+  async getProductReviews({
+    query,
+    limit = 20,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<ProductReview[]> {
     try {
       await this.conn.runAndReadAll(`SELECT 1 FROM ${REVIEWS_TABLE} LIMIT 1`);
     } catch {

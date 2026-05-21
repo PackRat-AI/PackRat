@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     // Generate the posts
-    const filePaths = await generatePosts(count, requestData.categories);
+    const filePaths = await generatePosts({ count, categories: requestData.categories });
 
     if (!filePaths.length) {
       throw new Error('Failed to generate posts');

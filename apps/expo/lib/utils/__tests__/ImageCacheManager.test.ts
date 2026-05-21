@@ -111,7 +111,10 @@ describe('ImageCacheManager', () => {
         .mockResolvedValueOnce({ exists: false } as any); // file exists check
       vi.mocked(FileSystem.downloadAsync).mockResolvedValue({ status: 200 } as any);
 
-      const result = await manager.cacheRemoteImage('test.jpg', 'https://example.com/test.jpg');
+      const result = await manager.cacheRemoteImage({
+        fileName: 'test.jpg',
+        remoteUrl: 'https://example.com/test.jpg',
+      });
 
       expect(FileSystem.downloadAsync).toHaveBeenCalledWith(
         'https://example.com/test.jpg',
@@ -131,7 +134,10 @@ describe('ImageCacheManager', () => {
         .mockResolvedValueOnce({ exists: true } as any) // initCacheDirectory check
         .mockResolvedValueOnce({ exists: true } as any); // file exists check
 
-      const result = await manager.cacheRemoteImage('cached.jpg', 'https://example.com/cached.jpg');
+      const result = await manager.cacheRemoteImage({
+        fileName: 'cached.jpg',
+        remoteUrl: 'https://example.com/cached.jpg',
+      });
 
       expect(FileSystem.downloadAsync).not.toHaveBeenCalled();
       expect(result).toBe('/mock/documents/images/cached.jpg');
@@ -144,7 +150,10 @@ describe('ImageCacheManager', () => {
       vi.mocked(FileSystem.downloadAsync).mockResolvedValue({ status: 404 } as any);
 
       await expect(
-        manager.cacheRemoteImage('fail.jpg', 'https://example.com/fail.jpg'),
+        manager.cacheRemoteImage({
+          fileName: 'fail.jpg',
+          remoteUrl: 'https://example.com/fail.jpg',
+        }),
       ).rejects.toThrow('Failed to download image: 404');
     });
 
@@ -154,7 +163,10 @@ describe('ImageCacheManager', () => {
         .mockResolvedValueOnce({ exists: false } as any);
       vi.mocked(FileSystem.downloadAsync).mockResolvedValue({ status: 200 } as any);
 
-      await manager.cacheRemoteImage('test.jpg', 'https://example.com/test.jpg');
+      await manager.cacheRemoteImage({
+        fileName: 'test.jpg',
+        remoteUrl: 'https://example.com/test.jpg',
+      });
 
       expect(FileSystem.makeDirectoryAsync).toHaveBeenCalled();
     });
@@ -167,7 +179,7 @@ describe('ImageCacheManager', () => {
     it('moves temp image to cache', async () => {
       vi.mocked(FileSystem.getInfoAsync).mockResolvedValue({ exists: true } as any);
 
-      await manager.cacheLocalTempImage('/tmp/temp.jpg', 'final.jpg');
+      await manager.cacheLocalTempImage({ tempImageUri: '/tmp/temp.jpg', fileName: 'final.jpg' });
 
       expect(FileSystem.moveAsync).toHaveBeenCalledWith({
         from: '/tmp/temp.jpg',
@@ -178,7 +190,7 @@ describe('ImageCacheManager', () => {
     it('initializes cache directory before move', async () => {
       vi.mocked(FileSystem.getInfoAsync).mockResolvedValue({ exists: false } as any);
 
-      await manager.cacheLocalTempImage('/tmp/temp.jpg', 'final.jpg');
+      await manager.cacheLocalTempImage({ tempImageUri: '/tmp/temp.jpg', fileName: 'final.jpg' });
 
       expect(FileSystem.makeDirectoryAsync).toHaveBeenCalled();
       expect(FileSystem.moveAsync).toHaveBeenCalled();

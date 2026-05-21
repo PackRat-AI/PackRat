@@ -63,7 +63,7 @@ export default function LocationPreviewScreen() {
         if (formattedData.details) {
           const weatherCode = formattedData.details.weatherCode || 1000;
           const isNight = formattedData.details.isDay === 0;
-          setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
+          setGradientColors(getWeatherBackgroundColors({ code: weatherCode, isNight }));
         }
       } else {
         setError(t('weather.failedToLoadWeather'));

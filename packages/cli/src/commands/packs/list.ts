@@ -18,15 +18,16 @@ export default defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const includePublic = args['include-public'] ? 1 : 0;
-    const packs = await runApi(client.packs.get({ query: { includePublic } }), {
+    const packs = await runApi({
+      promise: client.packs.get({ query: { includePublic } }),
       action: 'list packs',
     });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(packs, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(packs).map((r) => ({
+    printTable({
+      rows: toRecordArray(packs).map((r) => ({
         id: r.id,
         name: r.name,
         category: r.category,
@@ -34,7 +35,7 @@ export default defineCommand({
         totalGrams: r.totalWeight,
         isPublic: r.isPublic,
       })),
-      { title: 'Your packs' },
-    );
+      options: { title: 'Your packs' },
+    });
   },
 });

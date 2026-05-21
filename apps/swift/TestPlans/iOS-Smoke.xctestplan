@@ -1,0 +1,44 @@
+{
+  "configurations" : [
+    {
+      "id" : "5E1A1F00-0002-4001-A000-000000000001",
+      "name" : "Default",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "areLocalizationScreenshotsEnabled" : false,
+    "codeCoverage" : false,
+    "diagnosticCollectionPolicy" : "Never",
+    "environmentVariableEntries" : [
+      {
+        "key" : "E2E_EMAIL",
+        "value" : "$(E2E_EMAIL)"
+      },
+      {
+        "key" : "E2E_PASSWORD",
+        "value" : "$(E2E_PASSWORD)"
+      }
+    ],
+    "language" : "en",
+    "region" : "US",
+    "testTimeoutsEnabled" : true,
+    "maximumTestExecutionTimeAllowance" : 90
+  },
+  "testTargets" : [
+    {
+      "selectedTests" : [
+        "AuthTests",
+        "NavigationTests"
+      ],
+      "target" : {
+        "containerPath" : "container:PackRat.xcodeproj",
+        "identifier" : "PackRatUITests",
+        "name" : "PackRatUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

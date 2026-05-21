@@ -39,7 +39,8 @@ export const queryKeys = {
 
   osm: {
     all: () => ['osm'] as const,
-    search: (q?: string, sport?: string) => [...queryKeys.osm.all(), 'search', q, sport] as const,
+    search: ({ q, sport }: { q: string; sport?: string }) =>
+      [...queryKeys.osm.all(), 'search', q, sport] as const,
     trail: (osmId: string) => [...queryKeys.osm.all(), 'trail', osmId] as const,
     conditions: (q?: string) => [...queryKeys.osm.all(), 'conditions', q] as const,
   },
@@ -56,7 +57,7 @@ export const queryKeys = {
       list: (limit?: number) => [...queryKeys.catalogAnalytics.etl.all(), limit] as const,
       failureSummary: (limit?: number) =>
         [...queryKeys.catalogAnalytics.etl.all(), 'failureSummary', limit] as const,
-      jobFailures: (jobId: string, limit?: number) =>
+      jobFailures: ({ jobId, limit }: { jobId: string; limit?: number }) =>
         [...queryKeys.catalogAnalytics.etl.all(), 'jobFailures', jobId, limit] as const,
     },
   },

@@ -14,10 +14,10 @@ export default defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client['season-suggestions'].post({ location: args.location, date: args.date }),
-      { action: 'season suggestions' },
-    );
+    const data = await runApi({
+      promise: client['season-suggestions'].post({ location: args.location, date: args.date }),
+      action: 'season suggestions',
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });

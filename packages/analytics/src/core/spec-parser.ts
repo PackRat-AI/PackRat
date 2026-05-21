@@ -80,12 +80,12 @@ const FABRIC_PATTERNS = [
 
 // ── Unit Conversion ───────────────────────────────────────────────────
 
-function toGrams(value: number, unit: string): number | null {
+function toGrams({ value, unit }: { value: number; unit: string }): number | null {
   const factor = WEIGHT_CONVERSIONS[unit.toLowerCase()];
   return factor ? Math.round(value * factor * 100) / 100 : null;
 }
 
-function toFahrenheit(value: number, unit: string): number {
+function toFahrenheit({ value, unit }: { value: number; unit: string }): number {
   if (unit.toUpperCase() === 'C') return Math.round((value * 9) / 5 + 32);
   return value;
 }
@@ -103,7 +103,7 @@ export function parseWeightGrams(text: string): number | null {
 
   const simple = WEIGHT_SIMPLE.exec(text);
   if (simple?.[1] !== undefined && simple[2] !== undefined) {
-    return toGrams(Number.parseFloat(simple[1]), simple[2]);
+    return toGrams({ value: Number.parseFloat(simple[1]), unit: simple[2] });
   }
   return null;
 }
@@ -118,12 +118,12 @@ export function parseTempRatingF(text: string): number | null {
   const range = TEMP_RANGE.exec(text);
   if (range?.[1] !== undefined && range[2] !== undefined && range[3] !== undefined) {
     const lower = Math.min(Number.parseInt(range[1], 10), Number.parseInt(range[2], 10));
-    return toFahrenheit(lower, range[3]);
+    return toFahrenheit({ value: lower, unit: range[3] });
   }
 
   const single = TEMP_SINGLE.exec(text);
   if (single?.[1] !== undefined && single[2] !== undefined) {
-    return toFahrenheit(Number.parseInt(single[1], 10), single[2]);
+    return toFahrenheit({ value: Number.parseInt(single[1], 10), unit: single[2] });
   }
   return null;
 }
@@ -215,10 +215,15 @@ export function extractSpecsFromRow(row: ProductRow): ProductSpecs {
 const SPECS_TABLE = 'parsed_specs';
 
 export class SpecParser {
-  constructor(
-    private readonly conn: DuckDBConnection,
-    private readonly sourceTable = 'gear_data',
-  ) {}
+  constructor({
+    conn,
+    sourceTable = 'gear_data',
+  }: { conn: DuckDBConnection; sourceTable?: string }) {
+    this.conn = conn;
+    this.sourceTable = sourceTable;
+  }
+  private readonly conn: DuckDBConnection;
+  private readonly sourceTable: string;
 
   /** Parse all products and store results in DuckDB. */
   async build(batchSize = 10_000): Promise<{ total: number; parsed: number }> {
@@ -287,7 +292,13 @@ export class SpecParser {
   }
 
   /** Search products by name/brand and return parsed specs. */
-  async getProductSpecs(query: string, limit = 10): Promise<ProductSpecs[]> {
+  async getProductSpecs({
+    query,
+    limit = 10,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<ProductSpecs[]> {
     const kw = SQLFragments.escapeSql(query.toLowerCase());
     const result = await this.conn.runAndReadAll(`
       SELECT * FROM ${SPECS_TABLE}

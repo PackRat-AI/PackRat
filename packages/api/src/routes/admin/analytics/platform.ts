@@ -12,7 +12,13 @@ import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-function getStartDate(period: 'day' | 'week' | 'month', range: number): Date {
+function getStartDate({
+  period,
+  range,
+}: {
+  period: 'day' | 'week' | 'month';
+  range: number;
+}): Date {
   const d = new Date();
   if (period === 'day') d.setDate(d.getDate() - range);
   else if (period === 'week') d.setDate(d.getDate() - range * 7);
@@ -35,7 +41,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     async ({ query }) => {
       const db = createDb();
       const { period = 'month', range = 12 } = query;
-      const startDate = getStartDate(period, range);
+      const startDate = getStartDate({ period, range });
 
       try {
         const [userGrowth, packGrowth, catalogGrowth] = await Promise.all([
@@ -105,7 +111,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     async ({ query }) => {
       const db = createDb();
       const { period = 'month', range = 12 } = query;
-      const startDate = getStartDate(period, range);
+      const startDate = getStartDate({ period, range });
 
       try {
         const [tripActivity, trailActivity, postActivity] = await Promise.all([

@@ -11,11 +11,13 @@ export default defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const response = toRecord(await runApi(client.user.profile.get(), { action: 'fetch profile' }));
+    const response = toRecord(
+      await runApi({ promise: client.user.profile.get(), action: 'fetch profile' }),
+    );
     const user = toRecord(response.user);
     const config = await loadConfig();
-    printSummary(
-      {
+    printSummary({
+      data: {
         baseUrl: config.baseUrl,
         userId: config.userId ?? '—',
         email: config.userEmail ?? user.email ?? '—',
@@ -24,8 +26,8 @@ export default defineCommand({
         adminTokenSet: Boolean(config.adminToken),
         configFile: CONFIG_FILE_PATH,
       },
-      'PackRat session',
-    );
+      title: 'PackRat session',
+    });
     consola.success('Session looks healthy.');
   },
 });

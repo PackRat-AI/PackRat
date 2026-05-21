@@ -25,7 +25,7 @@ export function registerAuthTools(agent: AgentContext): void {
       description: 'Return the currently authenticated PackRat user profile.',
       inputSchema: {},
     },
-    async () => call(agent.api.user.user.profile.get(), { action: 'fetch profile' }),
+    async () => call({ promise: agent.api.user.user.profile.get(), action: 'fetch profile' }),
   );
 
   // ── Admin login ───────────────────────────────────────────────────────────

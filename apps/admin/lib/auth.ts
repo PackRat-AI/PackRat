@@ -9,7 +9,7 @@ export function getStoredToken(): string | null {
 
 /** Persist a short-lived admin JWT for the session. */
 export function storeToken(token: string): void {
-  safeSessionStorage.setItem(TOKEN_KEY, token);
+  safeSessionStorage.setItem({ key: TOKEN_KEY, value: token });
 }
 
 /** Remove the token (logout). */

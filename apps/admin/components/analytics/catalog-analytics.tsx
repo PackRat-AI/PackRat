@@ -67,7 +67,7 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
 
 function EtlJobFailuresDialog({ jobId, totalInvalid }: { jobId: string; totalInvalid: number }) {
   const [open, setOpen] = useState(false);
-  const { data, isLoading } = useEtlJobFailures(jobId, { enabled: open });
+  const { data, isLoading } = useEtlJobFailures({ jobId, opts: { enabled: open } });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -65,6 +65,10 @@ const ALLOWED: string[] = [
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
   'apps/admin/lib/env.ts',
+  // E2E test runners — read E2E_EMAIL/E2E_PASSWORD from .env.local and forward
+  // to xcodebuild. Not app code.
+  'apps/swift/scripts/run-e2e.ts',
+  'apps/swift/scripts/run-e2e-macos.ts',
   // Playwright web E2E test infrastructure — Node process, reads env for CI secrets
   'apps/expo/playwright/',
   // OSM import script — spawns subprocesses and must pass the full OS env (PATH, HOME, etc.)
@@ -100,7 +104,7 @@ interface Violation {
 
 const violations: Violation[] = [];
 
-function walkDir(dir: string, relPath: string): void {
+function walkDir({ dir, relPath }: { dir: string; relPath: string }): void {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -122,7 +126,7 @@ function walkDir(dir: string, relPath: string): void {
     }
 
     if (isDir) {
-      walkDir(entryFull, entryRel);
+      walkDir({ dir: entryFull, relPath: entryRel });
     } else if (isTargetFile(entry)) {
       if (isAllowed(entryRel)) continue;
 
@@ -147,7 +151,7 @@ for (const root of SCAN_ROOTS) {
   const absRoot = join(ROOT, root);
   // For .github/scripts we use the relative path directly
   const relRoot = relative(ROOT, absRoot);
-  walkDir(absRoot, relRoot);
+  walkDir({ dir: absRoot, relPath: relRoot });
 }
 
 if (violations.length > 0) {

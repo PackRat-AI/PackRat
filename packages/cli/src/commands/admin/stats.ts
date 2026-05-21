@@ -9,10 +9,11 @@ export default defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.stats.get(), {
+    const data = await runApi({
+      promise: client.admin.stats.get(),
       action: 'admin stats',
       requiresAdmin: true,
     });
-    printSummary(toRecord(data), 'Admin stats');
+    printSummary({ data: toRecord(data), title: 'Admin stats' });
   },
 });

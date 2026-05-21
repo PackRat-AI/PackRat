@@ -26,7 +26,7 @@ export default function ReportedContentScreen() {
     return item.status === selectedFilter;
   });
 
-  const handleReview = (id: string, status: 'reviewed' | 'dismissed') => {
+  const handleReview = ({ id, status }: { id: string; status: 'reviewed' | 'dismissed' }) => {
     updateMutation.mutate({ id, status });
   };
 
@@ -144,7 +144,7 @@ export default function ReportedContentScreen() {
                 <Button
                   variant="tonal"
                   size="sm"
-                  onPress={() => handleReview(item.id, 'dismissed')}
+                  onPress={() => handleReview({ id: item.id, status: 'dismissed' })}
                   disabled={updateMutation.isPending}
                 >
                   <Text>{t('ai.reportedContent.dismiss')}</Text>
@@ -152,7 +152,7 @@ export default function ReportedContentScreen() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onPress={() => handleReview(item.id, 'reviewed')}
+                  onPress={() => handleReview({ id: item.id, status: 'reviewed' })}
                   disabled={updateMutation.isPending}
                 >
                   <Text>{t('ai.reportedContent.resolve')}</Text>

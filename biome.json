@@ -22,7 +22,8 @@
       "!**/*.gen.ts",
       "!**/vite.config.ts.timestamp-*.mjs",
       "!**/src/codegen",
-      "!**/.claude"
+      "!**/.claude",
+      "!**/.worktrees"
     ]
   },
   "formatter": {

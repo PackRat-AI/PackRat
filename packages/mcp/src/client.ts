@@ -97,9 +97,9 @@ export type CallOptions = {
  * Thrown errors and `{ error: ... }` responses both surface as `isError: true`.
  */
 export async function call<T>(
-  promise: Promise<TreatyResponse<T>>,
-  options: CallOptions = {},
+  args: { promise: Promise<TreatyResponse<T>> } & CallOptions,
 ): Promise<McpToolResult> {
+  const { promise, ...options } = args;
   try {
     const result = await promise;
     if (result.error || result.data == null) {

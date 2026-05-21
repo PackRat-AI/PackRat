@@ -12,7 +12,7 @@ function Icon({
   size = 27,
   materialIcon,
 }: IconProps) {
-  const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
+  const iconNames = useMemo(() => getIconNames({ namingScheme, name }), [namingScheme, name]);
 
   const prefersMaterialIcons = materialIcon?.type === 'MaterialIcons';
   const prefersMaterialCommunityIcons = materialIcon?.type === 'MaterialCommunityIcons';

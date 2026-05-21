@@ -69,7 +69,7 @@ export function useAuthActions() {
     redirect(redirectTo);
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async ({ email, password }: { email: string; password: string }) => {
     setIsLoading(true);
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
@@ -195,7 +195,12 @@ export function useAuthActions() {
     if (error) throw new Error(error.message ?? 'Forgot password failed');
   };
 
-  const resetPassword = async (_email: string, opts: { token: string; newPassword: string }) => {
+  const resetPassword = async ({
+    opts,
+  }: {
+    email?: string;
+    opts: { token: string; newPassword: string };
+  }) => {
     const { error } = await authClient.resetPassword({
       token: opts.token,
       newPassword: opts.newPassword,
@@ -203,7 +208,7 @@ export function useAuthActions() {
     if (error) throw new Error(error.message ?? 'Reset password failed');
   };
 
-  const verifyEmail = async (_email: string, token: string) => {
+  const verifyEmail = async ({ token }: { _email?: string; token: string }) => {
     const { data, error } = await authClient.verifyEmail({ query: { token } });
     if (error) throw new Error(error.message ?? 'Email verification failed');
 

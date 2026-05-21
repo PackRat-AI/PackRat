@@ -60,7 +60,7 @@ const BREAKDOWN_COLORS = [
 type Period = 'day' | 'week' | 'month';
 const PERIODS = ['day', 'week', 'month'] as const satisfies readonly Period[];
 
-function formatPeriodLabel(v: string, period: Period) {
+function formatPeriodLabel({ v, period }: { v: string; period: Period }) {
   const d = new Date(v);
   if (period === 'day') return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   if (period === 'week') return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -122,7 +122,7 @@ export function PlatformAnalytics() {
                   dataKey="period"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: string) => formatPeriodLabel(v, period)}
+                  tickFormatter={(v: string) => formatPeriodLabel({ v, period })}
                 />
                 <YAxis tickLine={false} axisLine={false} width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -177,7 +177,7 @@ export function PlatformAnalytics() {
                   dataKey="period"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: string) => formatPeriodLabel(v, period)}
+                  tickFormatter={(v: string) => formatPeriodLabel({ v, period })}
                 />
                 <YAxis tickLine={false} axisLine={false} width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />

@@ -1,0 +1,49 @@
+{
+  "configurations" : [
+    {
+      "id" : "5E1A1F00-0004-4001-A000-000000000001",
+      "name" : "Default",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "diagnosticCollectionPolicy" : "Never",
+    "environmentVariableEntries" : [
+      {
+        "key" : "E2E_EMAIL",
+        "value" : "$(E2E_EMAIL)"
+      },
+      {
+        "key" : "E2E_PASSWORD",
+        "value" : "$(E2E_PASSWORD)"
+      }
+    ],
+    "language" : "en",
+    "region" : "US",
+    "testTimeoutsEnabled" : true,
+    "maximumTestExecutionTimeAllowance" : 90
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:PackRat.xcodeproj",
+        "identifier" : "PackRatMacOSTests",
+        "name" : "PackRatMacOSTests"
+      }
+    },
+    {
+      "selectedTests" : [
+        "AuthTests"
+      ],
+      "target" : {
+        "containerPath" : "container:PackRat.xcodeproj",
+        "identifier" : "PackRatMacOSUITests",
+        "name" : "PackRatMacOSUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

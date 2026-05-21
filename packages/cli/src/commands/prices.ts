@@ -9,6 +9,6 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const rows = await cache.getPriceDistribution(args.site);
-    printTable(rows, { title: 'Price Distribution' });
+    printTable({ rows, options: { title: 'Price Distribution' } });
   },
 });

@@ -46,7 +46,13 @@ export async function ensureCache(forceRefresh = false): Promise<LocalCacheManag
 }
 
 /** Print an array of objects as a formatted CLI table. */
-export function printTable(rows: unknown[], options?: { title?: string }): void {
+export function printTable({
+  rows,
+  options,
+}: {
+  rows: unknown[];
+  options?: { title?: string };
+}): void {
   if (rows.length === 0) {
     consola.warn('No results found.');
     return;
@@ -73,7 +79,13 @@ export function printTable(rows: unknown[], options?: { title?: string }): void 
 }
 
 /** Print a key-value summary. */
-export function printSummary(data: Record<string, unknown>, title?: string): void {
+export function printSummary({
+  data,
+  title,
+}: {
+  data: Record<string, unknown>;
+  title?: string;
+}): void {
   if (title) console.log(`\n${chalk.bold(title)}`);
 
   const table = new Table({ style: { head: [], border: [] } });

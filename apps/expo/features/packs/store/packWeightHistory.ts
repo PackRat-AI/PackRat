@@ -66,14 +66,14 @@ syncObservable(
 );
 
 export function recordPackWeight(packId: string) {
-  const pack = obs(packsStore, packId).peek();
+  const pack = obs({ store: packsStore, id: packId }).peek();
   const packItems = Object.values(packItemsStore.peek()).filter(
     (item) => item.packId === packId && !item.deleted,
   );
-  const { totalWeight } = computePackWeights({ ...pack, items: packItems });
+  const { totalWeight } = computePackWeights({ pack: { ...pack, items: packItems } });
   const id = nanoid();
 
-  obs(packWeigthHistoryStore, id).set({
+  obs({ store: packWeigthHistoryStore, id: id }).set({
     id,
     packId,
     weight: totalWeight,

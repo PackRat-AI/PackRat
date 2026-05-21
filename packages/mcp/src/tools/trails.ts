@@ -21,12 +21,12 @@ export function registerTrailTools(agent: AgentContext): void {
       },
     },
     async ({ q, lat, lon, radius, sport, limit, offset }) =>
-      call(
-        agent.api.user.trails.search.get({ query: { q, lat, lon, radius, sport, limit, offset } }),
-        {
-          action: 'search trails',
-        },
-      ),
+      call({
+        promise: agent.api.user.trails.search.get({
+          query: { q, lat, lon, radius, sport, limit, offset },
+        }),
+        action: 'search trails',
+      }),
   );
 
   // ── Get trail metadata ────────────────────────────────────────────────────
@@ -39,7 +39,8 @@ export function registerTrailTools(agent: AgentContext): void {
       inputSchema: { osm_id: z.string() },
     },
     async ({ osm_id }) =>
-      call(agent.api.user.trails({ osmId: osm_id }).get(), {
+      call({
+        promise: agent.api.user.trails({ osmId: osm_id }).get(),
         action: 'get trail',
         resourceHint: `trail ${osm_id}`,
       }),
@@ -55,7 +56,8 @@ export function registerTrailTools(agent: AgentContext): void {
       inputSchema: { osm_id: z.string() },
     },
     async ({ osm_id }) =>
-      call(agent.api.user.trails({ osmId: osm_id }).geometry.get(), {
+      call({
+        promise: agent.api.user.trails({ osmId: osm_id }).geometry.get(),
         action: 'get trail geometry',
         resourceHint: `trail ${osm_id}`,
       }),

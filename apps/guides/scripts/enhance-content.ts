@@ -139,10 +139,13 @@ function parseContentFile(filePath: string): {
  * Write enhanced content back to file
  */
 
-function writeEnhancedContent(
-  filePath: string,
-  opts: { metadata: Record<string, unknown>; enhancedContent: string },
-): void {
+function writeEnhancedContent({
+  filePath,
+  opts,
+}: {
+  filePath: string;
+  opts: { metadata: Record<string, unknown>; enhancedContent: string };
+}): void {
   const { metadata, enhancedContent } = opts;
   const newFileContent = matter.stringify(enhancedContent, metadata);
   fs.writeFileSync(filePath, newFileContent, 'utf8');
@@ -152,10 +155,13 @@ function writeEnhancedContent(
  * Enhance a single content file
  */
 
-async function enhanceFile(
-  filePath: string,
-  opts: { cliOptions: CliOptions; enhancementOptions: ContentEnhancementOptions },
-): Promise<{
+async function enhanceFile({
+  filePath,
+  opts,
+}: {
+  filePath: string;
+  opts: { cliOptions: CliOptions; enhancementOptions: ContentEnhancementOptions };
+}): Promise<{
   enhanced: boolean;
   productsAdded: number;
   error?: string;
@@ -182,7 +188,7 @@ async function enhanceFile(
     console.log(chalk.blue(`🔄 Enhancing: ${fileName}`));
 
     // Enhance the content
-    const result = await enhanceGuideContent(content, enhancementOptions);
+    const result = await enhanceGuideContent({ content, options: enhancementOptions });
 
     // Check if enhancement actually added value
     if (result.productsUsed.length === 0) {
@@ -213,7 +219,7 @@ async function enhanceFile(
     }
 
     // Write enhanced content
-    writeEnhancedContent(filePath, { metadata, enhancedContent: result.content });
+    writeEnhancedContent({ filePath, opts: { metadata, enhancedContent: result.content } });
 
     console.log(
       chalk.green(`  ✅ Enhanced ${fileName} with ${result.productsUsed.length} product links`),
@@ -283,7 +289,7 @@ async function enhanceContent(cliOptions: CliOptions): Promise<void> {
   for (const filePath of filesToProcess) {
     stats.processed++;
 
-    const result = await enhanceFile(filePath, { cliOptions, enhancementOptions });
+    const result = await enhanceFile({ filePath, opts: { cliOptions, enhancementOptions } });
 
     if (result.error) {
       stats.errors++;

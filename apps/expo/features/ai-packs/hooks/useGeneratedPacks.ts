@@ -21,7 +21,7 @@ export function useGeneratePacks() {
 
   const generatedPacksFromStore = use$(() => {
     if (mutation.data) {
-      return mutation.data.map((pack) => obs(packsStore, pack.id).get());
+      return mutation.data.map((pack) => obs({ store: packsStore, id: pack.id }).get());
     }
     return [];
   });
