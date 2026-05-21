@@ -1,5 +1,5 @@
 {
-  "id": "eaf00886-b21e-48ad-a913-ff982b8c6562",
+  "id": "79eab1cd-6669-4ece-95a3-4aecfcba8563",
   "prevId": "1f086d6d-055d-4b37-a5d6-32b1141d2043",
   "version": "7",
   "dialect": "postgresql",
@@ -551,6 +551,42 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verified_row_count": {
+          "name": "verified_row_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_etag": {
+          "name": "source_etag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_last_modified": {
+          "name": "source_last_modified",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "superseded_by_job_id": {
+          "name": "superseded_by_job_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "superseded_at": {
+          "name": "superseded_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -583,13 +619,43 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "etl_jobs_superseded_by_idx": {
+          "name": "etl_jobs_superseded_by_idx",
+          "columns": [
+            {
+              "expression": "superseded_by_job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "etl_jobs_superseded_by_job_id_etl_jobs_id_fk": {
+          "name": "etl_jobs_superseded_by_job_id_etl_jobs_id_fk",
+          "tableFrom": "etl_jobs",
+          "tableTo": "etl_jobs",
+          "columnsFrom": ["superseded_by_job_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "etl_jobs_no_self_supersede": {
+          "name": "etl_jobs_no_self_supersede",
+          "value": "\"etl_jobs\".\"superseded_by_job_id\" IS NULL OR \"etl_jobs\".\"superseded_by_job_id\" <> \"etl_jobs\".\"id\""
+        }
+      },
       "isRLSEnabled": false
     },
     "public.invalid_item_logs": {

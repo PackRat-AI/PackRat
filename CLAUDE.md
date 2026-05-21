@@ -244,6 +244,24 @@ Defined in root `tsconfig.json`:
 - Migrations: Drizzle Kit (`drizzle-kit`)
 - Embeddings: pgvector with 1536 dimensions
 
+### Migration discipline (read before touching `packages/api/drizzle/`)
+
+1. **Always generate via drizzle-kit.** Edit `packages/api/src/db/schema.ts` (or `packages/db/src/schema.ts` for the shared workspace), then run from the API package:
+
+   ```bash
+   cd packages/api && bun run db:generate
+   ```
+
+   Drizzle-kit emits a random-name file like `0048_loud_squirrel_girl.sql`. That random name is fine — keep it. The naming convention here is "whatever drizzle-kit gives you."
+
+2. **Do not rename a generated migration file.** The `meta/_journal.json` `tag` field, the migration SQL filename, and the snapshot filename all encode the migration identity together. Renaming any one of them (even with corresponding journal edits) makes the migration look hand-authored and creates drift that future drizzle-kit operations can mis-handle.
+
+3. **Do not hand-edit `meta/_journal.json`, `meta/*_snapshot.json`, or the generated SQL.** If the generated migration is wrong, fix the schema, delete the bad migration + snapshot + journal entry, and regenerate. Do not patch around it.
+
+4. **Collapse additive changes into one migration when they ship together** — fewer snapshot files in the diff, easier to revert as a unit. Splitting only makes sense when migrations need to land in separate releases.
+
+5. **Verify after generating.** Run `bunx drizzle-kit check` from `packages/api/` — it validates the snapshot chain is internally consistent. Run before pushing.
+
 ## EAS Build Profiles
 
 | Profile | Use | Distribution |
