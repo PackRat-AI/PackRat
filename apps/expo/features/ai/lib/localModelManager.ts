@@ -169,9 +169,12 @@ export async function downloadLocalModel(): Promise<void> {
 
     store.set(localModelStatusAtom, 'downloading');
     store.set(localModelProgressAtom, 0);
+    console.log('[KeepAwake] activating');
     await activateKeepAwakeAsync(KEEP_AWAKE_TAG);
+    console.log('[KeepAwake] activated, _isCancellingDownload=', _isCancellingDownload);
     // Guard against cancel arriving during the activateKeepAwakeAsync await
     if (_isCancellingDownload) {
+      console.log('[KeepAwake] early cancel detected — deactivating');
       deactivateKeepAwake(KEEP_AWAKE_TAG);
       return;
     }
@@ -190,6 +193,7 @@ export async function downloadLocalModel(): Promise<void> {
       const downloadRes = await activeDownloadTask;
       activeDownloadTask = null;
       const httpStatus = downloadRes.respInfo?.status ?? 0;
+      console.log('[KeepAwake] download finished, httpStatus=', httpStatus);
       if (httpStatus < 200 || httpStatus >= 300) {
         await RNBlobUtil.fs.unlink(_getLlamaModelPath()).catch(() => {});
         store.set(localModelStatusAtom, 'error');
@@ -198,12 +202,14 @@ export async function downloadLocalModel(): Promise<void> {
       }
     } catch (err) {
       activeDownloadTask = null;
+      console.log('[KeepAwake] catch, _isCancellingDownload=', _isCancellingDownload, 'err=', err);
       if (!_isCancellingDownload) {
         store.set(localModelStatusAtom, 'error');
         store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
       }
       return;
     } finally {
+      console.log('[KeepAwake] deactivating (finally)');
       deactivateKeepAwake(KEEP_AWAKE_TAG);
     }
   }
@@ -213,6 +219,10 @@ export async function downloadLocalModel(): Promise<void> {
 
 /** Cancel an in-progress llama model download and reset state to idle. */
 export async function cancelLocalModelDownload(): Promise<void> {
+  console.log(
+    '[KeepAwake] cancelLocalModelDownload called, activeDownloadTask=',
+    !!activeDownloadTask,
+  );
   _isCancellingDownload = true;
   if (activeDownloadTask) {
     activeDownloadTask.cancel();
