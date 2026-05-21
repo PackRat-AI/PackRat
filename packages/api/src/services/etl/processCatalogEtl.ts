@@ -203,7 +203,7 @@ export async function processCatalogETL({
           };
           invalidItemsBatch.push(parseErrorLog);
           console.warn(
-            `[ETL] Skipped malformed CSV row at parser line ${parserLine}: ${err.message}`,
+            `[ETL] Skipped malformed CSV row at parser line ${parserLine}: ${message}`,
           );
         },
       });
