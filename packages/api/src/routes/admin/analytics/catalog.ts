@@ -7,6 +7,7 @@ import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
 import {
   AdminErrorResponses,
   BrandRowSchema,
+  CatalogAuditSchema,
   CatalogOverviewSchema,
   EtlFailureSummarySchema,
   EtlJobFailuresSchema,
@@ -717,6 +718,193 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
       detail: {
         tags: ['Admin'],
         summary: 'Count R2 source rows and persist verified_row_count on etl_jobs',
+      },
+    },
+  )
+
+  // ─── Catalog data-quality audit ────────────────────────────────────────────
+  //
+  // Per-source breakdown of catalog_items quality flags. Powers the scrapyd
+  // audit_db_catalog.py script so that scrapyd never needs DB credentials —
+  // it consumes the JSON from this endpoint and renders markdown.
+  //
+  // Flags surfaced (computed server-side from threshold constants):
+  //   decimal_bug — count of prices < $10 with 3+ decimal places
+  //   low_median — median price below $20 for a non-allowlisted source
+  //   high_null:<field> — > 30% NULL rate on a key field
+  //   bad_weight — count of weights < 1g or > 100kg
+  //   empty_name — count of empty/null names
+  //   stale — source has no completed ETL in 30+ days
+  //
+  // ?source=<name> filters to one source (faster + scoped). Omit for all sources.
+
+  .get(
+    '/etl/audit',
+    async ({ query }) => {
+      const db = createDb();
+
+      try {
+        const sourceFilter = query.source;
+
+        // Single GROUP BY query. catalog_item_etl_jobs is the per-item-per-job
+        // join; we attribute each catalog item to its most recent ingest source
+        // via DISTINCT ON. Then aggregate per source.
+        const rows = (await db.execute(sql`
+          WITH latest_per_item AS (
+            SELECT DISTINCT ON (cie.catalog_item_id)
+              cie.catalog_item_id,
+              j.source
+            FROM catalog_item_etl_jobs cie
+            JOIN etl_jobs j ON j.id = cie.etl_job_id
+            ORDER BY cie.catalog_item_id, cie.created_at DESC
+          ),
+          last_jobs AS (
+            SELECT DISTINCT ON (source)
+              source,
+              id AS last_id,
+              completed_at AS last_at
+            FROM etl_jobs
+            WHERE status = 'completed'
+            ORDER BY source, completed_at DESC NULLS LAST
+          )
+          SELECT
+            lpi.source,
+            COUNT(*)::int AS total_items,
+            lj.last_id,
+            lj.last_at,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY ci.price)::float AS median_price,
+            MIN(ci.price) FILTER (WHERE ci.price > 0)::float AS min_price,
+            MAX(ci.price)::float AS max_price,
+            COUNT(*) FILTER (WHERE ci.price IS NULL)::int AS null_price,
+            COUNT(*) FILTER (WHERE ci.brand IS NULL OR ci.brand = '')::int AS null_brand,
+            COUNT(*) FILTER (WHERE ci.description IS NULL OR ci.description = '')::int AS null_desc,
+            COUNT(*) FILTER (WHERE ci.weight IS NULL)::int AS null_weight,
+            COUNT(*) FILTER (
+              WHERE ci.images IS NULL OR jsonb_array_length(ci.images) = 0
+            )::int AS null_images,
+            COUNT(*) FILTER (WHERE ci.availability IS NULL)::int AS null_avail,
+            COUNT(*) FILTER (WHERE ci.name IS NULL OR ci.name = '')::int AS empty_name,
+            COUNT(*) FILTER (
+              WHERE ci.price IS NOT NULL
+                AND ci.price < 10
+                AND ci.price <> floor(ci.price)
+                AND (ci.price * 1000) = floor(ci.price * 1000)
+            )::int AS suspicious_decimal,
+            COUNT(*) FILTER (
+              WHERE ci.weight IS NOT NULL
+                AND (ci.weight < 1 OR ci.weight > 100000)
+            )::int AS suspicious_weight
+          FROM latest_per_item lpi
+          JOIN catalog_items ci ON ci.id = lpi.catalog_item_id
+          LEFT JOIN last_jobs lj ON lj.source = lpi.source
+          ${sourceFilter ? sql`WHERE lpi.source = ${sourceFilter}` : sql``}
+          GROUP BY lpi.source, lj.last_id, lj.last_at
+          ORDER BY lpi.source
+        `)) as unknown as Array<{
+          source: string;
+          total_items: number;
+          last_id: string | null;
+          last_at: Date | null;
+          median_price: number | null;
+          min_price: number | null;
+          max_price: number | null;
+          null_price: number;
+          null_brand: number;
+          null_desc: number;
+          null_weight: number;
+          null_images: number;
+          null_avail: number;
+          empty_name: number;
+          suspicious_decimal: number;
+          suspicious_weight: number;
+        }>;
+
+        const now = Date.now();
+        // Sources with no median price below this for non-allowlisted sources flag low_median.
+        // Allowlist matches the EXPECTED_LOW_PRICE_SOURCES constant in scrapyd's
+        // audit_r2_data.py — kept in sync manually for now.
+        const expectedLowPriceSources = new Set([
+          '3vgear',
+          'bioliteenergy',
+          'farmtofeet',
+          'kelty',
+          'darntough',
+        ]);
+        const minFillRate = 0.7;
+
+        const sources = rows.map((r) => {
+          const daysStale =
+            r.last_at !== null
+              ? Math.floor((now - new Date(r.last_at).getTime()) / (24 * 60 * 60 * 1000))
+              : null;
+          const total = r.total_items;
+          const nullRates = {
+            price: total > 0 ? r.null_price / total : 0,
+            brand: total > 0 ? r.null_brand / total : 0,
+            description: total > 0 ? r.null_desc / total : 0,
+            weight: total > 0 ? r.null_weight / total : 0,
+            images: total > 0 ? r.null_images / total : 0,
+            availability: total > 0 ? r.null_avail / total : 0,
+          };
+          const flags: string[] = [];
+          if (r.suspicious_decimal > 0) flags.push(`decimal_bug (${r.suspicious_decimal})`);
+          if (
+            r.median_price !== null &&
+            r.median_price < 20 &&
+            !expectedLowPriceSources.has(r.source)
+          ) {
+            flags.push(`low_median ($${r.median_price.toFixed(2)})`);
+          }
+          for (const [field, rate] of Object.entries(nullRates)) {
+            if (rate > 1 - minFillRate) {
+              flags.push(`high_null:${field} (${Math.round(rate * 100)}%)`);
+            }
+          }
+          if (r.suspicious_weight > 0) flags.push(`bad_weight (${r.suspicious_weight})`);
+          if (r.empty_name > 0) flags.push(`empty_name (${r.empty_name})`);
+          if (daysStale !== null && daysStale > 30) flags.push(`stale (${daysStale}d)`);
+
+          return {
+            source: r.source,
+            totalItems: total,
+            lastEtlId: r.last_id,
+            lastEtlAt: r.last_at ? new Date(r.last_at).toISOString() : null,
+            daysStale,
+            medianPrice: r.median_price,
+            minPrice: r.min_price,
+            maxPrice: r.max_price,
+            nullRates,
+            suspiciousDecimalCount: r.suspicious_decimal,
+            suspiciousWeightCount: r.suspicious_weight,
+            emptyNameCount: r.empty_name,
+            flags,
+          };
+        });
+
+        return {
+          generatedAt: new Date().toISOString(),
+          thresholds: {
+            decimalBugPriceThreshold: 10,
+            lowMedianPriceThreshold: 20,
+            minFillRate,
+            staleDaysThreshold: 30,
+            weightTooLightGrams: 1,
+            weightTooHeavyGrams: 100000,
+          },
+          sources,
+        };
+      } catch (error) {
+        console.error('Catalog audit error:', error);
+        return status(500, { error: 'Failed to generate catalog audit', code: 'AUDIT_ERROR' });
+      }
+    },
+    {
+      query: z.object({ source: z.string().optional() }),
+      response: { 200: CatalogAuditSchema, ...AdminErrorResponses },
+      detail: {
+        tags: ['Admin'],
+        summary:
+          'Per-source catalog_items data-quality audit (decimal bugs, NULL rates, staleness)',
       },
     },
   );

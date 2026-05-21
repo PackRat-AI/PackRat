@@ -241,6 +241,42 @@ export const EtlReconcileSchema = z.object({
   delta: z.number().int().nullable(),
 });
 
+export const CatalogAuditSourceSchema = z.object({
+  source: z.string(),
+  totalItems: z.number().int(),
+  lastEtlId: z.string().nullable(),
+  lastEtlAt: z.string().nullable(),
+  daysStale: z.number().int().nullable(),
+  medianPrice: z.number().nullable(),
+  minPrice: z.number().nullable(),
+  maxPrice: z.number().nullable(),
+  nullRates: z.object({
+    price: z.number(),
+    brand: z.number(),
+    description: z.number(),
+    weight: z.number(),
+    images: z.number(),
+    availability: z.number(),
+  }),
+  suspiciousDecimalCount: z.number().int(),
+  suspiciousWeightCount: z.number().int(),
+  emptyNameCount: z.number().int(),
+  flags: z.array(z.string()),
+});
+
+export const CatalogAuditSchema = z.object({
+  generatedAt: z.string(),
+  thresholds: z.object({
+    decimalBugPriceThreshold: z.number(),
+    lowMedianPriceThreshold: z.number(),
+    minFillRate: z.number(),
+    staleDaysThreshold: z.number(),
+    weightTooLightGrams: z.number(),
+    weightTooHeavyGrams: z.number(),
+  }),
+  sources: z.array(CatalogAuditSourceSchema),
+});
+
 // ─── Trails ───────────────────────────────────────────────────────────────────
 
 export const TrailSearchItemSchema = z.object({
