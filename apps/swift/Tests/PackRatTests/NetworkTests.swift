@@ -4,9 +4,17 @@ import Foundation
 
 // MARK: - Keychain
 
-@Suite("KeychainService")
+// Swift Testing parallelises tests across a suite by default, but the keychain
+// is a process-wide singleton. Two tests mutating `.shared` at the same time
+// flake (one test reads the other's value). Serialise.
+@Suite("KeychainService", .serialized)
 struct KeychainServiceTests {
     let keychain = KeychainService.shared
+
+    init() {
+        // Defensive: ensure no leaked state from a prior suite or aborted run.
+        keychain.clearTokens()
+    }
 
     @Test("saves and reads session token")
     func saveAndReadSessionToken() {

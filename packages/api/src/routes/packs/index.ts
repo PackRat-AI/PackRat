@@ -111,7 +111,11 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           userId: user.userId,
           name: data.name,
           description: data.description,
-          category: data.category,
+          // packs.category is notNull in the DB; the request schema makes it
+          // optional so clients without a category picker (or with no
+          // selection) still validate. Default to 'custom' here so the insert
+          // doesn't violate the NOT NULL constraint.
+          category: data.category ?? 'custom',
           isPublic: data.isPublic ?? false,
           image: data.image,
           tags: data.tags,
