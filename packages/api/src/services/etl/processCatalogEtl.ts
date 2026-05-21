@@ -1,9 +1,9 @@
 import { createDbClient } from '@packrat/api/db';
-import { toRecord } from '@packrat/guards';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
+import { toRecord } from '@packrat/guards';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
@@ -86,8 +86,9 @@ export async function processCatalogETL({
       // --- JSONL streaming path ---
       // No csv-parse, no header injection. Each line is a JSON object.
       let buffer = '';
-      const skipPartialLine = byteStart !== undefined && byteStart > 0;
-      let firstLineSkipped = !skipPartialLine;
+      // The chunker snaps boundaries to newlines, so every chunk starts at a
+      // clean line boundary — no partial first-line skip needed for any chunk.
+      let firstLineSkipped = true;
 
       for await (const chunk of streamToText(r2Object.body)) {
         buffer += chunk;

@@ -1,7 +1,7 @@
 import type { NewCatalogItem } from '@packrat/db';
 import { isNumber, isObject, isString, toStringRecord } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
-import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from './csv-utils';
+import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from '@packrat/api/utils/csv-utils';
 
 // Module-level regex constant (Biome useTopLevelRegex)
 const NEWLINE_CHARS = /[\r\n]+/g;
@@ -99,7 +99,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
     const val = rawCategories.trim();
     try {
       item.categories = val.startsWith('[')
-        ? JSON.parse(val)
+        ? (JSON.parse(val) as unknown[]).filter((c): c is string => isString(c))
         : val
             .split(',')
             .map((v) => v.trim())
@@ -175,7 +175,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   } else if (isString(rawTechs) && rawTechs.trim()) {
     try {
       const parsed = safeJsonParse<Record<string, string>>(rawTechs);
-      item.techs = Array.isArray(parsed) ? {} : parsed;
+      item.techs = Array.isArray(parsed) ? {} : toStringRecord(parsed);
     } catch {
       item.techs = {};
     }
