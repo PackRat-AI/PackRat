@@ -1,7 +1,7 @@
+import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from '@packrat/api/utils/csv-utils';
 import type { NewCatalogItem } from '@packrat/db';
 import { isNumber, isObject, isString, toStringRecord } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
-import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from '@packrat/api/utils/csv-utils';
 
 // Module-level regex constant (Biome useTopLevelRegex)
 const NEWLINE_CHARS = /[\r\n]+/g;
