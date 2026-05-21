@@ -149,6 +149,13 @@ actor APIClient {
         request.httpMethod = endpoint.method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        // Better Auth runs a CSRF Origin check on every POST. Native apps don't
+        // send a browser Origin, so we identify ourselves with the deep-link
+        // scheme — `packrat://` is the iOS/macOS bundle URL type and is
+        // registered in the API's trustedOrigins list. The Expo client uses
+        // the Better Auth `expo()` plugin which promotes its expo-origin
+        // header to Origin; we go direct.
+        request.setValue("packrat://", forHTTPHeaderField: "Origin")
 
         if endpoint.requiresAuth, let token = sessionToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

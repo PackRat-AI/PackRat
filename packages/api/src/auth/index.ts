@@ -151,7 +151,16 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    trustedOrigins: [
+      env.BETTER_AUTH_URL,
+      'packrat://',
+      // Local dev: the e2e pipeline runs a parallel wrangler on :8791 to avoid
+      // colliding with a developer's own wrangler on :8787. Accept either when
+      // BETTER_AUTH_URL itself is localhost.
+      ...(env.BETTER_AUTH_URL.startsWith('http://localhost')
+        ? ['http://localhost:8787', 'http://localhost:8791']
+        : []),
+    ],
   });
 
   authCache.set(env as object, auth);
