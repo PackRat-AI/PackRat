@@ -38,7 +38,7 @@ async function describeIndexes(table: string): Promise<IndexInfo[]> {
   return result;
 }
 
-describe('Migration 0048 — ETL workflow columns', () => {
+describe('Migration 0047 — ETL workflow columns', () => {
   it('adds workflow_instance_id as nullable text', async () => {
     const cols = await describeColumns('etl_jobs');
     const col = cols.find((c) => c.column_name === 'workflow_instance_id');

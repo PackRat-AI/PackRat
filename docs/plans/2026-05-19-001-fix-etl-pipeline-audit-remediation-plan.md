@@ -304,6 +304,7 @@ Background (CF Cron):
 
 **Verification:**
 - `bun run --cwd packages/api db:migrate` applies cleanly against a fresh Docker Postgres + against a Postgres seeded with current-prod-shape `etl_jobs` rows.
+- `bunx drizzle-kit check` (run from `packages/api/`) validates the snapshot chain is internally consistent — run this before pushing any migration change.
 - `bun lint:custom` passes on the new migration.
 - `bun test:api:unit` includes the new schema test and it passes.
 
