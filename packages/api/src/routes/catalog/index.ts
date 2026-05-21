@@ -244,6 +244,9 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body, query }) => {
       const { filename, chunks, source, scraperRevision } = body;
       const engine = query.engine ?? 'workflow';
+      // chunkMiB lets the caller tune chunk size per-source without a deploy.
+      // Default (undefined) falls through to DEFAULT_CHUNK_BYTES in chunkCsvForR2.
+      const chunkBytes = query.chunkMiB !== undefined ? query.chunkMiB * 1024 * 1024 : undefined;
       const db = createDb();
       const env = getEnv();
       const jobId = crypto.randomUUID();
@@ -262,7 +265,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           startedAt: new Date(),
         });
 
-        const CHUNK_BYTES = 20 * 1024 * 1024;
+        const CHUNK_BYTES = chunkBytes ?? 2 * 1024 * 1024; // 2 MiB default (matches workflow path)
         const r2 = new R2BucketService({ env, bucketType: 'catalog' });
         const queueChunks: Array<{
           objectKey: string;
@@ -315,7 +318,15 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       let firstEtag: string | null = null;
       let firstLastModified: Date | null = null;
       for (const objectKey of chunks) {
-        const { etag, lastModified, chunks: chunkSpecs } = await chunkCsvForR2({ r2, objectKey });
+        const {
+          etag,
+          lastModified,
+          chunks: chunkSpecs,
+        } = await chunkCsvForR2({
+          r2,
+          objectKey,
+          ...(chunkBytes !== undefined && { chunkBytes }),
+        });
         if (firstEtag === null) {
           firstEtag = etag;
           firstLastModified = lastModified;
@@ -375,11 +386,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       body: CatalogETLSchema,
       query: z.object({
         engine: z.enum(['workflow', 'queue']).optional(),
+        chunkMiB: z.coerce.number().int().min(1).max(20).optional(),
       }),
       isValidApiKey: true,
       detail: {
         tags: ['Catalog'],
-        summary: 'Trigger catalog ETL ingest (Workflow by default; ?engine=queue for legacy path)',
+        summary:
+          'Trigger catalog ETL ingest (Workflow by default; ?engine=queue for legacy path). ' +
+          'Pass ?chunkMiB=N to override the default 2 MiB chunk size (1–20 MiB).',
       },
     },
   )
