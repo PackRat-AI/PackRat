@@ -52,20 +52,17 @@ const OPENAPI_YAML_PATH = resolve(
 //      and feed each as its own JSON Schema source. More fragile but works
 //      even before the API routes register schemas via Elysia's `.model({})`.
 //
-// Override via `BUN_QUICKTYPE_INPUT=bundle|per-schema`. Default auto-detects.
+// Auto-detect: bundle when components.schemas has entries, else per-schema.
 
 type InputMode = 'bundle' | 'per-schema';
 
 function detectInputMode(): InputMode {
-  const override = process.env.BUN_QUICKTYPE_INPUT as InputMode | undefined;
-  if (override === 'bundle' || override === 'per-schema') return override;
   if (!existsSync(OPENAPI_YAML_PATH)) return 'per-schema';
   try {
     const spec = parseYaml(readFileSync(OPENAPI_YAML_PATH, 'utf8'));
-    const componentsSchemas = isObject(spec)
-      ? (spec as { components?: { schemas?: Record<string, unknown> } }).components?.schemas
-      : undefined;
-    const count = componentsSchemas ? Object.keys(componentsSchemas).length : 0;
+    if (!isObject(spec)) return 'per-schema';
+    const components = (spec as { components?: { schemas?: Record<string, unknown> } }).components;
+    const count = components?.schemas ? Object.keys(components.schemas).length : 0;
     return count > 0 ? 'bundle' : 'per-schema';
   } catch {
     return 'per-schema';

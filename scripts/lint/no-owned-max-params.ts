@@ -24,6 +24,8 @@ const EXCLUDED_DIRS = new Set([
   '.next',
   '.expo',
   '.turbo',
+  '.wrangler',
+  '.swiftpm',
   'coverage',
 ]);
 
