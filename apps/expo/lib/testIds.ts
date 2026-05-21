@@ -98,6 +98,11 @@ export const testIds = Object.freeze({
     nameEditBtn: 'profile:name-edit',
   }),
 
+  // ── AI Chat ───────────────────────────────────────────────────────────────
+  aiChat: Object.freeze({
+    sendBtn: 'ai-chat:send-btn',
+  }),
+
   // ── Settings ──────────────────────────────────────────────────────────────
   settings: Object.freeze({
     aiModelsSection: 'settings:ai-models',

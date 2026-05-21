@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -88,8 +88,20 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: bunx playwright install chromium --with-deps
+
+      - name: Install Playwright system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps chromium
 
       - name: Build Expo web app
         working-directory: apps/expo
@@ -111,15 +123,17 @@ jobs:
       - name: Serve web app (SPA mode, port 8081)
         working-directory: apps/expo
         # -s routes all 404s to index.html for client-side routing
-        run: npx serve -s dist -l 8081 &
+        run: bunx serve -s dist -l 8081 &
 
       - name: Wait for web server
         run: |
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8081 && echo "Server ready" && break
+            curl -sf http://localhost:8081 && echo "Server ready" && exit 0
             echo "Waiting... ($i/30)"
             sleep 2
           done
+          echo "::error::Web server failed to start after 60 seconds"
+          exit 1
 
       - name: Run Playwright E2E tests
         working-directory: apps/expo
@@ -132,7 +146,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: apps/expo/playwright-report/
@@ -140,7 +154,7 @@ jobs:
 
       - name: Upload Playwright traces on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
           path: apps/expo/test-results/
