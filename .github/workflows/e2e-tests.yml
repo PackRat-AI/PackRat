@@ -219,7 +219,7 @@ jobs:
         run: |
           WRANGLER_LOG=warn \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 \
+            wrangler dev -e dev --ip 0.0.0.0 --local \
               > /tmp/wrangler-dev.log 2>&1 &
           echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
 
@@ -572,7 +572,7 @@ jobs:
           # getApiUrl() in apps/expo swaps 'localhost' -> '10.0.2.2' at runtime.
           WRANGLER_LOG=warn \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 \
+            wrangler dev -e dev --ip 0.0.0.0 --local \
               > /tmp/wrangler-dev.log 2>&1 &
           echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
 
