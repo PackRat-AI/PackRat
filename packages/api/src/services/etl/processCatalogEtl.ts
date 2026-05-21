@@ -206,7 +206,7 @@ export async function processCatalogETL({
         },
       });
 
-      (async () => {
+      const writerPromise = (async () => {
         // Non-first chunks: inject the header row so csv-parse sees a valid header,
         // then skip the partial row at the chunk boundary (tail of the previous chunk).
         if (injectedHeader) {
@@ -234,7 +234,10 @@ export async function processCatalogETL({
           if (!ok) await new Promise<void>((resolve) => parser.once('drain', resolve));
         }
         parser.end();
-      })();
+      })().catch((err) => {
+        parser.destroy(err instanceof Error ? err : new Error(String(err)));
+        throw err;
+      });
 
       for await (const record of parser) {
         if (rowIndex % 100 === 0) await new Promise((resolve) => setTimeout(resolve, 1)); // Yield every 100 rows for GC; per-row yield hits the CF Worker wall-clock limit on large files
@@ -285,6 +288,8 @@ export async function processCatalogETL({
           invalidItemsBatch.length = 0;
         }
       }
+
+      await writerPromise;
     }
 
     console.log(`🔍 [TRACE] Streaming complete - processing remaining batches`);
