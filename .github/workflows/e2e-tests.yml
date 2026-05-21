@@ -106,23 +106,31 @@ jobs:
 
       - name: Start local Postgres with pgvector
         run: |
-          PG_VER=16
+          set -euo pipefail
+          # postgresql@14 is pre-installed on macos-15; @16 requires a 35s download.
+          PG_VER=14
           BREW_PREFIX="$(brew --prefix)"
           PG_BIN="${BREW_PREFIX}/opt/postgresql@${PG_VER}/bin"
           PG_DATA="$HOME/pgdata-e2e"
 
-          # Free port 5432 in case a pre-installed postgres is running
-          brew services stop postgresql@14 2>/dev/null || true
+          # Stop any running postgres service so port 5432 is free.
           brew services stop "postgresql@${PG_VER}" 2>/dev/null || true
+          brew services stop postgresql@16 2>/dev/null || true
 
-          brew install "postgresql@${PG_VER}"
+          # Skip brew install if pg_config is already present (pre-installed keg).
+          if ! "$PG_BIN/pg_config" --version > /dev/null 2>&1; then
+            echo "postgresql@${PG_VER} not found, installing..."
+            brew install "postgresql@${PG_VER}"
+          fi
+          echo "Using: $("$PG_BIN/pg_config" --version)"
 
-          # Build pgvector from source against postgresql@16's pg_config.
-          # Brew's pgvector formula targets whichever PG version its formula
-          # depends on (may not be @16), so we compile directly to be certain.
-          git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+          # Build pgvector from source against this PG version's pg_config.
+          # Pin to a known-good tag so the build is reproducible.
+          git clone --depth 1 --branch v0.8.0 \
+            https://github.com/pgvector/pgvector.git /tmp/pgvector-build
           make -C /tmp/pgvector-build PG_CONFIG="$PG_BIN/pg_config"
           make -C /tmp/pgvector-build install PG_CONFIG="$PG_BIN/pg_config"
+          echo "pgvector installed"
 
           "$PG_BIN/initdb" -D "$PG_DATA" --encoding=UTF8 --auth=trust
           printf '\nport = 5432\nlisten_addresses = '"'"'127.0.0.1'"'"'\n' \
@@ -147,6 +155,7 @@ jobs:
             -c "CREATE USER e2e_user WITH PASSWORD 'e2e_pass';"
           "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
             -c "CREATE DATABASE packrat_e2e OWNER e2e_user;"
+          echo "Database ready."
 
       - name: Write wrangler .dev.vars
         env:
@@ -217,14 +226,23 @@ jobs:
       - name: Start wrangler dev (background)
         working-directory: packages/api
         run: |
-          WRANGLER_LOG=warn \
+          WRANGLER_LOG=info \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 \
+            wrangler dev -e dev --ip 0.0.0.0 --port 8787 \
               > /tmp/wrangler-dev.log 2>&1 &
-          echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
+          WRANGLER_PID=$!
+          echo "WRANGLER_PID=${WRANGLER_PID}" >> "$GITHUB_ENV"
+
+          # Fail fast if wrangler crashes at startup (TypeScript error, bad config, etc.)
+          sleep 5
+          if ! kill -0 "${WRANGLER_PID}" 2>/dev/null; then
+            echo "::error::wrangler dev exited immediately — showing log:"
+            cat /tmp/wrangler-dev.log
+            exit 1
+          fi
 
           echo "Waiting for API to be ready on ${{ env.E2E_API_URL }}/health ..."
-          RETRIES=30
+          RETRIES=60
           until curl -sf "${{ env.E2E_API_URL }}/health" > /dev/null; do
             RETRIES=$((RETRIES - 1))
             if [ "$RETRIES" -le 0 ]; then
@@ -570,14 +588,23 @@ jobs:
           # --ip 0.0.0.0 is required: Android emulator reaches the host via
           # 10.0.2.2; wrangler must listen on all interfaces to accept it.
           # getApiUrl() in apps/expo swaps 'localhost' -> '10.0.2.2' at runtime.
-          WRANGLER_LOG=warn \
+          WRANGLER_LOG=info \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 \
+            wrangler dev -e dev --ip 0.0.0.0 --port 8787 \
               > /tmp/wrangler-dev.log 2>&1 &
-          echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
+          WRANGLER_PID=$!
+          echo "WRANGLER_PID=${WRANGLER_PID}" >> "$GITHUB_ENV"
+
+          # Fail fast if wrangler crashes at startup (TypeScript error, bad config, etc.)
+          sleep 5
+          if ! kill -0 "${WRANGLER_PID}" 2>/dev/null; then
+            echo "::error::wrangler dev exited immediately — showing log:"
+            cat /tmp/wrangler-dev.log
+            exit 1
+          fi
 
           echo "Waiting for API to be ready on ${{ env.E2E_API_URL }}/health ..."
-          RETRIES=30
+          RETRIES=60
           until curl -sf "${{ env.E2E_API_URL }}/health" > /dev/null; do
             RETRIES=$((RETRIES - 1))
             if [ "$RETRIES" -le 0 ]; then
