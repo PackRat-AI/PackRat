@@ -27,7 +27,7 @@ export type ChunkCsvResult = {
 
 export type ChunkerR2 = Pick<R2BucketService, 'head' | 'get'>;
 
-const DEFAULT_CHUNK_BYTES = 20 * 1024 * 1024; // 20 MiB
+const DEFAULT_CHUNK_BYTES = 5 * 1024 * 1024; // 5 MiB — 20 MiB caused WorkflowTimeoutError on large files (>15 MB)
 const DEFAULT_PEEK_BYTES = 64 * 1024; // 64 KiB
 
 export class ChunkBoundaryError extends Error {
