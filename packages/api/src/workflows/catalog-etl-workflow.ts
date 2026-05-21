@@ -27,7 +27,9 @@ import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
+import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
+import { toRecord } from '@packrat/guards';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import type { ChunkSpec } from './shared/chunkCsvForR2';
@@ -94,7 +96,7 @@ export async function processChunk({
   const r2 = new R2BucketService({ env, bucketType: 'catalog' });
 
   const isNonFirstChunk = chunk.chunkIndex > 0;
-  const injectedHeader = isNonFirstChunk ? await fetchHeaderRow(r2, chunk.objectKey) : '';
+  const useJsonl = isJsonlFile(chunk.objectKey);
 
   const length = chunk.byteEnd - chunk.byteStart + 1;
   const obj = await r2.get(chunk.objectKey, {
@@ -106,78 +108,199 @@ export async function processChunk({
   const invalidItemsBatch: NewInvalidItemLog[] = [];
   const validator = new CatalogItemValidator();
 
-  const parser = parse({
-    relax_column_count: true,
-    skip_empty_lines: true,
-  });
-
-  const writerPromise = (async () => {
-    if (injectedHeader) {
-      parser.write(`${injectedHeader}\n`);
-    }
-    for await (const text of streamToText(obj.body)) {
-      const ok = parser.write(text);
-      if (!ok) {
-        await new Promise<void>((resolve) => parser.once('drain', resolve));
-      }
-    }
-    parser.end();
-  })().catch((err) => {
-    parser.destroy(err instanceof Error ? err : new Error(String(err)));
-    throw err;
-  });
-
   let rowIndex = 0;
   let rowsValid = 0;
   let rowsInvalid = 0;
-  let fieldMap: Record<string, number> = {};
-  let isHeaderProcessed = false;
 
-  for await (const record of parser) {
-    if (rowIndex % 100 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-    const row = record as string[];
+  if (useJsonl) {
+    // --- JSONL streaming path ---
+    // The chunker snaps boundaries to newlines, so every chunk starts at a
+    // clean line boundary — no partial first-line skip needed for any chunk.
+    let buffer = '';
+    let firstLineSkipped = true;
 
-    if (!isHeaderProcessed) {
-      fieldMap = {};
-      for (const [idx, header] of row.entries()) {
-        fieldMap[header.trim()] = idx;
+    for await (const text of streamToText(obj.body)) {
+      buffer += text;
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        if (!firstLineSkipped) {
+          firstLineSkipped = true;
+          continue; // discard partial row at chunk boundary
+        }
+
+        if (rowIndex % 100 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+
+        let parsedObj: Record<string, unknown>;
+        try {
+          parsedObj = toRecord(JSON.parse(trimmed));
+        } catch (parseErr) {
+          invalidItemsBatch.push({
+            jobId,
+            errors: [{ field: 'json_parse', reason: String(parseErr) }],
+            rawData: { parseError: String(parseErr) },
+            rowIndex,
+          });
+          rowIndex++;
+          if (invalidItemsBatch.length >= BATCH_SIZE) {
+            await processLogsBatch({ jobId, logs: [...invalidItemsBatch], env });
+            rowsInvalid += invalidItemsBatch.length;
+            invalidItemsBatch.length = 0;
+          }
+          continue;
+        }
+
+        const item = mapJsonRowToItem(parsedObj);
+        if (item) {
+          const validated = validator.validateItem(item);
+          if (validated.isValid) {
+            validItemsBatch.push(validated.item);
+          } else {
+            invalidItemsBatch.push({
+              jobId,
+              errors: validated.errors,
+              rawData: validated.item,
+              rowIndex,
+            });
+          }
+        }
+        rowIndex++;
+
+        if (validItemsBatch.length >= BATCH_SIZE) {
+          await processValidItemsBatch({ jobId, items: [...validItemsBatch], env });
+          rowsValid += validItemsBatch.length;
+          validItemsBatch.length = 0;
+        }
+        if (invalidItemsBatch.length >= BATCH_SIZE) {
+          await processLogsBatch({ jobId, logs: [...invalidItemsBatch], env });
+          rowsInvalid += invalidItemsBatch.length;
+          invalidItemsBatch.length = 0;
+        }
       }
-      isHeaderProcessed = true;
-      continue;
     }
 
-    const item = mapCsvRowToItem({ values: row, fieldMap });
-    if (item) {
-      const validated = validator.validateItem(item);
-      if (validated.isValid) {
-        validItemsBatch.push(validated.item);
-      } else {
+    // Flush remaining buffer line (last line without trailing newline)
+    const lastLine = buffer.trim();
+    if (lastLine && firstLineSkipped) {
+      try {
+        const parsedObj = toRecord(JSON.parse(lastLine));
+        const item = mapJsonRowToItem(parsedObj);
+        if (item) {
+          const validated = validator.validateItem(item);
+          if (validated.isValid) {
+            validItemsBatch.push(validated.item);
+          } else {
+            invalidItemsBatch.push({
+              jobId,
+              errors: validated.errors,
+              rawData: validated.item,
+              rowIndex,
+            });
+          }
+        }
+        rowIndex++;
+      } catch (parseErr) {
         invalidItemsBatch.push({
           jobId,
-          errors: validated.errors,
-          rawData: validated.item,
+          errors: [{ field: 'json_parse', reason: String(parseErr) }],
+          rawData: { parseError: String(parseErr) },
           rowIndex,
         });
+        rowIndex++;
+      }
+    }
+  } else {
+    // --- CSV path ---
+    const injectedHeader = isNonFirstChunk ? await fetchHeaderRow(r2, chunk.objectKey) : '';
+
+    let fieldMap: Record<string, number> = {};
+    let isHeaderProcessed = false;
+
+    const parser = parse({
+      relax_column_count: true,
+      relax_quotes: true,
+      skip_empty_lines: true,
+      skip_records_with_error: true,
+      on_skip: (err) => {
+        const parserLine = (err as { lines?: number } | undefined)?.lines ?? rowIndex;
+        const message = err?.message ?? 'unknown parse error';
+        invalidItemsBatch.push({
+          jobId,
+          errors: [{ field: 'csv_parse', reason: message }],
+          rawData: { parseError: message },
+          rowIndex: parserLine,
+        });
+      },
+    });
+
+    const writerPromise = (async () => {
+      if (injectedHeader) {
+        parser.write(`${injectedHeader}\n`);
+      }
+      for await (const text of streamToText(obj.body)) {
+        const ok = parser.write(text);
+        if (!ok) {
+          await new Promise<void>((resolve) => parser.once('drain', resolve));
+        }
+      }
+      parser.end();
+    })().catch((err) => {
+      parser.destroy(err instanceof Error ? err : new Error(String(err)));
+      throw err;
+    });
+
+    for await (const record of parser) {
+      if (rowIndex % 100 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      const row = record as string[];
+
+      if (!isHeaderProcessed) {
+        fieldMap = {};
+        for (const [idx, header] of row.entries()) {
+          fieldMap[header.trim()] = idx;
+        }
+        isHeaderProcessed = true;
+        continue;
+      }
+
+      const item = mapCsvRowToItem({ values: row, fieldMap });
+      if (item) {
+        const validated = validator.validateItem(item);
+        if (validated.isValid) {
+          validItemsBatch.push(validated.item);
+        } else {
+          invalidItemsBatch.push({
+            jobId,
+            errors: validated.errors,
+            rawData: validated.item,
+            rowIndex,
+          });
+        }
+      }
+
+      rowIndex++;
+
+      if (validItemsBatch.length >= BATCH_SIZE) {
+        await processValidItemsBatch({ jobId, items: [...validItemsBatch], env });
+        rowsValid += validItemsBatch.length;
+        validItemsBatch.length = 0;
+      }
+      if (invalidItemsBatch.length >= BATCH_SIZE) {
+        await processLogsBatch({ jobId, logs: [...invalidItemsBatch], env });
+        rowsInvalid += invalidItemsBatch.length;
+        invalidItemsBatch.length = 0;
       }
     }
 
-    rowIndex++;
-
-    if (validItemsBatch.length >= BATCH_SIZE) {
-      await processValidItemsBatch({ jobId, items: [...validItemsBatch], env });
-      rowsValid += validItemsBatch.length;
-      validItemsBatch.length = 0;
-    }
-    if (invalidItemsBatch.length >= BATCH_SIZE) {
-      await processLogsBatch({ jobId, logs: [...invalidItemsBatch], env });
-      rowsInvalid += invalidItemsBatch.length;
-      invalidItemsBatch.length = 0;
-    }
+    await writerPromise;
   }
-
-  await writerPromise;
 
   if (validItemsBatch.length > 0) {
     await processValidItemsBatch({ jobId, items: validItemsBatch, env });
