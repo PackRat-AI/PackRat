@@ -13,6 +13,7 @@ The framing is **conditional** by construction — when the audit started, two E
 The conditions:
 
 - ✅ Better Auth migration shipped on Swift (sign-in / sign-up / sign-out work end-to-end on iOS + macOS — verified via curl against local wrangler; iOS Simulator e2e captured in parallel)
+- ✅ **Real-simulator e2e (2026-05-21): iOS-Smoke 13/13 · iOS-Full 209/209 · macOS unit 135/135**, all against actual iPhone 17 Pro sim + local wrangler + Neon DB. Four product/infrastructure bugs surfaced and were fixed during this run (commits `8bb1b1b6e`, `ffc1e6408`): Better Auth CSRF Origin missing on native HTTP client; `trustedOrigins` too narrow for dual-port dev wrangler; stale JWKS rows encrypted under a prior `BETTER_AUTH_SECRET`; pack-category NOT NULL violation when the form submits without a category. The four iOS-Full failures from the first real-sim pass dropped to zero on the second. macOS UI tests remain gated on Mac Development cert (see operational item #1 below).
 - ✅ `ai-packs` ported (full feature parity)
 - ✅ `offline-ai` foundation ported (Mock provider runs; MLX wire-up is a documented one-paragraph follow-up — model + steps named)
 - ✅ Test coverage is comprehensive on both platforms (74 iOS XCUITest cases + 13 new macOS test classes + 45+ unit tests)
