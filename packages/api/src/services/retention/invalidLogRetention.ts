@@ -60,6 +60,7 @@ export async function sweepInvalidItemLogs(
 
   let deleted = 0;
   let iterations = 0;
+  let rowCount = 0;
   const cutoff = sql`now() - (${retentionDays}::int * interval '1 day')`;
 
   for (let i = 0; i < maxIterations; i++) {
@@ -74,9 +75,9 @@ export async function sweepInvalidItemLogs(
     const removed = await db
       .delete(invalidItemLogs)
       .where(inArray(invalidItemLogs.id, selectExpired))
-      .returning();
+      .returning({ id: invalidItemLogs.id });
 
-    const rowCount = removed.length;
+    rowCount = removed.length;
     deleted += rowCount;
     if (rowCount === 0) break;
   }
@@ -84,7 +85,9 @@ export async function sweepInvalidItemLogs(
   return {
     deleted,
     iterations,
-    capped: iterations >= maxIterations,
+    // capped only when we hit the iteration ceiling with rows still remaining;
+    // if the last batch returned 0 rows we exhausted the table (not capped).
+    capped: rowCount > 0,
     retentionDays,
   };
 }

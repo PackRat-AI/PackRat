@@ -675,15 +675,17 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           throw err;
         });
 
-        for await (const _record of parser) {
-          if (!isHeaderProcessed) {
-            isHeaderProcessed = true;
-            continue;
+        try {
+          for await (const _record of parser) {
+            if (!isHeaderProcessed) {
+              isHeaderProcessed = true;
+              continue;
+            }
+            totalRows++;
           }
-          totalRows++;
+        } finally {
+          await writerPromise;
         }
-
-        await writerPromise;
 
         const expectedRowCount = totalRows;
         const actualRowCount = job.totalProcessed;

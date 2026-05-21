@@ -208,59 +208,75 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
     // so a chunk that succeeds is never re-run on a downstream step failure.
     // Retries are bounded to 3 with exponential backoff for transient R2/DB
     // failures; a chunk that exhausts retries marks the entire instance errored.
-    const chunkResults: ChunkResult[] = [];
-    for (const chunk of chunks) {
-      const result = await step.do(
-        `chunk-${chunk.chunkIndex}`,
-        {
-          retries: { limit: 3, delay: '30 seconds', backoff: 'exponential' },
-          timeout: '5 minutes',
-        },
-        async () => processChunk({ jobId, chunk, env: this.env }),
+    try {
+      const chunkResults: ChunkResult[] = [];
+      for (const chunk of chunks) {
+        const result = await step.do(
+          `chunk-${chunk.chunkIndex}`,
+          {
+            retries: { limit: 3, delay: '30 seconds', backoff: 'exponential' },
+            timeout: '5 minutes',
+          },
+          async () => processChunk({ jobId, chunk, env: this.env }),
+        );
+        chunkResults.push(result);
+      }
+
+      const totals = chunkResults.reduce(
+        (acc, r) => ({
+          rowsProcessed: acc.rowsProcessed + r.rowsProcessed,
+          rowsValid: acc.rowsValid + r.rowsValid,
+          rowsInvalid: acc.rowsInvalid + r.rowsInvalid,
+        }),
+        { rowsProcessed: 0, rowsValid: 0, rowsInvalid: 0 },
       );
-      chunkResults.push(result);
+
+      // Aggregate step writes the canonical totals — any over-counts from chunk
+      // retries (the inner processValidItemsBatch increments are non-idempotent
+      // on retry) get overridden here. This is the authoritative count.
+      if (chunks.length === 0) {
+        throw new Error(`Workflow ${jobId} received empty chunks array`);
+      }
+      await step.do('aggregate', async () => {
+        const db = createDbClient(this.env);
+        await db
+          .update(etlJobs)
+          .set({
+            totalProcessed: totals.rowsProcessed,
+            totalValid: totals.rowsValid,
+            totalInvalid: totals.rowsInvalid,
+          })
+          .where(eq(etlJobs.id, jobId));
+      });
+
+      await step.do('finalize', async () => {
+        const db = createDbClient(this.env);
+        await db
+          .update(etlJobs)
+          .set({ status: 'completed', completedAt: new Date() })
+          .where(eq(etlJobs.id, jobId));
+      });
+
+      return {
+        jobId,
+        rowsProcessed: totals.rowsProcessed,
+        rowsValid: totals.rowsValid,
+        rowsInvalid: totals.rowsInvalid,
+      };
+    } catch (err) {
+      // Best-effort: mark the DB row failed so operators aren't looking at a
+      // perpetually-running job. The workflow runtime also marks the instance
+      // errored, but that's only visible in the CF dashboard.
+      try {
+        const db = createDbClient(this.env);
+        await db
+          .update(etlJobs)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(eq(etlJobs.id, jobId));
+      } catch {
+        // ignore — status update is best-effort; don't mask the original error
+      }
+      throw err;
     }
-
-    const totals = chunkResults.reduce(
-      (acc, r) => ({
-        rowsProcessed: acc.rowsProcessed + r.rowsProcessed,
-        rowsValid: acc.rowsValid + r.rowsValid,
-        rowsInvalid: acc.rowsInvalid + r.rowsInvalid,
-      }),
-      { rowsProcessed: 0, rowsValid: 0, rowsInvalid: 0 },
-    );
-
-    // Aggregate step writes the canonical totals — any over-counts from chunk
-    // retries (the inner processValidItemsBatch increments are non-idempotent
-    // on retry) get overridden here. This is the authoritative count.
-    if (chunks.length === 0) {
-      throw new Error(`Workflow ${jobId} received empty chunks array`);
-    }
-    await step.do('aggregate', async () => {
-      const db = createDbClient(this.env);
-      await db
-        .update(etlJobs)
-        .set({
-          totalProcessed: totals.rowsProcessed,
-          totalValid: totals.rowsValid,
-          totalInvalid: totals.rowsInvalid,
-        })
-        .where(eq(etlJobs.id, jobId));
-    });
-
-    await step.do('finalize', async () => {
-      const db = createDbClient(this.env);
-      await db
-        .update(etlJobs)
-        .set({ status: 'completed', completedAt: new Date() })
-        .where(eq(etlJobs.id, jobId));
-    });
-
-    return {
-      jobId,
-      rowsProcessed: totals.rowsProcessed,
-      rowsValid: totals.rowsValid,
-      rowsInvalid: totals.rowsInvalid,
-    };
   }
 }
