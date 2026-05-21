@@ -125,6 +125,11 @@ describe('json-utils', () => {
       expect(result?.categories).toEqual(['Footwear', 'Trail Running']);
     });
 
+    it('filters non-strings from JSON array string categories', () => {
+      const result = mapJsonRowToItem({ categories: '["Footwear",42,null]' });
+      expect(result?.categories).toEqual(['Footwear']);
+    });
+
     it('wraps unparseable categories string in array', () => {
       const result = mapJsonRowToItem({ categories: 'Footwear' });
       expect(result?.categories).toEqual(['Footwear']);

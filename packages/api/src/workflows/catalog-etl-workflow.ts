@@ -24,12 +24,12 @@ import { BATCH_SIZE } from '@packrat/api/services/etl/processCatalogEtl';
 import { processLogsBatch } from '@packrat/api/services/etl/processLogsBatch';
 import { processValidItemsBatch } from '@packrat/api/services/etl/processValidItemsBatch';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
-import { toRecord } from '@packrat/guards';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
+import { toRecord } from '@packrat/guards';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import type { ChunkSpec } from './shared/chunkCsvForR2';
@@ -114,9 +114,10 @@ export async function processChunk({
 
   if (useJsonl) {
     // --- JSONL streaming path ---
+    // The chunker snaps boundaries to newlines, so every chunk starts at a
+    // clean line boundary — no partial first-line skip needed for any chunk.
     let buffer = '';
-    const skipPartialLine = isNonFirstChunk;
-    let firstLineSkipped = !skipPartialLine;
+    let firstLineSkipped = true;
 
     for await (const text of streamToText(obj.body)) {
       buffer += text;
