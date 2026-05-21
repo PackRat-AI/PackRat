@@ -170,6 +170,11 @@ export async function downloadLocalModel(): Promise<void> {
     store.set(localModelStatusAtom, 'downloading');
     store.set(localModelProgressAtom, 0);
     await activateKeepAwakeAsync(KEEP_AWAKE_TAG);
+    // Guard against cancel arriving during the activateKeepAwakeAsync await
+    if (_isCancellingDownload) {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+      return;
+    }
     try {
       const dirExists = await RNBlobUtil.fs.exists(LLAMA_MODELS_DIR);
       if (!dirExists) {
@@ -184,7 +189,6 @@ export async function downloadLocalModel(): Promise<void> {
       });
       const downloadRes = await activeDownloadTask;
       activeDownloadTask = null;
-      deactivateKeepAwake(KEEP_AWAKE_TAG);
       const httpStatus = downloadRes.respInfo?.status ?? 0;
       if (httpStatus < 200 || httpStatus >= 300) {
         await RNBlobUtil.fs.unlink(_getLlamaModelPath()).catch(() => {});
@@ -194,11 +198,13 @@ export async function downloadLocalModel(): Promise<void> {
       }
     } catch (err) {
       activeDownloadTask = null;
-      deactivateKeepAwake(KEEP_AWAKE_TAG);
-      if (_isCancellingDownload) return;
-      store.set(localModelStatusAtom, 'error');
-      store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
+      if (!_isCancellingDownload) {
+        store.set(localModelStatusAtom, 'error');
+        store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
+      }
       return;
+    } finally {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
     }
   }
 
@@ -212,7 +218,6 @@ export async function cancelLocalModelDownload(): Promise<void> {
     activeDownloadTask.cancel();
     activeDownloadTask = null;
   }
-  deactivateKeepAwake(KEEP_AWAKE_TAG);
   store.set(localModelStatusAtom, 'idle');
   store.set(localModelProgressAtom, 0);
   store.set(localModelErrorAtom, null);
