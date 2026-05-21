@@ -1,4 +1,5 @@
 import type { NewCatalogItem } from '@packrat/db';
+import { isNumber, isObject, isString } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
 import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from './csv-utils';
 
@@ -22,52 +23,52 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
 
   // --- String scalar fields ---
   const rawName = obj.name;
-  if (typeof rawName === 'string') item.name = rawName.trim();
+  if (isString(rawName)) item.name = rawName.trim();
 
   const rawProductUrl = obj.productUrl;
-  if (typeof rawProductUrl === 'string') item.productUrl = rawProductUrl.trim();
+  if (isString(rawProductUrl)) item.productUrl = rawProductUrl.trim();
 
   const rawCurrency = obj.currency;
-  if (typeof rawCurrency === 'string') item.currency = rawCurrency.trim();
+  if (isString(rawCurrency)) item.currency = rawCurrency.trim();
 
   const rawBrand = obj.brand;
-  if (typeof rawBrand === 'string') item.brand = rawBrand.trim();
+  if (isString(rawBrand)) item.brand = rawBrand.trim();
 
   const rawModel = obj.model;
-  if (typeof rawModel === 'string') item.model = rawModel.trim();
+  if (isString(rawModel)) item.model = rawModel.trim();
 
   const rawColor = obj.color;
-  if (typeof rawColor === 'string') item.color = rawColor.trim();
+  if (isString(rawColor)) item.color = rawColor.trim();
 
   const rawSize = obj.size;
-  if (typeof rawSize === 'string') item.size = rawSize.trim();
+  if (isString(rawSize)) item.size = rawSize.trim();
 
   const rawSku = obj.sku;
-  if (typeof rawSku === 'string') item.sku = rawSku.trim();
+  if (isString(rawSku)) item.sku = rawSku.trim();
 
   const rawProductSku = obj.productSku;
-  if (typeof rawProductSku === 'string') item.productSku = rawProductSku.trim();
+  if (isString(rawProductSku)) item.productSku = rawProductSku.trim();
 
   const rawSeller = obj.seller;
-  if (typeof rawSeller === 'string') item.seller = rawSeller.trim();
+  if (isString(rawSeller)) item.seller = rawSeller.trim();
 
   const rawMaterial = obj.material;
-  if (typeof rawMaterial === 'string') item.material = rawMaterial.trim();
+  if (isString(rawMaterial)) item.material = rawMaterial.trim();
 
   const rawCondition = obj.condition;
-  if (typeof rawCondition === 'string') item.condition = rawCondition.trim();
+  if (isString(rawCondition)) item.condition = rawCondition.trim();
 
   // --- Description: strip newline chars ---
   const rawDescription = obj.description;
-  if (typeof rawDescription === 'string') {
+  if (isString(rawDescription)) {
     item.description = rawDescription.replace(NEWLINE_CHARS, ' ').trim();
   }
 
   // --- reviewCount: direct number or parse from string ---
   const rawReviewCount = obj.reviewCount;
-  if (typeof rawReviewCount === 'number') {
+  if (isNumber(rawReviewCount)) {
     item.reviewCount = Math.trunc(rawReviewCount) || 0;
-  } else if (typeof rawReviewCount === 'string') {
+  } else if (isString(rawReviewCount)) {
     item.reviewCount = parseInt(rawReviewCount, 10) || 0;
   } else {
     item.reviewCount = 0;
@@ -75,17 +76,17 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
 
   // --- price: direct number or parsePrice from string ---
   const rawPrice = obj.price;
-  if (typeof rawPrice === 'number') {
+  if (isNumber(rawPrice)) {
     item.price = rawPrice;
-  } else if (typeof rawPrice === 'string') {
+  } else if (isString(rawPrice)) {
     item.price = parsePrice(rawPrice) ?? undefined;
   }
 
   // --- ratingValue: direct number or parseFloat from string ---
   const rawRatingValue = obj.ratingValue;
-  if (typeof rawRatingValue === 'number') {
+  if (isNumber(rawRatingValue)) {
     item.ratingValue = rawRatingValue;
-  } else if (typeof rawRatingValue === 'string') {
+  } else if (isString(rawRatingValue)) {
     const parsed = parseFloat(rawRatingValue);
     item.ratingValue = Number.isNaN(parsed) ? null : parsed;
   }
@@ -93,8 +94,8 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   // --- categories: array passthrough or split string ---
   const rawCategories = obj.categories;
   if (Array.isArray(rawCategories)) {
-    item.categories = rawCategories.filter((c): c is string => typeof c === 'string');
-  } else if (typeof rawCategories === 'string' && rawCategories.trim()) {
+    item.categories = rawCategories.filter((c): c is string => isString(c));
+  } else if (isString(rawCategories) && rawCategories.trim()) {
     const val = rawCategories.trim();
     try {
       item.categories = val.startsWith('[')
@@ -111,20 +112,20 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   // --- images: array passthrough ---
   const rawImages = obj.images;
   if (Array.isArray(rawImages)) {
-    item.images = rawImages.filter((i): i is string => typeof i === 'string');
+    item.images = rawImages.filter((i): i is string => isString(i));
   }
 
   // --- weight + weightUnit ---
   const rawWeight = obj.weight;
   const rawWeightUnit = obj.weightUnit;
-  const unitStr = typeof rawWeightUnit === 'string' ? rawWeightUnit : undefined;
+  const unitStr = isString(rawWeightUnit) ? rawWeightUnit : undefined;
 
-  if (typeof rawWeight === 'number' && rawWeight > 0) {
+  if (isNumber(rawWeight) && rawWeight > 0) {
     const { weight, unit } = parseWeight(String(rawWeight), unitStr);
     item.weight = weight ?? undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
     item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
-  } else if (typeof rawWeight === 'string' && parseFloat(rawWeight) > 0) {
+  } else if (isString(rawWeight) && parseFloat(rawWeight) > 0) {
     const { weight, unit } = parseWeight(rawWeight, unitStr);
     item.weight = weight ?? undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
@@ -159,7 +160,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   const rawFaqs = obj.faqs;
   if (Array.isArray(rawFaqs)) {
     item.faqs = rawFaqs as NewCatalogItem['faqs'];
-  } else if (typeof rawFaqs === 'string' && rawFaqs.trim()) {
+  } else if (isString(rawFaqs) && rawFaqs.trim()) {
     try {
       item.faqs = parseFaqs(rawFaqs);
     } catch {
@@ -169,9 +170,9 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
 
   // --- techs: passthrough ---
   const rawTechs = obj.techs;
-  if (rawTechs !== null && typeof rawTechs === 'object' && !Array.isArray(rawTechs)) {
+  if (isObject(rawTechs)) {
     item.techs = rawTechs as Record<string, string>;
-  } else if (typeof rawTechs === 'string' && rawTechs.trim()) {
+  } else if (isString(rawTechs) && rawTechs.trim()) {
     try {
       const parsed = safeJsonParse<Record<string, string>>(rawTechs);
       item.techs = Array.isArray(parsed) ? {} : parsed;
@@ -181,7 +182,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   }
 
   // --- weight fallback from techs (same as CSV path) ---
-  if (!item.weight && item.techs && typeof item.techs === 'object') {
+  if (!item.weight && item.techs && isObject(item.techs)) {
     const techs = item.techs as Record<string, string>;
     const claimedWeight = techs['Claimed Weight'] ?? techs.weight;
     if (claimedWeight) {
@@ -194,7 +195,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
 
   // --- availability: string → AvailabilitySchema.safeParse ---
   const rawAvailability = obj.availability;
-  if (typeof rawAvailability === 'string' && rawAvailability.trim()) {
+  if (isString(rawAvailability) && rawAvailability.trim()) {
     const parsedAvailability = AvailabilitySchema.safeParse(rawAvailability.trim());
     if (parsedAvailability.success) {
       item.availability = parsedAvailability.data;
