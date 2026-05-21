@@ -348,7 +348,15 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         chunks: indexedChunks,
       };
 
-      await env.ETL_WORKFLOW.create({ id: instanceId, params });
+      try {
+        await env.ETL_WORKFLOW.create({ id: instanceId, params });
+      } catch (err) {
+        await db
+          .update(etlJobs)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(eq(etlJobs.id, jobId));
+        throw err;
+      }
 
       return {
         message: 'Catalog ETL workflow triggered',

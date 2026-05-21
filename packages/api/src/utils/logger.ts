@@ -91,7 +91,12 @@ function emit({ level, event, ctx }: EmitArgs): void {
       }
     }
   }
-  const out = JSON.stringify(line);
+  let out: string;
+  try {
+    out = JSON.stringify(line);
+  } catch {
+    out = JSON.stringify({ level, event, ts: line.ts, serializationError: true });
+  }
   if (level === 'ERROR') {
     console.error(out);
   } else if (level === 'WARN') {

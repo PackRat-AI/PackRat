@@ -105,14 +105,21 @@ export async function chunkCsvForR2({
     candidates.map(async ({ index, from, to }) => {
       const obj = await r2.get(objectKey, { range: { offset: from, length: to - from } });
       if (!obj) throw new Error(`R2 peek read returned null for ${objectKey} [${from},${to})`);
-      const text = await obj.text();
-      const lastNewlineIndex = text.lastIndexOf('\n');
-      if (lastNewlineIndex === -1) {
+      // Scan bytes directly so the boundary is byte-accurate for non-ASCII CSV content.
+      const buf = new Uint8Array(await obj.arrayBuffer());
+      let lastNewlineByte = -1;
+      for (let i = buf.length - 1; i >= 0; i--) {
+        if (buf[i] === 0x0a) {
+          lastNewlineByte = i;
+          break;
+        }
+      }
+      if (lastNewlineByte === -1) {
         throw new ChunkBoundaryError(objectKey, { from, to });
       }
       // byteEnd is inclusive; it's the byte position of the newline itself,
       // so the next chunk starts at that index + 1 (which begins the next row).
-      const byteEnd = from + lastNewlineIndex;
+      const byteEnd = from + lastNewlineByte;
       return { index, byteEnd };
     }),
   );
