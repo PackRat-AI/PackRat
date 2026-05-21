@@ -27,7 +27,7 @@ export type ChunkCsvResult = {
 
 export type ChunkerR2 = Pick<R2BucketService, 'head' | 'get'>;
 
-const DEFAULT_CHUNK_BYTES = 5 * 1024 * 1024; // 5 MiB — 20 MiB caused WorkflowTimeoutError on large files (>15 MB)
+const DEFAULT_CHUNK_BYTES = 2 * 1024 * 1024; // 2 MiB — 5 MiB still caused WorkflowTimeoutError on Marmot's large CSV (>24 min total on 4-retry run)
 const DEFAULT_PEEK_BYTES = 64 * 1024; // 64 KiB
 
 export class ChunkBoundaryError extends Error {
