@@ -228,11 +228,12 @@ export async function processChunk({
       skip_empty_lines: true,
       skip_records_with_error: true,
       on_skip: (err) => {
-        const parserLine = (err as { lines?: number }).lines ?? rowIndex;
+        const parserLine = (err as { lines?: number } | undefined)?.lines ?? rowIndex;
+        const message = err?.message ?? 'unknown parse error';
         invalidItemsBatch.push({
           jobId,
-          errors: [{ field: 'csv_parse', reason: err.message }],
-          rawData: { parseError: err.message },
+          errors: [{ field: 'csv_parse', reason: message }],
+          rawData: { parseError: message },
           rowIndex: parserLine,
         });
       },
