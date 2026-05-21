@@ -122,10 +122,11 @@ Response:
 ```
 
 Original job's `etl_jobs` row is left untouched (still `failed`); the new
-row reflects the retry. There is no automatic supersession link yet — when
-the repair-from-scratch endpoint lands (follow-up PR), it will add
-`superseded_by_job_id` to make the link explicit. For now operators
-correlate by `(source, filename)` and timestamp.
+row reflects the retry. The new row's `superseded_by_job_id` is set to the
+original `jobId` (with `superseded_at = now()`) so the supersession chain
+is explicit — no manual correlation by `(source, filename)` and timestamp
+is required. Use `GET /admin/analytics/catalog/etl/:jobId` to see the full
+chain for any job.
 
 ## Reconciling a job's row count
 
@@ -279,10 +280,12 @@ meanings under the Workflows architecture:
 - **Reconcile endpoint is synchronous.** Very large source files
   (>200 MB) may exceed the fetch budget. Async-via-workflow path is a
   documented follow-up.
-- **No ETag fail-closed on retry.** If the R2 source has been overwritten
-  since the original ingest, retry silently re-ingests the new content.
-  Operator-managed for now; ETag verification + a `?force=true` override
-  is a follow-up PR.
+- **ETag fail-closed on repair-from-scratch (not plain retry).** The
+  `repair-from-scratch` endpoint compares the stored `source_etag` against
+  `r2.head().etag` and returns 409 on mismatch; pass `?force=true` to
+  override. The plain `retry` endpoint does not enforce ETag checks — if the
+  R2 source has been overwritten, retry re-ingests the new content. Use
+  repair-from-scratch when historical accuracy matters.
 - **Embedding failures still cost API calls on retry.** Workflows
   memoizes step results, so a successful chunk step doesn't re-fire its
   embedding call on a downstream failure. But a chunk that fails AT the
