@@ -191,9 +191,22 @@ Defined in root `tsconfig.json`:
 
 ## Database
 
-- ORM: Drizzle (`packages/api/src/db/schema.ts`)
-- Migrations: Drizzle Kit (`drizzle-kit`)
+- ORM: Drizzle (`packages/db/src/schema/` after the schema extraction)
+- Migrations: **always** Drizzle Kit (`drizzle-kit generate`) — never hand-written SQL
 - Embeddings: pgvector with 1536 dimensions
+
+### Migrations — HARD RULE
+
+**Do not hand-write SQL migrations.** Always use Drizzle Kit:
+
+1. Change the schema in `packages/db/src/schema/*.ts`
+2. Run `bun --cwd packages/db drizzle-kit generate` to emit the migration SQL
+3. Review the generated `packages/db/drizzle/<NNNN>_<name>.sql` for correctness
+4. Commit both the schema change AND the generated migration in the same PR
+
+Hand-written migrations get out of sync with the schema, drift across environments, and break the Better Auth / drizzle-zod / inferred-TS-types unified pipeline (PR #2414). If `drizzle-kit generate` produces a migration you disagree with, **fix the schema or the generator config** — do not edit the SQL by hand.
+
+If you find a migration in the repo that was hand-written (no `drizzle-kit` provenance), flag it in your PR description and regenerate from schema as a follow-up commit.
 
 ## EAS Build Profiles
 
