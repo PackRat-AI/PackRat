@@ -39,6 +39,8 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
+const FILE_EXT_RE = /\.[^.]*$/;
+
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
   .use(apiKeyAuthPlugin)
@@ -327,7 +329,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         chunksTotal: totalChunks,
       }));
 
-      const instanceId = `${source}-${filename}`;
+      // CF Workflows instance IDs only allow [a-zA-Z0-9_-] — strip the file extension.
+      const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
 
       await db.insert(etlJobs).values({
         id: jobId,
