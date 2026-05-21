@@ -24,6 +24,7 @@ import { BATCH_SIZE } from '@packrat/api/services/etl/processCatalogEtl';
 import { processLogsBatch } from '@packrat/api/services/etl/processLogsBatch';
 import { processValidItemsBatch } from '@packrat/api/services/etl/processValidItemsBatch';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { toRecord } from '@packrat/guards';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
@@ -137,7 +138,7 @@ export async function processChunk({
 
         let parsedObj: Record<string, unknown>;
         try {
-          parsedObj = JSON.parse(trimmed) as Record<string, unknown>;
+          parsedObj = toRecord(JSON.parse(trimmed));
         } catch (parseErr) {
           invalidItemsBatch.push({
             jobId,
@@ -187,7 +188,7 @@ export async function processChunk({
     const lastLine = buffer.trim();
     if (lastLine && firstLineSkipped) {
       try {
-        const parsedObj = JSON.parse(lastLine) as Record<string, unknown>;
+        const parsedObj = toRecord(JSON.parse(lastLine));
         const item = mapJsonRowToItem(parsedObj);
         if (item) {
           const validated = validator.validateItem(item);

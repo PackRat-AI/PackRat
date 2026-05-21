@@ -193,12 +193,12 @@ describe('json-utils', () => {
     });
 
     it('maps availability from valid string', () => {
-      const result = mapJsonRowToItem({ availability: 'InStock' });
-      expect(result?.availability).toBe('InStock');
+      const result = mapJsonRowToItem({ availability: 'in_stock' });
+      expect(result?.availability).toBe('in_stock');
     });
 
     it('ignores invalid availability value', () => {
-      const result = mapJsonRowToItem({ availability: 'maybe' });
+      const result = mapJsonRowToItem({ availability: 'InStock' });
       expect(result?.availability).toBeUndefined();
     });
 
