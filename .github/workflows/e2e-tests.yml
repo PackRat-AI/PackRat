@@ -34,7 +34,9 @@ env:
   MAESTRO_VERSION: 2.3.0
   MAESTRO_CLI_NO_ANALYTICS: "true"
   # Local Postgres used by both jobs — no cloud DB dependency.
-  E2E_DB_URL: postgres://e2e_user:e2e_pass@localhost:5432/packrat_e2e
+  # Use 127.0.0.1 explicitly: on some runners `localhost` resolves to ::1 (IPv6)
+  # while Postgres only listens on 127.0.0.1 (IPv4), causing connection failures.
+  E2E_DB_URL: postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
   E2E_API_URL: http://localhost:8787
 
 jobs:
@@ -49,16 +51,14 @@ jobs:
         name: Verify E2E secrets are available
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          # NEON_DEV_DATABASE_URL no longer required — both jobs run a local
-          # Postgres instance via ikalnytskyi/action-setup-postgres.
-          # E2E_BETTER_AUTH_SECRET is the only crypto secret wrangler dev needs.
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
         run: |
-          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$E2E_BETTER_AUTH_SECRET" ]; then
+          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$E2E_TEST_PASSWORD" ] && [ -n "$E2E_BETTER_AUTH_SECRET" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::E2E secrets not configured — skipping E2E tests (need E2E_TEST_EMAIL + E2E_BETTER_AUTH_SECRET)"
+            echo "::notice::E2E secrets not configured — skipping E2E tests (need E2E_TEST_EMAIL + E2E_TEST_PASSWORD + E2E_BETTER_AUTH_SECRET)"
           fi
 
   ios-e2e:
@@ -111,9 +111,9 @@ jobs:
           PG_BIN="${BREW_PREFIX}/opt/postgresql@${PG_VER}/bin"
           PG_DATA="$HOME/pgdata-e2e"
 
-          # Free port 5432 in case a pre-installed postgres is running
-          brew services stop postgresql@14 2>/dev/null || true
-          brew services stop "postgresql@${PG_VER}" 2>/dev/null || true
+          # Stop any running Homebrew Postgres service regardless of version to free port 5432.
+          brew services list | awk '/postgresql/{print $1}' \
+            | xargs -I{} brew services stop {} 2>/dev/null || true
 
           brew install "postgresql@${PG_VER}"
 
@@ -160,8 +160,8 @@ jobs:
           # Schema-valid stubs are used for APIs not exercised by the master flow
           # (AI, email, R2, social OAuth) so env-validation does not throw.
           cat > packages/api/.dev.vars << 'DEVVARS'
-          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@localhost:5432/packrat_e2e
-          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@localhost:5432/packrat_e2e
+          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
           BETTER_AUTH_URL=http://localhost:8787
           EXPO_PUBLIC_API_URL=http://localhost:8787
           ADMIN_USERNAME=admin
@@ -203,16 +203,16 @@ jobs:
             >> packages/api/.dev.vars
 
       - name: Run DB migrations
-        run: |
-          NEON_DATABASE_URL="${{ env.E2E_DB_URL }}" \
-            bun run --filter @packrat/api db:migrate
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+        run: bun run --filter @packrat/api db:migrate
 
       - name: Seed E2E test user
-        run: |
-          NEON_DATABASE_URL="${{ env.E2E_DB_URL }}" \
-          E2E_TEST_EMAIL="${{ env.TEST_EMAIL }}" \
-          E2E_TEST_PASSWORD="${{ env.TEST_PASSWORD }}" \
-            bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+        run: bun run --filter @packrat/api db:seed:e2e-user
 
       - name: Start wrangler dev (background)
         working-directory: packages/api
@@ -416,6 +416,7 @@ jobs:
         with:
           name: ios-wrangler-dev-log
           path: /tmp/wrangler-dev.log
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: Stop wrangler dev
@@ -516,8 +517,8 @@ jobs:
           OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
         run: |
           cat > packages/api/.dev.vars << 'DEVVARS'
-          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@localhost:5432/packrat_e2e
-          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@localhost:5432/packrat_e2e
+          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
           BETTER_AUTH_URL=http://localhost:8787
           EXPO_PUBLIC_API_URL=http://localhost:8787
           ADMIN_USERNAME=admin
@@ -558,16 +559,16 @@ jobs:
             >> packages/api/.dev.vars
 
       - name: Run DB migrations
-        run: |
-          NEON_DATABASE_URL="${{ env.E2E_DB_URL }}" \
-            bun run --filter @packrat/api db:migrate
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+        run: bun run --filter @packrat/api db:migrate
 
       - name: Seed E2E test user
-        run: |
-          NEON_DATABASE_URL="${{ env.E2E_DB_URL }}" \
-          E2E_TEST_EMAIL="${{ env.TEST_EMAIL }}" \
-          E2E_TEST_PASSWORD="${{ env.TEST_PASSWORD }}" \
-            bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+        run: bun run --filter @packrat/api db:seed:e2e-user
 
       - name: Start wrangler dev (background)
         working-directory: packages/api
@@ -577,7 +578,7 @@ jobs:
           # getApiUrl() in apps/expo swaps 'localhost' -> '10.0.2.2' at runtime.
           WRANGLER_LOG=warn \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 --local \
+            wrangler dev -e dev --ip 0.0.0.0 --local --enable-containers=false \
               > /tmp/wrangler-dev.log 2>&1 &
           echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
 
@@ -750,6 +751,7 @@ jobs:
         with:
           name: android-wrangler-dev-log
           path: /tmp/wrangler-dev.log
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: Stop wrangler dev

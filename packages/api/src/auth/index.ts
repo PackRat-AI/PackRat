@@ -17,17 +17,31 @@ import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
-// Keyed by NEON_DATABASE_URL so the same instance is reused across requests
-// within the same isolate — miniflare creates a new env object per request,
-// so a WeakMap would never hit and every request would re-initialize auth.
+// Stores the in-flight Promise so concurrent requests that arrive before the
+// first initialization completes all await the same Promise rather than each
+// kicking off a redundant build. Evicted on rejection so the next call retries.
+// Keyed by NEON_DATABASE_URL|BETTER_AUTH_URL — miniflare creates a new env
+// object per request, so a WeakMap never hits; the URL composite key is stable
+// within an isolate lifetime and distinguishes different env configurations.
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
-const authCache = new Map<string, any>();
+const authCache = new Map<string, Promise<any>>();
 
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cached = authCache.get(env.NEON_DATABASE_URL);
+  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}`;
+  const cached = authCache.get(cacheKey);
   if (cached) return cached;
 
+  const promise = buildAuth(env).catch((err) => {
+    authCache.delete(cacheKey);
+    throw err;
+  });
+  authCache.set(cacheKey, promise);
+  return promise;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
+async function buildAuth(env: ValidatedEnv): Promise<any> {
   const appleClientSecret = await generateAppleClientSecret(env);
 
   const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
@@ -58,7 +72,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
             await env.AUTH_KV.put(
               key,
               value,
-              ttl ? { expirationTtl: Math.max(60, ttl) } : undefined,
+              ttl !== undefined ? { expirationTtl: Math.max(60, ttl) } : undefined,
             );
           },
           delete: async (key: string) => env.AUTH_KV.delete(key),
@@ -160,7 +174,6 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
     trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
   });
 
-  authCache.set(env.NEON_DATABASE_URL, auth);
   return auth;
 }
 

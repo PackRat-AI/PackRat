@@ -27,7 +27,7 @@ The API is now live at **http://localhost:8787**.
 
 ## How the stack connects
 
-```
+```text
 iOS Simulator ──────► localhost:8787 (wrangler dev)
                                 │
                                 ▼
@@ -38,7 +38,7 @@ The iOS Simulator on macOS shares the Mac's loopback, so `localhost` works
 without any special network config. For a real device on the same Wi-Fi, use
 your Mac's LAN IP and rebuild the app with:
 
-```
+```bash
 EXPO_PUBLIC_API_URL=http://<mac-lan-ip>:8787
 ```
 

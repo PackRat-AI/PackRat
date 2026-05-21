@@ -107,7 +107,7 @@ async function seedE2EUser() {
       })
       .onConflictDoUpdate({
         target: [schema.account.providerId, schema.account.accountId],
-        set: { password: passwordHash, updatedAt: new Date() },
+        set: { userId, password: passwordHash, updatedAt: new Date() },
       });
     console.log(`E2E credential account upserted for: ${normalizedEmail}`);
   } finally {

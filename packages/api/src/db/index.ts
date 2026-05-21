@@ -27,7 +27,7 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
   if (isStandardPostgresUrl(url)) {
     let pool = pgPools.get(url);
     if (!pool) {
-      pool = new Pool({
+      const newPool = new Pool({
         connectionString: url,
         max: 5,
         // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
@@ -35,10 +35,12 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
         idleTimeoutMillis: 0,
         connectionTimeoutMillis: 10000,
       });
-      pool.on('error', () => {
+      newPool.on('error', () => {
         pgPools.delete(url);
+        newPool.end().catch(() => {});
       });
-      pgPools.set(url, pool);
+      pgPools.set(url, newPool);
+      pool = newPool;
     }
     return drizzlePg(pool, { schema });
   }

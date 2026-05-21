@@ -56,8 +56,8 @@ echo "▶ Running schema migrations..."
 )
 
 # ── Seed E2E user ────────────────────────────────────────────────────────────
-E2E_EMAIL="${E2E_TEST_EMAIL:-$(grep '^E2E_TEST_EMAIL=' "$E2E_VARS" | cut -d= -f2-)}"
-E2E_PASS="${E2E_TEST_PASSWORD:-$(grep '^E2E_TEST_PASSWORD=' "$E2E_VARS" | cut -d= -f2-)}"
+E2E_EMAIL="${E2E_TEST_EMAIL:-$(grep '^E2E_TEST_EMAIL=' "$E2E_VARS" 2>/dev/null || true | cut -d= -f2-)}"
+E2E_PASS="${E2E_TEST_PASSWORD:-$(grep '^E2E_TEST_PASSWORD=' "$E2E_VARS" 2>/dev/null || true | cut -d= -f2-)}"
 E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
 E2E_PASS="${E2E_PASS:-E2eTestPass123!}"
 
