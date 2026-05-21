@@ -45,6 +45,7 @@
     "swift": "cd apps/swift && xcodegen generate && bun scripts/fix-xcodeproj.ts",
     "swift:codegen": "swift package --package-path apps/swift/PackRatAPIClient plugin --allow-writing-to-package-directory generate-code-from-openapi && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Client.swift apps/swift/Sources/PackRat/API/Client.swift && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Types.swift apps/swift/Sources/PackRat/API/Types.swift",
     "swift:models": "bun run apps/swift/scripts/generate-swift-models.ts",
+    "swift:quicktype": "bun run apps/swift/scripts/generate-quicktype-models.ts",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:api-client:types": "vitest run --config packages/api-client/vitest.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
@@ -75,6 +76,7 @@
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14",
+    "quicktype-core": "^23.2.6",
     "semver": "catalog:",
     "sort-package-json": "^3.6.1"
   },
