@@ -11,16 +11,6 @@
   "defaultOptions" : {
     "codeCoverage" : false,
     "diagnosticCollectionPolicy" : "Never",
-    "environmentVariableEntries" : [
-      {
-        "key" : "E2E_EMAIL",
-        "value" : "$(E2E_EMAIL)"
-      },
-      {
-        "key" : "E2E_PASSWORD",
-        "value" : "$(E2E_PASSWORD)"
-      }
-    ],
     "language" : "en",
     "region" : "US",
     "testTimeoutsEnabled" : true,

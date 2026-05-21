@@ -170,6 +170,13 @@ const args = [
   '-resultBundlePath',
   resultBundle,
   ...parsed.passthrough,
+  // Build settings — substituted into the UITests target's Info.plist
+  // (PACKRAT_E2E_EMAIL / PACKRAT_E2E_PASSWORD entries) at build time. The
+  // test class reads them via Bundle.main.infoDictionary at runtime. This
+  // is the documented Apple pattern for "secrets into a test bundle" —
+  // no file patching, no .local overrides.
+  `PACKRAT_E2E_EMAIL=${E2E_EMAIL}`,
+  `PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}`,
 ];
 
 const result = spawnSync('xcodebuild', args, {

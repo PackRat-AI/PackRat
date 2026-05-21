@@ -185,6 +185,10 @@ const args = [
   '-resultBundlePath',
   resultBundle,
   ...parsed.passthrough,
+  // Same build-setting → Info.plist → Bundle.infoDictionary path as iOS —
+  // see apps/swift/scripts/run-e2e.ts for the doc comment.
+  `PACKRAT_E2E_EMAIL=${E2E_EMAIL}`,
+  `PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}`,
 ];
 
 const result = spawnSync('xcodebuild', args, {

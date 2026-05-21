@@ -4,12 +4,21 @@ import XCTest
 
 /// Base class for all PackRat UI tests.
 ///
-/// Credentials come from the scheme's environment variables:
-///   E2E_EMAIL    — registered test account email
-///   E2E_PASSWORD — registered test account password
+/// Credentials flow via xcodebuild build settings → this test bundle's static
+/// Info.plist → `Bundle(for: AppUITestCase.self).infoDictionary`:
 ///
-/// Set them in Xcode: Edit Scheme → Run → Arguments → Environment Variables,
-/// or pass via xcodebuild: -e E2E_EMAIL=... -e E2E_PASSWORD=...
+///   bun e2e:swift                   — reads E2E_EMAIL / E2E_PASSWORD from
+///                                     .env.local and forwards as
+///                                     PACKRAT_E2E_EMAIL / PACKRAT_E2E_PASSWORD
+///                                     xcodebuild build-setting overrides.
+///   project.yml                     — UITests target's `info.properties`
+///                                     declares the keys with `$(VAR)` refs
+///                                     that xcodebuild substitutes at build.
+///   loginIfNeeded()                 — reads them at runtime via
+///                                     Bundle(for: AppUITestCase.self).
+///
+/// No scheme injection, no .xctestplan env entries, no file patching. Run
+/// directly via xcodebuild: `xcodebuild test ... PACKRAT_E2E_EMAIL=... PACKRAT_E2E_PASSWORD=...`.
 class AppUITestCase: XCTestCase {
     var app: XCUIApplication!
 
@@ -44,11 +53,18 @@ class AppUITestCase: XCTestCase {
         // Already logged in from a previous test (app not relaunched between classes)
         if isLoggedIn { return }
 
-        let email = ProcessInfo.processInfo.environment["E2E_EMAIL"] ?? ""
-        let password = ProcessInfo.processInfo.environment["E2E_PASSWORD"] ?? ""
+        // Credentials flow via xcodebuild build settings (PACKRAT_E2E_EMAIL /
+        // PACKRAT_E2E_PASSWORD passed on the CLI by `bun e2e:swift`) →
+        // INFOPLIST_KEY_* in project.yml → this test bundle's Info.plist →
+        // Bundle(for:) at runtime. No env-var or scheme injection involved.
+        let bundle = Bundle(for: AppUITestCase.self)
+        let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String) ?? ""
+        let password = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String) ?? ""
 
         guard !email.isEmpty, !password.isEmpty else {
-            throw XCTSkip("E2E_EMAIL and E2E_PASSWORD environment variables are required to run UI tests")
+            throw XCTSkip(
+                "PACKRAT_E2E_EMAIL / PACKRAT_E2E_PASSWORD must be passed as xcodebuild build settings — `bun e2e:swift` handles this automatically."
+            )
         }
 
         let emailField = app.textFields["login_email"]

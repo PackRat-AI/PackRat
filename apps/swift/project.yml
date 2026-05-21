@@ -190,10 +190,29 @@ targets:
       - Tests/PackRatUITests
     dependencies:
       - target: PackRat-iOS
+    # Static Info.plist (xcodegen-rendered from `info.properties`) instead of
+    # GENERATE_INFOPLIST_FILE. xcodebuild substitutes $(PACKRAT_E2E_*) build
+    # settings into the file at build time; the values arrive via the xcodebuild
+    # CLI from run-e2e.ts. INFOPLIST_KEY_* silently drops non-Apple-defined
+    # keys, which is why this target uses a static plist instead.
+    info:
+      path: Tests/PackRatUITests/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundlePackageType: BNDL
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        PACKRAT_E2E_EMAIL: $(PACKRAT_E2E_EMAIL)
+        PACKRAT_E2E_PASSWORD: $(PACKRAT_E2E_PASSWORD)
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        GENERATE_INFOPLIST_FILE: YES
+        PACKRAT_E2E_EMAIL: ""
+        PACKRAT_E2E_PASSWORD: ""
 
   PackRatMacOSTests:
     type: bundle.unit-test
@@ -214,10 +233,25 @@ targets:
       - Tests/PackRatUITests
     dependencies:
       - target: PackRat-macOS
+    # Same static-plist + build-setting-substitution pattern as PackRatUITests.
+    info:
+      path: Tests/PackRatMacOSUITests/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundlePackageType: BNDL
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        PACKRAT_E2E_EMAIL: $(PACKRAT_E2E_EMAIL)
+        PACKRAT_E2E_PASSWORD: $(PACKRAT_E2E_PASSWORD)
     settings:
       base:
         SWIFT_VERSION: "5.9"
-        GENERATE_INFOPLIST_FILE: YES
+        PACKRAT_E2E_EMAIL: ""
+        PACKRAT_E2E_PASSWORD: ""
 
 schemes:
   PackRat-iOS:
