@@ -7,7 +7,10 @@
   //     startup on CI runners.
   //   - E2E-specific bucket/queue names so miniflare doesn't clash with dev state.
   "name": "packrat-api",
-  "main": "src/index.ts",
+  // Use the E2E-specific entry point which omits the AppContainer export.
+  // Exporting a Container subclass from the worker causes wrangler to require
+  // Docker even without a containers binding — this entry point prevents that.
+  "main": "src/index-e2e.ts",
   "compatibility_date": "2025-06-01",
   "compatibility_flags": ["nodejs_compat"],
   "version_metadata": {

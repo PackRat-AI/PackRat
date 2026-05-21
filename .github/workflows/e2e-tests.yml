@@ -260,9 +260,11 @@ jobs:
 
           # Fail fast if wrangler crashes at startup (TypeScript error, bad config, etc.)
           sleep 5
+          echo "=== wrangler log at 5 s ==="
+          cat /tmp/wrangler-dev.log || true
+          echo "==========================="
           if ! kill -0 "${WRANGLER_PID}" 2>/dev/null; then
-            echo "::error::wrangler dev exited immediately — showing log:"
-            cat /tmp/wrangler-dev.log
+            echo "::error::wrangler dev exited immediately"
             exit 1
           fi
 
@@ -623,9 +625,11 @@ jobs:
 
           # Fail fast if wrangler crashes at startup (TypeScript error, bad config, etc.)
           sleep 5
+          echo "=== wrangler log at 5 s ==="
+          cat /tmp/wrangler-dev.log || true
+          echo "==========================="
           if ! kill -0 "${WRANGLER_PID}" 2>/dev/null; then
-            echo "::error::wrangler dev exited immediately — showing log:"
-            cat /tmp/wrangler-dev.log
+            echo "::error::wrangler dev exited immediately"
             exit 1
           fi
 
