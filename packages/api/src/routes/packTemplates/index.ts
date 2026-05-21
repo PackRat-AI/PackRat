@@ -1,5 +1,4 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { CatalogService } from '@packrat/api/services/catalogService';
@@ -52,6 +51,10 @@ Focus on items that would realistically appear in an outdoor adventure packing l
 async function fetchTikTokPostData(
   url: string,
 ): Promise<{ imageUrls: string[]; videoUrl?: string; caption?: string; contentId?: string }> {
+  // Lazy-imported so `bun generate:openapi` can walk this route's schemas in plain
+  // Bun (outside the Workers runtime) without `@cloudflare/containers` trying to
+  // resolve the `cloudflare:workers` virtual module at module-load time.
+  const { getContainer } = await import('@cloudflare/containers');
   const { APP_CONTAINER } = getEnv();
   const container = getContainer(APP_CONTAINER);
 
