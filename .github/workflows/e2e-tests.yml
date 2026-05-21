@@ -117,18 +117,41 @@ jobs:
           brew services stop "postgresql@${PG_VER}" 2>/dev/null || true
           brew services stop postgresql@16 2>/dev/null || true
 
-          # Skip brew install if pg_config is already present (pre-installed keg).
+          # Ensure postgresql@14 is installed. If pg_config exists but was compiled
+          # against an older macOS SDK (common on macos-15 runners where pg14 ships
+          # pre-installed from a prior image build), reinstall to get a fresh bottle.
           if ! "$PG_BIN/pg_config" --version > /dev/null 2>&1; then
-            echo "postgresql@${PG_VER} not found, installing..."
+            echo "postgresql@${PG_VER} not found — installing..."
             brew install "postgresql@${PG_VER}"
+          else
+            # Check if the embedded SDK path in pg_config's CFLAGS still exists.
+            # If not, the pre-installed pg14 was compiled against a stale SDK and
+            # we need a fresh bottle compiled for the current macOS version.
+            PGCFLAGS="$("$PG_BIN/pg_config" --cflags 2>&1 || echo '')"
+            STALE_SDK="$(echo "$PGCFLAGS" | grep -oE -- '-isysroot [^[:space:]]+' | awk '{print $2}' || true)"
+            if [ -n "$STALE_SDK" ] && [ ! -d "$STALE_SDK" ]; then
+              echo "pg14 compiled against stale SDK $STALE_SDK — reinstalling..."
+              brew reinstall "postgresql@${PG_VER}"
+            fi
           fi
           echo "Using: $("$PG_BIN/pg_config" --version)"
+          echo "pg_config CFLAGS: $("$PG_BIN/pg_config" --cflags)"
 
           # Build pgvector from source against this PG version's pg_config.
           # Pin to a known-good tag so the build is reproducible.
+          # Pass the current Xcode SDK explicitly so make doesn't use any stale
+          # -isysroot path that may remain in pg_config's CFLAGS after reinstall.
           git clone --depth 1 --branch v0.8.0 \
             https://github.com/pgvector/pgvector.git /tmp/pgvector-build
-          make -C /tmp/pgvector-build PG_CONFIG="$PG_BIN/pg_config"
+          CURRENT_SDK="$(xcrun --show-sdk-path)"
+          echo "Building pgvector with SDK: ${CURRENT_SDK}"
+          make -C /tmp/pgvector-build \
+            PG_CONFIG="$PG_BIN/pg_config" \
+            PG_CFLAGS="-isysroot ${CURRENT_SDK}" || {
+            echo "::error::pgvector make failed. pg_config CFLAGS:"
+            "$PG_BIN/pg_config" --cflags || true
+            exit 1
+          }
           make -C /tmp/pgvector-build install PG_CONFIG="$PG_BIN/pg_config"
           echo "pgvector installed"
 
@@ -226,9 +249,11 @@ jobs:
       - name: Start wrangler dev (background)
         working-directory: packages/api
         run: |
+          # Use the E2E-specific config which strips the containers/durable_objects
+          # bindings — Docker image builds block wrangler startup on CI runners.
           WRANGLER_LOG=info \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 --port 8787 \
+            wrangler dev --config wrangler-e2e.jsonc --ip 0.0.0.0 --port 8787 \
               > /tmp/wrangler-dev.log 2>&1 &
           WRANGLER_PID=$!
           echo "WRANGLER_PID=${WRANGLER_PID}" >> "$GITHUB_ENV"
@@ -585,12 +610,13 @@ jobs:
       - name: Start wrangler dev (background)
         working-directory: packages/api
         run: |
+          # Use the E2E-specific config which strips the containers/durable_objects
+          # bindings — Docker image builds block wrangler startup on CI runners.
           # --ip 0.0.0.0 is required: Android emulator reaches the host via
           # 10.0.2.2; wrangler must listen on all interfaces to accept it.
-          # getApiUrl() in apps/expo swaps 'localhost' -> '10.0.2.2' at runtime.
           WRANGLER_LOG=info \
           WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 --port 8787 \
+            wrangler dev --config wrangler-e2e.jsonc --ip 0.0.0.0 --port 8787 \
               > /tmp/wrangler-dev.log 2>&1 &
           WRANGLER_PID=$!
           echo "WRANGLER_PID=${WRANGLER_PID}" >> "$GITHUB_ENV"

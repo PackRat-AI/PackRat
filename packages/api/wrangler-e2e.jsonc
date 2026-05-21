@@ -1,0 +1,69 @@
+{
+  "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
+  // Minimal wrangler config for local E2E CI runs.
+  // Identical to the base wrangler.jsonc except:
+  //   - No containers / durable_objects — AppContainer (TikTok) is not exercised
+  //     by the Maestro master flow, and Docker image builds block wrangler dev
+  //     startup on CI runners.
+  //   - E2E-specific bucket/queue names so miniflare doesn't clash with dev state.
+  "name": "packrat-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_KV",
+      "id": "0d0dd76cec764c81be58ae7b871b47cb",
+      "preview_id": "f3441ec9f4b044e6b6c6a087251e3f00"
+    }
+  ],
+  "rate_limiting": [
+    {
+      "binding": "TOKEN_RATE_LIMITER",
+      "namespace_id": "1",
+      "simple": {
+        "limit": 5,
+        "period": 60
+      }
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "PACKRAT_BUCKET",
+      "bucket_name": "packrat-bucket",
+      "preview_bucket_name": "packrat-bucket"
+    },
+    {
+      "binding": "PACKRAT_SCRAPY_BUCKET",
+      "bucket_name": "packrat-scrapy-bucket",
+      "preview_bucket_name": "packrat-scrapy-bucket"
+    },
+    {
+      "binding": "PACKRAT_GUIDES_BUCKET",
+      "bucket_name": "packrat-guides",
+      "preview_bucket_name": "packrat-guides"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "queue": "packrat-etl-queue",
+        "binding": "ETL_QUEUE"
+      },
+      {
+        "queue": "packrat-logs-queue",
+        "binding": "LOGS_QUEUE"
+      },
+      {
+        "queue": "packrat-embeddings-queue",
+        "binding": "EMBEDDINGS_QUEUE"
+      }
+    ]
+  },
+  "ai": {
+    "binding": "AI"
+  }
+}
