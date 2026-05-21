@@ -1,4 +1,5 @@
 import { createDbClient } from '@packrat/api/db';
+import { toRecord } from '@packrat/guards';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
@@ -107,7 +108,7 @@ export async function processCatalogETL({
 
           let obj: Record<string, unknown>;
           try {
-            obj = JSON.parse(trimmed) as Record<string, unknown>;
+            obj = toRecord(JSON.parse(trimmed));
           } catch (parseErr) {
             invalidItemsBatch.push({
               jobId,
@@ -154,7 +155,7 @@ export async function processCatalogETL({
       const lastLine = buffer.trim();
       if (lastLine && firstLineSkipped) {
         try {
-          const obj = JSON.parse(lastLine) as Record<string, unknown>;
+          const obj = toRecord(JSON.parse(lastLine));
           const item = mapJsonRowToItem(obj);
           if (item) {
             const validated = validator.validateItem(item);

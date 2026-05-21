@@ -1,5 +1,5 @@
 import type { NewCatalogItem } from '@packrat/db';
-import { isNumber, isObject, isString } from '@packrat/guards';
+import { isNumber, isObject, isString, toStringRecord } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
 import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from './csv-utils';
 
@@ -171,7 +171,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   // --- techs: passthrough ---
   const rawTechs = obj.techs;
   if (isObject(rawTechs)) {
-    item.techs = rawTechs as Record<string, string>;
+    item.techs = toStringRecord(rawTechs);
   } else if (isString(rawTechs) && rawTechs.trim()) {
     try {
       const parsed = safeJsonParse<Record<string, string>>(rawTechs);
@@ -183,7 +183,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
 
   // --- weight fallback from techs (same as CSV path) ---
   if (!item.weight && item.techs && isObject(item.techs)) {
-    const techs = item.techs as Record<string, string>;
+    const techs = toStringRecord(item.techs);
     const claimedWeight = techs['Claimed Weight'] ?? techs.weight;
     if (claimedWeight) {
       const { weight, unit } = parseWeight(claimedWeight);
