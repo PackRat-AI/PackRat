@@ -126,10 +126,11 @@ async function reingestJob(args: {
       chunksTotal: totalChunks,
     }));
 
-    // Suffix the instance ID with the new jobId so duplicate retries
-    // don't collide with the original instance or with each other.
+    // CF Workflows IDs allow [a-zA-Z0-9_-] only, max 64 chars.
+    // source-filename-retry-uuid can exceed 64 chars; use suffix+newJobId which is
+    // always unique (UUID) and well within limits.
     const suffix = mode === 'retry' ? 'retry' : 'repair';
-    const workflowInstanceId = `${original.source}-${original.filename}-${suffix}-${newJobId}`;
+    const workflowInstanceId = `${suffix}-${newJobId}`;
 
     await db.insert(etlJobs).values({
       id: newJobId,

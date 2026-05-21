@@ -70,13 +70,16 @@ Response:
   "message": "Catalog ETL workflow triggered",
   "jobId": "<uuid>",
   "engine": "workflow",
-  "workflowInstanceId": "cotopaxi-cotopaxi_2026-05-14T16-54-05.csv"
+  "workflowInstanceId": "cotopaxi-cotopaxi_2026-05-14T16-54-05"
 }
 ```
 
-The deterministic `workflowInstanceId` (`${source}-${filename}`) means
+The deterministic `workflowInstanceId` (`${source}-${filenameWithoutExtension}`) means
 duplicate triggers for the same file are rejected by the Workflows runtime
 — safe to retry the curl on network failures.
+
+Note: CF Workflows instance IDs only allow `[a-zA-Z0-9_-]` — the `.csv` extension is
+stripped when building the ID.
 
 ## Inspecting a workflow instance
 
@@ -117,7 +120,7 @@ Response:
   "success": true,
   "newJobId": "<uuid>",
   "objectKey": "v2/cotopaxi/cotopaxi_2026-05-14T16-54-05.csv",
-  "workflowInstanceId": "cotopaxi-cotopaxi_...-retry-<newJobId>"
+  "workflowInstanceId": "retry-<newJobId>"
 }
 ```
 
