@@ -32,6 +32,10 @@ final class WildlifeService: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        // Better Auth runs a CSRF Origin check on every POST — see APIClient
+        // for the full rationale. This route uses multipart so it can't go
+        // through the JSON-only APIClient.send path; set Origin manually.
+        request.setValue("packrat://", forHTTPHeaderField: "Origin")
         if let token = KeychainService.shared.sessionToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
