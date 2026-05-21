@@ -214,10 +214,12 @@ jobs:
           E2E_TEST_PASSWORD="${{ env.TEST_PASSWORD }}" \
             bun run --filter @packrat/api db:seed:e2e-user
 
-      - name: Install Docker via Colima
+      - name: Install Docker via Colima (QEMU backend)
         run: |
-          brew install colima docker
-          colima start --cpu 2 --memory 4 --disk 20
+          brew install colima docker qemu
+          # VZ (Apple Virtualization.framework) is blocked in the GitHub Actions
+          # macOS-15 sandbox. Force the QEMU backend which has no such restriction.
+          colima start --vm-type=qemu --cpu 2 --memory 4 --disk 20
           until docker info >/dev/null 2>&1; do sleep 1; done
           echo "Docker ready"
 
