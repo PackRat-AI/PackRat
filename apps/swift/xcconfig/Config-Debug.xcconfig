@@ -14,7 +14,7 @@
 // To use the deployed dev API instead (e.g., after the auth routes deploy):
 //   echo "PACKRAT_ENV = dev" > xcconfig/Config-Debug.local.xcconfig
 // The .local.xcconfig file is gitignored and picked up via the #include? above.
-PACKRAT_ENV = local
+PACKRAT_ENV = dev-local
 
 // SENTRY_DSN flows xcconfig → Info.plist → runtime.
 // Drop the DSN into Config-Debug.local.xcconfig to enable Sentry on Debug
