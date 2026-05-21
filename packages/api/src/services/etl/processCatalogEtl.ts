@@ -87,14 +87,17 @@ export async function processCatalogETL({
       skip_empty_lines: true,
       skip_records_with_error: true,
       on_skip: (err: Error) => {
+        const parserLine = (err as { lines?: number }).lines ?? rowIndex;
         const parseErrorLog: NewInvalidItemLog = {
           jobId,
           errors: [{ field: 'csv_parse', reason: err.message }],
           rawData: { parseError: err.message },
-          rowIndex,
+          rowIndex: parserLine,
         };
         invalidItemsBatch.push(parseErrorLog);
-        console.warn(`[ETL] Skipped malformed CSV row at row ${rowIndex}: ${err.message}`);
+        console.warn(
+          `[ETL] Skipped malformed CSV row at parser line ${parserLine}: ${err.message}`,
+        );
       },
     });
 
