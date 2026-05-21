@@ -101,13 +101,28 @@ jobs:
 
       # ── Local API stack ────────────────────────────────────────────────────
 
-      - name: Start local Postgres
-        uses: ikalnytskyi/action-setup-postgres@v6
-        with:
-          username: e2e_user
-          password: e2e_pass
-          database: packrat_e2e
-          port: 5432
+      - name: Start local Postgres with pgvector
+        run: |
+          PG_VER=16
+          BREW_PREFIX="$(brew --prefix)"
+          PG_BIN="${BREW_PREFIX}/opt/postgresql@${PG_VER}/bin"
+          PG_DATA="$HOME/pgdata-e2e"
+
+          brew install "postgresql@${PG_VER}" pgvector
+
+          "$PG_BIN/initdb" -D "$PG_DATA" --encoding=UTF8 --auth=trust
+          printf 'port = 5432\nlisten_addresses = '"'"'127.0.0.1'"'"'\n' \
+            >> "$PG_DATA/postgresql.conf"
+          "$PG_BIN/pg_ctl" -D "$PG_DATA" -l "$HOME/pg.log" start
+
+          for i in $(seq 1 30); do
+            "$PG_BIN/pg_isready" -h 127.0.0.1 -p 5432 && break || sleep 2
+          done
+
+          "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
+            -c "CREATE USER e2e_user WITH PASSWORD 'e2e_pass';"
+          "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
+            -c "CREATE DATABASE packrat_e2e OWNER e2e_user;"
 
       - name: Write wrangler .dev.vars
         env:
@@ -400,6 +415,21 @@ jobs:
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: e2e_user
+          POSTGRES_PASSWORD: e2e_pass
+          POSTGRES_DB: packrat_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Free disk space on runner
         run: |
@@ -445,14 +475,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       # ── Local API stack ────────────────────────────────────────────────────
-
-      - name: Start local Postgres
-        uses: ikalnytskyi/action-setup-postgres@v6
-        with:
-          username: e2e_user
-          password: e2e_pass
-          database: packrat_e2e
-          port: 5432
+      # Postgres with pgvector runs as a job-level service container (see services: above).
 
       - name: Write wrangler .dev.vars
         env:
