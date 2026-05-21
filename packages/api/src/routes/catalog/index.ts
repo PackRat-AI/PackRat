@@ -6,6 +6,8 @@ import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
+import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, packItems } from '@packrat/db';
 import { isString } from '@packrat/guards';
 import {
@@ -225,19 +227,107 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
   )
 
-  // -- ETL queue (api-key auth)
+  // -- ETL trigger (api-key auth)
+  //
+  // Default engine is 'workflow' — triggers a CatalogEtlWorkflow instance
+  // per source file. The 'queue' engine routes to the legacy queue path and
+  // remains available during the coexistence window so operators can fall
+  // back if the workflow path misbehaves in production. The queue path will
+  // be removed after the workflow path bakes (per the migration plan).
   .post(
     '/etl',
-    async ({ body }) => {
+    async ({ body, query }) => {
       const { filename, chunks, source, scraperRevision } = body;
+      const engine = query.engine ?? 'workflow';
       const db = createDb();
       const env = getEnv();
+      const jobId = crypto.randomUUID();
 
-      if (!env.ETL_QUEUE) {
-        return status(400, { message: 'ETL_QUEUE is not configured' });
+      if (engine === 'queue') {
+        if (!env.ETL_QUEUE) {
+          return status(400, { message: 'ETL_QUEUE is not configured' });
+        }
+
+        await db.insert(etlJobs).values({
+          id: jobId,
+          status: 'running',
+          source,
+          filename,
+          scraperRevision,
+          startedAt: new Date(),
+        });
+
+        const CHUNK_BYTES = 20 * 1024 * 1024;
+        const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+        const queueChunks: Array<{
+          objectKey: string;
+          byteStart?: number;
+          byteEnd?: number;
+        }> = [];
+
+        for (const objectKey of chunks) {
+          const meta = await r2.head(objectKey);
+          if (!meta || meta.size <= CHUNK_BYTES) {
+            queueChunks.push({ objectKey });
+          } else {
+            const n = Math.ceil(meta.size / CHUNK_BYTES);
+            for (let i = 0; i < n; i++) {
+              queueChunks.push({
+                objectKey,
+                byteStart: i * CHUNK_BYTES,
+                byteEnd: Math.min((i + 1) * CHUNK_BYTES - 1, meta.size - 1),
+              });
+            }
+          }
+        }
+
+        await queueCatalogETL({
+          queue: env.ETL_QUEUE,
+          chunks: queueChunks,
+          jobId,
+        });
+
+        return {
+          message: 'Catalog ETL job queued successfully (legacy queue path)',
+          jobId,
+          engine: 'queue' as const,
+        };
       }
 
-      const jobId = crypto.randomUUID();
+      // Workflow path (default).
+      if (!env.ETL_WORKFLOW) {
+        return status(400, { message: 'ETL_WORKFLOW is not configured' });
+      }
+
+      const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+
+      // Chunk every source object up front so the workflow params carry the
+      // full plan. Single-file is the dominant case in prod (scrapers
+      // produce one CSV per run); multi-object requests bundle into one
+      // workflow instance. ETag from the first object is captured for the
+      // repair-from-scratch fail-closed verification (U5 follow-up).
+      const allChunks: ChunkSpec[] = [];
+      let firstEtag: string | null = null;
+      let firstLastModified: Date | null = null;
+      for (const objectKey of chunks) {
+        const { etag, lastModified, chunks: chunkSpecs } = await chunkCsvForR2({ r2, objectKey });
+        if (firstEtag === null) {
+          firstEtag = etag;
+          firstLastModified = lastModified;
+        }
+        allChunks.push(...chunkSpecs);
+      }
+
+      // Re-index chunkIndex / chunksTotal across the combined chunk array so
+      // step names in the workflow are globally unique within an instance.
+      const totalChunks = allChunks.length;
+      const indexedChunks: ChunkSpec[] = allChunks.map((c, i) => ({
+        ...c,
+        chunkIndex: i,
+        chunksTotal: totalChunks,
+      }));
+
+      const instanceId = `${source}-${filename}`;
 
       await db.insert(etlJobs).values({
         id: jobId,
@@ -246,48 +336,44 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         filename,
         scraperRevision,
         startedAt: new Date(),
+        workflowInstanceId: instanceId,
+        sourceEtag: firstEtag,
+        sourceLastModified: firstLastModified,
       });
 
-      // Split large files into 20 MB byte-range chunks so each Worker
-      // invocation stays within the CPU time budget (~30k rows / chunk).
-      const CHUNK_BYTES = 20 * 1024 * 1024;
-      const r2 = new R2BucketService({ env, bucketType: 'catalog' });
-      const queueChunks: Array<{ objectKey: string; byteStart?: number; byteEnd?: number }> = [];
+      const params: CatalogEtlWorkflowParams = {
+        jobId,
+        source,
+        scraperRevision,
+        chunks: indexedChunks,
+      };
 
-      for (const objectKey of chunks) {
-        const meta = await r2.head(objectKey);
-        if (!meta || meta.size <= CHUNK_BYTES) {
-          queueChunks.push({ objectKey });
-        } else {
-          const n = Math.ceil(meta.size / CHUNK_BYTES);
-          for (let i = 0; i < n; i++) {
-            queueChunks.push({
-              objectKey,
-              byteStart: i * CHUNK_BYTES,
-              byteEnd: Math.min((i + 1) * CHUNK_BYTES - 1, meta.size - 1),
-            });
-          }
-        }
+      try {
+        await env.ETL_WORKFLOW.create({ id: instanceId, params });
+      } catch (err) {
+        await db
+          .update(etlJobs)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(eq(etlJobs.id, jobId));
+        throw err;
       }
 
-      await queueCatalogETL({
-        queue: env.ETL_QUEUE,
-        chunks: queueChunks,
-        jobId,
-      });
-
       return {
-        message: 'Catalog ETL job queued successfully',
+        message: 'Catalog ETL workflow triggered',
         jobId,
-        queued: true,
+        engine: 'workflow' as const,
+        workflowInstanceId: instanceId,
       };
     },
     {
       body: CatalogETLSchema,
+      query: z.object({
+        engine: z.enum(['workflow', 'queue']).optional(),
+      }),
       isValidApiKey: true,
       detail: {
         tags: ['Catalog'],
-        summary: 'Queue catalog ETL job from R2 CSV chunk files',
+        summary: 'Trigger catalog ETL ingest (Workflow by default; ?engine=queue for legacy path)',
       },
     },
   )

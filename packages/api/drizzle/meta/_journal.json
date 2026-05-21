@@ -337,6 +337,13 @@
       "when": 1778594728740,
       "tag": "0047_cute_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1779334995277,
+      "tag": "0047_clear_monster_badoon",
+      "breakpoints": true
     }
   ]
 }
