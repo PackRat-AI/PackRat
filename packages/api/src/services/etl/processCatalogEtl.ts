@@ -83,7 +83,19 @@ export async function processCatalogETL({
 
     const parser = parse({
       relax_column_count: true,
+      relax_quotes: true,
       skip_empty_lines: true,
+      skip_records_with_error: true,
+      on_skip: (err: Error) => {
+        const parseErrorLog: NewInvalidItemLog = {
+          jobId,
+          errors: [{ field: 'csv_parse', reason: err.message }],
+          rawData: { parseError: err.message },
+          rowIndex,
+        };
+        invalidItemsBatch.push(parseErrorLog);
+        console.warn(`[ETL] Skipped malformed CSV row at row ${rowIndex}: ${err.message}`);
+      },
     });
 
     (async () => {
