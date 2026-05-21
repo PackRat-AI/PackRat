@@ -13,6 +13,7 @@ import type { LlamaLanguageModel } from '@react-native-ai/llama';
 import { llama } from '@react-native-ai/llama';
 import type { LanguageModel } from 'ai';
 import { store } from 'expo-app/atoms/store';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
 import {
@@ -28,6 +29,7 @@ import { createLocalTools } from './tools';
 
 const LLAMA_MODEL_FILENAME = LLAMA_MODEL_ID.split('/').at(-1) ?? 'model.gguf';
 const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
+const KEEP_AWAKE_TAG = 'model-download';
 
 function _getLlamaModelPath(): string {
   return `${LLAMA_MODELS_DIR}/${LLAMA_MODEL_FILENAME}`;
@@ -167,6 +169,7 @@ export async function downloadLocalModel(): Promise<void> {
 
     store.set(localModelStatusAtom, 'downloading');
     store.set(localModelProgressAtom, 0);
+    await activateKeepAwakeAsync(KEEP_AWAKE_TAG);
     try {
       const dirExists = await RNBlobUtil.fs.exists(LLAMA_MODELS_DIR);
       if (!dirExists) {
@@ -181,6 +184,7 @@ export async function downloadLocalModel(): Promise<void> {
       });
       const downloadRes = await activeDownloadTask;
       activeDownloadTask = null;
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
       const httpStatus = downloadRes.respInfo?.status ?? 0;
       if (httpStatus < 200 || httpStatus >= 300) {
         await RNBlobUtil.fs.unlink(_getLlamaModelPath()).catch(() => {});
@@ -190,6 +194,7 @@ export async function downloadLocalModel(): Promise<void> {
       }
     } catch (err) {
       activeDownloadTask = null;
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
       if (_isCancellingDownload) return;
       store.set(localModelStatusAtom, 'error');
       store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
@@ -207,6 +212,7 @@ export async function cancelLocalModelDownload(): Promise<void> {
     activeDownloadTask.cancel();
     activeDownloadTask = null;
   }
+  deactivateKeepAwake(KEEP_AWAKE_TAG);
   store.set(localModelStatusAtom, 'idle');
   store.set(localModelProgressAtom, 0);
   store.set(localModelErrorAtom, null);
