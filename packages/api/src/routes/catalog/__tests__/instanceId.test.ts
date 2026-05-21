@@ -41,7 +41,7 @@ describe('catalog ETL instanceId', () => {
   it('long name truncation: result is capped at 64 chars', () => {
     // 20-char source + '-' + 60-char filename (no ext) = 81 chars before slice
     const source = 'a'.repeat(20);
-    const filename = 'b'.repeat(60) + '.csv';
+    const filename = `${'b'.repeat(60)}.csv`;
 
     const id = buildInstanceId(source, filename);
 
