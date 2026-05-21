@@ -6,6 +6,10 @@ import { ForgotPasswordRequestSchema, ResetPasswordRequestSchema } from '@packra
 import { Elysia, status } from 'elysia';
 
 export const passwordResetRoutes = new Elysia({ prefix: '/password-reset' })
+  .model({
+    'passwordReset.ForgotPasswordRequest': ForgotPasswordRequestSchema,
+    'passwordReset.ResetPasswordRequest': ResetPasswordRequestSchema,
+  })
   // public-route: unauthenticated users need this to initiate a password reset
   .post(
     '/request',
@@ -14,7 +18,7 @@ export const passwordResetRoutes = new Elysia({ prefix: '/password-reset' })
       return { success: true, message: 'If an account exists, a reset code has been sent.' };
     },
     {
-      body: ForgotPasswordRequestSchema,
+      body: 'passwordReset.ForgotPasswordRequest',
       detail: {
         tags: ['Auth'],
         summary: 'Request password reset',
@@ -37,7 +41,7 @@ export const passwordResetRoutes = new Elysia({ prefix: '/password-reset' })
       }
     },
     {
-      body: ResetPasswordRequestSchema,
+      body: 'passwordReset.ResetPasswordRequest',
       detail: {
         tags: ['Auth'],
         summary: 'Verify OTP and reset password',

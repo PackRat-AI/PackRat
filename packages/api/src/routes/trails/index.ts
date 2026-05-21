@@ -9,6 +9,10 @@ import { z } from 'zod';
 // ── Routes ─────────────────────────────────────────────────────────────────
 
 export const trailsRoutes = new Elysia({ prefix: '/trails' })
+  .model({
+    'trails.RouteDetailRow': RouteDetailRowSchema,
+    'trails.RouteSearchRow': RouteSearchRowSchema,
+  })
   .use(authPlugin)
 
   /**

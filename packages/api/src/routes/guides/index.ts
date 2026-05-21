@@ -19,6 +19,12 @@ import matter from 'gray-matter';
 import { z } from 'zod';
 
 export const guidesRoutes = new Elysia({ prefix: '/guides' })
+  .model({
+    'guides.GuideCategoriesResponse': GuideCategoriesResponseSchema,
+    'guides.GuideDetail': GuideDetailSchema,
+    'guides.GuideSearchResponse': GuideSearchResponseSchema,
+    'guides.GuidesResponse': GuidesResponseSchema,
+  })
   .use(authPlugin)
 
   // -- List guides
@@ -131,7 +137,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     },
     {
       query: GuidesQuerySchema,
-      response: { 200: GuidesResponseSchema },
+      response: { 200: 'guides.GuidesResponse' },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],
@@ -185,7 +191,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
       }
     },
     {
-      response: { 200: GuideCategoriesResponseSchema },
+      response: { 200: 'guides.GuideCategoriesResponse' },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],
@@ -344,7 +350,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
     },
     {
       params: z.object({ id: z.string() }),
-      response: { 200: GuideDetailSchema },
+      response: { 200: 'guides.GuideDetail' },
       isAuthenticated: true,
       detail: {
         tags: ['Guides'],

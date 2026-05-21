@@ -17,6 +17,11 @@ import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
 export const chatRoutes = new Elysia({ prefix: '/chat' })
+  .model({
+    'chat.ChatRequest': ChatRequestSchema,
+    'chat.CreateReportRequest': CreateReportRequestSchema,
+    'chat.UpdateReportStatusRequest': UpdateReportStatusRequestSchema,
+  })
   .use(authPlugin)
 
   // Chat streaming
@@ -120,7 +125,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return response;
     },
     {
-      body: ChatRequestSchema,
+      body: 'chat.ChatRequest',
       isAuthenticated: true,
       detail: { tags: ['Chat'], summary: 'Chat with AI assistant', security: [{ bearerAuth: [] }] },
     },
@@ -144,7 +149,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return { success: true };
     },
     {
-      body: CreateReportRequestSchema,
+      body: 'chat.CreateReportRequest',
       isAuthenticated: true,
       detail: { tags: ['Chat'], summary: 'Report AI content', security: [{ bearerAuth: [] }] },
     },
@@ -209,7 +214,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
     },
     {
       params: z.object({ id: z.string() }),
-      body: UpdateReportStatusRequestSchema,
+      body: 'chat.UpdateReportStatusRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Chat'],

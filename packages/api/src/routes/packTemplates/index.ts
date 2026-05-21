@@ -116,6 +116,14 @@ function getYouTubeId(url: string): string | null {
 // ---------------------------------------------------------------------------
 
 export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
+  .model({
+    'packTemplates.AIPackAnalysis': AIPackAnalysisSchema,
+    'packTemplates.CreatePackTemplateItemRequest': CreatePackTemplateItemRequestSchema,
+    'packTemplates.CreatePackTemplateRequest': CreatePackTemplateRequestSchema,
+    'packTemplates.GenerateFromOnlineContentRequest': GenerateFromOnlineContentRequestSchema,
+    'packTemplates.UpdatePackTemplateItemRequest': UpdatePackTemplateItemRequestSchema,
+    'packTemplates.UpdatePackTemplateRequest': UpdatePackTemplateRequestSchema,
+  })
   .use(authPlugin)
   .use(adminAuthPlugin)
 
@@ -175,7 +183,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       return status(201, templateWithItems);
     },
     {
-      body: CreatePackTemplateRequestSchema,
+      body: 'packTemplates.CreatePackTemplateRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
@@ -386,7 +394,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
       }
     },
     {
-      body: GenerateFromOnlineContentRequestSchema,
+      body: 'packTemplates.GenerateFromOnlineContentRequest',
       isAdmin: true,
       detail: {
         tags: ['Pack Templates'],
@@ -441,7 +449,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       params: z.object({ itemId: z.string() }),
-      body: UpdatePackTemplateItemRequestSchema,
+      body: 'packTemplates.UpdatePackTemplateItemRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
@@ -563,7 +571,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       params: z.object({ templateId: z.string() }),
-      body: UpdatePackTemplateRequestSchema,
+      body: 'packTemplates.UpdatePackTemplateRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
@@ -689,7 +697,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       params: z.object({ templateId: z.string() }),
-      body: CreatePackTemplateItemRequestSchema,
+      body: 'packTemplates.CreatePackTemplateItemRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],

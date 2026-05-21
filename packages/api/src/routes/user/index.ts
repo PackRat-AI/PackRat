@@ -11,6 +11,12 @@ import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 
 export const userRoutes = new Elysia({ prefix: '/user' })
+  .model({
+    'user.ErrorResponse': ErrorResponseSchema,
+    'user.UpdateUserRequest': UpdateUserRequestSchema,
+    'user.UpdateUserResponse': UpdateUserResponseSchema,
+    'user.UserProfile': UserProfileSchema,
+  })
   .use(authPlugin)
 
   // Get profile
@@ -53,7 +59,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       }
     },
     {
-      response: { 200: UserProfileSchema, 404: ErrorResponseSchema },
+      response: { 200: 'user.UserProfile', 404: 'user.ErrorResponse' },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Get user profile', security: [{ bearerAuth: [] }] },
     },
@@ -125,7 +131,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       }
     },
     {
-      body: UpdateUserRequestSchema,
+      body: 'user.UpdateUserRequest',
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Update user profile', security: [{ bearerAuth: [] }] },
     },
