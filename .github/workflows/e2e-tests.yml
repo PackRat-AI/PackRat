@@ -144,7 +144,7 @@ jobs:
           fi
 
           "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
-            -c "CREATE USER e2e_user WITH PASSWORD 'e2e_pass';"
+            -c "CREATE USER e2e_user WITH PASSWORD 'e2e_pass' SUPERUSER;"
           "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
             -c "CREATE DATABASE packrat_e2e OWNER e2e_user;"
 
@@ -479,6 +479,11 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
