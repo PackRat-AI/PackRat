@@ -123,6 +123,13 @@ describe('chunkCsvForR2', () => {
     expect(cursor).toBe(bytes.length);
   });
 
+  it('throws for an empty R2 object (0 bytes)', async () => {
+    const { r2 } = fakeR2('');
+    await expect(chunkCsvForR2({ r2, objectKey: 'fixture.csv' })).rejects.toThrow(
+      'empty (0 bytes)',
+    );
+  });
+
   it('throws ChunkBoundaryError when no newline is found in the peek window', async () => {
     // A single very long row with no internal newlines forces peekBytes=256
     // to scan a tail with no \n at all.

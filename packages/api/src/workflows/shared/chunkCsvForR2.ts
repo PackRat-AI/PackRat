@@ -70,6 +70,10 @@ export async function chunkCsvForR2({
   const etag = meta.etag;
   const lastModified = meta.uploaded;
 
+  if (size === 0) {
+    throw new Error(`R2 object ${objectKey} is empty (0 bytes) — not a valid CSV source`);
+  }
+
   if (size <= chunkBytes) {
     return {
       etag,
@@ -98,24 +102,29 @@ export async function chunkCsvForR2({
     candidates.push({ index: i, from, to });
   }
 
-  // Parallel peek reads — cap concurrency at 16 to keep R2 from rate-limiting
-  // multi-GB ingests. Promise.all is fine at <100 boundaries; if a file ever
-  // produces more, batch this loop with p-limit.
-  const peeks = await Promise.all(
-    candidates.map(async ({ index, from, to }) => {
-      const obj = await r2.get(objectKey, { range: { offset: from, length: to - from } });
-      if (!obj) throw new Error(`R2 peek read returned null for ${objectKey} [${from},${to})`);
-      const text = await obj.text();
-      const lastNewlineIndex = text.lastIndexOf('\n');
-      if (lastNewlineIndex === -1) {
-        throw new ChunkBoundaryError(objectKey, { from, to });
-      }
-      // TextEncoder gives byte length of the prefix — accurate for non-ASCII CSV
-      // content where char index != byte offset (e.g. accented product names).
-      const byteEnd = from + new TextEncoder().encode(text.slice(0, lastNewlineIndex)).byteLength;
-      return { index, byteEnd };
-    }),
-  );
+  // Peek reads in bounded-parallel batches of 16 to keep R2 from rate-limiting
+  // on multi-GB ingests with many chunk boundaries.
+  const PEEK_CONCURRENCY = 16;
+  const peeks: Array<{ index: number; byteEnd: number }> = [];
+  for (let i = 0; i < candidates.length; i += PEEK_CONCURRENCY) {
+    const batch = candidates.slice(i, i + PEEK_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(async ({ index, from, to }) => {
+        const obj = await r2.get(objectKey, { range: { offset: from, length: to - from } });
+        if (!obj) throw new Error(`R2 peek read returned null for ${objectKey} [${from},${to})`);
+        const text = await obj.text();
+        const lastNewlineIndex = text.lastIndexOf('\n');
+        if (lastNewlineIndex === -1) {
+          throw new ChunkBoundaryError(objectKey, { from, to });
+        }
+        // TextEncoder gives byte length of the prefix — accurate for non-ASCII CSV
+        // content where char index != byte offset (e.g. accented product names).
+        const byteEnd = from + new TextEncoder().encode(text.slice(0, lastNewlineIndex)).byteLength;
+        return { index, byteEnd };
+      }),
+    );
+    peeks.push(...batchResults);
+  }
 
   // Assemble the final chunk list in order. Each chunk's byteStart is the
   // previous chunk's byteEnd + 1 (so the next chunk starts AFTER the

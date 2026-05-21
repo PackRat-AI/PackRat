@@ -237,7 +237,10 @@ scheduled for removal:
 # Check that no consumers are reading from the old queue
 bunx wrangler queues info packrat-etl-queue
 
-# Drain any in-flight messages (one-time, before consumer removal)
+# Remove the consumer binding — NOTE: this does NOT drain messages already
+# sitting in the queue. Wait for the queue depth to reach 0 (visible in the
+# Cloudflare dashboard) before removing the consumer, or messages will be
+# lost. Only then is it safe to remove:
 bunx wrangler queues consumer remove packrat-etl-queue packrat-api
 ```
 
