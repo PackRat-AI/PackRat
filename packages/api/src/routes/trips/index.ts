@@ -7,6 +7,11 @@ import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
 export const tripsRoutes = new Elysia({ prefix: '/trips' })
+  .model({
+    'trips.CreateTripBody': CreateTripBodySchema,
+    'trips.Trip': TripSchema,
+    'trips.UpdateTripBody': UpdateTripBodySchema,
+  })
   .use(authPlugin)
 
   // List trips
@@ -28,7 +33,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       }
     },
     {
-      response: { 200: z.array(TripSchema) },
+      response: { 200: z.array(TripSchema) }, // array — stays inline (item schema is referenced via .model())
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -73,8 +78,8 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       }
     },
     {
-      body: CreateTripBodySchema,
-      response: { 200: TripSchema },
+      body: 'trips.CreateTripBody',
+      response: { 200: 'trips.Trip' },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -99,7 +104,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
     },
     {
       params: z.object({ tripId: z.string() }),
-      response: { 200: TripSchema },
+      response: { 200: 'trips.Trip' },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],
@@ -152,8 +157,8 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
     },
     {
       params: z.object({ tripId: z.string() }),
-      body: UpdateTripBodySchema,
-      response: { 200: TripSchema },
+      body: 'trips.UpdateTripBody',
+      response: { 200: 'trips.Trip' },
       isAuthenticated: true,
       detail: {
         tags: ['Trips'],

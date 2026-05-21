@@ -49,6 +49,18 @@ import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
+  .model({
+    'packs.AddPackItemBody': AddPackItemBodySchema,
+    'packs.AnalyzeImageRequest': AnalyzeImageRequestSchema,
+    'packs.CreatePackBody': CreatePackBodySchema,
+    'packs.CreatePackWeightHistoryBody': CreatePackWeightHistoryBodySchema,
+    'packs.ErrorResponse': ErrorResponseSchema,
+    'packs.GapAnalysisRequest': GapAnalysisRequestSchema,
+    'packs.PackItem': PackItemSchema,
+    'packs.PackWithWeights': PackWithWeightsSchema,
+    'packs.UpdatePackItemRequest': UpdatePackItemRequestSchema,
+    'packs.UpdatePackRequest': UpdatePackRequestSchema,
+  })
   .use(authPlugin)
   .use(adminAuthPlugin)
 
@@ -114,8 +126,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
-      body: CreatePackBodySchema,
-      response: { 200: PackWithWeightsSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
+      body: 'packs.CreatePackBody',
+      response: {
+        200: 'packs.PackWithWeights',
+        400: 'packs.ErrorResponse',
+        500: 'packs.ErrorResponse',
+      },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -210,7 +226,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       }
     },
     {
-      body: AnalyzeImageRequestSchema,
+      body: 'packs.AnalyzeImageRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Packs'],
@@ -235,7 +251,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     },
     {
       params: z.object({ packId: z.string() }),
-      response: { 200: PackWithWeightsSchema },
+      response: { 200: 'packs.PackWithWeights' },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
     },
@@ -435,7 +451,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     },
     {
       params: z.object({ packId: z.string() }),
-      body: CreatePackWeightHistoryBodySchema,
+      body: 'packs.CreatePackWeightHistoryBody',
       isAuthenticated: true,
       detail: {
         tags: ['Packs'],
@@ -681,7 +697,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     },
     {
       params: z.object({ packId: z.string() }),
-      body: AddPackItemBodySchema,
+      body: 'packs.AddPackItemBody',
       isAuthenticated: true,
       detail: { tags: ['Pack Items'], summary: 'Add item to pack', security: [{ bearerAuth: [] }] },
     },
@@ -795,8 +811,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     },
     {
       params: z.object({ itemId: z.string() }),
-      body: UpdatePackItemRequestSchema,
-      response: { 200: PackItemSchema, 500: ErrorResponseSchema },
+      body: 'packs.UpdatePackItemRequest',
+      response: { 200: 'packs.PackItem', 500: 'packs.ErrorResponse' },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

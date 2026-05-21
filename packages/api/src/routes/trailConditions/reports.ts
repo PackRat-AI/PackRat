@@ -32,6 +32,10 @@ function toReportResponse(row: Record<string, unknown>): Record<string, unknown>
 }
 
 export const trailConditionRoutes = new Elysia()
+  .model({
+    'trailConditions.CreateTrailConditionReportRequest': CreateTrailConditionReportRequestSchema,
+    'trailConditions.UpdateTrailConditionReportRequest': UpdateTrailConditionReportRequestSchema,
+  })
   .use(authPlugin)
   .get(
     '/',
@@ -127,7 +131,7 @@ export const trailConditionRoutes = new Elysia()
       }
     },
     {
-      body: CreateTrailConditionReportRequestSchema,
+      body: 'trailConditions.CreateTrailConditionReportRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Trail Conditions'],
@@ -220,7 +224,7 @@ export const trailConditionRoutes = new Elysia()
     },
     {
       params: z.object({ reportId: z.string() }),
-      body: UpdateTrailConditionReportRequestSchema,
+      body: 'trailConditions.UpdateTrailConditionReportRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Trail Conditions'],

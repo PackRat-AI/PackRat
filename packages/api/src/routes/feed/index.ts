@@ -16,6 +16,11 @@ function parseImages(raw: unknown): string[] {
 }
 
 export const feedRoutes = new Elysia({ prefix: '/feed' })
+  .model({
+    'feed.CreateCommentRequest': CreateCommentRequestSchema,
+    'feed.CreatePostRequest': CreatePostRequestSchema,
+    'feed.FeedResponse': FeedResponseSchema,
+  })
   .use(authPlugin)
 
   // List posts
@@ -98,7 +103,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(50).optional(),
       }),
-      response: { 200: FeedResponseSchema },
+      response: { 200: 'feed.FeedResponse' },
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'List social feed posts', security: [{ bearerAuth: [] }] },
     },
@@ -142,7 +147,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       });
     },
     {
-      body: CreatePostRequestSchema,
+      body: 'feed.CreatePostRequest',
       isAuthenticated: true,
       detail: { tags: ['Feed'], summary: 'Create a post', security: [{ bearerAuth: [] }] },
     },
@@ -380,7 +385,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
     },
     {
       params: z.object({ postId: z.coerce.number().int() }),
-      body: CreateCommentRequestSchema,
+      body: 'feed.CreateCommentRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Feed'],

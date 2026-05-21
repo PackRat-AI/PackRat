@@ -1,5 +1,18 @@
 import { openapi } from '@elysiajs/openapi';
+import type { ZodSchema } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+
+/**
+ * Converts a Zod schema to JSON Schema with options tuned for the OpenAPI
+ * spec consumed by swift-openapi-generator:
+ *  - `target: 'openApi3'` removes JSON-Schema-only constructs (e.g. `null`
+ *    as a type) that the Apple generator rejects.
+ *  - `$refStrategy: 'none'` inlines duplicate sub-schemas instead of
+ *    emitting `#/properties/createdAt`-style internal refs, which OpenAPI
+ *    forbids (refs must point to `#/components/schemas/...`).
+ */
+const zodToJsonSchemaForOpenApi = (schema: ZodSchema) =>
+  zodToJsonSchema(schema, { target: 'openApi3', $refStrategy: 'none' });
 
 /**
  * Shared OpenAPI plugin instance configured for the PackRat API.
@@ -16,7 +29,7 @@ export const packratOpenApi = openapi({
   path: '/scalar',
   specPath: '/doc',
   mapJsonSchema: {
-    zod: zodToJsonSchema,
+    zod: zodToJsonSchemaForOpenApi,
   },
   exclude: {
     paths: [
