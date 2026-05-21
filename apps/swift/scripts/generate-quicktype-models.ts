@@ -26,17 +26,54 @@
  *   two generators' top-level type names.
  */
 
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isObject } from '@packrat/guards';
 import { FetchingJSONSchemaStore, InputData, JSONSchemaInput, quicktype } from 'quicktype-core';
+import { parse as parseYaml } from 'yaml';
 import { ZodType } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import * as schemas from '../../../packages/schemas/src/index';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = resolve(__dir, '../Sources/PackRat/Models/QuicktypeGenerated.swift');
+const OPENAPI_YAML_PATH = resolve(
+  __dir,
+  '../PackRatAPIClient/Sources/PackRatAPIClient/openapi.yaml',
+);
+
+// ─── Input mode selection ────────────────────────────────────────────────────
+// Two input paths, picked at runtime:
+//   1. **bundle** — if the OpenAPI YAML has `components.schemas` populated,
+//      feed quicktype that single well-formed input. One source = better
+//      chance of avoiding the per-schema namer bugs in quicktype-core.
+//   2. **per-schema** — fallback: iterate every Zod schema in @packrat/schemas
+//      and feed each as its own JSON Schema source. More fragile but works
+//      even before the API routes register schemas via Elysia's `.model({})`.
+//
+// Override via `BUN_QUICKTYPE_INPUT=bundle|per-schema`. Default auto-detects.
+
+type InputMode = 'bundle' | 'per-schema';
+
+function detectInputMode(): InputMode {
+  const override = process.env.BUN_QUICKTYPE_INPUT as InputMode | undefined;
+  if (override === 'bundle' || override === 'per-schema') return override;
+  if (!existsSync(OPENAPI_YAML_PATH)) return 'per-schema';
+  try {
+    const spec = parseYaml(readFileSync(OPENAPI_YAML_PATH, 'utf8'));
+    const componentsSchemas = isObject(spec)
+      ? (spec as { components?: { schemas?: Record<string, unknown> } }).components?.schemas
+      : undefined;
+    const count = componentsSchemas ? Object.keys(componentsSchemas).length : 0;
+    return count > 0 ? 'bundle' : 'per-schema';
+  } catch {
+    return 'per-schema';
+  }
+}
+
+const inputMode = detectInputMode();
+console.log(`Input mode: ${inputMode}`);
 
 // Top-level regex literals (lint rule: useTopLevelRegex). Captured once at
 // module load so hot paths don't allocate a fresh RegExp on each invocation.
@@ -65,11 +102,36 @@ console.log(`Discovered ${zodEntries.length} Zod schemas in @packrat/schemas`);
 // name normalizer assumes the source name and every property name are strings.
 // One non-string slip causes the inscrutable `s.codePointAt is not a function`
 // crash in quicktype/Swift/utils.js. Catch it here with a clear message.
-const skipped: Array<{ name: string; reason: string }> = [];
 
 const schemaInput = new JSONSchemaInput(new FetchingJSONSchemaStore());
 
-for (const [name, schema] of zodEntries) {
+if (inputMode === 'bundle') {
+  // Bundle mode: feed quicktype the entire openapi.yaml's components.schemas
+  // as a single JSON Schema source. quicktype dedupes + names from the schema
+  // keys. Works once Elysia's `.model({})` registry is wired (U7).
+  const spec = parseYaml(readFileSync(OPENAPI_YAML_PATH, 'utf8')) as {
+    components?: { schemas?: Record<string, unknown> };
+  };
+  const components = spec.components?.schemas ?? {};
+  const wrapped = {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    title: 'PackRatComponents',
+    definitions: components,
+    type: 'object',
+    properties: Object.fromEntries(
+      Object.keys(components).map((key) => [key, { $ref: `#/definitions/${key}` }]),
+    ),
+  };
+  await schemaInput.addSource({
+    name: 'PackRatComponents',
+    schema: JSON.stringify(wrapped),
+  });
+  console.log(`Bundle mode: ${Object.keys(components).length} schemas from openapi.yaml`);
+}
+
+const skipped: Array<{ name: string; reason: string }> = [];
+
+for (const [name, schema] of inputMode === 'per-schema' ? zodEntries : []) {
   // Skip names that aren't valid Swift identifier roots — anything that starts
   // with a digit, contains spaces, or is empty. quicktype could probably handle
   // some of these but it's better to keep names predictable.
