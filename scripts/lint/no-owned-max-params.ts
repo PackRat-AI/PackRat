@@ -24,10 +24,12 @@ const EXCLUDED_DIRS = new Set([
   '.next',
   '.expo',
   '.turbo',
+  '.wrangler',
   'coverage',
 ]);
 
 const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
+const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
@@ -35,6 +37,7 @@ const EXCLUDED_FILES = new Set([
   // match the runtime's (input, init) signature.
   'apps/landing/scripts/generate-og-images.ts',
   'apps/guides/scripts/generate-og-images.ts',
+  'apps/trails/scripts/generate-og-images.ts',
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
@@ -65,6 +68,7 @@ interface Violation {
 function isTargetFile(relPath: string): boolean {
   if (EXCLUDED_FILES.has(relPath)) return false;
   if (EXCLUDED_PATH_PARTS.some((part) => relPath.includes(part))) return false;
+  if (EXCLUDED_SUFFIXES.some((suffix) => relPath.endsWith(suffix))) return false;
   return TARGET_EXTENSIONS.has(extname(relPath));
 }
 
