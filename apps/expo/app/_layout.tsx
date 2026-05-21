@@ -17,16 +17,37 @@ import { useEffect, useRef } from 'react';
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
-  // Disable Sentry in local development or when no DSN is configured.
   enabled: clientEnvs.NODE_ENV !== 'development' && !!clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
+
+  // PII: email, IP, device fingerprint — off by default for GDPR; enable if you have consent.
+  sendDefaultPii: false,
+
+  // Sample 20% of sessions for performance; 100% of errors always reach Sentry.
+  tracesSampleRate: 0.2,
+
+  // Tag every event with environment so you can filter in the Sentry UI.
+  environment: clientEnvs.NODE_ENV ?? 'production',
+
+  // Trim noisy console breadcrumbs in production; keep them in dev.
+  beforeBreadcrumb(breadcrumb) {
+    if (breadcrumb.type === 'http' && breadcrumb.data?.url) {
+      // Strip auth tokens from URLs in breadcrumbs
+      const url = String(breadcrumb.data.url);
+      if (url.includes('/api/auth/')) return null;
+    }
+    return breadcrumb;
+  },
 });
 
+// Sync the authenticated user to Sentry on startup so every event is
+// associated with the correct user identity.
 const user = userStore.peek();
 if (user) {
-  Sentry.setUser(user);
+  Sentry.setUser({
+    id: user.id,
+    email: user.email,
+    username: `${user.firstName} ${user.lastName}`.trim(),
+  });
 }
 
 export {

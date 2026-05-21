@@ -50,11 +50,21 @@ const DefaultFallback = () => {
 
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
   const handleError = ({ error, info }: { error: unknown; info: { componentStack: string } }) => {
-    // Log the error to your preferred logging service
     console.error('Error caught by ErrorBoundary:', error);
     console.error('Component stack:', info.componentStack);
 
-    // Call the custom error handler if provided
+    // Attach the component stack as extra context so Sentry shows exactly
+    // which component tree caused the crash.
+    Sentry.withScope((scope) => {
+      scope.setTag('error_source', 'error_boundary');
+      scope.setExtra('componentStack', info.componentStack);
+      if (error instanceof Error) {
+        scope.setExtra('errorName', error.name);
+        scope.setExtra('errorMessage', error.message);
+      }
+      Sentry.captureException(error);
+    });
+
     if (onError) {
       onError(error, info);
     }
