@@ -58,6 +58,10 @@ export default defineConfig({
         'src/auth/index.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
+        // CatalogEtlWorkflow needs the CF Workflows runtime for end-to-end
+        // execution; covered by integration tests in /test once Docker Postgres
+        // is wired. Sibling chunker (src/workflows/shared/) IS unit-tested.
+        'src/workflows/catalog-etl-workflow.ts',
         'src/utils/ai/**',
         // Complex orchestration services (defer to integration tests)
         'src/services/aiService.ts',
