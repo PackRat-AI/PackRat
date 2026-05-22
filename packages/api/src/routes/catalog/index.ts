@@ -242,7 +242,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const { filename, chunks, source, scraperRevision } = body;
       const engine = query.engine ?? 'workflow';
       // chunkMiB lets the caller tune chunk size per-source without a deploy.
-      // Default (undefined) falls through to DEFAULT_CHUNK_BYTES in chunkCsvForR2.
+      // Both workflow and queue paths default to 2 MiB when omitted.
       const chunkBytes = query.chunkMiB !== undefined ? query.chunkMiB * 1024 * 1024 : undefined;
       const db = createDb();
       const env = getEnv();
