@@ -34,7 +34,13 @@ export default function SeasonSuggestionsScreen() {
     });
   };
 
-  const handleCreatePack = (suggestion: PackSuggestion, index: number) => {
+  const handleCreatePack = ({
+    suggestion,
+    index,
+  }: {
+    suggestion: PackSuggestion;
+    index: number;
+  }) => {
     setCreatingPackIndex(index);
 
     // Add a short delay to show the loading state
@@ -154,7 +160,7 @@ export default function SeasonSuggestionsScreen() {
 
                   <Button
                     variant="secondary"
-                    onPress={() => handleCreatePack(suggestion, index)}
+                    onPress={() => handleCreatePack({ suggestion, index })}
                     disabled={creatingPackIndex === index}
                     className="w-full"
                   >

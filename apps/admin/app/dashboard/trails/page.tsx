@@ -62,7 +62,7 @@ function TrailSearchSection({
   const [activeSport, setActiveSport] = useState('');
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: queryKeys.osm.search(activeQ, activeSport || undefined),
+    queryKey: queryKeys.osm.search({ q: activeQ, sport: activeSport || undefined }),
     queryFn: () => searchTrails({ q: activeQ, sport: activeSport || undefined }),
     enabled: activeQ.length > 0,
   });

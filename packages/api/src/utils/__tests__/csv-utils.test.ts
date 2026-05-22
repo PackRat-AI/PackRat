@@ -419,38 +419,41 @@ describe('csv-utils', () => {
 
   describe('parseWeight', () => {
     it('parses grams correctly', () => {
-      expect(parseWeight('100')).toEqual({ weight: 100, unit: 'g' });
-      expect(parseWeight('150', 'g')).toEqual({ weight: 150, unit: 'g' });
+      expect(parseWeight({ weightStr: '100' })).toEqual({ weight: 100, unit: 'g' });
+      expect(parseWeight({ weightStr: '150', unitStr: 'g' })).toEqual({ weight: 150, unit: 'g' });
     });
 
     it('parses ounces correctly', () => {
-      expect(parseWeight('10', 'oz')).toEqual({ weight: 284, unit: 'oz' });
-      expect(parseWeight('5 oz')).toEqual({ weight: 142, unit: 'oz' });
+      expect(parseWeight({ weightStr: '10', unitStr: 'oz' })).toEqual({ weight: 284, unit: 'oz' });
+      expect(parseWeight({ weightStr: '5 oz' })).toEqual({ weight: 142, unit: 'oz' });
     });
 
     it('parses pounds correctly', () => {
-      expect(parseWeight('2', 'lb')).toEqual({ weight: 907, unit: 'lb' });
-      expect(parseWeight('3 lbs')).toEqual({ weight: 1361, unit: 'lb' });
+      expect(parseWeight({ weightStr: '2', unitStr: 'lb' })).toEqual({ weight: 907, unit: 'lb' });
+      expect(parseWeight({ weightStr: '3 lbs' })).toEqual({ weight: 1361, unit: 'lb' });
     });
 
     it('parses kilograms correctly', () => {
-      expect(parseWeight('1.5', 'kg')).toEqual({ weight: 1500, unit: 'kg' });
-      expect(parseWeight('2 kg')).toEqual({ weight: 2000, unit: 'kg' });
+      expect(parseWeight({ weightStr: '1.5', unitStr: 'kg' })).toEqual({
+        weight: 1500,
+        unit: 'kg',
+      });
+      expect(parseWeight({ weightStr: '2 kg' })).toEqual({ weight: 2000, unit: 'kg' });
     });
 
     it('handles empty or invalid input', () => {
-      expect(parseWeight('')).toEqual({ weight: null, unit: null });
-      expect(parseWeight('invalid')).toEqual({ weight: null, unit: null });
-      expect(parseWeight('-10')).toEqual({ weight: null, unit: null });
+      expect(parseWeight({ weightStr: '' })).toEqual({ weight: null, unit: null });
+      expect(parseWeight({ weightStr: 'invalid' })).toEqual({ weight: null, unit: null });
+      expect(parseWeight({ weightStr: '-10' })).toEqual({ weight: null, unit: null });
     });
 
     it('defaults to grams when no unit is specified', () => {
-      expect(parseWeight('250')).toEqual({ weight: 250, unit: 'g' });
+      expect(parseWeight({ weightStr: '250' })).toEqual({ weight: 250, unit: 'g' });
     });
 
     it('is case-insensitive for units', () => {
-      expect(parseWeight('10', 'OZ')).toEqual({ weight: 284, unit: 'oz' });
-      expect(parseWeight('1', 'KG')).toEqual({ weight: 1000, unit: 'kg' });
+      expect(parseWeight({ weightStr: '10', unitStr: 'OZ' })).toEqual({ weight: 284, unit: 'oz' });
+      expect(parseWeight({ weightStr: '1', unitStr: 'KG' })).toEqual({ weight: 1000, unit: 'kg' });
     });
   });
 

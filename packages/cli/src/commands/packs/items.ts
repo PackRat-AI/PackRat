@@ -13,7 +13,8 @@ export default defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const items = await runApi(client.packs({ packId: args.id }).items.get(), {
+    const items = await runApi({
+      promise: client.packs({ packId: args.id }).items.get(),
       action: 'list pack items',
       resourceHint: `pack ${args.id}`,
     });
@@ -21,8 +22,8 @@ export default defineCommand({
       process.stdout.write(`${JSON.stringify(items, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(items).map((r) => ({
+    printTable({
+      rows: toRecordArray(items).map((r) => ({
         id: r.id,
         name: r.name,
         category: r.category,
@@ -31,7 +32,7 @@ export default defineCommand({
         worn: r.worn,
         consumable: r.consumable,
       })),
-      { title: `Items in ${args.id}` },
-    );
+      options: { title: `Items in ${args.id}` },
+    });
   },
 });

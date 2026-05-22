@@ -17,7 +17,13 @@ interface TripCardProps {
   onPress?: (trip: Trip) => void;
 }
 
-function getTripDurationDays(startDate?: string, endDate?: string): number | null {
+function getTripDurationDays({
+  startDate,
+  endDate,
+}: {
+  startDate?: string;
+  endDate?: string;
+}): number | null {
   if (!startDate || !endDate) return null;
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -41,7 +47,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   const alertRef = useRef<AlertMethods>(null);
   const insets = useSafeAreaInsets();
 
-  const durationDays = getTripDurationDays(trip.startDate, trip.endDate);
+  const durationDays = getTripDurationDays({ startDate: trip.startDate, endDate: trip.endDate });
 
   const handleActionsPress = () => {
     const options = [

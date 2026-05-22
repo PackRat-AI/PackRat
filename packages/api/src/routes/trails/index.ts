@@ -154,7 +154,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (row.geojson) {
           geometry = JSON.parse(row.geojson);
         } else if (row.members && row.members.length > 0) {
-          geometry = await stitchRouteGeometry(db, row.members);
+          geometry = await stitchRouteGeometry({ db, members: row.members });
         }
 
         return {

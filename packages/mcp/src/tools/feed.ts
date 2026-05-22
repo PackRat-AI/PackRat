@@ -15,7 +15,7 @@ export function registerFeedTools(agent: AgentContext): void {
       },
     },
     async ({ page, limit }) =>
-      call(agent.api.user.feed.get({ query: { page, limit } }), { action: 'list feed' }),
+      call({ promise: agent.api.user.feed.get({ query: { page, limit } }), action: 'list feed' }),
   );
 
   agent.server.registerTool(
@@ -28,7 +28,8 @@ export function registerFeedTools(agent: AgentContext): void {
       },
     },
     async ({ caption, images }) =>
-      call(agent.api.user.feed.post({ caption, images: images ?? [] }), {
+      call({
+        promise: agent.api.user.feed.post({ caption, images: images ?? [] }),
         action: 'create feed post',
       }),
   );
@@ -40,7 +41,8 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: { post_id: z.string() },
     },
     async ({ post_id }) =>
-      call(agent.api.user.feed({ postId: post_id }).get(), {
+      call({
+        promise: agent.api.user.feed({ postId: post_id }).get(),
         action: 'get feed post',
         resourceHint: `post ${post_id}`,
       }),
@@ -53,7 +55,8 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: { post_id: z.string() },
     },
     async ({ post_id }) =>
-      call(agent.api.user.feed({ postId: post_id }).delete(), {
+      call({
+        promise: agent.api.user.feed({ postId: post_id }).delete(),
         action: 'delete feed post',
         resourceHint: `post ${post_id}`,
       }),
@@ -66,7 +69,8 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: { post_id: z.string() },
     },
     async ({ post_id }) =>
-      call(agent.api.user.feed({ postId: post_id }).like.post({}), {
+      call({
+        promise: agent.api.user.feed({ postId: post_id }).like.post({}),
         action: 'toggle feed post like',
         resourceHint: `post ${post_id}`,
       }),
@@ -85,7 +89,8 @@ export function registerFeedTools(agent: AgentContext): void {
       },
     },
     async ({ post_id, page, limit }) =>
-      call(agent.api.user.feed({ postId: post_id }).comments.get({ query: { page, limit } }), {
+      call({
+        promise: agent.api.user.feed({ postId: post_id }).comments.get({ query: { page, limit } }),
         action: 'list feed comments',
         resourceHint: `post ${post_id}`,
       }),
@@ -102,13 +107,14 @@ export function registerFeedTools(agent: AgentContext): void {
       },
     },
     async ({ post_id, content, parent_comment_id }) =>
-      call(
-        agent.api.user.feed({ postId: post_id }).comments.post({
+      call({
+        promise: agent.api.user.feed({ postId: post_id }).comments.post({
           content,
           parentCommentId: parent_comment_id,
         }),
-        { action: 'create feed comment', resourceHint: `post ${post_id}` },
-      ),
+        action: 'create feed comment',
+        resourceHint: `post ${post_id}`,
+      }),
   );
 
   agent.server.registerTool(
@@ -118,7 +124,11 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: { post_id: z.string(), comment_id: z.string() },
     },
     async ({ post_id, comment_id }) =>
-      call(agent.api.user.feed({ postId: post_id }).comments({ commentId: comment_id }).delete(), {
+      call({
+        promise: agent.api.user
+          .feed({ postId: post_id })
+          .comments({ commentId: comment_id })
+          .delete(),
         action: 'delete feed comment',
         resourceHint: `comment ${comment_id}`,
       }),
@@ -131,9 +141,13 @@ export function registerFeedTools(agent: AgentContext): void {
       inputSchema: { post_id: z.string(), comment_id: z.string() },
     },
     async ({ post_id, comment_id }) =>
-      call(
-        agent.api.user.feed({ postId: post_id }).comments({ commentId: comment_id }).like.post({}),
-        { action: 'toggle feed comment like', resourceHint: `comment ${comment_id}` },
-      ),
+      call({
+        promise: agent.api.user
+          .feed({ postId: post_id })
+          .comments({ commentId: comment_id })
+          .like.post({}),
+        action: 'toggle feed comment like',
+        resourceHint: `comment ${comment_id}`,
+      }),
   );
 }

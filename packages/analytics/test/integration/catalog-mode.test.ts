@@ -48,7 +48,7 @@ describe.skipIf(!hasCatalogCreds)('catalog mode integration', () => {
     const stats = await cache.getLiveStats();
     if (stats.recordCount === 0) return; // No data published yet
 
-    const results = await cache.search('jacket', { limit: 5 });
+    const results = await cache.search({ keyword: 'jacket', options: { limit: 5 } });
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]).toHaveProperty('name');
     expect(results[0]).toHaveProperty('price');
@@ -77,7 +77,7 @@ describe.skipIf(!hasCatalogCreds)('catalog mode integration', () => {
     const stats = await cache.getLiveStats();
     if (stats.recordCount === 0) return;
 
-    const brands = await cache.getTopBrands(5);
+    const brands = await cache.getTopBrands({ limit: 5 });
     expect(brands.length).toBeGreaterThan(0);
     expect(brands[0]).toHaveProperty('brand');
   });

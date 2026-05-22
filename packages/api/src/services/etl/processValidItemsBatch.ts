@@ -18,12 +18,12 @@ export async function processValidItemsBatch({
   items: Partial<NewCatalogItem>[];
   env: Env;
 }): Promise<void> {
-  const catalogService = new CatalogService(env, true);
+  const catalogService = new CatalogService({ explicitEnv: env, useHttpDriver: true });
 
   const mergedItems = mergeItemsBySku(items as NewCatalogItem[]); // safe-cast: items are Partial<NewCatalogItem> at the type level, but all required fields have been confirmed present by CatalogItemValidator before reaching here
 
   // Prepare texts for batch embedding
-  const embeddingTexts = mergedItems.map((item) => getEmbeddingText(item));
+  const embeddingTexts = mergedItems.map((item) => getEmbeddingText({ item }));
 
   try {
     // Generate embeddings in batch
@@ -44,13 +44,16 @@ export async function processValidItemsBatch({
 
     const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);
     // Track the ETL job that processed these items
-    await catalogService.trackEtlJob(upsertedItems, jobId);
+    await catalogService.trackEtlJob({ itemIds: upsertedItems, jobId });
     // Update the ETL job progress — processed is incremented atomically with valid to prevent
     // totalValid > totalProcessed if the Worker dies between two separate DB updates.
-    await updateEtlJobProgress(env, {
-      jobId,
-      valid: items.length,
-      processed: items.length,
+    await updateEtlJobProgress({
+      env,
+      params: {
+        jobId,
+        valid: items.length,
+        processed: items.length,
+      },
     });
   } catch (error) {
     // Embedding-fallback path. The upsert still happens (catalog gets the
@@ -64,11 +67,14 @@ export async function processValidItemsBatch({
     });
 
     const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
-    await catalogService.trackEtlJob(upsertedItems, jobId);
-    await updateEtlJobProgress(env, {
-      jobId,
-      valid: items.length,
-      processed: items.length,
+    await catalogService.trackEtlJob({ itemIds: upsertedItems, jobId });
+    await updateEtlJobProgress({
+      env,
+      params: {
+        jobId,
+        valid: items.length,
+        processed: items.length,
+      },
     });
 
     const db = createDbClient(env);

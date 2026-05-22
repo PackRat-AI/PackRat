@@ -147,7 +147,7 @@ export const adminTrailsRoutes = new Elysia({ prefix: '/trails' })
           geometry = JSON.parse(row.geojson);
         } else if (row.members && row.members.length > 0) {
           const { stitchRouteGeometry } = await import('@packrat/api/services/trails');
-          geometry = await stitchRouteGeometry(db, row.members);
+          geometry = await stitchRouteGeometry({ db, members: row.members });
         }
 
         return {

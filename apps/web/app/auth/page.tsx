@@ -62,7 +62,7 @@ export default function AuthPage() {
         onSuccess: (data) => {
           const token = (data as { token?: string }).token ?? '';
           if (!token) return;
-          setTokens(token, '');
+          setTokens({ accessToken: token, refreshToken: '' });
           router.push('/');
         },
       },

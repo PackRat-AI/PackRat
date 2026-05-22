@@ -5,7 +5,7 @@ import type { Trip } from '../types';
 
 export function useUpdateTrip() {
   const updateTrip = useCallback((trip: Trip) => {
-    obs(tripsStore, trip.id).set({
+    obs({ store: tripsStore, id: trip.id }).set({
       ...trip,
       localUpdatedAt: new Date().toISOString(),
     });

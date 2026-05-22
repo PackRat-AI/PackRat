@@ -134,7 +134,7 @@ function Profile() {
   );
 }
 
-export default withAuthWall(Profile, ProfileAuthWall);
+export default withAuthWall({ Component: Profile, AuthWall: ProfileAuthWall });
 
 function renderItem(info: ListRenderItemInfo<DataItem>) {
   return <Item info={info} />;
@@ -194,7 +194,7 @@ function ListHeaderComponent() {
       }
 
       setIsUploading(true);
-      const remoteFileName = await uploadImage(image.fileName, image.uri);
+      const remoteFileName = await uploadImage({ fileName: image.fileName, uri: image.uri });
       if (remoteFileName) {
         const success = await updateProfile({ avatarUrl: remoteFileName });
         if (!success) {
@@ -303,7 +303,7 @@ function ListFooterComponent() {
               // dialogs are not surfaced in XCTest/UIAutomator accessibility trees).
               Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
                 { text: t('common.cancel'), style: 'cancel' },
-                { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
+                { text: t('auth.proceedLogOut'), style: 'destructive', onPress: handleSignOut },
               ]);
               return;
             }

@@ -16,31 +16,32 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin['catalog-list'].get({
+    const data = await runApi({
+      promise: client.admin['catalog-list'].get({
         query: {
           q: args.q,
           limit: Number.parseInt(args.limit, 10),
           offset: Number.parseInt(args.offset, 10),
         },
       }),
-      { action: 'admin list catalog', requiresAdmin: true },
-    );
+      action: 'admin list catalog',
+      requiresAdmin: true,
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
     // Endpoint returns { data: [...], total, limit, offset }
-    printTable(
-      toRecordArray(toRecord(data).data).map((it) => ({
+    printTable({
+      rows: toRecordArray(toRecord(data).data).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
         weight: it.weight,
         price: it.price,
       })),
-      { title: 'Catalog (admin)' },
-    );
+      options: { title: 'Catalog (admin)' },
+    });
   },
 });
 
@@ -65,7 +66,8 @@ const updateCmd = defineCommand({
     if (args.weight) body.weight = Number.parseFloat(args.weight);
     if (args['weight-unit']) body.weightUnit = args['weight-unit'];
     if (args.price) body.price = Number.parseFloat(args.price);
-    await runApi(client.admin.catalog({ id: args.id }).patch(body), {
+    await runApi({
+      promise: client.admin.catalog({ id: args.id }).patch(body),
       action: 'admin update catalog item',
       resourceHint: `item ${args.id}`,
       requiresAdmin: true,
@@ -87,7 +89,8 @@ const deleteCmd = defineCommand({
       if (!confirm) return consola.info('Aborted.');
     }
     const client = await getAdminClient();
-    await runApi(client.admin.catalog({ id: args.id }).delete(), {
+    await runApi({
+      promise: client.admin.catalog({ id: args.id }).delete(),
       action: 'admin delete catalog item',
       resourceHint: `item ${args.id}`,
       requiresAdmin: true,

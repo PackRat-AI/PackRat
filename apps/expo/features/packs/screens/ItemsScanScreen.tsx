@@ -153,7 +153,7 @@ export function ItemsScanScreen() {
 
   const handleCatalogItemsSelected = async () => {
     router.back();
-    await addItemsToPack(packId as string, selectedCatalogItemsList);
+    await addItemsToPack({ packId: packId as string, catalogItems: selectedCatalogItemsList });
     Burnt.toast({
       title: `Added ${selectedCatalogItemsList.length} items to your pack`,
       preset: 'done',

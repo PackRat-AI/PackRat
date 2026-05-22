@@ -17,102 +17,163 @@ appId: ${APP_ID}
                 text: "Wait"
             - waitForAnimationToEnd
 
-# Wait for the auth entry screen — ensures sign-in button is rendered before tapping
-- extendedWaitUntil:
-    visible:
-      id: "sign-in-email-button"
-    timeout: 15000
-
-# Tap the "Sign In" (email) button to navigate to the email login screen
-- tapOn:
-    id: "sign-in-email-button"
-
-# Wait for login form to appear.
-# iOS 26 / slow CI: the app startup takes ~10s before sign-in-button appears;
-# by the time the modal opens we may have little budget left. Use 35s here.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - extendedWaitUntil:
-          visible:
-            text: "Email"
-          timeout: 35000
+# Give the app time to render its initial screen before checking for overlays.
 - waitForAnimationToEnd
 
-# Fill in the email field
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          text: "Email"
-      - inputText: "${TEST_EMAIL}"
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn:
-          id: "email-input"
-      - inputText: "${TEST_EMAIL}"
-
-# Fill in the password field
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          text: "Password"
-      - inputText: ${TEST_PASSWORD}
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn:
-          id: "password-input"
-      - inputText: ${TEST_PASSWORD}
-
-# Dismiss the keyboard before submitting
-- hideKeyboard
-
-# Submit login form via the continue button
-- tapOn:
-    id: "continue-button"
-
-# Wait for navigation to complete — login can take a few seconds
-- waitForAnimationToEnd
-
-# Handle transient network error: if the API call failed, dismiss the alert and retry once.
+# Dev client only: if the Metro bundle failed to load (e.g. server was unreachable),
+# dismiss the "Error loading app" alert so we can retry the dev-server picker.
 - runFlow:
     when:
       visible:
-        text: "Network request failed"
+        text: "Error loading app"
     commands:
       - tapOn:
           text: "OK"
       - waitForAnimationToEnd
-      - tapOn:
-          id: "continue-button"
-      - waitForAnimationToEnd
 
-# iOS only: dismiss the system "Save Password?" Keychain prompt that appears
-# after submitting any form with a password field (textContentType="password").
-# This prompt is a blocking OS-level dialog and would intercept subsequent taps
-# if not handled. Real users can choose to save — in CI we always skip it.
+# Dev client only: if the dev server picker appears on iOS (saved Metro URL was
+# cleared or is stale), tap the discovered server row identified by METRO_HOST:METRO_PORT.
 - runFlow:
     when:
       platform: iOS
     commands:
+      - runFlow:
+          when:
+            visible:
+              text: "DEVELOPMENT SERVERS"
+          commands:
+            - waitForAnimationToEnd
+            - tapOn:
+                text: "http://${METRO_HOST}:${METRO_PORT}"
+            - waitForAnimationToEnd
+
+# Dev client only: dismiss the Expo "Developer Tools" intro + dev-menu sheet that
+# appears on the first launch after clearState.
+# Step 1: Tap "Continue" on the intro card to advance past it (opens the dev menu sheet).
+# Step 2: Tap the scrim above the sheet to dismiss the dev menu.
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
       - tapOn:
-          text: "Not Now"
-          optional: true
-          label: "Dismiss iOS Save Password prompt"
+          text: "Continue"
+      - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible:
+              text: "Reload"
+          commands:
+            - tapOn:
+                point: "50%,10%"
+            - waitForAnimationToEnd
+
+# Sign in only if the auth entry screen is shown.
+# Maestro's clearState does NOT clear iOS Keychain / SecureStore, so on runs
+# after a successful login the session token survives and the app opens straight
+# to Dashboard.  Wrapping the entire sign-in block in a `runFlow when visible`
+# lets both cases (needs login / already logged in) reach the Packs assertion.
+- runFlow:
+    when:
+      visible:
+        id: "sign-in-email-button"
+    commands:
+      # Tap the "Sign In" (email) button to navigate to the email login screen
+      - tapOn:
+          id: "sign-in-email-button"
+
+      # Wait for login form to appear.
+      # iOS 26 / slow CI: the app startup takes ~10s before sign-in-button appears;
+      # by the time the modal opens we may have little budget left. Use 35s here.
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  text: "Email"
+                timeout: 35000
+      - waitForAnimationToEnd
+
+      # Fill in the email field
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn:
+                text: "Email"
+            - inputText: "${TEST_EMAIL}"
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - tapOn:
+                id: "email-input"
+            - inputText: "${TEST_EMAIL}"
+
+      # Fill in the password field
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn:
+                text: "Password"
+            - inputText: ${TEST_PASSWORD}
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - tapOn:
+                id: "password-input"
+            - inputText: ${TEST_PASSWORD}
+
+      # Dismiss the keyboard before submitting
+      - hideKeyboard
+
+      # Submit login form via the continue button
+      - tapOn:
+          id: "continue-button"
+
+      # Wait for the API call to complete: the button shows "Loading..." during the
+      # network round-trip. waitForAnimationToEnd returns as soon as the screen is
+      # visually stable, but "Loading..." is static — wait explicitly for it to disappear.
+      - extendedWaitUntil:
+          notVisible:
+            text: "Loading.*"
+          timeout: 20000
+
+      # Handle transient errors: dismiss the alert and retry once for any failure dialog.
+      - runFlow:
+          when:
+            visible:
+              text: "Login Failed"
+          commands:
+            - tapOn:
+                text: "OK"
+            - waitForAnimationToEnd
+            - tapOn:
+                id: "continue-button"
+            - extendedWaitUntil:
+                notVisible:
+                  text: "Loading.*"
+                timeout: 20000
+
+      # iOS only: dismiss the system "Save Password?" Keychain prompt that appears
+      # after submitting any form with a password field (textContentType="password").
+      # This prompt is a blocking OS-level dialog and would intercept subsequent taps
+      # if not handled. Real users can choose to save — in CI we always skip it.
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn:
+                text: "Not Now"
+                optional: true
+                label: "Dismiss iOS Save Password prompt"
 
 # Wait for the main tab bar to appear — confirms we are logged in and on the main app.
-# We only assert the tab bar is visible here; navigation to specific tabs is left to
-# subsequent flows (dashboard-tiles-flow taps Packs, providing a stable entry point for
-# create-pack-flow). Navigating to Packs directly after login is unreliable on iOS
-# because Expo Router's post-login routing is still settling at this point.
+# This assertion covers both flows: just signed-in AND already-authenticated (session
+# survived clearState because Keychain is not wiped by Maestro's clearState on iOS).
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:

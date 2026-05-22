@@ -40,7 +40,13 @@ export class ImageCacheManager {
    * Download and cache an image
    */
 
-  public async cacheRemoteImage(fileName: string, remoteUrl: string): Promise<string> {
+  public async cacheRemoteImage({
+    fileName,
+    remoteUrl,
+  }: {
+    fileName: string;
+    remoteUrl: string;
+  }): Promise<string> {
     await this.initCacheDirectory();
 
     const localUri = `${this.cacheDirectory}${fileName}`;
@@ -65,7 +71,13 @@ export class ImageCacheManager {
     return localUri;
   }
 
-  public async cacheLocalTempImage(tempImageUri: string, fileName: string): Promise<void> {
+  public async cacheLocalTempImage({
+    tempImageUri,
+    fileName,
+  }: {
+    tempImageUri: string;
+    fileName: string;
+  }): Promise<void> {
     await this.initCacheDirectory();
 
     const localUri = `${this.cacheDirectory}${fileName}`;

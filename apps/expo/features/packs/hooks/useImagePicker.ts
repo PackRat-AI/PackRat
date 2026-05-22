@@ -96,7 +96,7 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
     const fileName = `${nanoid()}.${extension}`;
 
     try {
-      ImageCacheManager.cacheLocalTempImage(imageUri, fileName);
+      ImageCacheManager.cacheLocalTempImage({ tempImageUri: imageUri, fileName });
       return fileName;
     } catch (err) {
       console.error('Error saving image locally:', err);

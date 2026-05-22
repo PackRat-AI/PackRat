@@ -10,7 +10,7 @@ import type { IdentificationResult } from '../types';
 const isIdentifyResponse = zodGuard(z.object({ results: z.array(z.unknown()) }));
 
 async function identifyOnline(selectedImage: SelectedImage): Promise<IdentificationResult[]> {
-  const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
+  const image = await uploadImage({ fileName: selectedImage.fileName, uri: selectedImage.uri });
   if (!image) {
     throw new Error(
       `Couldn't upload image${selectedImage.fileName ? ` "${selectedImage.fileName}"` : ' (no filename provided)'}`,

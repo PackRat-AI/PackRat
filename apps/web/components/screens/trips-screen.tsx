@@ -192,7 +192,7 @@ function TripCard({
       <h3 className="font-semibold text-base">{trip.name}</h3>
       <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
         <Calendar className="h-3.5 w-3.5" />
-        <span>{formatDateRange(trip.startDate, trip.endDate)}</span>
+        <span>{formatDateRange({ start: trip.startDate, end: trip.endDate })}</span>
       </div>
 
       {trip.description && (
@@ -253,7 +253,7 @@ function TripDetail({
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold truncate">{trip.name}</h1>
           <p className="text-xs text-muted-foreground">
-            {formatDateRange(trip.startDate, trip.endDate)}
+            {formatDateRange({ start: trip.startDate, end: trip.endDate })}
           </p>
         </div>
       </div>
@@ -371,7 +371,7 @@ function TripDetail({
   );
 }
 
-function formatDateRange(start?: string | null, end?: string | null): string {
+function formatDateRange({ start, end }: { start?: string | null; end?: string | null }): string {
   if (!start) return 'Dates TBD';
   const s = new Date(start);
   const startStr = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

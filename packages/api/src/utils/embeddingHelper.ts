@@ -2,10 +2,13 @@ import type { CatalogItem, PackItem } from '@packrat/db';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
 
-export const getEmbeddingText = (
-  item: ItemForEmbedding,
-  existingItem?: Partial<CatalogItem> | Partial<PackItem>,
-): string => {
+export const getEmbeddingText = ({
+  item,
+  existingItem,
+}: {
+  item: ItemForEmbedding;
+  existingItem?: Partial<CatalogItem> | Partial<PackItem>;
+}): string => {
   const embeddingInput = [
     item.name,
     item.description,

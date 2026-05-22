@@ -17,30 +17,20 @@ module.exports = {
       },
     },
     assert: {
-      assertMatrix: [
-        {
-          // Next.js error pages (404/500) inherently lack <title>, <html lang>,
-          // and meta description. They're never user-shareable; skip them.
-          matchingUrlPattern: '.*/(404|500)\\.html$',
-        },
-        {
-          matchingUrlPattern: '.*\\.html$',
-          assertions: {
-            'categories:performance': ['error', { minScore: 0.8 }],
-            'categories:accessibility': ['error', { minScore: 0.9 }],
-            'categories:best-practices': ['error', { minScore: 0.9 }],
-            'categories:seo': ['error', { minScore: 0.9 }],
-            'first-contentful-paint': ['error', { maxNumericValue: 2000 }],
-            'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
-            'total-blocking-time': ['error', { maxNumericValue: 300 }],
-            'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-            'meta-description': 'error',
-            'document-title': 'error',
-            'html-has-lang': 'error',
-            'image-alt': 'error',
-          },
-        },
-      ],
+      assertions: {
+        'categories:performance': ['error', { minScore: 0.8 }],
+        'categories:accessibility': ['error', { minScore: 0.9 }],
+        'categories:best-practices': ['error', { minScore: 0.9 }],
+        'categories:seo': ['error', { minScore: 0.9 }],
+        'first-contentful-paint': ['error', { maxNumericValue: 2000 }],
+        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
+        'total-blocking-time': ['error', { maxNumericValue: 300 }],
+        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        'meta-description': 'error',
+        'document-title': 'error',
+        'html-has-lang': 'error',
+        'image-alt': 'error',
+      },
     },
     upload: {
       target: 'temporary-public-storage',

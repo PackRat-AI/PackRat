@@ -9,18 +9,18 @@ const getCmd = defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.user.profile.get(), { action: 'get profile' });
+    const data = await runApi({ promise: client.user.profile.get(), action: 'get profile' });
     // Endpoint returns { success, user: { firstName, ... } }
     const user = toRecord(toRecord(data).user);
-    printSummary(
-      {
+    printSummary({
+      data: {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         avatarUrl: user.avatarUrl,
       },
-      'Profile',
-    );
+      title: 'Profile',
+    });
   },
 });
 
@@ -40,7 +40,7 @@ const updateCmd = defineCommand({
     if (args['last-name']) body.lastName = args['last-name'];
     if (args.email) body.email = args.email;
     if (args.avatar) body.avatarUrl = args.avatar;
-    const data = await runApi(client.user.profile.put(body), { action: 'update profile' });
+    const data = await runApi({ promise: client.user.profile.put(body), action: 'update profile' });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });

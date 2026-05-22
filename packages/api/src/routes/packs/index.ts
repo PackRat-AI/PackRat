@@ -70,7 +70,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return z.array(PackWithWeightsSchema).parse(computePacksWeights(result));
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
@@ -111,7 +111,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return PackWithWeightsSchema.parse(computePackWeights(packWithItems));
+      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
       body: CreatePackBodySchema,
@@ -189,7 +189,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         const imageDetectionService = new ImageDetectionService();
-        const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
+        const result = await imageDetectionService.detectAndMatchItems({ imageUrl, matchLimit });
 
         await PACKRAT_BUCKET.delete(image);
 
@@ -231,7 +231,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       });
 
       if (!pack) throw new NotFoundError('Pack not found');
-      return PackWithWeightsSchema.parse(computePackWeights(pack));
+      return PackWithWeightsSchema.parse(computePackWeights({ pack }));
     },
     {
       params: z.object({ packId: z.string() }),
@@ -306,7 +306,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return computePackWeights({ pack: updatedPack });
       } catch (error) {
         console.error('Error updating pack:', error);
         return status(500, { error: 'Failed to update pack' });
@@ -458,7 +458,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packDetails = await getPackDetails({ packId: params.packId });
         if (!packDetails) return status(404, { error: 'Pack not found' });
 
-        const pack = computePackWeights(packDetails);
+        const pack = computePackWeights({ pack: packDetails });
 
         if (pack.userId !== user.userId) {
           return status(403, { error: 'Forbidden' });
@@ -633,7 +633,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
       const itemId = data.id;
 
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
@@ -735,8 +735,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!existingItem) throw new NotFoundError('Pack item not found');
 
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       const updateData: Partial<typeof packItems.$inferInsert> = {};
       if ('name' in data) updateData.name = data.name;

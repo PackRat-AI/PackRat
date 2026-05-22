@@ -11,21 +11,21 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const trips = await runApi(client.trips.get(), { action: 'list trips' });
+    const trips = await runApi({ promise: client.trips.get(), action: 'list trips' });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(trips, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(trips).map((r) => ({
+    printTable({
+      rows: toRecordArray(trips).map((r) => ({
         id: r.id,
         name: r.name,
         startDate: r.startDate,
         endDate: r.endDate,
         packId: r.packId,
       })),
-      { title: 'Your trips' },
-    );
+      options: { title: 'Your trips' },
+    });
   },
 });
 
@@ -38,7 +38,8 @@ const getCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const trip = await runApi(client.trips({ tripId: args.id }).get(), {
+    const trip = await runApi({
+      promise: client.trips({ tripId: args.id }).get(),
       action: 'get trip',
       resourceHint: `trip ${args.id}`,
     });
@@ -47,8 +48,8 @@ const getCmd = defineCommand({
       return;
     }
     const t = toRecord(trip);
-    printSummary(
-      {
+    printSummary({
+      data: {
         id: t.id,
         name: t.name,
         description: t.description,
@@ -57,8 +58,8 @@ const getCmd = defineCommand({
         packId: t.packId,
         notes: t.notes,
       },
-      `Trip ${t.name ?? args.id}`,
-    );
+      title: `Trip ${t.name ?? args.id}`,
+    });
   },
 });
 
@@ -85,8 +86,8 @@ const createCmd = defineCommand({
       lat != null && lon != null && !Number.isNaN(lat) && !Number.isNaN(lon)
         ? { latitude: lat, longitude: lon, name: args['location-name'] }
         : null;
-    const trip = await runApi(
-      client.trips.post({
+    const trip = await runApi({
+      promise: client.trips.post({
         id: shortId('t'),
         name: args.name,
         description: args.description,
@@ -98,8 +99,8 @@ const createCmd = defineCommand({
         localCreatedAt: now,
         localUpdatedAt: now,
       }),
-      { action: 'create trip' },
-    );
+      action: 'create trip',
+    });
     process.stdout.write(`${JSON.stringify(trip, null, 2)}\n`);
   },
 });
@@ -110,7 +111,8 @@ const deleteCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    await runApi(client.trips({ tripId: args.id }).delete(), {
+    await runApi({
+      promise: client.trips({ tripId: args.id }).delete(),
       action: 'delete trip',
       resourceHint: `trip ${args.id}`,
     });

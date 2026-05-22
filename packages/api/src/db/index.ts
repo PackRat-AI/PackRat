@@ -23,12 +23,24 @@ const isStandardPostgresUrl = (url: string) => {
 
 const pgPools = new Map<string, Pool>();
 
-const createConnection = (url: string, useNeonHttp?: boolean) => {
+export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
     let pool = pgPools.get(url);
     if (!pool) {
-      pool = new Pool({ connectionString: url });
-      pgPools.set(url, pool);
+      const newPool = new Pool({
+        connectionString: url,
+        max: 5,
+        // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
+        // which is not supported in the Cloudflare Workers runtime (miniflare).
+        idleTimeoutMillis: 0,
+        connectionTimeoutMillis: 10000,
+      });
+      newPool.on('error', () => {
+        pgPools.delete(url);
+        newPool.end().catch(() => {});
+      });
+      pgPools.set(url, newPool);
+      pool = newPool;
     }
     return drizzlePg(pool, { schema });
   }
@@ -46,7 +58,7 @@ const createConnection = (url: string, useNeonHttp?: boolean) => {
  */
 export const createDb = () => {
   const { NEON_DATABASE_URL } = getEnv();
-  return createConnection(NEON_DATABASE_URL);
+  return createConnection({ url: NEON_DATABASE_URL });
 };
 
 /**
@@ -54,7 +66,7 @@ export const createDb = () => {
  */
 export const createReadOnlyDb = () => {
   const { NEON_DATABASE_URL_READONLY } = getEnv();
-  return createConnection(NEON_DATABASE_URL_READONLY);
+  return createConnection({ url: NEON_DATABASE_URL_READONLY });
 };
 
 /**
@@ -72,7 +84,7 @@ export const createOsmDb = () => {
       'OSM_DATABASE_URL is not configured — trail features are disabled on this server',
     );
   }
-  return createConnection(OSM_DATABASE_URL);
+  return createConnection({ url: OSM_DATABASE_URL });
 };
 
 /**
@@ -80,5 +92,5 @@ export const createOsmDb = () => {
  * Used from the queue handler which has direct access to the validated env.
  */
 export const createDbClient = (env: ValidatedEnv) => {
-  return createConnection(env.NEON_DATABASE_URL, true);
+  return createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
 };

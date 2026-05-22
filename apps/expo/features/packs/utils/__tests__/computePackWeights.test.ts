@@ -30,7 +30,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(250); // (100 * 2) + (50 * 1)
       expect(result.baseWeight).toBe(250);
@@ -53,7 +53,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(1000); // 1 kg = 1000 g
       expect(result.baseWeight).toBe(1000);
@@ -87,7 +87,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(1500); // 1000 + 500
       expect(result.baseWeight).toBe(1000); // only tent (food is consumable)
@@ -128,7 +128,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(4000); // 2000 + (500 * 2) + 1000
       expect(result.baseWeight).toBe(2000); // only backpack
@@ -162,7 +162,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(1300); // 1000 + 300
       expect(result.baseWeight).toBe(1000); // only tent (jacket is worn)
@@ -203,7 +203,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(3100); // 2000 + 300 + 800
       expect(result.baseWeight).toBe(2000); // only backpack
@@ -246,7 +246,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(1800); // 1000 + 500 + 300
       expect(result.baseWeight).toBe(1000); // only tent
@@ -271,7 +271,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(1000);
     });
@@ -293,7 +293,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack, 'oz');
+      const result = computePackWeights({ pack, preferredUnit: 'oz' });
 
       expect(result.totalWeight).toBeCloseTo(10, 1);
     });
@@ -315,7 +315,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack, 'kg');
+      const result = computePackWeights({ pack, preferredUnit: 'kg' });
 
       expect(result.totalWeight).toBe(2);
     });
@@ -337,7 +337,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack, 'lb');
+      const result = computePackWeights({ pack, preferredUnit: 'lb' });
 
       expect(result.totalWeight).toBeCloseTo(1, 1);
     });
@@ -351,7 +351,7 @@ describe('computePackWeights', () => {
         items: [] as PackItem[],
       } as unknown as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(0);
       expect(result.baseWeight).toBe(0);
@@ -374,7 +374,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(0);
       expect(result.baseWeight).toBe(0);
@@ -397,7 +397,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.totalWeight).toBe(100.12);
       expect(result.baseWeight).toBe(100.12);
@@ -411,7 +411,7 @@ describe('computePackWeights', () => {
         items: [] as PackItem[],
       } as unknown as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack);
+      const result = computePackWeights({ pack });
 
       expect(result.id).toBe('1');
       expect(result.name).toBe('Test Pack');
@@ -473,7 +473,7 @@ describe('computePackWeights', () => {
         ],
       } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
-      const result = computePackWeights(pack, 'kg');
+      const result = computePackWeights({ pack, preferredUnit: 'kg' });
 
       expect(result.totalWeight).toBe(6.4); // 1.5 + 1 + 2.4 + 0.5 + 1
       expect(result.baseWeight).toBe(2.5); // 1.5 + 1 (tent + sleeping bag only)

@@ -18,10 +18,9 @@ function resourceError(opts: { uri: string; context: string; status: number; val
   return { uri, context, status, error: message };
 }
 
-function asContent(
-  uri: string,
-  body: object,
-): { contents: Array<{ uri: string; mimeType: string; text: string }> } {
+function asContent({ uri, body }: { uri: string; body: object }): {
+  contents: Array<{ uri: string; mimeType: string; text: string }>;
+} {
   return {
     contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(body, null, 2) }],
   };
@@ -36,14 +35,20 @@ async function settle(args: {
   try {
     const { data, error, status } = await promise;
     if (error || data == null) {
-      return asContent(uri, resourceError({ uri, context, status, value: error?.value ?? null }));
+      return asContent({
+        uri,
+        body: resourceError({ uri, context, status, value: error?.value ?? null }),
+      });
     }
-    return asContent(uri, data as object);
+    return asContent({ uri, body: data as object });
   } catch (e) {
-    return asContent(uri, {
+    return asContent({
       uri,
-      context,
-      error: e instanceof Error ? e.message : String(e),
+      body: {
+        uri,
+        context,
+        error: e instanceof Error ? e.message : String(e),
+      },
     });
   }
 }

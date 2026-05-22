@@ -27,11 +27,14 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
   });
 
   const handleAddItem = async (item: CatalogItem) => {
-    await addItemToPack(packId, {
-      catalogItem: item,
-      data: {
-        consumable: gap.consumable,
-        worn: gap.worn,
+    await addItemToPack({
+      packId,
+      opts: {
+        catalogItem: item,
+        data: {
+          consumable: gap.consumable,
+          worn: gap.worn,
+        },
       },
     });
     setCatalogSuggestionsModalVisible(false);
