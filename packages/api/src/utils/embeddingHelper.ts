@@ -18,10 +18,20 @@ export const getEmbeddingText = (
     ('category' in item && item.category) ||
       (existingItem && 'category' in existingItem && existingItem.category),
     ('variants' in item &&
-      item.variants?.map((v) => `${v.attribute}: ${v.values.join(', ')}`).join('; ')) ||
+      item.variants
+        ?.map((v) => {
+          const vals = Array.isArray(v.values) ? v.values : [v.values].filter(Boolean);
+          return `${v.attribute}: ${vals.join(', ')}`;
+        })
+        .join('; ')) ||
       (existingItem &&
         'variants' in existingItem &&
-        existingItem.variants?.map((v) => `${v.attribute}: ${v.values.join(', ')}`).join('; ')),
+        existingItem.variants
+          ?.map((v) => {
+            const vals = Array.isArray(v.values) ? v.values : [v.values].filter(Boolean);
+            return `${v.attribute}: ${vals.join(', ')}`;
+          })
+          .join('; ')),
     ('techs' in item && item.techs
       ? Object.entries(item.techs)
           .map(([k, v]) => `${k}: ${v}`)
