@@ -142,6 +142,15 @@ describe('chunkCsvForR2', () => {
     ).rejects.toBeInstanceOf(ChunkBoundaryError);
   });
 
+  it('uses DEFAULT_CHUNK_BYTES (2 MiB) when chunkBytes is omitted', async () => {
+    const csv = makeCsv(10);
+    const { r2 } = fakeR2(csv);
+    const result = await chunkCsvForR2({ r2, objectKey: 'fixture.csv' });
+    // Small file fits in one chunk regardless of default size
+    expect(result.chunks).toHaveLength(1);
+    expect(result.chunks[0]?.byteStart).toBe(0);
+  });
+
   it('preserves a CSV row at the boundary — first row of chunk N+1 is intact', async () => {
     const csv = makeCsv(200, 40);
     const { r2, bytes } = fakeR2(csv);
