@@ -11,6 +11,7 @@
 import { isString } from '@packrat/guards';
 import type { LlamaLanguageModel } from '@react-native-ai/llama';
 import { llama } from '@react-native-ai/llama';
+import * as Sentry from '@sentry/react-native';
 import type { LanguageModel } from 'ai';
 import { store } from 'expo-app/atoms/store';
 import { Platform } from 'react-native';
@@ -172,6 +173,16 @@ export async function downloadLocalModel(): Promise<void> {
       if (!dirExists) {
         await RNBlobUtil.fs.mkdir(LLAMA_MODELS_DIR);
       }
+      Sentry.addBreadcrumb({
+        category: 'localModel',
+        message: 'Model download started',
+        level: 'info',
+        data: {
+          modelId: LLAMA_MODEL_ID,
+          platform: Platform.OS,
+          osVersion: String(Platform.Version),
+        },
+      });
       activeDownloadTask = RNBlobUtil.config({ path: _getLlamaModelPath(), fileCache: true }).fetch(
         'GET',
         _getLlamaDownloadUrl(),
@@ -184,6 +195,10 @@ export async function downloadLocalModel(): Promise<void> {
       const httpStatus = downloadRes.respInfo?.status ?? 0;
       if (httpStatus < 200 || httpStatus >= 300) {
         await RNBlobUtil.fs.unlink(_getLlamaModelPath()).catch(() => {});
+        Sentry.captureException(new Error(`Model download failed: HTTP ${httpStatus}`), {
+          tags: { feature: 'localModel', action: 'download' },
+          extra: { httpStatus, modelId: LLAMA_MODEL_ID, osVersion: String(Platform.Version) },
+        });
         store.set(localModelStatusAtom, 'error');
         store.set(localModelErrorAtom, `Download failed: HTTP ${httpStatus}`);
         return;
@@ -191,6 +206,10 @@ export async function downloadLocalModel(): Promise<void> {
     } catch (err) {
       activeDownloadTask = null;
       if (_isCancellingDownload) return;
+      Sentry.captureException(err, {
+        tags: { feature: 'localModel', action: 'download' },
+        extra: { modelId: LLAMA_MODEL_ID, osVersion: String(Platform.Version) },
+      });
       store.set(localModelStatusAtom, 'error');
       store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
       return;
@@ -315,6 +334,12 @@ async function _initLlamaModel(): Promise<void> {
 
 async function _prepareLlamaModel(): Promise<void> {
   store.set(localModelStatusAtom, 'preparing');
+  Sentry.addBreadcrumb({
+    category: 'localModel',
+    message: 'Model prepare started',
+    level: 'info',
+    data: { modelId: LLAMA_MODEL_ID, platform: Platform.OS, osVersion: String(Platform.Version) },
+  });
   try {
     if (!llamaModel) throw new Error('llamaModel is not initialised');
     await llamaModel.prepare();
@@ -322,6 +347,10 @@ async function _prepareLlamaModel(): Promise<void> {
     store.set(localModelFileAvailableAtom, true);
     store.set(localModelStatusAtom, 'ready');
   } catch (err) {
+    Sentry.captureException(err, {
+      tags: { feature: 'localModel', action: 'prepare' },
+      extra: { modelId: LLAMA_MODEL_ID, osVersion: String(Platform.Version) },
+    });
     store.set(localModelStatusAtom, 'error');
     store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
   }

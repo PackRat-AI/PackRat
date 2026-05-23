@@ -2,6 +2,7 @@ import '../polyfills';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-app/lib/devClient';
+import Constants from 'expo-constants';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
@@ -26,7 +27,9 @@ Sentry.init({
   tracesSampleRate: 0.2,
 
   // Tag every event with environment so you can filter in the Sentry UI.
-  environment: clientEnvs.NODE_ENV ?? 'production',
+  // APP_VARIANT is set per EAS build profile and exposed via app.config.ts extra.
+  // Using it instead of NODE_ENV prevents all EAS builds from reporting as 'production'.
+  environment: (Constants.expoConfig?.extra?.appVariant as string) ?? 'production',
 
   // Trim noisy console breadcrumbs in production; keep them in dev.
   beforeBreadcrumb(breadcrumb) {

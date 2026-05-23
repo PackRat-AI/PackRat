@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import type { NewTrailConditionReport } from '@packrat/db';
 import { trailConditionReports } from '@packrat/db';
 import {
@@ -61,7 +62,11 @@ export const trailConditionRoutes = new Elysia()
 
         return reports.map(toReportResponse);
       } catch (error) {
-        console.error('Error listing trail condition reports:', error);
+        captureApiException(error, {
+          operation: 'trailConditions.list',
+          tags: { feature: 'trailConditions' },
+          extra: { trailName, limit },
+        });
         return status(500, { error: 'Failed to list trail condition reports' });
       }
     },
@@ -122,7 +127,11 @@ export const trailConditionRoutes = new Elysia()
           if (existing) return toReportResponse(existing);
           return status(409, { error: 'Report ID already in use by another user' });
         }
-        console.error('Error creating trail condition report:', error);
+        captureApiException(error, {
+          operation: 'trailConditions.create',
+          tags: { feature: 'trailConditions' },
+          extra: { reportId: data.id, userId: user.userId },
+        });
         return status(500, { error: 'Failed to submit trail condition report' });
       }
     },
@@ -159,7 +168,11 @@ export const trailConditionRoutes = new Elysia()
 
         return reports.map(toReportResponse);
       } catch (error) {
-        console.error('Error listing user trail condition reports:', error);
+        captureApiException(error, {
+          operation: 'trailConditions.listMine',
+          tags: { feature: 'trailConditions' },
+          extra: { userId: user.userId, updatedAt },
+        });
         return status(500, { error: 'Failed to list trail condition reports' });
       }
     },
@@ -214,7 +227,11 @@ export const trailConditionRoutes = new Elysia()
 
         return toReportResponse(updated);
       } catch (error) {
-        console.error('Error updating trail condition report:', error);
+        captureApiException(error, {
+          operation: 'trailConditions.update',
+          tags: { feature: 'trailConditions' },
+          extra: { reportId, userId: user.userId },
+        });
         return status(500, { error: 'Failed to update trail condition report' });
       }
     },
@@ -251,7 +268,11 @@ export const trailConditionRoutes = new Elysia()
 
         return { success: true };
       } catch (error) {
-        console.error('Error deleting trail condition report:', error);
+        captureApiException(error, {
+          operation: 'trailConditions.delete',
+          tags: { feature: 'trailConditions' },
+          extra: { reportId, userId: user.userId },
+        });
         return status(500, { error: 'Failed to delete trail condition report' });
       }
     },
