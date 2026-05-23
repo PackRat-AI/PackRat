@@ -360,6 +360,10 @@ export const PackRatAuthHandler = {
     const url = new URL(request.url);
 
     // Health check (replaced with a real probing version in U16).
+    // U12: surface terms / privacy / support URLs so reviewers and MCP clients
+    // can discover the legal + contact surface without scraping the landing
+    // site. All URLs are pinned to packratai.com (the canonical brand domain
+    // per the plan's domain-unification decision).
     if (url.pathname === '/' || url.pathname === '/health') {
       return Response.json({
         status: 'ok',
@@ -368,6 +372,9 @@ export const PackRatAuthHandler = {
         transport: ServiceMeta.Transport,
         endpoint: '/mcp',
         docs: 'https://packratai.com/mcp',
+        terms: 'https://packratai.com/terms-of-service',
+        privacy: 'https://packratai.com/privacy-policy',
+        support: 'mailto:hello@packratai.com',
       });
     }
 

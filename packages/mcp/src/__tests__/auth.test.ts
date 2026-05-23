@@ -162,10 +162,20 @@ describe('PackRatAuthHandler — health endpoint', () => {
       transport: string;
       endpoint: string;
       docs: string;
+      terms: string;
+      privacy: string;
+      support: string;
     };
     expect(body.status).toBe('ok');
     expect(body.endpoint).toBe('/mcp');
     expect(body.docs).toMatch(/^https:\/\//);
+    // U12: terms + privacy + support are reviewer-facing requirements per
+    // Anthropic's Software Directory Policy. All URLs land on packratai.com
+    // (the canonical brand domain); support is the mailto we surface from
+    // the listing as well.
+    expect(body.terms).toBe('https://packratai.com/terms-of-service');
+    expect(body.privacy).toBe('https://packratai.com/privacy-policy');
+    expect(body.support).toBe('mailto:hello@packratai.com');
   });
 
   it('responds to GET /health identically to GET /', async () => {

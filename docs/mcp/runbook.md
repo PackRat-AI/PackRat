@@ -799,6 +799,78 @@ branding, client-name disclosure (including the XSS escape), hidden-field
 escaping, helper + legal links, accessibility, and the SSO deferral
 contract. 20 tests total.
 
+## U12 legal pages
+
+Anthropic's Software Directory Policy treats a missing or incomplete privacy
+policy as an immediate-rejection cause. Both URLs below are reviewer-loaded
+during connector intake; the MCP `/health` JSON now references them so the
+listing surface, the worker, and the brand domain stay in lockstep.
+
+### Canonical URLs
+
+| Page | URL | Source |
+| ---- | --- | ------ |
+| Terms of Service | `https://packratai.com/terms-of-service` | `apps/landing/app/terms-of-service/page.tsx` |
+| Privacy Policy | `https://packratai.com/privacy-policy` | `apps/landing/app/privacy-policy/page.tsx` |
+
+The footer on every landing page surfaces both via
+`siteConfig.footerLinks.legal` (`apps/landing/config/site.ts`); the support
+contact (`hello@packratai.com`) is exposed via the new `siteConfig.support`
+field on the same config.
+
+### Privacy Policy — MCP addendum
+
+The Privacy Policy includes a "MCP Connector & Third-Party Clients" section
+that covers, at minimum:
+
+- OAuth refresh tokens stored at rest in Cloudflare KV (encrypted by KV); 60-
+  minute access tokens; 30-day rotating refresh tokens.
+- What MCP clients see (only the scopes the user approved) and explicit
+  callout that `mcp:admin` is restricted to PackRat admins.
+- What MCP clients do NOT see (passwords; conversation content sent to MCP
+  clients).
+- Retention: grants deleted automatically when the refresh token expires, or
+  immediately on revocation.
+- Third-party clients (e.g. Claude.ai) — their own privacy policy governs
+  their handling of PackRat data.
+- Deletion path: account settings or `hello@packratai.com`.
+
+If you add a new MCP data flow, update this section first — reviewers and
+end users will read the Privacy Policy before they read the source.
+
+### `/health` JSON references these URLs
+
+`PackRatAuthHandler` (`packages/mcp/src/auth.ts`) now emits the legal +
+support URLs from `/` and `/health`:
+
+```jsonc
+{
+  "status": "ok",
+  "service": "PackRat MCP",
+  "version": "<from package.json>",
+  "transport": "streamable-http",
+  "endpoint": "/mcp",
+  "docs": "https://packratai.com/mcp",
+  "terms": "https://packratai.com/terms-of-service",
+  "privacy": "https://packratai.com/privacy-policy",
+  "support": "mailto:hello@packratai.com"
+}
+```
+
+The auth.test.ts `/health` test asserts the three new fields; if you change
+either URL, update both the JSON and the test in one commit so the listing
+intake and the worker advertisement never drift.
+
+### TODO (operator): jurisdiction in the Terms of Service
+
+`apps/landing/app/terms-of-service/page.tsx` ships with a placeholder
+governing-law / venue clause (Delaware, US federal + state courts) and a
+`{/* TODO(operator): set jurisdiction */}` marker at that paragraph. Replace
+it with the chosen jurisdiction once legal review completes. The smoke test
+in `apps/landing/__tests__/legal.pages.test.ts` asserts the TODO marker is
+still present — remove that assertion in the same commit that resolves the
+TODO, so the marker can't be silently lost.
+
 ## Common operations
 
 ### Deploy

@@ -359,7 +359,17 @@ export const siteConfig = {
       { title: 'Careers', href: '/about#careers' },
       { title: 'Contact', href: 'mailto:hello@packratai.com' },
     ],
-    legal: [{ title: 'Privacy', href: '/privacy-policy' }],
+    legal: [
+      { title: 'Privacy', href: '/privacy-policy' },
+      { title: 'Terms', href: '/terms-of-service' },
+    ],
+  },
+
+  // Support contact — surfaced from MCP /health, the login page, and the connector listing.
+  // Email is the canonical channel; we don't run a separate support web page yet.
+  support: {
+    email: 'hello@packratai.com',
+    mailto: 'mailto:hello@packratai.com',
   },
 
   // Social links

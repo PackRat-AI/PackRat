@@ -92,6 +92,57 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section className="space-y-4">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            MCP Connector & Third-Party Clients
+          </h2>
+          <p>
+            PackRat operates a Model Context Protocol (MCP) connector at{' '}
+            <code className="text-sm">mcp.packratai.com</code> that lets you connect MCP-capable
+            clients (for example, Claude.ai) to your PackRat account. This section explains how we
+            handle data on that surface.
+          </p>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>
+              <strong>OAuth tokens.</strong> When you connect an MCP client we store the OAuth
+              refresh token at rest in Cloudflare KV, which encrypts data at rest. Access tokens are
+              short-lived (60 minutes); refresh tokens last 30 days and rotate on use.
+            </li>
+            <li>
+              <strong>What the MCP client sees.</strong> Only the data the scopes you approved
+              authorize. <code className="text-sm">mcp:read</code> exposes read-only tools,{' '}
+              <code className="text-sm">mcp:write</code> adds create/update/delete, and{' '}
+              <code className="text-sm">mcp:admin</code> is granted only to PackRat admin users.
+            </li>
+            <li>
+              <strong>What the MCP client does NOT see.</strong> The MCP client never sees your
+              PackRat password — sign-in is handled directly by our authentication service. We do
+              not log the conversation content you send to MCP clients; we only see the tool calls
+              those clients make against PackRat.
+            </li>
+            <li>
+              <strong>Retention.</strong> OAuth grants are deleted automatically when the refresh
+              token expires, and immediately when you revoke the connection from your PackRat
+              account or by emailing us.
+            </li>
+            <li>
+              <strong>Third-party clients.</strong> When you connect a third-party MCP client (e.g.,
+              Claude.ai) to PackRat, that client's own privacy policy governs how it handles the
+              PackRat data it receives. We are not responsible for the data practices of MCP clients
+              we do not operate.
+            </li>
+            <li>
+              <strong>Deletion.</strong> To delete your PackRat account, or to revoke just the MCP
+              OAuth grants without deleting your account, use the account-settings flow in the app
+              or contact us at{' '}
+              <Link href="mailto:hello@packratai.com" className="text-primary hover:underline">
+                hello@packratai.com
+              </Link>
+              .
+            </li>
+          </ul>
+        </section>
+
+        <section className="space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight">User Rights & Choices</h2>
           <p>Depending on your location, you may have the following rights:</p>
           <ul className="list-disc pl-6 space-y-1">
