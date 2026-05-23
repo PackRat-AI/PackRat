@@ -54,16 +54,16 @@ describe('Catalog Routes', () => {
         weight: null,
         weightUnit: null,
       });
+      const sort = encodeURIComponent(JSON.stringify({ field: 'createdAt', order: 'desc' }));
 
-      const res = await apiWithAuth(
-        '/catalog?sort=%7B%22field%22%3A%22createdAt%22%2C%22order%22%3A%22desc%22%7D',
-      );
+      const res = await apiWithAuth(`/catalog?sort=${sort}`);
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['items']);
       const item = data.items.find(
         (catalogItem: { id: number }) => catalogItem.id === seededItem.id,
       );
+      expect(item).toBeDefined();
       expect(item).toMatchObject({
         id: seededItem.id,
         weight: null,
