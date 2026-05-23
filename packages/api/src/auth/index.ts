@@ -153,7 +153,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
       // JWT: issues asymmetric JWTs and exposes a JWKS endpoint at
       // /api/auth/jwks for downstream service verification.
-      jwt(),
+      // Private key encryption is disabled — it causes decrypt failures when
+      // BETTER_AUTH_SECRET rotates or differs across environments.
+      jwt({ disablePrivateKeyEncryption: true }),
 
       // Admin: role-based user management endpoints.
       admin(),

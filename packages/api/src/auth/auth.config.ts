@@ -69,7 +69,7 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [bearer(), jwt(), admin()],
+  plugins: [bearer(), jwt({ disablePrivateKeyEncryption: true }), admin()],
 
   trustedOrigins: ['http://localhost:8787', 'packrat://'],
 });
