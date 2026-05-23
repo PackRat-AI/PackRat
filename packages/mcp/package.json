@@ -12,10 +12,10 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@cloudflare/workers-oauth-provider": "^0.4.0",
-    "@modelcontextprotocol/sdk": "^1.11.0",
+    "@cloudflare/workers-oauth-provider": "^0.7.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@packrat/api-client": "workspace:*",
-    "agents": "^0.11.0",
+    "agents": "^0.13.2",
     "magic-regexp": "catalog:",
     "zod": "catalog:"
   },
