@@ -7,10 +7,11 @@ export function registerCatalogTools(agent: AgentContext): void {
   // ── Text search ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'search_gear_catalog',
+    'packrat_search_gear_catalog',
     {
+      title: 'Search Gear Catalog',
       description:
-        'Search the PackRat gear catalog containing thousands of real outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories.',
+        'Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories.',
       inputSchema: {
         query: z
           .string()
@@ -26,6 +27,12 @@ export function registerCatalogTools(agent: AgentContext): void {
         page: z.number().int().min(1).default(1),
         sort_by: z.nativeEnum(CatalogSortField).optional(),
         sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc),
+      },
+      annotations: {
+        title: 'Search Gear Catalog',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ query, category, limit, page, sort_by, sort_order }) =>
@@ -46,13 +53,20 @@ export function registerCatalogTools(agent: AgentContext): void {
   // ── Semantic/vector search ────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'semantic_gear_search',
+    'packrat_semantic_gear_search',
     {
+      title: 'Semantic Gear Search',
       description:
-        'Search the gear catalog using AI-powered semantic/vector search. Great for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
+        'Search the gear catalog using vector/semantic search. Good for natural-language queries like "warm but lightweight insulation layer for cold shoulder-season camping" or "minimalist trail running shoe for rocky terrain".',
       inputSchema: {
         query: z.string().min(3),
         limit: z.number().int().min(1).max(30).default(8),
+      },
+      annotations: {
+        title: 'Semantic Gear Search',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ query, limit }) =>
@@ -64,12 +78,19 @@ export function registerCatalogTools(agent: AgentContext): void {
   // ── Get single item ───────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'get_catalog_item',
+    'packrat_get_catalog_item',
     {
+      title: 'Get Catalog Item',
       description:
-        'Retrieve full details for a specific gear catalog item by ID. Returns all specs, dimensions, weight, price, availability, user reviews, Q&A, and product URL.',
+        'Retrieve full details for a specific gear catalog item by ID. Returns specs, dimensions, weight, price, availability, user reviews, Q&A, and product URL.',
       inputSchema: {
         item_id: z.number().int().describe('The catalog item ID'),
+      },
+      annotations: {
+        title: 'Get Catalog Item',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_id }) =>
@@ -82,13 +103,20 @@ export function registerCatalogTools(agent: AgentContext): void {
   // ── Similar catalog items ─────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'similar_catalog_items',
+    'packrat_similar_catalog_items',
     {
+      title: 'Find Similar Catalog Items',
       description: 'Find items similar to a given catalog item by embedding similarity.',
       inputSchema: {
         item_id: z.number().int(),
         limit: z.number().int().min(1).max(50).default(10),
         threshold: z.number().min(0).max(1).optional(),
+      },
+      annotations: {
+        title: 'Find Similar Catalog Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_id, limit, threshold }) =>
@@ -103,11 +131,18 @@ export function registerCatalogTools(agent: AgentContext): void {
   // ── List categories ───────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'list_gear_categories',
+    'packrat_list_gear_categories',
     {
+      title: 'List Gear Categories',
       description:
         'List all available gear categories in the catalog with item counts. Use this to explore what gear types are available before searching.',
       inputSchema: { limit: z.number().int().min(1).max(200).optional() },
+      annotations: {
+        title: 'List Gear Categories',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ limit }) =>
       call(agent.api.user.catalog.categories.get({ query: { limit } }), {
@@ -118,8 +153,9 @@ export function registerCatalogTools(agent: AgentContext): void {
   // ── Create a catalog item (user-submitted) ────────────────────────────────
 
   agent.server.registerTool(
-    'create_catalog_item',
+    'packrat_create_catalog_item',
     {
+      title: 'Create Catalog Item',
       description:
         'Submit a new gear item to the catalog. The API will embed and dedupe automatically. Use this for custom items not yet in the catalog.',
       inputSchema: {
@@ -133,6 +169,13 @@ export function registerCatalogTools(agent: AgentContext): void {
         images: z.array(z.string()).optional(),
         rating: z.number().min(0).max(5).optional(),
         product_url: z.string().url().optional(),
+      },
+      annotations: {
+        title: 'Create Catalog Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({
@@ -169,12 +212,19 @@ export function registerCatalogTools(agent: AgentContext): void {
   // endpoint that accepts an `ids[]` query. Tracked in the API thickening list.
 
   agent.server.registerTool(
-    'compare_gear_items',
+    'packrat_compare_gear_items',
     {
+      title: 'Compare Gear Items',
       description:
         'Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.',
       inputSchema: {
         item_ids: z.array(z.number().int()).min(2).max(10),
+      },
+      annotations: {
+        title: 'Compare Gear Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_ids }) =>

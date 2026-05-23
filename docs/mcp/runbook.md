@@ -120,10 +120,10 @@ The MCP Worker advertises four coarse-grained OAuth scopes (see
 
 | Scope | Visible tools |
 | ----- | ------------- |
-| `mcp` (umbrella, back-compat) | read tools only (`get_*`, `list_*`, `search_*`, `find_*`, `extract_*`, `preview_*`, `whoami`) |
+| `mcp` (umbrella, back-compat) | read tools only (`packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, `packrat_extract_*`, `packrat_preview_*`, `packrat_whoami`) |
 | `mcp:read` | same as `mcp`, explicit |
 | `mcp:write` | read + write tools (everything not classified `admin`) |
-| `mcp:admin` | read + write + every `admin_*` tool + the two explicit overrides `execute_sql_query` / `get_database_schema` |
+| `mcp:admin` | read + write + every `packrat_admin_*` tool + the four explicit overrides `packrat_execute_sql_query` / `packrat_get_database_schema` / `packrat_generate_pack_template_from_url` / `packrat_create_app_pack_template` (the last two added in U7) |
 
 `mcp:admin` is granted ONLY when:
 
@@ -302,6 +302,77 @@ U4's `/register` gate hit).
 If Anthropic adds new origins (e.g. a future Claude domain), update the
 `WELL_KNOWN_ALLOWED_ORIGINS` set in `cors.ts` and the corresponding test
 in `__tests__/auth.test.ts`.
+
+## U7 tool surface
+
+### `packrat_*` namespace
+
+Every user-callable MCP tool is namespaced with the `packrat_` prefix. This
+prevents collisions when a user installs multiple connectors in Claude
+(e.g. another connector also exposing a `get_pack` tool would clash without
+the prefix). Admin tools keep the legacy `admin_` prefix on top of the
+namespace, so they read as `packrat_admin_*`.
+
+There are no backwards-compatible aliases — the v1 connector-store
+listing breaks pre-rename tool names by design. The scope classifier in
+`packages/mcp/src/scopes.ts` accepts both shapes (`admin_*` and
+`packrat_admin_*`) so the U5 gating contract doesn't depend on U7 having
+shipped, but the live surface only emits the prefixed form.
+
+### Annotation policy — every flag set explicitly
+
+Every tool registration sets `title`, `readOnlyHint`, `idempotentHint`,
+and `openWorldHint` on the `annotations` object. Write tools (anything
+with `readOnlyHint: false`) additionally set `destructiveHint`.
+
+We do **not** rely on SDK defaults. The MCP SDK's `destructiveHint`
+default is `true`, which forces a confirmation prompt on every tool
+call — including reads — if `readOnlyHint` is also unset. The catalog
+test in `packages/mcp/src/__tests__/annotations.test.ts` fails the
+build if any tool ships without explicit values for every annotation.
+
+Classification rules (codified in the catalog test):
+
+| Pattern | `readOnlyHint` | `destructiveHint` | `openWorldHint` |
+| --- | --- | --- | --- |
+| `packrat_get_*` / `packrat_list_*` / `packrat_search_*` / `packrat_whoami` | true | (unset) | false for internal data; true for `packrat_web_search`, `packrat_get_weather`, `packrat_extract_url_content`, `packrat_preview_alltrails_url`, `packrat_search_weather_*`, etc. |
+| `packrat_create_*` / `packrat_update_*` / `packrat_submit_*` / `packrat_record_*` / `packrat_add_*` | false | false (additive) | false |
+| `packrat_delete_*` / `packrat_remove_*` / `packrat_admin_hard_delete_*` / `packrat_admin_delete_*` | false | true | false |
+| `packrat_toggle_*` | false | false (additive — flips state) | false |
+| `packrat_analyze_*` / `packrat_identify_*` / `packrat_analyze_pack_image` | false | false | false |
+| `packrat_generate_pack_template_from_url` | false | false | true (reaches TikTok/YouTube) |
+
+### Split tools
+
+The pre-rename `create_pack_template` accepted an `is_app_template`
+boolean that switched between user-level and admin-only behaviour. Per
+the U7 plan's "Key Technical Decisions" and the security-lens
+doc-review finding, U7 split this into two tools so a single boolean
+parameter never decides between safe and unsafe operations:
+
+| New tool | Behaviour | Visibility |
+| --- | --- | --- |
+| `packrat_create_pack_template` | `is_app_template` forced to `false`. Creates a personal template visible only to the signed-in user. | All write+admin scopes (`mcp:write`, `mcp:admin`). |
+| `packrat_create_app_pack_template` | `is_app_template` forced to `true`. Creates a curated app template visible to all users. | `mcp:admin` only — listed in `EXPLICIT_ADMIN` in `scopes.ts`. |
+
+### `EXPLICIT_ADMIN` overrides — U7 additions
+
+The `ADMIN_OVERRIDES` set in `packages/mcp/src/scopes.ts` lists tool
+names whose prefix doesn't match the admin convention but whose blast
+radius warrants admin-only visibility. U7 added two new entries on top
+of the existing two D3-finding overrides:
+
+| Tool | Why explicit-admin |
+| --- | --- |
+| `packrat_execute_sql_query` (carry-over from U5 / D3) | Raw DB SELECT access — over-grant risk. |
+| `packrat_get_database_schema` (carry-over from U5 / D3) | Exposes the DB shape; admin-only data leakage prevention. |
+| `packrat_generate_pack_template_from_url` (U7) | API enforces admin on `user.role`; MCP hides it from non-admin sessions so `tools/list` matches what the user can actually call. |
+| `packrat_create_app_pack_template` (U7) | Admin variant of the split create-template tool; the `admin_` prefix isn't in the name (would otherwise read as "admin: create"), so the override is the only gate. |
+
+Each override is listed twice in `ADMIN_OVERRIDES` — once without the
+`packrat_` prefix and once with — so the classifier handles both
+pre- and post-U7 naming and the override semantics survive a future
+naming refactor.
 
 ## Common operations
 

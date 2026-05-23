@@ -46,13 +46,27 @@ export type ToolClassification = 'read' | 'write' | 'admin';
 // access tools and must not be exposed to mcp:read/mcp:write clients,
 // regardless of what their prefixes suggest.
 //
+// U7 additions:
+//  - `generate_pack_template_from_url`: the API gates on admin role; MCP
+//    must hide the tool from non-admin sessions so the listed surface
+//    matches what the user can actually call (the API still enforces).
+//  - `create_app_pack_template`: the admin-only split of
+//    `create_pack_template` (which used to take an `is_app_template`
+//    boolean that switched between user-level and admin-only behaviour).
+//    The user-level `create_pack_template` keeps its write classification;
+//    the new `create_app_pack_template` is admin-only.
+//
 // Both the current names and the post-U7 `packrat_*` variants are listed
 // so this set doesn't have to land in lockstep with U7's rename.
 const ADMIN_OVERRIDES: ReadonlySet<string> = new Set([
   'execute_sql_query',
   'get_database_schema',
+  'generate_pack_template_from_url',
+  'create_app_pack_template',
   'packrat_execute_sql_query',
   'packrat_get_database_schema',
+  'packrat_generate_pack_template_from_url',
+  'packrat_create_app_pack_template',
 ]);
 
 // Prefix bucket: read tools. Any tool whose name starts with one of these

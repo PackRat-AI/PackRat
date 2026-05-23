@@ -13,9 +13,10 @@
  * so a non-admin session never sees these in `tools/list` even though they
  * were registered.
  *
- * Tool names retain the `admin_*` shape for now; U7 will rename to
- * `packrat_admin_*` alongside the rest of the namespacing pass. The
- * classifier in `scopes.ts` accepts both shapes.
+ * U7 renamed every tool to the `packrat_admin_*` shape and added explicit
+ * tool annotations (title, readOnlyHint, destructiveHint, idempotentHint,
+ * openWorldHint). The classifier in `scopes.ts` accepts both the
+ * pre-rename `admin_*` and post-rename `packrat_admin_*` shapes.
  */
 
 import { z } from 'zod';
@@ -24,27 +25,43 @@ import type { AgentContext } from '../types';
 
 const ADMIN = { requiresAdmin: true as const };
 
+/**
+ * Common annotation defaults for read-style admin tools (stats, list,
+ * analytics drill-downs). Spread into the `annotations` object on each
+ * tool to keep the per-tool surface short while still being explicit
+ * about every flag.
+ */
+const READ_ADMIN_ANNOTATIONS = {
+  readOnlyHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
+
 export function registerAdminTools(agent: AgentContext): void {
   // ── Stats / users / packs / catalog ───────────────────────────────────────
 
   agent.server.registerTool(
-    'admin_stats',
+    'packrat_admin_stats',
     {
+      title: 'Admin: Platform Stats',
       description: 'Get high-level platform stats: user, pack, and catalog counts.',
       inputSchema: {},
+      annotations: { title: 'Admin: Platform Stats', ...READ_ADMIN_ANNOTATIONS },
     },
     async () => call(agent.api.admin.admin.stats.get(), { action: 'fetch admin stats', ...ADMIN }),
   );
 
   agent.server.registerTool(
-    'admin_list_users',
+    'packrat_admin_list_users',
     {
+      title: 'Admin: List Users',
       description: 'Search/list users (paginated). Use `q` to filter by email or name.',
       inputSchema: {
         q: z.string().optional(),
         limit: z.number().int().min(1).max(200).default(50),
         offset: z.number().int().min(0).default(0),
       },
+      annotations: { title: 'Admin: List Users', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset }) =>
       call(agent.api.admin.admin['users-list'].get({ query: { q, limit, offset } }), {
@@ -54,11 +71,19 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_hard_delete_user',
+    'packrat_admin_hard_delete_user',
     {
+      title: 'Admin: Hard-Delete User',
       description:
         'GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log.',
       inputSchema: { user_id: z.string(), reason: z.string().min(1) },
+      annotations: {
+        title: 'Admin: Hard-Delete User',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ user_id, reason }) =>
       call(agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }), {
@@ -69,8 +94,9 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_list_packs',
+    'packrat_admin_list_packs',
     {
+      title: 'Admin: List Packs',
       description: 'Search/list packs across all users (admin view).',
       inputSchema: {
         q: z.string().optional(),
@@ -78,6 +104,7 @@ export function registerAdminTools(agent: AgentContext): void {
         offset: z.number().int().min(0).default(0),
         include_deleted: z.boolean().default(false),
       },
+      annotations: { title: 'Admin: List Packs', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset, include_deleted }) =>
       call(
@@ -89,10 +116,18 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_delete_pack',
+    'packrat_admin_delete_pack',
     {
+      title: 'Admin: Delete Pack',
       description: 'Soft-delete a pack as admin (bypasses ownership).',
       inputSchema: { pack_id: z.string() },
+      annotations: {
+        title: 'Admin: Delete Pack',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ pack_id }) =>
       call(agent.api.admin.admin.packs({ id: pack_id }).delete(), {
@@ -103,14 +138,16 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_list_catalog',
+    'packrat_admin_list_catalog',
     {
+      title: 'Admin: List Catalog Items',
       description: 'Search/list catalog items across the platform.',
       inputSchema: {
         q: z.string().optional(),
         limit: z.number().int().min(1).max(200).default(50),
         offset: z.number().int().min(0).default(0),
       },
+      annotations: { title: 'Admin: List Catalog Items', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset }) =>
       call(agent.api.admin.admin['catalog-list'].get({ query: { q, limit, offset } }), {
@@ -120,8 +157,9 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_update_catalog_item',
+    'packrat_admin_update_catalog_item',
     {
+      title: 'Admin: Update Catalog Item',
       description: 'Update a catalog item (name, brand, price, weight, etc.) as admin.',
       inputSchema: {
         item_id: z.union([z.string(), z.number()]),
@@ -132,6 +170,13 @@ export function registerAdminTools(agent: AgentContext): void {
         weight_unit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
         price: z.number().min(0).optional(),
         description: z.string().optional(),
+      },
+      annotations: {
+        title: 'Admin: Update Catalog Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_id, name, brand, categories, weight, weight_unit, price, description }) => {
@@ -152,10 +197,18 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_delete_catalog_item',
+    'packrat_admin_delete_catalog_item',
     {
+      title: 'Admin: Delete Catalog Item',
       description: 'Delete a catalog item as admin.',
       inputSchema: { item_id: z.union([z.string(), z.number()]) },
+      annotations: {
+        title: 'Admin: Delete Catalog Item',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ item_id }) =>
       call(agent.api.admin.admin.catalog({ id: String(item_id) }).delete(), {
@@ -168,8 +221,9 @@ export function registerAdminTools(agent: AgentContext): void {
   // ── Trails (admin) ────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'admin_search_trails',
+    'packrat_admin_search_trails',
     {
+      title: 'Admin: Search Trails',
       description: 'Search OSM trails by name/sport (admin view).',
       inputSchema: {
         q: z.string().min(1),
@@ -177,6 +231,7 @@ export function registerAdminTools(agent: AgentContext): void {
         limit: z.number().int().min(1).max(200).default(50),
         offset: z.number().int().min(0).default(0),
       },
+      annotations: { title: 'Admin: Search Trails', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, sport, limit, offset }) =>
       call(agent.api.admin.admin.trails.search.get({ query: { q, sport, limit, offset } }), {
@@ -186,10 +241,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_get_trail',
+    'packrat_admin_get_trail',
     {
+      title: 'Admin: Get Trail',
       description: 'Get a trail by OSM relation ID (admin).',
       inputSchema: { osm_id: z.string() },
+      annotations: { title: 'Admin: Get Trail', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ osm_id }) =>
       call(agent.api.admin.admin.trails({ osmId: osm_id }).get(), {
@@ -200,10 +257,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_get_trail_geometry',
+    'packrat_admin_get_trail_geometry',
     {
+      title: 'Admin: Get Trail Geometry',
       description: 'Get full GeoJSON geometry for a trail (admin).',
       inputSchema: { osm_id: z.string() },
+      annotations: { title: 'Admin: Get Trail Geometry', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ osm_id }) =>
       call(agent.api.admin.admin.trails({ osmId: osm_id }).geometry.get(), {
@@ -214,14 +273,19 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_list_trail_condition_reports',
+    'packrat_admin_list_trail_condition_reports',
     {
+      title: 'Admin: List Trail Condition Reports',
       description: 'List trail condition reports across all users (admin).',
       inputSchema: {
         q: z.string().optional(),
         limit: z.number().int().min(1).max(200).default(50),
         offset: z.number().int().min(0).default(0),
         include_deleted: z.boolean().default(false),
+      },
+      annotations: {
+        title: 'Admin: List Trail Condition Reports',
+        ...READ_ADMIN_ANNOTATIONS,
       },
     },
     async ({ q, limit, offset, include_deleted }) =>
@@ -234,10 +298,18 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_delete_trail_condition_report',
+    'packrat_admin_delete_trail_condition_report',
     {
+      title: 'Admin: Delete Trail Condition Report',
       description: 'Soft-delete a trail condition report as admin.',
       inputSchema: { report_id: z.string() },
+      annotations: {
+        title: 'Admin: Delete Trail Condition Report',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ report_id }) =>
       call(agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(), {
@@ -250,13 +322,15 @@ export function registerAdminTools(agent: AgentContext): void {
   // ── Analytics: platform ───────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'admin_analytics_growth',
+    'packrat_admin_analytics_growth',
     {
+      title: 'Admin: Analytics Growth',
       description: 'Platform user/pack growth metrics.',
       inputSchema: {
         period: z.enum(['day', 'week', 'month']).optional(),
         range: z.number().int().min(1).optional(),
       },
+      annotations: { title: 'Admin: Analytics Growth', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ period, range }) =>
       call(agent.api.admin.admin.analytics.platform.growth.get({ query: { period, range } }), {
@@ -266,13 +340,15 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_activity',
+    'packrat_admin_analytics_activity',
     {
+      title: 'Admin: Analytics Activity',
       description: 'Platform activity metrics over a time period.',
       inputSchema: {
         period: z.enum(['day', 'week', 'month']).optional(),
         range: z.number().int().min(1).optional(),
       },
+      annotations: { title: 'Admin: Analytics Activity', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ period, range }) =>
       call(agent.api.admin.admin.analytics.platform.activity.get({ query: { period, range } }), {
@@ -282,10 +358,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_active_users',
+    'packrat_admin_analytics_active_users',
     {
+      title: 'Admin: Active Users',
       description: 'Daily/weekly/monthly active user counts.',
       inputSchema: {},
+      annotations: { title: 'Admin: Active Users', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.platform['active-users'].get(), {
@@ -295,10 +373,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_pack_breakdown',
+    'packrat_admin_analytics_pack_breakdown',
     {
+      title: 'Admin: Pack Breakdown',
       description: 'Distribution of packs by category.',
       inputSchema: {},
+      annotations: { title: 'Admin: Pack Breakdown', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.platform.breakdown.get(), {
@@ -310,10 +390,12 @@ export function registerAdminTools(agent: AgentContext): void {
   // ── Analytics: catalog ────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'admin_analytics_catalog_overview',
+    'packrat_admin_analytics_catalog_overview',
     {
+      title: 'Admin: Catalog Overview',
       description: 'Catalog-wide overview: item count, brands, price ranges, embedding coverage.',
       inputSchema: {},
+      annotations: { title: 'Admin: Catalog Overview', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.catalog.overview.get(), {
@@ -323,10 +405,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_top_brands',
+    'packrat_admin_analytics_top_brands',
     {
+      title: 'Admin: Top Brands',
       description: 'Top gear brands in the catalog by item count.',
       inputSchema: { limit: z.number().int().min(1).max(200).default(20) },
+      annotations: { title: 'Admin: Top Brands', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
       call(agent.api.admin.admin.analytics.catalog.brands.get({ query: { limit } }), {
@@ -336,10 +420,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_catalog_prices',
+    'packrat_admin_analytics_catalog_prices',
     {
+      title: 'Admin: Catalog Prices',
       description: 'Price distribution across the catalog.',
       inputSchema: {},
+      annotations: { title: 'Admin: Catalog Prices', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.catalog.prices.get(), {
@@ -349,10 +435,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_catalog_embeddings',
+    'packrat_admin_analytics_catalog_embeddings',
     {
+      title: 'Admin: Catalog Embedding Stats',
       description: 'Catalog embedding coverage stats.',
       inputSchema: {},
+      annotations: { title: 'Admin: Catalog Embedding Stats', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.catalog.embeddings.get(), {
@@ -362,10 +450,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_etl_jobs',
+    'packrat_admin_analytics_etl_jobs',
     {
+      title: 'Admin: ETL Jobs',
       description: 'Recent ETL pipeline jobs.',
       inputSchema: { limit: z.number().int().min(1).max(200).default(20) },
+      annotations: { title: 'Admin: ETL Jobs', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
       call(agent.api.admin.admin.analytics.catalog.etl.get({ query: { limit } }), {
@@ -375,10 +465,12 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_etl_failure_summary',
+    'packrat_admin_analytics_etl_failure_summary',
     {
+      title: 'Admin: ETL Failure Summary',
       description: 'Top recent ETL failure patterns.',
       inputSchema: { limit: z.number().int().min(1).max(50).default(10) },
+      annotations: { title: 'Admin: ETL Failure Summary', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
       call(
@@ -388,13 +480,15 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_analytics_etl_job_failures',
+    'packrat_admin_analytics_etl_job_failures',
     {
+      title: 'Admin: ETL Job Failures',
       description: 'Per-job ETL failure drill-down.',
       inputSchema: {
         job_id: z.string(),
         limit: z.number().int().min(1).max(200).default(50),
       },
+      annotations: { title: 'Admin: ETL Job Failures', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ job_id, limit }) =>
       call(
@@ -406,10 +500,18 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_etl_reset_stuck',
+    'packrat_admin_etl_reset_stuck',
     {
+      title: 'Admin: ETL Reset Stuck Jobs',
       description: 'Mark stuck-running ETL jobs as failed (admin maintenance).',
       inputSchema: {},
+      annotations: {
+        title: 'Admin: ETL Reset Stuck Jobs',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () =>
       call(agent.api.admin.admin.analytics.catalog.etl['reset-stuck'].post({}), {
@@ -419,10 +521,18 @@ export function registerAdminTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'admin_etl_retry_job',
+    'packrat_admin_etl_retry_job',
     {
+      title: 'Admin: ETL Retry Job',
       description: 'Retry a specific failed ETL job.',
       inputSchema: { job_id: z.string() },
+      annotations: {
+        title: 'Admin: ETL Retry Job',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ job_id }) =>
       call(agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).retry.post({}), {

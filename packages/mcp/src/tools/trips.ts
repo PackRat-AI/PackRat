@@ -12,11 +12,18 @@ export function registerTripTools(agent: AgentContext): void {
   // ── List trips ────────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'list_trips',
+    'packrat_list_trips',
     {
+      title: 'List My Trips',
       description:
         "List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack.",
       inputSchema: {},
+      annotations: {
+        title: 'List My Trips',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => call(agent.api.user.trips.get(), { action: 'list trips' }),
   );
@@ -24,11 +31,18 @@ export function registerTripTools(agent: AgentContext): void {
   // ── Get trip ──────────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'get_trip',
+    'packrat_get_trip',
     {
+      title: 'Get Trip',
       description:
         'Get full details for a single trip including location coordinates, dates, notes, and linked pack information.',
       inputSchema: { trip_id: z.string().describe('The unique trip ID (e.g. "t_abc123")') },
+      annotations: {
+        title: 'Get Trip',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ trip_id }) =>
       call(agent.api.user.trips({ tripId: trip_id }).get(), {
@@ -40,8 +54,9 @@ export function registerTripTools(agent: AgentContext): void {
   // ── Create trip ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'create_trip',
+    'packrat_create_trip',
     {
+      title: 'Create Trip',
       description:
         'Create a new trip plan with destination, dates, and optional link to a pack. Returns the created trip with its ID.',
       inputSchema: {
@@ -52,6 +67,13 @@ export function registerTripTools(agent: AgentContext): void {
         end_date: z.string().optional().describe('Trip end date in ISO 8601 format'),
         notes: z.string().optional().describe('Planning notes, permits needed, logistics'),
         pack_id: z.string().optional().describe('Optionally link an existing pack to this trip'),
+      },
+      annotations: {
+        title: 'Create Trip',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({ name, description, location, start_date, end_date, notes, pack_id }) => {
@@ -76,8 +98,9 @@ export function registerTripTools(agent: AgentContext): void {
   // ── Update trip ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'update_trip',
+    'packrat_update_trip',
     {
+      title: 'Update Trip',
       description: "Update an existing trip's details, dates, location, or linked pack.",
       inputSchema: {
         trip_id: z.string(),
@@ -88,6 +111,13 @@ export function registerTripTools(agent: AgentContext): void {
         end_date: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
         pack_id: z.string().nullable().optional(),
+      },
+      annotations: {
+        title: 'Update Trip',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ trip_id, name, description, location, start_date, end_date, notes, pack_id }) => {
@@ -109,10 +139,18 @@ export function registerTripTools(agent: AgentContext): void {
   // ── Delete trip ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'delete_trip',
+    'packrat_delete_trip',
     {
+      title: 'Delete Trip',
       description: 'Delete a trip. The trip will no longer appear in listings.',
       inputSchema: { trip_id: z.string() },
+      annotations: {
+        title: 'Delete Trip',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ trip_id }) =>
       call(agent.api.user.trips({ tripId: trip_id }).delete(), {

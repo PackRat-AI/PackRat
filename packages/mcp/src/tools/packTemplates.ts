@@ -1,3 +1,23 @@
+/**
+ * Pack template tools.
+ *
+ * U7 split:
+ *  - `packrat_create_pack_template` — user-level. `is_app_template` is
+ *    hardcoded to `false` (no longer a caller-supplied parameter), so the
+ *    write-vs-admin distinction is no longer collapsed into a single
+ *    boolean. This is the doc-review finding called out in the U7 plan.
+ *  - `packrat_create_app_pack_template` — admin-only equivalent.
+ *    `is_app_template` is hardcoded to `true`. Visibility is enforced by
+ *    the `create_app_pack_template` entry in `EXPLICIT_ADMIN` in
+ *    `scopes.ts` (the `admin_` prefix convention can't apply here because
+ *    the tool needs the `packrat_create_*` shape to read as a "create").
+ *
+ * The `packrat_generate_pack_template_from_url` tool is admin-only on the
+ * API side. U7 also hides it from non-admin OAuth sessions via the
+ * `EXPLICIT_ADMIN` set so the MCP `tools/list` matches what the user can
+ * actually call.
+ */
+
 import { z } from 'zod';
 import { call, nowIso } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
@@ -7,19 +27,33 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   // ── Templates ─────────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'list_pack_templates',
+    'packrat_list_pack_templates',
     {
+      title: 'List Pack Templates',
       description: 'List both user-owned and app-curated pack templates.',
       inputSchema: {},
+      annotations: {
+        title: 'List Pack Templates',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => call(agent.api.user['pack-templates'].get(), { action: 'list pack templates' }),
   );
 
   agent.server.registerTool(
-    'get_pack_template',
+    'packrat_get_pack_template',
     {
+      title: 'Get Pack Template',
       description: 'Get a pack template with its items.',
       inputSchema: { template_id: z.string() },
+      annotations: {
+        title: 'Get Pack Template',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ template_id }) =>
       call(agent.api.user['pack-templates']({ templateId: template_id }).get(), {
@@ -28,21 +62,32 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       }),
   );
 
+  // ── Create pack template (user-level) ─────────────────────────────────────
+  // `is_app_template` is forced to `false` here; the admin variant lives in
+  // `packrat_create_app_pack_template` below.
+
   agent.server.registerTool(
-    'create_pack_template',
+    'packrat_create_pack_template',
     {
+      title: 'Create Pack Template',
       description:
-        'Create a pack template. Set is_app_template=true to create a curated app template (admin only).',
+        'Create a personal pack template visible only to you. To create a curated app template, use packrat_create_app_pack_template (admin-only).',
       inputSchema: {
         name: z.string().min(1),
         description: z.string().optional(),
         category: z.nativeEnum(PackCategory),
         image: z.string().optional(),
         tags: z.array(z.string()).optional(),
-        is_app_template: z.boolean().default(false),
+      },
+      annotations: {
+        title: 'Create Pack Template',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
-    async ({ name, description, category, image, tags, is_app_template }) => {
+    async ({ name, description, category, image, tags }) => {
       const now = nowIso();
       return call(
         agent.api.user['pack-templates'].post({
@@ -51,7 +96,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           category,
           image,
           tags,
-          isAppTemplate: is_app_template,
+          isAppTemplate: false,
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
@@ -60,9 +105,55 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     },
   );
 
+  // ── Create app pack template (admin-only) ────────────────────────────────
+  // Same surface as `packrat_create_pack_template` but `is_app_template` is
+  // forced to `true`. Admin-gated via the `create_app_pack_template` entry
+  // in `EXPLICIT_ADMIN` in `scopes.ts` (the tool doesn't carry the
+  // `admin_` prefix so the prefix-based classifier can't pick it up).
+
   agent.server.registerTool(
-    'update_pack_template',
+    'packrat_create_app_pack_template',
     {
+      title: 'Create App Pack Template (Admin)',
+      description:
+        'Create a curated app-level pack template visible to all users. Admin-only — also requires the mcp:admin OAuth scope. For personal templates use packrat_create_pack_template.',
+      inputSchema: {
+        name: z.string().min(1),
+        description: z.string().optional(),
+        category: z.nativeEnum(PackCategory),
+        image: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      },
+      annotations: {
+        title: 'Create App Pack Template (Admin)',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ name, description, category, image, tags }) => {
+      const now = nowIso();
+      return call(
+        agent.api.user['pack-templates'].post({
+          name,
+          description,
+          category,
+          image,
+          tags,
+          isAppTemplate: true,
+          localCreatedAt: now,
+          localUpdatedAt: now,
+        }),
+        { action: 'create app pack template', requiresAdmin: true },
+      );
+    },
+  );
+
+  agent.server.registerTool(
+    'packrat_update_pack_template',
+    {
+      title: 'Update Pack Template',
       description: 'Update a pack template.',
       inputSchema: {
         template_id: z.string(),
@@ -71,6 +162,13 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         category: z.nativeEnum(PackCategory).optional(),
         image: z.string().optional(),
         tags: z.array(z.string()).optional(),
+      },
+      annotations: {
+        title: 'Update Pack Template',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ template_id, name, description, category, image, tags }) => {
@@ -88,10 +186,18 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'delete_pack_template',
+    'packrat_delete_pack_template',
     {
+      title: 'Delete Pack Template',
       description: 'Delete a pack template.',
       inputSchema: { template_id: z.string() },
+      annotations: {
+        title: 'Delete Pack Template',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ template_id }) =>
       call(agent.api.user['pack-templates']({ templateId: template_id }).delete(), {
@@ -103,10 +209,17 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   // ── Template items ────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'list_pack_template_items',
+    'packrat_list_pack_template_items',
     {
+      title: 'List Pack Template Items',
       description: 'List items inside a pack template.',
       inputSchema: { template_id: z.string() },
+      annotations: {
+        title: 'List Pack Template Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ template_id }) =>
       call(agent.api.user['pack-templates']({ templateId: template_id }).items.get(), {
@@ -116,8 +229,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'add_pack_template_item',
+    'packrat_add_pack_template_item',
     {
+      title: 'Add Pack Template Item',
       description: 'Add an item to a pack template.',
       inputSchema: {
         template_id: z.string(),
@@ -131,6 +245,13 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         worn: z.boolean().default(false),
         image: z.string().optional(),
         notes: z.string().optional(),
+      },
+      annotations: {
+        title: 'Add Pack Template Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({
@@ -164,8 +285,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'update_pack_template_item',
+    'packrat_update_pack_template_item',
     {
+      title: 'Update Pack Template Item',
       description: 'Update a pack template item.',
       inputSchema: {
         item_id: z.string(),
@@ -179,6 +301,13 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         worn: z.boolean().optional(),
         image: z.string().optional(),
         notes: z.string().optional(),
+      },
+      annotations: {
+        title: 'Update Pack Template Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_id, ...fields }) => {
@@ -198,10 +327,18 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'delete_pack_template_item',
+    'packrat_delete_pack_template_item',
     {
+      title: 'Delete Pack Template Item',
       description: 'Delete a pack template item.',
       inputSchema: { item_id: z.string() },
+      annotations: {
+        title: 'Delete Pack Template Item',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ item_id }) =>
       call(agent.api.user['pack-templates'].items({ itemId: item_id }).delete(), {
@@ -211,15 +348,26 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   );
 
   // ── Generate from online content (admin-only on the API side) ─────────────
+  // U7 adds this tool to EXPLICIT_ADMIN in scopes.ts so the MCP-level
+  // surface matches what the API enforces — non-admin OAuth sessions don't
+  // see it in tools/list.
 
   agent.server.registerTool(
-    'generate_pack_template_from_url',
+    'packrat_generate_pack_template_from_url',
     {
+      title: 'Generate Pack Template From URL (Admin)',
       description:
-        'Generate a pack template from a TikTok or YouTube link. The server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user; your signed-in PackRat account must be an admin and the MCP session must carry the `mcp:admin` scope (granted at OAuth callback time when the Better Auth role resolves to ADMIN).',
+        'Generate a pack template from a TikTok or YouTube link. Admin-only — the server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user, and MCP hides it from non-admin sessions. The `mcp:admin` scope is granted at OAuth callback time when the Better Auth role resolves to ADMIN.',
       inputSchema: {
         content_url: z.string().url(),
         is_app_template: z.boolean().default(false),
+      },
+      annotations: {
+        title: 'Generate Pack Template From URL (Admin)',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
       },
     },
     async ({ content_url, is_app_template }) =>
@@ -228,7 +376,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           contentUrl: content_url,
           isAppTemplate: is_app_template,
         }),
-        { action: 'generate pack template from URL' },
+        { action: 'generate pack template from URL', requiresAdmin: true },
       ),
   );
 }

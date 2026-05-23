@@ -7,8 +7,9 @@ export function registerPackTools(agent: AgentContext): void {
   // ── List packs ────────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'list_packs',
+    'packrat_list_packs',
     {
+      title: 'List My Packs',
       description:
         'List all packs belonging to the authenticated user. Returns pack summaries including name, category, item count, and total weight.',
       inputSchema: {
@@ -16,6 +17,12 @@ export function registerPackTools(agent: AgentContext): void {
           .boolean()
           .default(false)
           .describe('Include public packs from other users'),
+      },
+      annotations: {
+        title: 'List My Packs',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ include_public }) =>
@@ -27,12 +34,19 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Get pack details ──────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'get_pack',
+    'packrat_get_pack',
     {
+      title: 'Get Pack',
       description:
         'Get complete details of a single pack including all items with weights, categories, and computed totals. Use this to analyze pack weight, find gear gaps, or suggest optimizations.',
       inputSchema: {
         pack_id: z.string().describe('The unique pack ID (e.g. "p_abc123")'),
+      },
+      annotations: {
+        title: 'Get Pack',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ pack_id }) =>
@@ -45,8 +59,9 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Create pack ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'create_pack',
+    'packrat_create_pack',
     {
+      title: 'Create Pack',
       description:
         'Create a new packing list for the user. Returns the newly created pack with its ID.',
       inputSchema: {
@@ -58,6 +73,13 @@ export function registerPackTools(agent: AgentContext): void {
           .default(false)
           .describe('Whether this pack is publicly discoverable by other users'),
         tags: z.array(z.string()).optional().describe('Optional tags for the pack'),
+      },
+      annotations: {
+        title: 'Create Pack',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({ name, description, category, is_public, tags }) => {
@@ -80,8 +102,9 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Update pack ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'update_pack',
+    'packrat_update_pack',
     {
+      title: 'Update Pack',
       description: "Update a pack's name, description, category, visibility, or tags.",
       inputSchema: {
         pack_id: z.string().describe('The unique pack ID to update'),
@@ -90,6 +113,13 @@ export function registerPackTools(agent: AgentContext): void {
         category: z.nativeEnum(PackCategory).optional().describe('New category'),
         is_public: z.boolean().optional().describe('Update public visibility'),
         tags: z.array(z.string()).optional().describe('New tags (replaces existing tags)'),
+      },
+      annotations: {
+        title: 'Update Pack',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ pack_id, name, description, category, is_public, tags }) => {
@@ -109,11 +139,19 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Delete pack ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'delete_pack',
+    'packrat_delete_pack',
     {
+      title: 'Delete Pack',
       description: 'Soft-delete a pack. The pack will no longer appear in listings.',
       inputSchema: {
         pack_id: z.string().describe('The unique pack ID to delete'),
+      },
+      annotations: {
+        title: 'Delete Pack',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ pack_id }) =>
@@ -126,10 +164,17 @@ export function registerPackTools(agent: AgentContext): void {
   // ── List pack items ───────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'list_pack_items',
+    'packrat_list_pack_items',
     {
+      title: 'List Pack Items',
       description: 'List all items in a pack.',
       inputSchema: { pack_id: z.string().describe('The pack ID') },
+      annotations: {
+        title: 'List Pack Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ pack_id }) =>
       call(agent.api.user.packs({ packId: pack_id }).items.get(), {
@@ -141,10 +186,17 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Get a single pack item ────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'get_pack_item',
+    'packrat_get_pack_item',
     {
+      title: 'Get Pack Item',
       description: 'Get full details of a single pack item.',
       inputSchema: { item_id: z.string().describe('The pack item ID') },
+      annotations: {
+        title: 'Get Pack Item',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ item_id }) =>
       call(agent.api.user.packs.items({ itemId: item_id }).get(), {
@@ -156,10 +208,11 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Add item to pack ──────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'add_pack_item',
+    'packrat_add_pack_item',
     {
+      title: 'Add Pack Item',
       description:
-        'Add a gear item to a pack. Provide either a catalog_item_id (from search_gear_catalog) or specify custom item details. Weight should be in grams.',
+        'Add a gear item to a pack. Provide either a catalog_item_id (from packrat_search_gear_catalog) or specify custom item details. Weight should be in grams.',
       inputSchema: {
         pack_id: z.string().describe('The pack ID to add the item to'),
         name: z.string().min(1).describe('Item name'),
@@ -177,6 +230,13 @@ export function registerPackTools(agent: AgentContext): void {
           .describe('Whether the item is consumed (food, fuel, etc.)'),
         is_worn: z.boolean().default(false).describe('Whether the item is worn (clothing, shoes)'),
         notes: z.string().optional().describe('Optional notes about this item'),
+      },
+      annotations: {
+        title: 'Add Pack Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({
@@ -208,8 +268,9 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Update pack item ──────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'update_pack_item',
+    'packrat_update_pack_item',
     {
+      title: 'Update Pack Item',
       description: 'Update fields on an existing pack item.',
       inputSchema: {
         item_id: z.string().describe('The pack item ID'),
@@ -220,6 +281,13 @@ export function registerPackTools(agent: AgentContext): void {
         is_consumable: z.boolean().optional(),
         is_worn: z.boolean().optional(),
         notes: z.string().nullable().optional(),
+      },
+      annotations: {
+        title: 'Update Pack Item',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ item_id, name, category, weight_grams, quantity, is_consumable, is_worn, notes }) => {
@@ -241,10 +309,18 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Remove item from pack ─────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'remove_pack_item',
+    'packrat_remove_pack_item',
     {
+      title: 'Remove Pack Item',
       description: 'Remove an item from a pack (soft-delete).',
       inputSchema: { item_id: z.string().describe('The item ID to remove') },
+      annotations: {
+        title: 'Remove Pack Item',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ item_id }) =>
       call(agent.api.user.packs.items({ itemId: item_id }).delete(), {
@@ -256,14 +332,21 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Similar items for an item in a pack ───────────────────────────────────
 
   agent.server.registerTool(
-    'similar_pack_items',
+    'packrat_similar_pack_items',
     {
+      title: 'Find Similar Pack Items',
       description: 'Find catalog gear similar to a specific item in a pack (semantic similarity).',
       inputSchema: {
         pack_id: z.string(),
         item_id: z.string(),
         limit: z.number().int().min(1).max(50).default(10),
         threshold: z.number().min(0).max(1).optional().describe('Similarity threshold (0-1)'),
+      },
+      annotations: {
+        title: 'Find Similar Pack Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ pack_id, item_id, limit, threshold }) =>
@@ -279,13 +362,19 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Pack item suggestions ─────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'suggest_pack_items',
+    'packrat_suggest_pack_items',
     {
-      description:
-        'Get AI-driven catalog item suggestions for a pack based on the items already in it.',
+      title: 'Suggest Pack Items',
+      description: 'Return catalog item suggestions for a pack based on the items already in it.',
       inputSchema: {
         pack_id: z.string(),
         existing_catalog_item_ids: z.array(z.number().int()).default([]),
+      },
+      annotations: {
+        title: 'Suggest Pack Items',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ pack_id, existing_catalog_item_ids }) =>
@@ -300,10 +389,17 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Weight history ────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'get_pack_weight_history',
+    'packrat_get_pack_weight_history',
     {
+      title: 'Get Pack Weight History',
       description: "Get the weight history for all of the user's packs over time.",
       inputSchema: {},
+      annotations: {
+        title: 'Get Pack Weight History',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () =>
       call(agent.api.user.packs['weight-history'].get(), {
@@ -312,10 +408,18 @@ export function registerPackTools(agent: AgentContext): void {
   );
 
   agent.server.registerTool(
-    'record_pack_weight',
+    'packrat_record_pack_weight',
     {
+      title: 'Record Pack Weight',
       description: 'Record a weight measurement for a pack at a specific point in time.',
       inputSchema: { pack_id: z.string(), weight_grams: z.number().min(0) },
+      annotations: {
+        title: 'Record Pack Weight',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async ({ pack_id, weight_grams }) =>
       call(
@@ -328,11 +432,18 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Pack weight analysis (server-computed breakdown) ─────────────────────
   agent.server.registerTool(
-    'analyze_pack_weight',
+    'packrat_analyze_pack_weight',
     {
+      title: 'Analyze Pack Weight',
       description:
-        'Get a detailed weight breakdown for a pack: total / base / worn / consumable grams plus a per-category aggregation sorted heaviest first.',
+        'Return a detailed weight breakdown for a pack: total / base / worn / consumable grams plus a per-category aggregation sorted heaviest first.',
       inputSchema: { pack_id: z.string().describe('The pack ID to analyze') },
+      annotations: {
+        title: 'Analyze Pack Weight',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ pack_id }) =>
       call(agent.api.user.packs({ packId: pack_id })['weight-breakdown'].get(), {
@@ -344,8 +455,9 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Gap analysis ──────────────────────────────────────────────────────────
 
   agent.server.registerTool(
-    'analyze_pack_gaps',
+    'packrat_analyze_pack_gaps',
     {
+      title: 'Analyze Pack Gaps',
       description:
         "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
       inputSchema: {
@@ -355,6 +467,12 @@ export function registerPackTools(agent: AgentContext): void {
         duration_days: z.number().int().min(1).describe('Trip duration in days'),
         start_date: z.string().optional().describe('ISO date for trip start'),
         end_date: z.string().optional().describe('ISO date for trip end'),
+      },
+      annotations: {
+        title: 'Analyze Pack Gaps',
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
       },
     },
     async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
@@ -373,10 +491,11 @@ export function registerPackTools(agent: AgentContext): void {
   // ── Image-based gear detection ───────────────────────────────────────────
 
   agent.server.registerTool(
-    'analyze_pack_image',
+    'packrat_analyze_pack_image',
     {
+      title: 'Analyze Pack Image',
       description:
-        'Submit a gear image (R2 key from upload_image_url) for AI-powered item detection. Returns detected items with catalog matches.',
+        'Submit a gear image (R2 key from packrat_upload_image_url) for item detection. Returns detected items with catalog matches.',
       inputSchema: {
         image_key: z.string().describe('R2 image key from a presigned upload'),
         match_limit: z
@@ -386,6 +505,13 @@ export function registerPackTools(agent: AgentContext): void {
           .max(20)
           .default(5)
           .describe('Max catalog matches per detected item'),
+      },
+      annotations: {
+        title: 'Analyze Pack Image',
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({ image_key, match_limit }) =>
