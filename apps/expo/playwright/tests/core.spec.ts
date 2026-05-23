@@ -239,7 +239,8 @@ test('settings screen loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText('AI Models')).toBeVisible();
   await expect(page.getByText('Danger Zone')).toBeVisible();
-  await expect(page.getByText(/PackRat v/i)).toBeVisible();
+  // Dev/preview builds prepend an environment tag, e.g. "PackRat (Dev) v2.0.26"
+  await expect(page.getByText(/PackRat(?: \([^)]+\))? v\d/i)).toBeVisible();
 });
 
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
@@ -269,6 +270,21 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
 
   // Send a message
   await page.getByRole('textbox', { name: /Ask about this pack/i }).fill('List 3 essential items.');
+  // The chat transport's Authorization header is sourced from
+  // `authClient.useSession()`, which starts as null and resolves on the first
+  // GET /api/auth/get-session. We need both: the network response AND a beat
+  // for React to flush the state update so the memoized transport rebuilds
+  // with the real token. Without the post-response settle, the send fires
+  // with `Bearer null` and the server returns 401.
+  await page
+    .waitForResponse((r) => r.url().includes('/api/auth/get-session') && r.status() === 200, {
+      timeout: 10_000,
+    })
+    .catch(() => {
+      // Session may already be cached on the page — fall through.
+    });
+  // Let React commit the session-loaded state into the chat transport.
+  await page.waitForTimeout(500);
   // Send button is icon-only with no accessible name; use the arrow-up icon character
   await page.getByText('󰁝').click();
 
