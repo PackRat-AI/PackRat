@@ -88,7 +88,7 @@ jobs:
           bun-version: latest
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -113,7 +113,7 @@ jobs:
           java-version: "17"
 
       - name: Cache CocoaPods
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/Library/Caches/CocoaPods
@@ -124,7 +124,7 @@ jobs:
 
       - name: Cache iOS simulator build
         id: ios-build-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/expo/build/PackRat-sim.tar.gz
           key: ios-sim-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
@@ -146,7 +146,7 @@ jobs:
 
       - name: Cache Maestro CLI
         id: maestro-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.maestro
           key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
@@ -333,7 +333,7 @@ jobs:
           bun-version: latest
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -358,7 +358,7 @@ jobs:
           java-version: "17"
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -369,7 +369,7 @@ jobs:
 
       - name: Cache Maestro CLI
         id: maestro-cache-android
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.maestro
           key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
@@ -385,7 +385,7 @@ jobs:
 
       - name: Cache Android APK build
         id: android-build-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/expo/build/PackRat.apk
           key: android-apk-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
@@ -413,7 +413,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
