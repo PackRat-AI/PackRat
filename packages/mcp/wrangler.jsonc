@@ -1,6 +1,26 @@
 {
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
-  "name": "packrat-mcp",
+  // ───────────────────────────────────────────────────────────────────────────
+  // PackRat MCP Worker
+  //
+  // The top-level config is the dev base. `wrangler dev` and
+  // `wrangler dev -e dev` run against it; `wrangler deploy --env prod` ships
+  // the production worker bound to mcp.packrat.world.
+  //
+  // Required secrets (set per environment via `wrangler secret put <NAME> --env <env>`):
+  //   PACKRAT_API_URL              — base URL of the PackRat API (e.g. https://packrat.world)
+  //   MCP_INITIAL_ACCESS_TOKEN     — pre-shared bearer required to call POST /register (DCR gate)
+  //
+  // Optional vars:
+  //   MCP_FEATURE_FLAGS            — comma-separated flag names enabled at boot
+  //
+  // Bindings created via wrangler CLI (KV namespaces; replace the placeholder IDs):
+  //   wrangler kv namespace create OAUTH_KV                     # for prod
+  //   wrangler kv namespace create OAUTH_KV --preview            # for dev / preview
+  //
+  // See docs/mcp/runbook.md for the full deploy + secret-rotation procedure.
+  // ───────────────────────────────────────────────────────────────────────────
+  "name": "packrat-mcp-dev",
   "main": "src/index.ts",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -10,16 +30,13 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
-  // KV namespace for OAuth token storage (required by @cloudflare/workers-oauth-provider)
-  // Create with: wrangler kv namespace create OAUTH_KV
   "kv_namespaces": [
     {
       "binding": "OAUTH_KV",
-      "id": "__TODO_OAUTH_KV_PROD_ID__",
+      "id": "__TODO_OAUTH_KV_DEV_ID__",
       "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
     }
   ],
-  // Durable Objects power each MCP session (stateful per client connection)
   "durable_objects": {
     "bindings": [
       {
@@ -28,17 +45,54 @@
       }
     ]
   },
-  // SQLite-backed DO for state persistence and hibernation support
+  // SQLite-backed DO; required for McpAgent state persistence + hibernation.
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": ["PackRatMCP"]
     }
   ],
-  // Environment variables are set via Cloudflare dashboard or .dev.vars locally
-  // Required: PACKRAT_API_URL
-  // Optional: MCP_INITIAL_ACCESS_TOKEN (pre-shared secret for dynamic client registration)
   "env": {
+    // ───── Production ──────────────────────────────────────────────────────
+    // Custom domain: mcp.packratai.com — brand-aligned with the landing site
+    // (packratai.com) so Claude.ai users and connector reviewers see a
+    // consistent brand surface. Provisioned in the Cloudflare dashboard
+    // against the packratai.com zone. `custom_domain: true` expects a bare
+    // hostname pattern (no wildcard), per Cloudflare's worker-domain contract;
+    // the worker handles all paths under the hostname.
+    "prod": {
+      "name": "packrat-mcp",
+      "routes": [
+        {
+          "pattern": "mcp.packratai.com",
+          "custom_domain": true
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "OAUTH_KV",
+          "id": "__TODO_OAUTH_KV_PROD_ID__"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "PackRatMCP",
+            "class_name": "PackRatMCP"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["PackRatMCP"]
+        }
+      ]
+    },
+    // ───── Dev ─────────────────────────────────────────────────────────────
+    // Kept as an explicit env so `wrangler deploy --env dev` ships a
+    // dedicated worker (packrat-mcp-dev) on the *.workers.dev URL for
+    // pre-prod smoke testing without colliding with prod.
     "dev": {
       "name": "packrat-mcp-dev",
       "kv_namespaces": [

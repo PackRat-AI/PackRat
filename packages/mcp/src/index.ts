@@ -35,6 +35,7 @@ import { McpAgent } from 'agents/mcp';
 import { z } from 'zod';
 import { PackRatAuthHandler } from './auth';
 import { createMcpClients, type McpClients } from './client';
+import { ServiceMeta } from './constants';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
 import { registerAdminTools } from './tools/admin';
@@ -72,8 +73,8 @@ export interface State {
 
 export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   server = new McpServer({
-    name: 'packrat',
-    version: '2.0.0',
+    name: ServiceMeta.McpServerName,
+    version: ServiceMeta.Version,
   });
 
   initialState: State = { authToken: '', adminToken: '' };

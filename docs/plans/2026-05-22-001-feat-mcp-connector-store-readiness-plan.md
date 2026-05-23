@@ -17,13 +17,13 @@ Close the gap between today's PackRat MCP Worker and the bar Anthropic enforces 
 
 The packrat MCP Worker (`packages/mcp`) was built as a thin Eden/Hono RPC façade over `@packrat/api`, with OAuth 2.1 wired via `@cloudflare/workers-oauth-provider` and a Durable-Object-backed `McpAgent`. It works, but it was shaped for "an MCP server we run for our own clients" — not for "a public connector that Anthropic's reviewers and end users will install through Claude.ai's directory". The submission bar (HTTPS custom domain, RFC 9728 metadata, audience-bound tokens, tool annotations, prompt-injection hygiene, privacy policy, branded consent, support contact, working reviewer test account, ≥3 example prompts) is well-specified by Anthropic and the MCP 2025-11-25 authorization spec, and the bulk of the gap is concrete and small per item — but spread across deployment config, OAuth surface, ~104 tools, login UX, public docs, observability, and CI/CD. Without a sequenced plan this fragments across many half-shipped PRs; with one, it should be a focused 4-phase push.
 
-A prior plan, `docs/plans/2026-04-30-feat-better-auth-migration-plan.md`, is the architectural parent of the current MCP. It is marked `status: completed` but several of its Phase-3 checkboxes (custom domain, DCR initial-access-token, `mcp.packrat.world` in `trustedOrigins`, OAuth scope design, pre-registering Claude as a trusted client) shipped only partially. This plan explicitly closes those open items as part of its work.
+A prior plan, `docs/plans/2026-04-30-feat-better-auth-migration-plan.md`, is the architectural parent of the current MCP. It is marked `status: completed` but several of its Phase-3 checkboxes (custom domain, DCR initial-access-token, `mcp.packratai.com` in `trustedOrigins`, OAuth scope design, pre-registering Claude as a trusted client) shipped only partially. This plan explicitly closes those open items as part of its work.
 
 ---
 
 ## Requirements
 
-- R1. The MCP server is reachable at a stable custom HTTPS subdomain owned by PackRat (e.g. `https://mcp.packrat.world`), with CA-signed TLS, and Streamable HTTP at `/mcp`.
+- R1. The MCP server is reachable at a stable custom HTTPS subdomain owned by PackRat (e.g. `https://mcp.packratai.com`), with CA-signed TLS, and Streamable HTTP at `/mcp`.
 - R2. OAuth 2.1 + PKCE S256 + RFC 8707 audience binding is enforced; tokens are audience-bound to the MCP server; access tokens are short-lived; refresh tokens rotate.
 - R3. `/.well-known/oauth-protected-resource` (RFC 9728) and `/.well-known/oauth-authorization-server` (RFC 8414) are served and accurate, including `code_challenge_methods_supported: ["S256"]` and `scopes_supported`.
 - R4. Dynamic client registration is either disabled and replaced by admin-issued clients, or gated by an initial access token; in both cases the Claude callback hosts `https://claude.ai/api/mcp/auth_callback` and `https://claude.com/api/mcp/auth_callback` are explicitly allowlisted.
@@ -74,7 +74,7 @@ A prior plan, `docs/plans/2026-04-30-feat-better-auth-migration-plan.md`, is the
 - `packages/mcp/src/resources.ts` — 4 templated resources, all by ID; the list-provider/search/glossary work extends this file.
 - `packages/mcp/src/prompts.ts` — 4 prompts that hard-reference tool names; needs sync after tool renames.
 - `packages/mcp/wrangler.jsonc` — `__TODO_OAUTH_KV_*_ID__` placeholders, no `routes` block, no `env.prod`, redundant migrations.
-- `packages/api/src/auth/index.ts` — Better Auth setup (lines 106-131); Google + Apple social providers are already configured. `trustedOrigins` (line 158) does NOT include `mcp.packrat.world` — add it.
+- `packages/api/src/auth/index.ts` — Better Auth setup (lines 106-131); Google + Apple social providers are already configured. `trustedOrigins` (line 158) does NOT include `mcp.packratai.com` — add it.
 - `apps/landing/app/privacy-policy/page.tsx` — existing privacy policy on `packratai.com`; needs (a) MCP-specific addendum and (b) domain unification with the MCP `/health` `docs` URL.
 - `apps/landing/config/site.ts` — footer + support contact (`mailto:hello@packratai.com`); only "Privacy" is in the legal section, "Terms" is missing.
 - `docs/plans/2026-04-30-feat-better-auth-migration-plan.md` — architectural parent; its Phase 3 unchecked items (DCR, scope design, custom domain, trustedOrigins) become this plan's targets.
@@ -102,8 +102,8 @@ A prior plan, `docs/plans/2026-04-30-feat-better-auth-migration-plan.md`, is the
 
 ## Key Technical Decisions
 
-- **Custom domain `mcp.packrat.world`.** Aligns with the Better Auth migration plan, gives reviewers a stable, brand-aligned URL, and matches what the OAuth provider's `resourceMetadata.resource` field will advertise to Claude. Reject the `*.workers.dev` shortcut — known reviewer red flag.
-- **Domain unification: `packratai.com` is the canonical brand domain.** The landing site already lives there with the privacy policy. The MCP `/health` will reference `https://packratai.com/docs/mcp`. The MCP server itself stays at `mcp.packrat.world`. We do *not* try to migrate the landing site domain in this plan — too much blast radius.
+- **Custom domain `mcp.packratai.com`.** Aligns with the Better Auth migration plan, gives reviewers a stable, brand-aligned URL, and matches what the OAuth provider's `resourceMetadata.resource` field will advertise to Claude. Reject the `*.workers.dev` shortcut — known reviewer red flag.
+- **Domain unification: `packratai.com` is the canonical brand domain.** The landing site already lives there with the privacy policy. The MCP `/health` will reference `https://packratai.com/docs/mcp`. The MCP server itself stays at `mcp.packratai.com`. We do *not* try to migrate the landing site domain in this plan — too much blast radius.
 - **OAuth scopes: `mcp`, `mcp:read`, `mcp:write`, `mcp:admin`.** Coarse-grained four-level model. `mcp` retained as backwards-compatible umbrella for currently-registered clients. `mcp:admin` becomes the gate for all admin tools; the `admin_login` tool and `X-PackRat-Admin-Token` header path are removed entirely (admin users acquire the admin scope at OAuth time via a backend-issued grant, not via a runtime tool call). Finer-grained per-domain scopes are deferred.
 - **DCR posture: dual mechanism.** Configure `clientRegistrationEndpoint: '/register'` AND wire `MCP_INITIAL_ACCESS_TOKEN` enforcement in the `defaultHandler` (per the workers-oauth-provider README's gating pattern), AND pre-register both `claude.ai` and `claude.com` callback hosts via `env.OAUTH_PROVIDER.createClient()` from an admin route so Claude.ai users hit a pre-approved client and can skip the consent screen.
 - **MCP SDK version line: stay on `1.x`.** v2.0 is alpha (Apr 2026) and changes error semantics (`-32602` for unknown tools instead of `isError`). Bump to `^1.29.0` and pin transitively so it stays aligned with `agents@^0.13.2`.
@@ -130,7 +130,7 @@ A prior plan, `docs/plans/2026-04-30-feat-better-auth-migration-plan.md`, is the
 - **Per-tool fine-grained scopes (`mcp:trails:read` etc.)?** Deferred to a follow-up; v1 ships with four coarse scopes.
 - **Tool namespace?** `packrat_*` prefix on every user tool; remove unprefixed names without compatibility aliases (pre-listing break).
 - **MCP SDK major: stay on 1.x or jump to 2.0 alpha?** Stay on `^1.29.0` for connector submission.
-- **Custom domain choice?** `mcp.packrat.world`.
+- **Custom domain choice?** `mcp.packratai.com`.
 - **Landing-site domain unification?** Defer the full `packrat.world ↔ packratai.com` reconciliation; align the MCP `/health` `docs` URL with the landing site's actual domain (`packratai.com`) and stop there.
 
 ### Deferred to Implementation
@@ -154,18 +154,18 @@ sequenceDiagram
     autonumber
     participant U as User
     participant C as Claude.ai
-    participant M as MCP Worker<br/>mcp.packrat.world
+    participant M as MCP Worker<br/>mcp.packratai.com
     participant B as Better Auth<br/>packratai.com API
     participant S as Sentry/OTel
 
     Note over C,M: Discovery
     C->>M: GET /.well-known/oauth-protected-resource
-    M-->>C: { authorization_servers: ["https://mcp.packrat.world"], resource: ".../mcp", scopes: [...] }
+    M-->>C: { authorization_servers: ["https://mcp.packratai.com"], resource: ".../mcp", scopes: [...] }
     C->>M: GET /.well-known/oauth-authorization-server
     M-->>C: { code_challenge_methods_supported: ["S256"], scopes_supported: [...], ... }
 
     Note over C,M: Authorization (pre-registered client; PKCE S256; RFC 8707 resource)
-    C->>M: GET /authorize?client_id=claude&scope=mcp+mcp:read+mcp:write&resource=mcp.packrat.world&code_challenge=...
+    C->>M: GET /authorize?client_id=claude&scope=mcp+mcp:read+mcp:write&resource=mcp.packratai.com&code_challenge=...
     M->>U: Branded /login (Google / Apple / email+password, terms/privacy/support links)
     alt SSO
         U->>B: Sign in with Google/Apple
@@ -178,7 +178,7 @@ sequenceDiagram
     M->>M: Determine OAuth scopes from user role (admins get mcp:admin)
     M-->>C: /callback redirect with auth code
 
-    C->>M: POST /token (PKCE verifier, resource=mcp.packrat.world)
+    C->>M: POST /token (PKCE verifier, resource=mcp.packratai.com)
     M-->>C: access_token (audience-bound) + refresh_token (rotating)
 
     Note over C,M: Tool calls (per-user/per-tool rate-limited; structuredContent)
@@ -264,7 +264,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 
 ### U1. Production deploy configuration
 
-**Goal:** Make the MCP Worker actually deployable to production at `mcp.packrat.world` with real KV namespaces, custom domain route, an explicit `env.prod`, and unified version/identity across `package.json`, `McpServer`, `ServiceMeta`, and `/health`.
+**Goal:** Make the MCP Worker actually deployable to production at `mcp.packratai.com` with real KV namespaces, custom domain route, an explicit `env.prod`, and unified version/identity across `package.json`, `McpServer`, `ServiceMeta`, and `/health`.
 
 **Requirements:** R1
 
@@ -281,7 +281,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 
 **Approach:**
 - Create real Cloudflare KV namespaces for prod + dev via `wrangler kv namespace create`. Replace both `__TODO_OAUTH_KV_*_ID__` placeholders. Keep `preview_id` on dev only.
-- Add a `routes` block binding the Worker to `mcp.packrat.world/*` (production) with `custom_domain: true`. Document the DNS CNAME / route configuration in the runbook.
+- Add a `routes` block binding the Worker to `mcp.packratai.com/*` (production) with `custom_domain: true`. Document the DNS CNAME / route configuration in the runbook.
 - Add an explicit `env.prod` block with the worker name `packrat-mcp` so `wrangler deploy --env prod` is unambiguous; top-level config becomes the dev base.
 - Centralize the version string: import it from `package.json` (TS allows `import pkg from '../package.json' with { type: 'json' }`), expose as `ServiceMeta.Version`, and use everywhere — kills the four-way drift.
 - Document every required secret (`PACKRAT_API_URL`, `MCP_INITIAL_ACCESS_TOKEN`, optional `MCP_FEATURE_FLAGS`, Sentry DSN once U15 lands) in `.dev.vars.example` and `docs/mcp/runbook.md`.
@@ -353,9 +353,9 @@ docs/solutions/                   # NEW entries written *after* each phase
 - Test: `packages/mcp/src/__tests__/integration/well-known.test.ts`
 
 **Approach:**
-- Provider already auto-emits both endpoints; override only the resource URL to match the custom domain: `resourceMetadata: { resource: 'https://mcp.packrat.world/mcp', authorization_servers: ['https://mcp.packrat.world'], scopes_supported: ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin'], bearer_methods_supported: ['header'], resource_name: 'PackRat MCP' }`.
+- Provider already auto-emits both endpoints; override only the resource URL to match the custom domain: `resourceMetadata: { resource: 'https://mcp.packratai.com/mcp', authorization_servers: ['https://mcp.packratai.com'], scopes_supported: ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin'], bearer_methods_supported: ['header'], resource_name: 'PackRat MCP' }`.
 - Advertise all four scopes in `OAuthProvider.scopesSupported` (visible in `/.well-known/oauth-authorization-server`).
-- Update `mcpApiHandler.fetch` (or thread through the OAuth provider's `apiHandler` flow) to set `WWW-Authenticate: Bearer resource_metadata="https://mcp.packrat.world/.well-known/oauth-protected-resource", scope="mcp"` on every 401.
+- Update `mcpApiHandler.fetch` (or thread through the OAuth provider's `apiHandler` flow) to set `WWW-Authenticate: Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp"` on every 401.
 
 **Test scenarios:**
 - Happy path: `GET /.well-known/oauth-protected-resource` returns JSON with `resource`, `authorization_servers`, `scopes_supported`.
@@ -408,7 +408,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 
 **Requirements:** R5, R6
 
-**Dependencies:** U2, U3, U4, U6 (Better Auth `trustedOrigins` must contain `mcp.packrat.world` *before* U5's `/callback` handler issues role-based scope grants via `getAuth(env).api.getSession()` — otherwise the session lookup is rejected as untrusted-origin. U5 and U6 can also land in a single atomic PR; either approach satisfies the constraint.)
+**Dependencies:** U2, U3, U4, U6 (Better Auth `trustedOrigins` must contain `mcp.packratai.com` *before* U5's `/callback` handler issues role-based scope grants via `getAuth(env).api.getSession()` — otherwise the session lookup is rejected as untrusted-origin. U5 and U6 can also land in a single atomic PR; either approach satisfies the constraint.)
 
 **Files:**
 - Create: `packages/mcp/src/scopes.ts` (scope constants, `getVisibleTools(scopes): string[]`, scope-to-tool mapping)
@@ -450,24 +450,24 @@ docs/solutions/                   # NEW entries written *after* each phase
 
 ### U6. Better Auth integration repair + login form security
 
-**Goal:** Add `mcp.packrat.world` to Better Auth's `trustedOrigins`; add CORS headers on `.well-known/*` (and `/mcp` only for the hosts that need it); harden the `/login` POST with Origin validation, a CSRF nonce distinct from the OAuth state key, and a rate limit; map Better Auth's rate-limit / locked / invalid-password responses to distinct error messages.
+**Goal:** Add `mcp.packratai.com` to Better Auth's `trustedOrigins`; add CORS headers on `.well-known/*` (and `/mcp` only for the hosts that need it); harden the `/login` POST with Origin validation, a CSRF nonce distinct from the OAuth state key, and a rate limit; map Better Auth's rate-limit / locked / invalid-password responses to distinct error messages.
 
 **Requirements:** R2, R10, R13, R14
 
 **Dependencies:** U2 (the runtime/static `trustedOrigins` edits in this unit are independent of U5; U5 in turn depends on U6's `trustedOrigins` repair landing first or in the same PR)
 
 **Files:**
-- Modify: `packages/api/src/auth/index.ts` (add `https://mcp.packrat.world` to `trustedOrigins` at line 158)
-- Modify: `packages/api/src/auth/auth.config.ts` (add `https://mcp.packrat.world` to the static `trustedOrigins` list at line 74 in lockstep with the runtime change above; without this, `bunx auth generate` will run against a drifted config and any tooling that reads the static config will be wrong about which origins are trusted). Per `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`, regenerate the Better Auth schema after this edit.
+- Modify: `packages/api/src/auth/index.ts` (add `https://mcp.packratai.com` to `trustedOrigins` at line 158)
+- Modify: `packages/api/src/auth/auth.config.ts` (add `https://mcp.packratai.com` to the static `trustedOrigins` list at line 74 in lockstep with the runtime change above; without this, `bunx auth generate` will run against a drifted config and any tooling that reads the static config will be wrong about which origins are trusted). Per `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`, regenerate the Better Auth schema after this edit.
 - Modify: `packages/mcp/src/auth.ts` (CSRF nonce in a `__Host-PR_CSRF` cookie; Origin check on `/login` POST; rate-limit hook via U14's binding once landed, stubbed with a placeholder check until then; distinguish API-side 429 / 423 / 401 responses)
 - Modify: `packages/mcp/src/index.ts` (CORS allowlist for `claude.ai` + `claude.com` on `.well-known/*` paths)
 - Test: extend `packages/mcp/src/__tests__/auth.test.ts`
 
 **Approach:**
-- The Better Auth instance is per-isolate-singleton per `packages/api/src/auth/index.ts` (memoized in `authCache`). Adding `mcp.packrat.world` to `trustedOrigins` is a one-line config change; the singleton cache will be rebuilt on the next isolate spin-up after deploy.
+- The Better Auth instance is per-isolate-singleton per `packages/api/src/auth/index.ts` (memoized in `authCache`). Adding `mcp.packratai.com` to `trustedOrigins` is a one-line config change; the singleton cache will be rebuilt on the next isolate spin-up after deploy.
 - Run `bunx auth generate --config src/auth/auth.config.ts` per the documented learning to ensure schema parity (no schema change expected, but it's the prescribed checkpoint).
 - CSRF: at `/authorize`, set a `__Host-PR_CSRF` cookie containing a UUID; embed the same UUID in a hidden form field. On POST, compare cookie vs. form field; reject mismatches with a clear error.
-- Origin check: reject `/login` POSTs whose Origin header is not `https://mcp.packrat.world` (production) or the dev origin.
+- Origin check: reject `/login` POSTs whose Origin header is not `https://mcp.packratai.com` (production) or the dev origin.
 - CORS: a static handler in `index.ts` adds `Access-Control-Allow-Origin` for the two Anthropic hosts on `GET .well-known/*`. Other endpoints default-deny.
 - Map Better Auth responses: `429` → "Too many attempts, please wait", `423` → "Account locked, check your email", `401` → "Invalid email or password". Today they collapse to one generic message.
 
@@ -635,11 +635,11 @@ docs/solutions/                   # NEW entries written *after* each phase
 **Files:**
 - Modify: `packages/mcp/src/auth.ts` (`loginPage()` rewritten; new `/login/google` and `/login/apple` redirect handlers that initiate the Better Auth social flow with the MCP state key threaded through `redirect_to`)
 - Create: `packages/mcp/src/login-page.ts` (the HTML body — kept readable, no template engine)
-- Modify: `packages/api/src/auth/index.ts` — confirm the Better Auth `redirect_to` allowlist permits the MCP callback (`https://mcp.packrat.world/callback/social`)
+- Modify: `packages/api/src/auth/index.ts` — confirm the Better Auth `redirect_to` allowlist permits the MCP callback (`https://mcp.packratai.com/callback/social`)
 - Test: extend `packages/mcp/src/__tests__/auth.test.ts`
 
 **Approach:**
-- The login page renders three options: "Sign in with Google", "Sign in with Apple", or email/password. SSO buttons POST to `/login/google` (and `/login/apple`), which redirects to Better Auth's `/api/auth/sign-in/social?provider=google&callbackURL=https://mcp.packrat.world/callback/social&state=...`.
+- The login page renders three options: "Sign in with Google", "Sign in with Apple", or email/password. SSO buttons POST to `/login/google` (and `/login/apple`), which redirects to Better Auth's `/api/auth/sign-in/social?provider=google&callbackURL=https://mcp.packratai.com/callback/social&state=...`.
 - A new `/callback/social` handler validates the returned session and threads it back through the existing `completeAuthorization` flow (mirroring email+password).
 - The page surfaces the OAuth client name from the `OAuthRequest` (`client.clientName` if available) — "Claude is requesting access to your PackRat account".
 - Footer links: Terms (U12), Privacy (U12), Support (`mailto:hello@packratai.com` or a status page).
@@ -680,12 +680,12 @@ docs/solutions/                   # NEW entries written *after* each phase
 - Draft Terms of Service that explicitly cover MCP usage: scope grant, rate limits, abuse policy, refund / no-refund language, jurisdiction.
 - Add a Privacy Policy addendum section explaining MCP data flows: OAuth tokens stored encrypted at rest in Cloudflare KV; tool calls relayed to the PackRat API; no conversation logging; per-user deletion via the existing account-deletion flow.
 - Add the `support` config so the landing site footer surfaces the same contact MCP advertises.
-- Pin every URL the MCP advertises to `packratai.com` (not `packrat.world`); the worker remains at `mcp.packrat.world` but documentation lives on the brand domain.
+- Pin every URL the MCP advertises to `packratai.com` (not `packrat.world`); the worker remains at `mcp.packratai.com` but documentation lives on the brand domain.
 
 **Test scenarios:**
 - Happy path: `GET /terms-of-service` returns 200 with full ToS body.
 - Happy path: `GET /privacy-policy` returns 200 including the new MCP addendum.
-- Happy path: `GET https://mcp.packrat.world/health` references `https://packratai.com/docs/mcp`, `.../privacy-policy`, `.../terms-of-service`.
+- Happy path: `GET https://mcp.packratai.com/health` references `https://packratai.com/docs/mcp`, `.../privacy-policy`, `.../terms-of-service`.
 - Test expectation: A landing-site smoke test asserts the footer renders both legal links.
 
 **Verification:**
@@ -716,13 +716,13 @@ docs/solutions/                   # NEW entries written *after* each phase
 - ≥3 example prompts covering different tool surfaces (one read-only, one write, one with elicitation) per the Software Directory Policy.
 - The reviewer test account: a pre-provisioned PackRat account with sample packs/trips/feed posts; credentials documented in `docs/mcp/submission-packet.md` (excluded from public docs but provided to Anthropic via the form).
 - Logo: a vector PackRat mark + a 1024×1024 PNG fallback.
-- Favicon must be served at the same domain as the OAuth server (`mcp.packrat.world/favicon.ico`) so Anthropic's verification probe succeeds — either copy from the landing site or add a tiny static route in the MCP worker.
+- Favicon must be served at the same domain as the OAuth server (`mcp.packratai.com/favicon.ico`) so Anthropic's verification probe succeeds — either copy from the landing site or add a tiny static route in the MCP worker.
 
 **Test scenarios:**
 - Happy path: `apps/landing/app/mcp/page.tsx` renders with the tool catalog, scopes, and example prompts visible.
 - Happy path: `packages/mcp/README.md` lints clean (markdown lint).
 - Test expectation: smoke test for `/mcp` route returns 200 with the catalog text visible.
-- Happy path: `GET https://mcp.packrat.world/favicon.ico` returns a 200 with `image/x-icon` (so Anthropic's domain check succeeds).
+- Happy path: `GET https://mcp.packratai.com/favicon.ico` returns a 200 with `image/x-icon` (so Anthropic's domain check succeeds).
 
 **Verification:**
 - A Claude reviewer can reach a public docs page, install the connector via OAuth, find ≥3 example prompts, and use the test account.
@@ -875,7 +875,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 
 **Approach:**
 - Walk Anthropic's pre-submission checklist:
-  - Streamable HTTP at `mcp.packrat.world/mcp` — verify.
+  - Streamable HTTP at `mcp.packratai.com/mcp` — verify.
   - OAuth 2.1, PKCE S256, RFC 8707, well-known endpoints — verify with the integration tests + MCP Inspector.
   - Both Claude callback URLs allowlisted — verify in KV via `wrangler kv key list --namespace-id ... | grep client`.
   - Every tool has the required annotations — verify via the catalog test.
@@ -914,7 +914,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 |---|---|---|---|
 | Removing `admin_login` / `X-PackRat-Admin-Token` breaks an internal client | Low | Med | Audit `apps/admin` and any internal scripts before merging U5; pre-flight communicate the change. |
 | Renaming all tools (`packrat_*` prefix) breaks any pinned tool reference in a Claude saved chat | Low | Low | Renames happen before any Connector Store listing exists publicly; no upstream consumer is locked in. Document the change in the README. |
-| `mcp.packrat.world` DNS / cert provisioning takes longer than expected | Med | Med | Start DNS work in U1 in parallel with code; verify TLS via `curl -v` before proceeding. |
+| `mcp.packratai.com` DNS / cert provisioning takes longer than expected | Med | Med | Start DNS work in U1 in parallel with code; verify TLS via `curl -v` before proceeding. |
 | Anthropic's reviewers reject the listing for an unforeseen reason | Med | Low | Pre-submission validation in U18 plus the published rejection-reason taxonomy (annotations, missing privacy, OAuth callback allowlist, vague descriptions, mixed safe/unsafe params) cover the top causes. A first rejection is recoverable within days. |
 | Better Auth singleton cache hides a `trustedOrigins` change in deployed isolates | Low | Med | After deploy, force isolate rotation (a no-op env change deploy); add an assertion in CI that `trustedOrigins` includes the expected hosts. |
 | Workers Rate Limiting binding hits its 1000-keys cap under abuse | Low | Med | Keyed by `${userId}:${toolName}` — bounded by `unique_users × tools`. With ~104 tools and v1 user count this is well under the cap. Re-evaluate at v2. |
@@ -928,7 +928,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 
 ## Dependencies / Prerequisites
 
-- Cloudflare DNS access for `mcp.packrat.world` subdomain.
+- Cloudflare DNS access for `mcp.packratai.com` subdomain.
 - Two Cloudflare KV namespaces (prod + dev) created via `wrangler kv namespace create`.
 - `MCP_INITIAL_ACCESS_TOKEN` and any new secrets set via `wrangler secret put` (or Cloudflare dashboard) for the prod and dev environments.
 - Sentry project + OTel ingest URL (configured in the Cloudflare dashboard, not in code).

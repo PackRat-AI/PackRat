@@ -16,6 +16,7 @@
 import { isString } from '@packrat/guards';
 import { createRegExp, exactly, global as globalFlag } from 'magic-regexp';
 import { z } from 'zod';
+import { ServiceMeta } from './constants';
 import type { Env, Props } from './types';
 
 // ── HTML-escape regexes (magic-regexp so the pre-push hook is satisfied) ─────
@@ -116,15 +117,15 @@ export const PackRatAuthHandler = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Health check
+    // Health check (replaced with a real probing version in U16).
     if (url.pathname === '/' || url.pathname === '/health') {
       return Response.json({
         status: 'ok',
-        service: 'packrat-mcp',
-        version: '1.0.0',
-        transport: 'streamable-http',
+        service: ServiceMeta.Name,
+        version: ServiceMeta.Version,
+        transport: ServiceMeta.Transport,
         endpoint: '/mcp',
-        docs: 'https://packrat.world/docs/mcp',
+        docs: 'https://packratai.com/mcp',
       });
     }
 

@@ -2,17 +2,30 @@
 export const WorkerRoute = {
   Root: '/',
   Health: '/health',
+  Status: '/status',
   Mcp: '/mcp',
   Authorize: '/authorize',
   Login: '/login',
   Callback: '/callback',
   Token: '/token',
   Register: '/register',
+  WellKnownProtectedResource: '/.well-known/oauth-protected-resource',
+  WellKnownAuthorizationServer: '/.well-known/oauth-authorization-server',
 } as const;
 
-/** Service identification metadata */
+/**
+ * Service identification metadata.
+ *
+ * `Version` is the single source of truth for this Worker's reported version.
+ * It is mirrored manually from `package.json` (kept in sync by the unit test
+ * in `__tests__/constants.test.ts`). Centralizing it here lets `McpServer`,
+ * the `/health` and `/status` endpoints, and any other surface report a
+ * consistent string without four-way drift.
+ */
 export const ServiceMeta = {
   Name: 'packrat-mcp',
-  Version: '1.0.0',
+  /** MCP-server display name surfaced to clients. */
+  McpServerName: 'packrat',
+  Version: '2.1.0',
   Transport: 'streamable-http',
 } as const;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import pkg from '../../package.json' with { type: 'json' };
 import { ServiceMeta, WorkerRoute } from '../constants';
 
 describe('WorkerRoute', () => {
@@ -34,8 +35,24 @@ describe('WorkerRoute', () => {
     expect(WorkerRoute.Register).toBe('/register');
   });
 
-  it('has exactly 8 route entries', () => {
-    expect(Object.keys(WorkerRoute)).toHaveLength(8);
+  it('has exactly 11 route entries (8 originals + status + 2 well-known)', () => {
+    expect(Object.keys(WorkerRoute)).toHaveLength(11);
+  });
+
+  it('defines the status endpoint', () => {
+    expect(WorkerRoute.Status).toBe('/status');
+  });
+
+  it('defines the RFC 9728 protected-resource well-known path', () => {
+    expect(WorkerRoute.WellKnownProtectedResource).toBe(
+      '/.well-known/oauth-protected-resource',
+    );
+  });
+
+  it('defines the RFC 8414 authorization-server well-known path', () => {
+    expect(WorkerRoute.WellKnownAuthorizationServer).toBe(
+      '/.well-known/oauth-authorization-server',
+    );
   });
 
   it('all routes start with /', () => {
@@ -55,8 +72,19 @@ describe('ServiceMeta', () => {
     expect(ServiceMeta.Name).toBe('packrat-mcp');
   });
 
+  it('declares the MCP server display name shown to clients', () => {
+    expect(ServiceMeta.McpServerName).toBe('packrat');
+  });
+
   it('has a semver-formatted version', () => {
     expect(ServiceMeta.Version).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it('keeps Version in lockstep with package.json — single source of truth', () => {
+    // ServiceMeta.Version is mirrored from package.json by hand; this test
+    // is the only thing that catches drift before /health, McpServer, and
+    // the listing surface diverge again.
+    expect(ServiceMeta.Version).toBe(pkg.version);
   });
 
   it('uses streamable-http transport', () => {
