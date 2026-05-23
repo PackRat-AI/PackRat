@@ -268,7 +268,6 @@ describe('createMcpClients()', () => {
     const clients = createMcpClients({
       baseUrl: 'https://api.example.com',
       getUserToken: () => 'user-token',
-      getAdminToken: () => 'admin-token',
     });
     expect(clients).toHaveProperty('user');
     expect(clients).toHaveProperty('admin');
@@ -281,12 +280,32 @@ describe('createMcpClients()', () => {
     createMcpClients({
       baseUrl: 'https://api.test.com',
       getUserToken: () => null,
-      getAdminToken: () => null,
     });
     expect(spy).toHaveBeenCalledTimes(2);
     for (const c of spy.mock.calls) {
       expect((c[0] as { baseUrl: string }).baseUrl).toBe('https://api.test.com');
     }
+  });
+
+  it('U5: user and admin clients share the same token provider', async () => {
+    // After U5, the admin client uses the same Better Auth bearer as the
+    // user client; the API enforces admin role on its side. This test
+    // locks the wiring in so a future refactor that re-splits the
+    // providers (e.g. accidentally re-introducing a `getAdminToken`
+    // parameter) regresses visibly.
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => 'shared-bearer',
+    });
+    const userAuth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } })
+      .auth;
+    const adminAuth = (spy.mock.calls[1]?.[0] as { auth: { getAccessToken: () => string | null } })
+      .auth;
+    expect(userAuth.getAccessToken()).toBe('shared-bearer');
+    expect(adminAuth.getAccessToken()).toBe('shared-bearer');
   });
 
   it('noopHooks getAccessToken returns null when token provider returns null', async () => {
@@ -296,7 +315,6 @@ describe('createMcpClients()', () => {
     createMcpClients({
       baseUrl: 'https://api.test.com',
       getUserToken: () => null,
-      getAdminToken: () => null,
     });
     const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
     expect(auth.getAccessToken()).toBeNull();
@@ -309,7 +327,6 @@ describe('createMcpClients()', () => {
     createMcpClients({
       baseUrl: 'https://api.test.com',
       getUserToken: () => 'my-token',
-      getAdminToken: () => null,
     });
     const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
     expect(auth.getAccessToken()).toBe('my-token');
@@ -322,7 +339,6 @@ describe('createMcpClients()', () => {
     createMcpClients({
       baseUrl: 'https://api.test.com',
       getUserToken: () => 'tok',
-      getAdminToken: () => null,
     });
     const auth = (spy.mock.calls[0]?.[0] as { auth: { getRefreshToken: () => null } }).auth;
     expect(auth.getRefreshToken()).toBeNull();
@@ -335,7 +351,6 @@ describe('createMcpClients()', () => {
     createMcpClients({
       baseUrl: 'https://api.test.com',
       getUserToken: () => null,
-      getAdminToken: () => null,
     });
     const auth = (
       spy.mock.calls[0]?.[0] as {

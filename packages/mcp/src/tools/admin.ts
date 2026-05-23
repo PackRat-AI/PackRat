@@ -2,9 +2,20 @@
  * Admin tools.
  *
  * All tools here use the admin Treaty client (`agent.api.admin`) which sends
- * the admin JWT minted by `admin_login` (or supplied via `X-PackRat-Admin-Token`).
- * Errors with status 401/403 are surfaced with `requiresAdmin: true` so the
- * caller gets a clear message about needing to authenticate as admin.
+ * the Better Auth bearer; the API enforces admin-only access by inspecting
+ * `user.role === 'ADMIN'` (the U5 extension to `adminAuthGuard`). Errors
+ * with status 401/403 are surfaced with `requiresAdmin: true` so the caller
+ * gets a clear message about needing to be signed in as an admin.
+ *
+ * U5 visibility: admin tools register as ordinary `agent.server.registerTool`
+ * calls. The PackRatMCP `init()` post-pass disables any tool whose
+ * `visibleScopesForTool(name)` doesn't intersect the granted OAuth scopes,
+ * so a non-admin session never sees these in `tools/list` even though they
+ * were registered.
+ *
+ * Tool names retain the `admin_*` shape for now; U7 will rename to
+ * `packrat_admin_*` alongside the rest of the namespacing pass. The
+ * classifier in `scopes.ts` accepts both shapes.
  */
 
 import { z } from 'zod';
@@ -16,7 +27,7 @@ const ADMIN = { requiresAdmin: true as const };
 export function registerAdminTools(agent: AgentContext): void {
   // ── Stats / users / packs / catalog ───────────────────────────────────────
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_stats',
     {
       description: 'Get high-level platform stats: user, pack, and catalog counts.',
@@ -25,7 +36,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async () => call(agent.api.admin.admin.stats.get(), { action: 'fetch admin stats', ...ADMIN }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_list_users',
     {
       description: 'Search/list users (paginated). Use `q` to filter by email or name.',
@@ -42,7 +53,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_hard_delete_user',
     {
       description:
@@ -57,7 +68,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_list_packs',
     {
       description: 'Search/list packs across all users (admin view).',
@@ -77,7 +88,7 @@ export function registerAdminTools(agent: AgentContext): void {
       ),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_delete_pack',
     {
       description: 'Soft-delete a pack as admin (bypasses ownership).',
@@ -91,7 +102,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_list_catalog',
     {
       description: 'Search/list catalog items across the platform.',
@@ -108,7 +119,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_update_catalog_item',
     {
       description: 'Update a catalog item (name, brand, price, weight, etc.) as admin.',
@@ -140,7 +151,7 @@ export function registerAdminTools(agent: AgentContext): void {
     },
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_delete_catalog_item',
     {
       description: 'Delete a catalog item as admin.',
@@ -156,7 +167,7 @@ export function registerAdminTools(agent: AgentContext): void {
 
   // ── Trails (admin) ────────────────────────────────────────────────────────
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_search_trails',
     {
       description: 'Search OSM trails by name/sport (admin view).',
@@ -174,7 +185,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_get_trail',
     {
       description: 'Get a trail by OSM relation ID (admin).',
@@ -188,7 +199,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_get_trail_geometry',
     {
       description: 'Get full GeoJSON geometry for a trail (admin).',
@@ -202,7 +213,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_list_trail_condition_reports',
     {
       description: 'List trail condition reports across all users (admin).',
@@ -222,7 +233,7 @@ export function registerAdminTools(agent: AgentContext): void {
       ),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_delete_trail_condition_report',
     {
       description: 'Soft-delete a trail condition report as admin.',
@@ -238,7 +249,7 @@ export function registerAdminTools(agent: AgentContext): void {
 
   // ── Analytics: platform ───────────────────────────────────────────────────
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_growth',
     {
       description: 'Platform user/pack growth metrics.',
@@ -254,7 +265,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_activity',
     {
       description: 'Platform activity metrics over a time period.',
@@ -270,7 +281,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_active_users',
     {
       description: 'Daily/weekly/monthly active user counts.',
@@ -283,7 +294,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_pack_breakdown',
     {
       description: 'Distribution of packs by category.',
@@ -298,7 +309,7 @@ export function registerAdminTools(agent: AgentContext): void {
 
   // ── Analytics: catalog ────────────────────────────────────────────────────
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_catalog_overview',
     {
       description: 'Catalog-wide overview: item count, brands, price ranges, embedding coverage.',
@@ -311,7 +322,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_top_brands',
     {
       description: 'Top gear brands in the catalog by item count.',
@@ -324,7 +335,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_catalog_prices',
     {
       description: 'Price distribution across the catalog.',
@@ -337,7 +348,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_catalog_embeddings',
     {
       description: 'Catalog embedding coverage stats.',
@@ -350,7 +361,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_etl_jobs',
     {
       description: 'Recent ETL pipeline jobs.',
@@ -363,7 +374,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_etl_failure_summary',
     {
       description: 'Top recent ETL failure patterns.',
@@ -376,7 +387,7 @@ export function registerAdminTools(agent: AgentContext): void {
       ),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_analytics_etl_job_failures',
     {
       description: 'Per-job ETL failure drill-down.',
@@ -394,7 +405,7 @@ export function registerAdminTools(agent: AgentContext): void {
       ),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_etl_reset_stuck',
     {
       description: 'Mark stuck-running ETL jobs as failed (admin maintenance).',
@@ -407,7 +418,7 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.registerAdminTool(
+  agent.server.registerTool(
     'admin_etl_retry_job',
     {
       description: 'Retry a specific failed ETL job.',

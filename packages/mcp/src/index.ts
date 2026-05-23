@@ -17,16 +17,18 @@
  *  - Guided prompts: trip planning, pack optimization, gear recommendations.
  *  - Stateful sessions with hibernation (via Durable Objects).
  *  - OAuth 2.1 + PKCE authorization via @cloudflare/workers-oauth-provider.
- *  - Per-session admin JWT, supplied via `X-PackRat-Admin-Token` or `admin_login`.
+ *  - Scope-based admin gating (U5): admin tools are visible only when the
+ *    OAuth token carries the `mcp:admin` scope, which is granted at
+ *    `/callback` time when the Better Auth user role resolves to ADMIN.
  *
  * Transport: Streamable HTTP (default) and SSE.
  *
  * OAuth flow:
  *   GET  /authorize  → login form redirect
  *   POST /login      → Better Auth sign-in, session stored in KV
- *   GET  /callback   → issue auth code, redirect to client
+ *   GET  /callback   → look up role, grant scopes, issue auth code
  *   POST /token      → exchange code for access token (handled by OAuthProvider)
- *   POST /register   → dynamic client registration (handled by OAuthProvider)
+ *   POST /register   → dynamic client registration (gated by initial access token, U4)
  */
 
 import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
@@ -40,6 +42,7 @@ import { applyCorsHeaders } from './cors';
 import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
+import { getVisibleTools } from './scopes';
 import { registerAdminTools } from './tools/admin';
 import { registerAiTools } from './tools/ai';
 import { registerAlltrailsTools } from './tools/alltrails';
@@ -67,8 +70,6 @@ export type { Env };
 export interface State {
   /** Better Auth session token, injected per-request from OAuth props or a Bearer header. */
   authToken: string;
-  /** Admin JWT, populated by `admin_login` or injected via `X-PackRat-Admin-Token`. */
-  adminToken: string;
 }
 
 // ── MCP Agent (Durable Object) ────────────────────────────────────────────────
@@ -79,19 +80,25 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     version: ServiceMeta.Version,
   });
 
-  initialState: State = { authToken: '', adminToken: '' };
+  initialState: State = { authToken: '' };
 
   private _api: McpClients | null = null;
-  private _adminTools: RegisteredTool[] = [];
   private _flaggedTools: Map<string, RegisteredTool[]> = new Map();
   private _flagState: Map<string, boolean> = new Map();
+  /**
+   * Map of tool name → registered handle, populated during `init()` by a
+   * proxy on `server.registerTool`. The post-init scope-filter pass walks
+   * this map and disables anything the granted scopes don't authorize.
+   * Using a local map (rather than reaching into the SDK's private
+   * `_registeredTools`) keeps us off of internal SDK shape.
+   */
+  private _toolsByName: Map<string, RegisteredTool> = new Map();
 
   get api(): McpClients {
     if (!this._api) {
       this._api = createMcpClients({
         baseUrl: this.apiBaseUrl,
         getUserToken: () => this.state.authToken,
-        getAdminToken: () => this.state.adminToken,
       });
     }
     return this._api;
@@ -99,35 +106,6 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
 
   get apiBaseUrl(): string {
     return this.env.PACKRAT_API_URL;
-  }
-
-  /** Replace the per-session admin token. Toggles visibility of admin tools. */
-  setAdminToken(token: string): void {
-    if (token === this.state.adminToken) return;
-    this.setState({ ...this.state, adminToken: token });
-    this.syncAdminToolVisibility();
-  }
-
-  /**
-   * Register a tool that's only listed when an admin JWT is on the session.
-   * Mirrors `server.registerTool` and toggles visibility via the MCP SDK's
-   * `enable()/disable()` (which emits `tools/list_changed`).
-   */
-  registerAdminTool: McpServer['registerTool'] = (...args) => {
-    // safe-cast: McpServer.registerTool's overloads collapse at the implementation level;
-    // forwarding via spread requires a single call signature here.
-    const tool = (this.server.registerTool as (...a: unknown[]) => RegisteredTool)(...args);
-    this._adminTools.push(tool);
-    if (!this.state.adminToken) tool.disable();
-    return tool;
-  };
-
-  private syncAdminToolVisibility(): void {
-    const enabled = Boolean(this.state.adminToken);
-    for (const tool of this._adminTools) {
-      if (enabled && !tool.enabled) tool.enable();
-      else if (!enabled && tool.enabled) tool.disable();
-    }
   }
 
   /**
@@ -163,26 +141,68 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     return envList.includes(flag);
   }
 
+  /**
+   * Override `server.registerTool` to record each registration in our
+   * local `_toolsByName` map. The wrapper is installed once at the top of
+   * `init()` and tears down nothing — every tool file calls
+   * `agent.server.registerTool(...)` and lands in the map transparently.
+   *
+   * Why not just walk the SDK's `_registeredTools` field after `init()`?
+   * That field is private and undocumented; pinning to it would break
+   * silently on any minor SDK bump. The wrapper costs us one closure
+   * per tool but keeps the contract explicit.
+   */
+  private installToolRegistrationProxy(): void {
+    const original = this.server.registerTool.bind(this.server);
+    // safe-cast: McpServer.registerTool's overload union collapses at the
+    // implementation level — forwarding via spread requires a single
+    // call signature here.
+    this.server.registerTool = ((...args: unknown[]) => {
+      const tool = (original as (...a: unknown[]) => RegisteredTool)(...args);
+      const name = args[0] as string;
+      this._toolsByName.set(name, tool);
+      return tool;
+    }) as typeof this.server.registerTool;
+  }
+
+  /**
+   * After registration, disable every tool whose visible-scopes don't
+   * intersect the granted scopes. Uses the SDK's `RegisteredTool.disable()`
+   * which auto-emits `notifications/tools/list_changed`.
+   *
+   * `props.scopes` is set at `/callback` time (see `auth.ts/handleCallback`).
+   * If absent (e.g. a legacy token issued before U5), we fall back to the
+   * `['mcp']` umbrella scope per the back-compat contract documented in
+   * `scopes.ts` — that scope only authorizes reads, so the worst-case
+   * misclassification is "an admin-issued legacy token loses access to
+   * admin tools until they re-auth".
+   */
+  private applyScopeFilter(grantedScopes: readonly string[]): void {
+    const isVisible = getVisibleTools(grantedScopes);
+    for (const [name, tool] of this._toolsByName) {
+      if (!isVisible(name) && tool.enabled) {
+        tool.disable();
+      }
+    }
+  }
+
   override async fetch(request: Request): Promise<Response> {
     const authHeader = request.headers.get('Authorization');
     const userToken = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
-    const adminToken = request.headers.get('X-PackRat-Admin-Token') ?? '';
 
-    const nextAuth = userToken || this.state.authToken;
-    const nextAdmin = adminToken || this.state.adminToken;
-    if (nextAuth !== this.state.authToken || nextAdmin !== this.state.adminToken) {
-      const adminChanged = nextAdmin !== this.state.adminToken;
-      this.setState({ ...this.state, authToken: nextAuth, adminToken: nextAdmin });
-      // Mirror setAdminToken: when the header path swaps the admin JWT, the
-      // tools/list visibility must follow. Without this the model can't see
-      // admin tools even after a valid header was supplied.
-      if (adminChanged) this.syncAdminToolVisibility();
+    if (userToken && userToken !== this.state.authToken) {
+      this.setState({ ...this.state, authToken: userToken });
     }
 
     return super.fetch(request);
   }
 
   async init(): Promise<void> {
+    // Install the registration proxy BEFORE any tool register call so
+    // every tool lands in `_toolsByName`. The scope-filter pass below
+    // relies on this map being complete.
+    this.installToolRegistrationProxy();
+
     // ── User-level (Bearer) ────────────────────────────────────────────────
     registerAuthTools(this);
     registerUserTools(this);
@@ -202,12 +222,25 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     registerGuidesTools(this);
     registerAiTools(this);
 
-    // ── Admin (admin JWT) ──────────────────────────────────────────────────
+    // ── Admin ──────────────────────────────────────────────────────────────
+    // Admin tools register as ordinary tools; visibility is decided by the
+    // post-init scope filter below. The session's granted scopes live in
+    // `(this.props as { scopes?: readonly string[] }).scopes` — set at
+    // OAuth `/callback` time per the U5 model.
     registerAdminTools(this);
 
     // ── Resources + prompts ────────────────────────────────────────────────
     registerResources(this);
     registerPrompts(this);
+
+    // ── Scope-based visibility filter (U5) ─────────────────────────────────
+    // `this.props` is injected by the OAuthProvider apiHandler before the
+    // DO fetch hits us; legacy/missing scopes fall back to the umbrella
+    // `['mcp']` per the back-compat contract.
+    const props = this.props as { scopes?: readonly string[] } | undefined;
+    const grantedScopes: readonly string[] =
+      props?.scopes && props.scopes.length > 0 ? props.scopes : ['mcp'];
+    this.applyScopeFilter(grantedScopes);
   }
 }
 
@@ -222,7 +255,15 @@ const mcpDoHandler = PackRatMCP.serve('/mcp');
 const PropsSchema = z.object({
   betterAuthToken: z.string(),
   userId: z.string(),
-  adminToken: z.string().optional(),
+  /**
+   * U5: granted OAuth scopes. Required (not optional) so a malformed grant
+   * surfaces as a 401 with `unauthorizedResponse` rather than silently
+   * defaulting to "all tools visible". Legacy tokens issued before U5
+   * landed will fail this schema and force a re-auth — acceptable for the
+   * pre-listing transition, per the connector-store plan's "no soft
+   * compat aliases" stance.
+   */
+  scopes: z.array(z.string()),
 });
 
 // ── API handler: wraps McpAgent, injecting the Better Auth token from OAuth props ──
@@ -239,13 +280,10 @@ const mcpApiHandler = {
       return unauthorizedResponse(env, 'Missing or malformed OAuth props');
     }
 
-    const { betterAuthToken: userToken, adminToken } = propsResult.data;
+    const { betterAuthToken: userToken } = propsResult.data;
 
     const headers = new Headers(request.headers);
     if (userToken) headers.set('Authorization', `Bearer ${userToken}`);
-    if (adminToken && !headers.has('X-PackRat-Admin-Token')) {
-      headers.set('X-PackRat-Admin-Token', adminToken);
-    }
 
     const response = await mcpDoHandler.fetch(new Request(request, { headers }), env, ctx);
 

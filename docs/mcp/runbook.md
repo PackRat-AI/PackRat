@@ -113,6 +113,81 @@ inside the OAuthProvider config as defense-in-depth: even if the gate were
 removed, public clients (`token_endpoint_auth_method: 'none'`) would still
 be rejected.
 
+## U5 admin scope model
+
+The MCP Worker advertises four coarse-grained OAuth scopes (see
+`packages/mcp/src/scopes.ts` and `metadata.ts`):
+
+| Scope | Visible tools |
+| ----- | ------------- |
+| `mcp` (umbrella, back-compat) | read tools only (`get_*`, `list_*`, `search_*`, `find_*`, `extract_*`, `preview_*`, `whoami`) |
+| `mcp:read` | same as `mcp`, explicit |
+| `mcp:write` | read + write tools (everything not classified `admin`) |
+| `mcp:admin` | read + write + every `admin_*` tool + the two explicit overrides `execute_sql_query` / `get_database_schema` |
+
+`mcp:admin` is granted ONLY when:
+
+1. The client requested `mcp:admin` in `/authorize`, AND
+2. The authenticated user's Better Auth session resolves to
+   `user.role === 'ADMIN'` at `/callback` time.
+
+A non-admin user who requests `mcp:admin` does not receive it — the
+authorization completes successfully but the granted-scope set is
+stripped of `mcp:admin`. Per RFC 6749 §3.3 the granted scope must be a
+subset of the requested scope, so a client that didn't request
+`mcp:admin` will never receive it even for an admin user.
+
+### Per-grant role lookup, fail-closed
+
+The role lookup at `/callback` calls Better Auth via the API
+(`/api/auth/get-session`) with a **5-second** `AbortSignal.timeout`.
+Any failure path — timeout, non-2xx response, malformed body,
+network error, role !== ADMIN — drops the request to "non-admin"
+scope set. This keeps the OAuth flow usable for read/write users
+during Better Auth degradation; admin scope is only granted on an
+unambiguous positive role check.
+
+The lookup is NOT cached across `/callback` invocations: every
+authorization re-checks the role, so a user whose admin role was
+revoked between sessions cannot keep getting `mcp:admin` on the
+next grant.
+
+### Contrast: removed parallel admin path
+
+U5 deleted the prior `admin_login` MCP tool and the
+`X-PackRat-Admin-Token` request header. Admins no longer need to
+perform a runtime tool-mediated handshake to access admin tools;
+they re-authorize the MCP client with `mcp:admin` in the requested
+scope set and the scope is granted automatically if their Better
+Auth role permits it.
+
+On the API side (`packages/api/src/routes/admin/index.ts`), the
+`adminAuthGuard` was extended to accept Better Auth session bearers
+whose `user.role === 'ADMIN'` in addition to the legacy HS256
+`packrat-admin` JWT. The HS256 path is retained for back-compat
+with `apps/admin`. See the security note in that file's docstring:
+accepting Better Auth bearers means a stolen admin session is now
+also a path to `/admin/*`. This is the intended trade-off — admin
+session theft has always been catastrophic, and consolidating on a
+single revocation surface (the Better Auth session table) is the
+simplification the change buys.
+
+### U5 consumer audit
+
+Grep audit (2026-05-22) across `apps/`, `packages/`, `docs/`,
+`scripts/`, `.github/workflows/`, `README*` for the removed
+identifiers:
+
+| Identifier | Hits outside `docs/plans/` | Resolution |
+| ---------- | -------------------------- | ---------- |
+| `X-PackRat-Admin-Token` | **0** | Header was MCP-internal; no consumer ever shipped. |
+| `admin_login` (MCP tool name) | 1 in `packages/mcp/src/tools/auth.ts` (historical-context comment) + 1 in `packages/mcp/src/tools/packTemplates.ts` (live tool description) | Comment retained as removal documentation. The tool description was updated to reference `mcp:admin` scope. |
+| `admin/login` (API route) | 1 in `apps/admin/app/login/page.tsx` | Unrelated — this is the API `POST /admin/login` HS256-JWT path used by the admin SPA. Path A of the dual-mechanism guard preserves it. |
+| `adminToken` / `getAdminToken` | 0 in `packages/mcp/` | Field removed from `Props`; client factory no longer takes the parameter. |
+
+No active consumer outside `apps/admin` (which uses the preserved
+HS256 path) was affected by the U5 removal.
+
 ## Better Auth trustedOrigins (U6)
 
 The MCP Worker calls Better Auth (in `packages/api`) for password sign-in
@@ -120,6 +195,12 @@ during the OAuth flow. Better Auth rejects calls whose `Origin` is not on
 its `trustedOrigins` list — so `https://mcp.packratai.com` must appear in
 that list, or every MCP-driven sign-in will fail with an untrusted-origin
 error.
+
+> U5 also depends on this: the role lookup at `/callback` calls
+> `/api/auth/get-session`, which Better Auth gates on the same
+> `trustedOrigins` list. If the MCP host is missing from
+> `trustedOrigins`, admin scope grants will fail closed (correctly —
+> the role check fails — but for the wrong reason).
 
 `trustedOrigins` is configured in **two files that drift independently**:
 

@@ -5,13 +5,22 @@
  *
  *  - `user`: authenticated as the OAuth-signed-in PackRat user via the Better
  *    Auth bearer that OAuthProvider injects into each request.
- *  - `admin`: authenticated as a PackRat admin via the short-lived admin JWT
- *    issued by `POST /api/admin/token` (or by passing an env-provided token).
+ *  - `admin`: authenticated with the *same* Better Auth bearer. The API
+ *    enforces admin access via `user.role === 'ADMIN'` on its
+ *    `adminAuthGuard` (extended in U5 to accept Better Auth bearers in
+ *    addition to the legacy HS256 admin JWT). Visibility of admin tools on
+ *    the MCP surface is gated by the `mcp:admin` OAuth scope, which is only
+ *    granted to admin users at `/callback` time.
  *
  * Tool files import these from `agent.api` and call the API with end-to-end
  * type safety. The `call()` helper converts Treaty's
  * `{ data, error, status }` response shape into MCP tool results and maps
  * 401/403 to actionable, ACL-aware error messages.
+ *
+ * U5 note: the dual-client shape is preserved so future tooling can swap
+ * the admin client to a different token source without churning every
+ * call site. Today both clients share the same token provider — see the
+ * `createMcpClients` signature.
  */
 
 import { type ApiClient, createApiClient } from '@packrat/api-client';
@@ -22,17 +31,21 @@ export type TokenProvider = () => string | null | undefined;
 export type McpClients = {
   /** Calls authenticated as the OAuth-signed-in PackRat user. */
   user: ApiClient;
-  /** Calls authenticated with a PackRat admin JWT. */
+  /**
+   * Calls to admin routes, authenticated with the same Better Auth bearer
+   * as the `user` client. The API-side `adminAuthGuard` (extended in U5)
+   * accepts a Better Auth session whose `user.role === 'ADMIN'`.
+   */
   admin: ApiClient;
 };
 
 /**
  * Build user and admin Eden Treaty clients sharing a single base URL.
  *
- * The user client uses the Better Auth bearer that the OAuth provider
+ * Both clients use the Better Auth bearer that the OAuth provider
  * (or a manual `Authorization` header) injected into the current request.
- * The admin client uses the short-lived admin JWT minted by
- * `POST /api/admin/token`.
+ * The API enforces admin access on the `admin` routes via the user's role,
+ * not via a separate token type.
  *
  * Refresh/reauth hooks are no-ops here: the MCP transport does not own session
  * lifecycle (the OAuth layer / caller does), so on 401 we surface the error
@@ -41,11 +54,10 @@ export type McpClients = {
 export function createMcpClients(opts: {
   baseUrl: string;
   getUserToken: TokenProvider;
-  getAdminToken: TokenProvider;
 }): McpClients {
   return {
     user: createApiClient({ baseUrl: opts.baseUrl, auth: noopHooks(opts.getUserToken) }),
-    admin: createApiClient({ baseUrl: opts.baseUrl, auth: noopHooks(opts.getAdminToken) }),
+    admin: createApiClient({ baseUrl: opts.baseUrl, auth: noopHooks(opts.getUserToken) }),
   };
 }
 
@@ -121,9 +133,12 @@ function formatError(args: { status: number; body: unknown; opts: CallOptions })
 
   if (status === 401) {
     if (opts.requiresAdmin) {
+      // U5: the MCP admin tools are gated by the `mcp:admin` OAuth scope.
+      // A 401 from the API on an admin route means the bearer wasn't
+      // recognized at all (not a scope/role rejection — that's 403).
       return errMessage(
-        `Admin authentication required to ${action}${resource}. Call admin_login first, ` +
-          `or provide an admin JWT via the X-PackRat-Admin-Token header.${suffix}`,
+        `Admin authentication required to ${action}${resource}. Sign in with an admin PackRat ` +
+          `account and re-authorize this MCP client with the mcp:admin scope.${suffix}`,
       );
     }
     return errMessage(

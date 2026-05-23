@@ -53,6 +53,7 @@ import {
 import { z } from 'zod';
 import { ServiceMeta } from './constants';
 import { unauthorizedResponse } from './metadata';
+import { SCOPES_SUPPORTED } from './scopes';
 import type { Env, Props } from './types';
 
 // ── HTML-escape regexes (magic-regexp so the pre-push hook is satisfied) ─────
@@ -720,6 +721,89 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
 // ── /callback ─────────────────────────────────────────────────────────────────
 
+/**
+ * Timeout for the Better Auth role lookup at `/callback`. If Better Auth is
+ * degraded, the OAuth grant must still proceed (so users aren't locked out
+ * of basic functionality) but WITHOUT `mcp:admin` — admin tools stay
+ * hidden until a follow-up authorization happens against a healthy
+ * backend. 5s aligns with the API-side guard timeout (see
+ * `packages/api/src/routes/admin/index.ts` U5 extension).
+ */
+const BETTER_AUTH_ROLE_LOOKUP_TIMEOUT_MS = 5000;
+
+const SessionResponseSchema = z.object({
+  user: z
+    .object({
+      role: z.string().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * Ask Better Auth (via the PackRat API) whether the bearer's session
+ * resolves to an admin user. Returns `true` only on an unambiguous
+ * `user.role === 'ADMIN'` response within the timeout window; everything
+ * else (timeout, network error, non-200, malformed body, role !== ADMIN)
+ * returns `false`. Fail-closed: a degraded Better Auth never escalates
+ * scope.
+ *
+ * U15 will replace the `console.warn` with a structured-log helper.
+ */
+async function isAdminUser(env: Env, betterAuthToken: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BETTER_AUTH_ROLE_LOOKUP_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${env.PACKRAT_API_URL}/api/auth/get-session`, {
+      headers: { Authorization: `Bearer ${betterAuthToken}` },
+      signal: controller.signal,
+    });
+    if (!res.ok) return false;
+    const parsed = SessionResponseSchema.safeParse(await res.json().catch(() => null));
+    if (!parsed.success) return false;
+    return parsed.data.user?.role === 'ADMIN';
+  } catch (e) {
+    // TODO (U15): structured log — distinguish timeout (AbortError) from
+    // transport errors. Both are fail-closed today, but the operational
+    // signal differs.
+    console.warn('[mcp/auth] Better Auth role lookup failed; granting non-admin scope', e);
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Compute the scope set to grant the new OAuth token.
+ *
+ * Per RFC 6749 §3.3 the granted scope must be a subset of what was
+ * requested; the OAuthProvider validates this for us. We additionally
+ * intersect the requested scopes with `SCOPES_SUPPORTED` so unknown
+ * scope strings are silently dropped (defensive — the AS advertises the
+ * supported list, so a well-behaved client should not ask for others).
+ *
+ * `mcp:admin` is granted ONLY when the user resolves to ADMIN at this
+ * specific authorization moment. A non-admin user asking for `mcp:admin`
+ * does NOT get it; they get the rest of their request stripped of
+ * `mcp:admin`. A degraded Better Auth makes everyone non-admin —
+ * see `isAdminUser` for fail-closed semantics.
+ */
+function grantedScopesFor(requestedScopes: readonly string[], isAdmin: boolean): string[] {
+  const supported = new Set<string>(SCOPES_SUPPORTED);
+  const granted = new Set<string>();
+  for (const scope of requestedScopes) {
+    if (!supported.has(scope)) continue;
+    if (scope === 'mcp:admin' && !isAdmin) continue;
+    granted.add(scope);
+  }
+  // Defensive: if the requested set was empty (or got fully filtered), we
+  // still grant the legacy umbrella `mcp` scope so the session is usable
+  // for reads. Pre-split clients relied on this implicit behaviour.
+  if (granted.size === 0) {
+    granted.add('mcp');
+  }
+  return [...granted];
+}
+
 async function handleCallback(request: Request, env: Env): Promise<Response> {
   const state = new URL(request.url).searchParams.get('state') ?? '';
 
@@ -757,13 +841,33 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     env.OAUTH_KV.delete(csrfKey(state)),
   ]);
 
-  const props: Props = { betterAuthToken, userId };
+  // ── U5 scope grant ────────────────────────────────────────────────────────
+  // Look up the user's role only if they actually asked for `mcp:admin` —
+  // skipping the round trip for non-admin requests keeps `/callback`
+  // fast for the common case. Per RFC 6749, granted scope must be a
+  // subset of requested, so a client that didn't request `mcp:admin`
+  // can't receive it even if the user IS an admin.
+  const wantedAdmin = oauthReq.scope.includes('mcp:admin');
+  const isAdmin = wantedAdmin ? await isAdminUser(env, betterAuthToken) : false;
+  const grantedScopes = grantedScopesFor(oauthReq.scope, isAdmin);
+
+  // Tell the OAuthProvider exactly which scopes we're granting (so the
+  // library's down-scoping check passes) and embed the same list in
+  // `props.scopes` so the DO can apply scope-based tool visibility.
+  // Note that `props.scopes` and `completeAuthorization({ scope })` must
+  // match — drift here would mean the access token is issued for one
+  // scope set but tools/list is filtered against another.
+  const props: Props = {
+    betterAuthToken,
+    userId,
+    scopes: grantedScopes,
+  };
 
   const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
     request: oauthReq,
     userId,
     metadata: {},
-    scope: oauthReq.scope,
+    scope: grantedScopes,
     props,
   });
 

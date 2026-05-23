@@ -4,7 +4,14 @@
  * Using a structural interface rather than the concrete PackRatMCP class avoids
  * the circular dependency: index.ts → tools/* → index.ts.
  * PackRatMCP satisfies this interface structurally via its `server`, `api`,
- * `apiBaseUrl`, and `setAdminToken` fields.
+ * `apiBaseUrl`, and `setFeatureFlag` fields.
+ *
+ * U5 note: `setAdminToken` and `registerAdminTool` have been removed. Admin
+ * gating now happens at OAuth-grant time via the `mcp:admin` scope — see
+ * `packages/mcp/src/scopes.ts` and the per-session disable pass in
+ * `PackRatMCP.init()`. Tool files register admin tools normally via
+ * `agent.server.registerTool(...)`; the agent walks them after init() and
+ * disables anything the granted scopes don't authorize.
  */
 
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
@@ -35,17 +42,8 @@ export interface AgentContext {
   api: McpClients;
   /** Base URL of the PackRat API (e.g. "https://packrat.world"). */
   apiBaseUrl: string;
-  /** Replace the per-session admin token (set by `admin_login`). */
-  setAdminToken: (token: string) => void;
   /** Toggle a feature flag at runtime (debug / admin-set). */
   setFeatureFlag: (flag: string, enabled: boolean) => void;
-  /**
-   * Register a tool that's only visible when the session holds an admin JWT.
-   * Has the same signature as `server.registerTool`. The MCP SDK's
-   * `enable()/disable()` toggles `tools/list_changed` notifications so the
-   * client's tool list stays in sync.
-   */
-  registerAdminTool: RegisterToolFn;
   /**
    * Register a tool gated on a named feature flag. The tool is hidden unless
    * the flag is present in `MCP_FEATURE_FLAGS` or has been toggled on at
@@ -66,18 +64,34 @@ export interface Env {
   OAUTH_KV: KVNamespace;
   /** OAuth helpers injected by OAuthProvider at runtime */
   OAUTH_PROVIDER: OAuthHelpers;
-  /** Optional pre-shared secret for dynamic client registration */
+  /**
+   * Pre-shared secret for dynamic client registration. **Required as of U4**:
+   * if unset, `POST /register` returns 401 to every caller (DCR effectively
+   * disabled). Operators must set this via `wrangler secret put` before
+   * pre-registering Claude's callbacks — see `docs/mcp/runbook.md`.
+   *
+   * Typed as optional because the binding is absent in test environments
+   * and the `dcrRegisterGate` helper must handle the unset case
+   * gracefully (fail-closed).
+   */
   MCP_INITIAL_ACCESS_TOKEN?: string;
   /** Comma-separated feature flags enabled at boot (e.g. "wildlife_id,season_suggestions"). */
   MCP_FEATURE_FLAGS?: string;
 }
 
-/** Properties embedded in OAuth access tokens and passed to API handlers */
+/**
+ * Properties embedded in OAuth access tokens and passed to API handlers.
+ *
+ * U5: `scopes` is the set of OAuth scopes granted to the token at
+ * `/callback` time. The DO uses this to decide which tools to disable
+ * for the session. There is no longer a parallel `adminToken` field —
+ * admin tools are gated by the presence of `mcp:admin` in `scopes`.
+ */
 export interface Props {
   /** Better Auth session token used to authenticate PackRat API calls */
   betterAuthToken: string;
   /** PackRat user ID */
   userId: string;
-  /** Optional admin JWT carried over from a successful admin login. */
-  adminToken?: string;
+  /** OAuth scopes granted to this session (e.g. `['mcp:read', 'mcp:write']`). */
+  scopes: readonly string[];
 }

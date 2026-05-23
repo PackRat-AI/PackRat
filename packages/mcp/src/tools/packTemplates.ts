@@ -216,7 +216,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     'generate_pack_template_from_url',
     {
       description:
-        'Generate a pack template from a TikTok or YouTube link. The server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user — the admin_login JWT does NOT authorize this call. Your signed-in PackRat account must be an admin.',
+        'Generate a pack template from a TikTok or YouTube link. The server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user; your signed-in PackRat account must be an admin and the MCP session must carry the `mcp:admin` scope (granted at OAuth callback time when the Better Auth role resolves to ADMIN).',
       inputSchema: {
         content_url: z.string().url(),
         is_app_template: z.boolean().default(false),

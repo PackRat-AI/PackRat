@@ -2,18 +2,20 @@
  * Auth tools.
  *
  * The MCP transport authenticates the user via OAuth 2.1, so MCP doesn't need
- * to implement email/password login itself. These tools expose the parts of
- * the auth surface a model may want to call:
+ * to implement email/password login itself. This module exposes only the
+ * read-side of the auth surface a model may want to call:
  *
  *  - `whoami` — return the signed-in user profile.
- *  - `admin_login` — exchange Basic credentials for a short-lived admin JWT
- *    and store it on the session so admin tools can use it.
- *  - `admin_logout` — clear the stored admin JWT.
+ *
+ * U5 removed the `admin_login` and `admin_logout` tools. Admin access is no
+ * longer a runtime tool-mediated handshake: admin users acquire the
+ * `mcp:admin` OAuth scope automatically at `/callback` time when their
+ * Better Auth role resolves to `ADMIN`. See `packages/mcp/src/auth.ts`
+ * (`handleCallback`), `packages/mcp/src/scopes.ts`, and the U5 section of
+ * `docs/mcp/runbook.md` for the migration story.
  */
 
-import { isObject } from '@packrat/guards';
-import { z } from 'zod';
-import { call, errMessage, ok } from '../client';
+import { call } from '../client';
 import type { AgentContext } from '../types';
 
 export function registerAuthTools(agent: AgentContext): void {
@@ -26,46 +28,5 @@ export function registerAuthTools(agent: AgentContext): void {
       inputSchema: {},
     },
     async () => call(agent.api.user.user.profile.get(), { action: 'fetch profile' }),
-  );
-
-  // ── Admin login ───────────────────────────────────────────────────────────
-  // Uses the body-credential variant of /api/admin/token (POST /admin/login)
-  // so the call goes straight through Treaty — no Basic-header bypass.
-
-  agent.server.registerTool(
-    'admin_login',
-    {
-      description:
-        'Exchange admin credentials (username + password) for a short-lived admin JWT and store it for the current MCP session. Required before calling any admin_* tool unless an admin JWT was already supplied via the X-PackRat-Admin-Token header.',
-      inputSchema: {
-        username: z.string().min(1),
-        password: z.string().min(1),
-      },
-    },
-    async ({ username, password }) => {
-      const result = await agent.api.user.admin.login.post({ username, password });
-      if (result.error || !result.data) {
-        const detail = isObject(result.error) ? (result.error.value ?? null) : null;
-        return errMessage(
-          `Admin login failed (HTTP ${result.status})${detail ? `: ${JSON.stringify(detail)}` : ''}`,
-        );
-      }
-      agent.setAdminToken(result.data.token);
-      return ok({ ok: true, expiresIn: result.data.expiresIn });
-    },
-  );
-
-  // ── Admin logout / clear token ────────────────────────────────────────────
-
-  agent.server.registerTool(
-    'admin_logout',
-    {
-      description: 'Clear the stored admin JWT for this MCP session.',
-      inputSchema: {},
-    },
-    async () => {
-      agent.setAdminToken('');
-      return ok({ ok: true });
-    },
   );
 }
