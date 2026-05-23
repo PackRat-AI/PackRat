@@ -117,8 +117,8 @@ export type CatalogItem = {
   name: string;
   productUrl: string;
   sku: string;
-  weight: number;
-  weightUnit: string;
+  weight: number | null;
+  weightUnit: string | null;
   description: string | null;
   categories: string[] | null;
   images: string[] | null;
