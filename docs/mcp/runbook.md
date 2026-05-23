@@ -374,6 +374,180 @@ Each override is listed twice in `ADMIN_OVERRIDES` — once without the
 pre- and post-U7 naming and the override semantics survive a future
 naming refactor.
 
+## U8 output envelopes
+
+### Error envelope convention
+
+Every recoverable tool failure flows through `errResponse(code, message, retryable)`
+in `packages/mcp/src/client.ts` and surfaces as:
+
+```jsonc
+{
+  "isError": true,
+  "content": [{ "type": "text", "text": "<human-readable message>" }],
+  "structuredContent": {
+    "error": {
+      "code": "api_error" | "network_error" | "unauthorized" | "forbidden" |
+              "not_found" | "conflict" | "validation_error" | "rate_limited" |
+              "tool_error",
+      "message": "<same as content[0].text>",
+      "retryable": true | false
+    }
+  }
+}
+```
+
+`call()` maps API responses to codes deterministically:
+
+| Origin                     | `code`              | `retryable` |
+| -------------------------- | ------------------- | ----------- |
+| Thrown / network error     | `network_error`     | true        |
+| HTTP 401                   | `unauthorized`      | false       |
+| HTTP 403                   | `forbidden`         | false       |
+| HTTP 404                   | `not_found`         | false       |
+| HTTP 409                   | `conflict`          | false       |
+| HTTP 422                   | `validation_error`  | false       |
+| HTTP 429                   | `rate_limited`      | true        |
+| HTTP 5xx                   | `api_error`         | true        |
+| Other non-success          | `api_error`         | false       |
+
+Protocol violations — unknown method, malformed JSON-RPC params, bad
+argument types — are reserved for the SDK to surface as JSON-RPC errors
+(`-32602`, `-32600`, etc.). Tool handlers must never throw to signal a
+recoverable failure; throw is for "the model gave us something we can't
+parse at all". `call()` catches inside-handler throws and converts them
+to `network_error` to make the asymmetry safe.
+
+### 150 000-char response cap + truncation
+
+Per Anthropic's connector-store documentation, Claude.ai and Claude
+Desktop truncate tool results at ~150 000 characters. We truncate
+server-side so we control the marker text and don't waste bandwidth:
+
+- The cap is `RESPONSE_SIZE_LIMIT_CHARS = 150_000` in `client.ts`.
+- `ok()` runs every payload through `truncateForResponse` before
+  formatting. If `JSON.stringify(data, null, 2).length` exceeds the cap,
+  the text content is sliced to fit and a `\n[truncated: response
+  exceeded 150k chars]` marker is appended.
+- On truncation we **drop `structuredContent`** even when the caller
+  opted in — the truncated text is no longer valid JSON, so emitting it
+  as `structuredContent` would fail the SDK's outputSchema validation.
+- Truncation is **not** flagged as `isError: true` — it's a response-
+  shape concern, not a failure. The marker is sufficient for the model
+  to detect the cutoff and request a narrower scope on its next turn.
+
+### Pagination clamp + cursor convention
+
+List-style tools that previously advertised `limit ≤ 200` now clamp to
+`PAGINATION_LIMIT_MAX = 50` server-side. The clamp is **silent**:
+caller-supplied `limit > 50` is rounded down without erroring, so a
+model that ignores the published cap still gets a successful response
+on a recoverable mistake.
+
+| Tool                                       | Pagination cursor surface |
+| ------------------------------------------ | ------------------------- |
+| `packrat_list_packs` (U8)                  | MCP envelope `{ data, nextOffset }`; `nextOffset` is null at end of list. |
+| `packrat_list_trips` (U8)                  | Same MCP envelope. |
+| `packrat_admin_list_users`                 | API native `{ data, total, limit, offset }`; walk via next `offset`. |
+| `packrat_admin_list_packs`                 | Same as above. |
+| `packrat_admin_list_catalog`               | Same as above. |
+| `packrat_admin_list_trail_condition_reports` | Same as above. |
+| `packrat_admin_search_trails`              | API native `{ trails, hasMore, offset, limit }`. |
+| `packrat_search_gear_catalog`              | API native `page`-based pagination; `limit` clamped. |
+| `packrat_admin_analytics_top_brands`       | `limit` clamped. |
+| `packrat_admin_analytics_etl_jobs`         | `limit` clamped. |
+| `packrat_admin_analytics_etl_failure_summary` | `limit` clamped. |
+| `packrat_admin_analytics_etl_job_failures` | `limit` clamped. |
+
+The `withNextOffset` helper in `client.ts` is the canonical
+no-cursor-from-API fallback: it returns
+`{ data: items, nextOffset: items.length >= limit ? offset + items.length : null }`
+so the model always sees the same shape regardless of which list tool
+it called.
+
+### Structured output (Tier 1)
+
+The MCP spec 2025-06-18 allows tools to declare an `outputSchema` and
+emit `structuredContent` alongside the text content block. Clients that
+adopt the new shape (Claude Code, future Claude.ai versions) can
+consume the structured payload directly; clients that don't still see
+the JSON-stringified text fallback. The SDK validates emitted
+`structuredContent` against the declared schema before send — a schema
+mismatch is a runtime error, not a silent shape drift.
+
+Tier 1 (shipped in U8 — these tools declare an `outputSchema` and call
+`ok(..., { structured: true })` or `call(..., { structured: true })`):
+
+| Tool | Schema |
+| --- | --- |
+| `packrat_whoami` | `WhoAmIOutputSchema` (`{ success?, user }`) |
+| `packrat_get_pack` | `PackWithItemsSchema` |
+| `packrat_list_packs` | `{ data: Pack[], nextOffset }` |
+| `packrat_get_trip` | `TripSchema` |
+| `packrat_list_trips` | `{ data: Trip[], nextOffset }` |
+| `packrat_get_weather` | `GetWeatherOutputSchema` (WeatherAPI passthrough) |
+| `packrat_admin_stats` | `AdminStatsSchema` |
+| `packrat_admin_analytics_active_users` | `ActiveUsersSchema` |
+| `packrat_admin_analytics_catalog_overview` | `CatalogOverviewSchema` |
+| `packrat_admin_analytics_growth` | `z.array(GrowthPointSchema)` (declared) |
+| `packrat_admin_analytics_activity` | `z.array(ActivityPointSchema)` (declared) |
+| `packrat_admin_analytics_pack_breakdown` | `z.array(BreakdownItemSchema)` (declared) |
+
+Schemas live in `packages/mcp/src/output-schemas.ts`. They re-use
+`@packrat/schemas` wherever a response shape is already modeled in the
+API contract — single source of truth. Tests in
+`packages/mcp/src/__tests__/output-schemas.test.ts` round-trip every
+schema and assert each Tier 1 tool's `_registeredTools` entry carries
+an `outputSchema` value.
+
+### Tier 2 deferral (follow-up unit)
+
+The remaining read tools emit text-only output today. Their API
+response shapes either aren't modeled in `@packrat/schemas` yet or
+require non-trivial derivation from Eden Treaty's inferred types.
+Lifting them to Tier 1 is a follow-up unit; the catalogue test still
+asserts the annotation invariants on all of these so the surface
+doesn't drift in the meantime.
+
+Tier 2 categories (representative — not exhaustive):
+
+- All `packs.items.*` mutations and the bare `*_items` reads
+  (`packrat_get_pack_item`, `packrat_list_pack_items`).
+- Catalog read paths beyond `packrat_search_gear_catalog`
+  (`packrat_get_catalog_item`, `packrat_similar_catalog_items`,
+  `packrat_semantic_gear_search`, `packrat_compare_gear_items`,
+  `packrat_list_gear_categories`).
+- All `tools/feed.ts`, `tools/trail-conditions.ts`,
+  `tools/trails.ts`, `tools/alltrails.ts`, `tools/guides.ts`,
+  `tools/knowledge.ts`, `tools/seasons.ts`, `tools/wildlife.ts`,
+  `tools/upload.ts`, `tools/packTemplates.ts`, `tools/ai.ts`.
+- `tools/user.ts` — `packrat_get_profile`, `packrat_update_profile`
+  (overlap with `packrat_whoami` shape; can be lifted in the same
+  follow-up).
+- Admin list/get tools that aren't analytics-bucket Tier 1 above:
+  `packrat_admin_list_users`, `packrat_admin_list_packs`,
+  `packrat_admin_list_catalog`, `packrat_admin_get_trail`,
+  `packrat_admin_get_trail_geometry`,
+  `packrat_admin_list_trail_condition_reports`,
+  `packrat_admin_search_trails`,
+  `packrat_admin_analytics_catalog_prices`,
+  `packrat_admin_analytics_catalog_embeddings`.
+- `tools/weather.ts` beyond `packrat_get_weather`
+  (`packrat_search_weather_location`,
+  `packrat_search_weather_by_coordinates`,
+  `packrat_get_weather_forecast`).
+
+Tracking sketch for a follow-up:
+
+1. Inventory each Tier 2 tool's API endpoint and pull the Treaty
+   inferred response type into `output-schemas.ts`.
+2. Where Treaty loses the array element shape (the recurring pattern
+   here is admin routes whose response is declared with Elysia's
+   `t.Unsafe<any>`), declare the schema fresh against the route's
+   underlying SQL projection.
+3. Add the schema to the Tier 1 table in this runbook; add a
+   round-trip test and a cross-check entry in `output-schemas.test.ts`.
+
 ## Common operations
 
 ### Deploy

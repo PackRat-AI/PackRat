@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { GetWeatherOutputSchema } from '../output-schemas';
 import type { AgentContext } from '../types';
 
 export function registerWeatherTools(agent: AgentContext): void {
@@ -16,6 +17,11 @@ export function registerWeatherTools(agent: AgentContext): void {
           .min(2)
           .describe('Location to get weather for (city, trail, park, etc.)'),
       },
+      // U8: tier-1 structured output. The provider-specific WeatherAPI
+      // shape is modeled loosely (passthrough on extra keys) so a
+      // downstream provider field rename doesn't fail validation in
+      // production before we can ship a fix.
+      outputSchema: GetWeatherOutputSchema.shape,
       annotations: {
         title: 'Get Weather Forecast',
         readOnlyHint: true,
@@ -27,6 +33,7 @@ export function registerWeatherTools(agent: AgentContext): void {
       call(agent.api.user.weather['by-name'].get({ query: { q: location } }), {
         action: 'fetch weather forecast',
         resourceHint: location,
+        structured: true,
       }),
   );
 

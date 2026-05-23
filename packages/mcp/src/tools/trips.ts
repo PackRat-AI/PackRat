@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { call, nowIso } from '../client';
+import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
+import { GetTripOutputSchema, ListTripsOutputSchema } from '../output-schemas';
 import type { AgentContext } from '../types';
 
 const LocationInput = z.object({
@@ -16,8 +17,24 @@ export function registerTripTools(agent: AgentContext): void {
     {
       title: 'List My Trips',
       description:
-        "List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack.",
-      inputSchema: {},
+        `List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack. ` +
+        `Paginated: results are capped at ${PAGINATION_LIMIT_MAX} per call; the response includes a \`nextOffset\` value (or \`null\` at the end) for continuation.`,
+      inputSchema: {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .default(0)
+          .describe('Pagination offset; use `nextOffset` from the previous response.'),
+      },
+      // U8: tier-1 structured output — list of Trip with nextOffset.
+      outputSchema: ListTripsOutputSchema.shape,
       annotations: {
         title: 'List My Trips',
         readOnlyHint: true,
@@ -25,7 +42,16 @@ export function registerTripTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async () => call(agent.api.user.trips.get(), { action: 'list trips' }),
+    async ({ limit, offset }) => {
+      const clamped = clampLimit(limit);
+      const result = await agent.api.user.trips.get();
+      if (result.error || result.data == null) {
+        return call(Promise.resolve(result), { action: 'list trips' });
+      }
+      const items = Array.isArray(result.data) ? result.data : [];
+      const page = items.slice(offset, offset + clamped);
+      return ok(withNextOffset({ items: page, offset, limit: clamped }), { structured: true });
+    },
   );
 
   // ── Get trip ──────────────────────────────────────────────────────────────
@@ -37,6 +63,8 @@ export function registerTripTools(agent: AgentContext): void {
       description:
         'Get full details for a single trip including location coordinates, dates, notes, and linked pack information.',
       inputSchema: { trip_id: z.string().describe('The unique trip ID (e.g. "t_abc123")') },
+      // U8: tier-1 structured output — Trip shape.
+      outputSchema: GetTripOutputSchema.shape,
       annotations: {
         title: 'Get Trip',
         readOnlyHint: true,
@@ -48,6 +76,7 @@ export function registerTripTools(agent: AgentContext): void {
       call(agent.api.user.trips({ tripId: trip_id }).get(), {
         action: 'get trip',
         resourceHint: `trip ${trip_id}`,
+        structured: true,
       }),
   );
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { call } from '../client';
+import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
 import { CatalogSortField, SortOrder } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -11,7 +11,8 @@ export function registerCatalogTools(agent: AgentContext): void {
     {
       title: 'Search Gear Catalog',
       description:
-        'Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories.',
+        `Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories. ` +
+        `Paginated via \`page\` (1-indexed); page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
       inputSchema: {
         query: z
           .string()
@@ -23,7 +24,13 @@ export function registerCatalogTools(agent: AgentContext): void {
           .describe(
             'Filter by category (e.g. "sleeping bags", "tents", "backpacks", "footwear", "apparel")',
           ),
-        limit: z.number().int().min(1).max(50).default(10),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .default(10)
+          .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
         page: z.number().int().min(1).default(1),
         sort_by: z.nativeEnum(CatalogSortField).optional(),
         sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc),
@@ -41,7 +48,7 @@ export function registerCatalogTools(agent: AgentContext): void {
           query: {
             q: query,
             category,
-            limit,
+            limit: clampLimit(limit),
             page,
             sort: sort_by ? { field: sort_by, order: sort_order } : undefined,
           },

@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
-import { call, createMcpClients, errMessage, nowIso, ok, shortId } from '../client';
+import {
+  call,
+  clampLimit,
+  createMcpClients,
+  errMessage,
+  errResponse,
+  nowIso,
+  ok,
+  PAGINATION_LIMIT_MAX,
+  RESPONSE_SIZE_LIMIT_CHARS,
+  shortId,
+  withNextOffset,
+} from '../client';
 
 vi.mock('@packrat/api-client', () => ({
   createApiClient: vi.fn((opts: unknown) => ({ _opts: opts })),
@@ -359,5 +371,231 @@ describe('createMcpClients()', () => {
     ).auth;
     expect(() => auth.onAccessTokenRefreshed()).not.toThrow();
     expect(() => auth.onNeedsReauth()).not.toThrow();
+  });
+});
+
+// ── U8: structured output + isError envelope + truncation + pagination ───────
+
+describe('U8 ok() with structured: true', () => {
+  it('emits both content (text JSON) and structuredContent on opt-in', () => {
+    const data = { id: 'pack-1', name: 'My Pack' };
+    const result = ok(data, { structured: true });
+    expect(result.content).toHaveLength(1);
+    expect(result.content[0].type).toBe('text');
+    expect(result.content[0].text).toContain('"id": "pack-1"');
+    expect(result.structuredContent).toEqual(data);
+  });
+
+  it('omits structuredContent when structured is not requested', () => {
+    const result = ok({ foo: 1 });
+    expect(result.structuredContent).toBeUndefined();
+  });
+
+  it('omits structuredContent when structured: false explicitly', () => {
+    const result = ok({ foo: 1 }, { structured: false });
+    expect(result.structuredContent).toBeUndefined();
+  });
+});
+
+describe('U8 ok() truncation', () => {
+  // Build a payload whose pretty-printed JSON is comfortably over the cap.
+  // A 200k-element array of "x" strings yields > 200k chars after JSON.
+  const buildLarge = () => Array.from({ length: 200_000 }, () => 'x');
+
+  it('passes through a small payload unchanged', () => {
+    const result = ok({ small: true });
+    expect(result.content[0].text).toContain('"small": true');
+  });
+
+  it('truncates payloads exceeding RESPONSE_SIZE_LIMIT_CHARS with a marker', () => {
+    const result = ok(buildLarge());
+    expect(result.content[0].text.length).toBeLessThanOrEqual(RESPONSE_SIZE_LIMIT_CHARS);
+    expect(result.content[0].text).toContain('[truncated: response exceeded 150k chars]');
+  });
+
+  it('drops structuredContent on truncation (would be unparseable)', () => {
+    const result = ok(buildLarge(), { structured: true });
+    expect(result.content[0].text).toContain('[truncated:');
+    expect(result.structuredContent).toBeUndefined();
+  });
+
+  it('does NOT set isError on truncation (truncation is shape, not failure)', () => {
+    const result = ok(buildLarge(), { structured: true });
+    expect(result.isError).toBeUndefined();
+  });
+});
+
+describe('U8 errResponse()', () => {
+  it('returns the canonical envelope with code, message, retryable defaulting to false', () => {
+    const result = errResponse('api_error', 'boom');
+    expect(result.isError).toBe(true);
+    expect(result.content[0].type).toBe('text');
+    expect(result.content[0].text).toBe('boom');
+    expect(result.structuredContent).toEqual({
+      error: { code: 'api_error', message: 'boom', retryable: false },
+    });
+  });
+
+  it('propagates the retryable flag when set to true', () => {
+    const result = errResponse('rate_limited', 'too many', true);
+    expect(result.structuredContent).toEqual({
+      error: { code: 'rate_limited', message: 'too many', retryable: true },
+    });
+  });
+
+  it('emits the message verbatim in content[0].text (no Error: prefix)', () => {
+    const result = errResponse('forbidden', 'No access');
+    expect(result.content[0].text).toBe('No access');
+  });
+});
+
+describe('U8 errMessage() carries structured error envelope', () => {
+  it('returns structuredContent with the tool_error code (legacy callers)', () => {
+    const result = errMessage('something went wrong');
+    expect(result.structuredContent).toEqual({
+      error: { code: 'tool_error', message: 'something went wrong', retryable: false },
+    });
+  });
+});
+
+describe('U8 call() maps errors to structured envelopes', () => {
+  it('maps 500 to api_error with retryable: true', async () => {
+    const result = await call(
+      Promise.resolve({ data: null, error: { status: 500, value: null }, status: 500 }),
+      { action: 'fetch x' },
+    );
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'api_error', retryable: true },
+    });
+  });
+
+  it('maps 401 to unauthorized with retryable: false', async () => {
+    const result = await call(
+      Promise.resolve({ data: null, error: { status: 401, value: null }, status: 401 }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'unauthorized', retryable: false },
+    });
+  });
+
+  it('maps 403 to forbidden with retryable: false', async () => {
+    const result = await call(
+      Promise.resolve({ data: null, error: { status: 403, value: null }, status: 403 }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'forbidden', retryable: false },
+    });
+  });
+
+  it('maps 404 to not_found', async () => {
+    const result = await call(
+      Promise.resolve({ data: null, error: { status: 404, value: null }, status: 404 }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'not_found', retryable: false },
+    });
+  });
+
+  it('maps 429 to rate_limited with retryable: true', async () => {
+    const result = await call(
+      Promise.resolve({ data: null, error: { status: 429, value: null }, status: 429 }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'rate_limited', retryable: true },
+    });
+  });
+
+  it('maps 422 to validation_error', async () => {
+    const result = await call(
+      Promise.resolve({ data: null, error: { status: 422, value: null }, status: 422 }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'validation_error', retryable: false },
+    });
+  });
+
+  it('maps a thrown network error to network_error with retryable: true (no escape)', async () => {
+    const result = await call(Promise.reject(new Error('socket hang up')), { action: 'fetch x' });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({
+      error: { code: 'network_error', retryable: true },
+    });
+    expect(result.content[0].text).toContain('socket hang up');
+  });
+
+  it('does not let thrown errors escape (protocol vs. recoverable separation)', async () => {
+    // A handler that throws unexpectedly should never bubble past call() —
+    // the SDK reserves thrown errors for protocol violations, so any
+    // runtime fault inside the API client is recoverable from Claude's
+    // perspective.
+    await expect(
+      call(Promise.reject('not even an Error instance'), { action: 'fetch' }),
+    ).resolves.toMatchObject({ isError: true });
+  });
+
+  it('emits structuredContent on success when structured: true is set', async () => {
+    const result = await call(Promise.resolve({ data: { ok: 'yes' }, error: null, status: 200 }), {
+      structured: true,
+    });
+    expect(result.isError).toBeUndefined();
+    expect(result.structuredContent).toEqual({ ok: 'yes' });
+  });
+
+  it('omits structuredContent on success when structured is not set', async () => {
+    const result = await call(Promise.resolve({ data: { ok: 'yes' }, error: null, status: 200 }));
+    expect(result.structuredContent).toBeUndefined();
+  });
+});
+
+describe('U8 pagination helpers', () => {
+  it('clampLimit returns the fallback when limit is undefined', () => {
+    expect(clampLimit(undefined)).toBe(PAGINATION_LIMIT_MAX);
+  });
+
+  it('clampLimit respects an alternate fallback', () => {
+    expect(clampLimit(undefined, 20)).toBe(20);
+  });
+
+  it('clampLimit clamps values above PAGINATION_LIMIT_MAX', () => {
+    expect(clampLimit(500)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit(PAGINATION_LIMIT_MAX + 1)).toBe(PAGINATION_LIMIT_MAX);
+  });
+
+  it('clampLimit passes through valid in-range values', () => {
+    expect(clampLimit(10)).toBe(10);
+    expect(clampLimit(PAGINATION_LIMIT_MAX)).toBe(PAGINATION_LIMIT_MAX);
+  });
+
+  it('clampLimit floors fractional limits', () => {
+    expect(clampLimit(10.7)).toBe(10);
+  });
+
+  it('clampLimit rejects non-positive / non-finite inputs', () => {
+    expect(clampLimit(0)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit(-5)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit(Number.NaN)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit(Number.POSITIVE_INFINITY)).toBe(PAGINATION_LIMIT_MAX);
+  });
+
+  it('withNextOffset advertises a next offset when page is full', () => {
+    expect(withNextOffset({ items: [1, 2, 3, 4, 5], offset: 0, limit: 5 })).toEqual({
+      data: [1, 2, 3, 4, 5],
+      nextOffset: 5,
+    });
+  });
+
+  it('withNextOffset returns null nextOffset on a short page (end of list)', () => {
+    expect(withNextOffset({ items: [1, 2], offset: 10, limit: 5 })).toEqual({
+      data: [1, 2],
+      nextOffset: null,
+    });
+  });
+
+  it('withNextOffset returns null nextOffset on an empty page', () => {
+    expect(withNextOffset({ items: [], offset: 50, limit: 25 })).toEqual({
+      data: [],
+      nextOffset: null,
+    });
   });
 });

@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { call, nowIso } from '../client';
+import { call, clampLimit, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
+import { GetPackOutputSchema, ListPacksOutputSchema } from '../output-schemas';
 import type { AgentContext } from '../types';
 
 export function registerPackTools(agent: AgentContext): void {
@@ -11,13 +12,30 @@ export function registerPackTools(agent: AgentContext): void {
     {
       title: 'List My Packs',
       description:
-        'List all packs belonging to the authenticated user. Returns pack summaries including name, category, item count, and total weight.',
+        `List all packs belonging to the authenticated user. Returns pack summaries including name, category, item count, and total weight. ` +
+        `Paginated: results are capped at ${PAGINATION_LIMIT_MAX} items per call; the response includes a \`nextOffset\` value (or \`null\` at the end) to continue iterating.`,
       inputSchema: {
         include_public: z
           .boolean()
           .default(false)
           .describe('Include public packs from other users'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`),
+        offset: z
+          .number()
+          .int()
+          .min(0)
+          .default(0)
+          .describe('Pagination offset; use `nextOffset` from the previous response.'),
       },
+      // U8: tier-1 structured output. The MCP-side envelope is
+      // `{ data: Pack[], nextOffset }` — the API returns a bare array;
+      // the wrapper here normalises it.
+      outputSchema: ListPacksOutputSchema.shape,
       annotations: {
         title: 'List My Packs',
         readOnlyHint: true,
@@ -25,10 +43,22 @@ export function registerPackTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ include_public }) =>
-      call(agent.api.user.packs.get({ query: { includePublic: include_public ? 1 : 0 } }), {
-        action: 'list packs',
-      }),
+    async ({ include_public, limit, offset }) => {
+      const clamped = clampLimit(limit);
+      const result = await agent.api.user.packs.get({
+        query: { includePublic: include_public ? 1 : 0 },
+      });
+      if (result.error || result.data == null) {
+        // Defer to the standard error envelope for failure consistency.
+        return call(Promise.resolve(result), { action: 'list packs' });
+      }
+      const items = Array.isArray(result.data) ? result.data : [];
+      // U8 server-side pagination: the API doesn't slice today, so we
+      // slice here using the clamped limit + offset. This keeps the
+      // structured envelope honest about page size and `nextOffset`.
+      const page = items.slice(offset, offset + clamped);
+      return ok(withNextOffset({ items: page, offset, limit: clamped }), { structured: true });
+    },
   );
 
   // ── Get pack details ──────────────────────────────────────────────────────
@@ -42,6 +72,8 @@ export function registerPackTools(agent: AgentContext): void {
       inputSchema: {
         pack_id: z.string().describe('The unique pack ID (e.g. "p_abc123")'),
       },
+      // U8: tier-1 structured output — full Pack-with-items shape.
+      outputSchema: GetPackOutputSchema.shape,
       annotations: {
         title: 'Get Pack',
         readOnlyHint: true,
@@ -53,6 +85,7 @@ export function registerPackTools(agent: AgentContext): void {
       call(agent.api.user.packs({ packId: pack_id }).get(), {
         action: 'get pack',
         resourceHint: `pack ${pack_id}`,
+        structured: true,
       }),
   );
 

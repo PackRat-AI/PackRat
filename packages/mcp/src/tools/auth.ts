@@ -22,6 +22,7 @@
  */
 
 import { call } from '../client';
+import { WhoAmIOutputSchema } from '../output-schemas';
 import type { AgentContext } from '../types';
 
 export function registerAuthTools(agent: AgentContext): void {
@@ -33,6 +34,10 @@ export function registerAuthTools(agent: AgentContext): void {
       title: 'Who Am I',
       description: 'Return the currently authenticated PackRat user profile.',
       inputSchema: {},
+      // U8: declare the structured-output shape so clients can consume
+      // the user profile without reparsing the text block. The handler
+      // opts into structured emission via `{ structured: true }`.
+      outputSchema: WhoAmIOutputSchema.shape,
       annotations: {
         title: 'Who Am I',
         readOnlyHint: true,
@@ -40,6 +45,7 @@ export function registerAuthTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async () => call(agent.api.user.user.profile.get(), { action: 'fetch profile' }),
+    async () =>
+      call(agent.api.user.user.profile.get(), { action: 'fetch profile', structured: true }),
   );
 }

@@ -20,10 +20,38 @@
  */
 
 import { z } from 'zod';
-import { call } from '../client';
+import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
+import {
+  AdminActiveUsersOutputSchema,
+  AdminAnalyticsActivityOutputSchema,
+  AdminAnalyticsGrowthOutputSchema,
+  AdminAnalyticsPackBreakdownOutputSchema,
+  AdminCatalogOverviewOutputSchema,
+  AdminStatsOutputSchema,
+} from '../output-schemas';
 import type { AgentContext } from '../types';
 
 const ADMIN = { requiresAdmin: true as const };
+
+// U8: shorthand for the paginated-list `limit` schema with the
+// connector-store cap baked into the description. The clamp happens
+// server-side; the upper bound here is intentionally generous so a
+// model that ignores the cap doesn't get a validation rejection on a
+// recoverable mistake.
+const PAGINATED_LIMIT_FIELD = z
+  .number()
+  .int()
+  .min(1)
+  .max(200)
+  .default(PAGINATION_LIMIT_MAX)
+  .describe(`Page size (clamped to ${PAGINATION_LIMIT_MAX} server-side).`);
+
+const PAGINATED_OFFSET_FIELD = z
+  .number()
+  .int()
+  .min(0)
+  .default(0)
+  .describe('Pagination offset; use `nextOffset` from the previous response.');
 
 /**
  * Common annotation defaults for read-style admin tools (stats, list,
@@ -46,28 +74,40 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Platform Stats',
       description: 'Get high-level platform stats: user, pack, and catalog counts.',
       inputSchema: {},
+      // U8: tier-1 structured output.
+      outputSchema: AdminStatsOutputSchema.shape,
       annotations: { title: 'Admin: Platform Stats', ...READ_ADMIN_ANNOTATIONS },
     },
-    async () => call(agent.api.admin.admin.stats.get(), { action: 'fetch admin stats', ...ADMIN }),
+    async () =>
+      call(agent.api.admin.admin.stats.get(), {
+        action: 'fetch admin stats',
+        structured: true,
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
     'packrat_admin_list_users',
     {
       title: 'Admin: List Users',
-      description: 'Search/list users (paginated). Use `q` to filter by email or name.',
+      description:
+        `Search/list users (paginated). Use \`q\` to filter by email or name. ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side; the API returns ` +
+        `a \`{ data, total, limit, offset }\` envelope which the model can walk via the next \`offset\`.`,
       inputSchema: {
         q: z.string().optional(),
-        limit: z.number().int().min(1).max(200).default(50),
-        offset: z.number().int().min(0).default(0),
+        limit: PAGINATED_LIMIT_FIELD,
+        offset: PAGINATED_OFFSET_FIELD,
       },
       annotations: { title: 'Admin: List Users', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset }) =>
-      call(agent.api.admin.admin['users-list'].get({ query: { q, limit, offset } }), {
-        action: 'list users',
-        ...ADMIN,
-      }),
+      call(
+        agent.api.admin.admin['users-list'].get({
+          query: { q, limit: clampLimit(limit), offset },
+        }),
+        { action: 'list users', ...ADMIN },
+      ),
   );
 
   agent.server.registerTool(
@@ -97,11 +137,13 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_list_packs',
     {
       title: 'Admin: List Packs',
-      description: 'Search/list packs across all users (admin view).',
+      description:
+        `Search/list packs across all users (admin view). ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side; walk via the next \`offset\` field.`,
       inputSchema: {
         q: z.string().optional(),
-        limit: z.number().int().min(1).max(200).default(50),
-        offset: z.number().int().min(0).default(0),
+        limit: PAGINATED_LIMIT_FIELD,
+        offset: PAGINATED_OFFSET_FIELD,
         include_deleted: z.boolean().default(false),
       },
       annotations: { title: 'Admin: List Packs', ...READ_ADMIN_ANNOTATIONS },
@@ -109,7 +151,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset, include_deleted }) =>
       call(
         agent.api.admin.admin['packs-list'].get({
-          query: { q, limit, offset, includeDeleted: include_deleted },
+          query: { q, limit: clampLimit(limit), offset, includeDeleted: include_deleted },
         }),
         { action: 'list packs (admin)', ...ADMIN },
       ),
@@ -141,19 +183,23 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_list_catalog',
     {
       title: 'Admin: List Catalog Items',
-      description: 'Search/list catalog items across the platform.',
+      description:
+        `Search/list catalog items across the platform. ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side; walk via the next \`offset\`.`,
       inputSchema: {
         q: z.string().optional(),
-        limit: z.number().int().min(1).max(200).default(50),
-        offset: z.number().int().min(0).default(0),
+        limit: PAGINATED_LIMIT_FIELD,
+        offset: PAGINATED_OFFSET_FIELD,
       },
       annotations: { title: 'Admin: List Catalog Items', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset }) =>
-      call(agent.api.admin.admin['catalog-list'].get({ query: { q, limit, offset } }), {
-        action: 'list catalog (admin)',
-        ...ADMIN,
-      }),
+      call(
+        agent.api.admin.admin['catalog-list'].get({
+          query: { q, limit: clampLimit(limit), offset },
+        }),
+        { action: 'list catalog (admin)', ...ADMIN },
+      ),
   );
 
   agent.server.registerTool(
@@ -224,20 +270,24 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_search_trails',
     {
       title: 'Admin: Search Trails',
-      description: 'Search OSM trails by name/sport (admin view).',
+      description:
+        `Search OSM trails by name/sport (admin view). ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side; the response carries an \`offset\` and a \`hasMore\` flag for continuation.`,
       inputSchema: {
         q: z.string().min(1),
         sport: z.string().optional(),
-        limit: z.number().int().min(1).max(200).default(50),
-        offset: z.number().int().min(0).default(0),
+        limit: PAGINATED_LIMIT_FIELD,
+        offset: PAGINATED_OFFSET_FIELD,
       },
       annotations: { title: 'Admin: Search Trails', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, sport, limit, offset }) =>
-      call(agent.api.admin.admin.trails.search.get({ query: { q, sport, limit, offset } }), {
-        action: 'admin search trails',
-        ...ADMIN,
-      }),
+      call(
+        agent.api.admin.admin.trails.search.get({
+          query: { q, sport, limit: clampLimit(limit), offset },
+        }),
+        { action: 'admin search trails', ...ADMIN },
+      ),
   );
 
   agent.server.registerTool(
@@ -276,11 +326,13 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_list_trail_condition_reports',
     {
       title: 'Admin: List Trail Condition Reports',
-      description: 'List trail condition reports across all users (admin).',
+      description:
+        `List trail condition reports across all users (admin). ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side; walk via the next \`offset\`.`,
       inputSchema: {
         q: z.string().optional(),
-        limit: z.number().int().min(1).max(200).default(50),
-        offset: z.number().int().min(0).default(0),
+        limit: PAGINATED_LIMIT_FIELD,
+        offset: PAGINATED_OFFSET_FIELD,
         include_deleted: z.boolean().default(false),
       },
       annotations: {
@@ -291,7 +343,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset, include_deleted }) =>
       call(
         agent.api.admin.admin.trails.conditions.get({
-          query: { q, limit, offset, includeDeleted: include_deleted },
+          query: { q, limit: clampLimit(limit), offset, includeDeleted: include_deleted },
         }),
         { action: 'list trail condition reports (admin)', ...ADMIN },
       ),
@@ -330,6 +382,8 @@ export function registerAdminTools(agent: AgentContext): void {
         period: z.enum(['day', 'week', 'month']).optional(),
         range: z.number().int().min(1).optional(),
       },
+      // U8: tier-1 — array of growth points.
+      outputSchema: { items: AdminAnalyticsGrowthOutputSchema },
       annotations: { title: 'Admin: Analytics Growth', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ period, range }) =>
@@ -348,6 +402,8 @@ export function registerAdminTools(agent: AgentContext): void {
         period: z.enum(['day', 'week', 'month']).optional(),
         range: z.number().int().min(1).optional(),
       },
+      // U8: tier-1 — array of activity points.
+      outputSchema: { items: AdminAnalyticsActivityOutputSchema },
       annotations: { title: 'Admin: Analytics Activity', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ period, range }) =>
@@ -363,11 +419,14 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Active Users',
       description: 'Daily/weekly/monthly active user counts.',
       inputSchema: {},
+      // U8: tier-1 — { dau, wau, mau }.
+      outputSchema: AdminActiveUsersOutputSchema.shape,
       annotations: { title: 'Admin: Active Users', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.platform['active-users'].get(), {
         action: 'admin analytics active users',
+        structured: true,
         ...ADMIN,
       }),
   );
@@ -378,6 +437,8 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Pack Breakdown',
       description: 'Distribution of packs by category.',
       inputSchema: {},
+      // U8: tier-1 — array of { category, count }.
+      outputSchema: { items: AdminAnalyticsPackBreakdownOutputSchema },
       annotations: { title: 'Admin: Pack Breakdown', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
@@ -395,11 +456,14 @@ export function registerAdminTools(agent: AgentContext): void {
       title: 'Admin: Catalog Overview',
       description: 'Catalog-wide overview: item count, brands, price ranges, embedding coverage.',
       inputSchema: {},
+      // U8: tier-1 — full CatalogOverview shape.
+      outputSchema: AdminCatalogOverviewOutputSchema.shape,
       annotations: { title: 'Admin: Catalog Overview', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
       call(agent.api.admin.admin.analytics.catalog.overview.get(), {
         action: 'admin catalog overview',
+        structured: true,
         ...ADMIN,
       }),
   );
@@ -408,15 +472,17 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_analytics_top_brands',
     {
       title: 'Admin: Top Brands',
-      description: 'Top gear brands in the catalog by item count.',
-      inputSchema: { limit: z.number().int().min(1).max(200).default(20) },
+      description:
+        `Top gear brands in the catalog by item count. ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
+      inputSchema: { limit: PAGINATED_LIMIT_FIELD },
       annotations: { title: 'Admin: Top Brands', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
-      call(agent.api.admin.admin.analytics.catalog.brands.get({ query: { limit } }), {
-        action: 'admin catalog brands',
-        ...ADMIN,
-      }),
+      call(
+        agent.api.admin.admin.analytics.catalog.brands.get({ query: { limit: clampLimit(limit) } }),
+        { action: 'admin catalog brands', ...ADMIN },
+      ),
   );
 
   agent.server.registerTool(
@@ -453,28 +519,37 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_analytics_etl_jobs',
     {
       title: 'Admin: ETL Jobs',
-      description: 'Recent ETL pipeline jobs.',
-      inputSchema: { limit: z.number().int().min(1).max(200).default(20) },
+      description:
+        `Recent ETL pipeline jobs. ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
+      inputSchema: { limit: PAGINATED_LIMIT_FIELD },
       annotations: { title: 'Admin: ETL Jobs', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
-      call(agent.api.admin.admin.analytics.catalog.etl.get({ query: { limit } }), {
-        action: 'admin ETL jobs',
-        ...ADMIN,
-      }),
+      call(
+        agent.api.admin.admin.analytics.catalog.etl.get({ query: { limit: clampLimit(limit) } }),
+        {
+          action: 'admin ETL jobs',
+          ...ADMIN,
+        },
+      ),
   );
 
   agent.server.registerTool(
     'packrat_admin_analytics_etl_failure_summary',
     {
       title: 'Admin: ETL Failure Summary',
-      description: 'Top recent ETL failure patterns.',
-      inputSchema: { limit: z.number().int().min(1).max(50).default(10) },
+      description:
+        `Top recent ETL failure patterns. ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
+      inputSchema: { limit: PAGINATED_LIMIT_FIELD },
       annotations: { title: 'Admin: ETL Failure Summary', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
       call(
-        agent.api.admin.admin.analytics.catalog.etl['failure-summary'].get({ query: { limit } }),
+        agent.api.admin.admin.analytics.catalog.etl['failure-summary'].get({
+          query: { limit: clampLimit(limit) },
+        }),
         { action: 'admin ETL failure summary', ...ADMIN },
       ),
   );
@@ -483,17 +558,19 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_analytics_etl_job_failures',
     {
       title: 'Admin: ETL Job Failures',
-      description: 'Per-job ETL failure drill-down.',
+      description:
+        `Per-job ETL failure drill-down. ` +
+        `Page size is capped at ${PAGINATION_LIMIT_MAX} server-side.`,
       inputSchema: {
         job_id: z.string(),
-        limit: z.number().int().min(1).max(200).default(50),
+        limit: PAGINATED_LIMIT_FIELD,
       },
       annotations: { title: 'Admin: ETL Job Failures', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ job_id, limit }) =>
       call(
         agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).failures.get({
-          query: { limit },
+          query: { limit: clampLimit(limit) },
         }),
         { action: 'admin ETL job failures', resourceHint: `job ${job_id}`, ...ADMIN },
       ),
