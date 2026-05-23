@@ -1,0 +1,1194 @@
+#!/usr/bin/env bun
+/**
+ * U18: pre-submission readiness probe for the PackRat MCP Worker.
+ *
+ * Operator runs this before filing Anthropic's Connector Store form
+ * (https://clau.de/mcp-directory-submission). CI can run it via
+ * `workflow_dispatch` from `.github/workflows/mcp-readiness.yml`. The script
+ * probes a target URL (default `https://mcp.packratai.com`) plus the brand
+ * domain (`packratai.com`) and emits a clear PASS/FAIL/WARN line per check.
+ * Exits 0 only when every check passes; CI gates the deploy tag on green.
+ *
+ * Why this exists separately from the unit tests:
+ *   The unit suite (`packages/mcp/src/__tests__/*.test.ts`) asserts the
+ *   in-process shape of the worker. This script is the **deployed-server**
+ *   probe — it catches the gaps the unit suite cannot:
+ *     - DNS / TLS / custom-domain reachability
+ *     - WAF blocks of Anthropic's discovery probes
+ *     - The KV-backed Claude pre-registration actually landing
+ *     - The brand domain rendering the public docs page
+ *
+ * Anthropic's documented rejection-reason taxonomy (per the connector-store
+ * docs as of plan-drafting) shapes the check order:
+ *   1.  TLS reachability                         — table-stakes
+ *   2.  /mcp returns 401 WWW-Authenticate        — RFC 9728 §5.1
+ *   3.  /.well-known/oauth-protected-resource    — RFC 9728 metadata
+ *   4.  /.well-known/oauth-authorization-server  — RFC 8414 metadata
+ *   5.  Pre-registered Claude clients reachable  — install flow gate
+ *   6.  DCR gate active (401 without bearer)     — security posture
+ *   7.  Favicon at OAuth domain                  — domain-ownership probe
+ *   8.  Public docs URL                          — reviewer-facing
+ *   9.  Privacy + Terms reachable                — immediate-reject cause
+ *  10.  Support contact resolvable               — listing requirement
+ *  11.  /health is healthy                       — operator + uptime gate
+ *  12.  Tool annotations on every tool           — #1 rejection cause
+ *  13.  Tool descriptions non-promotional        — content rules
+ *
+ * CLI:
+ *   bun packages/mcp/scripts/submission-readiness.ts
+ *   bun packages/mcp/scripts/submission-readiness.ts --url https://staging.example.com
+ *   bun packages/mcp/scripts/submission-readiness.ts --json
+ *
+ * Output:
+ *   Default — colour-coded one-line-per-check + a `N/13 passed` summary.
+ *   --json  — `{ checks: [...], summary: { passed, failed, warned } }`.
+ *
+ * Exit codes:
+ *   0 — every check passed
+ *   1 — at least one check failed
+ *   2 — bad CLI args
+ *
+ * Run env: Bun runtime (Node APIs are available). Do NOT run this against
+ * production until the worker has actually been deployed; the operator runs
+ * it once the deploy is live, and CI runs it on-demand via workflow_dispatch.
+ */
+
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ── Public types (also re-exported for the unit tests) ────────────────────
+
+export type CheckStatus = 'pass' | 'fail' | 'warn';
+
+export interface CheckResult {
+  /** Stable identifier for the check (used in JSON output). */
+  name: string;
+  /** Human-readable label printed in default output. */
+  label: string;
+  status: CheckStatus;
+  /** Short detail line printed after the status. */
+  details: string;
+}
+
+export interface ReadinessSummary {
+  passed: number;
+  failed: number;
+  warned: number;
+  total: number;
+}
+
+export interface ReadinessReport {
+  url: string;
+  brandDomain: string;
+  checks: CheckResult[];
+  summary: ReadinessSummary;
+}
+
+// ── Defaults & constants ──────────────────────────────────────────────────
+
+export const DEFAULT_TARGET_URL = 'https://mcp.packratai.com';
+export const DEFAULT_BRAND_DOMAIN = 'https://packratai.com';
+
+/**
+ * Marketing-claim words that get listings rejected for promotional language.
+ * Matching is case-insensitive on whole-word boundaries; "AI" alone is fine
+ * (it's factual) but "AI-powered" *as a hype phrase* is flagged.
+ */
+export const FORBIDDEN_PROMO_PATTERNS: ReadonlyArray<{ pattern: RegExp; label: string }> = [
+  { pattern: /\brevolutionary\b/i, label: 'revolutionary' },
+  { pattern: /\bbest[- ]in[- ]class\b/i, label: 'best-in-class' },
+  { pattern: /\bworld[- ]class\b/i, label: 'world-class' },
+  { pattern: /\bcutting[- ]edge\b/i, label: 'cutting-edge' },
+  { pattern: /\bstate[- ]of[- ]the[- ]art\b/i, label: 'state-of-the-art' },
+  { pattern: /\bgame[- ]chang(?:er|ing)\b/i, label: 'game-changer' },
+  // "AI-powered" as a marketing value claim — "AI for X" / "uses AI" is fine.
+  { pattern: /\bAI[- ]powered\b/i, label: 'AI-powered (value claim)' },
+];
+
+/** Required scopes the protected-resource metadata MUST advertise. */
+export const REQUIRED_SCOPES = ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin'] as const;
+
+/** Per-request fetch timeout in ms. */
+const FETCH_TIMEOUT_MS = 10_000;
+
+// Module-scope regex literals (biome rule `useTopLevelRegex`): hoisted so
+// repeated check invocations don't recompile the literals.
+const RESOURCE_METADATA_RE = /resource_metadata=/i;
+const SCOPE_PARAM_RE = /scope=/i;
+
+// ── CLI parsing ───────────────────────────────────────────────────────────
+
+interface CliArgs {
+  url: string;
+  brandDomain: string;
+  json: boolean;
+  catalogPath: string | null;
+  /**
+   * Operator-facing override for the Claude client_id probe (check 5).
+   * If unset the check WARNs with the gap-note rather than asserting.
+   */
+  claudeClientId: string | null;
+  help: boolean;
+}
+
+export function parseArgs(argv: readonly string[]): CliArgs {
+  const args: CliArgs = {
+    url: DEFAULT_TARGET_URL,
+    brandDomain: DEFAULT_BRAND_DOMAIN,
+    json: false,
+    catalogPath: null,
+    claudeClientId: null,
+    help: false,
+  };
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    switch (arg) {
+      case '--url':
+        args.url = stripTrailingSlash(requireValue({ argv, idx: ++i, name: '--url' }));
+        break;
+      case '--brand-domain':
+        args.brandDomain = stripTrailingSlash(
+          requireValue({ argv, idx: ++i, name: '--brand-domain' }),
+        );
+        break;
+      case '--catalog':
+        args.catalogPath = requireValue({ argv, idx: ++i, name: '--catalog' });
+        break;
+      case '--claude-client-id':
+        args.claudeClientId = requireValue({ argv, idx: ++i, name: '--claude-client-id' });
+        break;
+      case '--json':
+        args.json = true;
+        break;
+      case '-h':
+      case '--help':
+        args.help = true;
+        break;
+      default:
+        throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+  return args;
+}
+
+function requireValue(opts: { argv: readonly string[]; idx: number; name: string }): string {
+  const v = opts.argv[opts.idx];
+  if (!v) throw new Error(`${opts.name} requires a value`);
+  return v;
+}
+
+function stripTrailingSlash(url: string): string {
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+function printHelp(): void {
+  console.log(`submission-readiness — pre-submission probe for the PackRat MCP Worker
+
+Usage:
+  bun packages/mcp/scripts/submission-readiness.ts [--url URL] [--brand-domain URL] [--catalog PATH] [--claude-client-id ID] [--json]
+
+Flags:
+  --url <url>               MCP Worker base URL (default: ${DEFAULT_TARGET_URL})
+  --brand-domain <url>      PackRat brand domain (default: ${DEFAULT_BRAND_DOMAIN})
+  --catalog <path>          Override the catalog JSON path (default: auto-detect)
+  --claude-client-id <id>   Pre-registered Claude client_id to probe (check 5).
+                            Without it, check 5 WARNs and surfaces the gap-note.
+  --json                    Emit machine-readable JSON; suppresses colour.
+  -h, --help                Print this help.
+
+Exit codes:
+  0  every check passed
+  1  at least one check failed
+  2  bad CLI args
+`);
+}
+
+// ── ANSI colour helpers ───────────────────────────────────────────────────
+
+const ANSI = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  dim: '\x1b[2m',
+  bold: '\x1b[1m',
+};
+
+function isTty(): boolean {
+  return Boolean(process.stdout.isTTY);
+}
+
+function colorize(text: string, color: keyof typeof ANSI): string {
+  return isTty() ? `${ANSI[color]}${text}${ANSI.reset}` : text;
+}
+
+const STATUS_GLYPH: Record<CheckStatus, string> = {
+  pass: '✓',
+  fail: '✗',
+  warn: '!',
+};
+
+const STATUS_COLOR: Record<CheckStatus, keyof typeof ANSI> = {
+  pass: 'green',
+  fail: 'red',
+  warn: 'yellow',
+};
+
+// ── HTTP primitive ────────────────────────────────────────────────────────
+
+export interface ProbeResponse {
+  ok: boolean;
+  status: number;
+  headers: Headers;
+  bodyText: string;
+  url: string;
+  error?: string;
+}
+
+export interface ProbeOptions {
+  url: string;
+  init?: RequestInit;
+  fetchImpl?: typeof fetch;
+}
+
+/**
+ * Fetch wrapper with a 10s timeout and a never-throws contract — every
+ * branch returns a ProbeResponse so the calling check can format its
+ * details deterministically.
+ */
+export async function probe(opts: ProbeOptions): Promise<ProbeResponse> {
+  const { url, init = {}, fetchImpl = globalThis.fetch } = opts;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetchImpl(url, { ...init, signal: controller.signal, redirect: 'manual' });
+    const bodyText = await res.text().catch(() => '');
+    return {
+      ok: res.ok,
+      status: res.status,
+      headers: res.headers,
+      bodyText,
+      url,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      headers: new Headers(),
+      bodyText: '',
+      url,
+      error: (err as Error).message ?? String(err),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Check primitives (exported for unit tests) ────────────────────────────
+
+/**
+ * Check 1 — TLS + custom domain reachability. The worker root MUST return
+ * 200 over HTTPS, with no insecure redirect, and the URL host must match
+ * the targeted hostname.
+ */
+export function checkTlsReachability(targetUrl: string, res: ProbeResponse): CheckResult {
+  const name = 'tls_reachability';
+  const label = '1. TLS + custom domain reachability';
+  if (!targetUrl.startsWith('https://')) {
+    return { name, label, status: 'fail', details: `target URL is not HTTPS: ${targetUrl}` };
+  }
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 200) {
+    return { name, label, status: 'fail', details: `GET / returned ${res.status} (expected 200)` };
+  }
+  try {
+    const targetHost = new URL(targetUrl).host;
+    const resHost = new URL(res.url).host;
+    if (targetHost !== resHost) {
+      return {
+        name,
+        label,
+        status: 'fail',
+        details: `response URL host ${resHost} ≠ target host ${targetHost}`,
+      };
+    }
+  } catch (err) {
+    return { name, label, status: 'fail', details: `URL parse error: ${(err as Error).message}` };
+  }
+  return { name, label, status: 'pass', details: `200 OK over HTTPS at ${targetUrl}` };
+}
+
+/**
+ * Check 2 — `/mcp` returns 401 with a spec-compliant `WWW-Authenticate`
+ * header (`resource_metadata=...` per RFC 9728 §5.1 plus `scope=...`). A
+ * 404 or 500 here would silently break the entire MCP discovery handshake.
+ */
+export function checkStreamableHttpAuth(res: ProbeResponse): CheckResult {
+  const name = 'streamable_http_auth';
+  const label = '2. /mcp returns 401 with RFC 9728 WWW-Authenticate';
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 401) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `POST /mcp returned ${res.status} (expected 401)`,
+    };
+  }
+  const wwwAuth = res.headers.get('www-authenticate') ?? '';
+  if (!wwwAuth) {
+    return { name, label, status: 'fail', details: '401 response missing WWW-Authenticate header' };
+  }
+  if (!RESOURCE_METADATA_RE.test(wwwAuth)) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `WWW-Authenticate lacks resource_metadata=... : ${wwwAuth}`,
+    };
+  }
+  if (!SCOPE_PARAM_RE.test(wwwAuth)) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `WWW-Authenticate lacks scope=... : ${wwwAuth}`,
+    };
+  }
+  return { name, label, status: 'pass', details: '401 + resource_metadata + scope advertised' };
+}
+
+/**
+ * Check 3 — `/.well-known/oauth-protected-resource` (RFC 9728) returns a
+ * valid JSON document with `resource`, `authorization_servers`,
+ * `scopes_supported` (containing all four PackRat scopes), and
+ * `bearer_methods_supported` (including `'header'`).
+ */
+export function checkProtectedResourceMetadata(targetUrl: string, res: ProbeResponse): CheckResult {
+  const name = 'protected_resource_metadata';
+  const label = '3. /.well-known/oauth-protected-resource is well-formed';
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 200) {
+    return { name, label, status: 'fail', details: `GET returned ${res.status} (expected 200)` };
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(res.bodyText);
+  } catch (err) {
+    return { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` };
+  }
+  if (typeof body !== 'object' || body === null) {
+    return { name, label, status: 'fail', details: 'body is not a JSON object' };
+  }
+  const meta = body as Record<string, unknown>;
+  // resource — must match the expected pattern.
+  const expectedResource = `${targetUrl}/mcp`;
+  if (typeof meta.resource !== 'string') {
+    return { name, label, status: 'fail', details: 'missing or non-string "resource"' };
+  }
+  // The metadata is hard-pinned to prod; on a non-prod --url we still
+  // expect the metadata's `resource` to advertise the prod canonical URL.
+  // Accept either an exact match to the target's /mcp path or the canonical
+  // production URL — the canonical path is the binding-truth.
+  const canonicalProd = `${DEFAULT_TARGET_URL}/mcp`;
+  if (meta.resource !== expectedResource && meta.resource !== canonicalProd) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `resource "${meta.resource}" matches neither ${expectedResource} nor ${canonicalProd}`,
+    };
+  }
+  // authorization_servers — array with ≥1 entry.
+  if (!Array.isArray(meta.authorization_servers) || meta.authorization_servers.length === 0) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: 'authorization_servers must be a non-empty array',
+    };
+  }
+  // scopes_supported — array containing all four PackRat scopes.
+  if (!Array.isArray(meta.scopes_supported)) {
+    return { name, label, status: 'fail', details: 'scopes_supported is not an array' };
+  }
+  const scopes = meta.scopes_supported as unknown[];
+  const missing = REQUIRED_SCOPES.filter((s) => !scopes.includes(s));
+  if (missing.length > 0) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `scopes_supported missing: ${missing.join(', ')}`,
+    };
+  }
+  // bearer_methods_supported — includes 'header'.
+  if (
+    !Array.isArray(meta.bearer_methods_supported) ||
+    !(meta.bearer_methods_supported as unknown[]).includes('header')
+  ) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: 'bearer_methods_supported must include "header"',
+    };
+  }
+  return {
+    name,
+    label,
+    status: 'pass',
+    details: `resource=${meta.resource}, scopes_supported has all 4 PackRat scopes`,
+  };
+}
+
+/**
+ * Check 4 — `/.well-known/oauth-authorization-server` (RFC 8414) returns a
+ * valid JSON document with `code_challenge_methods_supported: ["S256"]`
+ * (mandatory — MCP clients refuse to proceed without it), the right grant
+ * types (`authorization_code`, `refresh_token`), and `response_types`
+ * containing `code`.
+ */
+export function checkAuthorizationServerMetadata(res: ProbeResponse): CheckResult {
+  const name = 'authorization_server_metadata';
+  const label = '4. /.well-known/oauth-authorization-server has S256 + correct grants';
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 200) {
+    return { name, label, status: 'fail', details: `GET returned ${res.status} (expected 200)` };
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(res.bodyText);
+  } catch (err) {
+    return { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` };
+  }
+  if (typeof body !== 'object' || body === null) {
+    return { name, label, status: 'fail', details: 'body is not a JSON object' };
+  }
+  const meta = body as Record<string, unknown>;
+  if (!Array.isArray(meta.code_challenge_methods_supported)) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: 'code_challenge_methods_supported is not an array',
+    };
+  }
+  if (!(meta.code_challenge_methods_supported as unknown[]).includes('S256')) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: 'code_challenge_methods_supported must include "S256"',
+    };
+  }
+  if (!Array.isArray(meta.grant_types_supported)) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: 'grant_types_supported is not an array',
+    };
+  }
+  const grants = meta.grant_types_supported as unknown[];
+  for (const required of ['authorization_code', 'refresh_token']) {
+    if (!grants.includes(required)) {
+      return {
+        name,
+        label,
+        status: 'fail',
+        details: `grant_types_supported missing "${required}"`,
+      };
+    }
+  }
+  if (
+    !Array.isArray(meta.response_types_supported) ||
+    !(meta.response_types_supported as unknown[]).includes('code')
+  ) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: 'response_types_supported must include "code"',
+    };
+  }
+  return { name, label, status: 'pass', details: 'S256 + auth_code/refresh + code response_type' };
+}
+
+/**
+ * Check 5 — Claude client_id is recognised by /authorize. The OAuth
+ * provider does not expose a public client-list endpoint, so we probe
+ * /authorize and treat a 400 with "unknown client" as a failure. Without
+ * a `--claude-client-id` arg the check WARNs and surfaces the gap.
+ */
+export function checkClaudeClientRegistration(
+  clientId: string | null,
+  res: ProbeResponse | null,
+): CheckResult {
+  const name = 'claude_client_registration';
+  const label = '5. Pre-registered Claude client recognised by /authorize';
+  if (!clientId || !res) {
+    return {
+      name,
+      label,
+      status: 'warn',
+      details:
+        'no --claude-client-id provided; library exposes no list endpoint. Verify manually via `wrangler kv key list ... | grep client`.',
+    };
+  }
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  const lowerBody = res.bodyText.toLowerCase();
+  if (
+    res.status === 400 &&
+    (lowerBody.includes('unknown client') || lowerBody.includes('invalid_client'))
+  ) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `/authorize rejected client_id=${clientId} with "unknown client" — pre-registration is missing`,
+    };
+  }
+  if (res.status >= 500) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `/authorize returned ${res.status} (server error)`,
+    };
+  }
+  return {
+    name,
+    label,
+    status: 'pass',
+    details: `/authorize accepts client_id=${clientId} (status ${res.status})`,
+  };
+}
+
+/**
+ * Check 6 — DCR gate is active. `POST /register` MUST return 401 both
+ * without any Authorization header AND with a wrong Bearer token. We
+ * don't probe the success path here — that would mutate KV.
+ */
+export function checkDcrGate(noAuth: ProbeResponse, fakeBearer: ProbeResponse): CheckResult {
+  const name = 'dcr_gate';
+  const label = '6. /register DCR gate rejects unauthenticated and fake-bearer probes';
+  if (noAuth.error) {
+    return { name, label, status: 'fail', details: `no-auth fetch error: ${noAuth.error}` };
+  }
+  if (noAuth.status !== 401) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `POST /register w/o Authorization returned ${noAuth.status} (expected 401)`,
+    };
+  }
+  if (fakeBearer.error) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `fake-bearer fetch error: ${fakeBearer.error}`,
+    };
+  }
+  if (fakeBearer.status !== 401) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `POST /register w/ fake bearer returned ${fakeBearer.status} (expected 401)`,
+    };
+  }
+  return { name, label, status: 'pass', details: 'both probes correctly rejected with 401' };
+}
+
+/**
+ * Check 7 — Favicon at the OAuth domain returns 200 with the right
+ * Content-Type and valid .ico magic bytes. Anthropic's domain-ownership
+ * probe targets the OAuth host (not the brand site), so a 404 here would
+ * fail intake silently.
+ */
+export function checkFaviconAtOauthDomain(res: ProbeResponse, body: Uint8Array): CheckResult {
+  const name = 'favicon_oauth_domain';
+  const label = '7. /favicon.ico at the OAuth domain has the right shape';
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 200) {
+    return { name, label, status: 'fail', details: `GET returned ${res.status} (expected 200)` };
+  }
+  const ct = (res.headers.get('content-type') ?? '').toLowerCase();
+  if (!ct.includes('image/x-icon') && !ct.includes('image/vnd.microsoft.icon')) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `Content-Type "${ct}" is not image/x-icon`,
+    };
+  }
+  if (body.byteLength < 4) {
+    return { name, label, status: 'fail', details: `body too short (${body.byteLength} bytes)` };
+  }
+  // .ico magic bytes: 00 00 01 00
+  if (body[0] !== 0x00 || body[1] !== 0x00 || body[2] !== 0x01 || body[3] !== 0x00) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `body does not start with .ico magic bytes (got ${[body[0], body[1], body[2], body[3]].map((b) => (b ?? 0).toString(16).padStart(2, '0')).join(' ')})`,
+    };
+  }
+  return {
+    name,
+    label,
+    status: 'pass',
+    details: `200 image/x-icon, ${body.byteLength} bytes, magic bytes OK`,
+  };
+}
+
+/**
+ * Check 8 — Public docs page on the brand domain renders. We don't parse
+ * the full DOM; we smoke-check that the page contains the three strings a
+ * reviewer would expect on the MCP page: "PackRat", "Claude.ai", "scope".
+ */
+export function checkPublicDocsPage(res: ProbeResponse, requiredTerms: string[]): CheckResult {
+  const name = 'public_docs_page';
+  const label = '8. Public docs URL (packratai.com/mcp) renders';
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 200) {
+    return { name, label, status: 'fail', details: `GET returned ${res.status} (expected 200)` };
+  }
+  const body = res.bodyText;
+  const missing = requiredTerms.filter((term) => !body.toLowerCase().includes(term.toLowerCase()));
+  if (missing.length > 0) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `body missing required terms: ${missing.join(', ')}`,
+    };
+  }
+  return {
+    name,
+    label,
+    status: 'pass',
+    details: `200 OK, body contains ${requiredTerms.join(', ')}`,
+  };
+}
+
+/**
+ * Check 9 — Privacy + Terms reachable on the brand domain AND contain
+ * MCP-specific copy (not just generic legal boilerplate). A missing
+ * MCP-specific section is an Anthropic immediate-reject cause.
+ */
+export function checkPrivacyAndTerms(
+  privacyRes: ProbeResponse,
+  termsRes: ProbeResponse,
+): CheckResult {
+  const name = 'privacy_and_terms';
+  const label = '9. /privacy-policy and /terms-of-service include MCP-specific copy';
+  for (const [pageName, res] of [
+    ['privacy-policy', privacyRes],
+    ['terms-of-service', termsRes],
+  ] as const) {
+    if (res.error) {
+      return { name, label, status: 'fail', details: `${pageName} fetch error: ${res.error}` };
+    }
+    if (res.status !== 200) {
+      return {
+        name,
+        label,
+        status: 'fail',
+        details: `${pageName} returned ${res.status} (expected 200)`,
+      };
+    }
+    const lower = res.bodyText.toLowerCase();
+    if (!lower.includes('mcp') && !lower.includes('connector')) {
+      return {
+        name,
+        label,
+        status: 'fail',
+        details: `${pageName} body contains neither "MCP" nor "connector" — the MCP-specific section is missing`,
+      };
+    }
+  }
+  return { name, label, status: 'pass', details: 'both pages return 200 and reference MCP' };
+}
+
+/**
+ * Check 10 — Support contact is resolvable from /health. The contact is
+ * also printed so the operator can confirm it matches the listing.
+ */
+export function checkSupportContact(healthBody: unknown): CheckResult {
+  const name = 'support_contact';
+  const label = '10. /health advertises a support contact';
+  if (typeof healthBody !== 'object' || healthBody === null) {
+    return { name, label, status: 'fail', details: '/health body is not a JSON object' };
+  }
+  const support = (healthBody as Record<string, unknown>).support;
+  if (typeof support !== 'string' || support.length === 0) {
+    return { name, label, status: 'fail', details: '/health is missing a "support" field' };
+  }
+  if (!support.startsWith('mailto:')) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `support contact is not a mailto: link (got "${support}")`,
+    };
+  }
+  return { name, label, status: 'pass', details: `support=${support}` };
+}
+
+/**
+ * Check 11 — /health returns `{ status: 'ok', probes: { kv, api } }` with
+ * both probes green. A degraded surface fails with the per-probe outcomes
+ * so an operator can see exactly which dependency tripped.
+ */
+export function checkHealthStatus(res: ProbeResponse): {
+  result: CheckResult;
+  body: unknown;
+} {
+  const name = 'health_status';
+  const label = '11. /health returns status: ok with both probes green';
+  if (res.error) {
+    return {
+      result: { name, label, status: 'fail', details: `fetch error: ${res.error}` },
+      body: null,
+    };
+  }
+  if (res.status !== 200) {
+    return {
+      result: {
+        name,
+        label,
+        status: 'fail',
+        details: `GET /health returned ${res.status} (expected 200; non-200 means degraded)`,
+      },
+      body: null,
+    };
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(res.bodyText);
+  } catch (err) {
+    return {
+      result: { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` },
+      body: null,
+    };
+  }
+  if (typeof body !== 'object' || body === null) {
+    return {
+      result: { name, label, status: 'fail', details: 'body is not a JSON object' },
+      body,
+    };
+  }
+  const obj = body as Record<string, unknown>;
+  if (obj.status !== 'ok') {
+    const probes =
+      obj.probes && typeof obj.probes === 'object'
+        ? JSON.stringify(obj.probes)
+        : '<no probes field>';
+    return {
+      result: {
+        name,
+        label,
+        status: 'fail',
+        details: `status=${String(obj.status)}, probes=${probes}`,
+      },
+      body,
+    };
+  }
+  return {
+    result: { name, label, status: 'pass', details: 'status=ok, probes all green' },
+    body,
+  };
+}
+
+/**
+ * Check 11b (rolled into the /health probe) — /status advertises
+ * scopes_supported, used as a sanity cross-check that the deployed worker
+ * matches the metadata we expect.
+ */
+export function checkStatusEndpoint(res: ProbeResponse): CheckResult {
+  const name = 'status_endpoint';
+  const label = '11b. /status advertises scopes_supported';
+  if (res.error) {
+    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
+  }
+  if (res.status !== 200) {
+    return { name, label, status: 'fail', details: `GET /status returned ${res.status}` };
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(res.bodyText);
+  } catch (err) {
+    return { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` };
+  }
+  if (typeof body !== 'object' || body === null) {
+    return { name, label, status: 'fail', details: 'body is not a JSON object' };
+  }
+  const scopes = (body as Record<string, unknown>).scopes_supported;
+  if (!Array.isArray(scopes)) {
+    return { name, label, status: 'fail', details: 'scopes_supported is not an array' };
+  }
+  const missing = REQUIRED_SCOPES.filter((s) => !(scopes as unknown[]).includes(s));
+  if (missing.length > 0) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `scopes_supported missing: ${missing.join(', ')}`,
+    };
+  }
+  return { name, label, status: 'pass', details: 'scopes_supported has all 4 PackRat scopes' };
+}
+
+/**
+ * Check 12 — Every tool in the catalog has `title`, `readOnlyHint`
+ * explicitly set, and (for non-read-only tools) `destructiveHint`
+ * explicitly set. This is Anthropic's #1 published rejection cause.
+ */
+export interface CatalogTool {
+  name: string;
+  title?: unknown;
+  description?: unknown;
+  annotations?: {
+    readOnlyHint?: unknown;
+    destructiveHint?: unknown;
+    idempotentHint?: unknown;
+    openWorldHint?: unknown;
+  };
+}
+
+export interface Catalog {
+  tools: CatalogTool[];
+  totalTools?: number;
+}
+
+export function checkToolAnnotations(catalog: Catalog | null, source: string): CheckResult {
+  const name = 'tool_annotations';
+  const label = '12. Every tool has title + readOnlyHint + destructiveHint (when applicable)';
+  if (!catalog) {
+    return { name, label, status: 'fail', details: `catalog not loaded (source: ${source})` };
+  }
+  if (!Array.isArray(catalog.tools) || catalog.tools.length === 0) {
+    return { name, label, status: 'fail', details: `catalog has no tools (source: ${source})` };
+  }
+  const offenders: string[] = [];
+  for (const tool of catalog.tools) {
+    const issues: string[] = [];
+    if (typeof tool.title !== 'string' || tool.title.length === 0) {
+      issues.push('title');
+    }
+    const ann = tool.annotations ?? {};
+    if (typeof ann.readOnlyHint !== 'boolean') {
+      issues.push('readOnlyHint');
+    } else if (ann.readOnlyHint === false && typeof ann.destructiveHint !== 'boolean') {
+      issues.push('destructiveHint');
+    }
+    if (issues.length > 0) {
+      offenders.push(`${tool.name}: missing ${issues.join(', ')}`);
+    }
+  }
+  if (offenders.length > 0) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `${offenders.length} tool(s) with annotation gaps: ${offenders.slice(0, 3).join(' | ')}${offenders.length > 3 ? ` (+${offenders.length - 3} more)` : ''}`,
+    };
+  }
+  return {
+    name,
+    label,
+    status: 'pass',
+    details: `all ${catalog.tools.length} tools have title + complete annotations`,
+  };
+}
+
+/**
+ * Check 13 — Tool descriptions are non-promotional. Scans every
+ * description for the FORBIDDEN_PROMO_PATTERNS list and flags matches.
+ */
+export function checkToolDescriptionsNonPromotional(catalog: Catalog | null): CheckResult {
+  const name = 'tool_descriptions_non_promotional';
+  const label = '13. Tool descriptions free of forbidden marketing words';
+  if (!catalog || !Array.isArray(catalog.tools)) {
+    return { name, label, status: 'fail', details: 'catalog not loaded' };
+  }
+  const flagged: string[] = [];
+  for (const tool of catalog.tools) {
+    if (typeof tool.description !== 'string') continue;
+    for (const { pattern, label: word } of FORBIDDEN_PROMO_PATTERNS) {
+      if (pattern.test(tool.description)) {
+        flagged.push(`${tool.name}: contains "${word}"`);
+      }
+    }
+  }
+  if (flagged.length > 0) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `${flagged.length} description(s) flagged: ${flagged.slice(0, 3).join(' | ')}${flagged.length > 3 ? ` (+${flagged.length - 3} more)` : ''}`,
+    };
+  }
+  return {
+    name,
+    label,
+    status: 'pass',
+    details: `${catalog.tools.length} descriptions scanned, none flagged`,
+  };
+}
+
+// ── Catalog loader ────────────────────────────────────────────────────────
+
+export async function loadCatalog(
+  overridePath: string | null,
+): Promise<{ catalog: Catalog | null; source: string }> {
+  const candidates: string[] = [];
+  if (overridePath) candidates.push(overridePath);
+  // Default: try the dumped catalog in the landing app.
+  const here = dirname(fileURLToPath(import.meta.url));
+  candidates.push(resolve(here, '../../../apps/landing/data/mcp-catalog.json'));
+  for (const path of candidates) {
+    try {
+      const text = await readFile(path, 'utf8');
+      const parsed = JSON.parse(text);
+      if (parsed && Array.isArray(parsed.tools)) {
+        return { catalog: parsed as Catalog, source: path };
+      }
+      return { catalog: null, source: `${path} (no tools array)` };
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        return {
+          catalog: null,
+          source: `${path} (load error: ${(err as Error).message})`,
+        };
+      }
+    }
+  }
+  return { catalog: null, source: `not found in: ${candidates.join(', ')}` };
+}
+
+// ── Runner ────────────────────────────────────────────────────────────────
+
+export interface RunOptions {
+  url?: string;
+  brandDomain?: string;
+  catalogPath?: string | null;
+  claudeClientId?: string | null;
+  fetchImpl?: typeof fetch;
+}
+
+/**
+ * Pure runner — no console output, no process.exit. Returns the report so
+ * callers (CLI, unit tests, CI) can format it however they need.
+ */
+export async function runReadinessChecks(opts: RunOptions = {}): Promise<ReadinessReport> {
+  const url = stripTrailingSlash(opts.url ?? DEFAULT_TARGET_URL);
+  const brandDomain = stripTrailingSlash(opts.brandDomain ?? DEFAULT_BRAND_DOMAIN);
+  const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
+
+  // Issue the network probes in parallel where independent.
+  const [
+    rootRes,
+    mcpRes,
+    protectedResourceRes,
+    asMetaRes,
+    registerNoAuth,
+    registerFakeBearer,
+    faviconRes,
+    docsRes,
+    privacyRes,
+    termsRes,
+    healthRes,
+    statusRes,
+    authorizeRes,
+  ] = await Promise.all([
+    probe({ url: `${url}/`, init: { method: 'GET' }, fetchImpl }),
+    probe({
+      url: `${url}/mcp`,
+      init: { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' },
+      fetchImpl,
+    }),
+    probe({
+      url: `${url}/.well-known/oauth-protected-resource`,
+      init: { method: 'GET' },
+      fetchImpl,
+    }),
+    probe({
+      url: `${url}/.well-known/oauth-authorization-server`,
+      init: { method: 'GET' },
+      fetchImpl,
+    }),
+    probe({ url: `${url}/register`, init: { method: 'POST', body: '{}' }, fetchImpl }),
+    probe({
+      url: `${url}/register`,
+      init: {
+        method: 'POST',
+        body: '{}',
+        headers: { Authorization: 'Bearer not-a-real-token' },
+      },
+      fetchImpl,
+    }),
+    probe({ url: `${url}/favicon.ico`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${brandDomain}/mcp`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${brandDomain}/privacy-policy`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${brandDomain}/terms-of-service`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${url}/health`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${url}/status`, init: { method: 'GET' }, fetchImpl }),
+    opts.claudeClientId
+      ? probe({
+          url: `${url}/authorize?client_id=${encodeURIComponent(opts.claudeClientId)}&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/api/mcp/auth_callback')}&code_challenge=test&code_challenge_method=S256&scope=mcp`,
+          init: { method: 'GET' },
+          fetchImpl,
+        })
+      : Promise.resolve(null),
+  ]);
+
+  // Catalog is filesystem-backed; load it in parallel with the network.
+  const { catalog, source: catalogSource } = await loadCatalog(opts.catalogPath ?? null);
+
+  // Re-fetch favicon as raw bytes for magic-byte inspection. (probe()'s
+  // .text() decode would mangle .ico binary content; this is the one
+  // surface that needs a real ArrayBuffer.)
+  let faviconBody = new Uint8Array(0);
+  if (faviconRes.status === 200) {
+    try {
+      const raw = await fetchImpl(`${url}/favicon.ico`, { method: 'GET' });
+      faviconBody = new Uint8Array(await raw.arrayBuffer());
+    } catch {
+      // Leave faviconBody empty — checkFaviconAtOauthDomain will FAIL.
+    }
+  }
+
+  const checks: CheckResult[] = [];
+  checks.push(checkTlsReachability(url, rootRes));
+  checks.push(checkStreamableHttpAuth(mcpRes));
+  checks.push(checkProtectedResourceMetadata(url, protectedResourceRes));
+  checks.push(checkAuthorizationServerMetadata(asMetaRes));
+  checks.push(checkClaudeClientRegistration(opts.claudeClientId ?? null, authorizeRes));
+  checks.push(checkDcrGate(registerNoAuth, registerFakeBearer));
+  checks.push(checkFaviconAtOauthDomain(faviconRes, faviconBody));
+  checks.push(checkPublicDocsPage(docsRes, ['PackRat', 'Claude.ai', 'scope']));
+  checks.push(checkPrivacyAndTerms(privacyRes, termsRes));
+
+  const healthCheck = checkHealthStatus(healthRes);
+  checks.push(checkSupportContact(healthCheck.body));
+  checks.push(healthCheck.result);
+  checks.push(checkStatusEndpoint(statusRes));
+  checks.push(checkToolAnnotations(catalog, catalogSource));
+  checks.push(checkToolDescriptionsNonPromotional(catalog));
+
+  const summary = summarize(checks);
+  return { url, brandDomain, checks, summary };
+}
+
+export function summarize(checks: CheckResult[]): ReadinessSummary {
+  let passed = 0;
+  let failed = 0;
+  let warned = 0;
+  for (const c of checks) {
+    if (c.status === 'pass') passed++;
+    else if (c.status === 'fail') failed++;
+    else warned++;
+  }
+  return { passed, failed, warned, total: checks.length };
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────
+
+export function formatReport(report: ReadinessReport): string {
+  const lines: string[] = [];
+  lines.push(colorize(`PackRat MCP submission readiness — target: ${report.url}`, 'bold'));
+  lines.push(colorize(`Brand domain: ${report.brandDomain}`, 'dim'));
+  lines.push('');
+  for (const check of report.checks) {
+    const glyph = colorize(STATUS_GLYPH[check.status], STATUS_COLOR[check.status]);
+    lines.push(`  ${glyph}  ${check.label}`);
+    lines.push(colorize(`      ${check.details}`, 'dim'));
+  }
+  lines.push('');
+  const summary = `${report.summary.passed}/${report.summary.total} passed`;
+  const summaryColor: keyof typeof ANSI =
+    report.summary.failed === 0 ? (report.summary.warned === 0 ? 'green' : 'yellow') : 'red';
+  lines.push(colorize(summary, summaryColor));
+  if (report.summary.warned > 0) {
+    lines.push(colorize(`(${report.summary.warned} warned — see notes above)`, 'yellow'));
+  }
+  return lines.join('\n');
+}
+
+export function formatJsonReport(report: ReadinessReport): string {
+  return JSON.stringify(
+    {
+      url: report.url,
+      brandDomain: report.brandDomain,
+      checks: report.checks.map((c) => ({
+        name: c.name,
+        label: c.label,
+        status: c.status,
+        details: c.details,
+      })),
+      summary: report.summary,
+    },
+    null,
+    2,
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  let args: CliArgs;
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (err) {
+    console.error(`Error: ${(err as Error).message}\n`);
+    printHelp();
+    process.exit(2);
+  }
+  if (args.help) {
+    printHelp();
+    return;
+  }
+
+  const report = await runReadinessChecks({
+    url: args.url,
+    brandDomain: args.brandDomain,
+    catalogPath: args.catalogPath,
+    claudeClientId: args.claudeClientId,
+  });
+
+  if (args.json) {
+    console.log(formatJsonReport(report));
+  } else {
+    console.log(formatReport(report));
+  }
+
+  process.exit(report.summary.failed > 0 ? 1 : 0);
+}
+
+// Only run main() when invoked as a script (not when imported by tests).
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error(`Error: ${(err as Error).message ?? err}`);
+    process.exit(1);
+  });
+}

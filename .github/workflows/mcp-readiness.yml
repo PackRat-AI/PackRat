@@ -1,0 +1,100 @@
+name: MCP Submission Readiness
+
+# U18: on-demand pre-submission probe for the PackRat MCP Worker.
+#
+# Operators trigger this workflow before pushing an `mcp-v*` deploy tag,
+# and again immediately after the deploy lands, to confirm every
+# Anthropic-side intake heuristic still passes. The script runs entirely
+# from the GitHub Actions runner — no Cloudflare credentials are needed
+# because it only speaks HTTPS to public endpoints (the worker URL +
+# packratai.com). Exit code 0 = green, 1 = at least one check failed.
+#
+# Local equivalent:
+#   bun packages/mcp/scripts/submission-readiness.ts
+#   bun packages/mcp/scripts/submission-readiness.ts --url https://staging.example.com
+#
+# Why workflow_dispatch only:
+#   The probe targets DEPLOYED infrastructure. Running it on every PR
+#   would either fail (worker not deployed for that branch) or test the
+#   wrong thing (the script doesn't exercise the PR's code; it exercises
+#   the live worker). Operator-driven trigger keeps the meaning clear.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'MCP Worker base URL (production default: https://mcp.packratai.com)'
+        required: false
+        default: 'https://mcp.packratai.com'
+      brand_domain:
+        description: 'PackRat brand domain (default: https://packratai.com)'
+        required: false
+        default: 'https://packratai.com'
+      claude_client_id:
+        description: 'Optional pre-registered Claude client_id to probe (lights up check 5)'
+        required: false
+        default: ''
+
+concurrency:
+  # One readiness probe per target URL at a time — back-to-back triggers
+  # don't race.
+  group: mcp-readiness-${{ github.event.inputs.target_url }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    name: Submission readiness (${{ github.event.inputs.target_url }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      # Make sure the catalog the readiness script reads is fresh.
+      # `dump-catalog.ts` is idempotent — re-running on an unchanged tool
+      # surface produces a byte-identical file.
+      - name: Refresh tool catalog
+        run: bun packages/mcp/scripts/dump-catalog.ts
+
+      - name: Run submission-readiness probe (human-readable)
+        run: |
+          ARGS=(--url "${{ github.event.inputs.target_url }}" \
+                --brand-domain "${{ github.event.inputs.brand_domain }}")
+          if [ -n "${{ github.event.inputs.claude_client_id }}" ]; then
+            ARGS+=(--claude-client-id "${{ github.event.inputs.claude_client_id }}")
+          fi
+          bun packages/mcp/scripts/submission-readiness.ts "${ARGS[@]}"
+
+      # Re-run with --json so the artifact captures the structured
+      # report. (Two runs is cheap: each is < 5s of HTTP probes.)
+      - name: Run submission-readiness probe (JSON artifact)
+        if: always()
+        run: |
+          ARGS=(--url "${{ github.event.inputs.target_url }}" \
+                --brand-domain "${{ github.event.inputs.brand_domain }}" \
+                --json)
+          if [ -n "${{ github.event.inputs.claude_client_id }}" ]; then
+            ARGS+=(--claude-client-id "${{ github.event.inputs.claude_client_id }}")
+          fi
+          bun packages/mcp/scripts/submission-readiness.ts "${ARGS[@]}" \
+            > readiness-report.json || true
+
+      - name: Upload readiness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: readiness-report
+          path: readiness-report.json
+          if-no-files-found: warn

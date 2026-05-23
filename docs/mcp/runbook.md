@@ -1594,6 +1594,135 @@ place a real ID is required.
 
 ---
 
+## U18 submission packet + readiness script
+
+The last unit of the connector-store readiness plan ships two operator
+surfaces: a programmatic pre-submission probe and a fully-resolved
+submission packet document. Together they replace the "operator reads
+13 different runbook sections and ad-hoc curls each one" pattern with a
+single command + a single doc.
+
+### `bun packages/mcp/scripts/submission-readiness.ts` — 13-check probe
+
+Default target is production; pass `--url` to probe a dev or staging
+URL. The script is **a deployed-server probe** — it cannot run before
+the Worker is actually deployed, and it never mutates KV (`/register`
+is probed for rejection only).
+
+```bash
+# Default: probes https://mcp.packratai.com and packratai.com/mcp
+bun packages/mcp/scripts/submission-readiness.ts
+
+# Against a staging worker
+bun packages/mcp/scripts/submission-readiness.ts --url https://packrat-mcp-dev.<acct>.workers.dev
+
+# CI / machine-readable
+bun packages/mcp/scripts/submission-readiness.ts --json
+
+# With a pre-registered Claude client_id (lights up check 5)
+bun packages/mcp/scripts/submission-readiness.ts --claude-client-id <id>
+```
+
+Exit codes: `0` = every check passed; `1` = at least one check failed;
+`2` = bad CLI args. Default output is colour-coded one-line-per-check
+plus a `N/13 passed` summary; `--json` emits a structured report
+suitable for piping into a CI job.
+
+#### The 13 checks at a glance
+
+| # | What it asserts | Failure recovery |
+| - | --- | --- |
+| 1 | TLS + custom domain reachability — `GET /` returns 200 over HTTPS on the right host | DNS not propagated; cert not provisioned; worker not deployed |
+| 2 | `/mcp` returns 401 with `WWW-Authenticate: Bearer resource_metadata=..., scope=...` (RFC 9728 §5.1) | OAuthProvider misconfigured; metadata wiring drifted |
+| 3 | `/.well-known/oauth-protected-resource` has `resource`, `authorization_servers`, all 4 scopes, `bearer_methods_supported: ['header']` | `packages/mcp/src/metadata.ts` drifted from the plan |
+| 4 | `/.well-known/oauth-authorization-server` advertises `S256`, `authorization_code`, `refresh_token`, `code` | OAuthProvider version mismatch; `allowPlainPKCE` flipped on |
+| 5 | Pre-registered Claude client_id resolves at `/authorize` (WARN without `--claude-client-id` — no public list endpoint exists) | Re-run `scripts/register-claude-clients.ts` |
+| 6 | `/register` DCR gate returns 401 to no-auth AND fake-bearer probes | `dcrRegisterGate` short-circuit broken; `MCP_INITIAL_ACCESS_TOKEN` exposed |
+| 7 | `/favicon.ico` returns 200 image/x-icon with the .ico magic bytes (Anthropic's domain-ownership probe) | `packages/mcp/src/favicon.ts` corrupted; re-embed per the U13 contract |
+| 8 | `packratai.com/mcp` renders with `PackRat`, `Claude.ai`, `scope` text present | Landing site deploy failed; route 404'd |
+| 9 | `/privacy-policy` and `/terms-of-service` return 200 AND contain `mcp` or `connector` | Legal pages missing the MCP addendum — Anthropic immediate-reject cause |
+| 10 | `/health` JSON includes `support: mailto:hello@packratai.com` | U12 mapping drifted |
+| 11 | `/health` returns `status: 'ok'` with `kv: ok` + `api: ok` | One dependency is degraded; check `wrangler tail` |
+| 11b | `/status` advertises `scopes_supported` with all 4 PackRat scopes | U16 metadata drifted |
+| 12 | Every tool in the catalog has `title` + `readOnlyHint` + `destructiveHint` (when not read-only) | Re-run `bun packages/mcp/scripts/dump-catalog.ts`; the U7 annotations test should have caught this |
+| 13 | Tool descriptions contain no forbidden marketing words (`revolutionary`, `AI-powered` as a value claim, etc.) | Edit the offending description in `packages/mcp/src/tools/*.ts`; re-dump catalog |
+
+#### Honest gaps in automation
+
+- **Check 5** (pre-registered Claude client) cannot be fully automated:
+  `@cloudflare/workers-oauth-provider` does not expose a public
+  client-list endpoint, so the script probes `/authorize` instead. When
+  `--claude-client-id` is omitted, the check WARNs with a gap-note
+  directing the operator to verify manually via
+  `wrangler kv key list ... | grep client`. This is the only check that
+  does not assert by default.
+- WAF rule audits are not probed — they require a non-Cloudflare-egress
+  client to test, which a Worker-side script cannot synthesize. See
+  § "TODO (operator): zone-level WAF Rate Limiting Rules" above.
+
+### Catalog source for checks 12 and 13
+
+The two catalog-shape checks read from
+`apps/landing/data/mcp-catalog.json` (dumped by U13's
+`scripts/dump-catalog.ts`). If the catalog file is missing or stale,
+re-run the dump first:
+
+```bash
+bun packages/mcp/scripts/dump-catalog.ts
+bun packages/mcp/scripts/submission-readiness.ts
+```
+
+Override the catalog path with `--catalog /tmp/other-catalog.json` if
+you need to probe an older snapshot.
+
+### Unit tests
+
+The check primitives are pure and have a comprehensive unit suite at
+`packages/mcp/src/__tests__/submission-readiness.test.ts` (62 tests).
+The PR-gate `mcp-test.yml` runs them alongside the existing 1,134-test
+surface. If a check's output shape ever drifts (new severity level,
+renamed status string), this suite fails loudly so the formatter, the
+CI workflow, and this runbook stay in lockstep.
+
+### Submission packet doc
+
+[`docs/mcp/submission-packet.md`](./submission-packet.md) is the
+operator's filing reference. It contains:
+
+- The form URL (<https://clau.de/mcp-directory-submission>).
+- A field-by-field mapping (every Anthropic form field → the
+  copy-pasteable PackRat value).
+- The 13-check pre-submission checklist with manual-verification
+  fallbacks.
+- The reviewer test account setup runbook.
+- The known-limitations / explicitly-deferred section (SSO, integration
+  `it.todo` cases, Tier 2 outputSchema tools, WAF rules, OTel pipeline).
+- The rejection-recovery playbook (same-day fixable vs. multi-day
+  re-architect).
+
+The operator does not commit the populated reviewer credentials to the
+repo — the doc carries `TODO (operator)` placeholders.
+
+### CI: `workflow_dispatch` trigger
+
+`.github/workflows/mcp-readiness.yml` runs the readiness script from
+GitHub Actions on-demand. Use it before pushing the `mcp-v*` deploy tag
+so the production probe runs against a CI-clean environment without
+needing local wrangler / bun.
+
+```
+GitHub → Actions → "MCP Submission Readiness" → Run workflow →
+  target_url: https://mcp.packratai.com  (default; override for staging)
+  claude_client_id: <optional — lights up check 5>
+  → Run
+```
+
+The job exits 0 on green / 1 on red so the workflow surfaces a clear
+status badge. Re-run after every deploy that touches metadata, scope,
+or annotation surfaces.
+
+---
+
 ## Common operations
 
 ### Deploy
