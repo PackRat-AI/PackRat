@@ -279,5 +279,23 @@ describe('embeddingHelper', () => {
       const result = getEmbeddingText(item, existingItem);
       expect(result).toContain('Headwear');
     });
+
+    it('handles variant with string values (not array) on item', () => {
+      const item = {
+        name: 'Pants',
+        variants: [{ attribute: 'Color', values: 'Black' as unknown as string[] }],
+      };
+      const result = getEmbeddingText(item);
+      expect(result).toContain('Color: Black');
+    });
+
+    it('handles variant with string values (not array) on existingItem', () => {
+      const item = { name: 'Pants' };
+      const existingItem = {
+        variants: [{ attribute: 'Size', values: 'Large' as unknown as string[] }],
+      };
+      const result = getEmbeddingText(item, existingItem);
+      expect(result).toContain('Size: Large');
+    });
   });
 });
