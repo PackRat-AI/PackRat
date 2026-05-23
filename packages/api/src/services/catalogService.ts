@@ -19,6 +19,7 @@ import {
   gt,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   or,
   type SQL,
@@ -234,6 +235,8 @@ export class CatalogService {
 
     const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
+    const vectorWhere = and(isNotNull(catalogItems.embedding), gt(similarity, 0.1));
+
     const [items, vectorTotalCountResult] = await Promise.all([
       this.db
         .select({
@@ -241,7 +244,7 @@ export class CatalogService {
           similarity,
         })
         .from(catalogItems)
-        .where(gt(similarity, 0.1))
+        .where(vectorWhere)
         .orderBy(desc(similarity))
         .limit(limit)
         .offset(offset),
@@ -250,7 +253,7 @@ export class CatalogService {
           totalCount: count(),
         })
         .from(catalogItems)
-        .where(gt(similarity, 0.1)),
+        .where(vectorWhere),
     ]);
     const totalCount = vectorTotalCountResult[0]?.totalCount ?? 0;
 
@@ -303,7 +306,7 @@ export class CatalogService {
           similarity,
         })
         .from(catalogItems)
-        .where(gt(similarity, 0.1))
+        .where(and(isNotNull(catalogItems.embedding), gt(similarity, 0.1)))
         .orderBy(desc(similarity))
         .limit(limit);
     });
