@@ -75,6 +75,11 @@ describe('json-utils', () => {
       expect(result?.reviewCount).toBe(128);
     });
 
+    it('defaults reviewCount to 0 for invalid strings', () => {
+      const result = mapJsonRowToItem({ reviewCount: 'not-a-number' });
+      expect(result?.reviewCount).toBe(0);
+    });
+
     it('defaults reviewCount to 0 for missing value', () => {
       const result = mapJsonRowToItem({});
       expect(result?.reviewCount).toBe(0);
@@ -88,6 +93,11 @@ describe('json-utils', () => {
     it('maps price from string', () => {
       const result = mapJsonRowToItem({ price: '$129.00' });
       expect(result?.price).toBeCloseTo(129.0);
+    });
+
+    it('ignores invalid price strings', () => {
+      const result = mapJsonRowToItem({ price: 'contact for price' });
+      expect(result?.price).toBeUndefined();
     });
 
     it('maps ratingValue from number', () => {
@@ -130,9 +140,19 @@ describe('json-utils', () => {
       expect(result?.categories).toEqual(['Footwear']);
     });
 
+    it('wraps malformed JSON array categories in an array', () => {
+      const result = mapJsonRowToItem({ categories: '["Footwear",' });
+      expect(result?.categories).toEqual(['["Footwear",']);
+    });
+
     it('wraps unparseable categories string in array', () => {
       const result = mapJsonRowToItem({ categories: 'Footwear' });
       expect(result?.categories).toEqual(['Footwear']);
+    });
+
+    it('ignores blank category strings', () => {
+      const result = mapJsonRowToItem({ categories: '   ' });
+      expect(result?.categories).toBeUndefined();
     });
 
     it('passes images array through, filtering non-strings', () => {
@@ -149,6 +169,12 @@ describe('json-utils', () => {
     it('maps weight from string', () => {
       const result = mapJsonRowToItem({ weight: '1.5 lbs' });
       expect(result?.weight).toBeGreaterThan(0);
+    });
+
+    it('ignores non-positive weight strings', () => {
+      const result = mapJsonRowToItem({ weight: '-1 lb' });
+      expect(result?.weight).toBeUndefined();
+      expect(result?.weightUnit).toBeUndefined();
     });
 
     it('ignores weight of zero', () => {
@@ -185,6 +211,11 @@ describe('json-utils', () => {
         techs: '{"Claimed Weight":"280g","Material":"Mesh"}',
       });
       expect(result?.techs).toEqual({ 'Claimed Weight': '280g', Material: 'Mesh' });
+    });
+
+    it('maps array-shaped techs strings to an empty object', () => {
+      const result = mapJsonRowToItem({ techs: '["unexpected"]' });
+      expect(result?.techs).toEqual({});
     });
 
     it('falls back to weight from techs Claimed Weight field', () => {
