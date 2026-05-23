@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { hashPassword, isValidApiKey, verifyPassword } from '../auth';
+import { hashPassword, isValidApiKey, timingSafeEqual, verifyPassword } from '../auth';
 
 vi.mock('bcryptjs', () => ({
   hash: vi.fn((password: string) => Promise.resolve(`hashed_${password}`)),
@@ -59,6 +59,12 @@ describe('auth utilities', () => {
 
     it('accepts a plain header map with uppercase X-API-Key', () => {
       expect(isValidApiKey({ 'X-API-Key': 'test-api-key' })).toBe(true);
+    });
+  });
+
+  describe('timingSafeEqual', () => {
+    it('rejects when the first value is longer than the second', () => {
+      expect(timingSafeEqual('test-api-key-extra', 'test-api-key')).toBe(false);
     });
   });
 });
