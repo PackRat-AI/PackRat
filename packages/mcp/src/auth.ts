@@ -48,6 +48,7 @@ import { ServiceMeta } from './constants';
 import { faviconResponse } from './favicon';
 import { renderLoginPage } from './login-page';
 import { unauthorizedResponse } from './metadata';
+import { checkRateLimit, loginRateLimitKey } from './rate-limit';
 import { SCOPES_SUPPORTED } from './scopes';
 import type { Env, Props } from './types';
 
@@ -183,30 +184,38 @@ function isOriginAcceptable(request: Request): boolean {
   return origin === reqOrigin;
 }
 
-// ── Login rate-limit stub (U14 swap point) ────────────────────────────────────
+// ── Login rate-limit (U14) ────────────────────────────────────────────────────
 
 /**
- * Per-IP login rate-limit check.
+ * Per-IP login rate-limit check, backed by `env.MCP_TOOLS_RL`.
  *
- * TODO (U14): swap this stub for a call to the Workers Rate Limiting
- * binding, e.g.:
+ * Returns `true` when the request is allowed and `false` when the budget
+ * for this caller has been exhausted. The signature is stable from the
+ * pre-U14 stub so `handleLoginPost` doesn't change.
  *
- *   const { success } = await env.MCP_TOOLS_RL.limit({ key: `login:${ip}` });
- *   return success;
+ * Key shape: `login:${ip || cfRay}` (see `loginRateLimitKey`). The
+ * `cfRay` fallback prevents all "missing IP" requests from collapsing to
+ * a single counter (which would effectively rate-limit legitimate users
+ * during a Cloudflare IP-header glitch). Both segments are URL-safe so
+ * the binding's namespace stays tidy.
  *
- * Today it always returns `true` (allowed) so the call site can be wired
- * up now — that way U14 only swaps the body of this function, not the
- * `handleLoginPost` flow. Keep the signature stable: a `Promise<boolean>`
- * where `false` means "rate-limited, reject".
+ * Dev fallback: when `env.MCP_TOOLS_RL` is undefined (local `vitest` or
+ * `wrangler dev` without a bound rate-limit namespace), `checkRateLimit`
+ * returns `true`. Production deploys always bind it per
+ * `wrangler.jsonc`.
  *
- * The `ip` argument is the best-effort caller IP, derived in the handler
- * via `cf-connecting-ip` with `x-forwarded-for` as a fallback. An empty
- * string is permitted and means "couldn't determine IP" — U14 should
- * still treat that as a request to limit (e.g. use the cf-ray as a
- * fallback key) rather than a free pass.
+ * The 60/60s budget is the same as the tool-call surface — a per-IP
+ * password-brute-force attempt can issue ~60 attempts/minute before being
+ * throttled. The zone-level WAF Rate Limiting Rules (TODO operator, see
+ * `docs/mcp/runbook.md` § "U14") layer on top with a coarser global limit.
  */
-export async function checkLoginRateLimit(_env: Env, _ip: string): Promise<boolean> {
-  return true;
+export async function checkLoginRateLimit(env: Env, ip: string): Promise<boolean> {
+  // When the IP can't be resolved, fall back to a per-handler stub key so
+  // every "missing IP" request doesn't collapse to one global counter.
+  // The handler passes cf-ray through if it has one, but the `loginRateLimitKey`
+  // helper still applies the `login:` prefix to keep namespaces separate.
+  const key = loginRateLimitKey(ip || 'no-ip');
+  return checkRateLimit(env, key);
 }
 
 // ── Better Auth response → user copy mapping ──────────────────────────────────
@@ -568,13 +577,16 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     );
   }
 
-  // ── Rate limit (U14 will swap the stub for env.MCP_TOOLS_RL.limit) ───────
+  // ── Rate limit (U14: backed by env.MCP_TOOLS_RL) ─────────────────────────
   // Caller IP is best-effort: Cloudflare populates `cf-connecting-ip`;
-  // `x-forwarded-for` is the standard fallback. An empty value is fine —
-  // the U14 implementation can decide how to handle it.
+  // `x-forwarded-for` is the standard fallback. When neither is present we
+  // fall back to `cf-ray` so missing-IP requests get their own counter
+  // instead of all collapsing to one global key (which would effectively
+  // rate-limit legitimate users during a CF IP-header glitch).
   const ip =
     request.headers.get('cf-connecting-ip') ??
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('cf-ray') ??
     '';
   const allowed = await checkLoginRateLimit(env, ip);
   if (!allowed) {

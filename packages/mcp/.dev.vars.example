@@ -12,3 +12,19 @@ PACKRAT_API_URL=http://localhost:8787
 # `packages/mcp/scripts/register-claude-clients.ts` reads this value to
 # pre-register Claude's callback URLs.
 MCP_INITIAL_ACCESS_TOKEN=
+
+# ── Bindings (NOT secrets — declared in wrangler.jsonc) ──────────────────────
+# The following are wired up as Cloudflare bindings in wrangler.jsonc and
+# automatically present in the Worker's `env` at runtime. They do NOT belong
+# in .dev.vars. Listed here so an engineer onboarding the package can find
+# the canonical location:
+#
+#   MCP_TOOLS_RL   — Workers Rate Limiting binding (U14). Keyed per-call
+#                    for tool dispatch (`${userId}:${toolName}`) and for the
+#                    /login form (`login:${ip || cfRay}`). Configured under
+#                    the `rate_limiting` block in wrangler.jsonc with a
+#                    60/60s budget; see docs/mcp/runbook.md § "U14 rate
+#                    limiting + KV purge" for the operator overview. In
+#                    local `wrangler dev` and `vitest` runs the binding may
+#                    be absent — both call sites fall back to "allowed" so
+#                    dev doesn't break.

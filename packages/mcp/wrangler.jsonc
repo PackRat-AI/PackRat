@@ -52,6 +52,41 @@
       "new_sqlite_classes": ["PackRatMCP"]
     }
   ],
+  // U14: Workers Rate Limiting binding for authenticated tool calls AND the
+  // /login POST gate. Keyed per-call by `${userId}:${toolName}` for tools and
+  // `login:${ip || cfRay}` for the login form. 60 successful checks per 60s
+  // is a deliberately humane default for interactive Claude-mediated use;
+  // bursts beyond it surface to the model as the U8 `rate_limited` error
+  // envelope (retryable=true) so the model can back off and retry.
+  //
+  // Block-key conventions follow `packages/api/wrangler.jsonc:44`:
+  //   - top-level key is `rate_limiting` (not `ratelimits`)
+  //   - per-binding field is `binding` (not `name`)
+  // `namespace_id` is a free-form Cloudflare identifier (per their docs);
+  // `"1"` matches the API package's convention.
+  //
+  // The binding is wired into:
+  //   - `PackRatMCP.installToolRegistrationProxy()` — wraps every tool handler
+  //   - `checkLoginRateLimit(env, ip)` in `packages/mcp/src/auth.ts`
+  // The dev fallback (`env.MCP_TOOLS_RL` undefined) returns success so local
+  // `vitest` and `wrangler dev` don't break when no binding is bound.
+  "rate_limiting": [
+    {
+      "binding": "MCP_TOOLS_RL",
+      "namespace_id": "1",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
+  // U14: Daily KV purge at 04:00 UTC. The `scheduled` handler in
+  // `packages/mcp/src/index.ts` calls `oauthProvider.purgeExpiredData(env)`
+  // to sweep orphaned + expired OAuth grants and tokens from KV. KV TTLs
+  // alone handle most expiry; this is defense-in-depth + cleanup of
+  // orphaned grants whose client was deleted. See docs/mcp/runbook.md
+  // § "U14 rate limiting + KV purge" for the operator-facing details and
+  // the 30s cron worker-time budget caveat.
+  "triggers": {
+    "crons": ["0 4 * * *"]
+  },
   "env": {
     // ───── Production ──────────────────────────────────────────────────────
     // Custom domain: mcp.packratai.com — brand-aligned with the landing site
@@ -87,7 +122,17 @@
           "tag": "v1",
           "new_sqlite_classes": ["PackRatMCP"]
         }
-      ]
+      ],
+      "rate_limiting": [
+        {
+          "binding": "MCP_TOOLS_RL",
+          "namespace_id": "1",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
+      "triggers": {
+        "crons": ["0 4 * * *"]
+      }
     },
     // ───── Dev ─────────────────────────────────────────────────────────────
     // Kept as an explicit env so `wrangler deploy --env dev` ships a
@@ -115,7 +160,17 @@
           "tag": "v1",
           "new_sqlite_classes": ["PackRatMCP"]
         }
-      ]
+      ],
+      "rate_limiting": [
+        {
+          "binding": "MCP_TOOLS_RL",
+          "namespace_id": "1",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
+      "triggers": {
+        "crons": ["0 4 * * *"]
+      }
     }
   }
 }

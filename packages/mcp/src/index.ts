@@ -36,12 +36,14 @@ import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server
 import { McpAgent } from 'agents/mcp';
 import { z } from 'zod';
 import { dcrRegisterGate, PackRatAuthHandler } from './auth';
-import { createMcpClients, type McpClients } from './client';
+import { createMcpClients, errResponse, type McpClients, type McpToolResult } from './client';
 import { ServiceMeta } from './constants';
 import { applyCorsHeaders } from './cors';
 import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
 import { registerPrompts } from './prompts';
+import { checkRateLimit, toolRateLimitKey } from './rate-limit';
 import { registerResources } from './resources';
+import { runScheduledPurge } from './scheduled';
 import { getVisibleTools } from './scopes';
 import { registerAdminTools } from './tools/admin';
 import { registerAiTools } from './tools/ai';
@@ -142,15 +144,28 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   }
 
   /**
-   * Override `server.registerTool` to record each registration in our
-   * local `_toolsByName` map. The wrapper is installed once at the top of
-   * `init()` and tears down nothing — every tool file calls
-   * `agent.server.registerTool(...)` and lands in the map transparently.
+   * Override `server.registerTool` to:
    *
-   * Why not just walk the SDK's `_registeredTools` field after `init()`?
-   * That field is private and undocumented; pinning to it would break
-   * silently on any minor SDK bump. The wrapper costs us one closure
-   * per tool but keeps the contract explicit.
+   *   1. Record each registration in `_toolsByName` so the post-init
+   *      scope-filter pass can walk every tool.
+   *   2. Wrap the tool handler in a U14 rate-limit gate keyed by
+   *      `${props.userId}:${toolName}` per the connector-readiness plan's
+   *      rate-limit-split decision. Per-user/per-tool counters are
+   *      independent so one user spamming `packrat_get_pack` doesn't
+   *      starve their own `packrat_list_trips` budget, and two users
+   *      hitting the same tool don't share a counter.
+   *
+   * The wrapper is installed once at the top of `init()` and tears down
+   * nothing — every tool file calls `agent.server.registerTool(...)` and
+   * lands in the map transparently. The rate-limit budget itself
+   * (60/60s) is configured at the binding level in `wrangler.jsonc`, not
+   * here, so operators can tune it without a code change.
+   *
+   * Why wrap inside the proxy rather than walking `_toolsByName` after
+   * registration to re-bind handlers? Re-binding would mean reaching
+   * into the SDK's `RegisteredTool` shape (private fields) to swap the
+   * callback. The proxy seam preserves the SDK contract — we only ever
+   * pass our wrapped callback into `registerTool` itself.
    */
   private installToolRegistrationProxy(): void {
     const original = this.server.registerTool.bind(this.server);
@@ -158,11 +173,69 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     // implementation level — forwarding via spread requires a single
     // call signature here.
     this.server.registerTool = ((...args: unknown[]) => {
-      const tool = (original as (...a: unknown[]) => RegisteredTool)(...args);
       const name = args[0] as string;
+      // The SDK's `registerTool(name, config, cb)` signature puts the
+      // handler at index 2. The config-less `(name, cb)` form was removed
+      // for the modern `registerTool` (only the deprecated `tool()` shape
+      // accepts it), so we can rely on index 2 here.
+      const originalHandler = args[2] as ((...handlerArgs: unknown[]) => unknown) | undefined;
+      if (typeof originalHandler === 'function') {
+        const wrappedHandler = this.wrapHandlerWithRateLimit(name, originalHandler);
+        args[2] = wrappedHandler;
+      }
+      const tool = (original as (...a: unknown[]) => RegisteredTool)(...args);
       this._toolsByName.set(name, tool);
       return tool;
     }) as typeof this.server.registerTool;
+  }
+
+  /**
+   * Wrap a tool's handler so each invocation passes through
+   * `env.MCP_TOOLS_RL.limit({ key })` before the original handler runs.
+   *
+   * Key shape per the connector-readiness plan's K.T.D.:
+   * `${props.userId}:${toolName}`. `props.userId` is set at OAuth time
+   * (see `auth.ts/handleCallback`); legacy bearer-flow sessions where
+   * `userId` is missing collapse to `:${toolName}` — acceptable because
+   * the bearer-flow path is a rare back-compat surface.
+   *
+   * On exceed: returns the canonical U8 `errResponse('rate_limited', ...,
+   * true)` envelope so the model gets a structured signal it can back
+   * off and retry against. The wrapper does NOT alter `arguments` /
+   * `extra` shape — the SDK validates the rest of the request boundary.
+   */
+  private wrapHandlerWithRateLimit(
+    toolName: string,
+    handler: (...handlerArgs: unknown[]) => unknown,
+  ): (...handlerArgs: unknown[]) => unknown {
+    return async (...handlerArgs: unknown[]): Promise<unknown> => {
+      const userId = this.currentUserId();
+      const key = toolRateLimitKey(userId, toolName);
+      const allowed = await checkRateLimit(this.env, key);
+      if (!allowed) {
+        const rateLimited: McpToolResult = errResponse(
+          'rate_limited',
+          'Rate limit exceeded; try again in a moment.',
+          true,
+        );
+        return rateLimited;
+      }
+      return handler(...handlerArgs);
+    };
+  }
+
+  /**
+   * Best-effort lookup of the current OAuth user ID from `this.props`.
+   *
+   * `props` is injected by the OAuthProvider apiHandler before the DO
+   * fetch hits us; for the rare back-compat bearer-only path where
+   * `props` is undefined or `userId` is missing, returns `''` and the
+   * rate-limit key collapses to `:${toolName}` — see
+   * `wrapHandlerWithRateLimit` for the trade-off.
+   */
+  private currentUserId(): string {
+    const props = this.props as { userId?: string } | undefined;
+    return props?.userId ?? '';
   }
 
   /**
@@ -356,7 +429,8 @@ const oauthProvider = new OAuthProvider<Env>({
 /**
  * Worker entrypoint: gate `/register` on the initial access token first,
  * apply the CORS allowlist for `/.well-known/*` to Claude origins, then
- * delegate every other path to the OAuthProvider.
+ * delegate every other path to the OAuthProvider. Also exports a
+ * `scheduled` handler for the U14 KV purge cron (daily at 04:00 UTC).
  *
  * Keeping the gate (and CORS) at this layer (vs. inside
  * `PackRatAuthHandler`) is load-bearing: the library routes `/register`
@@ -365,6 +439,13 @@ const oauthProvider = new OAuthProvider<Env>({
  * for those paths. The CORS logic itself lives in `./cors.ts` so it
  * stays testable without dragging the full agents/mcp module graph (and
  * its `cloudflare:workers` imports) into a Node-native vitest run.
+ *
+ * The `scheduled` handler delegates to `runScheduledPurge` in
+ * `./scheduled.ts`, which calls `oauthProvider.purgeExpiredData(env)`
+ * directly on the provider instance (NOT on `env.OAUTH_PROVIDER`, which
+ * is the helpers object injected per-request and isn't available in a
+ * scheduled handler context — see
+ * `@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:1191`).
  */
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -384,5 +465,9 @@ export default {
     // through unchanged (default-deny — see `applyCorsHeaders`).
     const annotated = applyCorsHeaders(request, response);
     return annotated ?? response;
+  },
+
+  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
+    await runScheduledPurge(oauthProvider, env);
   },
 };

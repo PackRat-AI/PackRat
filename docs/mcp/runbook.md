@@ -258,14 +258,17 @@ some MCP-flow user agents (CLI clients, headless flows) don't send an
 `Origin` header, and rejecting them would break legitimate flows. The
 CSRF and KV checks still apply.
 
-### Rate-limit hook stub (U14 swap point)
+### Rate-limit hook (U14)
 
-`checkLoginRateLimit(env, ip)` in `packages/mcp/src/auth.ts` today always
-returns `true`. U14 will swap the body to call
-`env.MCP_TOOLS_RL.limit({ key: \`login:${ip}\` })` once the Workers Rate
-Limiting binding is wired up in `wrangler.jsonc`. The signature
-(`(env, ip): Promise<boolean>`) is stable, so U14 only edits the
-function body — not the `handleLoginPost` flow.
+`checkLoginRateLimit(env, ip)` in `packages/mcp/src/auth.ts` now calls
+`env.MCP_TOOLS_RL.limit({ key: \`login:${ip || cfRay}\` })` via the
+shared `checkRateLimit` helper in `packages/mcp/src/rate-limit.ts`. See
+the "U14 rate limiting + KV purge" section below for the full
+enforcement-surfaces table, the dev-fallback contract, and the
+fail-open trade-off. The handler call site at `handleLoginPost`
+prefers `cf-connecting-ip`, falling back to `x-forwarded-for` then
+`cf-ray` so missing-IP requests don't all collapse to one global
+counter.
 
 ### Better Auth response mapping
 
@@ -957,6 +960,153 @@ result into `FAVICON_ICO_BASE64` in `packages/mcp/src/favicon.ts`.
 The favicon test (`packages/mcp/src/__tests__/favicon.test.ts`)
 asserts the `.ico` magic bytes and a non-zero size, so a
 copy-paste mistake fails CI loudly.
+
+## U14 rate limiting + KV purge
+
+PackRat's MCP Worker has **two distinct rate-limit enforcement surfaces**,
+deliberately split per the connector-store plan's K.T.D. "Rate-limit split":
+
+| Surface | Backed by | Keyed by | Default budget |
+| ------- | --------- | -------- | -------------- |
+| Authenticated tool calls | Workers Rate Limiting binding `MCP_TOOLS_RL` | `${props.userId}:${toolName}` | 60 calls / 60s |
+| `/login` POST            | Same binding `MCP_TOOLS_RL`                  | `login:${ip \|\| cfRay}`      | 60 attempts / 60s |
+| Anonymous discovery endpoints (`/register`, `/authorize`, `/token`) | **Zone-level WAF Rate Limiting Rules** (operator-applied; see TODO below) | client IP | 100 r/s/IP (target) |
+
+The binding configuration lives in
+[`packages/mcp/wrangler.jsonc`](../../packages/mcp/wrangler.jsonc) under the
+`rate_limiting` block — present in both the top-level/dev base and the
+`env.prod` block. Block-key conventions follow
+`packages/api/wrangler.jsonc:44`: the block is `rate_limiting` (not
+`ratelimits`) and the per-binding field is `binding` (not `name`).
+
+### Per-user/per-tool counter independence
+
+`MCP_TOOLS_RL.limit({ key: '${userId}:${toolName}' })` runs **before** every
+authenticated tool handler. The key shape makes counters independent across
+both axes:
+
+- One user spamming `packrat_get_pack` does NOT consume their own
+  `packrat_list_trips` budget.
+- Two different users both hitting `packrat_get_pack` do NOT share a
+  counter — each user gets their own 60/60s slot.
+
+On exceed, the wrapper short-circuits the handler and returns the canonical
+U8 envelope `errResponse('rate_limited', 'Rate limit exceeded; try again in
+a moment.', true)` — `retryable: true` so the model knows it can back off
+and retry. The handler itself never runs.
+
+### Dev fallback
+
+When `env.MCP_TOOLS_RL` is undefined (local `vitest`, some `wrangler dev`
+configurations), both call sites return "allowed" without consulting the
+binding. Production deploys always bind it via `wrangler.jsonc`; the
+fallback exists so onboarding engineers don't need a bound rate-limit
+namespace to run the unit suite.
+
+### Fail-open on binding error
+
+`checkRateLimit` in `packages/mcp/src/rate-limit.ts` swallows binding-side
+exceptions and returns `true`. The trade-off is documented at the call
+site: a brief over-allow window during a Cloudflare-side rate-limit-API
+hiccup is preferable to a hard outage of the MCP surface. U15 will add
+structured observability so we can alert on the error volume.
+
+### KV purge cron — 04:00 UTC daily
+
+`packages/mcp/wrangler.jsonc` declares `triggers.crons: ["0 4 * * *"]`
+in the top-level/dev base AND in `env.prod`. The `scheduled()` arm of the
+Worker default export (in `packages/mcp/src/index.ts`) delegates to
+`runScheduledPurge` (in `packages/mcp/src/scheduled.ts`), which loops:
+
+```ts
+while (!done && iterations < CRON_PURGE_MAX_ITERATIONS /* = 50 */) {
+  const result = await oauthProvider.purgeExpiredData(env, { batchSize: 100 });
+  done = result.done;
+  iterations += 1;
+}
+```
+
+The purge sweeps **orphaned grants** (grants whose client was deleted)
+and **expired grants** + tokens as defense-in-depth for KV TTLs. KV TTLs
+alone handle most expiry; the cron is the operator-visible cleanup
+surface and the safety net against orphaned records that survived a
+client deletion.
+
+#### 30s CPU budget caveat
+
+Scheduled handlers have ~30s of worker CPU time. Each `purgeExpiredData`
+call does up to ~200 KV subrequests (100 keys × ~2 reads). The
+50-iteration cap is the load-bearing safety: if a pathological state
+keeps returning `done: false`, the cron exits cleanly and the next
+day's tick picks up where this one stopped. `purgeExpiredData` is safe
+to call repeatedly per its library docstring: "deleted records
+disappear from KV, so subsequent invocations naturally process fresh
+records without needing a persisted cursor."
+
+#### Why `batchSize: 100` (vs. library default of 50)
+
+We have headroom in a daily cron and want to drain backlog quickly.
+Cloudflare's 1000-subrequest-per-invocation soft limit is the real
+ceiling; 100 keys × ~2 reads = ~200 subrequests/pass, comfortably under.
+
+#### Why call the provider instance, not `env.OAUTH_PROVIDER`
+
+`env.OAUTH_PROVIDER` is the *helpers* object — injected by the library
+per-request and not available in a scheduled handler. The provider
+instance itself exposes a `purgeExpiredData(env, options)` overload for
+exactly this case (see
+`@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:1191`).
+
+### Verifying the cron ran
+
+After a deploy, after the next 04:00 UTC tick:
+
+```bash
+wrangler tail --env prod --format pretty
+# Filter on "scheduled" handler logs once U15 lands; today the purge runs
+# silently except on error — the operator-visible signal is the absence
+# of stale-grant complaints over time.
+```
+
+If the purge ever throws, the `scheduled` arm propagates the error and
+Cloudflare records the failed cron invocation in the dashboard
+(Workers & Pages → packrat-mcp → Triggers → Cron). A repeated failure
+there is a real incident — check the `OAUTH_KV` namespace bindings
+first.
+
+### TODO (operator): zone-level WAF Rate Limiting Rules
+
+Workers Rate Limiting only protects **authenticated** tool calls and the
+login form. The anonymous OAuth endpoints (`/register`, `/authorize`,
+`/token`) are unauthenticated — they're the DoS surface. Apply
+WAF Rate Limiting Rules on the `packratai.com` zone (or via Terraform):
+
+| Path expression            | Rule | Action |
+| -------------------------- | ---- | ------ |
+| `http.request.uri.path eq "/register"`    | > 100 r/s per IP | Block 1m |
+| `http.request.uri.path eq "/authorize"`   | > 100 r/s per IP | Block 1m |
+| `http.request.uri.path eq "/token"`       | > 100 r/s per IP | Block 1m |
+
+100 r/s is generous for legitimate use: a Claude.ai user starting a fresh
+connection issues at most 3-4 requests across these endpoints. Tune
+downward after observing real traffic for a week. Add an explicit
+*allow* rule above the limits for Anthropic's IP ranges if reviewer
+probes get blocked during intake — Anthropic publishes the ranges in
+the connector-store docs.
+
+### Refreshing the binding budget
+
+The 60/60s default is configured in `wrangler.jsonc` under the
+`rate_limiting` block. To change it:
+
+1. Edit `simple.limit` and `simple.period` in both the top-level and
+   `env.prod` blocks.
+2. `wrangler deploy --env prod`.
+3. Update `docs/mcp/runbook.md` (this section) so the docs match the
+   live config.
+
+Changes take effect immediately on the next request after deploy — no
+binding-side state to migrate.
 
 ### Reviewer test account
 

@@ -588,11 +588,54 @@ describe('handleLoginPost — Better Auth status surface', () => {
   });
 });
 
-describe('checkLoginRateLimit — U14 swap point', () => {
-  it('always returns true today (stubbed; U14 swaps in env.MCP_TOOLS_RL.limit)', async () => {
+describe('checkLoginRateLimit — U14 binding wired', () => {
+  it('returns true when env.MCP_TOOLS_RL is undefined (dev fallback so vitest/wrangler dev never break)', async () => {
     const env = makeEnv();
     expect(await checkLoginRateLimit(env, '1.2.3.4')).toBe(true);
+    // Empty IP path: the helper uses a `no-ip` segment internally so the
+    // key is still well-formed; the dev fallback still returns true.
     expect(await checkLoginRateLimit(env, '')).toBe(true);
+  });
+
+  it('returns the binding success flag when MCP_TOOLS_RL is bound (allowed → true)', async () => {
+    const limit = vi.fn().mockResolvedValue({ success: true });
+    const env = makeEnv({
+      MCP_TOOLS_RL: { limit } as unknown as Env['MCP_TOOLS_RL'],
+    });
+    expect(await checkLoginRateLimit(env, '1.2.3.4')).toBe(true);
+    expect(limit).toHaveBeenCalledWith({ key: 'login:1.2.3.4' });
+  });
+
+  it('returns false when the binding reports the budget exhausted', async () => {
+    const limit = vi.fn().mockResolvedValue({ success: false });
+    const env = makeEnv({
+      MCP_TOOLS_RL: { limit } as unknown as Env['MCP_TOOLS_RL'],
+    });
+    expect(await checkLoginRateLimit(env, '5.6.7.8')).toBe(false);
+    expect(limit).toHaveBeenCalledWith({ key: 'login:5.6.7.8' });
+  });
+
+  it('uses a stable "no-ip" segment when the caller IP is empty (no global collapse)', async () => {
+    const limit = vi.fn().mockResolvedValue({ success: true });
+    const env = makeEnv({
+      MCP_TOOLS_RL: { limit } as unknown as Env['MCP_TOOLS_RL'],
+    });
+    await checkLoginRateLimit(env, '');
+    // The key still carries the `login:` namespace prefix and a
+    // recognizable fallback segment so it doesn't share a counter with
+    // every other rate-limited surface.
+    expect(limit).toHaveBeenCalledWith({ key: 'login:no-ip' });
+  });
+
+  it('fails open (returns true) when the binding itself throws', async () => {
+    const limit = vi.fn().mockRejectedValue(new Error('binding down'));
+    const env = makeEnv({
+      MCP_TOOLS_RL: { limit } as unknown as Env['MCP_TOOLS_RL'],
+    });
+    // Fail-open is intentional per the rate-limit.ts contract: a
+    // transient Cloudflare-side rate-limit-API hiccup must not black-hole
+    // legitimate sign-ins.
+    expect(await checkLoginRateLimit(env, '1.2.3.4')).toBe(true);
   });
 });
 

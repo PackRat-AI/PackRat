@@ -88,6 +88,23 @@ export interface Env {
   MCP_INITIAL_ACCESS_TOKEN?: string;
   /** Comma-separated feature flags enabled at boot (e.g. "wildlife_id,season_suggestions"). */
   MCP_FEATURE_FLAGS?: string;
+  /**
+   * Workers Rate Limiting binding (U14). Configured under the
+   * `rate_limiting` block in `packages/mcp/wrangler.jsonc` with a 60/60s
+   * budget. Two call sites use it:
+   *
+   *   - tool dispatch: keyed `${props.userId}:${toolName}` so per-user/
+   *     per-tool counters are independent; surfaces a `rate_limited`
+   *     `errResponse` envelope to the model when exceeded.
+   *   - `/login` POST: keyed `login:${ip || cfRay}` so anonymous bursts
+   *     can't brute-force the password form.
+   *
+   * Optional in the type because the binding is absent in unit tests and
+   * may not be bound in some `wrangler dev` flows. Both call sites
+   * fall back to "allowed" when the binding is undefined — dev should
+   * never break because of a missing rate-limit binding.
+   */
+  MCP_TOOLS_RL?: RateLimit;
 }
 
 /**
