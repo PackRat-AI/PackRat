@@ -86,17 +86,17 @@ export function buildWwwAuthenticateHeader(env: Env, scope: Scope = 'mcp'): stri
  * header for a 401 response from /mcp — convenience wrapper so the
  * apiHandler in index.ts doesn't have to reach into raw header shapes.
  */
-export function unauthorizedResponse(env: Env, message = 'Missing or invalid bearer token'): Response {
-  return new Response(
-    JSON.stringify({ error: 'invalid_token', error_description: message }),
-    {
-      status: 401,
-      headers: {
-        'Content-Type': 'application/json',
-        'WWW-Authenticate': buildWwwAuthenticateHeader(env),
-      },
+export function unauthorizedResponse(
+  env: Env,
+  message = 'Missing or invalid bearer token',
+): Response {
+  return new Response(JSON.stringify({ error: 'invalid_token', error_description: message }), {
+    status: 401,
+    headers: {
+      'Content-Type': 'application/json',
+      'WWW-Authenticate': buildWwwAuthenticateHeader(env),
     },
-  );
+  });
 }
 
 /** Re-export ServiceMeta so consumers can declare a single import surface. */

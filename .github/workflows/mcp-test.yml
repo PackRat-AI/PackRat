@@ -1,0 +1,75 @@
+name: MCP Tests
+
+# U17: PR gate for the PackRat MCP Worker. Runs on any PR that touches the
+# MCP package, the api-client (consumed by every tool), the API auth surface
+# (which the OAuth-token bridge depends on), or the API admin routes (which
+# the U5 scope-based admin gate calls into). This deliberately mirrors the
+# trust boundary the MCP worker straddles — anything that can silently
+# break scope enforcement, DCR gating, or tool dispatch should re-run this
+# gate before it merges.
+
+on:
+  push:
+    branches: ['main', 'development']
+    paths:
+      - 'packages/mcp/**'
+      - 'packages/api-client/**'
+      - 'packages/api/src/auth/**'
+      - 'packages/api/src/routes/admin/**'
+      - '.github/workflows/mcp-test.yml'
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'packages/mcp/**'
+      - 'packages/api-client/**'
+      - 'packages/api/src/auth/**'
+      - 'packages/api/src/routes/admin/**'
+      - '.github/workflows/mcp-test.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  mcp-tests:
+    name: MCP Unit + Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Biome (lint + format check)
+        run: bun biome check packages/mcp
+
+      # MCP-only type-check. The MCP SDK's type surface (combined with the
+      # @packrat/api-client + zod surface threaded in here) needs >8 GB of
+      # v8 heap to fit — see `docs/mcp/runbook.md` § "Known issues" for the
+      # full operator-facing detail. The GitHub Actions `ubuntu-latest`
+      # runner has 16 GB available; we bump the v8 old-space ceiling to
+      # 14 GB and leave headroom for tsc's other allocations.
+      - name: Type-check MCP package
+        env:
+          NODE_OPTIONS: --max-old-space-size=14336
+        run: bun run --cwd packages/mcp check-types
+
+      - name: Run MCP tests (unit + integration)
+        run: bun run --cwd packages/mcp test
+
+      # Re-run the API auth + admin guard tests so a MCP-side scope-model
+      # change can't silently break the API-side enforcement contract.
+      - name: Run API unit tests (auth + admin guard)
+        run: bun run --cwd packages/api test:unit

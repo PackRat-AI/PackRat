@@ -1467,6 +1467,133 @@ for every other path.
 
 ---
 
+## U17 CI + integration tests
+
+### `.github/workflows/mcp-test.yml` — PR gate
+
+Triggers on `pull_request` (and `push` to `main` / `development`) when
+any of these paths change:
+
+- `packages/mcp/**` — the Worker source
+- `packages/api-client/**` — every tool wraps the Eden Treaty client
+- `packages/api/src/auth/**` — the OAuth-token-to-Better-Auth bridge
+- `packages/api/src/routes/admin/**` — the U5 scope-based admin gate
+  calls into these
+- `.github/workflows/mcp-test.yml` — self-trigger so workflow edits
+  are validated against the suite they gate
+
+Steps:
+
+1. Biome (`bun biome check packages/mcp`) — lint + format on the
+   MCP package only. Cheap, runs in <5s.
+2. Type-check (`bun run --cwd packages/mcp check-types`) with
+   `NODE_OPTIONS=--max-old-space-size=14336`. The MCP SDK + zod + the
+   api-client type surface together need >8 GB of v8 heap to fit. The
+   GitHub Actions `ubuntu-latest` runner has 16 GB; we use 14 GB and
+   leave headroom for tsc's other allocations. **This is the official
+   type-validation surface** — `bun run check-types` OOMs on most
+   developer workstations and the CI run is the canonical pass/fail.
+3. MCP test suite (`bun run --cwd packages/mcp test`) — runs both the
+   `mcp-unit` project (1,134 tests) and the `mcp-integration` project
+   (currently 21 deferred `it.todo` placeholders; see below).
+4. API unit suite (`bun run --cwd packages/api test:unit`) — re-runs
+   the auth + admin guard tests so a MCP-side scope-model change
+   can't silently break the API-side enforcement contract.
+
+### `.github/workflows/mcp-deploy.yml` — tag-triggered prod deploy
+
+Triggers on `push` of any tag matching `mcp-v*` (e.g. `mcp-v2.1.0`).
+The intentional friction of a separate tag keeps prod deploys
+explicit; main-branch merges only redeploy the dev env (manual
+`bun run deploy:dev` for now).
+
+Steps:
+
+1. Re-run the MCP test suite (gates the deploy on tests passing — in
+   case a tag was pushed without a PR).
+2. Resolve the short SHA of the tagged commit so the worker bundle is
+   stamped with it.
+3. `wrangler deploy --env prod --var MCP_COMMIT_SHA:<short>` via the
+   `cloudflare/wrangler-action@v3` action. The MCP_COMMIT_SHA `var`
+   shows up on `/status` (see § "U16 /health + /status" above).
+
+### One-time operator setup — repo secrets
+
+The deploy workflow needs two repo secrets:
+
+| Secret | What it is | Where to get it |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | Scoped API token with `Workers Scripts: Edit` + `Account Settings: Read` on the PackRat account | https://dash.cloudflare.com/profile/api-tokens → "Create Custom Token" → use the "Edit Cloudflare Workers" template. **TODO (operator):** issue once, store at https://github.com/andrewbierman/PackRat/settings/secrets/actions, rotate annually. |
+| `CLOUDFLARE_ACCOUNT_ID` | The PackRat Cloudflare account ID | Visible on every page of the Cloudflare dashboard's right sidebar. Or via `wrangler whoami` if logged in locally. **TODO (operator):** copy once, store as above. |
+
+Both secrets must be set at the **repository** level (not the
+environment level — the deploy workflow doesn't use a GitHub
+Environment object, intentionally, to keep the trigger surface
+small).
+
+### Tag convention
+
+```bash
+# Bump version in packages/mcp/package.json + src/constants.ts (single
+# source of truth — they MUST match; `auth.test.ts` asserts this).
+git commit -am "chore(mcp): bump to v2.1.0"
+git tag mcp-v2.1.0
+git push origin main mcp-v2.1.0  # tag push triggers the deploy
+```
+
+Pre-deploy checklist (run locally before pushing the tag):
+
+- `bun run --cwd packages/mcp test` — 1,134 tests must pass.
+- Verify `version` in `packages/mcp/package.json` matches
+  `ServiceMeta.Version` in `packages/mcp/src/constants.ts`.
+
+### vitest-pool-workers integration suite — current state
+
+`packages/mcp/vitest.workspace.ts` declares two projects:
+
+- `mcp-unit` — Node-environment tests for pure modules (the existing
+  1,134-test surface). Fast; no workerd.
+- `mcp-integration` — wired but tests currently deferred as
+  `it.todo`. The harness boots cleanly (`bun run --cwd packages/mcp
+  test:integration` discovers all four integration files); the only
+  reason real assertions don't run is the upstream blocker below.
+
+**Why deferred:** the Worker entrypoint transitively imports the MCP
+SDK, which loads `ajv@^8` at module-eval time. `ajv` does
+`require('./refs/data.json')`, and workerd's CJS module-fallback path
+treats JSON content as JS code — the worker won't boot inside
+vitest-pool-workers until one of two upstream fixes lands:
+
+1. vitest-pool-workers' `handleModuleFallbackRequest` learns to apply
+   user-supplied `modulesRules` to bare JSON requires (currently the
+   rules array is only applied via the vite RPC patch, not the
+   workerd-side resolution chain).
+2. The MCP SDK accepts an injected `jsonSchemaValidator` we can stub
+   in tests — bypassing `ajv` entirely.
+
+Until then the `it.todo` placeholders in
+`packages/mcp/src/__tests__/integration/*.test.ts` preserve the
+contract intent and `vitest run` reports the deferred-todo count so
+the gap stays visible. Unit-level coverage of every deferred contract
+exists in the corresponding `../*.test.ts` files (well-known →
+`metadata.test.ts`, DCR gate + health/status → `auth.test.ts`).
+
+**First-invocation note (for when the integration tests light up):**
+`@cloudflare/vitest-pool-workers` downloads `workerd` on first run
+(~30s, one-time per machine + version). Subsequent runs are warm.
+
+### `OAUTH_KV` placeholder + miniflare synthesis
+
+The integration config (when switched back to
+`defineWorkersProject`) sets `miniflare.kvNamespaces: ['OAUTH_KV']`,
+which gives the Worker an in-memory KV binding bypassing the
+`__TODO_OAUTH_KV_DEV_ID__` placeholder in `wrangler.jsonc`. **No
+real KV namespace ID is needed for the test run** — the placeholder
+stays harmless and the live-deploy operator-setup remains the only
+place a real ID is required.
+
+---
+
 ## Common operations
 
 ### Deploy

@@ -1,0 +1,84 @@
+name: MCP Deploy (prod)
+
+# U17: tag-triggered production deploy for the PackRat MCP Worker.
+#
+# Push a `mcp-v<semver>` tag (e.g. `mcp-v2.1.0`) to ship that commit to
+# `mcp.packratai.com`. The intentional friction of a separate tag keeps
+# prod deploys explicit — main-branch merges only redeploy the dev env
+# (manual `bun run deploy:dev` for now; a follow-up unit can wire that
+# into a separate trigger if it ever becomes a hot path).
+#
+# Required repo secrets (one-time operator setup — see
+# `docs/mcp/runbook.md` § "U17 CI + integration tests"):
+#   CLOUDFLARE_API_TOKEN     — scoped token with `Workers Scripts: Edit`
+#                              + `Account Settings: Read` on the PackRat
+#                              account. Issue at
+#                              https://dash.cloudflare.com/profile/api-tokens
+#                              → "Create Custom Token" → use the "Edit
+#                              Cloudflare Workers" template.
+#   CLOUDFLARE_ACCOUNT_ID    — visible on every page of the Cloudflare
+#                              dashboard right sidebar.
+#
+# This workflow does NOT manage KV namespace IDs, secrets, or routes —
+# those are bootstrapped manually per the runbook's "One-time operator
+# setup" section. We only push the bundle.
+
+on:
+  push:
+    tags:
+      - 'mcp-v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref to deploy (commit SHA, tag, or branch)'
+        required: false
+        default: ''
+
+concurrency:
+  # Serialise deploys per env so two tags pushed back-to-back don't race.
+  group: mcp-deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy MCP Worker to prod
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          # Need a real commit SHA, not a shallow merge — wrangler stamps
+          # MCP_COMMIT_SHA from `git rev-parse --short HEAD` below.
+          fetch-depth: 1
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      # Gate the deploy on the MCP test suite passing. Re-runs the same
+      # checks the PR gate ran, in case a tag was pushed without a PR.
+      - name: Run MCP tests (unit + integration)
+        run: bun run --cwd packages/mcp test
+
+      # Resolve the short SHA once so the wrangler step can pass it as a
+      # deploy-time `var` (U16 surfaces it on /status).
+      - name: Resolve commit SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy with wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: packages/mcp
+          command: deploy --env prod --var MCP_COMMIT_SHA:${{ steps.sha.outputs.short }}

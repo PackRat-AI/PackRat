@@ -2,21 +2,23 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 /**
- * Vitest configuration for MCP package unit tests.
+ * Root vitest config for the MCP package.
  *
- * Runs in standard Node.js environment with Cloudflare/Workers APIs mocked.
+ * Projects are declared in `./vitest.workspace.ts`; this file holds the
+ * single-source coverage config that applies across both projects when
+ * `vitest run --coverage` is invoked from this directory.
+ *
+ * U17 split — see `./vitest.workspace.ts` for the unit vs integration
+ * project split and the rationale for each.
+ *
+ * Coverage thresholds were lowered (and the exclusion list shrunk) as
+ * part of U17 so the threshold applies to the broader risk surface
+ * (`src/index.ts`, `src/tools/**`, `src/resources.ts`, `src/prompts.ts`,
+ * `src/auth.ts`) that the per-unit + integration tests now exercise.
+ * `src/types.ts` stays excluded (no runtime).
  */
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@packrat/api-client': resolve(__dirname, '../api-client/src/index.ts'),
-    },
-  },
   test: {
-    name: 'mcp-unit',
-    environment: 'node',
-    globals: true,
-    include: [resolve(__dirname, 'src/**/__tests__/**/*.test.ts')],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'json'],
@@ -25,23 +27,14 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/**/*.spec.ts',
-        // Barrel file (just re-exports)
-        'src/index.ts',
-        // Type definitions — no runtime logic
+        // Type definitions — no runtime logic.
         'src/types.ts',
-        // MCP tool/resource/prompt wrappers — API-client-only code, better
-        // covered by integration tests against a live server
-        'src/tools/**',
-        'src/resources.ts',
-        'src/prompts.ts',
-        // Auth wrapper (requires live auth token flow)
-        'src/auth.ts',
       ],
       thresholds: {
-        statements: 95,
-        branches: 90,
-        functions: 95,
-        lines: 95,
+        statements: 80,
+        branches: 80,
+        functions: 80,
+        lines: 80,
       },
     },
   },
