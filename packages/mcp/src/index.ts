@@ -36,6 +36,7 @@ import { z } from 'zod';
 import { dcrRegisterGate, PackRatAuthHandler } from './auth';
 import { createMcpClients, type McpClients } from './client';
 import { ServiceMeta } from './constants';
+import { applyCorsHeaders } from './cors';
 import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
@@ -316,17 +317,34 @@ const oauthProvider = new OAuthProvider<Env>({
 
 /**
  * Worker entrypoint: gate `/register` on the initial access token first,
- * then delegate every other path to the OAuthProvider.
+ * apply the CORS allowlist for `/.well-known/*` to Claude origins, then
+ * delegate every other path to the OAuthProvider.
  *
- * Keeping the gate at this layer (vs. inside `PackRatAuthHandler`) is
- * load-bearing: the library routes `/register` to its built-in
- * `handleClientRegistration` *before* the default handler runs, so any
- * gate inside `PackRatAuthHandler` would never fire for `/register`.
+ * Keeping the gate (and CORS) at this layer (vs. inside
+ * `PackRatAuthHandler`) is load-bearing: the library routes `/register`
+ * and `/.well-known/*` to its built-in handlers *before* the default
+ * handler runs, so any logic inside `PackRatAuthHandler` would never fire
+ * for those paths. The CORS logic itself lives in `./cors.ts` so it
+ * stays testable without dragging the full agents/mcp module graph (and
+ * its `cloudflare:workers` imports) into a Node-native vitest run.
  */
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const gateResponse = dcrRegisterGate(request, env);
     if (gateResponse) return gateResponse;
-    return oauthProvider.fetch(request, env, ctx);
+
+    // OPTIONS preflight short-circuit: handled entirely here, never hits
+    // the OAuthProvider.
+    if (request.method === 'OPTIONS') {
+      const cors = applyCorsHeaders(request, null);
+      if (cors) return cors;
+    }
+
+    const response = await oauthProvider.fetch(request, env, ctx);
+
+    // Annotate well-known GETs from allowed origins; everything else falls
+    // through unchanged (default-deny — see `applyCorsHeaders`).
+    const annotated = applyCorsHeaders(request, response);
+    return annotated ?? response;
   },
 };

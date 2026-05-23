@@ -71,5 +71,10 @@ export const auth = betterAuth({
 
   plugins: [bearer(), jwt(), admin()],
 
-  trustedOrigins: ['http://localhost:8787', 'packrat://'],
+  // NOTE: keep in lockstep with `index.ts` (the runtime config). The two
+  // lists drift independently — see
+  // `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`
+  // and `docs/mcp/runbook.md` § "Better Auth trustedOrigins" for the
+  // schema-regen reminder.
+  trustedOrigins: ['http://localhost:8787', 'packrat://', 'https://mcp.packratai.com'],
 });

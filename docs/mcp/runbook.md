@@ -113,6 +113,115 @@ inside the OAuthProvider config as defense-in-depth: even if the gate were
 removed, public clients (`token_endpoint_auth_method: 'none'`) would still
 be rejected.
 
+## Better Auth trustedOrigins (U6)
+
+The MCP Worker calls Better Auth (in `packages/api`) for password sign-in
+during the OAuth flow. Better Auth rejects calls whose `Origin` is not on
+its `trustedOrigins` list — so `https://mcp.packratai.com` must appear in
+that list, or every MCP-driven sign-in will fail with an untrusted-origin
+error.
+
+`trustedOrigins` is configured in **two files that drift independently**:
+
+| File | Purpose | Line |
+| ---- | ------- | ---- |
+| `packages/api/src/auth/index.ts` | Runtime (per-isolate) config | search `trustedOrigins:` |
+| `packages/api/src/auth/auth.config.ts` | CLI / `bunx auth generate` static config | search `trustedOrigins:` |
+
+Both must include `https://mcp.packratai.com`. If you edit one, edit the
+other in the same commit. The factory pattern that splits them is
+documented in
+[`docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`](../solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md).
+
+### Schema regen reminder
+
+Per the same learning doc, after editing `auth.config.ts` you should run:
+
+```bash
+cd packages/api
+bunx auth generate --config src/auth/auth.config.ts
+```
+
+to keep the generated schema in sync. The U6 change only touches
+`trustedOrigins` — which is not a schema-affecting field — so a regen is
+not required to ship U6. Run it on the next deploy that does touch a
+schema-affecting field (an `additionalFields` change, a new plugin, etc.).
+
+### Forcing isolate rotation after a deploy
+
+Better Auth is memoized in a per-isolate singleton (`authCache` in
+`packages/api/src/auth/index.ts`). Existing isolates already running when
+a deploy lands will keep the old `trustedOrigins` list until they're
+rotated. Force a rotation by deploying a no-op env change (e.g. bumping
+a benign var) so MCP sign-ins start succeeding immediately rather than
+waiting on natural isolate churn.
+
+## Login form security (U6)
+
+The MCP `/login` POST has three independent checks before it forwards
+credentials to Better Auth:
+
+| Check | Failure mode |
+| ----- | ------------ |
+| `Origin` matches `https://mcp.packratai.com` or the request URL's own origin, **or is missing** | 403 |
+| Cookie `__Host-PR_CSRF` is present and equals the form's hidden `csrf` field | 400 |
+| The same CSRF value is present in KV under `csrf:<stateKey>` (set at `/authorize`) | 400 |
+| `checkLoginRateLimit(env, ip)` returns `true` (today stubbed; U14 wires the binding) | 429 |
+
+The KV anchor is the load-bearing CSRF defense — a pure double-submit
+cookie can be forged by a subdomain XSS, but an attacker can't fabricate
+a matching `csrf:<stateKey>` entry without controlling the worker's KV.
+
+The Origin check is intentionally permissive when the header is missing:
+some MCP-flow user agents (CLI clients, headless flows) don't send an
+`Origin` header, and rejecting them would break legitimate flows. The
+CSRF and KV checks still apply.
+
+### Rate-limit hook stub (U14 swap point)
+
+`checkLoginRateLimit(env, ip)` in `packages/mcp/src/auth.ts` today always
+returns `true`. U14 will swap the body to call
+`env.MCP_TOOLS_RL.limit({ key: \`login:${ip}\` })` once the Workers Rate
+Limiting binding is wired up in `wrangler.jsonc`. The signature
+(`(env, ip): Promise<boolean>`) is stable, so U14 only edits the
+function body — not the `handleLoginPost` flow.
+
+### Better Auth response mapping
+
+`/login` POST maps Better Auth's HTTP status to user-facing copy via
+`betterAuthErrorCopy(status)`:
+
+| Better Auth status | Rendered status | Copy |
+| ------------------ | --------------- | ---- |
+| 429 | 429 | "Too many sign-in attempts. Please wait a minute and try again." |
+| 423 | 423 | "This account is locked. Check your email for a reset link or contact support." |
+| 401 / other 4xx | 401 | "Invalid email or password." |
+| 5xx | 502 | "PackRat sign-in is temporarily unavailable. Try again shortly." |
+
+The non-401 4xx collapse is deliberate: don't leak "user exists but
+wrong password" vs. "no such user".
+
+## CORS allowlist on /.well-known/* (U6)
+
+The two well-known endpoints (`/.well-known/oauth-protected-resource`
+and `/.well-known/oauth-authorization-server`) accept cross-origin GET
+and OPTIONS requests **only** from:
+
+- `https://claude.ai`
+- `https://claude.com`
+
+Everything else gets the upstream OAuthProvider response unmodified
+(default-deny). The allowlist + GET annotation + OPTIONS short-circuit
+all live in `packages/mcp/src/cors.ts` (`applyCorsHeaders`), invoked by
+the outer fetch wrapper in `index.ts` — we can't add CORS inside
+`PackRatAuthHandler` because the OAuthProvider library routes the
+well-known paths before the defaultHandler dispatch (same constraint
+U4's `/register` gate hit).
+
+If Anthropic adds new origins (e.g. a future Claude domain), update the
+`WELL_KNOWN_ALLOWED_ORIGINS` set in `cors.ts` and the corresponding test
+in `__tests__/auth.test.ts`.
+
 ## Common operations
 
 ### Deploy

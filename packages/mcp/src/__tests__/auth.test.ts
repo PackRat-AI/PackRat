@@ -18,8 +18,14 @@
  * smoke-tested.
  */
 
-import { describe, expect, it } from 'vitest';
-import { dcrRegisterGate, PackRatAuthHandler } from '../auth';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  betterAuthErrorCopy,
+  checkLoginRateLimit,
+  dcrRegisterGate,
+  PackRatAuthHandler,
+} from '../auth';
+import { applyCorsHeaders } from '../cors';
 import type { Env } from '../types';
 
 /** Build a minimal `Env` for tests. The OAuth helpers are stubbed because
@@ -178,5 +184,488 @@ describe('PackRatAuthHandler — health endpoint', () => {
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe('Not Found');
+  });
+});
+
+// ─── U6: login security ───────────────────────────────────────────────────────
+//
+// The full /login POST flow needs a real KV namespace + Better Auth backend,
+// which is integration-test territory (U17). Here we build a minimal
+// in-memory KV stub and stub `fetch` so each branch of the handler — Origin
+// check, CSRF triple-check, Better Auth status mapping — can be exercised
+// without touching the network. The KV-bound CSRF anchor is the
+// load-bearing piece; the test names call out which check is being
+// targeted so a future refactor that collapses any branch into another
+// regresses visibly.
+
+interface MockKVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string, opts?: unknown): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(opts?: unknown): Promise<{ keys: { name: string }[] }>;
+}
+
+function makeKv(initial: Record<string, string> = {}): MockKVNamespace {
+  const store = new Map<string, string>(Object.entries(initial));
+  return {
+    async get(key: string) {
+      return store.get(key) ?? null;
+    },
+    async put(key: string, value: string) {
+      store.set(key, value);
+    },
+    async delete(key: string) {
+      store.delete(key);
+    },
+    async list() {
+      return { keys: [...store.keys()].map((name) => ({ name })) };
+    },
+  };
+}
+
+function makeLoginPostRequest(opts: {
+  state?: string;
+  csrfField?: string;
+  csrfCookie?: string | null;
+  origin?: string | null;
+  email?: string;
+  password?: string;
+  url?: string;
+}): Request {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+  if (opts.origin !== null && opts.origin !== undefined) {
+    headers.Origin = opts.origin;
+  }
+  if (opts.csrfCookie !== null && opts.csrfCookie !== undefined) {
+    headers.Cookie = `__Host-PR_CSRF=${opts.csrfCookie}`;
+  }
+
+  const params = new URLSearchParams();
+  if (opts.email !== undefined) params.set('email', opts.email);
+  if (opts.password !== undefined) params.set('password', opts.password);
+  if (opts.state !== undefined) params.set('state', opts.state);
+  if (opts.csrfField !== undefined) params.set('csrf', opts.csrfField);
+
+  return new Request(opts.url ?? 'https://mcp.packratai.com/login', {
+    method: 'POST',
+    headers,
+    body: params.toString(),
+  });
+}
+
+/**
+ * Seed an in-memory KV with an OAuth state entry + a CSRF nonce entry
+ * indexed by `state`. Returns the (now-populated) KV stub so the test
+ * can assert against it.
+ */
+function seedAuthorizeState(state: string, csrfNonce: string): MockKVNamespace {
+  return makeKv({
+    [`oauth_state:${state}`]: JSON.stringify({
+      responseType: 'code',
+      clientId: 'claude',
+      redirectUri: 'https://claude.ai/api/mcp/auth_callback',
+      scope: ['mcp'],
+      state: 'client-state',
+    }),
+    [`csrf:${state}`]: csrfNonce,
+  });
+}
+
+describe('handleLoginPost — Origin validation', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+    // Default: don't hit network — return a 401 so any test that gets past
+    // the early checks doesn't accidentally make a real request.
+    fetchSpy.mockResolvedValue(new Response(null, { status: 401 }));
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  it('rejects POST /login with a mismatched Origin (403)', async () => {
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: 'nonce',
+      origin: 'https://evil.example',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(403);
+  });
+
+  it('proceeds when Origin matches the production custom domain', async () => {
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ session: { token: 'tok' }, user: { id: 'u1' } }), {
+        status: 200,
+      }),
+    );
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: 'nonce',
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    // 302 means we reached the success path (redirect to /callback).
+    expect(res.status).toBe(302);
+  });
+
+  it('proceeds when Origin is missing (back-compat for non-browser MCP clients)', async () => {
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ session: { token: 'tok' }, user: { id: 'u1' } }), {
+        status: 200,
+      }),
+    );
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: 'nonce',
+      origin: null,
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(302);
+  });
+
+  it('proceeds when Origin equals the request URL origin (dev workers.dev fallback)', async () => {
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ session: { token: 'tok' }, user: { id: 'u1' } }), {
+        status: 200,
+      }),
+    );
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: 'nonce',
+      origin: 'https://packrat-mcp-dev.example.workers.dev',
+      url: 'https://packrat-mcp-dev.example.workers.dev/login',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(302);
+  });
+});
+
+describe('handleLoginPost — CSRF', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+    fetchSpy.mockResolvedValue(
+      new Response(JSON.stringify({ session: { token: 'tok' }, user: { id: 'u1' } }), {
+        status: 200,
+      }),
+    );
+  });
+  afterEach(() => fetchSpy.mockRestore());
+
+  it('rejects POST when CSRF cookie and form field do not match (400)', async () => {
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: 'different-nonce',
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(400);
+    const body = await res.text();
+    expect(body).toMatch(/CSRF check failed/i);
+  });
+
+  it('rejects POST when no cookie is present (400)', async () => {
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: null,
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(400);
+    const body = await res.text();
+    expect(body).toMatch(/CSRF check failed/i);
+  });
+
+  it('rejects POST when cookie is set but the KV entry is missing (load-bearing)', async () => {
+    // KV has no `csrf:s` entry — even though the cookie and form match,
+    // the KV-bound anchor is missing so the request must fail. This is the
+    // critical defense per doc-review F5: a pure double-submit cookie
+    // could be forged by a subdomain XSS, so we anchor on KV.
+    const kv = makeKv({
+      'oauth_state:s': JSON.stringify({
+        responseType: 'code',
+        clientId: 'claude',
+        redirectUri: 'https://claude.ai/api/mcp/auth_callback',
+        scope: ['mcp'],
+        state: 'client-state',
+      }),
+    });
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: 'nonce',
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(400);
+    const body = await res.text();
+    expect(body).toMatch(/CSRF check failed/i);
+  });
+
+  it('rejects POST when the form field matches the KV value but the cookie does not (cookie missing)', async () => {
+    // Asserting that ALL three values must be present and equal — not
+    // just any two of them.
+    const kv = seedAuthorizeState('s', 'nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'nonce',
+      csrfCookie: null,
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts POST when cookie, form field, and KV all match', async () => {
+    const kv = seedAuthorizeState('s', 'matching-nonce');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'matching-nonce',
+      csrfCookie: 'matching-nonce',
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    const res = await PackRatAuthHandler.fetch(req, env);
+    expect(res.status).toBe(302);
+  });
+});
+
+describe('betterAuthErrorCopy — Better Auth response mapping', () => {
+  it('maps 429 to a rate-limit-specific message and 429 status', () => {
+    const copy = betterAuthErrorCopy(429);
+    expect(copy.status).toBe(429);
+    expect(copy.message).toMatch(/too many/i);
+  });
+
+  it('maps 423 to a locked-account-specific message and 423 status', () => {
+    const copy = betterAuthErrorCopy(423);
+    expect(copy.status).toBe(423);
+    expect(copy.message).toMatch(/locked/i);
+  });
+
+  it('maps 401 to the canonical credentials error and 401 status', () => {
+    const copy = betterAuthErrorCopy(401);
+    expect(copy.status).toBe(401);
+    expect(copy.message).toMatch(/invalid email or password/i);
+  });
+
+  it('collapses other 4xx (400/403) into the credentials error to avoid leaking detail', () => {
+    expect(betterAuthErrorCopy(400).status).toBe(401);
+    expect(betterAuthErrorCopy(403).status).toBe(401);
+    expect(betterAuthErrorCopy(400).message).toMatch(/invalid email or password/i);
+  });
+
+  it('maps 5xx to a transient-upstream message and 502 status', () => {
+    expect(betterAuthErrorCopy(500).status).toBe(502);
+    expect(betterAuthErrorCopy(503).status).toBe(502);
+    expect(betterAuthErrorCopy(500).message).toMatch(/temporarily unavailable/i);
+  });
+});
+
+describe('handleLoginPost — Better Auth status surface', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+  });
+  afterEach(() => fetchSpy.mockRestore());
+
+  async function runWithBetterAuthStatus(status: number): Promise<Response> {
+    fetchSpy.mockResolvedValue(new Response(null, { status }));
+    const kv = seedAuthorizeState('s', 'n');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const req = makeLoginPostRequest({
+      state: 's',
+      csrfField: 'n',
+      csrfCookie: 'n',
+      origin: 'https://mcp.packratai.com',
+      email: 'a@b.c',
+      password: 'pw',
+    });
+    return PackRatAuthHandler.fetch(req, env);
+  }
+
+  it('429 from Better Auth surfaces the rate-limit copy', async () => {
+    const res = await runWithBetterAuthStatus(429);
+    expect(res.status).toBe(429);
+    const body = await res.text();
+    expect(body).toMatch(/too many sign-in attempts/i);
+  });
+
+  it('423 from Better Auth surfaces the locked-account copy', async () => {
+    const res = await runWithBetterAuthStatus(423);
+    expect(res.status).toBe(423);
+    const body = await res.text();
+    expect(body).toMatch(/locked/i);
+  });
+
+  it('401 from Better Auth surfaces the canonical credentials error', async () => {
+    const res = await runWithBetterAuthStatus(401);
+    expect(res.status).toBe(401);
+    const body = await res.text();
+    expect(body).toMatch(/invalid email or password/i);
+  });
+
+  it('5xx from Better Auth surfaces the transient-upstream copy with status 502', async () => {
+    const res = await runWithBetterAuthStatus(500);
+    expect(res.status).toBe(502);
+    const body = await res.text();
+    expect(body).toMatch(/temporarily unavailable/i);
+  });
+});
+
+describe('checkLoginRateLimit — U14 swap point', () => {
+  it('always returns true today (stubbed; U14 swaps in env.MCP_TOOLS_RL.limit)', async () => {
+    const env = makeEnv();
+    expect(await checkLoginRateLimit(env, '1.2.3.4')).toBe(true);
+    expect(await checkLoginRateLimit(env, '')).toBe(true);
+  });
+});
+
+// ─── U6: CORS allowlist on /.well-known/* ────────────────────────────────────
+//
+// applyCorsHeaders is the one place CORS lives — the outer fetch wrapper
+// in `index.ts` invokes it for OPTIONS preflights (short-circuiting the
+// OAuthProvider entirely) and for GET responses (annotating after the
+// provider replies). Default-deny is critical: any origin not in
+// WELL_KNOWN_ALLOWED_ORIGINS must see the upstream response unmodified.
+
+describe('applyCorsHeaders — well-known CORS', () => {
+  it('returns a 204 preflight with the correct headers for OPTIONS from claude.ai', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-protected-resource', {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://claude.ai' },
+    });
+    const res = applyCorsHeaders(req, null);
+    expect(res).not.toBeNull();
+    expect(res?.status).toBe(204);
+    expect(res?.headers.get('Access-Control-Allow-Origin')).toBe('https://claude.ai');
+    expect(res?.headers.get('Vary')).toBe('Origin');
+    expect(res?.headers.get('Access-Control-Allow-Methods')).toContain('GET');
+    expect(res?.headers.get('Access-Control-Allow-Methods')).toContain('OPTIONS');
+    expect(res?.headers.get('Access-Control-Allow-Headers')).toMatch(/Authorization/i);
+    expect(res?.headers.get('Access-Control-Max-Age')).toBe('3600');
+  });
+
+  it('returns a 204 preflight for OPTIONS from claude.com (both Anthropic hosts)', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-authorization-server', {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://claude.com' },
+    });
+    const res = applyCorsHeaders(req, null);
+    expect(res?.status).toBe(204);
+    expect(res?.headers.get('Access-Control-Allow-Origin')).toBe('https://claude.com');
+  });
+
+  it('annotates a GET response from claude.ai with Allow-Origin + Vary', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-protected-resource', {
+      method: 'GET',
+      headers: { Origin: 'https://claude.ai' },
+    });
+    const upstream = new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const res = applyCorsHeaders(req, upstream);
+    expect(res).not.toBeNull();
+    expect(res?.status).toBe(200);
+    expect(res?.headers.get('Access-Control-Allow-Origin')).toBe('https://claude.ai');
+    expect(res?.headers.get('Vary')).toMatch(/Origin/);
+    expect(res?.headers.get('Content-Type')).toBe('application/json');
+  });
+
+  it('does NOT set Allow-Origin for a GET from a non-allowlisted origin (default-deny)', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-protected-resource', {
+      method: 'GET',
+      headers: { Origin: 'https://evil.example' },
+    });
+    const upstream = new Response('{}', { status: 200 });
+    const res = applyCorsHeaders(req, upstream);
+    expect(res).toBeNull();
+  });
+
+  it('does NOT set Allow-Origin for a non-/.well-known/ path (CORS scope is contained)', () => {
+    const req = new Request('https://mcp.packratai.com/mcp', {
+      method: 'GET',
+      headers: { Origin: 'https://claude.ai' },
+    });
+    const upstream = new Response('{}', { status: 200 });
+    const res = applyCorsHeaders(req, upstream);
+    expect(res).toBeNull();
+  });
+
+  it('does NOT preflight for OPTIONS from a non-allowlisted origin', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-protected-resource', {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://evil.example' },
+    });
+    const res = applyCorsHeaders(req, null);
+    expect(res).toBeNull();
+  });
+
+  it('handles a GET with no Origin header by returning null (no CORS needed)', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-protected-resource', {
+      method: 'GET',
+    });
+    const upstream = new Response('{}', { status: 200 });
+    const res = applyCorsHeaders(req, upstream);
+    expect(res).toBeNull();
+  });
+
+  it('preserves any existing Vary header by appending Origin', () => {
+    const req = new Request('https://mcp.packratai.com/.well-known/oauth-protected-resource', {
+      method: 'GET',
+      headers: { Origin: 'https://claude.ai' },
+    });
+    const upstream = new Response('{}', {
+      status: 200,
+      headers: { Vary: 'Accept-Encoding' },
+    });
+    const res = applyCorsHeaders(req, upstream);
+    expect(res?.headers.get('Vary')).toBe('Accept-Encoding, Origin');
   });
 });

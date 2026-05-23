@@ -155,7 +155,13 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    // NOTE: keep in lockstep with `auth.config.ts` (the CLI-facing static
+    // config). The two lists drift independently — see
+    // `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`
+    // and `docs/mcp/runbook.md` § "Better Auth trustedOrigins".
+    // `https://mcp.packratai.com` is the PackRat MCP Worker — sign-in calls
+    // originate from there during the OAuth flow.
+    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://', 'https://mcp.packratai.com'],
   });
 
   authCache.set(env as object, auth);
