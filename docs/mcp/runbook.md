@@ -733,6 +733,72 @@ so unit tests can construct an agent stub without standing up a Durable
 Object — both helpers short-circuit to `reason: 'unsupported'` when the
 method is missing, mirroring the live-client missing-capability path.
 
+## U11 login UX
+
+The login page renderer is extracted to `packages/mcp/src/login-page.ts`
+(263 lines). `renderLoginPage({ state, csrf, error?, clientName?, ssoEnabled? })`
+returns a complete HTML document. The presentation has room to breathe
+without dragging the OAuth handler internals along for the ride.
+
+### What shipped
+
+- **Brand mark + name** (inline SVG, no extra HTTP round-trip; replaceable
+  with the U13 public asset via a one-line change in `login-page.ts`).
+- **OAuth client-name disclosure** when `renderLoginPage({ ..., clientName: 'Claude' })`
+  is invoked — falls back to a generic "An MCP client is requesting access…"
+  line when omitted. `clientName` is HTML-escaped because it originates in
+  DCR metadata for non-pre-registered clients.
+- **Password-reset link** to `mailto:hello@packratai.com?subject=PackRat%20password%20reset`.
+  Better Auth's reset endpoint is POST-only with no public web page; mailto
+  is the most honest path until a web reset surface ships.
+- **Legal footer** links to Terms (U12), Privacy (U12), and Support
+  (`hello@packratai.com`). All three targets are on `packratai.com`.
+- **Accessibility**: `<main>` landmark, skip link, labelled inputs with
+  `autocomplete` hints, `role="alert"` on the error banner only when present,
+  `autofocus` on the email field, `prefers-color-scheme: dark` palette,
+  `noindex,nofollow` meta.
+
+### Stable signature for the SSO follow-up
+
+`renderLoginPage` accepts `ssoEnabled?: boolean` today; the field is
+parsed-and-ignored so the follow-up SSO PR can flip it without touching
+the handler call sites. The test suite asserts SSO buttons are NOT rendered
+in v1 (locks in the deferral).
+
+### What was NOT wired and why
+
+- **`clientName` is not threaded through at call sites yet.** The
+  `OAuthStateSchema` captures `clientId` but not the client name; to surface
+  the name in the disclosure copy, `handleAuthorize` would need to call
+  `env.OAUTH_PROVIDER.lookupClient(clientId)` and persist the name in KV
+  alongside the OAuth state. That's a one-screen change but it's not
+  required for the connector listing — Claude's name appears in the
+  consent screen Anthropic renders, not on our login form. Follow-up:
+  thread it through if a user reports the missing disclosure copy.
+- **Google + Apple SSO buttons.** Deferred per the U11 conditional
+  decision. Cookie-domain blocker: Better Auth's session cookie is
+  host-locked to `api.packrat.world`; the MCP worker at `mcp.packratai.com`
+  can't read it, and `packratai.com` and `packrat.world` share no parent
+  domain so `crossSubDomainCookies` doesn't bridge them. Realistic
+  follow-up options:
+  1. Move the API to a subdomain of `packratai.com` (e.g.
+     `api.packratai.com`) so cookies can be set on `.packratai.com`.
+  2. Extend Better Auth to encode the session token in the `callbackURL`
+     query string for the social flow (workaround for the cookie limit).
+  3. Introduce a one-time auth-code exchange endpoint between MCP and
+     the API: MCP redirects through API → API mints a short-lived code
+     bound to the Better Auth session → MCP exchanges the code for the
+     bearer server-to-server.
+  All three are non-trivial; (1) is the cleanest long-term but has
+  blast radius beyond the MCP. Worth a follow-up planning conversation.
+
+### Tests
+
+`packages/mcp/src/__tests__/login-page.test.ts` covers: document shape,
+branding, client-name disclosure (including the XSS escape), hidden-field
+escaping, helper + legal links, accessibility, and the SSO deferral
+contract. 20 tests total.
+
 ## Common operations
 
 ### Deploy

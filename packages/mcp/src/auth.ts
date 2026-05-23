@@ -42,25 +42,13 @@
  */
 
 import { isString } from '@packrat/guards';
-import {
-  caseInsensitive,
-  createRegExp,
-  exactly,
-  global as globalFlag,
-  oneOrMore,
-  whitespace,
-} from 'magic-regexp';
+import { caseInsensitive, createRegExp, exactly, oneOrMore, whitespace } from 'magic-regexp';
 import { z } from 'zod';
 import { ServiceMeta } from './constants';
+import { renderLoginPage } from './login-page';
 import { unauthorizedResponse } from './metadata';
 import { SCOPES_SUPPORTED } from './scopes';
 import type { Env, Props } from './types';
-
-// ── HTML-escape regexes (magic-regexp so the pre-push hook is satisfied) ─────
-const AMP_RE = createRegExp(exactly('&'), [globalFlag]);
-const LT_RE = createRegExp(exactly('<'), [globalFlag]);
-const GT_RE = createRegExp(exactly('>'), [globalFlag]);
-const QUOT_RE = createRegExp(exactly('"'), [globalFlag]);
 
 // `Authorization: Bearer <prefix>` — case-insensitive scheme, one-or-more
 // spaces. Used by `extractBearer` to split the prefix from the token without
@@ -268,66 +256,12 @@ export function betterAuthErrorCopy(status: number): LoginErrorCopy {
   return { status: 401, message: 'Invalid email or password.' };
 }
 
-// ── HTML helpers ──────────────────────────────────────────────────────────────
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(AMP_RE, '&amp;')
-    .replace(LT_RE, '&lt;')
-    .replace(GT_RE, '&gt;')
-    .replace(QUOT_RE, '&quot;');
-}
-
-interface LoginPageOpts {
-  /** OAuth state key (links the page back to KV-stored state). */
-  state: string;
-  /** CSRF nonce (must round-trip through the form's hidden field). */
-  csrf: string;
-  /** Optional error message rendered in the page's banner. */
-  error?: string;
-}
-
-function loginPage({ state, csrf, error }: LoginPageOpts): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in · PackRat</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 400px; margin: 80px auto; padding: 0 16px; color: #1a1a1a; }
-    h1 { font-size: 1.5rem; margin-bottom: 8px; }
-    p.sub { color: #666; margin-bottom: 24px; font-size: .9rem; }
-    label { display: block; margin-bottom: 16px; font-size: .9rem; font-weight: 500; }
-    input { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px 12px;
-            border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    button { width: 100%; padding: 10px; background: #2563eb; color: white; border: none;
-             border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
-    button:hover { background: #1d4ed8; }
-    .error { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca;
-             border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: .9rem; }
-  </style>
-</head>
-<body>
-  <h1>Sign in to PackRat</h1>
-  <p class="sub">An MCP client is requesting access to your PackRat account.</p>
-  ${error ? `<div class="error">${escapeHtml(error)}</div>` : ''}
-  <form method="POST" action="/login">
-    <input type="hidden" name="state" value="${escapeHtml(state)}" />
-    <input type="hidden" name="csrf" value="${escapeHtml(csrf)}" />
-    <label>Email
-      <input type="email" name="email" required autocomplete="email" />
-    </label>
-    <label>Password
-      <input type="password" name="password" required autocomplete="current-password" />
-    </label>
-    <button type="submit">Sign in</button>
-  </form>
-</body>
-</html>`;
-}
-
-/** FormData.get() returns FormDataEntryValue | null (string | File | null). Extract string only. */
+/**
+ * FormData.get() returns FormDataEntryValue | null (string | File | null).
+ * Extract string only. (The branded HTML lives in `./login-page.ts`; the
+ * helpers below are the parts of the old `loginPage` module that aren't
+ * presentation — keep them here so the OAuth handler is self-contained.)
+ */
 function getFormString(data: { get(name: string): string | File | null }, key: string): string {
   const val = data.get(key);
   return isString(val) ? val : '';
@@ -512,7 +446,7 @@ async function handleLoginGet(request: Request, env: Env): Promise<Response> {
   // is what actually enforces the three-way match.
   const csrfNonce = state ? ((await env.OAUTH_KV.get(csrfKey(state))) ?? '') : '';
 
-  return new Response(loginPage({ state, csrf: csrfNonce }), {
+  return new Response(renderLoginPage({ state, csrf: csrfNonce }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
 }
@@ -540,10 +474,13 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     state = getFormString(form, 'state');
     csrfField = getFormString(form, 'csrf');
   } catch {
-    return new Response(loginPage({ state: '', csrf: '', error: 'Invalid form submission.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+    return new Response(
+      renderLoginPage({ state: '', csrf: '', error: 'Invalid form submission.' }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      },
+    );
   }
 
   // ── CSRF: cookie present, KV-bound, three-way match ──────────────────────
@@ -557,7 +494,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
   if (!csrfCookie || !csrfField) {
     return new Response(
-      loginPage({
+      renderLoginPage({
         state,
         csrf: csrfField,
         error: 'CSRF check failed. Please reload and try again.',
@@ -571,7 +508,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
   if (!state) {
     return new Response(
-      loginPage({
+      renderLoginPage({
         state,
         csrf: csrfField,
         error: 'Missing sign-in state. Please reload and try again.',
@@ -588,7 +525,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     // KV entry missing means /authorize was never visited or the nonce
     // expired. Either way the post can't be trusted.
     return new Response(
-      loginPage({
+      renderLoginPage({
         state,
         csrf: csrfField,
         error: 'CSRF check failed. Please reload and try again.',
@@ -602,7 +539,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
   if (!csrfEqual(csrfCookie, csrfField) || !csrfEqual(csrfFromKv, csrfField)) {
     return new Response(
-      loginPage({
+      renderLoginPage({
         state,
         csrf: csrfField,
         error: 'CSRF check failed. Please reload and try again.',
@@ -625,7 +562,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   const allowed = await checkLoginRateLimit(env, ip);
   if (!allowed) {
     return new Response(
-      loginPage({
+      renderLoginPage({
         state,
         csrf: csrfField,
         error: 'Too many sign-in attempts. Please wait a minute and try again.',
@@ -640,7 +577,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   // ── Field validation ─────────────────────────────────────────────────────
   if (!email || !password) {
     return new Response(
-      loginPage({ state, csrf: csrfField, error: 'Email and password are required.' }),
+      renderLoginPage({ state, csrf: csrfField, error: 'Email and password are required.' }),
       {
         status: 400,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -651,7 +588,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   const oauthReqStr = await env.OAUTH_KV.get(oauthStateKey(state));
   if (!oauthReqStr) {
     return new Response(
-      loginPage({ state, csrf: csrfField, error: 'Session expired. Please start over.' }),
+      renderLoginPage({ state, csrf: csrfField, error: 'Session expired. Please start over.' }),
       {
         status: 400,
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -671,7 +608,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     // Network-level failure (DNS, timeout, etc.) — treat as a transient
     // upstream outage with the same copy as a 5xx response body.
     const copy = betterAuthErrorCopy(503);
-    return new Response(loginPage({ state, csrf: csrfField, error: copy.message }), {
+    return new Response(renderLoginPage({ state, csrf: csrfField, error: copy.message }), {
       status: copy.status,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -683,7 +620,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     // target each branch (429 / 423 / 401 / 5xx) without spinning up
     // the full handler.
     const copy = betterAuthErrorCopy(signInRes.status);
-    return new Response(loginPage({ state, csrf: csrfField, error: copy.message }), {
+    return new Response(renderLoginPage({ state, csrf: csrfField, error: copy.message }), {
       status: copy.status,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -695,7 +632,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
   if (!betterAuthToken || !userId) {
     return new Response(
-      loginPage({
+      renderLoginPage({
         state,
         csrf: csrfField,
         error: 'Sign-in succeeded but session data was missing.',
