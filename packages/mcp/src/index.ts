@@ -33,7 +33,7 @@ import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
 import { z } from 'zod';
-import { PackRatAuthHandler } from './auth';
+import { dcrRegisterGate, PackRatAuthHandler } from './auth';
 import { createMcpClients, type McpClients } from './client';
 import { ServiceMeta } from './constants';
 import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
@@ -246,11 +246,7 @@ const mcpApiHandler = {
       headers.set('X-PackRat-Admin-Token', adminToken);
     }
 
-    const response = await mcpDoHandler.fetch(
-      new Request(request, { headers }),
-      env,
-      ctx,
-    );
+    const response = await mcpDoHandler.fetch(new Request(request, { headers }), env, ctx);
 
     // RFC 9728 §5.1: 401 responses from a protected resource MUST include a
     // WWW-Authenticate challenge with resource_metadata. The McpAgent
@@ -275,8 +271,17 @@ const mcpApiHandler = {
 // `resource` URL to our custom domain so Claude's audience-verification of
 // issued tokens matches what the metadata advertises — silent drift here is
 // a top connector-rejection cause.
+//
+// `disallowPublicClientRegistration: true` rejects public-client DCR (`none`
+// token_endpoint_auth_method) inside the library itself. We *also* wrap
+// the provider's `fetch` to gate every `/register` request on
+// `Authorization: Bearer <MCP_INITIAL_ACCESS_TOKEN>` — see `dcrRegisterGate`
+// in `auth.ts` for the rationale and fail-closed semantics. The library
+// dispatches `/register` to its internal `handleClientRegistration` *before*
+// any handler runs, so the gate must live above the provider (not inside
+// `PackRatAuthHandler`).
 
-export default new OAuthProvider<Env>({
+const oauthProvider = new OAuthProvider<Env>({
   // /mcp and sub-paths are API routes: require a valid access token
   apiRoute: '/mcp',
   apiHandler: mcpApiHandler,
@@ -291,7 +296,7 @@ export default new OAuthProvider<Env>({
 
   // Security: S256 PKCE only; no implicit flow; restrict DCR to confidential
   // clients (the /register endpoint is further gated by MCP_INITIAL_ACCESS_TOKEN
-  // in PackRatAuthHandler — see U4).
+  // in the outer fetch wrapper below — see U4).
   allowPlainPKCE: false,
   allowImplicitFlow: false,
   disallowPublicClientRegistration: true,
@@ -308,3 +313,20 @@ export default new OAuthProvider<Env>({
   // Pin the protected-resource URL to the custom domain (env-invariant in v1).
   resourceMetadata: buildResourceMetadata({} as Env),
 });
+
+/**
+ * Worker entrypoint: gate `/register` on the initial access token first,
+ * then delegate every other path to the OAuthProvider.
+ *
+ * Keeping the gate at this layer (vs. inside `PackRatAuthHandler`) is
+ * load-bearing: the library routes `/register` to its built-in
+ * `handleClientRegistration` *before* the default handler runs, so any
+ * gate inside `PackRatAuthHandler` would never fire for `/register`.
+ */
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const gateResponse = dcrRegisterGate(request, env);
+    if (gateResponse) return gateResponse;
+    return oauthProvider.fetch(request, env, ctx);
+  },
+};

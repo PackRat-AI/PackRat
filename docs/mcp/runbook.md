@@ -67,18 +67,51 @@ Repeat for `--env dev` with dev values.
 
 ### 4. Pre-register Claude as a trusted OAuth client (U4)
 
-Once the worker is deployed, run:
+Once the worker is deployed and `MCP_INITIAL_ACCESS_TOKEN` is set, run:
 
 ```bash
-cd packages/mcp
-bun scripts/register-claude-clients.ts --env prod
-# Reads MCP_INITIAL_ACCESS_TOKEN from your local .env and posts to
-# https://mcp.packratai.com/register, registering both
-# https://claude.ai/api/mcp/auth_callback and
-# https://claude.com/api/mcp/auth_callback as pre-approved clients.
+# From repo root:
+bun packages/mcp/scripts/register-claude-clients.ts --env prod
+
+# Dev worker (URL must be passed explicitly — no canonical *.workers.dev URL):
+bun packages/mcp/scripts/register-claude-clients.ts --env dev \
+  --url https://packrat-mcp-dev.<your-account>.workers.dev
 ```
 
-(Script lands in U4.)
+Token resolution order: `--token <value>` flag → `MCP_INITIAL_ACCESS_TOKEN`
+env var → `packages/mcp/.dev.vars`. The script POSTs to `/register` twice
+(once for `https://claude.ai/api/mcp/auth_callback`, once for
+`https://claude.com/api/mcp/auth_callback`) and prints the issued
+`client_id` + `client_secret` for each — record both immediately if you
+need to reuse them, because the Worker only retains the secret's hash.
+
+The script is idempotent: HTTP 409 or any "already exists" / "duplicate"
+response is treated as a skip, not a failure.
+
+### DCR gating contract (U4)
+
+Every `POST /register` request is gated by an outer fetch wrapper in
+`packages/mcp/src/index.ts` that calls `dcrRegisterGate` from
+`packages/mcp/src/auth.ts` *before* the OAuthProvider sees the request.
+The gate is **fail-closed**:
+
+| Authorization header                          | Result |
+| --------------------------------------------- | ------ |
+| Missing                                       | 401    |
+| Wrong scheme (`Basic ...`)                    | 401    |
+| `Bearer` but no token value                   | 401    |
+| `Bearer <wrong-token>`                        | 401    |
+| `Bearer <correct-token>`, env var **unset**   | 401    |
+| `Bearer <correct-token>`, env var matching    | passes through to `OAuthProvider.handleClientRegistration` |
+
+The same 401 is returned for non-POST `/register` requests, so an attacker
+cannot probe whether `MCP_INITIAL_ACCESS_TOKEN` is set by varying the
+method.
+
+The library option `disallowPublicClientRegistration: true` is also set
+inside the OAuthProvider config as defense-in-depth: even if the gate were
+removed, public clients (`token_endpoint_auth_method: 'none'`) would still
+be rejected.
 
 ## Common operations
 

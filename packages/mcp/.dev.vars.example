@@ -5,3 +5,10 @@
 # Local: http://localhost:8787
 # Production: https://packrat.world
 PACKRAT_API_URL=http://localhost:8787
+
+# Required: pre-shared bearer used by POST /register (Dynamic Client
+# Registration). Generate via `openssl rand -hex 32`. If unset, /register
+# returns 401 to every caller (fail-closed). The script
+# `packages/mcp/scripts/register-claude-clients.ts` reads this value to
+# pre-register Claude's callback URLs.
+MCP_INITIAL_ACCESS_TOKEN=

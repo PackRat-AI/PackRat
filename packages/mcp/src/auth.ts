@@ -8,15 +8,31 @@
  *   GET  /callback  → complete authorization, redirect client back with auth code
  *   GET  /          → health check (also /health)
  *
+ * Also exports a `dcrRegisterGate(env, request)` helper used by the Worker
+ * entrypoint (`index.ts`) to gate `POST /register` on
+ * `Authorization: Bearer <MCP_INITIAL_ACCESS_TOKEN>` *before* the
+ * `OAuthProvider` dispatch sees the request. The gate fails closed: if the
+ * env var is unset, every `/register` is rejected. See U4 of the
+ * connector-store readiness plan and `docs/mcp/runbook.md` for the operator
+ * flow that pre-registers Claude's callbacks via the one-shot script.
+ *
  * KV layout (all keys expire after 10 minutes):
  *   oauth_state:<stateKey>  → JSON-serialised AuthRequest from parseAuthRequest()
  *   session:<stateKey>      → JSON { token: string, userId: string }
  */
 
 import { isString } from '@packrat/guards';
-import { createRegExp, exactly, global as globalFlag } from 'magic-regexp';
+import {
+  caseInsensitive,
+  createRegExp,
+  exactly,
+  global as globalFlag,
+  oneOrMore,
+  whitespace,
+} from 'magic-regexp';
 import { z } from 'zod';
 import { ServiceMeta } from './constants';
+import { unauthorizedResponse } from './metadata';
 import type { Env, Props } from './types';
 
 // ── HTML-escape regexes (magic-regexp so the pre-push hook is satisfied) ─────
@@ -24,6 +40,18 @@ const AMP_RE = createRegExp(exactly('&'), [globalFlag]);
 const LT_RE = createRegExp(exactly('<'), [globalFlag]);
 const GT_RE = createRegExp(exactly('>'), [globalFlag]);
 const QUOT_RE = createRegExp(exactly('"'), [globalFlag]);
+
+// `Authorization: Bearer <prefix>` — case-insensitive scheme, one-or-more
+// spaces. Used by `extractBearer` to split the prefix from the token without
+// touching the token contents (magic-regexp's strict group typing pushes us
+// away from a single-pattern capture for arbitrary opaque values).
+const BEARER_PREFIX_RE = createRegExp(exactly('Bearer').and(oneOrMore(whitespace)), [
+  caseInsensitive,
+]);
+// Bound the body of the Authorization header we even bother to inspect.
+// Worker header limits cap this around 8 KiB; 4 KiB is plenty for any OAuth
+// access or initial-access token shape we expect to see.
+const MAX_BEARER_HEADER_LEN = 4096;
 
 // ── Zod schemas for external data ─────────────────────────────────────────────
 
@@ -109,6 +137,92 @@ function loginPage(state: string, error?: string): string {
 function getFormString(data: { get(name: string): string | File | null }, key: string): string {
   const val = data.get(key);
   return isString(val) ? val : '';
+}
+
+// ── Dynamic Client Registration gate ──────────────────────────────────────────
+
+/**
+ * Extract the bearer token from an `Authorization` header value.
+ *
+ * Returns `null` if the header is missing, doesn't use the Bearer scheme,
+ * the token slot is empty, or the value exceeds `MAX_BEARER_HEADER_LEN`.
+ * The length cap defends the comparator from pathological header sizes —
+ * Workers will already reject anything > ~8 KiB but we cap earlier so
+ * `timingSafeEqual` never sees attacker-chosen multi-MB inputs.
+ */
+function extractBearer(headerValue: string | null): string | null {
+  if (!headerValue) return null;
+  if (headerValue.length > MAX_BEARER_HEADER_LEN) return null;
+  const match = BEARER_PREFIX_RE.exec(headerValue);
+  if (!match || match.index !== 0) return null;
+  const token = headerValue.slice(match[0].length).trim();
+  return token.length > 0 ? token : null;
+}
+
+/**
+ * Constant-time string equality. Returns false on any length mismatch and
+ * compares byte-by-byte without short-circuit so an attacker can't probe
+ * the secret one character at a time via timing.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+/**
+ * Gate for `POST /register` (RFC 7591 Dynamic Client Registration).
+ *
+ * The `@cloudflare/workers-oauth-provider` library does not natively support
+ * initial-access-token gating; without this check, anyone who can reach the
+ * Worker URL can mint OAuth clients. We intercept the request *before*
+ * `OAuthProvider.fetch()` dispatches it, validate the bearer against
+ * `env.MCP_INITIAL_ACCESS_TOKEN`, and only let valid callers fall through
+ * to the library's `handleClientRegistration` (which preserves the spec
+ * response shape: `client_id`, optional `client_secret`,
+ * `registration_client_uri`, etc.).
+ *
+ * Fail-closed semantics:
+ *   - Missing `Authorization` header                  → 401
+ *   - `Authorization` not Bearer scheme               → 401
+ *   - Token mismatch                                  → 401
+ *   - `MCP_INITIAL_ACCESS_TOKEN` env var unset/empty  → 401 (DCR effectively disabled)
+ *
+ * All 401s carry the same `WWW-Authenticate: Bearer resource_metadata=...`
+ * header as `/mcp`, so an MCP client receiving the error can rediscover
+ * the protected-resource metadata in one round trip.
+ *
+ * Returns a `Response` to short-circuit dispatch, or `null` if the request
+ * should proceed to the normal `OAuthProvider` routing.
+ */
+export function dcrRegisterGate(request: Request, env: Env): Response | null {
+  const url = new URL(request.url);
+  if (url.pathname !== '/register') return null;
+  // Method check is left to OAuthProvider (it returns 405 for non-POST).
+  // We still apply the bearer gate to non-POST so a GET probe can't be used
+  // to fingerprint whether the env var is set.
+
+  const expected = env.MCP_INITIAL_ACCESS_TOKEN;
+  if (!expected || expected.length === 0) {
+    return unauthorizedResponse(env, 'Dynamic client registration is disabled on this server');
+  }
+
+  const provided = extractBearer(request.headers.get('Authorization'));
+  if (!provided) {
+    return unauthorizedResponse(
+      env,
+      'Dynamic client registration requires an initial access token',
+    );
+  }
+
+  if (!timingSafeEqual(provided, expected)) {
+    return unauthorizedResponse(env, 'Invalid initial access token');
+  }
+
+  return null;
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
