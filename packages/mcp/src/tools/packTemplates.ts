@@ -19,9 +19,43 @@
  */
 
 import { z } from 'zod';
-import { call, nowIso } from '../client';
+import { call, errResponse, nowIso } from '../client';
+import { type ConfirmReason, confirmAction } from '../elicit';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
+
+/**
+ * U10: structured error envelope for elicitation failures on the two
+ * destructive/high-blast-radius template tools. Mirrors the helper of the
+ * same name in `tools/admin.ts`; duplicated rather than centralised to
+ * keep both files independently grep-able and avoid a circular-import
+ * risk from `client.ts → elicit.ts → client.ts` if we hoisted it to
+ * `client.ts`.
+ */
+function elicitFailureResponse(reason: ConfirmReason) {
+  switch (reason) {
+    case 'cancelled':
+      return errResponse('user_cancelled', 'Action cancelled — confirmation not provided', false);
+    case 'mismatch':
+      return errResponse(
+        'confirmation_mismatch',
+        'Action cancelled — the confirmation text did not match',
+        false,
+      );
+    case 'timeout':
+      return errResponse(
+        'confirmation_timeout',
+        'Confirmation prompt timed out before the user responded',
+        true,
+      );
+    case 'unsupported':
+      return errResponse(
+        'elicitation_unsupported',
+        'This tool requires user confirmation, which your MCP client does not support',
+        false,
+      );
+  }
+}
 
 export function registerPackTemplateTools(agent: AgentContext): void {
   // ── Templates ─────────────────────────────────────────────────────────────
@@ -116,7 +150,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     {
       title: 'Create App Pack Template (Admin)',
       description:
-        'Create a curated app-level pack template visible to all users. Admin-only — also requires the mcp:admin OAuth scope. For personal templates use packrat_create_pack_template.',
+        'Create a curated app-level pack template visible to all users. Admin-only — also requires the mcp:admin OAuth scope. For personal templates use packrat_create_pack_template. ' +
+        'U10: prompts the admin to type PUBLISH before the template is created (visible to every PackRat user, not easily unpublished).',
       inputSchema: {
         name: z.string().min(1),
         description: z.string().optional(),
@@ -132,7 +167,15 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ name, description, category, image, tags }) => {
+    async ({ name, description, category, image, tags }, extra) => {
+      const confirm = await confirmAction(agent, extra, {
+        message:
+          `Confirm publish of app-wide pack template "${name}". ` +
+          `This is visible to every PackRat user and not easily unpublished. ` +
+          `Type PUBLISH to proceed:`,
+        expectedConfirmation: 'PUBLISH',
+      });
+      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
       const now = nowIso();
       return call(
         agent.api.user['pack-templates'].post({
@@ -357,7 +400,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     {
       title: 'Generate Pack Template From URL (Admin)',
       description:
-        'Generate a pack template from a TikTok or YouTube link. Admin-only — the server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user, and MCP hides it from non-admin sessions. The `mcp:admin` scope is granted at OAuth callback time when the Better Auth role resolves to ADMIN.',
+        'Generate a pack template from a TikTok or YouTube link. Admin-only — the server gates this on `user.role === "ADMIN"` on the OAuth-authenticated user, and MCP hides it from non-admin sessions. The `mcp:admin` scope is granted at OAuth callback time when the Better Auth role resolves to ADMIN. ' +
+        'U10: prompts the admin to type GENERATE before the LLM call fires (fetched content is processed and a template is created).',
       inputSchema: {
         content_url: z.string().url(),
         is_app_template: z.boolean().default(false),
@@ -370,13 +414,23 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         openWorldHint: true,
       },
     },
-    async ({ content_url, is_app_template }) =>
-      call(
+    async ({ content_url, is_app_template }, extra) => {
+      const confirm = await confirmAction(agent, extra, {
+        message:
+          `Confirm generate template from ${content_url}. ` +
+          `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
+          `The fetched content will be processed by an LLM and the resulting template will be created. ` +
+          `Type GENERATE to proceed:`,
+        expectedConfirmation: 'GENERATE',
+      });
+      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
+      return call(
         agent.api.user['pack-templates']['generate-from-online-content'].post({
           contentUrl: content_url,
           isAppTemplate: is_app_template,
         }),
         { action: 'generate pack template from URL', requiresAdmin: true },
-      ),
+      );
+    },
   );
 }

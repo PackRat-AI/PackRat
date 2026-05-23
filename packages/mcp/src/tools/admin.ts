@@ -20,7 +20,8 @@
  */
 
 import { z } from 'zod';
-import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
+import { call, clampLimit, errResponse, PAGINATION_LIMIT_MAX } from '../client';
+import { type ConfirmReason, confirmAction } from '../elicit';
 import {
   AdminActiveUsersOutputSchema,
   AdminAnalyticsActivityOutputSchema,
@@ -30,6 +31,48 @@ import {
   AdminStatsOutputSchema,
 } from '../output-schemas';
 import type { AgentContext } from '../types';
+
+/**
+ * U10: map a `confirmAction` failure reason into the canonical structured-
+ * error envelope. Kept here (not in `elicit.ts`) so the helper module
+ * stays free of `errResponse` coupling and remains usable from tests
+ * that don't want the `McpToolResult` shape.
+ *
+ * Error codes:
+ *   - `user_cancelled`         → user declined / cancelled the prompt.
+ *   - `confirmation_mismatch`  → user accepted but typed the wrong string.
+ *   - `confirmation_timeout`   → SDK's 60s elicitation timeout fired.
+ *   - `elicitation_unsupported` → client never advertised the capability,
+ *     no live transport, or some other unrecoverable surface issue.
+ *
+ * `retryable` is set to `true` only for timeout — the user might answer
+ * faster on the next try. Mismatch / cancelled / unsupported are all
+ * "do not retry without changing something" states.
+ */
+function elicitFailureResponse(reason: ConfirmReason) {
+  switch (reason) {
+    case 'cancelled':
+      return errResponse('user_cancelled', 'Action cancelled — confirmation not provided', false);
+    case 'mismatch':
+      return errResponse(
+        'confirmation_mismatch',
+        'Action cancelled — the confirmation text did not match',
+        false,
+      );
+    case 'timeout':
+      return errResponse(
+        'confirmation_timeout',
+        'Confirmation prompt timed out before the user responded',
+        true,
+      );
+    case 'unsupported':
+      return errResponse(
+        'elicitation_unsupported',
+        'This tool requires user confirmation, which your MCP client does not support',
+        false,
+      );
+  }
+}
 
 const ADMIN = { requiresAdmin: true as const };
 
@@ -115,7 +158,8 @@ export function registerAdminTools(agent: AgentContext): void {
     {
       title: 'Admin: Hard-Delete User',
       description:
-        'GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log.',
+        'GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log. ' +
+        'U10: prompts the user to retype the target user_id before proceeding.',
       inputSchema: { user_id: z.string(), reason: z.string().min(1) },
       annotations: {
         title: 'Admin: Hard-Delete User',
@@ -125,12 +169,30 @@ export function registerAdminTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ user_id, reason }) =>
-      call(agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }), {
+    async ({ user_id, reason }, extra) => {
+      // U10: confirm before the irreversible side-effect. We require the
+      // operator to retype the user_id verbatim. The admin API has no
+      // GET-by-id endpoint to enrich the prompt with the username/email
+      // pre-deletion (see `packages/api/src/routes/admin/index.ts` — only
+      // `/users-list` and the DELETE exist). Keeping the prompt to "type
+      // the id you passed" avoids an extra failable read while still
+      // forcing a deliberate confirmation step.
+      const confirm = await confirmAction(agent, extra, {
+        message:
+          `Confirm hard-delete of user ${user_id}. ` +
+          `Reason on record: "${reason}". ` +
+          `This is irreversible (GDPR-style). ` +
+          `Type the user id (${user_id}) to proceed:`,
+        expectedConfirmation: user_id,
+        fieldLabel: 'User ID',
+      });
+      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
+      return call(agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }), {
         action: 'hard-delete user',
         resourceHint: `user ${user_id}`,
         ...ADMIN,
-      }),
+      });
+    },
   );
 
   agent.server.registerTool(
@@ -161,7 +223,9 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_delete_pack',
     {
       title: 'Admin: Delete Pack',
-      description: 'Soft-delete a pack as admin (bypasses ownership).',
+      description:
+        'Soft-delete a pack as admin (bypasses ownership). ' +
+        'U10: prompts the user to type DELETE before proceeding.',
       inputSchema: { pack_id: z.string() },
       annotations: {
         title: 'Admin: Delete Pack',
@@ -171,12 +235,18 @@ export function registerAdminTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ pack_id }) =>
-      call(agent.api.admin.admin.packs({ id: pack_id }).delete(), {
+    async ({ pack_id }, extra) => {
+      const confirm = await confirmAction(agent, extra, {
+        message: `Confirm delete of pack ${pack_id}. Type DELETE to proceed:`,
+        expectedConfirmation: 'DELETE',
+      });
+      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
+      return call(agent.api.admin.admin.packs({ id: pack_id }).delete(), {
         action: 'admin delete pack',
         resourceHint: `pack ${pack_id}`,
         ...ADMIN,
-      }),
+      });
+    },
   );
 
   agent.server.registerTool(
@@ -246,7 +316,8 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_delete_catalog_item',
     {
       title: 'Admin: Delete Catalog Item',
-      description: 'Delete a catalog item as admin.',
+      description:
+        'Delete a catalog item as admin. U10: prompts the user to type DELETE before proceeding.',
       inputSchema: { item_id: z.union([z.string(), z.number()]) },
       annotations: {
         title: 'Admin: Delete Catalog Item',
@@ -256,12 +327,18 @@ export function registerAdminTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ item_id }) =>
-      call(agent.api.admin.admin.catalog({ id: String(item_id) }).delete(), {
+    async ({ item_id }, extra) => {
+      const confirm = await confirmAction(agent, extra, {
+        message: `Confirm delete of catalog item ${item_id}. Type DELETE to proceed:`,
+        expectedConfirmation: 'DELETE',
+      });
+      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
+      return call(agent.api.admin.admin.catalog({ id: String(item_id) }).delete(), {
         action: 'admin delete catalog item',
         resourceHint: `catalog item ${item_id}`,
         ...ADMIN,
-      }),
+      });
+    },
   );
 
   // ── Trails (admin) ────────────────────────────────────────────────────────
@@ -353,7 +430,9 @@ export function registerAdminTools(agent: AgentContext): void {
     'packrat_admin_delete_trail_condition_report',
     {
       title: 'Admin: Delete Trail Condition Report',
-      description: 'Soft-delete a trail condition report as admin.',
+      description:
+        'Soft-delete a trail condition report as admin. ' +
+        'U10: prompts the user to type DELETE before proceeding.',
       inputSchema: { report_id: z.string() },
       annotations: {
         title: 'Admin: Delete Trail Condition Report',
@@ -363,12 +442,18 @@ export function registerAdminTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ report_id }) =>
-      call(agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(), {
+    async ({ report_id }, extra) => {
+      const confirm = await confirmAction(agent, extra, {
+        message: `Confirm delete of trail condition report ${report_id}. Type DELETE to proceed:`,
+        expectedConfirmation: 'DELETE',
+      });
+      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
+      return call(agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(), {
         action: 'admin delete trail report',
         resourceHint: `report ${report_id}`,
         ...ADMIN,
-      }),
+      });
+    },
   );
 
   // ── Analytics: platform ───────────────────────────────────────────────────

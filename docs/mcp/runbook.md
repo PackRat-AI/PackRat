@@ -622,6 +622,117 @@ The `ReadResourceResult` type in MCP SDK 1.29 does NOT have an
 path diverges from the tool-call envelope U8 hardened — for resources
 the JSON-RPC layer carries the error, not the result body.
 
+## U10 elicitations
+
+PackRat's MCP server prompts the user via MCP `elicitation/create` before
+firing irreversible / high-blast-radius admin operations. The blast
+radius is intentionally limited — only six tools elicit, matching the
+plan's "destructive admin + ambiguous input" stance.
+
+### Gated tools and confirmation tokens
+
+| Tool                                              | Confirmation field | Required string  |
+| ------------------------------------------------- | ------------------ | ---------------- |
+| `packrat_admin_hard_delete_user`                  | User ID            | the target user_id (verbatim) |
+| `packrat_admin_delete_pack`                       | Confirmation       | `DELETE`         |
+| `packrat_admin_delete_catalog_item`               | Confirmation       | `DELETE`         |
+| `packrat_admin_delete_trail_condition_report`     | Confirmation       | `DELETE`         |
+| `packrat_create_app_pack_template`                | Confirmation       | `PUBLISH`        |
+| `packrat_generate_pack_template_from_url`         | Confirmation       | `GENERATE`       |
+
+For `packrat_admin_hard_delete_user` we ask the operator to retype the
+user_id rather than a fixed token because the admin API has no GET-by-id
+endpoint to enrich the prompt with the username/email pre-deletion
+(`packages/api/src/routes/admin/index.ts` only exposes `/users-list` and
+the DELETE itself). Retyping the id keeps the prompt deliberate without
+introducing a fragile pre-read call. If a future API unit adds the GET
+endpoint, swap the confirmation token to the username.
+
+### agents@0.13 contract — `{ relatedRequestId }` is required
+
+The U2 dependency bump pulled `agents` to `^0.13.2`. The 0.13 release
+added a required second argument to `McpAgent.elicitInput`:
+
+```ts
+elicitInput(
+  params: { message: string; requestedSchema: unknown },
+  options?: { relatedRequestId?: RequestId },
+): Promise<ElicitResult>;
+```
+
+Without `{ relatedRequestId: extra.requestId }`, the elicitation request
+routes to a non-existent SSE stream and rejects with
+`Elicitation request timed out` after the SDK's 60-second timeout —
+silently from the user's perspective (no prompt ever appears).
+
+Both helpers in `packages/mcp/src/elicit.ts` (`confirmAction`,
+`chooseFromList`) always pass this option, sourcing `requestId` from the
+tool handler's second argument (`extra: RequestHandlerExtra`).
+`packages/mcp/src/__tests__/elicit.test.ts` asserts every call site
+passes the option, so a future helper that forgets it fails CI rather
+than failing silently in prod.
+
+### Fallback for clients without elicitation support
+
+When the connecting client (e.g. a custom MCP harness, or an older
+Claude Desktop build) never advertised the `elicitation` capability in
+its `initialize` handshake, the MCP SDK's
+`Server.assertCapabilityForMethod` throws:
+
+> `Client does not support elicitation (required for elicitation/create)`
+
+The helpers catch this exact substring (plus the agents SDK's
+`No active connections available for elicitation`, which fires when the
+SSE stream has dropped) and return `reason: 'unsupported'`. Each gated
+tool maps that into a structured error envelope:
+
+| Helper reason | `structuredContent.error.code` | `retryable` |
+| ------------- | ------------------------------ | ----------- |
+| `cancelled`   | `user_cancelled`               | false       |
+| `mismatch`    | `confirmation_mismatch`        | false       |
+| `timeout`     | `confirmation_timeout`         | true        |
+| `unsupported` | `elicitation_unsupported`      | false       |
+
+The destructive API call is NOT fired in any of those branches. The
+tool-handler tests in `packages/mcp/src/__tests__/tools-admin.test.ts`
+assert that explicitly — the spy on the underlying Treaty endpoint sees
+zero `delete`/`post` invocations on the cancel / mismatch / unsupported
+paths.
+
+### Ambiguous-search elicitation — deferred
+
+The plan flagged `packrat_alltrails_search` as a possible candidate for
+`chooseFromList`-style disambiguation. We deferred this because:
+
+- `packrat_preview_alltrails_url` is the only alltrails tool today, and
+  it takes a single URL — there's no multi-result step where the user
+  has to pick between candidates.
+- `packrat_search_trails` already returns a list of trails plus their
+  OSM IDs, and the established pattern (`search_trails` →
+  `get_trail(osm_id)` → `get_trail_geometry(osm_id)`) puts the
+  disambiguation step squarely in front of the model + user with the
+  IDs in hand. Layering an elicitation on top would duplicate that
+  choice and add a round-trip without changing the outcome.
+
+The `chooseFromList` helper is implemented, tested, and ready to wire
+in the moment a real ambiguity surface arrives (likely a future
+trail-name fuzzy-search endpoint). This is a connector-store nice-to-
+have rather than a blocker, per the plan.
+
+### Where the helpers live
+
+`packages/mcp/src/elicit.ts` — `confirmAction`, `chooseFromList`, and
+the `ElicitCapable` / `ElicitAgent` structural types. Designed to be
+called with `(agent, extra, opts)` where `agent` is the live
+`PackRatMCP` instance (which extends `McpAgent` and inherits
+`elicitInput`) and `extra` is the second argument the SDK passes to
+every tool handler.
+
+`AgentContext.elicitInput` is optional (see `packages/mcp/src/types.ts`)
+so unit tests can construct an agent stub without standing up a Durable
+Object — both helpers short-circuit to `reason: 'unsupported'` when the
+method is missing, mirroring the live-client missing-capability path.
+
 ## Common operations
 
 ### Deploy

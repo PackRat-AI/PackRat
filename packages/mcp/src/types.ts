@@ -17,6 +17,7 @@
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpClients } from './client';
+import type { ElicitCapable } from './elicit';
 
 /** Subset of McpServer.registerTool we use — same signature, no narrower types needed downstream. */
 export type RegisterToolFn = McpServer['registerTool'];
@@ -52,6 +53,16 @@ export interface AgentContext {
   registerFlaggedTool: RegisterFlaggedToolFn;
   /** Best-effort PackRat user ID (from OAuth props). May be empty for legacy bearer flows. */
   userId?: string;
+  /**
+   * U10: MCP elicitation surface. Present on the live `PackRatMCP` agent
+   * (which extends `McpAgent` and inherits `elicitInput` from agents@0.13);
+   * optional here so unit tests can construct an `AgentContext` without
+   * standing up the full Durable Object. Tools that need to prompt the
+   * user for confirmation must call into the `elicit.ts` helpers
+   * (`confirmAction`, `chooseFromList`), which gracefully degrade to a
+   * `reason: 'unsupported'` failure when this field is undefined.
+   */
+  elicitInput?: ElicitCapable['elicitInput'];
 }
 
 /** Cloudflare Worker environment bindings */
