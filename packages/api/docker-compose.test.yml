@@ -23,8 +23,8 @@ services:
       -c log_duration=on
       -c max_connections=100
 
-  # Neon-compatible WebSocket proxy so tests use the same @neondatabase/serverless
-  # driver as production — eliminates pg-cloudflare / cloudflare:sockets workarounds.
+  # Neon-compatible WebSocket proxy used by the vitest integration suite
+  # (`packages/api/test/setup.ts`) — speaks WebSocket only.
   wsproxy:
     image: ghcr.io/neondatabase/wsproxy:latest
     environment:
@@ -33,6 +33,22 @@ services:
       LOG_CONN_INFO: "true"
     ports:
       - "5434:80"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+
+  # Official Neon HTTP+WS local proxy
+  # (https://neon.com/guides/local-development-with-neon). Lets the
+  # `@neondatabase/serverless` HTTP driver (neon(url)) and WebSocket Pool
+  # talk to local Postgres on a single port (4444), so wrangler dev hits the
+  # exact same code paths as prod — no per-request WebSocket lifetime issues.
+  # Used by the Playwright E2E stack.
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+    environment:
+      PG_CONNECTION_STRING: postgres://test_user:test_password@postgres-test:5432/packrat_test
+    ports:
+      - "4444:4444"
     depends_on:
       postgres-test:
         condition: service_healthy
