@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PackRat MCP connector mark — U13.
+
+  Vector copy of the inline SVG in `packages/mcp/src/login-page.ts` at a
+  larger canvas (256×256) so it scales cleanly for listing thumbnails
+  (Anthropic's Software Directory accepts SVG and 1024×1024 PNG). The
+  shape is a stylized backpack: main compartment + top lid + horizontal
+  strap + a small attachment buckle.
+
+  Palette: PackRat product-blue (#2563eb / #1d4ed8) with a soft accent
+  band (#bfdbfe) — same tokens as the login page and the landing
+  feature cards (`apps/landing/config/site.ts` → features[].color
+  conventions).
+
+  Refresh contract: if the brand mark changes, update this file AND
+  `packages/mcp/src/login-page.ts` (which inlines an SVG copy) AND
+  `apps/landing/public/favicon.ico` in the same commit so the three
+  surfaces don't drift.
+-->
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PackRat MCP">
+  <title>PackRat MCP</title>
+  <!-- Main pack body -->
+  <rect x="56" y="72" width="144" height="152" rx="32" fill="#2563eb" />
+  <!-- Top lid -->
+  <rect x="88" y="40" width="80" height="56" rx="16" fill="#1d4ed8" />
+  <!-- Accent strap / lid divider -->
+  <rect x="88" y="128" width="80" height="32" rx="8" fill="#bfdbfe" />
+  <!-- Buckle (small dot) -->
+  <circle cx="128" cy="184" r="12" fill="#bfdbfe" />
+</svg>

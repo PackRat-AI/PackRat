@@ -35,8 +35,12 @@ describe('WorkerRoute', () => {
     expect(WorkerRoute.Register).toBe('/register');
   });
 
-  it('has exactly 11 route entries (8 originals + status + 2 well-known)', () => {
-    expect(Object.keys(WorkerRoute)).toHaveLength(11);
+  it('has exactly 12 route entries (8 originals + status + 2 well-known + favicon)', () => {
+    expect(Object.keys(WorkerRoute)).toHaveLength(12);
+  });
+
+  it('defines the /favicon.ico endpoint (Anthropic domain-ownership probe target)', () => {
+    expect(WorkerRoute.Favicon).toBe('/favicon.ico');
   });
 
   it('defines the status endpoint', () => {
@@ -44,9 +48,7 @@ describe('WorkerRoute', () => {
   });
 
   it('defines the RFC 9728 protected-resource well-known path', () => {
-    expect(WorkerRoute.WellKnownProtectedResource).toBe(
-      '/.well-known/oauth-protected-resource',
-    );
+    expect(WorkerRoute.WellKnownProtectedResource).toBe('/.well-known/oauth-protected-resource');
   });
 
   it('defines the RFC 8414 authorization-server well-known path', () => {

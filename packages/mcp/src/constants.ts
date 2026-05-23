@@ -11,6 +11,7 @@ export const WorkerRoute = {
   Register: '/register',
   WellKnownProtectedResource: '/.well-known/oauth-protected-resource',
   WellKnownAuthorizationServer: '/.well-known/oauth-authorization-server',
+  Favicon: '/favicon.ico',
 } as const;
 
 /**

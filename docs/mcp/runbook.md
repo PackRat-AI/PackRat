@@ -871,6 +871,117 @@ in `apps/landing/__tests__/legal.pages.test.ts` asserts the TODO marker is
 still present — remove that assertion in the same commit that resolves the
 TODO, so the marker can't be silently lost.
 
+## U13 listing artifacts
+
+The artifacts a Claude Connector Store reviewer interacts with — public
+docs page, brand assets, the favicon Anthropic probes for domain
+ownership, the reviewer test account — all land in U13. This section
+documents where each one lives and how to refresh it.
+
+### Public docs page
+
+URL: <https://packratai.com/mcp>. Source:
+[`apps/landing/app/mcp/page.tsx`](../../apps/landing/app/mcp/page.tsx).
+The page is an RSC route in the landing site (`apps/landing`), styled
+to match the existing privacy/terms pages (same container width, same
+Tailwind tokens — no new component vocabulary).
+
+Information architecture: hero → 3-step Claude.ai quickstart → scopes
+table → 3 example prompts (read, multi-tool plan, write with
+elicitation) → tool catalog (grouped by domain) → resources →
+privacy & security → reviewer test account pointer → footer pointers
+to the dev README, plan, and this runbook. Per the doc-review D6
+finding, the catalog is **not** a flat 103-tool dump — it groups by
+domain (Packs, Trips, Trails, Gear & Catalog, Admin & Analytics, …)
+so reviewers and end-users can scan in chunks.
+
+### Catalog regen
+
+The public docs page reads its tool catalog from
+`apps/landing/data/mcp-catalog.json`. **Rerun the dump after any tool
+surface change** (new tool, rename, annotation tweak, scope
+re-classification):
+
+```bash
+bun packages/mcp/scripts/dump-catalog.ts
+```
+
+Commit the regenerated JSON in the same PR as the tool change so
+`packratai.com/mcp` stays in lockstep with the live worker. The script
+uses the same recursive-Proxy stub as the U7 annotations test
+(`packages/mcp/src/__tests__/annotations.test.ts`), so it picks up
+every tool the worker registers without needing a Cloudflare runtime.
+
+If the script exits with `dump-catalog: zero tools registered`, the
+MCP SDK's internal `_registeredTools` field shape probably changed —
+update both the dump script and the annotations test to use the new
+accessor; they walk the same field.
+
+### Brand assets
+
+| Asset | Path | Notes |
+| --- | --- | --- |
+| MCP connector mark (SVG, 256×256 viewBox) | [`apps/landing/public/mcp-logo.svg`](../../apps/landing/public/mcp-logo.svg) | Vector copy of the inline backpack mark in `packages/mcp/src/login-page.ts`. If the brand mark changes, update **all three** (`login-page.ts`, this SVG, and the favicon) in the same commit so the surfaces don't drift. |
+| 1024×1024 PNG fallback for the directory listing | not in repo — render from `mcp-logo.svg` at submission time | Operator action; tracked in `docs/mcp/submission-packet.md` § "Logo / favicon checklist". |
+| Favicon (32×32 .ico) at the OAuth host | served at `https://mcp.packratai.com/favicon.ico` by the worker | Implementation: [`packages/mcp/src/favicon.ts`](../../packages/mcp/src/favicon.ts) (see "Favicon at OAuth domain" below). |
+| Favicon at the brand domain | `apps/landing/public/favicon.ico` and `apps/landing/public/PackRat.ico` (legacy filename still referenced by `apps/landing/lib/metadata.ts`) | Both files exist for compat; the worker's embedded favicon is sourced from `favicon.ico`. |
+
+### Favicon at OAuth domain (Anthropic domain-ownership probe)
+
+Anthropic's domain-ownership verification probe hits
+`mcp.packratai.com/favicon.ico` — **not** the landing site at
+`packratai.com/favicon.ico`. The two domains are distinct from
+Cloudflare's perspective, so the worker has to own the route.
+
+Chosen mechanism (U13): embed the .ico as a base64 string at build
+time. `packages/mcp/src/favicon.ts` exports `faviconResponse()`
+which returns a `Response` with `Content-Type: image/x-icon`,
+`Cache-Control: public, max-age=86400, immutable`, and a fresh
+buffer per call. The route is wired up in
+`packages/mcp/src/auth.ts` (`PackRatAuthHandler.fetch` —
+`/favicon.ico` branch, immediately after `/health`).
+
+Why embedded vs. a runtime fetch to the landing site:
+- **Self-contained.** The worker has no extra binding and no
+  cross-domain hop on cold start; the probe always succeeds.
+- **Small.** ~4.2 KiB binary, ~5.7 KiB base64 — negligible bundle
+  overhead.
+- **No race on cold start.** A runtime fetch to `packratai.com`
+  during a worker boot could 502 if the landing site is in the
+  middle of a deploy; the embed avoids that failure mode entirely.
+
+Refresh contract: if the brand icon changes, copy the new file to
+`apps/landing/public/favicon.ico`, regenerate the base64 with
+`base64 -w 0 < apps/landing/public/favicon.ico`, and paste the
+result into `FAVICON_ICO_BASE64` in `packages/mcp/src/favicon.ts`.
+The favicon test (`packages/mcp/src/__tests__/favicon.test.ts`)
+asserts the `.ico` magic bytes and a non-zero size, so a
+copy-paste mistake fails CI loudly.
+
+### Reviewer test account
+
+Credentials and the populated-data list live in
+[`docs/mcp/submission-packet.md`](./submission-packet.md) § 4. The
+file ships with `TODO (operator)` placeholders; the operator fills
+them in **only** for the form-submission session and does **not**
+commit the populated values to the repo.
+
+The public docs page at `packratai.com/mcp` deliberately tells
+reviewers the credentials are not on the public page and points
+them at the submission-packet doc (which Anthropic receives via the
+form, not via a public link).
+
+### Footer link
+
+`apps/landing/config/site.ts` adds `MCP Connector` to
+`siteConfig.footerLinks.product` so the landing site's footer
+exposes the public docs page. The landing-site smoke tests cover
+the legal links; the MCP page itself is RSC-rendered and shipped
+without a separate vitest assertion (the catalog JSON is the
+build-time contract).
+
+---
+
 ## Common operations
 
 ### Deploy

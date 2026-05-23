@@ -352,6 +352,7 @@ export const siteConfig = {
       { title: 'Pricing', href: '/pricing' },
       { title: 'Guides', href: 'https://guides.packratai.com/' },
       { title: 'Integrations', href: '#integrations' },
+      { title: 'MCP Connector', href: '/mcp' },
     ],
     company: [
       { title: 'About', href: '/about' },

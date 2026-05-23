@@ -45,6 +45,7 @@ import { isString } from '@packrat/guards';
 import { caseInsensitive, createRegExp, exactly, oneOrMore, whitespace } from 'magic-regexp';
 import { z } from 'zod';
 import { ServiceMeta } from './constants';
+import { faviconResponse } from './favicon';
 import { renderLoginPage } from './login-page';
 import { unauthorizedResponse } from './metadata';
 import { SCOPES_SUPPORTED } from './scopes';
@@ -376,6 +377,15 @@ export const PackRatAuthHandler = {
         privacy: 'https://packratai.com/privacy-policy',
         support: 'mailto:hello@packratai.com',
       });
+    }
+
+    // U13: serve the favicon from the OAuth host. Anthropic's domain-
+    // ownership verification probe hits `mcp.packratai.com/favicon.ico`,
+    // not the landing site — see `packages/mcp/src/favicon.ts` for the
+    // embed/cache strategy and `docs/mcp/runbook.md` § "U13 listing
+    // artifacts" for the operator-facing rationale.
+    if (url.pathname === '/favicon.ico') {
+      return faviconResponse();
     }
 
     if (url.pathname === '/authorize') {

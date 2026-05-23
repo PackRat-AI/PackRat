@@ -197,6 +197,26 @@ describe('PackRatAuthHandler — health endpoint', () => {
   });
 });
 
+// ─── U13: /favicon.ico (Anthropic domain-ownership probe) ────────────────────
+//
+// Anthropic verifies that the OAuth host serves a favicon as part of intake.
+// The probe hits `mcp.packratai.com/favicon.ico` directly — not the landing
+// site at `packratai.com` — so the handler has to own the route. The body /
+// content-type / cache-control coverage of the embedded payload lives in
+// `favicon.test.ts`; here we only check that the route table dispatches to
+// `faviconResponse` and not to the 404 fallthrough.
+describe('PackRatAuthHandler — /favicon.ico (U13)', () => {
+  it('serves a 200 image/x-icon at /favicon.ico', async () => {
+    const env = makeEnv();
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/favicon.ico'),
+      env,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('image/x-icon');
+  });
+});
+
 // ─── U6: login security ───────────────────────────────────────────────────────
 //
 // The full /login POST flow needs a real KV namespace + Better Auth backend,

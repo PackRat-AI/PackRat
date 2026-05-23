@@ -1,0 +1,1389 @@
+{
+  "generatedAt": "2026-05-23T06:02:06.502Z",
+  "totalTools": 103,
+  "counts": {
+    "byClassification": {
+      "read": 35,
+      "write": 38,
+      "admin": 30
+    },
+    "byDomain": {
+      "Packs": 18,
+      "Pack Templates": 11,
+      "Admin & Analytics": 16,
+      "Gear & Catalog": 11,
+      "Trail Conditions": 7,
+      "Trails": 7,
+      "Feed": 9,
+      "Trips": 5,
+      "Database (Admin)": 2,
+      "Knowledge & Search": 2,
+      "Guides": 5,
+      "Account": 3,
+      "Seasons": 1,
+      "Weather": 4,
+      "Wildlife": 1,
+      "Uploads": 1
+    }
+  },
+  "scopes": [
+    {
+      "name": "mcp",
+      "description": "Legacy umbrella scope; treated as read-only for back-compat."
+    },
+    {
+      "name": "mcp:read",
+      "description": "Read-only tools: get_*, list_*, search_*, find_*, whoami."
+    },
+    {
+      "name": "mcp:write",
+      "description": "Read plus create/update/delete/submit tools."
+    },
+    {
+      "name": "mcp:admin",
+      "description": "Read + write + admin tools. Only granted to PackRat admin users."
+    }
+  ],
+  "endpoint": "https://mcp.packratai.com/mcp",
+  "tools": [
+    {
+      "name": "packrat_add_pack_item",
+      "title": "Add Pack Item",
+      "description": "Add a gear item to a pack. Provide either a catalog_item_id (from packrat_search_gear_catalog) or specify custom item details. Weight should be in grams.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_add_pack_template_item",
+      "title": "Add Pack Template Item",
+      "description": "Add an item to a pack template.",
+      "domain": "Pack Templates",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_active_users",
+      "title": "Admin: Active Users",
+      "description": "Daily/weekly/monthly active user counts.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_activity",
+      "title": "Admin: Analytics Activity",
+      "description": "Platform activity metrics over a time period.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_catalog_embeddings",
+      "title": "Admin: Catalog Embedding Stats",
+      "description": "Catalog embedding coverage stats.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_catalog_overview",
+      "title": "Admin: Catalog Overview",
+      "description": "Catalog-wide overview: item count, brands, price ranges, embedding coverage.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_catalog_prices",
+      "title": "Admin: Catalog Prices",
+      "description": "Price distribution across the catalog.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_etl_failure_summary",
+      "title": "Admin: ETL Failure Summary",
+      "description": "Top recent ETL failure patterns. Page size is capped at 50 server-side.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_etl_job_failures",
+      "title": "Admin: ETL Job Failures",
+      "description": "Per-job ETL failure drill-down. Page size is capped at 50 server-side.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_etl_jobs",
+      "title": "Admin: ETL Jobs",
+      "description": "Recent ETL pipeline jobs. Page size is capped at 50 server-side.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_growth",
+      "title": "Admin: Analytics Growth",
+      "description": "Platform user/pack growth metrics.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_pack_breakdown",
+      "title": "Admin: Pack Breakdown",
+      "description": "Distribution of packs by category.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_analytics_top_brands",
+      "title": "Admin: Top Brands",
+      "description": "Top gear brands in the catalog by item count. Page size is capped at 50 server-side.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_delete_catalog_item",
+      "title": "Admin: Delete Catalog Item",
+      "description": "Delete a catalog item as admin. U10: prompts the user to type DELETE before proceeding.",
+      "domain": "Gear & Catalog",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_delete_pack",
+      "title": "Admin: Delete Pack",
+      "description": "Soft-delete a pack as admin (bypasses ownership). U10: prompts the user to type DELETE before proceeding.",
+      "domain": "Packs",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_delete_trail_condition_report",
+      "title": "Admin: Delete Trail Condition Report",
+      "description": "Soft-delete a trail condition report as admin. U10: prompts the user to type DELETE before proceeding.",
+      "domain": "Trail Conditions",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_etl_reset_stuck",
+      "title": "Admin: ETL Reset Stuck Jobs",
+      "description": "Mark stuck-running ETL jobs as failed (admin maintenance).",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_etl_retry_job",
+      "title": "Admin: ETL Retry Job",
+      "description": "Retry a specific failed ETL job.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_get_trail",
+      "title": "Admin: Get Trail",
+      "description": "Get a trail by OSM relation ID (admin).",
+      "domain": "Trails",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_get_trail_geometry",
+      "title": "Admin: Get Trail Geometry",
+      "description": "Get full GeoJSON geometry for a trail (admin).",
+      "domain": "Trails",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_hard_delete_user",
+      "title": "Admin: Hard-Delete User",
+      "description": "GDPR-style hard-delete of a user. Irrevocable. Requires a non-empty `reason` for the audit log. U10: prompts the user to retype the target user_id before proceeding.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_list_catalog",
+      "title": "Admin: List Catalog Items",
+      "description": "Search/list catalog items across the platform. Page size is capped at 50 server-side; walk via the next `offset`.",
+      "domain": "Gear & Catalog",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_list_packs",
+      "title": "Admin: List Packs",
+      "description": "Search/list packs across all users (admin view). Page size is capped at 50 server-side; walk via the next `offset` field.",
+      "domain": "Packs",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_list_trail_condition_reports",
+      "title": "Admin: List Trail Condition Reports",
+      "description": "List trail condition reports across all users (admin). Page size is capped at 50 server-side; walk via the next `offset`.",
+      "domain": "Trail Conditions",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_list_users",
+      "title": "Admin: List Users",
+      "description": "Search/list users (paginated). Use `q` to filter by email or name. Page size is capped at 50 server-side; the API returns a `{ data, total, limit, offset }` envelope which the model can walk via the next `offset`.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_search_trails",
+      "title": "Admin: Search Trails",
+      "description": "Search OSM trails by name/sport (admin view). Page size is capped at 50 server-side; the response carries an `offset` and a `hasMore` flag for continuation.",
+      "domain": "Trails",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_stats",
+      "title": "Admin: Platform Stats",
+      "description": "Get high-level platform stats: user, pack, and catalog counts.",
+      "domain": "Admin & Analytics",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_admin_update_catalog_item",
+      "title": "Admin: Update Catalog Item",
+      "description": "Update a catalog item (name, brand, price, weight, etc.) as admin.",
+      "domain": "Gear & Catalog",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_analyze_pack_gaps",
+      "title": "Analyze Pack Gaps",
+      "description": "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_analyze_pack_image",
+      "title": "Analyze Pack Image",
+      "description": "Submit a gear image (R2 key from packrat_upload_image_url) for item detection. Returns detected items with catalog matches.",
+      "domain": "Gear & Catalog",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_analyze_pack_weight",
+      "title": "Analyze Pack Weight",
+      "description": "Return a detailed weight breakdown for a pack: total / base / worn / consumable grams plus a per-category aggregation sorted heaviest first.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_compare_gear_items",
+      "title": "Compare Gear Items",
+      "description": "Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.",
+      "domain": "Gear & Catalog",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_app_pack_template",
+      "title": "Create App Pack Template (Admin)",
+      "description": "Create a curated app-level pack template visible to all users. Admin-only — also requires the mcp:admin OAuth scope. For personal templates use packrat_create_pack_template. U10: prompts the admin to type PUBLISH before the template is created (visible to every PackRat user, not easily unpublished).",
+      "domain": "Pack Templates",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_catalog_item",
+      "title": "Create Catalog Item",
+      "description": "Submit a new gear item to the catalog. The API will embed and dedupe automatically. Use this for custom items not yet in the catalog.",
+      "domain": "Gear & Catalog",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_feed_comment",
+      "title": "Create Feed Comment",
+      "description": "Add a comment to a feed post (or reply to a parent comment).",
+      "domain": "Feed",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_feed_post",
+      "title": "Create Feed Post",
+      "description": "Create a feed post with a caption and optional image keys.",
+      "domain": "Feed",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_pack",
+      "title": "Create Pack",
+      "description": "Create a new packing list for the user. Returns the newly created pack with its ID.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_pack_template",
+      "title": "Create Pack Template",
+      "description": "Create a personal pack template visible only to you. To create a curated app template, use packrat_create_app_pack_template (admin-only).",
+      "domain": "Pack Templates",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_create_trip",
+      "title": "Create Trip",
+      "description": "Create a new trip plan with destination, dates, and optional link to a pack. Returns the created trip with its ID.",
+      "domain": "Trips",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_feed_comment",
+      "title": "Delete Feed Comment",
+      "description": "Delete one of your own feed comments.",
+      "domain": "Feed",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_feed_post",
+      "title": "Delete Feed Post",
+      "description": "Delete one of your own feed posts.",
+      "domain": "Feed",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_pack",
+      "title": "Delete Pack",
+      "description": "Soft-delete a pack. The pack will no longer appear in listings.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_pack_template",
+      "title": "Delete Pack Template",
+      "description": "Delete a pack template.",
+      "domain": "Pack Templates",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_pack_template_item",
+      "title": "Delete Pack Template Item",
+      "description": "Delete a pack template item.",
+      "domain": "Pack Templates",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_trail_condition",
+      "title": "Delete Trail Condition Report",
+      "description": "Soft-delete one of your trail condition reports.",
+      "domain": "Trail Conditions",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_delete_trip",
+      "title": "Delete Trip",
+      "description": "Delete a trip. The trip will no longer appear in listings.",
+      "domain": "Trips",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_execute_sql_query",
+      "title": "Execute Read-Only SQL Query",
+      "description": "Execute a read-only SQL SELECT query against the PackRat database for advanced analytics. Only SELECT statements are allowed. Admin-only.",
+      "domain": "Database (Admin)",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_extract_url_content",
+      "title": "Extract URL Content",
+      "description": "Extract the readable article content from any URL using Readability. Useful for ingesting blog posts, trip reports, or gear reviews.",
+      "domain": "Knowledge & Search",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_generate_pack_template_from_url",
+      "title": "Generate Pack Template From URL (Admin)",
+      "description": "Generate a pack template from a TikTok or YouTube link. Admin-only — the server gates this on `user.role === \"ADMIN\"` on the OAuth-authenticated user, and MCP hides it from non-admin sessions. The `mcp:admin` scope is granted at OAuth callback time when the Better Auth role resolves to ADMIN. U10: prompts the admin to type GENERATE before the LLM call fires (fetched content is processed and a template is created).",
+      "domain": "Pack Templates",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_get_catalog_item",
+      "title": "Get Catalog Item",
+      "description": "Retrieve full details for a specific gear catalog item by ID. Returns specs, dimensions, weight, price, availability, user reviews, Q&A, and product URL.",
+      "domain": "Gear & Catalog",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_database_schema",
+      "title": "Get Database Schema",
+      "description": "Get the PackRat DB schema — table names, columns, types. Admin-only.",
+      "domain": "Database (Admin)",
+      "classification": "admin",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_feed_post",
+      "title": "Get Feed Post",
+      "description": "Get a specific feed post by ID.",
+      "domain": "Feed",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_guide",
+      "title": "Get Guide",
+      "description": "Get a specific guide by ID. Returns MDX/Markdown content.",
+      "domain": "Guides",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_pack",
+      "title": "Get Pack",
+      "description": "Get complete details of a single pack including all items with weights, categories, and computed totals. Use this to analyze pack weight, find gear gaps, or suggest optimizations.",
+      "domain": "Packs",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_pack_item",
+      "title": "Get Pack Item",
+      "description": "Get full details of a single pack item.",
+      "domain": "Packs",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_pack_template",
+      "title": "Get Pack Template",
+      "description": "Get a pack template with its items.",
+      "domain": "Pack Templates",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_pack_weight_history",
+      "title": "Get Pack Weight History",
+      "description": "Get the weight history for all of the user's packs over time.",
+      "domain": "Packs",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_profile",
+      "title": "Get My Profile",
+      "description": "Get the authenticated user's profile (firstName, lastName, email, avatar).",
+      "domain": "Account",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_season_suggestions",
+      "title": "Get Season Suggestions",
+      "description": "Generate season-appropriate pack suggestions for a location + date. Requires at least 20 inventory items on the signed-in user.",
+      "domain": "Seasons",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_trail",
+      "title": "Get Trail",
+      "description": "Get metadata for a specific trail by its OSM relation ID. Returns name, sport, difficulty, distance, and bounding box.",
+      "domain": "Trails",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_trail_conditions",
+      "title": "Get Trail Condition Reports",
+      "description": "Get user-submitted trail condition reports. Filter by trail name to find reports for a specific trail or area.",
+      "domain": "Trail Conditions",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_trail_geometry",
+      "title": "Get Trail Geometry",
+      "description": "Get full GeoJSON geometry for a trail. May be slow for large routes with many segments.",
+      "domain": "Trails",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_trip",
+      "title": "Get Trip",
+      "description": "Get full details for a single trip including location coordinates, dates, notes, and linked pack information.",
+      "domain": "Trips",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_get_weather",
+      "title": "Get Weather Forecast",
+      "description": "Get current weather conditions and multi-day forecast for any location. Returns temperature, precipitation, wind, humidity, and outdoor conditions relevant to trip planning.",
+      "domain": "Weather",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_get_weather_forecast",
+      "title": "Get Weather Forecast By Location ID",
+      "description": "Fetch a 10-day forecast given a WeatherAPI location ID (returned by packrat_search_weather_location).",
+      "domain": "Weather",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_identify_wildlife",
+      "title": "Identify Wildlife From Image",
+      "description": "Identify the plant or animal species in an uploaded image (provide the R2 image key from packrat_upload_image_url).",
+      "domain": "Wildlife",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_feed",
+      "title": "List Feed Posts",
+      "description": "List social feed posts (paginated).",
+      "domain": "Feed",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_feed_comments",
+      "title": "List Feed Comments",
+      "description": "List comments on a feed post.",
+      "domain": "Feed",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_gear_categories",
+      "title": "List Gear Categories",
+      "description": "List all available gear categories in the catalog with item counts. Use this to explore what gear types are available before searching.",
+      "domain": "Gear & Catalog",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_guide_categories",
+      "title": "List Guide Categories",
+      "description": "List all guide categories.",
+      "domain": "Guides",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_guides",
+      "title": "List Outdoor Guides",
+      "description": "List PackRat outdoor guides (paginated, filterable by category).",
+      "domain": "Guides",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_my_trail_reports",
+      "title": "List My Trail Reports",
+      "description": "List trail condition reports authored by the signed-in user.",
+      "domain": "Trail Conditions",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_pack_items",
+      "title": "List Pack Items",
+      "description": "List all items in a pack.",
+      "domain": "Packs",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_pack_template_items",
+      "title": "List Pack Template Items",
+      "description": "List items inside a pack template.",
+      "domain": "Pack Templates",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_pack_templates",
+      "title": "List Pack Templates",
+      "description": "List both user-owned and app-curated pack templates.",
+      "domain": "Pack Templates",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_packs",
+      "title": "List My Packs",
+      "description": "List all packs belonging to the authenticated user. Returns pack summaries including name, category, item count, and total weight. Paginated: results are capped at 50 items per call; the response includes a `nextOffset` value (or `null` at the end) to continue iterating.",
+      "domain": "Packs",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_list_trips",
+      "title": "List My Trips",
+      "description": "List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack. Paginated: results are capped at 50 per call; the response includes a `nextOffset` value (or `null` at the end) for continuation.",
+      "domain": "Trips",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_preview_alltrails_url",
+      "title": "Preview AllTrails URL",
+      "description": "Fetch trail metadata (title, description, image) from an AllTrails URL using OpenGraph tags.",
+      "domain": "Trails",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_record_pack_weight",
+      "title": "Record Pack Weight",
+      "description": "Record a weight measurement for a pack at a specific point in time.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_remove_pack_item",
+      "title": "Remove Pack Item",
+      "description": "Remove an item from a pack (soft-delete).",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_search_gear_catalog",
+      "title": "Search Gear Catalog",
+      "description": "Search the PackRat gear catalog of outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories. Paginated via `page` (1-indexed); page size is capped at 50 server-side.",
+      "domain": "Gear & Catalog",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_search_guides",
+      "title": "Search Outdoor Guides",
+      "description": "Full-text search across PackRat outdoor guides.",
+      "domain": "Guides",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_search_outdoor_guides",
+      "title": "Search Outdoor Knowledge Base",
+      "description": "Search the PackRat outdoor knowledge base using retrieval-augmented search. Contains expert guides on outdoor skills, safety, Leave No Trace principles, gear techniques, navigation, first aid, and outdoor activities. Use this for \"how-to\" questions, technique guidance, or safety information.",
+      "domain": "Guides",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_search_trails",
+      "title": "Search Trails",
+      "description": "Search outdoor trails and routes from OpenStreetMap. Filter by name, sport type, and/or proximity to a location. Returns { trails, hasMore } — paginate via offset.",
+      "domain": "Trails",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_search_weather_by_coordinates",
+      "title": "Search Weather By Coordinates",
+      "description": "Find weather locations near a latitude/longitude pair.",
+      "domain": "Weather",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_search_weather_location",
+      "title": "Search Weather Locations",
+      "description": "Search for weather locations by name. Returns matching locations with IDs.",
+      "domain": "Weather",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_semantic_gear_search",
+      "title": "Semantic Gear Search",
+      "description": "Search the gear catalog using vector/semantic search. Good for natural-language queries like \"warm but lightweight insulation layer for cold shoulder-season camping\" or \"minimalist trail running shoe for rocky terrain\".",
+      "domain": "Gear & Catalog",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_similar_catalog_items",
+      "title": "Find Similar Catalog Items",
+      "description": "Find items similar to a given catalog item by embedding similarity.",
+      "domain": "Gear & Catalog",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_similar_pack_items",
+      "title": "Find Similar Pack Items",
+      "description": "Find catalog gear similar to a specific item in a pack (semantic similarity).",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_submit_trail_condition",
+      "title": "Submit Trail Condition Report",
+      "description": "Submit a trail condition report to help the community. Requires user authentication.",
+      "domain": "Trail Conditions",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_suggest_pack_items",
+      "title": "Suggest Pack Items",
+      "description": "Return catalog item suggestions for a pack based on the items already in it.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_toggle_feed_comment_like",
+      "title": "Toggle Feed Comment Like",
+      "description": "Like or unlike a feed comment (toggle).",
+      "domain": "Feed",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_toggle_feed_post_like",
+      "title": "Toggle Feed Post Like",
+      "description": "Like or unlike a feed post (toggle).",
+      "domain": "Feed",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_pack",
+      "title": "Update Pack",
+      "description": "Update a pack's name, description, category, visibility, or tags.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_pack_item",
+      "title": "Update Pack Item",
+      "description": "Update fields on an existing pack item.",
+      "domain": "Packs",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_pack_template",
+      "title": "Update Pack Template",
+      "description": "Update a pack template.",
+      "domain": "Pack Templates",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_pack_template_item",
+      "title": "Update Pack Template Item",
+      "description": "Update a pack template item.",
+      "domain": "Pack Templates",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_profile",
+      "title": "Update My Profile",
+      "description": "Update the authenticated user's profile fields.",
+      "domain": "Account",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_trail_condition",
+      "title": "Update Trail Condition Report",
+      "description": "Update one of your own trail condition reports.",
+      "domain": "Trail Conditions",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_update_trip",
+      "title": "Update Trip",
+      "description": "Update an existing trip's details, dates, location, or linked pack.",
+      "domain": "Trips",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_upload_image_url",
+      "title": "Create Image Upload URL",
+      "description": "Generate a presigned R2 URL the caller can PUT an image to (jpeg/png/webp, ≤10MB). Returns { uploadUrl, key } — use `key` in downstream tools (packrat_analyze_pack_image, packrat_identify_wildlife, etc.).",
+      "domain": "Uploads",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "packrat_web_search",
+      "title": "Web Search",
+      "description": "Search the public web for current, real-time information. Use this for current trail conditions, recent news, current gear prices and deals, permit availability, or anything requiring up-to-date info not in the PackRat knowledge base.",
+      "domain": "Knowledge & Search",
+      "classification": "write",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "packrat_whoami",
+      "title": "Who Am I",
+      "description": "Return the currently authenticated PackRat user profile.",
+      "domain": "Account",
+      "classification": "read",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": null,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}
