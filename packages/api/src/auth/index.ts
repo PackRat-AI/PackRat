@@ -199,7 +199,20 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    trustedOrigins: [
+      env.BETTER_AUTH_URL,
+      'packrat://',
+      // Local web dev (Expo web on 8081/8082, Next admin on 3000). Gated on
+      // the API URL pointing at localhost so prod never widens trust.
+      ...(env.BETTER_AUTH_URL.startsWith('http://localhost')
+        ? [
+            'http://localhost:8081',
+            'http://localhost:8082',
+            'http://localhost:3000',
+            'http://localhost:19006',
+          ]
+        : []),
+    ],
   });
 
   authCache.set(env as object, auth);
