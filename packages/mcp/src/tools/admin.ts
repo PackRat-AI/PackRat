@@ -22,6 +22,7 @@
 import { z } from 'zod';
 import { call, clampLimit, errResponse, PAGINATION_LIMIT_MAX } from '../client';
 import { type ConfirmReason, confirmAction } from '../elicit';
+import { audit, createLogger, type Logger } from '../observability';
 import {
   AdminActiveUsersOutputSchema,
   AdminAnalyticsActivityOutputSchema,
@@ -75,6 +76,78 @@ function elicitFailureResponse(reason: ConfirmReason) {
 }
 
 const ADMIN = { requiresAdmin: true as const };
+
+/**
+ * U15: build a `{ logger, actor, correlationId }` triple from the agent's
+ * per-session audit context, falling back to an empty actor when the
+ * agent doesn't expose one (test stubs / legacy bearer flow).
+ *
+ * Exposed as a tiny helper so each admin tool's audit-line site reads
+ * uniformly. Note that we read `getAuditContext` lazily inside each
+ * tool handler (not at registration time) so per-invocation `props`
+ * changes are picked up correctly.
+ */
+function auditCtxFor(agent: AgentContext): {
+  logger: Logger;
+  actor: { userId: string; scopes: readonly string[] };
+  correlationId: string;
+} {
+  const ctx = agent.getAuditContext?.() ?? { userId: '', scopes: [], correlationId: '' };
+  const logger = createLogger({ correlationId: ctx.correlationId });
+  return {
+    logger,
+    actor: { userId: ctx.userId, scopes: ctx.scopes },
+    correlationId: ctx.correlationId,
+  };
+}
+
+/**
+ * U15: audit-log shape for the destructive admin tools (delete, hard-
+ * delete, publish app template, generate from URL). The error code is
+ * the canonical U8 `errResponse` code; `retryable` is the same flag the
+ * error envelope carries to the model.
+ *
+ * `outcome` discriminates:
+ *   - `'success'`  — the side-effect ran and the API returned a 2xx.
+ *   - `'failure'`  — the API returned a non-2xx; `error` carries the
+ *                    canonical code/retryable surface.
+ *   - `'declined'` — an elicitation surface returned `confirmed: false`
+ *                    (user_cancelled, confirmation_mismatch, timeout,
+ *                    elicitation_unsupported). The action did not run.
+ */
+type AuditOutcome = 'success' | 'failure' | 'declined';
+type ToolResult = {
+  isError?: true;
+  structuredContent?: { error?: { code: string; retryable: boolean } };
+};
+
+function auditOutcome(result: ToolResult): {
+  outcome: AuditOutcome;
+  error?: { code: string; retryable: boolean };
+} {
+  if (result.isError === true) {
+    const e = result.structuredContent?.error;
+    return e
+      ? { outcome: 'failure', error: { code: e.code, retryable: e.retryable } }
+      : { outcome: 'failure' };
+  }
+  return { outcome: 'success' };
+}
+
+function auditElicitDeclined(reason: ConfirmReason): { code: string; retryable: boolean } {
+  // Mirror the elicitFailureResponse mapping (kept close to the
+  // failure-response helper above so they evolve in lockstep).
+  switch (reason) {
+    case 'cancelled':
+      return { code: 'user_cancelled', retryable: false };
+    case 'mismatch':
+      return { code: 'confirmation_mismatch', retryable: false };
+    case 'timeout':
+      return { code: 'confirmation_timeout', retryable: true };
+    case 'unsupported':
+      return { code: 'elicitation_unsupported', retryable: false };
+  }
+}
 
 // U8: shorthand for the paginated-list `limit` schema with the
 // connector-store cap baked into the description. The clamp happens
@@ -170,6 +243,8 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ user_id, reason }, extra) => {
+      const { logger, actor } = auditCtxFor(agent);
+      const target = { type: 'user', id: user_id };
       // U10: confirm before the irreversible side-effect. We require the
       // operator to retype the user_id verbatim. The admin API has no
       // GET-by-id endpoint to enrich the prompt with the username/email
@@ -186,12 +261,25 @@ export function registerAdminTools(agent: AgentContext): void {
         expectedConfirmation: user_id,
         fieldLabel: 'User ID',
       });
-      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
-      return call(agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }), {
-        action: 'hard-delete user',
-        resourceHint: `user ${user_id}`,
-        ...ADMIN,
-      });
+      if (!confirm.confirmed) {
+        audit(logger, 'admin_hard_delete_user', {
+          actor,
+          target,
+          outcome: 'declined',
+          error: auditElicitDeclined(confirm.reason),
+        });
+        return elicitFailureResponse(confirm.reason);
+      }
+      const result = await call(
+        agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }),
+        {
+          action: 'hard-delete user',
+          resourceHint: `user ${user_id}`,
+          ...ADMIN,
+        },
+      );
+      audit(logger, 'admin_hard_delete_user', { actor, target, ...auditOutcome(result) });
+      return result;
     },
   );
 
@@ -236,16 +324,28 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id }, extra) => {
+      const { logger, actor } = auditCtxFor(agent);
+      const target = { type: 'pack', id: pack_id };
       const confirm = await confirmAction(agent, extra, {
         message: `Confirm delete of pack ${pack_id}. Type DELETE to proceed:`,
         expectedConfirmation: 'DELETE',
       });
-      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
-      return call(agent.api.admin.admin.packs({ id: pack_id }).delete(), {
+      if (!confirm.confirmed) {
+        audit(logger, 'admin_delete_pack', {
+          actor,
+          target,
+          outcome: 'declined',
+          error: auditElicitDeclined(confirm.reason),
+        });
+        return elicitFailureResponse(confirm.reason);
+      }
+      const result = await call(agent.api.admin.admin.packs({ id: pack_id }).delete(), {
         action: 'admin delete pack',
         resourceHint: `pack ${pack_id}`,
         ...ADMIN,
       });
+      audit(logger, 'admin_delete_pack', { actor, target, ...auditOutcome(result) });
+      return result;
     },
   );
 
@@ -328,16 +428,28 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ item_id }, extra) => {
+      const { logger, actor } = auditCtxFor(agent);
+      const target = { type: 'catalog_item', id: String(item_id) };
       const confirm = await confirmAction(agent, extra, {
         message: `Confirm delete of catalog item ${item_id}. Type DELETE to proceed:`,
         expectedConfirmation: 'DELETE',
       });
-      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
-      return call(agent.api.admin.admin.catalog({ id: String(item_id) }).delete(), {
+      if (!confirm.confirmed) {
+        audit(logger, 'admin_delete_catalog_item', {
+          actor,
+          target,
+          outcome: 'declined',
+          error: auditElicitDeclined(confirm.reason),
+        });
+        return elicitFailureResponse(confirm.reason);
+      }
+      const result = await call(agent.api.admin.admin.catalog({ id: String(item_id) }).delete(), {
         action: 'admin delete catalog item',
         resourceHint: `catalog item ${item_id}`,
         ...ADMIN,
       });
+      audit(logger, 'admin_delete_catalog_item', { actor, target, ...auditOutcome(result) });
+      return result;
     },
   );
 
@@ -443,16 +555,35 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ report_id }, extra) => {
+      const { logger, actor } = auditCtxFor(agent);
+      const target = { type: 'trail_condition_report', id: report_id };
       const confirm = await confirmAction(agent, extra, {
         message: `Confirm delete of trail condition report ${report_id}. Type DELETE to proceed:`,
         expectedConfirmation: 'DELETE',
       });
-      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
-      return call(agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(), {
-        action: 'admin delete trail report',
-        resourceHint: `report ${report_id}`,
-        ...ADMIN,
+      if (!confirm.confirmed) {
+        audit(logger, 'admin_delete_trail_condition_report', {
+          actor,
+          target,
+          outcome: 'declined',
+          error: auditElicitDeclined(confirm.reason),
+        });
+        return elicitFailureResponse(confirm.reason);
+      }
+      const result = await call(
+        agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(),
+        {
+          action: 'admin delete trail report',
+          resourceHint: `report ${report_id}`,
+          ...ADMIN,
+        },
+      );
+      audit(logger, 'admin_delete_trail_condition_report', {
+        actor,
+        target,
+        ...auditOutcome(result),
       });
+      return result;
     },
   );
 

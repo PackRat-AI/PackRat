@@ -40,6 +40,12 @@ import { createMcpClients, errResponse, type McpClients, type McpToolResult } fr
 import { ServiceMeta } from './constants';
 import { applyCorsHeaders } from './cors';
 import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
+import {
+  attachCorrelationId,
+  correlationIdFrom,
+  createLogger,
+  syntheticCorrelationId,
+} from './observability';
 import { registerPrompts } from './prompts';
 import { checkRateLimit, toolRateLimitKey } from './rate-limit';
 import { registerResources } from './resources';
@@ -239,6 +245,35 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   }
 
   /**
+   * U15: per-session audit context surfaced to admin tool handlers via
+   * `AgentContext.getAuditContext()`.
+   *
+   * Returns `{ userId, scopes, correlationId }` where:
+   *
+   *   - `userId` and `scopes` are read straight off `this.props`
+   *     (populated at OAuth `/callback` time by `auth.ts/handleCallback`).
+   *     If `props` is missing (legacy bearer flow), both collapse to
+   *     empty values — the audit line still emits, just without actor
+   *     attribution. That's deliberate: we'd rather record "someone
+   *     unauthenticated triggered this" than silently drop the audit.
+   *
+   *   - `correlationId` is a session-stable `session:<DO-id>` synthetic.
+   *     Per-tool-call IDs would need the inbound Request to pivot on,
+   *     and the SDK doesn't surface that through `RequestHandlerExtra`.
+   *     `session:<DO-id>` is the right granularity for "which session
+   *     fired this audit" — every audit line on the same session shares
+   *     a key an operator can filter on.
+   */
+  getAuditContext(): { userId: string; scopes: readonly string[]; correlationId: string } {
+    const props = this.props as { userId?: string; scopes?: readonly string[] } | undefined;
+    return {
+      userId: props?.userId ?? '',
+      scopes: props?.scopes ?? [],
+      correlationId: `session:${this.ctx.id.toString()}`,
+    };
+  }
+
+  /**
    * After registration, disable every tool whose visible-scopes don't
    * intersect the granted scopes. Uses the SDK's `RegisteredTool.disable()`
    * which auto-emits `notifications/tools/list_changed`.
@@ -424,6 +459,43 @@ const oauthProvider = new OAuthProvider<Env>({
 
   // Pin the protected-resource URL to the custom domain (env-invariant in v1).
   resourceMetadata: buildResourceMetadata({} as Env),
+
+  // U15: forward provider-side OAuth errors to Workers Logs as structured
+  // WARN events. The provider invokes this hook for invalid_grant,
+  // invalid_client, invalid_scope, audience mismatch, etc. — every
+  // OAuth failure response the library generates. We log only the
+  // public `{ code, description, status }` fields; we never log the
+  // request body, the bearer token, or any `props` payload.
+  //
+  // `internal` (when present) carries server-side-only diagnostic
+  // context the library deliberately did NOT put on the wire (e.g. a
+  // JWT validation failure category). We DO log that, but only the
+  // `category` + `reason` strings — never `detail`, which can carry an
+  // arbitrary payload that risks leaking issuer-side material.
+  //
+  // We don't return a Response: the library's default error response
+  // shape is the right OAuth surface (RFC 6749 error envelope); we
+  // just observe it.
+  //
+  // The correlation ID is synthesised here — the OAuthProvider hook
+  // signature in v0.7.0 (see
+  // `node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:556`)
+  // does NOT expose the inbound Request, so we can't pivot to the
+  // outer wrapper's per-request stash. We use the `oauth:` namespace
+  // so an operator filter on `correlationId: oauth:*` returns every
+  // provider-side error; Workers Logs still echoes `cf-ray` alongside
+  // each line so cross-correlation with the zone log is one filter away.
+  onError: ({ code, description, status, internal }) => {
+    const log = createLogger({ correlationId: syntheticCorrelationId('oauth') });
+    log.warn('mcp.oauth.error', {
+      oauthCode: code,
+      oauthStatus: status,
+      description,
+      ...(internal
+        ? { error: { code: internal.category, message: internal.reason, retryable: false } }
+        : {}),
+    });
+  },
 });
 
 /**
@@ -449,14 +521,24 @@ const oauthProvider = new OAuthProvider<Env>({
  */
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // U15: derive a correlation ID at the top of the wrapper and stash it
+    // on the Request via a WeakMap so deep handlers (`dcrRegisterGate`,
+    // `handleLoginPost`, `handleCallback`) can read it back without
+    // plumbing it through every function signature. We also echo it
+    // on every outbound response via `X-Correlation-Id` so operators
+    // can trace a single request through Workers Logs + the upstream
+    // Cloudflare zone log + Sentry by one value.
+    const correlationId = correlationIdFrom(request);
+    attachCorrelationId(request, correlationId);
+
     const gateResponse = dcrRegisterGate(request, env);
-    if (gateResponse) return gateResponse;
+    if (gateResponse) return withCorrelationHeader(gateResponse, correlationId);
 
     // OPTIONS preflight short-circuit: handled entirely here, never hits
     // the OAuthProvider.
     if (request.method === 'OPTIONS') {
       const cors = applyCorsHeaders(request, null);
-      if (cors) return cors;
+      if (cors) return withCorrelationHeader(cors, correlationId);
     }
 
     const response = await oauthProvider.fetch(request, env, ctx);
@@ -464,10 +546,25 @@ export default {
     // Annotate well-known GETs from allowed origins; everything else falls
     // through unchanged (default-deny — see `applyCorsHeaders`).
     const annotated = applyCorsHeaders(request, response);
-    return annotated ?? response;
+    return withCorrelationHeader(annotated ?? response, correlationId);
   },
 
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
     await runScheduledPurge(oauthProvider, env);
   },
 };
+
+/**
+ * Annotate an outbound response with `X-Correlation-Id: <id>`.
+ *
+ * Returns a new Response wrapping the same body — Response headers are
+ * immutable once the response is consumed, so we always clone via the
+ * `new Response(body, init)` shape. The body is streamed through
+ * unchanged (no buffering).
+ */
+function withCorrelationHeader(response: Response, correlationId: string): Response {
+  if (response.headers.has('X-Correlation-Id')) return response;
+  const annotated = new Response(response.body, response);
+  annotated.headers.set('X-Correlation-Id', correlationId);
+  return annotated;
+}

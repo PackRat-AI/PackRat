@@ -63,6 +63,23 @@ export interface AgentContext {
    * `reason: 'unsupported'` failure when this field is undefined.
    */
   elicitInput?: ElicitCapable['elicitInput'];
+  /**
+   * U15: per-invocation audit context — used by admin tools to record
+   * who performed an action and which scopes the OAuth grant carried.
+   *
+   * Returns the current OAuth-grant actor info (`userId`, `scopes`) and
+   * a session-level correlation ID. The actor info is read from
+   * `this.props` on `PackRatMCP`; the correlation ID is the synthetic
+   * `session:<DO-id>` shape because a single DO instance can serve
+   * many MCP requests over its lifetime and we lack a per-tool-call
+   * inbound Request to pivot on.
+   *
+   * Optional so test stubs / non-DO contexts don't have to implement it;
+   * tools that audit MUST fall back to an empty actor when this is
+   * absent (the `audit` helper handles that cleanly — see `audit` in
+   * `observability.ts`).
+   */
+  getAuditContext?: () => { userId: string; scopes: readonly string[]; correlationId: string };
 }
 
 /** Cloudflare Worker environment bindings */

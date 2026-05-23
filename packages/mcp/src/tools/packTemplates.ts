@@ -22,6 +22,7 @@ import { z } from 'zod';
 import { call, errResponse, nowIso } from '../client';
 import { type ConfirmReason, confirmAction } from '../elicit';
 import { ItemCategory, PackCategory } from '../enums';
+import { audit, createLogger } from '../observability';
 import type { AgentContext } from '../types';
 
 /**
@@ -55,6 +56,53 @@ function elicitFailureResponse(reason: ConfirmReason) {
         false,
       );
   }
+}
+
+/**
+ * U15: per-template-tool audit context. Mirrors the helper of the same
+ * name in `tools/admin.ts` (intentionally duplicated for the same
+ * grep-ability reasons documented on `elicitFailureResponse` above).
+ */
+function auditCtxFor(agent: AgentContext): {
+  logger: ReturnType<typeof createLogger>;
+  actor: { userId: string; scopes: readonly string[] };
+} {
+  const ctx = agent.getAuditContext?.() ?? { userId: '', scopes: [], correlationId: '' };
+  return {
+    logger: createLogger({ correlationId: ctx.correlationId }),
+    actor: { userId: ctx.userId, scopes: ctx.scopes },
+  };
+}
+
+function auditElicitDeclined(reason: ConfirmReason): { code: string; retryable: boolean } {
+  switch (reason) {
+    case 'cancelled':
+      return { code: 'user_cancelled', retryable: false };
+    case 'mismatch':
+      return { code: 'confirmation_mismatch', retryable: false };
+    case 'timeout':
+      return { code: 'confirmation_timeout', retryable: true };
+    case 'unsupported':
+      return { code: 'elicitation_unsupported', retryable: false };
+  }
+}
+
+type ToolResult = {
+  isError?: true;
+  structuredContent?: { error?: { code: string; retryable: boolean } };
+};
+
+function auditOutcome(result: ToolResult): {
+  outcome: 'success' | 'failure';
+  error?: { code: string; retryable: boolean };
+} {
+  if (result.isError === true) {
+    const e = result.structuredContent?.error;
+    return e
+      ? { outcome: 'failure', error: { code: e.code, retryable: e.retryable } }
+      : { outcome: 'failure' };
+  }
+  return { outcome: 'success' };
 }
 
 export function registerPackTemplateTools(agent: AgentContext): void {
@@ -168,6 +216,10 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ name, description, category, image, tags }, extra) => {
+      const { logger, actor } = auditCtxFor(agent);
+      // Target is the template name (no id yet — pre-create). The model can
+      // re-derive the created id from the response if it cares.
+      const target = { type: 'app_pack_template', id: name };
       const confirm = await confirmAction(agent, extra, {
         message:
           `Confirm publish of app-wide pack template "${name}". ` +
@@ -175,9 +227,17 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           `Type PUBLISH to proceed:`,
         expectedConfirmation: 'PUBLISH',
       });
-      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
+      if (!confirm.confirmed) {
+        audit(logger, 'create_app_pack_template', {
+          actor,
+          target,
+          outcome: 'declined',
+          error: auditElicitDeclined(confirm.reason),
+        });
+        return elicitFailureResponse(confirm.reason);
+      }
       const now = nowIso();
-      return call(
+      const result = await call(
         agent.api.user['pack-templates'].post({
           name,
           description,
@@ -190,6 +250,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         }),
         { action: 'create app pack template', requiresAdmin: true },
       );
+      audit(logger, 'create_app_pack_template', { actor, target, ...auditOutcome(result) });
+      return result;
     },
   );
 
@@ -415,6 +477,12 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ content_url, is_app_template }, extra) => {
+      const { logger, actor } = auditCtxFor(agent);
+      // Target is the URL — bounded by the schema's `z.string().url()` and
+      // already known to the operator from the rest of the audit context.
+      // We deliberately do NOT log the LLM-fetched body or any derived
+      // template fields.
+      const target = { type: 'pack_template_source', id: content_url };
       const confirm = await confirmAction(agent, extra, {
         message:
           `Confirm generate template from ${content_url}. ` +
@@ -423,14 +491,28 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           `Type GENERATE to proceed:`,
         expectedConfirmation: 'GENERATE',
       });
-      if (!confirm.confirmed) return elicitFailureResponse(confirm.reason);
-      return call(
+      if (!confirm.confirmed) {
+        audit(logger, 'generate_pack_template_from_url', {
+          actor,
+          target,
+          outcome: 'declined',
+          error: auditElicitDeclined(confirm.reason),
+        });
+        return elicitFailureResponse(confirm.reason);
+      }
+      const result = await call(
         agent.api.user['pack-templates']['generate-from-online-content'].post({
           contentUrl: content_url,
           isAppTemplate: is_app_template,
         }),
         { action: 'generate pack template from URL', requiresAdmin: true },
       );
+      audit(logger, 'generate_pack_template_from_url', {
+        actor,
+        target,
+        ...auditOutcome(result),
+      });
+      return result;
     },
   );
 }

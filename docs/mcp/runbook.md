@@ -1062,10 +1062,12 @@ exactly this case (see
 After a deploy, after the next 04:00 UTC tick:
 
 ```bash
-wrangler tail --env prod --format pretty
-# Filter on "scheduled" handler logs once U15 lands; today the purge runs
-# silently except on error — the operator-visible signal is the absence
-# of stale-grant complaints over time.
+wrangler tail --env prod --format pretty | grep mcp.cron.purge
+# The U15 logging emits a `mcp.cron.purge.start`, one
+# `mcp.cron.purge.batch` per iteration with `grantsPurged`/`tokensPurged`,
+# and a `mcp.cron.purge.complete` line. A `mcp.cron.purge.cap_reached`
+# WARN means the 50-iteration safety cap fired without `done: true` —
+# investigate the KV scan volume.
 ```
 
 If the purge ever throws, the `scheduled` arm propagates the error and
@@ -1129,6 +1131,187 @@ exposes the public docs page. The landing-site smoke tests cover
 the legal links; the MCP page itself is RSC-rendered and shipped
 without a separate vitest assertion (the catalog JSON is the
 build-time contract).
+
+---
+
+## U15 observability
+
+The MCP Worker emits structured JSON logs via `console.log/warn/error`.
+Workers Logs ingests them as structured events, and a Cloudflare-dashboard
+**OTel pipeline** forwards them to Sentry's OTLP endpoint. There is NO
+in-process Sentry SDK in the worker — by design (smaller bundle, no
+SDK-version drift, no need to handle SDK initialisation in the DO
+constructor).
+
+### Operator TODO: enable the OTel → Sentry pipeline
+
+Required dashboard click-path (do once per environment, after the U1
+`SENTRY_DSN` secret is set):
+
+1. **Cloudflare dashboard** → Workers & Pages → `packrat-mcp` (or
+   `packrat-mcp-dev`).
+2. **Observability** → **Telemetry** → **Add destination** →
+   **OTLP**.
+3. Endpoint: the Sentry OTLP ingest URL for your project (find it in
+   Sentry → Settings → Projects → packrat-mcp → Client Keys (DSN) → use
+   the "OTLP" tab).
+4. Authentication: **Headers** → add `x-sentry-auth: sentry_key=<DSN
+   public key>` (the public key is the segment of the DSN before `@`).
+5. **Resource attributes** (recommended): `service.name=mcp`,
+   `deployment.environment=prod` (or `dev`).
+6. **Sampling**: 100% on `WARN`/`ERROR`; 5% on `INFO` (cost guardrail —
+   per-batch cron INFO is high-volume but low-value individually).
+7. Save. The pipeline activates within ~1 minute. Verify by triggering a
+   known WARN (e.g. `curl -X POST https://mcp.packratai.com/register`
+   with no Authorization header — this emits `mcp.auth.dcr_register.denied
+   reason=missing_bearer`) and watching Sentry's Issues view.
+
+The `SENTRY_DSN` secret (set as a placeholder by U1) is **not** read by
+the worker. It's surfaced in the runbook so operators have one canonical
+place to look for the DSN value when configuring the pipeline; the
+worker's logs reach Sentry exclusively via the OTLP pipeline.
+
+### Log shape
+
+Every log line is a single JSON object on one line:
+
+```json
+{
+  "ts": "2026-05-22T04:00:00.000Z",
+  "level": "info" | "warn" | "error" | "debug",
+  "msg": "human-readable message",
+  "correlationId": "ray-or-uuid-or-cron:timestamp",
+  "service": "mcp",
+  "...": "additional structured fields (allowlisted)"
+}
+```
+
+`ts` is ISO-8601 UTC. `level` is the canonical lowercase severity.
+`correlationId` and `service` are pinned on every line so Workers Logs
+filters can pivot on them without per-call instrumentation.
+
+### Correlation IDs
+
+Each inbound request receives a correlation ID at the top of the outer
+`fetch` wrapper (`packages/mcp/src/index.ts`):
+
+- Prefers the `cf-ray` header (every Cloudflare-fronted request has one,
+  and the value matches the upstream zone log so an operator can pivot
+  between Workers Logs / Sentry / the Cloudflare dashboard for the same
+  request).
+- Falls back to `crypto.randomUUID()` for off-CF tests or the rare
+  upstream-strip case.
+- Stashed on the Request via a per-request `WeakMap` so deep handlers
+  (`dcrRegisterGate`, `handleLoginPost`, `handleCallback`) can read it
+  via `getCorrelationId(request)` without plumbing the id through every
+  function signature. **Not AsyncLocalStorage** — Workers ALS support is
+  still gated behind a compatibility flag we don't set.
+- Echoed on every outbound response as `X-Correlation-Id: <id>` so the
+  caller can quote it when reporting issues.
+
+For code paths without an inbound Request (today only the scheduled
+cron sweep), `syntheticCorrelationId('cron')` mints `cron:<unix-ms>`.
+
+### Audit log shape
+
+Admin tool invocations emit a structured audit line via
+`audit(logger, '<action>', { actor, target, outcome, ... })`:
+
+```json
+{
+  "ts": "...",
+  "level": "info",
+  "msg": "mcp.audit.admin_hard_delete_user",
+  "action": "admin_hard_delete_user",
+  "actor":  { "userId": "...", "scopes": ["mcp:admin", "mcp:write"] },
+  "target": { "type": "user", "id": "u-42" },
+  "outcome": "success" | "failure" | "declined",
+  "error":   { "code": "...", "retryable": false },   // failure / declined only
+  "correlationId": "session:<DO-id>",
+  "service": "mcp"
+}
+```
+
+The `mcp.audit.` prefix on `msg` is the operator-facing namespace filter
+for Sentry / Workers Logs. Six tools currently audit:
+
+- `packrat_admin_hard_delete_user`
+- `packrat_admin_delete_pack`
+- `packrat_admin_delete_catalog_item`
+- `packrat_admin_delete_trail_condition_report`
+- `packrat_create_app_pack_template` (PUBLISH gate)
+- `packrat_generate_pack_template_from_url` (GENERATE gate)
+
+`outcome: 'declined'` is used when the U10 elicitation surface returned
+`confirmed: false` — the action did not run, but the intent was made
+known to the server and is recorded with the canonical error code
+(`user_cancelled`, `confirmation_mismatch`, `confirmation_timeout`,
+`elicitation_unsupported`).
+
+### Auth-failure WARN logs
+
+Every rejection path on the unauthenticated auth surface emits a
+WARN-level structured log (helpful for spotting brute-force probes):
+
+| Surface              | `msg`                              | `reason` values                                                                           |
+| -------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| `POST /register`     | `mcp.auth.dcr_register.denied`     | `disabled`, `missing_bearer`, `token_mismatch`                                            |
+| `POST /login`        | `mcp.auth.login.denied`            | `bad_origin`, `csrf_missing`, `csrf_kv_missing`, `csrf_mismatch`, `missing_state`, `rate_limited`, `better_auth_failed` |
+| `/callback` Better Auth lookup | `mcp.auth.role_lookup.{denied,failed}` | `timeout`, `transport_error`, `non_ok_response`, `malformed_body`                |
+| OAuthProvider errors | `mcp.oauth.error`                  | Library-defined `oauthCode` (e.g. `invalid_grant`, `invalid_client`)                      |
+
+The OAuthProvider hook is wired via the `onError` callback in
+`packages/mcp/src/index.ts`. The v0.7.0 signature is
+`({ code, description, status, headers, internal? }) => Response | void`;
+we log `oauthCode`, `oauthStatus`, `description` (and the `internal`
+`{ category, reason }` when present) and return `void` so the library's
+default RFC 6749 error envelope reaches the client unchanged.
+
+### Redaction policy — no tokens, no PII, default-deny field allowlist
+
+`packages/mcp/src/observability.ts` exports `scrubFields()`, which every
+log line passes through before emit. The policy is **default-deny on a
+top-level allowlist** (not a denylist):
+
+- Allowed top-level keys: `correlationId`, `service`, `ts`, `level`,
+  `msg`, `requestId`, `method`, `path`, `statusCode`, `duration`,
+  `iteration`, `iterations`, `done`, `code`, `description`, `reason`,
+  `retryable`, `oauthCode`, `oauthStatus`, `action`, `outcome`, `actor`,
+  `target`, `error`, `grantsChecked`, `grantsPurged`, `tokensChecked`,
+  `tokensPurged`, `cap`, `tool`, `toolName`.
+- `actor` allows nested `userId`, `scopes`.
+- `target` allows nested `type`, `id`.
+- `error` allows nested `code`, `message`, `retryable`.
+- **Anything else collapses to `'[redacted]'`** with the key preserved
+  (so triage can see "the caller tried to log X but it was scrubbed").
+- Functions are dropped entirely.
+
+What is **never** logged: `betterAuthToken`, `props`, OAuth `code`,
+bearer tokens, refresh tokens, passwords, email addresses, IP addresses,
+full URLs (only bounded path/origin is okay), the request/response body,
+the user's typed elicitation answer.
+
+To add a field to the allowlist, edit `TOP_LEVEL_ALLOWLIST` in
+`observability.ts`. **Every addition is a code-review event** — that's
+the property we want for telemetry hygiene.
+
+### Operator TODO: confirm Sentry routing
+
+After enabling the OTel pipeline, verify end-to-end:
+
+1. `curl -i https://mcp.packratai.com/register` (no Authorization).
+2. The response includes `X-Correlation-Id: <ray-id>` and 401 +
+   `WWW-Authenticate: Bearer resource_metadata=...`.
+3. `wrangler tail --env prod --format pretty | grep dcr_register`
+   shows `{"ts":...,"level":"warn","msg":"mcp.auth.dcr_register.denied",
+   "correlationId":"<ray-id>","reason":"missing_bearer",...}`.
+4. Sentry Issues view receives a matching event tagged
+   `service.name=mcp`, `correlationId=<ray-id>`, with the message
+   `mcp.auth.dcr_register.denied`.
+
+If steps 3 and 4 don't align within ~30 seconds, the OTel pipeline is
+mis-configured (most often: missing `x-sentry-auth` header or a typo
+in the OTLP endpoint).
 
 ---
 

@@ -48,6 +48,7 @@ import { ServiceMeta } from './constants';
 import { faviconResponse } from './favicon';
 import { renderLoginPage } from './login-page';
 import { unauthorizedResponse } from './metadata';
+import { correlationIdFrom, createLogger, getCorrelationId } from './observability';
 import { checkRateLimit, loginRateLimitKey } from './rate-limit';
 import { SCOPES_SUPPORTED } from './scopes';
 import type { Env, Props } from './types';
@@ -343,13 +344,24 @@ export function dcrRegisterGate(request: Request, env: Env): Response | null {
   // We still apply the bearer gate to non-POST so a GET probe can't be used
   // to fingerprint whether the env var is set.
 
+  // U15: structured WARN on every rejection path so an operator can spot a
+  // brute-force probe against the gate. We never log the bearer value
+  // itself — only `reason` + `statusCode`. The correlation ID is read
+  // from the per-request WeakMap stash if the outer fetch wrapper has
+  // already attached one; otherwise we mint one so this surface remains
+  // observable even on a synthesised call from a test.
+  const correlationId = getCorrelationId(request) ?? correlationIdFrom(request);
+  const log = createLogger({ correlationId });
+
   const expected = env.MCP_INITIAL_ACCESS_TOKEN;
   if (!expected || expected.length === 0) {
+    log.warn('mcp.auth.dcr_register.denied', { reason: 'disabled', statusCode: 401 });
     return unauthorizedResponse(env, 'Dynamic client registration is disabled on this server');
   }
 
   const provided = extractBearer(request.headers.get('Authorization'));
   if (!provided) {
+    log.warn('mcp.auth.dcr_register.denied', { reason: 'missing_bearer', statusCode: 401 });
     return unauthorizedResponse(
       env,
       'Dynamic client registration requires an initial access token',
@@ -357,6 +369,7 @@ export function dcrRegisterGate(request: Request, env: Env): Response | null {
   }
 
   if (!timingSafeEqual(provided, expected)) {
+    log.warn('mcp.auth.dcr_register.denied', { reason: 'token_mismatch', statusCode: 401 });
     return unauthorizedResponse(env, 'Invalid initial access token');
   }
 
@@ -480,10 +493,18 @@ async function handleLoginGet(request: Request, env: Env): Promise<Response> {
 // ── /login POST ───────────────────────────────────────────────────────────────
 
 async function handleLoginPost(request: Request, env: Env): Promise<Response> {
+  // U15: structured log on every auth-failure path. The login surface is
+  // unauthenticated so a brute-force probe is interesting to operators;
+  // we never log the email, the password, the typed CSRF token, or the
+  // form body — only the failure reason and the response status code.
+  const correlationId = getCorrelationId(request) ?? correlationIdFrom(request);
+  const log = createLogger({ correlationId });
+
   // ── Origin check (back-compat: missing Origin is allowed) ────────────────
   // Reject before parsing the body to avoid wasted work on cross-origin
   // posts. Bare-bones response — the browser won't even render this.
   if (!isOriginAcceptable(request)) {
+    log.warn('mcp.auth.login.denied', { reason: 'bad_origin', statusCode: 403 });
     return new Response('Forbidden: bad Origin', { status: 403 });
   }
 
@@ -519,6 +540,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   const csrfCookie = cookies[CSRF_COOKIE_NAME] ?? '';
 
   if (!csrfCookie || !csrfField) {
+    log.warn('mcp.auth.login.denied', { reason: 'csrf_missing', statusCode: 400 });
     return new Response(
       renderLoginPage({
         state,
@@ -533,6 +555,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   }
 
   if (!state) {
+    log.warn('mcp.auth.login.denied', { reason: 'missing_state', statusCode: 400 });
     return new Response(
       renderLoginPage({
         state,
@@ -550,6 +573,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   if (!csrfFromKv) {
     // KV entry missing means /authorize was never visited or the nonce
     // expired. Either way the post can't be trusted.
+    log.warn('mcp.auth.login.denied', { reason: 'csrf_kv_missing', statusCode: 400 });
     return new Response(
       renderLoginPage({
         state,
@@ -564,6 +588,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   }
 
   if (!csrfEqual(csrfCookie, csrfField) || !csrfEqual(csrfFromKv, csrfField)) {
+    log.warn('mcp.auth.login.denied', { reason: 'csrf_mismatch', statusCode: 400 });
     return new Response(
       renderLoginPage({
         state,
@@ -590,6 +615,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     '';
   const allowed = await checkLoginRateLimit(env, ip);
   if (!allowed) {
+    log.warn('mcp.auth.login.denied', { reason: 'rate_limited', statusCode: 429 });
     return new Response(
       renderLoginPage({
         state,
@@ -649,6 +675,10 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
     // target each branch (429 / 423 / 401 / 5xx) without spinning up
     // the full handler.
     const copy = betterAuthErrorCopy(signInRes.status);
+    log.warn('mcp.auth.login.denied', {
+      reason: 'better_auth_failed',
+      statusCode: copy.status,
+    });
     return new Response(renderLoginPage({ state, csrf: csrfField, error: copy.message }), {
       status: copy.status,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -713,25 +743,43 @@ const SessionResponseSchema = z.object({
  * returns `false`. Fail-closed: a degraded Better Auth never escalates
  * scope.
  *
- * U15 will replace the `console.warn` with a structured-log helper.
+ * U15: failures emit a WARN-level structured log distinguishing
+ * `reason: 'timeout'` (AbortError) from `reason: 'transport_error'`.
+ * Never logs the bearer token itself.
  */
-async function isAdminUser(env: Env, betterAuthToken: string): Promise<boolean> {
+// biome-ignore lint/complexity/useMaxParams: caller is the single /callback handler; collapsing (env, betterAuthToken, correlationId) into an options object adds noise without helping readability of the one call site.
+async function isAdminUser(
+  env: Env,
+  betterAuthToken: string,
+  correlationId: string,
+): Promise<boolean> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), BETTER_AUTH_ROLE_LOOKUP_TIMEOUT_MS);
+  const log = createLogger({ correlationId });
   try {
     const res = await fetch(`${env.PACKRAT_API_URL}/api/auth/get-session`, {
       headers: { Authorization: `Bearer ${betterAuthToken}` },
       signal: controller.signal,
     });
-    if (!res.ok) return false;
+    if (!res.ok) {
+      log.warn('mcp.auth.role_lookup.denied', {
+        reason: 'non_ok_response',
+        statusCode: res.status,
+      });
+      return false;
+    }
     const parsed = SessionResponseSchema.safeParse(await res.json().catch(() => null));
-    if (!parsed.success) return false;
+    if (!parsed.success) {
+      log.warn('mcp.auth.role_lookup.denied', { reason: 'malformed_body', statusCode: 200 });
+      return false;
+    }
     return parsed.data.user?.role === 'ADMIN';
   } catch (e) {
-    // TODO (U15): structured log — distinguish timeout (AbortError) from
-    // transport errors. Both are fail-closed today, but the operational
-    // signal differs.
-    console.warn('[mcp/auth] Better Auth role lookup failed; granting non-admin scope', e);
+    const isTimeout = e instanceof Error && e.name === 'AbortError';
+    log.warn('mcp.auth.role_lookup.failed', {
+      reason: isTimeout ? 'timeout' : 'transport_error',
+      statusCode: 0,
+    });
     return false;
   } finally {
     clearTimeout(timeoutId);
@@ -772,6 +820,7 @@ function grantedScopesFor(requestedScopes: readonly string[], isAdmin: boolean):
 
 async function handleCallback(request: Request, env: Env): Promise<Response> {
   const state = new URL(request.url).searchParams.get('state') ?? '';
+  const correlationId = getCorrelationId(request) ?? correlationIdFrom(request);
 
   const [oauthReqStr, sessionStr] = await Promise.all([
     env.OAUTH_KV.get(oauthStateKey(state)),
@@ -814,7 +863,7 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   // subset of requested, so a client that didn't request `mcp:admin`
   // can't receive it even if the user IS an admin.
   const wantedAdmin = oauthReq.scope.includes('mcp:admin');
-  const isAdmin = wantedAdmin ? await isAdminUser(env, betterAuthToken) : false;
+  const isAdmin = wantedAdmin ? await isAdminUser(env, betterAuthToken, correlationId) : false;
   const grantedScopes = grantedScopesFor(oauthReq.scope, isAdmin);
 
   // Tell the OAuthProvider exactly which scopes we're granting (so the

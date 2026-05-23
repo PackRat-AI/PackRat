@@ -27,6 +27,7 @@
  */
 
 import type { OAuthProvider, PurgeResult } from '@cloudflare/workers-oauth-provider';
+import { createLogger, type Logger, syntheticCorrelationId } from './observability';
 import type { Env } from './types';
 
 /**
@@ -53,18 +54,40 @@ export const PURGE_OPTIONS = { batchSize: 100 } as const;
  * scheduled handler). See
  * `@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:1191`.
  */
+// biome-ignore lint/complexity/useMaxParams: the `logger` slot is the test seam — passing a pre-built Logger lets the scheduled-handler tests capture the cron emission inline. Folding it into an options object adds noise at every prod call site (which never wants to pass it).
 export async function runScheduledPurge(
   provider: Pick<OAuthProvider<Env>, 'purgeExpiredData'>,
   env: Env,
+  logger?: Logger,
 ): Promise<{ iterations: number; done: boolean; lastResult: PurgeResult | null }> {
+  // U15: a scheduled handler has no inbound Request, so we synthesise a
+  // correlation ID with a `cron:` prefix. Operators can filter Workers
+  // Logs on `correlationId: cron:*` to see only purge-loop emissions.
+  const log = logger ?? createLogger({ correlationId: syntheticCorrelationId('cron') });
   let iterations = 0;
   let done = false;
   let lastResult: PurgeResult | null = null;
+  log.info('mcp.cron.purge.start', { cap: CRON_PURGE_MAX_ITERATIONS });
   while (!done && iterations < CRON_PURGE_MAX_ITERATIONS) {
     iterations += 1;
     const result = await provider.purgeExpiredData(env, PURGE_OPTIONS);
     lastResult = result;
     done = result.done;
+    log.info('mcp.cron.purge.batch', {
+      iteration: iterations,
+      grantsChecked: result.grantsChecked,
+      grantsPurged: result.grantsPurged,
+      tokensChecked: result.tokensChecked,
+      tokensPurged: result.tokensPurged,
+      done: result.done,
+    });
   }
+  if (!done) {
+    log.warn('mcp.cron.purge.cap_reached', {
+      iterations,
+      cap: CRON_PURGE_MAX_ITERATIONS,
+    });
+  }
+  log.info('mcp.cron.purge.complete', { iterations, done });
   return { iterations, done, lastResult };
 }

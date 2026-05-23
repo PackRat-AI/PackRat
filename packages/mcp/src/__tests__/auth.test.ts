@@ -28,6 +28,36 @@ import {
 import { applyCorsHeaders } from '../cors';
 import type { Env } from '../types';
 
+// Shared log-spy helper for U15 auth-failure assertions.
+type CapturedLine = { level: 'log' | 'warn' | 'error'; json: Record<string, unknown> };
+function captureLogs(): { lines: CapturedLine[]; restore: () => void } {
+  const lines: CapturedLine[] = [];
+  const original = { log: console.log, warn: console.warn, error: console.error };
+  console.log = (msg: unknown) =>
+    lines.push({
+      level: 'log',
+      json: typeof msg === 'string' ? JSON.parse(msg) : (msg as Record<string, unknown>),
+    });
+  console.warn = (msg: unknown) =>
+    lines.push({
+      level: 'warn',
+      json: typeof msg === 'string' ? JSON.parse(msg) : (msg as Record<string, unknown>),
+    });
+  console.error = (msg: unknown) =>
+    lines.push({
+      level: 'error',
+      json: typeof msg === 'string' ? JSON.parse(msg) : (msg as Record<string, unknown>),
+    });
+  return {
+    lines,
+    restore: () => {
+      console.log = original.log;
+      console.warn = original.warn;
+      console.error = original.error;
+    },
+  };
+}
+
 /** Build a minimal `Env` for tests. The OAuth helpers are stubbed because
  *  `/register` is intercepted before any OAuthProvider machinery runs. */
 function makeEnv(overrides: Partial<Env> = {}): Env {
@@ -740,5 +770,152 @@ describe('applyCorsHeaders — well-known CORS', () => {
     });
     const res = applyCorsHeaders(req, upstream);
     expect(res?.headers.get('Vary')).toBe('Accept-Encoding, Origin');
+  });
+});
+
+// ─── U15: structured WARN logging on auth-failure paths ──────────────────────
+//
+// The DCR gate and the /login POST handler emit structured JSON logs on every
+// rejection so operators can spot brute-force probes from Workers Logs. We
+// assert (a) the message shape, (b) the WARN level, and (c) the absence of
+// any secret material in the line. The redaction is enforced by
+// `observability.scrubFields` — these tests pin the call sites match the
+// expected `{ reason, statusCode }` payload contract.
+
+describe('U15 — dcrRegisterGate structured WARN logging', () => {
+  let capture: ReturnType<typeof captureLogs>;
+  beforeEach(() => {
+    capture = captureLogs();
+  });
+  afterEach(() => capture.restore());
+
+  it('emits WARN reason=disabled when MCP_INITIAL_ACCESS_TOKEN is unset', () => {
+    const env = makeEnv();
+    dcrRegisterGate(makeRegisterRequest({ Authorization: 'Bearer x' }), env);
+    const warns = capture.lines.filter(
+      (l) => l.level === 'warn' && l.json.msg === 'mcp.auth.dcr_register.denied',
+    );
+    expect(warns).toHaveLength(1);
+    expect(warns[0].json.reason).toBe('disabled');
+    expect(warns[0].json.statusCode).toBe(401);
+    // Critical: the bearer value must not appear in the line.
+    expect(JSON.stringify(warns[0].json)).not.toContain('Bearer');
+  });
+
+  it('emits WARN reason=missing_bearer when no Authorization header is sent', () => {
+    const env = makeEnv({ MCP_INITIAL_ACCESS_TOKEN: 'secret' });
+    dcrRegisterGate(makeRegisterRequest(), env);
+    const warns = capture.lines.filter(
+      (l) => l.level === 'warn' && l.json.msg === 'mcp.auth.dcr_register.denied',
+    );
+    expect(warns).toHaveLength(1);
+    expect(warns[0].json.reason).toBe('missing_bearer');
+  });
+
+  it('emits WARN reason=token_mismatch when the bearer is wrong', () => {
+    const env = makeEnv({ MCP_INITIAL_ACCESS_TOKEN: 'secret' });
+    dcrRegisterGate(makeRegisterRequest({ Authorization: 'Bearer wrong' }), env);
+    const warns = capture.lines.filter(
+      (l) => l.level === 'warn' && l.json.msg === 'mcp.auth.dcr_register.denied',
+    );
+    expect(warns).toHaveLength(1);
+    expect(warns[0].json.reason).toBe('token_mismatch');
+    // Neither the expected nor the provided bearer is in the log.
+    expect(JSON.stringify(warns[0].json)).not.toContain('secret');
+    expect(JSON.stringify(warns[0].json)).not.toContain('wrong');
+  });
+
+  it('does NOT log when the bearer matches (success path is silent)', () => {
+    const env = makeEnv({ MCP_INITIAL_ACCESS_TOKEN: 'tok' });
+    dcrRegisterGate(makeRegisterRequest({ Authorization: 'Bearer tok' }), env);
+    const denied = capture.lines.filter((l) => l.json.msg === 'mcp.auth.dcr_register.denied');
+    expect(denied).toHaveLength(0);
+  });
+});
+
+describe('U15 — handleLoginPost WARN logging', () => {
+  let capture: ReturnType<typeof captureLogs>;
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    capture = captureLogs();
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+  });
+  afterEach(() => {
+    capture.restore();
+    fetchSpy.mockRestore();
+  });
+
+  it('emits WARN reason=bad_origin when the Origin header mismatches', async () => {
+    const kv = seedAuthorizeState('s', 'n');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    await PackRatAuthHandler.fetch(
+      makeLoginPostRequest({
+        state: 's',
+        csrfField: 'n',
+        csrfCookie: 'n',
+        origin: 'https://evil.example',
+        email: 'a@b.c',
+        password: 'pw',
+      }),
+      env,
+    );
+    const warns = capture.lines.filter(
+      (l) => l.level === 'warn' && l.json.msg === 'mcp.auth.login.denied',
+    );
+    expect(warns).toHaveLength(1);
+    expect(warns[0].json.reason).toBe('bad_origin');
+    expect(warns[0].json.statusCode).toBe(403);
+    // Email + password must NEVER appear.
+    expect(JSON.stringify(warns[0].json)).not.toContain('a@b.c');
+    expect(JSON.stringify(warns[0].json)).not.toContain('pw');
+  });
+
+  it('emits WARN reason=csrf_mismatch when CSRF tokens diverge', async () => {
+    const kv = seedAuthorizeState('s', 'n');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    await PackRatAuthHandler.fetch(
+      makeLoginPostRequest({
+        state: 's',
+        csrfField: 'n',
+        csrfCookie: 'different',
+        origin: 'https://mcp.packratai.com',
+        email: 'a@b.c',
+        password: 'pw',
+      }),
+      env,
+    );
+    const warns = capture.lines.filter(
+      (l) => l.level === 'warn' && l.json.msg === 'mcp.auth.login.denied',
+    );
+    expect(warns).toHaveLength(1);
+    expect(warns[0].json.reason).toBe('csrf_mismatch');
+    expect(warns[0].json.statusCode).toBe(400);
+  });
+
+  it('emits WARN reason=better_auth_failed when Better Auth returns 401', async () => {
+    fetchSpy.mockResolvedValue(new Response(null, { status: 401 }));
+    const kv = seedAuthorizeState('s', 'n');
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    await PackRatAuthHandler.fetch(
+      makeLoginPostRequest({
+        state: 's',
+        csrfField: 'n',
+        csrfCookie: 'n',
+        origin: 'https://mcp.packratai.com',
+        email: 'a@b.c',
+        password: 'pw',
+      }),
+      env,
+    );
+    const warns = capture.lines.filter(
+      (l) => l.level === 'warn' && l.json.msg === 'mcp.auth.login.denied',
+    );
+    expect(warns).toHaveLength(1);
+    expect(warns[0].json.reason).toBe('better_auth_failed');
+    expect(warns[0].json.statusCode).toBe(401);
+    // No password / no email / no body in the log.
+    const dumped = JSON.stringify(warns[0].json);
+    expect(dumped).not.toContain('a@b.c');
+    expect(dumped).not.toContain('pw');
   });
 });
