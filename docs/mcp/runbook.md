@@ -548,6 +548,80 @@ Tracking sketch for a follow-up:
 3. Add the schema to the Tier 1 table in this runbook; add a
    round-trip test and a cross-check entry in `output-schemas.test.ts`.
 
+## U9 resources surface
+
+The MCP Worker exposes the following resources. Templated resources
+carry `list:` providers wherever it makes sense, so MCP clients can
+enumerate the signed-in user's data via `resources/list` rather than
+having to guess IDs.
+
+| URI                                | Shape     | List provider | mimeType            | Notes |
+| ---------------------------------- | --------- | ------------- | ------------------- | ----- |
+| `packrat://packs/{packId}`         | template  | yes           | `application/json`  | Lists user's packs (no public packs in the enumeration). |
+| `packrat://trips/{tripId}`         | template  | yes           | `application/json`  | Lists user's trips. |
+| `packrat://catalog/{itemId}`       | template  | yes (capped)  | `application/json`  | List capped at `CATALOG_LIST_CAP = 25` to avoid context-blowing on the multi-thousand-item catalog. |
+| `packrat://catalog/categories`     | static    | n/a           | `application/json`  | Pre-U9; preserved. |
+| `packrat://search?q={query}`       | template  | no            | `application/json`  | Delegates to the gear-catalog text-search endpoint. Returns up to 20 hits as JSON. No list provider (queries are inherently parameterised). |
+| `packrat://glossary`               | static    | n/a           | `text/markdown`     | Domain vocabulary (pack/trip/weight/trail/scope terms). Reviewers see this in the resource catalog; Claude reads it once early in a session. |
+
+### Why a glossary resource
+
+Reviewer-facing: Anthropic's reviewers downrank "thin connectors" that
+expose only CRUD calls. A glossary resource doubles as
+domain-knowledge documentation a reviewer can browse without leaving
+the resource catalog.
+
+Model-facing: Claude burns tool calls (and turns) re-learning that
+"base weight" excludes consumables, that an "AT thru-hiker" walks the
+Appalachian Trail, etc. A single static markdown read at session start
+shortcuts that. The glossary content lives in
+`packages/mcp/src/glossary.ts` and is exported as
+`GLOSSARY_MARKDOWN` so the resource handler stays a one-line return.
+
+### List-provider error handling (degrade, don't propagate)
+
+A thrown error inside any list callback would break the SDK's
+`resources/list` aggregator for **every** template at once. So all
+three list providers (`pack`, `trip`, `catalog_item`) wrap their
+callbacks in `safeList()` which swallows the error, logs a warning to
+`console.warn`, and returns an empty array. The catalog, glossary,
+and other resources stay readable even while one provider is degraded
+(network blip, auth race at session start, API outage).
+
+U15 will replace `console.warn` here with the structured logger; the
+contract is otherwise stable.
+
+### Catalog list cap (25)
+
+The full PackRat catalog runs to thousands of items. Listing all of
+them on every `resources/list` call would burn megabytes of context
+for marginal value. `CATALOG_LIST_CAP = 25` is one screen of resource
+entries in Claude.ai's resource browser; the model can still page
+deeper via `packrat://search?q=...` or the
+`packrat_search_gear_catalog` / `packrat_semantic_gear_search` tools.
+
+Bumping the cap is cheap (single constant in `resources.ts`); revisit
+if reviewer feedback says the initial surface is too narrow.
+
+### Error envelope on resource reads
+
+Resource read failures throw `McpError` (from
+`@modelcontextprotocol/sdk/types.js`) so the SDK converts them to
+proper JSON-RPC errors. Pre-U9, the read handlers returned errors as
+JSON content blocks with no error flag — clients couldn't tell apart
+"successful read of a JSON document that describes an error" from
+"the read itself failed". U9 fixes that:
+
+| Upstream status | JSON-RPC code            |
+| --------------- | ------------------------ |
+| 4xx (404, etc.) | `-32602` (InvalidParams) |
+| 5xx / network   | `-32603` (InternalError) |
+
+The `ReadResourceResult` type in MCP SDK 1.29 does NOT have an
+`isError` field (unlike `CallToolResult`), which is why the resource
+path diverges from the tool-call envelope U8 hardened — for resources
+the JSON-RPC layer carries the error, not the result body.
+
 ## Common operations
 
 ### Deploy
