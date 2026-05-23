@@ -1,7 +1,17 @@
 // Unit tests for the structured logger.
 
-import { logger } from '@packrat/api/utils/logger';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const sentry = vi.hoisted(() => ({
+  addBreadcrumb: vi.fn(),
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  isInitialized: vi.fn(() => false),
+}));
+
+vi.mock('@sentry/cloudflare', () => sentry);
+
+import { logger } from '@packrat/api/utils/logger';
 
 describe('logger', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
@@ -12,6 +22,11 @@ describe('logger', () => {
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    sentry.addBreadcrumb.mockReset();
+    sentry.captureException.mockReset();
+    sentry.captureMessage.mockReset();
+    sentry.isInitialized.mockReset();
+    sentry.isInitialized.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -44,6 +59,20 @@ describe('logger', () => {
       const line = parseLastLine(logSpy);
       expect(line.jobId).toBe('j1');
       expect(line.count).toBe(42);
+    });
+
+    it('falls back to a serialization error line when ctx cannot be stringified', () => {
+      const ctx: Record<string, unknown> = {};
+      ctx.self = ctx;
+
+      logger.info('etl.circular', ctx);
+
+      const line = parseLastLine(logSpy);
+      expect(line).toMatchObject({
+        level: 'INFO',
+        event: 'etl.circular',
+        serializationError: true,
+      });
     });
   });
 
@@ -93,6 +122,94 @@ describe('logger', () => {
       expect(line.errorName).toBeUndefined();
       expect(line.errorMessage).toBeUndefined();
       expect(line.errorStack).toBeUndefined();
+    });
+  });
+
+  describe('sentry forwarding', () => {
+    it('adds info breadcrumbs with primitive tags and complex extras', () => {
+      sentry.isInitialized.mockReturnValue(true);
+
+      logger.info('etl.started', {
+        jobId: 'j1',
+        count: 42,
+        dryRun: true,
+        metadata: { source: 'test' },
+      });
+
+      expect(sentry.addBreadcrumb).toHaveBeenCalledWith({
+        category: 'etl.started',
+        level: 'info',
+        data: {
+          event: 'etl.started',
+          jobId: 'j1',
+          count: '42',
+          dryRun: 'true',
+          metadata: { source: 'test' },
+        },
+      });
+    });
+
+    it('adds warn breadcrumbs at warning level', () => {
+      sentry.isInitialized.mockReturnValue(true);
+
+      logger.warn('etl.retry', { jobId: 'j2' });
+
+      expect(sentry.addBreadcrumb).toHaveBeenCalledWith({
+        category: 'etl.retry',
+        level: 'warning',
+        data: {
+          event: 'etl.retry',
+          jobId: 'j2',
+        },
+      });
+    });
+
+    it('captures error objects with event tags and extras', () => {
+      sentry.isInitialized.mockReturnValue(true);
+      const err = new Error('boom');
+
+      logger.error('etl.failed', {
+        err,
+        jobId: 'j3',
+        metadata: { source: 'test' },
+      });
+
+      expect(sentry.captureException).toHaveBeenCalledWith(err, {
+        tags: {
+          event: 'etl.failed',
+          jobId: 'j3',
+        },
+        extra: {
+          event: 'etl.failed',
+          metadata: { source: 'test' },
+        },
+      });
+    });
+
+    it('captures error events without error objects as messages', () => {
+      sentry.isInitialized.mockReturnValue(true);
+
+      logger.error('etl.failed', { jobId: 'j4' });
+
+      expect(sentry.captureMessage).toHaveBeenCalledWith('etl.failed', {
+        level: 'error',
+        tags: {
+          jobId: 'j4',
+        },
+        extra: {
+          event: 'etl.failed',
+        },
+      });
+    });
+
+    it('swallows sentry forwarding failures after console output', () => {
+      sentry.isInitialized.mockReturnValue(true);
+      sentry.addBreadcrumb.mockImplementation(() => {
+        throw new Error('sentry unavailable');
+      });
+
+      expect(() => logger.info('etl.best-effort')).not.toThrow();
+      expect(logSpy).toHaveBeenCalledOnce();
     });
   });
 });
