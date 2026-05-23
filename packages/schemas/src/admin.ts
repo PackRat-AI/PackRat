@@ -179,6 +179,10 @@ export const EtlJobSchema = z.object({
   totalValid: z.number().nullable(),
   totalInvalid: z.number().nullable(),
   successRate: z.number().nullable(),
+  failureRate: z.number().nullable(),
+  totalEmbeddingFailures: z.number(),
+  verifiedRowCount: z.number().nullable(),
+  verifiedAt: z.string().nullable(),
 });
 
 export const EtlResponseSchema = z.object({
