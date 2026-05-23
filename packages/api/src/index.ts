@@ -157,7 +157,7 @@ export default withSentry<Env>(
     environment: env.ENVIRONMENT ?? 'production',
     tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
     sendDefaultPii: false,
-    release: (env as unknown as Record<string, unknown>).SENTRY_RELEASE as string | undefined,
+    release: env.SENTRY_RELEASE,
   }),
   workerHandler,
 );
