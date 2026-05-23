@@ -36,6 +36,7 @@ import { z } from 'zod';
 import { PackRatAuthHandler } from './auth';
 import { createMcpClients, type McpClients } from './client';
 import { ServiceMeta } from './constants';
+import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
 import { registerAdminTools } from './tools/admin';
@@ -224,13 +225,20 @@ const PropsSchema = z.object({
 });
 
 // ── API handler: wraps McpAgent, injecting the Better Auth token from OAuth props ──
+//
+// Adds the RFC 9728 `WWW-Authenticate: Bearer resource_metadata=...` header
+// to every 401 response so MCP clients can discover the protected-resource
+// metadata on first encounter.
 
 const mcpApiHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rawCtx = ctx as unknown as Record<string, unknown>; // safe-cast: OAuth provider injects props at runtime; ExecutionContext has no index signature
     const propsResult = PropsSchema.safeParse(rawCtx.props);
-    const userToken = propsResult.success ? propsResult.data.betterAuthToken : '';
-    const adminToken = propsResult.success ? (propsResult.data.adminToken ?? '') : '';
+    if (!propsResult.success) {
+      return unauthorizedResponse(env, 'Missing or malformed OAuth props');
+    }
+
+    const { betterAuthToken: userToken, adminToken } = propsResult.data;
 
     const headers = new Headers(request.headers);
     if (userToken) headers.set('Authorization', `Bearer ${userToken}`);
@@ -238,11 +246,35 @@ const mcpApiHandler = {
       headers.set('X-PackRat-Admin-Token', adminToken);
     }
 
-    return mcpDoHandler.fetch(new Request(request, { headers }), env, ctx);
+    const response = await mcpDoHandler.fetch(
+      new Request(request, { headers }),
+      env,
+      ctx,
+    );
+
+    // RFC 9728 §5.1: 401 responses from a protected resource MUST include a
+    // WWW-Authenticate challenge with resource_metadata. The McpAgent
+    // doesn't add this for us, so we annotate it here when needed.
+    if (response.status === 401 && !response.headers.has('WWW-Authenticate')) {
+      const annotated = new Response(response.body, response);
+      annotated.headers.set(
+        'WWW-Authenticate',
+        `Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp"`,
+      );
+      return annotated;
+    }
+
+    return response;
   },
 };
 
 // ── OAuthProvider — the Worker entrypoint ─────────────────────────────────────
+//
+// The provider auto-emits both well-known endpoints (RFC 8414 for AS metadata,
+// RFC 9728 for protected-resource metadata). `resourceMetadata` pins the
+// `resource` URL to our custom domain so Claude's audience-verification of
+// issued tokens matches what the metadata advertises — silent drift here is
+// a top connector-rejection cause.
 
 export default new OAuthProvider<Env>({
   // /mcp and sub-paths are API routes: require a valid access token
@@ -257,13 +289,22 @@ export default new OAuthProvider<Env>({
   tokenEndpoint: '/token',
   clientRegistrationEndpoint: '/register',
 
-  // Security: S256 PKCE only; no implicit flow
+  // Security: S256 PKCE only; no implicit flow; restrict DCR to confidential
+  // clients (the /register endpoint is further gated by MCP_INITIAL_ACCESS_TOKEN
+  // in PackRatAuthHandler — see U4).
   allowPlainPKCE: false,
   allowImplicitFlow: false,
+  disallowPublicClientRegistration: true,
 
-  // Token lifetimes: 60-min access tokens, 30-day refresh tokens
+  // Token lifetimes: 60-min access tokens, 30-day refresh tokens. Refresh
+  // tokens rotate by default in @cloudflare/workers-oauth-provider per
+  // OAuth 2.1 §4.3.1; the rotation is verified in U17 integration tests.
   accessTokenTTL: 3600,
   refreshTokenTTL: 2592000,
 
-  scopesSupported: ['mcp'],
+  // Surface the full v1 scope catalog in /.well-known/oauth-authorization-server.
+  scopesSupported: [...SCOPES_SUPPORTED],
+
+  // Pin the protected-resource URL to the custom domain (env-invariant in v1).
+  resourceMetadata: buildResourceMetadata({} as Env),
 });
