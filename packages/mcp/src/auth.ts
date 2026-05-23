@@ -7,7 +7,13 @@
  *   POST /login     → CSRF-validated, Origin-validated, rate-limited; calls
  *                      Better Auth and redirects to /callback
  *   GET  /callback  → complete authorization, redirect client back with auth code
- *   GET  /          → health check (also /health)
+ *   GET  /          → real health probe (also /health); 200 when KV.list + API
+ *                      `/health` both succeed, 503 when either is down; isolate-
+ *                      local 10s cache so reviewer probes don't synthesise load
+ *                      against the upstream surfaces (U16)
+ *   GET  /status    → public-safe metadata block: version, scope catalog, build
+ *                      commit SHA (from env.MCP_COMMIT_SHA), legal/support
+ *                      links (U16)
  *
  * Also exports a `dcrRegisterGate(env, request)` helper used by the Worker
  * entrypoint (`index.ts`) to gate `POST /register` on
@@ -44,7 +50,7 @@
 import { isString } from '@packrat/guards';
 import { caseInsensitive, createRegExp, exactly, oneOrMore, whitespace } from 'magic-regexp';
 import { z } from 'zod';
-import { ServiceMeta } from './constants';
+import { ServiceMeta, WorkerRoute } from './constants';
 import { faviconResponse } from './favicon';
 import { renderLoginPage } from './login-page';
 import { unauthorizedResponse } from './metadata';
@@ -376,29 +382,228 @@ export function dcrRegisterGate(request: Request, env: Env): Response | null {
   return null;
 }
 
+// ── /health + /status (U16) ──────────────────────────────────────────────────
+
+/**
+ * Public-safe legal / support / docs URLs surfaced on both `/health` and
+ * `/status`. Single source of truth so the two endpoints can never drift —
+ * a reviewer hitting either gets the same brand-aligned values.
+ *
+ * All URLs land on `packratai.com` (the canonical brand domain per the
+ * plan's domain-unification decision). `support` is the mailto we also
+ * surface from the listing.
+ */
+const PUBLIC_LINKS = {
+  docs: 'https://packratai.com/mcp',
+  terms: 'https://packratai.com/terms-of-service',
+  privacy: 'https://packratai.com/privacy-policy',
+  support: 'mailto:hello@packratai.com',
+} as const;
+
+/**
+ * Per-isolate cache for `/health` responses. A reviewer (or a Cloudflare-
+ * native uptime monitor) hitting `/health` once per second would otherwise
+ * land a KV `list` + an upstream `/health` fetch on every call — easy to
+ * accidentally turn into a synthetic load source against KV and the API.
+ * Ten seconds is plenty for an external uptime probe (which polls every
+ * 30-60s) and keeps the freshness window short enough that a real outage
+ * surfaces within one cache-window of when it began.
+ *
+ * Isolate-local state — every Worker isolate keeps its own copy, so a
+ * fleet of N isolates allows up to N probe-batches per 10s window. That's
+ * still bounded by the isolate-pool size (single-digits for our traffic
+ * shape) and avoids the complexity + extra KV round-trips a shared
+ * Worker-wide cache would require. See `docs/mcp/runbook.md` § "U16
+ * /health + /status" for the operator-facing trade-off.
+ *
+ * Module-level `let` (rather than `WeakMap` / `LRU`) is deliberate: a
+ * single shared entry is all this cache holds, and we want the simplest
+ * possible eviction story so a future refactor can't silently introduce
+ * a per-key memory leak.
+ */
+interface HealthCacheEntry {
+  body: unknown;
+  status: number;
+  expiresAt: number;
+}
+let healthCache: HealthCacheEntry | null = null;
+const HEALTH_CACHE_TTL_MS = 10_000;
+
+/**
+ * Reset the `/health` cache. Test-only — every test that exercises the
+ * probing path should call this in `beforeEach` so the isolate-local
+ * cache doesn't leak between cases. Not exported in the public API
+ * surface; the `__resetHealthCacheForTests` name signals intent at the
+ * call site.
+ */
+export function __resetHealthCacheForTests(): void {
+  healthCache = null;
+}
+
+/**
+ * Timeout for the upstream PackRat API health probe. 3s is long enough to
+ * tolerate transient network jitter without hanging the `/health`
+ * response — and short enough that the synchronous wait stays well below
+ * any reasonable reviewer-tool timeout (Cloudflare's external uptime
+ * probes default to ~10s).
+ */
+const API_HEALTH_PROBE_TIMEOUT_MS = 3000;
+
+/**
+ * Probe the OAUTH_KV binding by issuing a cheap `list({ limit: 1 })`. We
+ * don't care whether any keys come back; the success of the call itself
+ * is what proves the binding answered. Any thrown error (binding
+ * unavailable, internal Cloudflare KV error, network glitch) collapses to
+ * `false` and the `/health` response surfaces `kv: 'down'`.
+ */
+async function probeKv(env: Env): Promise<boolean> {
+  try {
+    await env.OAUTH_KV.list({ limit: 1 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Probe the PackRat API's `/health` endpoint (see
+ * `packages/api/src/index.ts:86`). Hits the API's root `/health`, NOT
+ * `/api/health` — Elysia mounts the meta route at the worker root, so
+ * the canonical URL is `${PACKRAT_API_URL}/health`. Any non-2xx (or any
+ * fetch throw within the timeout window) collapses to `false`. Empty /
+ * missing `PACKRAT_API_URL` (unit test environment without the binding)
+ * also collapses to `false` rather than throwing a `URL` constructor
+ * error.
+ */
+async function probeApi(env: Env): Promise<boolean> {
+  const base = env.PACKRAT_API_URL;
+  if (!base || base.length === 0) return false;
+  try {
+    const res = await fetch(`${base}/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(API_HEALTH_PROBE_TIMEOUT_MS),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Build the `/health` JSON body + status by probing KV and the upstream
+ * API in parallel. The result is cached for `HEALTH_CACHE_TTL_MS` in the
+ * isolate-local `healthCache` slot above.
+ *
+ * Body shape (stable — reviewers parse this):
+ *   {
+ *     status: 'ok' | 'degraded',
+ *     service, version, transport, endpoint,
+ *     docs, terms, privacy, support,             // U12 legal/support surface
+ *     probes: { kv: 'ok' | 'down', api: 'ok' | 'down' },
+ *   }
+ *
+ * On the degraded path we emit a WARN-level structured log so an operator
+ * tailing logs sees which dependency tripped the response. No correlation
+ * ID is available here (the U15 outer wrapper attaches one to the inbound
+ * Request, but the helper is called from the route handler with the
+ * request already passed in — see the call site below).
+ */
+async function handleHealth(request: Request, env: Env): Promise<Response> {
+  const now = Date.now();
+  if (healthCache && healthCache.expiresAt > now) {
+    return Response.json(healthCache.body, { status: healthCache.status });
+  }
+
+  const [kvResult, apiResult] = await Promise.allSettled([probeKv(env), probeApi(env)]);
+  const kvOk = kvResult.status === 'fulfilled' && kvResult.value === true;
+  const apiOk = apiResult.status === 'fulfilled' && apiResult.value === true;
+  const allOk = kvOk && apiOk;
+
+  const body = {
+    status: allOk ? 'ok' : 'degraded',
+    service: ServiceMeta.Name,
+    version: ServiceMeta.Version,
+    transport: ServiceMeta.Transport,
+    endpoint: WorkerRoute.Mcp,
+    docs: PUBLIC_LINKS.docs,
+    terms: PUBLIC_LINKS.terms,
+    privacy: PUBLIC_LINKS.privacy,
+    support: PUBLIC_LINKS.support,
+    probes: {
+      kv: kvOk ? 'ok' : 'down',
+      api: apiOk ? 'ok' : 'down',
+    },
+  };
+  const status = allOk ? 200 : 503;
+
+  // U15: degraded health is interesting to operators — tail-able with
+  // `wrangler tail --env prod --format pretty | grep mcp.health.degraded`.
+  // We only log on the degraded path; healthy `/health` calls are
+  // silent (otherwise external uptime probes spam Workers Logs every
+  // probe-interval seconds).
+  if (!allOk) {
+    const correlationId = getCorrelationId(request) ?? correlationIdFrom(request);
+    const log = createLogger({ correlationId });
+    log.warn('mcp.health.degraded', {
+      reason: !kvOk && !apiOk ? 'kv_and_api_down' : !kvOk ? 'kv_down' : 'api_down',
+      statusCode: status,
+    });
+  }
+
+  healthCache = { body, status, expiresAt: now + HEALTH_CACHE_TTL_MS };
+  return Response.json(body, { status });
+}
+
+/**
+ * `/status` — public-safe metadata block with no secrets ever.
+ *
+ * Returns the version + transport + scope catalog + brand URLs + the
+ * build commit SHA (when `env.MCP_COMMIT_SHA` is bound at deploy time;
+ * sentinel `'unknown'` otherwise). Unlike `/health` this is NOT cached:
+ * the body is pure constants + an env-var read, no upstream calls — so
+ * the per-call cost is already O(1) and a cache would add only
+ * complexity. Also unlike `/health` there is no probe, no 503 path,
+ * and no degraded surface.
+ *
+ * The whitelisted fields here are deliberate. Reviewers want a single
+ * read-only metadata endpoint to verify a deployed Worker matches the
+ * version + scope catalog they were promised; everything they need is in
+ * the body. Things we will NEVER add: `PACKRAT_API_URL` (internal),
+ * `OAUTH_KV` binding state, anything from `props`, any token, any
+ * runtime feature-flag value beyond the canonical scope list.
+ */
+function handleStatus(_request: Request, env: Env): Response {
+  return Response.json({
+    service: ServiceMeta.Name,
+    version: ServiceMeta.Version,
+    transport: ServiceMeta.Transport,
+    endpoint: WorkerRoute.Mcp,
+    scopes_supported: [...SCOPES_SUPPORTED],
+    docs: PUBLIC_LINKS.docs,
+    terms: PUBLIC_LINKS.terms,
+    privacy: PUBLIC_LINKS.privacy,
+    support: PUBLIC_LINKS.support,
+    commitSha: env.MCP_COMMIT_SHA ?? 'unknown',
+  });
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export const PackRatAuthHandler = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Health check (replaced with a real probing version in U16).
-    // U12: surface terms / privacy / support URLs so reviewers and MCP clients
-    // can discover the legal + contact surface without scraping the landing
-    // site. All URLs are pinned to packratai.com (the canonical brand domain
-    // per the plan's domain-unification decision).
-    if (url.pathname === '/' || url.pathname === '/health') {
-      return Response.json({
-        status: 'ok',
-        service: ServiceMeta.Name,
-        version: ServiceMeta.Version,
-        transport: ServiceMeta.Transport,
-        endpoint: '/mcp',
-        docs: 'https://packratai.com/mcp',
-        terms: 'https://packratai.com/terms-of-service',
-        privacy: 'https://packratai.com/privacy-policy',
-        support: 'mailto:hello@packratai.com',
-      });
+    // U16: `/` and `/health` both run the real probe path. The probe
+    // result is cached per-isolate for 10s so a reviewer hammering the
+    // endpoint doesn't turn into synthetic load against KV / the API.
+    if (url.pathname === WorkerRoute.Root || url.pathname === WorkerRoute.Health) {
+      return handleHealth(request, env);
+    }
+
+    // U16: `/status` is the public-safe extended metadata surface.
+    // Static (no upstream calls) — version, scope catalog, build SHA.
+    if (url.pathname === WorkerRoute.Status) {
+      return handleStatus(request, env);
     }
 
     // U13: serve the favicon from the OAuth host. Anthropic's domain-
@@ -406,21 +611,21 @@ export const PackRatAuthHandler = {
     // not the landing site — see `packages/mcp/src/favicon.ts` for the
     // embed/cache strategy and `docs/mcp/runbook.md` § "U13 listing
     // artifacts" for the operator-facing rationale.
-    if (url.pathname === '/favicon.ico') {
+    if (url.pathname === WorkerRoute.Favicon) {
       return faviconResponse();
     }
 
-    if (url.pathname === '/authorize') {
+    if (url.pathname === WorkerRoute.Authorize) {
       return handleAuthorize(request, env);
     }
 
-    if (url.pathname === '/login') {
+    if (url.pathname === WorkerRoute.Login) {
       return request.method === 'POST'
         ? handleLoginPost(request, env)
         : handleLoginGet(request, env);
     }
 
-    if (url.pathname === '/callback') {
+    if (url.pathname === WorkerRoute.Callback) {
       return handleCallback(request, env);
     }
 

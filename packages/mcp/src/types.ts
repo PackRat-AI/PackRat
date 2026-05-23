@@ -122,6 +122,20 @@ export interface Env {
    * never break because of a missing rate-limit binding.
    */
   MCP_TOOLS_RL?: RateLimit;
+  /**
+   * Build identifier injected at deploy time (U16). Typically the short
+   * git SHA of the commit that produced this Worker bundle — set by CI
+   * via `wrangler deploy --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)`
+   * (see U17 / `.github/workflows/mcp-deploy.yml`) or by an operator
+   * doing a manual deploy.
+   *
+   * Surfaced verbatim by `/status` so a reviewer can correlate the
+   * running Worker with a specific commit. Optional — when unset
+   * (`wrangler dev`, vitest, manual deploy without the flag) `/status`
+   * returns the sentinel string `'unknown'`. **Never a secret** — it's a
+   * public version identifier on the same surface as the package version.
+   */
+  MCP_COMMIT_SHA?: string;
 }
 
 /**

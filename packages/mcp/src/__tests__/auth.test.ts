@@ -20,12 +20,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  __resetHealthCacheForTests,
   betterAuthErrorCopy,
   checkLoginRateLimit,
   dcrRegisterGate,
   PackRatAuthHandler,
 } from '../auth';
 import { applyCorsHeaders } from '../cors';
+import { SCOPES_SUPPORTED } from '../scopes';
 import type { Env } from '../types';
 
 // Shared log-spy helper for U15 auth-failure assertions.
@@ -179,40 +181,246 @@ describe('dcrRegisterGate', () => {
   });
 });
 
-describe('PackRatAuthHandler — health endpoint', () => {
-  it('responds to GET / with a JSON health summary', async () => {
-    const env = makeEnv();
-    const req = new Request('https://mcp.packratai.com/');
-    const res = await PackRatAuthHandler.fetch(req, env);
+// ─── U16: /health real probe ─────────────────────────────────────────────────
+//
+// /health probes (a) the OAUTH_KV binding via `list({ limit: 1 })` and (b) the
+// PackRat API's `/health` endpoint (see `packages/api/src/index.ts:86`) with a
+// 3s timeout. Result is cached for 10s in an isolate-local module slot so a
+// reviewer hammering the endpoint doesn't synthesise load against KV / the API.
+//
+// These tests build a minimal mock KV (with a spy on `list`) and stub
+// `globalThis.fetch` so each branch — both probes green, KV down, API down,
+// both down — can be exercised without touching the network. The cache is
+// reset between tests via `__resetHealthCacheForTests()` so isolate-local
+// state doesn't leak between cases.
+
+type HealthProbeBody = {
+  status: 'ok' | 'degraded';
+  service: string;
+  version: string;
+  transport: string;
+  endpoint: string;
+  docs: string;
+  terms: string;
+  privacy: string;
+  support: string;
+  probes: { kv: 'ok' | 'down'; api: 'ok' | 'down' };
+};
+
+function makeHealthyKv(): MockKVNamespace & { list: ReturnType<typeof vi.fn> } {
+  const list = vi.fn().mockResolvedValue({ keys: [] });
+  return {
+    async get() {
+      return null;
+    },
+    async put() {},
+    async delete() {},
+    list: list as unknown as MockKVNamespace['list'],
+  } as MockKVNamespace & { list: ReturnType<typeof vi.fn> };
+}
+
+function makeBrokenKv(): MockKVNamespace & { list: ReturnType<typeof vi.fn> } {
+  const list = vi.fn().mockRejectedValue(new Error('KV binding down'));
+  return {
+    async get() {
+      return null;
+    },
+    async put() {},
+    async delete() {},
+    list: list as unknown as MockKVNamespace['list'],
+  } as MockKVNamespace & { list: ReturnType<typeof vi.fn> };
+}
+
+describe('PackRatAuthHandler — /health real probe (U16)', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    __resetHealthCacheForTests();
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+    __resetHealthCacheForTests();
+  });
+
+  it('returns 200 + status=ok when both KV and API probes succeed', async () => {
+    const kv = makeHealthyKv();
+    fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as {
-      status: string;
-      service: string;
-      version: string;
-      transport: string;
-      endpoint: string;
-      docs: string;
-      terms: string;
-      privacy: string;
-      support: string;
-    };
+    const body = (await res.json()) as HealthProbeBody;
     expect(body.status).toBe('ok');
+    expect(body.probes).toEqual({ kv: 'ok', api: 'ok' });
     expect(body.endpoint).toBe('/mcp');
-    expect(body.docs).toMatch(/^https:\/\//);
-    // U12: terms + privacy + support are reviewer-facing requirements per
-    // Anthropic's Software Directory Policy. All URLs land on packratai.com
-    // (the canonical brand domain); support is the mailto we surface from
-    // the listing as well.
+    // Probes ran exactly once each.
+    expect(kv.list).toHaveBeenCalledTimes(1);
+    expect(kv.list).toHaveBeenCalledWith({ limit: 1 });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    // The API probe hits the upstream `/health` (NOT `/api/health` —
+    // Elysia mounts the meta route at the root of the API worker).
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://api.test/health',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('returns 503 + status=degraded when KV.list throws', async () => {
+    const kv = makeBrokenKv();
+    fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes).toEqual({ kv: 'down', api: 'ok' });
+  });
+
+  it('returns 503 + status=degraded when API health returns 500', async () => {
+    const kv = makeHealthyKv();
+    fetchSpy.mockResolvedValue(new Response('upstream error', { status: 500 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes).toEqual({ kv: 'ok', api: 'down' });
+  });
+
+  it('returns 503 + status=degraded when both probes fail', async () => {
+    const kv = makeBrokenKv();
+    fetchSpy.mockRejectedValue(new Error('network down'));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.probes).toEqual({ kv: 'down', api: 'down' });
+  });
+
+  it('treats a non-2xx API response (e.g. 503) as down', async () => {
+    const kv = makeHealthyKv();
+    fetchSpy.mockResolvedValue(new Response(null, { status: 503 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.probes.api).toBe('down');
+  });
+
+  it('includes the U12 legal + support URLs on every health body', async () => {
+    const kv = makeHealthyKv();
+    fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
+    const body = (await res.json()) as HealthProbeBody;
+    // Brand-aligned URLs land on packratai.com per the plan's domain
+    // unification decision; support is the mailto we also surface from
+    // the listing.
+    expect(body.docs).toBe('https://packratai.com/mcp');
     expect(body.terms).toBe('https://packratai.com/terms-of-service');
     expect(body.privacy).toBe('https://packratai.com/privacy-policy');
     expect(body.support).toBe('mailto:hello@packratai.com');
   });
 
-  it('responds to GET /health identically to GET /', async () => {
-    const env = makeEnv();
+  it('also includes the U12 legal URLs on the degraded response body', async () => {
+    // Reviewers might curl /health DURING an incident — the legal /
+    // support URLs are still useful then.
+    const kv = makeBrokenKv();
+    fetchSpy.mockRejectedValue(new Error('down'));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/health'),
+      env,
+    );
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.terms).toBe('https://packratai.com/terms-of-service');
+    expect(body.privacy).toBe('https://packratai.com/privacy-policy');
+    expect(body.support).toBe('mailto:hello@packratai.com');
+  });
+
+  it('caches the probe result for 10s — two back-to-back calls probe only once', async () => {
+    const kv = makeHealthyKv();
+    fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    const a = await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
+    const b = await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    expect(kv.list).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(await a.json()).toEqual(await b.json());
+  });
+
+  it("the degraded response is also cached so we don't hammer dependencies during an outage", async () => {
+    const kv = makeBrokenKv();
+    fetchSpy.mockRejectedValue(new Error('down'));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+    await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
+    await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
+    expect(kv.list).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('responds to GET / with the same probe response as GET /health', async () => {
+    const kv = makeHealthyKv();
+    fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+    const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
     const a = await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/'), env);
     const b = await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
     expect(await a.json()).toEqual(await b.json());
+  });
+
+  it('emits a WARN structured log on the degraded path', async () => {
+    const capture = captureLogs();
+    try {
+      const kv = makeBrokenKv();
+      fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+      const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+      await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
+      const warns = capture.lines.filter(
+        (l) => l.level === 'warn' && l.json.msg === 'mcp.health.degraded',
+      );
+      expect(warns).toHaveLength(1);
+      expect(warns[0].json.reason).toBe('kv_down');
+      expect(warns[0].json.statusCode).toBe(503);
+    } finally {
+      capture.restore();
+    }
+  });
+
+  it('does NOT emit a WARN log on the healthy path (avoid spamming logs from uptime probes)', async () => {
+    const capture = captureLogs();
+    try {
+      const kv = makeHealthyKv();
+      fetchSpy.mockResolvedValue(new Response('{"status":"ok"}', { status: 200 }));
+      const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+      await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/health'), env);
+      const healthLines = capture.lines.filter(
+        (l) => typeof l.json.msg === 'string' && (l.json.msg as string).startsWith('mcp.health.'),
+      );
+      expect(healthLines).toHaveLength(0);
+    } finally {
+      capture.restore();
+    }
   });
 
   it('returns 404 JSON for unknown paths', async () => {
@@ -224,6 +432,115 @@ describe('PackRatAuthHandler — health endpoint', () => {
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe('Not Found');
+  });
+});
+
+// ─── U16: /status — public-safe metadata block ───────────────────────────────
+//
+// /status is the version + scope catalog + commit-SHA surface for reviewers.
+// Unlike /health it has no upstream probe and never returns 503; it's a pure
+// constants + env-var read. The critical assertions here are (a) the
+// expected fields ARE present, (b) the scope catalog matches the wire
+// metadata advertised under /.well-known/oauth-authorization-server, and
+// (c) NOTHING secret-looking ever leaks (no betterAuthToken, no props,
+// no internal env state).
+
+describe('PackRatAuthHandler — /status (U16)', () => {
+  it('returns 200 with the full public metadata block', async () => {
+    const env = makeEnv();
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/status'),
+      env,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.service).toBe('packrat-mcp');
+    expect(typeof body.version).toBe('string');
+    expect(body.transport).toBe('streamable-http');
+    expect(body.endpoint).toBe('/mcp');
+    expect(body.docs).toBe('https://packratai.com/mcp');
+    expect(body.terms).toBe('https://packratai.com/terms-of-service');
+    expect(body.privacy).toBe('https://packratai.com/privacy-policy');
+    expect(body.support).toBe('mailto:hello@packratai.com');
+  });
+
+  it('returns the SCOPES_SUPPORTED array verbatim under scopes_supported', async () => {
+    const env = makeEnv();
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/status'),
+      env,
+    );
+    const body = (await res.json()) as { scopes_supported: string[] };
+    // Match in order — the AS metadata advertises the same ordering so a
+    // reviewer cross-checking /status against /.well-known sees identical
+    // content.
+    expect(body.scopes_supported).toEqual([...SCOPES_SUPPORTED]);
+  });
+
+  it("returns commitSha='unknown' when env.MCP_COMMIT_SHA is unset", async () => {
+    const env = makeEnv();
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/status'),
+      env,
+    );
+    const body = (await res.json()) as { commitSha: string };
+    expect(body.commitSha).toBe('unknown');
+  });
+
+  it('returns the bound commitSha verbatim when env.MCP_COMMIT_SHA is set', async () => {
+    const env = makeEnv({ MCP_COMMIT_SHA: 'a06b296' });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/status'),
+      env,
+    );
+    const body = (await res.json()) as { commitSha: string };
+    expect(body.commitSha).toBe('a06b296');
+  });
+
+  it('never includes secret-looking fields in the body', async () => {
+    // Defense-in-depth: if someone refactors handleStatus to surface
+    // `env` more broadly, the assertion list below catches the regression
+    // before a deploy ships it. Each forbidden key here is a recognised
+    // sensitive shape from elsewhere in the codebase.
+    const env = makeEnv({
+      MCP_INITIAL_ACCESS_TOKEN: 'secret-bearer',
+      MCP_COMMIT_SHA: 'a06b296',
+    });
+    const res = await PackRatAuthHandler.fetch(
+      new Request('https://mcp.packratai.com/status'),
+      env,
+    );
+    const body = (await res.json()) as Record<string, unknown>;
+    const forbidden = [
+      'betterAuthToken',
+      'props',
+      'OAUTH_KV',
+      'OAUTH_PROVIDER',
+      'MCP_INITIAL_ACCESS_TOKEN',
+      'PACKRAT_API_URL',
+      'token',
+      'secret',
+      'authToken',
+    ];
+    for (const key of forbidden) {
+      expect(body[key], `field ${key} must not appear in /status`).toBeUndefined();
+    }
+    // And the raw secret value must not appear in any value either.
+    const dumped = JSON.stringify(body);
+    expect(dumped).not.toContain('secret-bearer');
+  });
+
+  it('does NOT probe KV or call upstream fetch (no-cost endpoint)', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const kv = makeHealthyKv();
+    try {
+      const env = makeEnv({ OAUTH_KV: kv as unknown as Env['OAUTH_KV'] });
+      await PackRatAuthHandler.fetch(new Request('https://mcp.packratai.com/status'), env);
+      expect(kv.list).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 });
 

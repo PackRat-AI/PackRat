@@ -1315,6 +1315,158 @@ in the OTLP endpoint).
 
 ---
 
+## U16 /health + /status
+
+Two unauthenticated read-only endpoints reviewers (and uptime probes)
+hit to verify the Worker is healthy and to read its public metadata.
+
+### `/health` — real dependency probe
+
+`GET /health` (and `GET /`, which dispatches to the same handler) runs
+two probes in parallel and returns 200 only when both succeed:
+
+| Probe | Mechanism                                                  | Pass = `'ok'`, fail = `'down'`  |
+| ----- | ---------------------------------------------------------- | ------------------------------- |
+| KV    | `env.OAUTH_KV.list({ limit: 1 })` — cheap binding ping     | Call resolved (any keys is OK)  |
+| API   | `fetch(env.PACKRAT_API_URL + '/health')` with 3s timeout   | `res.ok` (HTTP 2xx)             |
+
+The API probe hits the PackRat API's root `/health` endpoint
+(`packages/api/src/index.ts:86`), **not** `/api/health` — Elysia mounts
+the meta route at the worker root, so the canonical URL is
+`${PACKRAT_API_URL}/health`. If we ever move the API to a versioned
+path prefix, this URL needs to update in lockstep.
+
+Response body shape (stable — reviewers parse this):
+
+```json
+{
+  "status": "ok" | "degraded",
+  "service": "packrat-mcp",
+  "version": "<from constants.ts>",
+  "transport": "streamable-http",
+  "endpoint": "/mcp",
+  "docs":    "https://packratai.com/mcp",
+  "terms":   "https://packratai.com/terms-of-service",
+  "privacy": "https://packratai.com/privacy-policy",
+  "support": "mailto:hello@packratai.com",
+  "probes":  { "kv": "ok" | "down", "api": "ok" | "down" }
+}
+```
+
+HTTP status: 200 when both probes are `'ok'`, 503 otherwise. The
+legal/support URLs (U12) are surfaced on **both** the healthy and
+degraded responses so a reviewer curling `/health` during an incident
+still finds the contact surface.
+
+### Cache strategy — 10s isolate-local
+
+The probe result is cached in an isolate-local module slot
+(`packages/mcp/src/auth.ts → healthCache`) for 10 seconds. Trade-offs:
+
+- **Why cache at all?** Without it, an external uptime monitor polling
+  every 5s would synthesize 12 KV.list + 12 API fetch calls/minute per
+  isolate — easy to miss as a load source. 10s keeps the steady-state
+  probe rate ≤6/min/isolate.
+- **Why 10 seconds?** Short enough that a real outage surfaces within
+  one cache-window of when it began (no reviewer waits 30s for /health
+  to flip red). Long enough that consecutive uptime probes hit the
+  cache.
+- **Why per-isolate (not Worker-wide)?** A shared cache would mean an
+  extra KV read on every probe call — defeating the point of caching
+  to avoid load. Per-isolate scales with the isolate pool (single
+  digits for our traffic shape) so worst-case the dependency surface
+  sees ≤N probes/10s where N is the pool size.
+- **Module-level `let healthCache`** (not WeakMap / LRU) is deliberate:
+  the cache holds exactly one entry, and the simplest possible
+  eviction story keeps future refactors honest. The
+  `__resetHealthCacheForTests` helper is exported for vitest only —
+  production code never calls it.
+
+### Incident response
+
+The `probes` field tells you which dependency tripped:
+
+```bash
+curl -s https://mcp.packratai.com/health | jq
+# {"status":"degraded", ..., "probes":{"kv":"ok","api":"down"}}
+#                                                    ^^^^^^^ → PackRat API outage
+```
+
+The degraded path also emits a WARN-level structured log:
+
+```bash
+wrangler tail --env prod --format pretty | grep mcp.health.degraded
+# {"ts":"...","level":"warn","msg":"mcp.health.degraded","reason":"api_down","statusCode":503,...}
+```
+
+`reason` is one of `kv_down`, `api_down`, `kv_and_api_down`. The healthy
+path is silent so external uptime probes don't fill Workers Logs with
+noise. If both probes fail, check the Cloudflare status page first
+(KV outages are usually region-level and self-resolve in minutes); if
+only `api` is down, escalate to the API on-call.
+
+### `/status` — public-safe extended metadata
+
+`GET /status` returns a static metadata block — no upstream calls, no
+503 path. Reviewers use this to verify a deployed Worker matches the
+version + scope catalog they were promised.
+
+```json
+{
+  "service": "packrat-mcp",
+  "version": "<from constants.ts>",
+  "transport": "streamable-http",
+  "endpoint": "/mcp",
+  "scopes_supported": ["mcp", "mcp:read", "mcp:write", "mcp:admin"],
+  "docs":    "https://packratai.com/mcp",
+  "terms":   "https://packratai.com/terms-of-service",
+  "privacy": "https://packratai.com/privacy-policy",
+  "support": "mailto:hello@packratai.com",
+  "commitSha": "a06b296" | "unknown"
+}
+```
+
+**No secrets ever**: the response only contains version + scopes +
+public URLs + the build SHA. Adding a new field requires a code review
+that explicitly notes the field is non-sensitive — the auth.test.ts
+suite asserts a denylist of secret-looking keys is absent so a
+careless refactor that surfaces `env` more broadly regresses visibly.
+
+### `MCP_COMMIT_SHA` — operator TODO at deploy time
+
+`/status` surfaces `commitSha` from `env.MCP_COMMIT_SHA`, a `var` (not a
+secret) injected at deploy time. Two paths:
+
+**Manual deploy:**
+
+```bash
+wrangler deploy --env prod --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)
+```
+
+**CI (U17, `.github/workflows/mcp-deploy.yml`):** the workflow passes
+the same flag automatically using the tagged commit's short SHA.
+
+When the var is unset (`wrangler dev`, vitest, manual deploy without
+the flag) `/status` returns `commitSha: "unknown"` — acceptable for
+dev, never for prod. If `/status` returns `unknown` on a prod
+hostname, the last deploy bypassed the convention; re-run with the
+flag.
+
+### CORS + DCR gate interaction
+
+Neither `/health` nor `/status` is annotated by the U6 CORS handler
+(`applyCorsHeaders` short-circuits on a `/.well-known/` prefix check —
+see `packages/mcp/src/cors.ts:48`). Reviewers curl them directly so no
+CORS dance is needed; if Claude.ai ever needed to fetch them
+cross-origin, the allowlist would have to extend.
+
+Neither endpoint is gated by `dcrRegisterGate` either — the gate
+short-circuits on a `/register` pathname check
+(`packages/mcp/src/auth.ts:dcrRegisterGate`) and falls through cleanly
+for every other path.
+
+---
+
 ## Common operations
 
 ### Deploy
