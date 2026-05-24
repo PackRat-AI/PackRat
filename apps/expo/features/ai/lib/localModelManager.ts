@@ -164,7 +164,7 @@ export async function downloadLocalModel(): Promise<void> {
   store.set(localModelErrorAtom, null);
 
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
   }
 
   const isAvailable = await _isLlamaModelAvailable();
@@ -332,7 +332,7 @@ async function _initAppleModel(): Promise<void> {
 
 async function _initLlamaModel(): Promise<void> {
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
   }
   const isAvailable = await _isLlamaModelAvailable();
   store.set(localModelFileAvailableAtom, isAvailable);

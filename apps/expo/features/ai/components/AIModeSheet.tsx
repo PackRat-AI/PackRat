@@ -38,7 +38,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     const isModelFileAvailable = useAtomValue(localModelFileAvailableAtom);
 
     const isApple = isAppleIntelligenceAvailable();
-    const showSlowDeviceWarning = !isApple && isSlowInferenceDevice();
+    const showSlowDeviceWarning = mode === 'local' && !isApple && isSlowInferenceDevice();
     const isModelReady = modelStatus === 'ready';
     const isDownloading = modelStatus === 'downloading';
     const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
