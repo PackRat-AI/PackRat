@@ -90,7 +90,7 @@ export function useAuthActions() {
     });
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
-      if (error) throw toAuthError(error, 'Sign in failed');
+      if (error) throw toAuthError({ source: error, fallback: 'Sign in failed' });
       applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
       Sentry.addBreadcrumb({ category: 'auth', message: 'Email sign in succeeded', level: 'info' });
     } catch (error) {
@@ -123,7 +123,7 @@ export function useAuthActions() {
         provider: 'google',
         idToken: { token: idToken },
       });
-      if (error) throw toAuthError(error, t('auth.failedToSignInWithGoogle'));
+      if (error) throw toAuthError({ source: error, fallback: t('auth.failedToSignInWithGoogle') });
       if (data && 'user' in data && data.user) {
         applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
         Sentry.addBreadcrumb({
@@ -186,7 +186,7 @@ export function useAuthActions() {
         provider: 'apple',
         idToken: { token: credential.identityToken ?? '' },
       });
-      if (error) throw toAuthError(error, 'Apple sign in failed');
+      if (error) throw toAuthError({ source: error, fallback: 'Apple sign in failed' });
       if (data && 'user' in data && data.user) {
         applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
         Sentry.addBreadcrumb({
@@ -235,7 +235,7 @@ export function useAuthActions() {
     try {
       const name = [firstName, lastName].filter(Boolean).join(' ') || email;
       const { error } = await authClient.signUp.email({ email, password, name });
-      if (error) throw toAuthError(error, 'Sign up failed');
+      if (error) throw toAuthError({ source: error, fallback: 'Sign up failed' });
       Sentry.addBreadcrumb({
         category: 'auth',
         message: 'Email sign up succeeded',
@@ -301,7 +301,7 @@ export function useAuthActions() {
       redirectTo: 'packrat://reset-password',
     });
     if (error) {
-      const err = toAuthError(error, 'Forgot password failed');
+      const err = toAuthError({ source: error, fallback: 'Forgot password failed' });
       Sentry.captureException(err, {
         tags: { auth_action: 'forgot_password' },
         extra: { httpStatus: error.status, errorCode: error.code },
@@ -326,7 +326,7 @@ export function useAuthActions() {
       newPassword: opts.newPassword,
     });
     if (error) {
-      const err = toAuthError(error, 'Reset password failed');
+      const err = toAuthError({ source: error, fallback: 'Reset password failed' });
       Sentry.captureException(err, {
         tags: { auth_action: 'reset_password' },
         extra: { httpStatus: error.status, errorCode: error.code },
@@ -343,7 +343,7 @@ export function useAuthActions() {
     });
     const { data, error } = await authClient.verifyEmail({ query: { token } });
     if (error) {
-      const err = toAuthError(error, 'Email verification failed');
+      const err = toAuthError({ source: error, fallback: 'Email verification failed' });
       Sentry.captureException(err, {
         tags: { auth_action: 'verify_email' },
         extra: { httpStatus: error.status, errorCode: error.code },
@@ -370,7 +370,7 @@ export function useAuthActions() {
       callbackURL: 'packrat://verify-email',
     });
     if (error) {
-      const err = toAuthError(error, 'Failed to resend verification email');
+      const err = toAuthError({ source: error, fallback: 'Failed to resend verification email' });
       Sentry.captureException(err, {
         tags: { auth_action: 'resend_verification' },
         extra: { httpStatus: error.status, errorCode: error.code },
@@ -388,7 +388,7 @@ export function useAuthActions() {
     });
     try {
       const { error } = await authClient.deleteUser();
-      if (error) throw toAuthError(error, 'Delete account failed');
+      if (error) throw toAuthError({ source: error, fallback: 'Delete account failed' });
       Sentry.setUser(null);
       userStore.set(null);
       await clearLocalData();

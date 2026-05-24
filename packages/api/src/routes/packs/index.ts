@@ -205,7 +205,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
             return status(400, { error: error.message });
           }
         }
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'packs.analyzeImage',
           tags: { feature: 'packs' },
           extra: { httpStatus: 500, errorCode: 'PACKS_ANALYZE_IMAGE_ERROR' },
@@ -263,7 +264,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (!canAccess) return status(403, { error: 'Unauthorized' });
         return computePackBreakdown(pack);
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'packs.weightBreakdown',
           tags: { feature: 'packs' },
           extra: {
@@ -320,7 +322,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (!updatedPack) return status(404, { error: 'Pack not found' });
         return computePackWeights({ pack: updatedPack });
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'packs.update',
           tags: { feature: 'packs' },
           extra: {
@@ -450,7 +453,8 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           updatedAt: entry.createdAt,
         }));
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'packs.createWeightHistory',
           tags: { feature: 'packs' },
           extra: {

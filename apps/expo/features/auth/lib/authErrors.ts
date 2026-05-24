@@ -28,7 +28,7 @@ export class AuthClientError extends Error {
   readonly status: number;
   readonly code: string | undefined;
 
-  constructor(message: string, source: BetterAuthError) {
+  constructor({ message, source }: { message: string; source: BetterAuthError }) {
     super(message);
     this.name = 'AuthClientError';
     this.status = source.status ?? 0;
@@ -41,7 +41,13 @@ export class AuthClientError extends Error {
  * user-friendly message. Maps known error codes to clear copy; falls back to
  * the server message or a generic "try again" for 5xx responses.
  */
-export function toAuthError(source: BetterAuthError, fallback: string): AuthClientError {
+export function toAuthError({
+  source,
+  fallback,
+}: {
+  source: BetterAuthError;
+  fallback: string;
+}): AuthClientError {
   const code = source.code;
   const status = source.status ?? 0;
 
@@ -56,5 +62,5 @@ export function toAuthError(source: BetterAuthError, fallback: string): AuthClie
     message = fallback;
   }
 
-  return new AuthClientError(message, source);
+  return new AuthClientError({ message, source });
 }

@@ -62,7 +62,8 @@ export const trailConditionRoutes = new Elysia()
 
         return reports.map(toReportResponse);
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trailConditions.list',
           tags: { feature: 'trailConditions' },
           extra: { trailName, limit, httpStatus: 500, errorCode: 'TRAIL_CONDITIONS_LIST_ERROR' },
@@ -127,7 +128,8 @@ export const trailConditionRoutes = new Elysia()
           if (existing) return toReportResponse(existing);
           return status(409, { error: 'Report ID already in use by another user' });
         }
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trailConditions.create',
           tags: { feature: 'trailConditions' },
           extra: {
@@ -173,7 +175,8 @@ export const trailConditionRoutes = new Elysia()
 
         return reports.map(toReportResponse);
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trailConditions.listMine',
           tags: { feature: 'trailConditions' },
           extra: {
@@ -237,7 +240,8 @@ export const trailConditionRoutes = new Elysia()
 
         return toReportResponse(updated);
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trailConditions.update',
           tags: { feature: 'trailConditions' },
           extra: {
@@ -283,7 +287,8 @@ export const trailConditionRoutes = new Elysia()
 
         return { success: true };
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trailConditions.delete',
           tags: { feature: 'trailConditions' },
           extra: {

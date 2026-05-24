@@ -45,7 +45,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           lon: isString(item.lon) ? Number.parseFloat(item.lon) : item.lon,
         }));
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'weather.search',
           userId: user?.userId,
           tags: { weather_operation: 'search' },
@@ -117,7 +118,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           lon: isString(item.lon) ? Number.parseFloat(item.lon) : item.lon,
         }));
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'weather.searchByCoordinates',
           userId: user?.userId,
           tags: { weather_operation: 'search_by_coordinates' },
@@ -168,7 +170,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
       } catch (error) {
         if (error instanceof ZodError) {
           const invalidPaths = error.errors.map((e) => e.path.join('.')).join(', ');
-          captureApiException(error, {
+          captureApiException({
+            error: error,
             operation: 'weather.forecast.schemaValidation',
             userId: user?.userId,
             tags: { weather_operation: 'forecast', error_type: 'schema_validation' },
@@ -181,7 +184,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           });
           return status(500, { error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' });
         }
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'weather.forecast',
           userId: user?.userId,
           tags: { weather_operation: 'forecast' },
@@ -232,7 +236,8 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           location: { ...data.location, id: Number(first.id) },
         };
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'weather.byName',
           userId: user?.userId,
           tags: { weather_operation: 'by_name' },
