@@ -21,6 +21,7 @@ import {
   cancelLocalModelDownload,
   downloadLocalModel,
   isAppleIntelligenceAvailable,
+  isSlowInferenceDevice,
 } from '../lib/localModelManager';
 import { CircularDownloadButton } from './CircularDownloadButton';
 
@@ -37,6 +38,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     const isModelFileAvailable = useAtomValue(localModelFileAvailableAtom);
 
     const isApple = isAppleIntelligenceAvailable();
+    const showSlowDeviceWarning = !isApple && isSlowInferenceDevice();
     const isModelReady = modelStatus === 'ready';
     const isDownloading = modelStatus === 'downloading';
     const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
@@ -179,6 +181,15 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
               />
             ) : null}
           </TouchableOpacity>
+          {/* Performance note for llama (non-Apple) devices */}
+          {showSlowDeviceWarning && (
+            <View className="mt-3 flex-row items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
+              <Icon name="alert-outline" size={16} color="#d97706" />
+              <Text variant="footnote" className="flex-1 text-amber-700 dark:text-amber-300">
+                {t('ai.localInferenceSlowNote')}
+              </Text>
+            </View>
+          )}
         </BottomSheetView>
       </Sheet>
     );

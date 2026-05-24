@@ -106,6 +106,16 @@ export function isAppleIntelligenceAvailable(): boolean {
   }
 }
 
+/**
+ * Returns true when the device will run local inference via llama (not Apple
+ * Foundation Models). llama inference speed is highly variable and can be
+ * noticeably slow on older or memory-constrained hardware, so callers use
+ * this to surface a heads-up to the user before they start a session.
+ */
+export function isSlowInferenceDevice(): boolean {
+  return !isAppleIntelligenceAvailable();
+}
+
 /** Returns the ready model instance, or null if not prepared yet. */
 export function getLocalModel(): LanguageModel | null {
   if (isAppleIntelligenceAvailable()) return appleModel;
@@ -154,7 +164,7 @@ export async function downloadLocalModel(): Promise<void> {
   store.set(localModelErrorAtom, null);
 
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
   }
 
   const isAvailable = await _isLlamaModelAvailable();
@@ -322,7 +332,7 @@ async function _initAppleModel(): Promise<void> {
 
 async function _initLlamaModel(): Promise<void> {
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
   }
   const isAvailable = await _isLlamaModelAvailable();
   store.set(localModelFileAvailableAtom, isAvailable);
