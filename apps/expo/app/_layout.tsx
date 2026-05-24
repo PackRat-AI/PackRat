@@ -10,7 +10,6 @@ import '../global.css';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
-import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
@@ -31,27 +30,23 @@ Sentry.init({
   // Using it instead of NODE_ENV prevents all EAS builds from reporting as 'production'.
   environment: (Constants.expoConfig?.extra?.appVariant as string) ?? 'production',
 
-  // Trim noisy console breadcrumbs in production; keep them in dev.
+  // Scrub sensitive query parameters from all HTTP breadcrumbs to prevent token leakage.
   beforeBreadcrumb(breadcrumb) {
     if (breadcrumb.type === 'http' && breadcrumb.data?.url) {
-      // Strip auth tokens from URLs in breadcrumbs
-      const url = String(breadcrumb.data.url);
-      if (url.includes('/api/auth/')) return null;
+      try {
+        const parsed = new URL(String(breadcrumb.data.url));
+        const SENSITIVE_PARAMS = ['token', 'access_token', 'auth', 'password', 'jwt', 'session'];
+        for (const key of SENSITIVE_PARAMS) {
+          if (parsed.searchParams.has(key)) parsed.searchParams.set(key, '[REDACTED]');
+        }
+        breadcrumb.data.url = parsed.toString();
+      } catch {
+        // URL parsing failed — leave breadcrumb unchanged
+      }
     }
     return breadcrumb;
   },
 });
-
-// Sync the authenticated user to Sentry on startup so every event is
-// associated with the correct user identity.
-const user = userStore.peek();
-if (user) {
-  Sentry.setUser({
-    id: user.id,
-    email: user.email,
-    username: `${user.firstName} ${user.lastName}`.trim(),
-  });
-}
 
 export {
   // Catch any errors thrown by the Layout component.

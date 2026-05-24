@@ -93,7 +93,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         captureApiException(error, {
           operation: 'trails.search',
           tags: { feature: 'trails' },
-          extra: { q, lat, lon, radius, sport },
+          extra: { q, lat, lon, radius, sport, httpStatus: 500, errorCode: 'TRAILS_SEARCH_ERROR' },
         });
         return status(500, { error: 'Trail search failed' });
       }
@@ -179,7 +179,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         captureApiException(error, {
           operation: 'trails.geometry',
           tags: { feature: 'trails' },
-          extra: { osmId: String(osmId) },
+          extra: { osmId: String(osmId), httpStatus: 500, errorCode: 'TRAILS_GEOMETRY_ERROR' },
         });
         return status(500, { error: 'Failed to fetch trail geometry' });
       }
@@ -246,7 +246,7 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         captureApiException(error, {
           operation: 'trails.getById',
           tags: { feature: 'trails' },
-          extra: { osmId: String(osmId) },
+          extra: { osmId: String(osmId), httpStatus: 500, errorCode: 'TRAILS_GET_BY_ID_ERROR' },
         });
         return status(500, { error: 'Failed to fetch trail' });
       }

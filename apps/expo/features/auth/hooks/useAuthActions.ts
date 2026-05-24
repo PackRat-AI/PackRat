@@ -86,7 +86,7 @@ export function useAuthActions() {
       category: 'auth',
       message: 'Email sign in attempt',
       level: 'info',
-      data: { email },
+      data: { emailDomain: email.split('@')[1] },
     });
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
@@ -97,8 +97,9 @@ export function useAuthActions() {
       Sentry.captureException(error, {
         tags: { auth_method: 'email', auth_action: 'sign_in' },
         extra: {
-          email,
-          ...(error instanceof AuthClientError ? { httpStatus: error.status, errorCode: error.code } : {}),
+          ...(error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {}),
         },
       });
       console.error('Sign in error:', error);
@@ -132,8 +133,6 @@ export function useAuthActions() {
         });
       }
     } catch (error) {
-      setIsLoading(false);
-
       if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
         Sentry.addBreadcrumb({
           category: 'auth',
@@ -156,11 +155,16 @@ export function useAuthActions() {
       } else {
         Sentry.captureException(error, {
           tags: { auth_method: 'google', auth_action: 'sign_in' },
-          extra: error instanceof AuthClientError ? { httpStatus: error.status, errorCode: error.code } : {},
+          extra:
+            error instanceof AuthClientError
+              ? { httpStatus: error.status, errorCode: error.code }
+              : {},
         });
         console.error('Google sign in error:', error);
       }
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -194,7 +198,10 @@ export function useAuthActions() {
     } catch (error) {
       Sentry.captureException(error, {
         tags: { auth_method: 'apple', auth_action: 'sign_in' },
-        extra: error instanceof AuthClientError ? { httpStatus: error.status, errorCode: error.code } : {},
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
       });
       console.error('Apple sign in error:', error);
       throw error;
@@ -219,7 +226,11 @@ export function useAuthActions() {
       category: 'auth',
       message: 'Email sign up attempt',
       level: 'info',
-      data: { email, hasFirstName: !!firstName, hasLastName: !!lastName },
+      data: {
+        emailDomain: email.split('@')[1],
+        hasFirstName: !!firstName,
+        hasLastName: !!lastName,
+      },
     });
     try {
       const name = [firstName, lastName].filter(Boolean).join(' ') || email;
@@ -229,14 +240,14 @@ export function useAuthActions() {
         category: 'auth',
         message: 'Email sign up succeeded',
         level: 'info',
-        data: { email },
       });
     } catch (error) {
       Sentry.captureException(error, {
         tags: { auth_method: 'email', auth_action: 'sign_up' },
         extra: {
-          email,
-          ...(error instanceof AuthClientError ? { httpStatus: error.status, errorCode: error.code } : {}),
+          ...(error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {}),
         },
       });
       console.error('Registration error:', error instanceof Error ? error.message : String(error));
@@ -259,7 +270,13 @@ export function useAuthActions() {
       // Clear user identity from Sentry on sign-out.
       Sentry.setUser(null);
     } catch (error) {
-      Sentry.captureException(error, { tags: { auth_action: 'sign_out' } });
+      Sentry.captureException(error, {
+        tags: { auth_action: 'sign_out' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Sign out error:', error);
     } finally {
       userStore.set(null);
@@ -277,7 +294,7 @@ export function useAuthActions() {
       category: 'auth',
       message: 'Password reset requested',
       level: 'info',
-      data: { email },
+      data: { emailDomain: email.split('@')[1] },
     });
     const { error } = await authClient.requestPasswordReset({
       email,
@@ -287,7 +304,7 @@ export function useAuthActions() {
       const err = toAuthError(error, 'Forgot password failed');
       Sentry.captureException(err, {
         tags: { auth_action: 'forgot_password' },
-        extra: { email, httpStatus: error.status, errorCode: error.code },
+        extra: { httpStatus: error.status, errorCode: error.code },
       });
       throw err;
     }
@@ -346,7 +363,7 @@ export function useAuthActions() {
       category: 'auth',
       message: 'Verification email resend requested',
       level: 'info',
-      data: { email },
+      data: { emailDomain: email.split('@')[1] },
     });
     const { error } = await authClient.sendVerificationEmail({
       email,
@@ -356,7 +373,7 @@ export function useAuthActions() {
       const err = toAuthError(error, 'Failed to resend verification email');
       Sentry.captureException(err, {
         tags: { auth_action: 'resend_verification' },
-        extra: { email, httpStatus: error.status, errorCode: error.code },
+        extra: { httpStatus: error.status, errorCode: error.code },
       });
       throw err;
     }
@@ -364,7 +381,11 @@ export function useAuthActions() {
 
   const deleteAccount = async () => {
     setIsLoading(true);
-    Sentry.addBreadcrumb({ category: 'auth', message: 'Account deletion initiated', level: 'warning' });
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Account deletion initiated',
+      level: 'warning',
+    });
     try {
       const { error } = await authClient.deleteUser();
       if (error) throw toAuthError(error, 'Delete account failed');
@@ -375,7 +396,10 @@ export function useAuthActions() {
     } catch (error) {
       Sentry.captureException(error, {
         tags: { auth_action: 'delete_account' },
-        extra: error instanceof AuthClientError ? { httpStatus: error.status, errorCode: error.code } : {},
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
       });
       console.error('Delete account error:', error);
       throw error;

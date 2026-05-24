@@ -31,6 +31,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
         captureApiException(error, {
           operation: 'auth.getSession',
           tags: { path: new URL(request.url).pathname },
+          extra: { httpStatus: 500, errorCode: 'AUTH_SESSION_UNAVAILABLE' },
         });
         return status(500, { error: 'Authentication service unavailable' });
       }
@@ -77,6 +78,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
         captureApiException(error, {
           operation: 'adminAuth.getSession',
           tags: { path: new URL(request.url).pathname },
+          extra: { httpStatus: 500, errorCode: 'AUTH_SESSION_UNAVAILABLE' },
         });
         return status(500, { error: 'Authentication service unavailable' });
       }

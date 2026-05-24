@@ -65,7 +65,7 @@ export const trailConditionRoutes = new Elysia()
         captureApiException(error, {
           operation: 'trailConditions.list',
           tags: { feature: 'trailConditions' },
-          extra: { trailName, limit },
+          extra: { trailName, limit, httpStatus: 500, errorCode: 'TRAIL_CONDITIONS_LIST_ERROR' },
         });
         return status(500, { error: 'Failed to list trail condition reports' });
       }
@@ -130,7 +130,12 @@ export const trailConditionRoutes = new Elysia()
         captureApiException(error, {
           operation: 'trailConditions.create',
           tags: { feature: 'trailConditions' },
-          extra: { reportId: data.id, userId: user.userId },
+          extra: {
+            reportId: data.id,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_CREATE_ERROR',
+          },
         });
         return status(500, { error: 'Failed to submit trail condition report' });
       }
@@ -171,7 +176,12 @@ export const trailConditionRoutes = new Elysia()
         captureApiException(error, {
           operation: 'trailConditions.listMine',
           tags: { feature: 'trailConditions' },
-          extra: { userId: user.userId, updatedAt },
+          extra: {
+            userId: user.userId,
+            updatedAt,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_LIST_MINE_ERROR',
+          },
         });
         return status(500, { error: 'Failed to list trail condition reports' });
       }
@@ -230,7 +240,12 @@ export const trailConditionRoutes = new Elysia()
         captureApiException(error, {
           operation: 'trailConditions.update',
           tags: { feature: 'trailConditions' },
-          extra: { reportId, userId: user.userId },
+          extra: {
+            reportId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_UPDATE_ERROR',
+          },
         });
         return status(500, { error: 'Failed to update trail condition report' });
       }
@@ -271,7 +286,12 @@ export const trailConditionRoutes = new Elysia()
         captureApiException(error, {
           operation: 'trailConditions.delete',
           tags: { feature: 'trailConditions' },
-          extra: { reportId, userId: user.userId },
+          extra: {
+            reportId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_DELETE_ERROR',
+          },
         });
         return status(500, { error: 'Failed to delete trail condition report' });
       }

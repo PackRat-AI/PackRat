@@ -24,6 +24,9 @@
       "environment": "preview",
       "distribution": "internal",
       "channel": "preview",
+      "env": {
+        "APP_VARIANT": "preview"
+      },
       "ios": {
         "simulator": true
       },

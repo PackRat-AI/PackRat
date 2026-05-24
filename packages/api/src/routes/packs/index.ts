@@ -208,13 +208,9 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         captureApiException(error, {
           operation: 'packs.analyzeImage',
           tags: { feature: 'packs' },
+          extra: { httpStatus: 500, errorCode: 'PACKS_ANALYZE_IMAGE_ERROR' },
         });
-        return status(500, {
-          error:
-            error instanceof Error
-              ? `Failed to analyze image: ${error.message}`
-              : 'Failed to analyze image',
-        });
+        return status(500, { error: 'Failed to analyze image' });
       }
     },
     {
@@ -270,7 +266,11 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         captureApiException(error, {
           operation: 'packs.weightBreakdown',
           tags: { feature: 'packs' },
-          extra: { packId: params.packId },
+          extra: {
+            packId: params.packId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_BREAKDOWN_ERROR',
+          },
         });
         return status(500, { error: 'Failed to compute breakdown' });
       }
@@ -323,7 +323,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         captureApiException(error, {
           operation: 'packs.update',
           tags: { feature: 'packs' },
-          extra: { packId: params.packId, userId: user.userId },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_UPDATE_ERROR',
+          },
         });
         return status(500, { error: 'Failed to update pack' });
       }
@@ -448,7 +453,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         captureApiException(error, {
           operation: 'packs.createWeightHistory',
           tags: { feature: 'packs' },
-          extra: { packId: params.packId, userId: user.userId },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_HISTORY_ERROR',
+          },
         });
         return status(500, { error: 'Failed to create weight history entry' });
       }

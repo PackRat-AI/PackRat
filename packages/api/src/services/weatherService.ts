@@ -36,8 +36,13 @@ export class WeatherService {
       );
       captureApiException(error, {
         operation: 'weatherService.getWeatherForLocation',
-        tags: { weather_api: 'openweathermap', http_status: String(response.status) },
-        extra: { location, apiMessage },
+        tags: { weather_api: 'openweathermap' },
+        extra: {
+          location,
+          apiMessage,
+          httpStatus: response.status,
+          errorCode: 'OPENWEATHERMAP_HTTP_ERROR',
+        },
       });
       throw error;
     }

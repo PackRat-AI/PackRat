@@ -98,6 +98,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
           operation: 'chat.stream',
           userId: user.userId,
           tags: { ai_provider: AI_PROVIDER },
+          extra: { httpStatus: 500, errorCode: 'AI_PROVIDER_NOT_CONFIGURED' },
         });
         return status(500, { error: 'AI provider not configured' });
       }

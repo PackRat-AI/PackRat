@@ -49,7 +49,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           operation: 'weather.search',
           userId: user?.userId,
           tags: { weather_operation: 'search' },
-          extra: { query: q },
+          extra: { query: q, httpStatus: 500, errorCode: 'WEATHER_SEARCH_ERROR' },
         });
         return status(500, { error: 'Internal server error', code: 'WEATHER_SEARCH_ERROR' });
       }
@@ -121,7 +121,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           operation: 'weather.searchByCoordinates',
           userId: user?.userId,
           tags: { weather_operation: 'search_by_coordinates' },
-          extra: { latitude, longitude },
+          extra: { latitude, longitude, httpStatus: 500, errorCode: 'WEATHER_COORD_SEARCH_ERROR' },
         });
         return status(500, {
           error: 'Internal server error',
@@ -172,15 +172,20 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
             operation: 'weather.forecast.schemaValidation',
             userId: user?.userId,
             tags: { weather_operation: 'forecast', error_type: 'schema_validation' },
-            extra: { locationId: id, invalidPaths },
+            extra: {
+              locationId: id,
+              invalidPaths,
+              httpStatus: 500,
+              errorCode: 'WEATHER_FORECAST_SCHEMA_ERROR',
+            },
           });
-          throw new Error(`Weather forecast response failed schema validation at: ${invalidPaths}`);
+          return status(500, { error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' });
         }
         captureApiException(error, {
           operation: 'weather.forecast',
           userId: user?.userId,
           tags: { weather_operation: 'forecast' },
-          extra: { locationId: id },
+          extra: { locationId: id, httpStatus: 500, errorCode: 'WEATHER_FORECAST_ERROR' },
         });
         return status(500, { error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' });
       }
@@ -231,7 +236,7 @@ export const weatherRoutes = new Elysia({ prefix: '/weather' })
           operation: 'weather.byName',
           userId: user?.userId,
           tags: { weather_operation: 'by_name' },
-          extra: { query: q },
+          extra: { query: q, httpStatus: 500, errorCode: 'WEATHER_BY_NAME_ERROR' },
         });
         return status(500, {
           error: 'Internal server error',

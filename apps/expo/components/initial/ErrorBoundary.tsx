@@ -49,34 +49,20 @@ const DefaultFallback = () => {
 };
 
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
-  const handleError = ({ error, info }: { error: unknown; info: { componentStack: string } }) => {
-    console.error('Error caught by ErrorBoundary:', error);
-    console.error('Component stack:', info.componentStack);
-
-    // Attach the component stack as extra context so Sentry shows exactly
-    // which component tree caused the crash.
-    Sentry.withScope((scope) => {
-      scope.setTag('error_source', 'error_boundary');
-      scope.setExtra('componentStack', info.componentStack);
-      if (error instanceof Error) {
-        scope.setExtra('errorName', error.name);
-        scope.setExtra('errorMessage', error.message);
-      }
-      Sentry.captureException(error);
-    });
-
-    if (onError) {
-      onError(error, info);
-    }
-  };
-
   return (
     <Sentry.ErrorBoundary
       fallback={fallback ? fallback : DefaultFallback}
       onReset={onReset}
-      onError={(error: unknown, componentStack: ErrorInfo['componentStack']) =>
-        handleError({ error, info: { componentStack: componentStack || '' } })
-      }
+      beforeCapture={(scope) => {
+        scope.setTag('error_source', 'error_boundary');
+      }}
+      onError={(error: unknown, componentStack: ErrorInfo['componentStack']) => {
+        console.error('Error caught by ErrorBoundary:', error);
+        console.error('Component stack:', componentStack);
+        if (onError) {
+          onError(error, { componentStack: componentStack || '' });
+        }
+      }}
     >
       {children}
     </Sentry.ErrorBoundary>

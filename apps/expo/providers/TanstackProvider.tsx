@@ -4,27 +4,36 @@ import type React from 'react';
 
 // 401 = handled by auth refresh cycle; 429 = transient rate-limit; 404 = intentional not-found.
 // Capturing these would flood Sentry with recoverable, non-actionable noise.
-function shouldCapture(error: unknown): boolean {
-  const status = (error as { status?: number })?.status;
-  return status !== 401 && status !== 429 && status !== 404;
+function getHttpMeta(error: unknown): {
+  capture: boolean;
+  httpStatus?: number;
+  errorCode?: string;
+} {
+  const e = error as { status?: number; code?: string; errorCode?: string };
+  const httpStatus = e?.status;
+  if (httpStatus === 401 || httpStatus === 429 || httpStatus === 404) return { capture: false };
+  return { capture: true, httpStatus, errorCode: e?.errorCode ?? e?.code };
 }
 
 // Create a client
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError(error, query) {
-      if (!shouldCapture(error)) return;
+      const { capture, httpStatus, errorCode } = getHttpMeta(error);
+      if (!capture) return;
       Sentry.captureException(error, {
         tags: { feature: 'reactQuery', action: 'query' },
-        extra: { queryKey: query.queryKey },
+        extra: { queryKey: query.queryKey, httpStatus, errorCode },
       });
     },
   }),
   mutationCache: new MutationCache({
     onError(error) {
-      if (!shouldCapture(error)) return;
+      const { capture, httpStatus, errorCode } = getHttpMeta(error);
+      if (!capture) return;
       Sentry.captureException(error, {
         tags: { feature: 'reactQuery', action: 'mutation' },
+        extra: { httpStatus, errorCode },
       });
     },
   }),

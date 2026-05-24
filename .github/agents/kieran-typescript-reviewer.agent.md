@@ -117,13 +117,16 @@ Every async operation or external service call must have Sentry coverage:
 - On the API side, use `captureApiException` from `@packrat/api/utils/sentry` (not raw `captureException`).
 
 🔴 FAIL:
+
 ```ts
 if (error) {
   Sentry.captureException(new Error(error.message ?? 'failed'), { tags });
   throw new Error(error.message ?? 'failed');
 }
 ```
+
 ✅ PASS:
+
 ```ts
 if (error) {
   const err = toAuthError(error, 'failed');

@@ -48,18 +48,16 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   )
   .use(packratOpenApi)
   .onError(({ error, code, request }) => {
-    console.error('Error occurred:', error);
-
     // Only report unexpected server errors — not user-input or routing errors.
     if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
       captureApiException(error, {
         operation: 'elysia.onError',
         tags: {
-          error_code: code,
+          error_code: String(code),
           method: request?.method ?? 'UNKNOWN',
           path: request ? new URL(request.url).pathname : 'UNKNOWN',
         },
-        extra: { errorCode: code },
+        extra: { errorCode: String(code), httpStatus: 500 },
       });
     }
 

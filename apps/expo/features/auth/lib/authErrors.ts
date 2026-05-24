@@ -15,7 +15,7 @@ const CODE_MESSAGES: Record<string, string> = {
   EMAIL_NOT_VERIFIED: 'Please verify your email before signing in.',
   TOO_MANY_REQUESTS: 'Too many attempts. Please wait a moment and try again.',
   INVALID_TOKEN: 'This link has expired or is invalid. Please request a new one.',
-  EXPIRED_TOKEN: 'This link has expired. Please request a new one.',
+  EXPIRED_TOKEN: 'This link has expired or is invalid. Please request a new one.',
   PASSWORD_TOO_SHORT: 'Password is too short.',
   SESSION_EXPIRED: 'Your session has expired. Please sign in again.',
 };

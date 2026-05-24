@@ -31,7 +31,9 @@ export function captureApiException(error: unknown, ctx: SentryOperationContext)
 
   withScope((scope) => {
     scope.setTag('operation', operation);
-    if (userId) scope.setUser({ id: userId });
+    // Use a tag for userId rather than setUser to avoid overwriting richer
+    // user context (email/role) already set on the scope by setApiUser.
+    if (userId) scope.setTag('user_id', userId);
     if (tags) {
       for (const [k, v] of Object.entries(tags)) scope.setTag(k, v);
     }
