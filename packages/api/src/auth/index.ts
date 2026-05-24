@@ -155,7 +155,31 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // /api/auth/jwks for downstream service verification.
       // Private key encryption is disabled — it causes decrypt failures when
       // BETTER_AUTH_SECRET rotates or differs across environments.
-      jwt({ jwks: { disablePrivateKeyEncryption: true } }),
+      //
+      // The adapter.getJwks filter skips any rows that were stored in the old
+      // encrypted format (where JSON.parse(privateKey) returns a string rather
+      // than a JWK object). Better Auth creates a fresh plaintext key when the
+      // filtered list is empty, resolving the "JWK must be an object" error that
+      // occurs after switching from encrypted to plaintext storage.
+      jwt({
+        jwks: { disablePrivateKeyEncryption: true },
+        adapter: {
+          // biome-ignore lint/suspicious/noExplicitAny: Better Auth ctx/key/jwks generics are not expressible here
+          getJwks: async (ctx: any) => {
+            // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
+            const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
+            // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
+            return keys.filter((key: any) => {
+              try {
+                const parsed = JSON.parse(key.privateKey);
+                return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
+              } catch {
+                return false;
+              }
+            });
+          },
+        },
+      }),
 
       // Admin: role-based user management endpoints.
       admin(),
