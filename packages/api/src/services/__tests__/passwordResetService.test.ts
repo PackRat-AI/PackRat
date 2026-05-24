@@ -36,7 +36,7 @@ const mocks = vi.hoisted(() => {
       update: updateFn,
     })),
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
-    timingSafeEqual: vi.fn((a: string, b: string) => a === b),
+    timingSafeEqual: vi.fn(({ a, b }: { a: string; b: string }) => a === b),
     hashPassword: vi.fn((p: string) => Promise.resolve(`hashed_${p}`)),
   };
 });

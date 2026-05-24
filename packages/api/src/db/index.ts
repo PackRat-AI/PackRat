@@ -23,12 +23,24 @@ const isStandardPostgresUrl = (url: string) => {
 
 const pgPools = new Map<string, Pool>();
 
-const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
+export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
     let pool = pgPools.get(url);
     if (!pool) {
-      pool = new Pool({ connectionString: url });
-      pgPools.set(url, pool);
+      const newPool = new Pool({
+        connectionString: url,
+        max: 5,
+        // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
+        // which is not supported in the Cloudflare Workers runtime (miniflare).
+        idleTimeoutMillis: 0,
+        connectionTimeoutMillis: 10000,
+      });
+      newPool.on('error', () => {
+        pgPools.delete(url);
+        newPool.end().catch(() => {});
+      });
+      pgPools.set(url, newPool);
+      pool = newPool;
     }
     return drizzlePg(pool, { schema });
   }

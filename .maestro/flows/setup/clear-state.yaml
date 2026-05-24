@@ -18,3 +18,23 @@ appId: ${APP_ID}
             - tapOn:
                 text: "Wait"
             - waitForAnimationToEnd
+
+# Dev client only: clearState wipes the saved Metro server URL, causing the
+# development server picker to appear on the next launch.
+# Tap the discovered server row (identified by the Mac's LAN IP + port) so the
+# saved URL is the routable IP, not localhost (which resolves to the simulator
+# itself, not the host machine).  METRO_HOST and METRO_PORT are passed by the
+# test runner; they default to the values used in the local dev setup.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "DEVELOPMENT SERVERS"
+          commands:
+            - waitForAnimationToEnd
+            - tapOn:
+                text: "http://${METRO_HOST}:${METRO_PORT}"
+            - waitForAnimationToEnd
