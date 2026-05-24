@@ -106,7 +106,36 @@ Consider extracting to a separate module when you see multiple of these:
 - Prefer immutable patterns over mutation
 - Use functional patterns where appropriate (map, filter, reduce)
 
-## 10. CORE PHILOSOPHY
+## 10. SENTRY INSTRUMENTATION
+
+Every async operation or external service call must have Sentry coverage:
+
+- **Breadcrumb before** — `Sentry.addBreadcrumb` (Expo) or `apiAddBreadcrumb` (API) before significant async steps.
+- **`captureException` in every `catch`** — capture the actual thrown value, never a re-wrapped `new Error(error.message)`. Re-wrapping discards the original stack, HTTP status, and error code.
+- **Better Auth errors**: plain objects `{ message, status, code }` must be converted via `toAuthError` from `expo-app/features/auth/lib/authErrors` before capturing and throwing. Never create two separate `new Error()` instances (one to capture, one to throw).
+- **`extra` must include `httpStatus` and `errorCode`** for any HTTP error response so they're searchable in Sentry.
+- On the API side, use `captureApiException` from `@packrat/api/utils/sentry` (not raw `captureException`).
+
+🔴 FAIL:
+
+```ts
+if (error) {
+  Sentry.captureException(new Error(error.message ?? 'failed'), { tags });
+  throw new Error(error.message ?? 'failed');
+}
+```
+
+✅ PASS:
+
+```ts
+if (error) {
+  const err = toAuthError(error, 'failed');
+  Sentry.captureException(err, { tags, extra: { httpStatus: error.status, errorCode: error.code } });
+  throw err;
+}
+```
+
+## 11. CORE PHILOSOPHY
 
 - **Duplication > Complexity**: "I'd rather have four components with simple logic than three components that are all custom and have very complex things"
 - Simple, duplicated code that's easy to understand is BETTER than complex DRY abstractions

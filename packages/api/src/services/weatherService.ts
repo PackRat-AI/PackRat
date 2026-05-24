@@ -1,4 +1,5 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 
 type WeatherData = {
   location: string;
@@ -30,9 +31,21 @@ export class WeatherService {
       } catch {
         // response body not parseable — fall back to statusText
       }
-      throw new Error(
+      const error = new Error(
         `Weather API error ${response.status}: ${apiMessage} (location: "${location}")`,
       );
+      captureApiException({
+        error: error,
+        operation: 'weatherService.getWeatherForLocation',
+        tags: { weather_api: 'openweathermap' },
+        extra: {
+          location,
+          apiMessage,
+          httpStatus: response.status,
+          errorCode: 'OPENWEATHERMAP_HTTP_ERROR',
+        },
+      });
+      throw error;
     }
 
     const data = (await response.json()) as {

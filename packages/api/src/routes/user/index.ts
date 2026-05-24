@@ -1,5 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { users } from '@packrat/db';
 import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
@@ -48,7 +49,12 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           },
         });
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        captureApiException({
+          error: error,
+          operation: 'user.getProfile',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
         throw error;
       }
     },
@@ -120,7 +126,12 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           },
         });
       } catch (error) {
-        console.error('Error updating user profile:', error);
+        captureApiException({
+          error: error,
+          operation: 'user.updateProfile',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
         throw error;
       }
     },

@@ -163,6 +163,7 @@ export default (): ExpoConfig =>
         eas: {
           projectId: '267945b1-d9ac-4621-8541-826a2c70576d',
         },
+        appVariant: IS_DEV ? 'development' : IS_PREVIEW ? 'preview' : 'production',
       },
       updates: {
         url: 'https://u.expo.dev/267945b1-d9ac-4621-8541-826a2c70576d',
