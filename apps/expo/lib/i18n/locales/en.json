@@ -685,7 +685,7 @@
     "noDownloadedModels": "No models downloaded",
     "appleFoundationModel": "Apple Foundation Model",
     "llamaModel": "Qwen2.5 3B",
-    "localInferenceSlowNote": "Performance may vary by device.",
+    "localInferenceSlowNote": "Local AI performance may vary by device.",
     "generateNewPacks": "Generate New Packs",
     "enterCount": "Enter count",
     "numberOfPacksToGenerate": "Number of packs to generate",
