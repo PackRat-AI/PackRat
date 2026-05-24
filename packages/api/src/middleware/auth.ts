@@ -28,7 +28,8 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
       try {
         session = await auth.api.getSession({ headers: request.headers });
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'auth.getSession',
           tags: { path: new URL(request.url).pathname },
           extra: { httpStatus: 500, errorCode: 'AUTH_SESSION_UNAVAILABLE' },
@@ -75,7 +76,8 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
       try {
         session = await auth.api.getSession({ headers: request.headers });
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'adminAuth.getSession',
           tags: { path: new URL(request.url).pathname },
           extra: { httpStatus: 500, errorCode: 'AUTH_SESSION_UNAVAILABLE' },

@@ -50,7 +50,8 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .onError(({ error, code, request }) => {
     // Only report unexpected server errors — not user-input or routing errors.
     if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
-      captureApiException(error, {
+      captureApiException({
+        error: error,
         operation: 'elysia.onError',
         tags: {
           error_code: String(code),
@@ -139,7 +140,8 @@ const workerHandler = {
         throw new Error(`Unknown queue: ${batch.queue}`);
       }
     } catch (error) {
-      captureApiException(error, {
+      captureApiException({
+        error: error,
         operation: 'queue.handler',
         tags: { queue_name: batch.queue },
         extra: { messageCount: batch.messages.length },

@@ -155,7 +155,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // /api/auth/jwks for downstream service verification.
       // Private key encryption is disabled — it causes decrypt failures when
       // BETTER_AUTH_SECRET rotates or differs across environments.
-      jwt({ disablePrivateKeyEncryption: true }),
+      jwt({ jwks: { disablePrivateKeyEncryption: true } }),
 
       // Admin: role-based user management endpoints.
       admin(),

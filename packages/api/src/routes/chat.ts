@@ -94,7 +94,8 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       });
 
       if (!aiProvider) {
-        captureApiException(new Error('AI provider not configured'), {
+        captureApiException({
+          error: new Error('AI provider not configured'),
           operation: 'chat.stream',
           userId: user.userId,
           tags: { ai_provider: AI_PROVIDER },
@@ -125,7 +126,8 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         temperature: 0.7,
         stopWhen: stepCountIs(5),
         onError: ({ error }) => {
-          captureApiException(error, {
+          captureApiException({
+            error: error,
             operation: 'chat.stream.onError',
             userId: user.userId,
             tags: { ai_provider: AI_PROVIDER, context_type: contextType ?? 'none' },

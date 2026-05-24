@@ -34,7 +34,8 @@ export class WeatherService {
       const error = new Error(
         `Weather API error ${response.status}: ${apiMessage} (location: "${location}")`,
       );
-      captureApiException(error, {
+      captureApiException({
+        error: error,
         operation: 'weatherService.getWeatherForLocation',
         tags: { weather_api: 'openweathermap' },
         extra: {

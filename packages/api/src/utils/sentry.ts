@@ -26,8 +26,8 @@ export type SentryOperationContext = {
  * Capture an exception with structured operation context.
  * Logs to console as well so wrangler dev output is still useful.
  */
-export function captureApiException(error: unknown, ctx: SentryOperationContext): void {
-  const { operation, userId, tags, extra } = ctx;
+export function captureApiException(opts: { error: unknown } & SentryOperationContext): void {
+  const { error, operation, userId, tags, extra } = opts;
 
   withScope((scope) => {
     scope.setTag('operation', operation);

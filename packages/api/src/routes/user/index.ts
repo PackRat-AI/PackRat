@@ -49,7 +49,8 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           },
         });
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'user.getProfile',
           userId: user.userId,
           tags: { feature: 'user' },
@@ -125,7 +126,8 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           },
         });
       } catch (error) {
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'user.updateProfile',
           userId: user.userId,
           tags: { feature: 'user' },

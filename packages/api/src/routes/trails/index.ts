@@ -90,7 +90,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
         }
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trails.search',
           tags: { feature: 'trails' },
           extra: { q, lat, lon, radius, sport, httpStatus: 500, errorCode: 'TRAILS_SEARCH_ERROR' },
@@ -176,7 +177,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
         }
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trails.geometry',
           tags: { feature: 'trails' },
           extra: { osmId: String(osmId), httpStatus: 500, errorCode: 'TRAILS_GEOMETRY_ERROR' },
@@ -243,7 +245,8 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
         }
-        captureApiException(error, {
+        captureApiException({
+          error: error,
           operation: 'trails.getById',
           tags: { feature: 'trails' },
           extra: { osmId: String(osmId), httpStatus: 500, errorCode: 'TRAILS_GET_BY_ID_ERROR' },

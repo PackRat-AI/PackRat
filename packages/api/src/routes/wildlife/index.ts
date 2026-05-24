@@ -49,7 +49,8 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' }).use(authPlugin
         }
       }
 
-      captureApiException(error, {
+      captureApiException({
+        error: error,
         operation: 'wildlife.identify',
         userId: user.userId,
         tags: { feature: 'wildlife' },
