@@ -212,6 +212,54 @@ Always add new features behind a flag and default to `false` until the feature i
 - Tailwind CSS for all styling — no inline styles
 - Radix UI for accessible components
 
+### Monitoring (Sentry)
+
+All new code that performs async operations or calls external services must include Sentry instrumentation. Sentry is already initialised per-platform — you only need to import and call the helpers.
+
+**Expo / React Native** — import from `@sentry/react-native`:
+
+```ts
+import * as Sentry from '@sentry/react-native';
+
+// Breadcrumb before async operations
+Sentry.addBreadcrumb({ category: 'feature', message: 'Action started', level: 'info', data: { ... } });
+
+// Every catch block must capture the original error
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { feature: 'myFeature', action: 'doThing' },
+    extra: { userId, relevantId },
+  });
+  throw error;
+}
+```
+
+Rules:
+- **Never wrap the root error** in `new Error(...)` before passing to `captureException` — wrapping loses the original stack trace and drops properties like HTTP status and error codes.
+- **Better Auth client errors** are plain objects `{ message, status, code }`, not JS Errors. Use `toAuthError` from `expo-app/features/auth/lib/authErrors` to convert them into an `AuthClientError` carrying `.status` and `.code`. Capture that single error — do not create two separate `new Error()` objects (one to capture, one to throw).
+- Include `httpStatus` and `errorCode` in `extra` for any HTTP error.
+
+**API / Cloudflare Workers** — use helpers from `@packrat/api/utils/sentry`:
+
+```ts
+import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+
+apiAddBreadcrumb({ category: 'feature', message: 'Calling external service', level: 'info' });
+
+} catch (error) {
+  captureApiException(error, {
+    operation: 'featureName.action',
+    userId,
+    tags: { feature: 'myFeature' },
+    extra: { relevantId },
+  });
+  throw error;
+}
+```
+
+- Use `captureApiException` (not the raw `captureException`) — it adds structured operation context and also logs to console for `wrangler dev` output.
+- Every route `catch` block and service method touching the DB or an external API needs a `captureApiException` call.
+
 ## Repository Structure
 
 ```
