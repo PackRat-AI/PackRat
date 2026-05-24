@@ -54,9 +54,12 @@ export default function GearInventoryScreen() {
           <Text variant="subhead" className="text-muted-foreground">
             {t('packs.itemsInInventory', { count: items?.length })}
           </Text>
-          <View className="flex-row overflow-hidden rounded-lg bg-card">
+          <View className="flex-row rounded-lg bg-card">
             <Pressable
-              className={cn('px-3 py-1.5', viewMode === 'all' ? 'bg-primary' : 'bg-transparent')}
+              className={cn(
+                'rounded-l-lg px-3 py-1.5',
+                viewMode === 'all' ? 'bg-primary' : 'bg-transparent',
+              )}
               onPress={() => setViewMode('all')}
             >
               <Text
@@ -68,7 +71,7 @@ export default function GearInventoryScreen() {
             </Pressable>
             <Pressable
               className={cn(
-                'px-3 py-1.5',
+                'rounded-r-lg px-3 py-1.5',
                 viewMode === 'category' ? 'bg-primary' : 'bg-transparent',
               )}
               onPress={() => setViewMode('category')}
