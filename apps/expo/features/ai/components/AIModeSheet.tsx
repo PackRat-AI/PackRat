@@ -58,7 +58,9 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
         return;
       }
       setMode(selected);
-      if (ref && !isFunction(ref)) ref.current?.close();
+      // For cloud mode close immediately; for local mode keep the sheet open
+      // so the user can see the performance warning before dismissing.
+      if (selected === 'cloud' && ref && !isFunction(ref)) ref.current?.close();
     };
 
     const handleDownload = () => {
