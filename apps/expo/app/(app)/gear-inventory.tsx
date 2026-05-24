@@ -1,5 +1,5 @@
 import { assertDefined } from '@packrat/guards';
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
@@ -47,16 +47,23 @@ export default function GearInventoryScreen() {
   const itemsByCategory = groupByCategory(items);
 
   return (
-    <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.gearInventory')} />
-      <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
+    <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+      <View className="px-4 pb-2 pt-4">
+        <Text variant="title1" className="font-bold">
+          {t('packs.gearInventory')}
+        </Text>
+      </View>
+      <ScrollView className="flex-1 px-4">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
             {t('packs.itemsInInventory', { count: items?.length })}
           </Text>
-          <View className="flex-row overflow-hidden rounded-lg bg-card">
+          <View className="flex-row rounded-lg bg-card">
             <Pressable
-              className={cn('px-3 py-1.5', viewMode === 'all' ? 'bg-primary' : 'bg-transparent')}
+              className={cn(
+                'rounded-l-lg px-3 py-1.5',
+                viewMode === 'all' ? 'bg-primary' : 'bg-transparent',
+              )}
               onPress={() => setViewMode('all')}
             >
               <Text
@@ -68,7 +75,7 @@ export default function GearInventoryScreen() {
             </Pressable>
             <Pressable
               className={cn(
-                'px-3 py-1.5',
+                'rounded-r-lg px-3 py-1.5',
                 viewMode === 'category' ? 'bg-primary' : 'bg-transparent',
               )}
               onPress={() => setViewMode('category')}
