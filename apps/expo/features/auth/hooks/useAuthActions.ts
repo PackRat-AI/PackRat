@@ -5,6 +5,8 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import * as Sentry from '@sentry/react-native';
+import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
 import { authClient } from 'expo-app/lib/auth-client';
@@ -64,18 +66,42 @@ export function useAuthActions() {
   };
 
   const applySession = (user: Record<string, unknown>) => {
-    userStore.set(mapToUser(user));
+    const mappedUser = mapToUser(user);
+    userStore.set(mappedUser);
+
+    // Identify the user in Sentry so all subsequent events are tagged.
+    Sentry.setUser({
+      id: mappedUser.id,
+      email: mappedUser.email,
+      username: `${mappedUser.firstName} ${mappedUser.lastName}`.trim(),
+    });
+
     setNeedsReauth(false);
     redirect(redirectTo);
   };
 
   const signIn = async ({ email, password }: { email: string; password: string }) => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Email sign in attempt',
+      level: 'info',
+      data: { emailDomain: email.split('@')[1] },
+    });
     try {
       const { data, error } = await authClient.signIn.email({ email, password });
-      if (error) throw new Error(error.message ?? 'Sign in failed');
+      if (error) throw toAuthError(error, 'Sign in failed');
       applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+      Sentry.addBreadcrumb({ category: 'auth', message: 'Email sign in succeeded', level: 'info' });
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_method: 'email', auth_action: 'sign_in' },
+        extra: {
+          ...(error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {}),
+        },
+      });
       console.error('Sign in error:', error);
       throw error;
     } finally {
@@ -85,6 +111,7 @@ export function useAuthActions() {
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({ category: 'auth', message: 'Google sign in attempt', level: 'info' });
     try {
       await GoogleSignin.hasPlayServices();
       await GoogleSignin.signIn();
@@ -96,26 +123,54 @@ export function useAuthActions() {
         provider: 'google',
         idToken: { token: idToken },
       });
-      if (error) throw new Error(error.message ?? t('auth.failedToSignInWithGoogle'));
-      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+      if (error) throw toAuthError(error, t('auth.failedToSignInWithGoogle'));
+      if (data && 'user' in data && data.user) {
+        applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Google sign in succeeded',
+          level: 'info',
+        });
+      }
     } catch (error) {
-      setIsLoading(false);
-
       if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Google sign in cancelled by user',
+          level: 'info',
+        });
         console.log(t('auth.userCancelledLogin'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Google sign in already in progress',
+          level: 'warning',
+        });
         console.log(t('auth.signInInProgress'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Sentry.captureException(error, {
+          tags: { auth_method: 'google', auth_action: 'sign_in', error_type: 'play_services' },
+        });
         console.log(t('auth.playServicesNotAvailable'));
       } else {
+        Sentry.captureException(error, {
+          tags: { auth_method: 'google', auth_action: 'sign_in' },
+          extra:
+            error instanceof AuthClientError
+              ? { httpStatus: error.status, errorCode: error.code }
+              : {},
+        });
         console.error('Google sign in error:', error);
       }
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signInWithApple = async () => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({ category: 'auth', message: 'Apple sign in attempt', level: 'info' });
     try {
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) throw new Error(t('auth.appleSignInNotAvailable'));
@@ -131,9 +186,23 @@ export function useAuthActions() {
         provider: 'apple',
         idToken: { token: credential.identityToken ?? '' },
       });
-      if (error) throw new Error(error.message ?? 'Apple sign in failed');
-      if (data && 'user' in data && data.user) applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+      if (error) throw toAuthError(error, 'Apple sign in failed');
+      if (data && 'user' in data && data.user) {
+        applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Apple sign in succeeded',
+          level: 'info',
+        });
+      }
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_method: 'apple', auth_action: 'sign_in' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Apple sign in error:', error);
       throw error;
     } finally {
@@ -153,11 +222,34 @@ export function useAuthActions() {
     lastName?: string;
   }) => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Email sign up attempt',
+      level: 'info',
+      data: {
+        emailDomain: email.split('@')[1],
+        hasFirstName: !!firstName,
+        hasLastName: !!lastName,
+      },
+    });
     try {
       const name = [firstName, lastName].filter(Boolean).join(' ') || email;
       const { error } = await authClient.signUp.email({ email, password, name });
-      if (error) throw new Error(error.message ?? 'Sign up failed');
+      if (error) throw toAuthError(error, 'Sign up failed');
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Email sign up succeeded',
+        level: 'info',
+      });
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_method: 'email', auth_action: 'sign_up' },
+        extra: {
+          ...(error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {}),
+        },
+      });
       console.error('Registration error:', error instanceof Error ? error.message : String(error));
       throw error;
     } finally {
@@ -170,11 +262,21 @@ export function useAuthActions() {
     // show a post-sign-out prompt and handle navigation itself.
     setSuppressSignOutNav(true);
     setIsLoading(true);
+    Sentry.addBreadcrumb({ category: 'auth', message: 'Sign out initiated', level: 'info' });
     try {
       const isSignedIn = await GoogleSignin.hasPreviousSignIn();
       if (isSignedIn) await GoogleSignin.signOut();
       await authClient.signOut();
+      // Clear user identity from Sentry on sign-out.
+      Sentry.setUser(null);
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_action: 'sign_out' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Sign out error:', error);
     } finally {
       userStore.set(null);
@@ -188,11 +290,24 @@ export function useAuthActions() {
   };
 
   const forgotPassword = async (email: string) => {
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Password reset requested',
+      level: 'info',
+      data: { emailDomain: email.split('@')[1] },
+    });
     const { error } = await authClient.requestPasswordReset({
       email,
       redirectTo: 'packrat://reset-password',
     });
-    if (error) throw new Error(error.message ?? 'Forgot password failed');
+    if (error) {
+      const err = toAuthError(error, 'Forgot password failed');
+      Sentry.captureException(err, {
+        tags: { auth_action: 'forgot_password' },
+        extra: { httpStatus: error.status, errorCode: error.code },
+      });
+      throw err;
+    }
   };
 
   const resetPassword = async ({
@@ -201,16 +316,40 @@ export function useAuthActions() {
     email?: string;
     opts: { token: string; newPassword: string };
   }) => {
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Password reset submitted',
+      level: 'info',
+    });
     const { error } = await authClient.resetPassword({
       token: opts.token,
       newPassword: opts.newPassword,
     });
-    if (error) throw new Error(error.message ?? 'Reset password failed');
+    if (error) {
+      const err = toAuthError(error, 'Reset password failed');
+      Sentry.captureException(err, {
+        tags: { auth_action: 'reset_password' },
+        extra: { httpStatus: error.status, errorCode: error.code },
+      });
+      throw err;
+    }
   };
 
   const verifyEmail = async ({ token }: { _email?: string; token: string }) => {
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Email verification submitted',
+      level: 'info',
+    });
     const { data, error } = await authClient.verifyEmail({ query: { token } });
-    if (error) throw new Error(error.message ?? 'Email verification failed');
+    if (error) {
+      const err = toAuthError(error, 'Email verification failed');
+      Sentry.captureException(err, {
+        tags: { auth_action: 'verify_email' },
+        extra: { httpStatus: error.status, errorCode: error.code },
+      });
+      throw err;
+    }
 
     const session = await authClient.getSession();
     if (session.data?.user) {
@@ -220,22 +359,48 @@ export function useAuthActions() {
   };
 
   const resendVerificationEmail = async (email: string) => {
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Verification email resend requested',
+      level: 'info',
+      data: { emailDomain: email.split('@')[1] },
+    });
     const { error } = await authClient.sendVerificationEmail({
       email,
       callbackURL: 'packrat://verify-email',
     });
-    if (error) throw new Error(error.message ?? 'Failed to resend verification email');
+    if (error) {
+      const err = toAuthError(error, 'Failed to resend verification email');
+      Sentry.captureException(err, {
+        tags: { auth_action: 'resend_verification' },
+        extra: { httpStatus: error.status, errorCode: error.code },
+      });
+      throw err;
+    }
   };
 
   const deleteAccount = async () => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Account deletion initiated',
+      level: 'warning',
+    });
     try {
       const { error } = await authClient.deleteUser();
-      if (error) throw new Error(error.message ?? 'Delete account failed');
+      if (error) throw toAuthError(error, 'Delete account failed');
+      Sentry.setUser(null);
       userStore.set(null);
       await clearLocalData();
       await Updates.reloadAsync();
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_action: 'delete_account' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Delete account error:', error);
       throw error;
     } finally {

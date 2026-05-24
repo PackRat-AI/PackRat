@@ -16,6 +16,8 @@ import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
+import { captureApiException } from '@packrat/api/utils/sentry';
+import { withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
@@ -45,8 +47,20 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
     }),
   )
   .use(packratOpenApi)
-  .onError(({ error, code }) => {
-    console.error('Error occurred:', error);
+  .onError(({ error, code, request }) => {
+    // Only report unexpected server errors — not user-input or routing errors.
+    if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
+      captureApiException(error, {
+        operation: 'elysia.onError',
+        tags: {
+          error_code: String(code),
+          method: request?.method ?? 'UNKNOWN',
+          path: request ? new URL(request.url).pathname : 'UNKNOWN',
+        },
+        extra: { errorCode: String(code), httpStatus: 500 },
+      });
+    }
+
     if (code === 'VALIDATION' || code === 'PARSE') {
       return new Response(JSON.stringify({ error: 'Validation failed' }), {
         status: 400,
@@ -90,7 +104,7 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
-export default {
+const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
@@ -109,19 +123,39 @@ export default {
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
-    if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
-      if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
-      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
-    } else if (
-      batch.queue === 'packrat-embeddings-queue' ||
-      batch.queue === 'packrat-embeddings-queue-dev'
-    ) {
-      if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
-      await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
-        batch,
-      );
-    } else {
-      throw new Error(`Unknown queue: ${batch.queue}`);
+    try {
+      if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
+        if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
+        await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
+      } else if (
+        batch.queue === 'packrat-embeddings-queue' ||
+        batch.queue === 'packrat-embeddings-queue-dev'
+      ) {
+        if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
+        await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
+          batch,
+        );
+      } else {
+        throw new Error(`Unknown queue: ${batch.queue}`);
+      }
+    } catch (error) {
+      captureApiException(error, {
+        operation: 'queue.handler',
+        tags: { queue_name: batch.queue },
+        extra: { messageCount: batch.messages.length },
+      });
+      throw error;
     }
   },
 } satisfies ExportedHandler<Env>;
+
+export default withSentry<Env>(
+  (env) => ({
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT ?? 'production',
+    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
+    sendDefaultPii: false,
+    release: env.SENTRY_RELEASE,
+  }),
+  workerHandler,
+);
