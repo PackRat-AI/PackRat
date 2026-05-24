@@ -63,7 +63,7 @@ export default (): ExpoConfig =>
         [
           'llama.rn',
           {
-            enableEntitlements: false,
+            enableEntitlements: true,
             forceCxx20: true,
             enableOpenCLAndHexagon: false,
           },

@@ -107,6 +107,16 @@ export function isAppleIntelligenceAvailable(): boolean {
   }
 }
 
+/**
+ * Returns true when the device will run local inference via llama (not Apple
+ * Foundation Models). llama inference speed is highly variable and can be
+ * noticeably slow on older or memory-constrained hardware, so callers use
+ * this to surface a heads-up to the user before they start a session.
+ */
+export function isSlowInferenceDevice(): boolean {
+  return !isAppleIntelligenceAvailable();
+}
+
 /** Returns the ready model instance, or null if not prepared yet. */
 export function getLocalModel(): LanguageModel | null {
   if (isAppleIntelligenceAvailable()) return appleModel;
