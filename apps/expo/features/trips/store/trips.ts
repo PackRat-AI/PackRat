@@ -42,6 +42,7 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.packId !== undefined ? { packId: data.packId ?? null } : {}),
     ...(data.startDate !== undefined ? { startDate: data.startDate ?? null } : {}),
     ...(data.endDate !== undefined ? { endDate: data.endDate ?? null } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
   });
   if (error) throw new Error(`Failed to update trip: ${error.value}`);

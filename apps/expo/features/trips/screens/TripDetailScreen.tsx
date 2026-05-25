@@ -15,7 +15,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Modal, ScrollView, Share, View } from 'react-native';
+import { Modal, Platform, ScrollView, Share, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -78,6 +78,19 @@ export function TripDetailScreen() {
   };
 
   const handleDeleteTrip = () => {
+    // TODO(e2e-web): replace one-off web confirm branches with a shared Alert-compatible web shim.
+    if (Platform.OS === 'web') {
+      const confirmed =
+        globalThis.confirm?.(`${t('trips.deleteTrip')}\n\n${t('trips.deleteTripConfirmation')}`) ??
+        false;
+
+      if (!confirmed) return;
+
+      deleteTrip(id as string);
+      router.back();
+      return;
+    }
+
     alertRef.current?.alert({
       title: t('trips.deleteTrip'),
       message: t('trips.deleteTripConfirmation'),
@@ -317,7 +330,7 @@ export function TripDetailScreen() {
           />
         </View>
       </Modal>
-      <AlertComponent title="" buttons={[]} ref={alertRef} />
+      {Platform.OS !== 'web' && <AlertComponent title="" buttons={[]} ref={alertRef} />}
     </SafeAreaView>
   );
 }

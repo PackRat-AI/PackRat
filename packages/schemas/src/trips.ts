@@ -52,6 +52,7 @@ export const UpdateTripBodySchema = z.object({
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
   packId: z.string().nullable().optional(),
+  deleted: z.boolean().optional(),
   localUpdatedAt: z.string().datetime().optional(),
 });
 
