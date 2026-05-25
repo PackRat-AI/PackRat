@@ -258,6 +258,14 @@ function ListFooterComponent() {
     await signOut();
     setIsSigningOut(false);
 
+    if (Platform.OS === 'web') {
+      setIsLoading(false);
+      setSuppressSignOutNav(false);
+      await AsyncStorage.setItem('skipped_login', 'true');
+      router.replace('/');
+      return;
+    }
+
     // signOut() has completed: auth cleared, spinner showing, auto-navigation
     // suppressed. Ask the user what to do next.
     Alert.alert(

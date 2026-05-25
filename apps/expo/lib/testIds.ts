@@ -27,6 +27,16 @@ export const testIds = Object.freeze({
     passwordInput: 'password-input',
     continueBtn: 'continue-button',
     signOutBtn: 'sign-out-button', // keep Maestro value
+    createFirstNameInput: 'auth:create-first-name-input',
+    createLastNameInput: 'auth:create-last-name-input',
+    createNameContinueBtn: 'auth:create-name-continue',
+    createEmailInput: 'auth:create-email-input',
+    createPasswordInput: 'auth:create-password-input',
+    createConfirmPasswordInput: 'auth:create-confirm-password-input',
+    createCredentialsSubmitBtn: 'auth:create-credentials-submit',
+    forgotPasswordEmailInput: 'auth:forgot-password-email-input',
+    forgotPasswordSubmitBtn: 'auth:forgot-password-submit',
+    otpScreen: 'auth:otp-screen',
   }),
 
   // ── Packs ─────────────────────────────────────────────────────────────────

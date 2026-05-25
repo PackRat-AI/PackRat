@@ -14,6 +14,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationKeys } from 'expo-app/lib/i18n/types';
+import { testIds } from 'expo-app/lib/testIds';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -207,6 +208,7 @@ export default function CredentialsScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
+                        testID={testIds.auth.createEmailInput}
                         placeholder={Platform.select({
                           ios: t('common.email'),
                           default: '',
@@ -241,6 +243,7 @@ export default function CredentialsScreen() {
                       return (
                         <View>
                           <TextField
+                            testID={testIds.auth.createPasswordInput}
                             placeholder={Platform.select({
                               ios: t('common.password'),
                               default: '',
@@ -375,6 +378,7 @@ export default function CredentialsScreen() {
                   <form.Field name="confirmPassword">
                     {(field) => (
                       <TextField
+                        testID={testIds.auth.createConfirmPasswordInput}
                         placeholder={Platform.select({
                           ios: t('auth.confirmPassword'),
                           default: '',
@@ -418,6 +422,7 @@ export default function CredentialsScreen() {
                 const disabled = !canSubmit || isLoading;
                 return (
                   <Button
+                    testID={testIds.auth.createCredentialsSubmitBtn}
                     size="lg"
                     disabled={disabled}
                     className="opacity-100"
@@ -436,6 +441,7 @@ export default function CredentialsScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
+                  testID={testIds.auth.createCredentialsSubmitBtn}
                   disabled={!canSubmit || isLoading}
                   onPress={() => {
                     if (focusedTextField !== 'confirm-password') {

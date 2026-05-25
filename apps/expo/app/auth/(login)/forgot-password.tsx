@@ -12,6 +12,7 @@ import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router, Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
@@ -110,6 +111,7 @@ export default function ForgotPasswordScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
+                        testID={testIds.auth.forgotPasswordEmailInput}
                         placeholder={Platform.select({
                           ios: 'Email',
                           default: '',
@@ -142,6 +144,7 @@ export default function ForgotPasswordScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
+                  testID={testIds.auth.forgotPasswordSubmitBtn}
                   size="lg"
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || isLoading}
@@ -167,7 +170,11 @@ export default function ForgotPasswordScreen() {
             <View className="ml-auto">
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, _isSubmitting]) => (
-                  <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
+                  <Button
+                    testID={testIds.auth.forgotPasswordSubmitBtn}
+                    onPress={() => form.handleSubmit()}
+                    disabled={!canSubmit || isLoading}
+                  >
                     <Text className="text-sm">
                       {isLoading ? t('auth.sending') : t('auth.sendCode')}
                     </Text>

@@ -5,6 +5,7 @@ import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
@@ -156,7 +157,7 @@ export default function OneTimePasswordScreen() {
         style={{ paddingBottom: insets.bottom, paddingTop: headerHeight }}
         extraKeyboardSpace={-insets.bottom + 12}
       >
-        <View className="flex-1 justify-center gap-3">
+        <View testID={testIds.auth.otpScreen} className="flex-1 justify-center gap-3">
           <View className="items-center pb-1">
             <Image source={LOGO_SOURCE} className="h-10 w-10 rounded-md" resizeMode="contain" />
           </View>

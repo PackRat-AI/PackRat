@@ -1,3 +1,4 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -9,6 +10,7 @@ import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
 import { authClient } from 'expo-app/lib/auth-client';
 import { t } from 'expo-app/lib/i18n';
+import { secureStorage } from 'expo-app/lib/secureStorage';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { queryClient } from 'expo-app/providers/TanstackProvider';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -16,6 +18,7 @@ import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
+import { Platform } from 'react-native';
 import {
   isLoadingAtom,
   needsReauthAtom,
@@ -29,6 +32,25 @@ function redirect(route: string) {
     return router.dismissTo(parsedRoute);
   } catch {
     router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
+  }
+}
+
+async function getStoredSessionToken(): Promise<string | null> {
+  const directToken = await secureStorage.getItemAsync('access_token');
+  if (directToken) return directToken;
+
+  const cookieJson = await secureStorage.getItemAsync('packrat_cookie');
+  if (!cookieJson) return null;
+
+  try {
+    const cookies = JSON.parse(cookieJson) as Record<string, { value?: string }>;
+    return (
+      cookies['better-auth.session_token']?.value ??
+      cookies['__Secure-better-auth.session_token']?.value ??
+      null
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -171,9 +193,51 @@ export function useAuthActions() {
     setSuppressSignOutNav(true);
     setIsLoading(true);
     try {
-      const isSignedIn = await GoogleSignin.hasPreviousSignIn();
-      if (isSignedIn) await GoogleSignin.signOut();
-      await authClient.signOut();
+      if (Platform.OS === 'web') {
+        const activeToken = await getStoredSessionToken();
+        await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/sign-out`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+        });
+        if (activeToken) {
+          await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/sign-out`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${activeToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: '{}',
+          });
+        }
+        userStore.set(null);
+        queryClient.clear();
+        window.localStorage.clear();
+        await AsyncStorage.clear();
+        setNeedsReauth(false);
+        return;
+      }
+
+      if (Platform.OS !== 'web') {
+        const isSignedIn = await GoogleSignin.hasPreviousSignIn();
+        if (isSignedIn) await GoogleSignin.signOut();
+      }
+      const activeToken = await getStoredSessionToken();
+      if (activeToken) {
+        await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/sign-out`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${activeToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: '{}',
+        });
+      }
+      await Promise.race([
+        authClient.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
@@ -188,19 +252,21 @@ export function useAuthActions() {
   };
 
   const forgotPassword = async (email: string) => {
-    const { error } = await authClient.requestPasswordReset({
-      email,
-      redirectTo: 'packrat://reset-password',
+    const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     });
-    if (error) throw new Error(error.message ?? 'Forgot password failed');
+    if (!response.ok) throw new Error('Forgot password failed');
   };
 
-  const resetPassword = async (_email: string, opts: { token: string; newPassword: string }) => {
-    const { error } = await authClient.resetPassword({
-      token: opts.token,
-      newPassword: opts.newPassword,
+  const resetPassword = async (email: string, opts: { token: string; newPassword: string }) => {
+    const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/password-reset/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code: opts.token, newPassword: opts.newPassword }),
     });
-    if (error) throw new Error(error.message ?? 'Reset password failed');
+    if (!response.ok) throw new Error('Reset password failed');
   };
 
   const verifyEmail = async (_email: string, token: string) => {

@@ -3,6 +3,7 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
@@ -87,6 +88,7 @@ export default function InfoScreen() {
                   <form.Field name="firstName">
                     {(field) => (
                       <TextField
+                        testID={testIds.auth.createFirstNameInput}
                         placeholder={Platform.select({
                           ios: t('auth.firstName'),
                           default: '',
@@ -116,6 +118,7 @@ export default function InfoScreen() {
                   <form.Field name="lastName">
                     {(field) => (
                       <TextField
+                        testID={testIds.auth.createLastNameInput}
                         placeholder={Platform.select({
                           ios: t('auth.lastName'),
                           default: '',
@@ -159,6 +162,7 @@ export default function InfoScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
                 <Button
+                  testID={testIds.auth.createNameContinueBtn}
                   size="lg"
                   disabled={!canSubmit || isSubmitting}
                   onPress={() => form.handleSubmit()}
@@ -182,6 +186,7 @@ export default function InfoScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
                 <Button
+                  testID={testIds.auth.createNameContinueBtn}
                   disabled={!canSubmit || isSubmitting}
                   onPress={() => {
                     if (focusedTextField === 'first-name') {
