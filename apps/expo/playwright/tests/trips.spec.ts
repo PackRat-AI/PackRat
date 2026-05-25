@@ -192,13 +192,14 @@ test.describe('Trip CRUD', () => {
     // Click the delete button in the trip detail header
     const deleteButton = page.getByTestId('trips:delete');
     await deleteButton.waitFor({ timeout: 10_000 });
+    const deletePromise = page.waitForResponse(
+      (r) =>
+        r.url().includes('/api/trips') &&
+        (r.request().method() === 'PUT' || r.request().method() === 'DELETE'),
+      { timeout: 20_000 },
+    );
     await deleteButton.click();
-
-    // react-native Alert.alert is a no-op on web; the app uses NativeWindUI Alert (DOM modal).
-    // Use exact:true so "E2E-DeleteTrip-..." trip names don't match as false positives.
-    const deleteConfirmBtn = page.getByText('Delete', { exact: true });
-    await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 10_000 });
-    await deleteConfirmBtn.click();
+    await deletePromise;
 
     // router.back() SPA-navigates away from the trip detail.
     // Wait for URL to change (either to /trips or /)

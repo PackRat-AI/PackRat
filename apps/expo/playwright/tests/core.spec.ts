@@ -4,6 +4,7 @@
  * Each test navigates to a route after seeding auth tokens in localStorage.
  * TestIds match the constants in lib/testIds.ts and the Maestro iOS flows.
  */
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
@@ -104,7 +105,8 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
   // Navigate to pack detail and open "Add from Catalog" sheet
   await page.goto(`${BASE_URL}/pack/${packId}`);
-  await page.getByTestId('add-from-catalog-option').last().click();
+  await page.getByTestId(testIds.packs.addItemBtn).click();
+  await page.getByTestId(testIds.items.addFromCatalogOption).last().click();
 
   // Dialog with catalog items should appear
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });
@@ -134,15 +136,15 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
 
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
-
   await page.goto(`${BASE_URL}/trip/new`);
   const nameInput = page.getByTestId('trips:name-input');
   await nameInput.waitFor({ timeout: 10_000 });
   await nameInput.fill(tripName);
+
+  await page.getByText(/Add Location/i).click();
+  await page.waitForURL(/\/trip\/location-search/, { timeout: 10_000 });
+  await page.getByTestId(testIds.trips.locationConfirmBtn).click();
+  await page.waitForURL(/\/trip\/new/, { timeout: 10_000 });
 
   // Open start date picker and set via native input
   await page
@@ -162,6 +164,10 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   await endInput.waitFor({ timeout: 5_000 });
   await endInput.fill('2026-08-14');
 
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
   await page.getByTestId('submit-trip-button').click();
 
   // Wait for the POST to complete so the trip is persisted before navigating
@@ -192,9 +198,9 @@ test('catalog search filters results', async ({ authedPage: page }) => {
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });
-  await searchBox.fill('sleeping bag');
+  await searchBox.fill('Front Range');
   // Results should update — check item names
-  await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Front Range/i).first()).toBeVisible({ timeout: 10_000 });
 });
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -224,6 +230,7 @@ test('settings screen loads', async ({ authedPage: page }) => {
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
 
 test('AI chat sends message and gets response', async ({ authedPage: page }) => {
+  test.skip(process.env.RUN_AI_E2E !== 'true', 'requires RUN_AI_E2E=true and a local AI provider');
   test.setTimeout(60_000); // AI streaming responses can take 20-30s
   // Create a pack to chat about first
   const packName = `E2E-AI-${Date.now()}`;
