@@ -77,6 +77,9 @@ export const testIds = Object.freeze({
     listItem: (id: string | number) => `trips:list-item-${id}`,
     startDateInput: 'trips:start-date-input',
     endDateInput: 'trips:end-date-input',
+    locationSearchInput: 'trips:location-search-input',
+    locationSearchBtn: 'trips:location-search-button',
+    locationConfirmBtn: 'trips:location-confirm-button',
   }),
 
   // ── Catalog ───────────────────────────────────────────────────────────────
@@ -108,7 +111,11 @@ export const testIds = Object.freeze({
   // ── Weather ───────────────────────────────────────────────────────────────
   weather: Object.freeze({
     searchInput: 'weather:search-input',
+    savedSearchInput: 'weather:saved-search-input',
     addLocationBtn: 'weather:add-location',
+    searchResult: (id: string | number) => `weather:search-result-${id}`,
+    searchResultViewBtn: (id: string | number) => `weather:search-result-view-${id}`,
+    searchResultAddBtn: (id: string | number) => `weather:search-result-add-${id}`,
     location: (id: string | number) => `weather:location-${id}`,
   }),
 });

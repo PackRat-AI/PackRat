@@ -160,9 +160,11 @@ export default (): ExpoConfig =>
         },
       },
       extra: {
+        e2eGeocode: process.env.EXPO_PUBLIC_E2E_GEOCODE === 'true',
         eas: {
           projectId: '267945b1-d9ac-4621-8541-826a2c70576d',
         },
+        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
       },
       updates: {
         url: 'https://u.expo.dev/267945b1-d9ac-4621-8541-826a2c70576d',

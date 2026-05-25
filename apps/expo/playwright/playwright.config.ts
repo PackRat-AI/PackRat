@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
+const CHROMIUM_EXECUTABLE_PATH =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/snap/bin/chromium';
 
 export default defineConfig({
   testDir: './tests',
@@ -22,8 +24,14 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'vanilla-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
+        launchOptions: {
+          executablePath: CHROMIUM_EXECUTABLE_PATH,
+        },
+      },
     },
   ],
 });

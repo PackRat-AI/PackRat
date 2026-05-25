@@ -5,6 +5,7 @@ import { SearchInput } from 'expo-app/components/SearchInput';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -247,7 +248,10 @@ export default function LocationSearchScreen() {
 
   // Render a search result item
   const renderResultItem = ({ item }: { item: LocationSearchResult }) => (
-    <View className="border-border/30 border-b px-4 py-3">
+    <View
+      className="border-border/30 border-b px-4 py-3"
+      testID={testIds.weather.searchResult(item.id)}
+    >
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="font-medium">{item.name}</Text>
@@ -262,6 +266,7 @@ export default function LocationSearchScreen() {
           <TouchableOpacity
             className="bg-primary/10 mr-2 rounded-full px-3 py-1.5"
             onPress={() => handleViewLocationDetails(item)}
+            testID={testIds.weather.searchResultViewBtn(item.id)}
           >
             <Text className="text-sm font-medium text-primary">{t('weather.view')}</Text>
           </TouchableOpacity>
@@ -271,6 +276,7 @@ export default function LocationSearchScreen() {
             className="rounded-full bg-primary px-3 py-1.5"
             onPress={() => handleAddLocation(item)}
             disabled={isAdding && addingLocationId === item.id}
+            testID={testIds.weather.searchResultAddBtn(item.id)}
           >
             {isAdding && addingLocationId === item.id ? (
               <ActivityIndicator size="small" color="white" />
@@ -393,6 +399,7 @@ export default function LocationSearchScreen() {
       <View className="px-4">
         <SearchInput
           ref={searchInputRef}
+          testID={testIds.weather.searchInput}
           placeholder={t('weather.searchForCity')}
           value={query}
           onChangeText={handleSearchChange}

@@ -5,6 +5,7 @@ import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -131,6 +132,7 @@ function LocationsScreen() {
         <View className="p-4">
           <SearchInput
             ref={searchInputRef}
+            testID={testIds.weather.savedSearchInput}
             placeholder={t('weather.searchSavedLocations')}
             value={searchQuery}
             onChangeText={handleSearchChange}

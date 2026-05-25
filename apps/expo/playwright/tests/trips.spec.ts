@@ -7,6 +7,7 @@
  *
  * testIds source: apps/expo/lib/testIds.ts
  */
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -25,11 +26,6 @@ async function createTrip(
     endDate?: string; // YYYY-MM-DD
   },
 ): Promise<string> {
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
-
   await page.goto(`${BASE_URL}/trip/new`);
 
   // Fill trip name
@@ -41,6 +37,11 @@ async function createTrip(
   if (opts.description) {
     await page.getByTestId('trips:description-input').fill(opts.description);
   }
+
+  await page.getByText(/Add Location/i).click();
+  await page.waitForURL(/\/trip\/location-search/, { timeout: 10_000 });
+  await page.getByTestId(testIds.trips.locationConfirmBtn).click();
+  await page.waitForURL(/\/trip\/new/, { timeout: 10_000 });
 
   // Set start date by clicking the Pressable to reveal the DateTimePicker, then
   // filling the underlying <input type="date">.
@@ -66,6 +67,10 @@ async function createTrip(
   }
 
   // Submit the form
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
   await page.getByTestId('submit-trip-button').click();
 
   // Wait for the POST to complete so the trip is persisted before any page reload
