@@ -112,7 +112,12 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const response = result.toUIMessageStreamResponse();
 
       if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_AI_GATEWAY_ID) {
-        response.headers.set('Access-Control-Allow-Origin', '*');
+        const origin = request.headers.get('Origin');
+        response.headers.set('Access-Control-Allow-Origin', origin ?? '*');
+        if (origin) {
+          response.headers.set('Vary', 'Origin');
+          response.headers.set('Access-Control-Allow-Credentials', 'true');
+        }
         response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
         response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       }

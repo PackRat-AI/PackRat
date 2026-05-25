@@ -61,6 +61,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
+const chatFetch = (input: RequestInfo | URL, init?: RequestInit) =>
+  expoFetch(
+    input,
+    Platform.OS === 'web' ? { ...init, credentials: init?.credentials ?? 'include' } : init,
+  );
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
@@ -191,11 +196,9 @@ export default function AIChat() {
     }
     return {
       transport: new DefaultChatTransport({
-        fetch: expoFetch as unknown as typeof globalThis.fetch,
+        fetch: chatFetch as unknown as typeof globalThis.fetch,
         api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: () => ({
           contextType: contextRef.current.contextType,
           itemId: contextRef.current.itemId,

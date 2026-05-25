@@ -260,8 +260,13 @@ test('AI chat sends message and gets response', async ({ signedInPage: page }) =
   await page
     .getByRole('textbox', { name: /Ask about this pack/i })
     .fill('Reply with exactly: E2E AI OK');
+  const chatResponse = page.waitForResponse(
+    (response) => response.url().includes('/api/chat') && response.request().method() === 'POST',
+    { timeout: 45_000 },
+  );
   // Send button is icon-only with no accessible name; use the arrow-up icon character
   await page.getByText('󰁝').click();
+  expect((await chatResponse).ok()).toBeTruthy();
 
   // Wait for AI response (streaming may take a while)
   await expect(page.getByText(/E2E AI OK/i)).toBeVisible({ timeout: 45_000 });
