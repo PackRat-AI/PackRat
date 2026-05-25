@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 export type CreateUserInput = {
   email: string;
   password?: string;
+  name?: string;
   firstName?: string | null;
   lastName?: string | null;
   role?: 'USER' | 'ADMIN';
@@ -30,11 +31,16 @@ export class UserService {
 
   async create(input: CreateUserInput): Promise<User> {
     const passwordHash = input.password ? await hashPassword(input.password) : null;
+    const name =
+      input.name ||
+      [input.firstName, input.lastName].filter(Boolean).join(' ') ||
+      input.email.toLowerCase();
 
     const [user] = await this.db
       .insert(users)
       .values({
         id: crypto.randomUUID(),
+        name,
         email: input.email.toLowerCase(),
         passwordHash,
         firstName: input.firstName ?? null,

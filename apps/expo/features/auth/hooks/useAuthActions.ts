@@ -219,10 +219,8 @@ export function useAuthActions() {
         return;
       }
 
-      if (Platform.OS !== 'web') {
-        const isSignedIn = await GoogleSignin.hasPreviousSignIn();
-        if (isSignedIn) await GoogleSignin.signOut();
-      }
+      const isSignedIn = await GoogleSignin.hasPreviousSignIn();
+      if (isSignedIn) await GoogleSignin.signOut();
       const activeToken = await getStoredSessionToken();
       if (activeToken) {
         await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/sign-out`, {
