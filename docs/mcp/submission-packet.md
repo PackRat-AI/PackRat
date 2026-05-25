@@ -35,9 +35,20 @@ the public site).
    `wrangler kv key list ... | grep client`.
 3. Prepare the **reviewer test account** (§ 4 below) and verify the demo
    prompts work end-to-end.
-4. Render the **1024×1024 PNG logo** from `apps/landing/public/mcp-logo.svg`
-   (any vector-aware exporter; macOS Preview "Export As… → PNG"). Save
-   locally; do not commit.
+4. **Logo PNGs are pre-rendered** and committed under `apps/landing/public/`:
+   - `mcp-logo-1024.png` (24 KB) — attach to the submission form
+   - `mcp-logo-512.png` (9 KB) — retina favicon fallback
+   - `mcp-logo-256.png` (3.6 KB) — listing thumbnail
+   Render command (run only if the SVG changes):
+   ```bash
+   node -e "
+   const sharp=require('sharp'),fs=require('fs');
+   const svg=fs.readFileSync('apps/landing/public/mcp-logo.svg');
+   for (const size of [1024,512,256])
+     sharp(svg,{density:600}).resize(size,size).png()
+       .toFile(\`apps/landing/public/mcp-logo-\${size}.png\`).then(i=>console.log(size,i.size));
+   "
+   ```
 5. Sign in to <https://clau.de/mcp-directory-submission> with the
    `hello@packratai.com` Google account (or whichever account owns the
    listing).
@@ -90,7 +101,7 @@ changes the form. Each row is the value the operator pastes verbatim.
 | Support contact (email) | `hello@packratai.com` | Same as `siteConfig.support.email`; advertised on `/health` (check 10). |
 | Support contact (URL) | `https://packratai.com/mcp#privacy--security` | Anchor on the public docs page. |
 | Logo / icon (SVG) | `apps/landing/public/mcp-logo.svg` | U13 vector mark. |
-| Logo / icon (1024×1024 PNG) | **TODO (operator)** — render the SVG to PNG at 1024×1024 and attach to the form. | Anthropic's form requires a raster fallback for the directory tile. |
+| Logo / icon (1024×1024 PNG) | `apps/landing/public/mcp-logo-1024.png` — pre-rendered from the SVG; attach this file to the form. | Anthropic's form requires a raster fallback for the directory tile. |
 | Favicon (32×32 .ico) at OAuth domain | `https://mcp.packratai.com/favicon.ico` | Served by the Worker — [`packages/mcp/src/favicon.ts`](../../packages/mcp/src/favicon.ts). Anthropic's domain-ownership probe targets this exact URL (check 7). |
 | Reviewer test account | See § 4 below. | Provide via the form's reviewer-credentials field. |
 | Example prompts (≥ 3) | See § 5 below. | Verbatim from the U13 public docs page. |
@@ -297,7 +308,7 @@ occurred.
 | Asset | Path | Status |
 | --- | --- | --- |
 | MCP logo (SVG, 256×256 viewBox) | `apps/landing/public/mcp-logo.svg` | Shipped (U13). |
-| MCP logo (1024×1024 PNG) | **TODO (operator)** — render from the SVG and attach to the submission form. | Operator action at submission time. |
+| MCP logo (1024×1024 PNG) | `apps/landing/public/mcp-logo-1024.png` — pre-rendered. | Pre-rendered + committed; no operator action. |
 | Favicon (32×32 .ico) at OAuth host | `https://mcp.packratai.com/favicon.ico` — served via [`packages/mcp/src/favicon.ts`](../../packages/mcp/src/favicon.ts) (embedded base64 of `apps/landing/public/favicon.ico`). | Shipped (U13). |
 | Favicon at brand domain | `https://packratai.com/PackRat.ico` (legacy filename used in `apps/landing/lib/metadata.ts`); also available at `/favicon.ico` since U13. | Shipped. |
 
