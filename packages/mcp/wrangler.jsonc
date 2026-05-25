@@ -14,9 +14,17 @@
   // Optional vars:
   //   MCP_FEATURE_FLAGS            — comma-separated flag names enabled at boot
   //
-  // Bindings created via wrangler CLI (KV namespaces; replace the placeholder IDs):
-  //   wrangler kv namespace create OAUTH_KV                     # for prod
-  //   wrangler kv namespace create OAUTH_KV --preview            # for dev / preview
+  // KV bindings (already provisioned — see commit history). The `OAUTH_KV`
+  // binding name is what the OAuth-provider library expects; the physical
+  // namespace titles in Cloudflare are prefixed for findability among
+  // PackRat's other namespaces:
+  //   MCP_OAUTH_KV       → 0ac2e23bb4f04dc5a39cfd3d7bc900e0  (prod)
+  //   MCP_OAUTH_KV_dev   → be554ba7448c4c13a48e85d9a0cdabc8  (dev / preview)
+  // To rotate or recreate:
+  //   wrangler kv namespace create MCP_OAUTH_KV       # prod-style
+  //   wrangler kv namespace create MCP_OAUTH_KV_dev   # dev-style (no --preview;
+  //                                                   #   the dev namespace doubles
+  //                                                   #   as the wrangler-dev preview)
   //
   // See docs/mcp/runbook.md for the full deploy + secret-rotation procedure.
   // ───────────────────────────────────────────────────────────────────────────

@@ -22,18 +22,42 @@ operates the Worker.
 These steps are required before `wrangler deploy --env prod` can succeed.
 They live outside the codebase because they touch Cloudflare account state.
 
-### 1. Create KV namespaces
+### 1. KV namespaces
+
+**Already provisioned** on the PackRat Cloudflare account
+(`Admin@packratai.com`, account ID `a0e238a64b4bb8d9ca35c30149c26893`).
+The MCP's OAuth provider needs its own dedicated namespaces — it should
+NOT share `AUTH_KV` / `AUTH_KV_preview` with the API's Better Auth
+because (a) the U14 `purgeExpiredData` cron would iterate over unrelated
+keys, and (b) a future provider version could interpret Better Auth keys
+as orphans and delete them. Two namespaces, one per env:
+
+| CF dashboard title | Binding name | KV ID | Used by |
+| ------------------ | ------------ | ----- | ------- |
+| `MCP_OAUTH_KV`     | `OAUTH_KV` (in `env.prod`)    | `0ac2e23bb4f04dc5a39cfd3d7bc900e0` | `packrat-mcp` (prod) |
+| `MCP_OAUTH_KV_dev` | `OAUTH_KV` (top-level + `env.dev`) | `be554ba7448c4c13a48e85d9a0cdabc8` | `packrat-mcp-dev` AND `wrangler dev` preview |
+
+`OAUTH_KV` is the binding name code reads (the OAuth-provider library
+expects it); the `MCP_` prefix on the dashboard title is just for
+findability among other PackRat KV namespaces.
+
+The dev namespace doubles as both the deployed-dev-env namespace AND
+the `wrangler dev` preview namespace (so `id` and `preview_id` are the
+same value in the dev block). This is intentional: there's no
+operational value in a third namespace just for `wrangler dev` HMR
+state. Distinct from the API's `AUTH_KV_preview` naming convention —
+the `_dev` suffix more accurately describes the dual-use semantics.
+
+To recreate from scratch (rotation, fresh env, etc.):
 
 ```bash
-# Production namespace
-wrangler kv namespace create OAUTH_KV
-# Note the returned id and replace __TODO_OAUTH_KV_PROD_ID__ in
-# packages/mcp/wrangler.jsonc → env.prod.kv_namespaces[0].id
-
-# Dev namespace (also serves as preview_id for `wrangler dev`)
-wrangler kv namespace create OAUTH_KV --preview
-# Replace __TODO_OAUTH_KV_DEV_ID__ in both the top-level kv_namespaces
-# and env.dev.kv_namespaces (used for id and preview_id).
+wrangler kv namespace create MCP_OAUTH_KV       # prod
+wrangler kv namespace create MCP_OAUTH_KV_dev   # dev (no --preview;
+                                                #   this namespace doubles
+                                                #   as the wrangler-dev preview)
+# Paste the returned IDs into packages/mcp/wrangler.jsonc — see the file
+# header for the three slots (top-level dev id+preview_id, env.prod.id,
+# env.dev.id+preview_id).
 ```
 
 ### 2. Provision the `mcp.packratai.com` custom domain
@@ -1582,15 +1606,15 @@ exists in the corresponding `../*.test.ts` files (well-known →
 `@cloudflare/vitest-pool-workers` downloads `workerd` on first run
 (~30s, one-time per machine + version). Subsequent runs are warm.
 
-### `OAUTH_KV` placeholder + miniflare synthesis
+### `OAUTH_KV` binding + miniflare synthesis
 
 The integration config (when switched back to
 `defineWorkersProject`) sets `miniflare.kvNamespaces: ['OAUTH_KV']`,
-which gives the Worker an in-memory KV binding bypassing the
-`__TODO_OAUTH_KV_DEV_ID__` placeholder in `wrangler.jsonc`. **No
-real KV namespace ID is needed for the test run** — the placeholder
-stays harmless and the live-deploy operator-setup remains the only
-place a real ID is required.
+which gives the Worker an in-memory KV binding instead of hitting the
+real `MCP_OAUTH_KV_dev` namespace declared in `wrangler.jsonc`.
+**No live Cloudflare creds are needed for the test run** — miniflare
+synthesizes the binding from the array entry, and the real namespace
+ID is only consumed by `wrangler dev` and `wrangler deploy`.
 
 ---
 
