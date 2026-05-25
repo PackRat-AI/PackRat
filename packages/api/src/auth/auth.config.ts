@@ -11,6 +11,7 @@
  */
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
+import { oauthProvider } from '@better-auth/oauth-provider';
 import { neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/db';
 import { betterAuth } from 'better-auth';
@@ -38,6 +39,11 @@ export const auth = betterAuth({
       session: schema.session,
       account: schema.account,
       verification: schema.verification,
+      jwks: schema.jwks,
+      oauthClient: schema.oauthClient,
+      oauthAccessToken: schema.oauthAccessToken,
+      oauthRefreshToken: schema.oauthRefreshToken,
+      oauthConsent: schema.oauthConsent,
     },
   }),
 
@@ -69,12 +75,37 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [bearer(), jwt(), admin()],
+  plugins: [
+    bearer(),
+    jwt(),
+    admin(),
+    // OAuth 2.1 provider — schema-affecting; mirrors index.ts. See the
+    // runtime config in src/auth/index.ts for the option rationale.
+    oauthProvider({
+      scopes: [
+        'openid',
+        'profile',
+        'email',
+        'offline_access',
+        'mcp',
+        'mcp:read',
+        'mcp:write',
+        'mcp:admin',
+      ],
+      validAudiences: ['https://mcp.packratai.com/mcp'],
+      allowDynamicClientRegistration: false,
+      allowUnauthenticatedClientRegistration: false,
+      consentPage: '/oauth/consent',
+      loginPage: '/api/auth/sign-in',
+    }),
+  ],
 
   // NOTE: keep in lockstep with `index.ts` (the runtime config). The two
   // lists drift independently — see
   // `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`
   // and `docs/mcp/runbook.md` § "Better Auth trustedOrigins" for the
   // schema-regen reminder.
-  trustedOrigins: ['http://localhost:8787', 'packrat://', 'https://mcp.packratai.com'],
+  // `https://mcp.packratai.com` removed in U1 of the OAuth provider
+  // consolidation refactor — MCP no longer calls Better Auth directly.
+  trustedOrigins: ['http://localhost:8787', 'packrat://'],
 });

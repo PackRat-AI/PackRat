@@ -6,9 +6,15 @@
  * Elysia-native so Eden Treaty gets full end-to-end type safety.
  */
 
+import {
+  oauthProviderAuthServerMetadata,
+  oauthProviderOpenIdConfigMetadata,
+} from '@better-auth/oauth-provider';
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
+import { neon } from '@neondatabase/serverless';
 import { getAuth } from '@packrat/api/auth';
+import { handleConsentPage } from '@packrat/api/auth/consent-page';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
@@ -18,7 +24,9 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import * as dbSchema from '@packrat/db';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
+import { drizzle } from 'drizzle-orm/neon-http';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
@@ -119,8 +127,43 @@ const handler: ExportedHandler<Env> = {
     const e = enrichEnv(env);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
-    // Route /api/auth/** to Better Auth before Elysia sees it.
     const url = new URL(request.url);
+
+    // RFC 5785 + MCP spec: OAuth AS discovery + OIDC config served at root.
+    // Better Auth's default mount is under /api/auth/.well-known/..., which
+    // doesn't satisfy clients that expect root paths (Anthropic's connector
+    // explicitly probes the root). The plugin's helpers (verified exports
+    // from @better-auth/oauth-provider/dist/index.d.mts) return Workers-
+    // compatible Response objects; we intercept before Better Auth's own
+    // /api/auth dispatcher to make sure the path-matching is exact.
+    if (request.method === 'GET') {
+      if (
+        url.pathname === '/.well-known/oauth-authorization-server' ||
+        url.pathname === '/.well-known/openid-configuration'
+      ) {
+        const validatedEnv = getEnv();
+        const auth = await getAuth(validatedEnv);
+        const handler =
+          url.pathname === '/.well-known/openid-configuration'
+            ? oauthProviderOpenIdConfigMetadata(auth)
+            : oauthProviderAuthServerMetadata(auth);
+        return handler(request);
+      }
+
+      // Branded consent page served at the path declared in the plugin's
+      // `consentPage` option. The plugin redirects the user-agent here mid-
+      // OAuth-flow; the page reads the user's session, filters scopes for
+      // non-admins, and POSTs back to /api/auth/oauth2/consent. See
+      // src/auth/consent-page.ts for the full mechanism.
+      if (url.pathname === '/oauth/consent') {
+        const validatedEnv = getEnv();
+        const auth = await getAuth(validatedEnv);
+        const db = drizzle(neon(validatedEnv.NEON_DATABASE_URL), { schema: dbSchema });
+        return handleConsentPage(request, { auth, db, schema: dbSchema });
+      }
+    }
+
+    // Route /api/auth/** to Better Auth before Elysia sees it.
     if (url.pathname.startsWith('/api/auth')) {
       const validatedEnv = getEnv();
       const auth = await getAuth(validatedEnv);

@@ -9,6 +9,7 @@
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { expo } from '@better-auth/expo';
+import { oauthProvider } from '@better-auth/oauth-provider';
 import { neon } from '@neondatabase/serverless';
 import { generateAppleClientSecret, verifyPasswordCompat } from '@packrat/api/auth/auth.helpers';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
@@ -16,6 +17,29 @@ import * as schema from '@packrat/db';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';
+
+// ─── MCP OAuth scope catalog (advertised in scopes_supported) ───────────────
+// `openid`, `profile`, `email`, `offline_access` are the OIDC standard scopes
+// the plugin advertises by default; we include them explicitly so this list
+// is the single source of truth for `scopes_supported` in discovery metadata.
+// The `mcp` umbrella is back-compat with the legacy MCP scope; `mcp:read/write/admin`
+// are the granular surface mapped to tool visibility in packages/mcp/src/scopes.ts.
+const MCP_OAUTH_SCOPES = [
+  'openid',
+  'profile',
+  'email',
+  'offline_access',
+  'mcp',
+  'mcp:read',
+  'mcp:write',
+  'mcp:admin',
+] as const;
+
+// RFC 8707 audience — JWT access tokens are bound to this `aud` claim.
+// The MCP worker verifies tokens carry exactly this audience; any other
+// `resource` parameter results in `invalid_request` (400) from the plugin's
+// `checkResource` (validAudiences enforcement).
+const MCP_AUDIENCE = 'https://mcp.packratai.com/mcp';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
@@ -71,6 +95,13 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
         account: schema.account,
         verification: schema.verification,
         jwks: schema.jwks,
+        // OAuth provider (@better-auth/oauth-provider@1.6.x) tables.
+        // The plugin auto-registers these models when present, gating its
+        // discovery + token + consent endpoints on their availability.
+        oauthClient: schema.oauthClient,
+        oauthAccessToken: schema.oauthAccessToken,
+        oauthRefreshToken: schema.oauthRefreshToken,
+        oauthConsent: schema.oauthConsent,
       },
     }),
 
@@ -136,7 +167,9 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       bearer(),
 
       // JWT: issues asymmetric JWTs and exposes a JWKS endpoint at
-      // /api/auth/jwks for downstream service verification.
+      // /api/auth/jwks for downstream service verification. The OAuth
+      // provider plugin reads this plugin's signer to mint JWT access tokens
+      // when a client sends `resource` (RFC 8707).
       jwt(),
 
       // Admin: role-based user management endpoints.
@@ -146,6 +179,43 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       // passes for requests from the native app (which can't send a browser
       // Origin header).
       expo(),
+
+      // OAuth 2.1 Authorization Server for the MCP worker.
+      //
+      // Configuration rationale (cross-reference: spike findings in
+      // docs/mcp/better-auth-oauth-provider-spike-2026-05-25.md):
+      //  - `scopes`: declares the MCP scope catalog; advertised under
+      //    `scopes_supported` in the AS metadata.
+      //  - `validAudiences`: RFC 8707 — `/oauth2/authorize` rejects any
+      //    `resource` parameter not in this list with 400 invalid_request.
+      //  - `allowDynamicClientRegistration: false` + Claude pre-registered
+      //    via packages/api/scripts/seed-claude-oauth-client.ts — DCR is
+      //    closed because we know our connector clients ahead of time.
+      //  - `consentPage`: points at `/oauth/consent` (mounted in the worker
+      //    fetch handler in src/index.ts). The consent page server-side
+      //    filters `mcp:admin` from non-admin grants and POSTs the reduced
+      //    scope to `/oauth2/consent` — the plugin's native scope-reduction
+      //    mechanism (customAccessTokenClaims CANNOT reduce scope; see
+      //    spike §Q1-Q2).
+      //  - `loginPage`: '/api/auth/sign-in' is a static placeholder URL the
+      //    plugin redirects to for `prompt=login`. PackRat clients (Claude)
+      //    rely on the user being already signed in via Better Auth's web
+      //    auth flow before initiating OAuth; this URL is set so the plugin
+      //    doesn't throw on missing config — the actual sign-in surface is
+      //    the existing Better Auth endpoints, not a custom page.
+      //  - `disableJwtPlugin` is intentionally unset: JWT access tokens are
+      //    the default — but ONLY issued when the client sends a `resource`
+      //    parameter (`isJwtAccessToken = audience && !opts.disableJwtPlugin`,
+      //    spike §Q4). Claude.ai sends `resource` per the MCP 2025-11-25
+      //    spec. Verified in U9 dev verification.
+      oauthProvider({
+        scopes: MCP_OAUTH_SCOPES,
+        validAudiences: [MCP_AUDIENCE],
+        allowDynamicClientRegistration: false,
+        allowUnauthenticatedClientRegistration: false,
+        consentPage: '/oauth/consent',
+        loginPage: '/api/auth/sign-in',
+      }),
     ],
 
     rateLimit: {
@@ -159,9 +229,14 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
     // config). The two lists drift independently — see
     // `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`
     // and `docs/mcp/runbook.md` § "Better Auth trustedOrigins".
-    // `https://mcp.packratai.com` is the PackRat MCP Worker — sign-in calls
-    // originate from there during the OAuth flow.
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://', 'https://mcp.packratai.com'],
+    //
+    // `https://mcp.packratai.com` was removed in U1 of the OAuth provider
+    // consolidation refactor (docs/plans/2026-05-25-001-...). The MCP worker
+    // no longer calls Better Auth sign-in endpoints directly — the OAuth flow
+    // lives entirely on api.packrat.world via the oauthProvider plugin above.
+    // Keeping it in trustedOrigins would expand the CORS/CSRF bypass surface
+    // for no behavioral reason.
+    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
   });
 
   authCache.set(env as object, auth);

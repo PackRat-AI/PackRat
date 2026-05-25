@@ -107,6 +107,140 @@ export const jwks = pgTable('jwks', {
   createdAt: timestamp('created_at').notNull(),
 });
 
+// ─── @better-auth/oauth-provider tables (OAuth 2.1 + OIDC AS) ────────────────
+//
+// Added in U1 of the MCP OAuth consolidation refactor
+// (docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md).
+//
+// The plugin (`@better-auth/oauth-provider@1.6.x`) auto-registers these four
+// models when present in the drizzle schema map (see packages/api/src/auth/index.ts
+// `database.schema`). Column shapes mirror `node_modules/@better-auth/oauth-provider/
+// dist/index.mjs` schema declarations — keep this in sync if upgrading the plugin.
+//
+// Naming: the wire format is RFC 7591 snake_case (e.g. `redirect_uris`); the
+// drizzle field names use camelCase (e.g. `redirectUris`); column names use
+// snake_case for Postgres convention. The plugin's drizzle-adapter integration
+// maps between camelCase fields and the column names declared here.
+
+// OAuth Client (registered relying parties — e.g. Claude, future MCP clients).
+// Pre-registered via auth.api.createOAuthClient() seed script
+// (packages/api/scripts/seed-claude-oauth-client.ts) since
+// `allowDynamicClientRegistration: false`.
+export const oauthClient = pgTable(
+  'oauthClient',
+  {
+    id: text('id').primaryKey(),
+    clientId: text('client_id').notNull().unique(),
+    clientSecret: text('client_secret'),
+    disabled: boolean('disabled').default(false),
+    skipConsent: boolean('skip_consent'),
+    enableEndSession: boolean('enable_end_session'),
+    subjectType: text('subject_type'),
+    scopes: jsonb('scopes').$type<string[]>(),
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at'),
+    updatedAt: timestamp('updated_at'),
+    name: text('name'),
+    uri: text('uri'),
+    icon: text('icon'),
+    contacts: jsonb('contacts').$type<string[]>(),
+    tos: text('tos'),
+    policy: text('policy'),
+    softwareId: text('software_id'),
+    softwareVersion: text('software_version'),
+    softwareStatement: text('software_statement'),
+    redirectUris: jsonb('redirect_uris').$type<string[]>().notNull(),
+    postLogoutRedirectUris: jsonb('post_logout_redirect_uris').$type<string[]>(),
+    tokenEndpointAuthMethod: text('token_endpoint_auth_method'),
+    grantTypes: jsonb('grant_types').$type<string[]>(),
+    responseTypes: jsonb('response_types').$type<string[]>(),
+    public: boolean('public'),
+    type: text('type'),
+    requirePKCE: boolean('require_pkce'),
+    referenceId: text('reference_id'),
+    metadata: jsonb('metadata'),
+  },
+  (t) => [index('oauth_client_user_id_idx').on(t.userId)],
+);
+
+// OAuth Refresh Token — used for `offline_access` scope; required for
+// refresh-token rotation per R2 (the spike caught this missing from the
+// original plan; it's NOT optional even though many docs omit it).
+export const oauthRefreshToken = pgTable(
+  'oauthRefreshToken',
+  {
+    id: text('id').primaryKey(),
+    token: text('token').notNull().unique(),
+    clientId: text('client_id')
+      .references(() => oauthClient.clientId, { onDelete: 'cascade' })
+      .notNull(),
+    sessionId: text('session_id').references(() => session.id, { onDelete: 'set null' }),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    referenceId: text('reference_id'),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').notNull(),
+    revoked: timestamp('revoked'),
+    authTime: timestamp('auth_time'),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+  },
+  (t) => [
+    index('oauth_refresh_token_client_id_idx').on(t.clientId),
+    index('oauth_refresh_token_session_id_idx').on(t.sessionId),
+    index('oauth_refresh_token_user_id_idx').on(t.userId),
+  ],
+);
+
+// OAuth Access Token — opaque-token storage (used when client does NOT send
+// `resource` parameter, per spike §Q4). JWT access tokens are NOT stored here
+// — they're stateless and validated against the JWKS endpoint on the MCP side.
+export const oauthAccessToken = pgTable(
+  'oauthAccessToken',
+  {
+    id: text('id').primaryKey(),
+    token: text('token').unique(),
+    clientId: text('client_id')
+      .references(() => oauthClient.clientId, { onDelete: 'cascade' })
+      .notNull(),
+    sessionId: text('session_id').references(() => session.id, { onDelete: 'set null' }),
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    referenceId: text('reference_id'),
+    refreshId: text('refresh_id').references(() => oauthRefreshToken.id, { onDelete: 'set null' }),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+  },
+  (t) => [
+    index('oauth_access_token_client_id_idx').on(t.clientId),
+    index('oauth_access_token_session_id_idx').on(t.sessionId),
+    index('oauth_access_token_user_id_idx').on(t.userId),
+    index('oauth_access_token_refresh_id_idx').on(t.refreshId),
+  ],
+);
+
+// OAuth Consent — record of user's per-client grant. The consentPage handler
+// (packages/api/src/auth/consent-page.ts) reads existing rows to determine
+// whether to render the consent form or auto-approve.
+export const oauthConsent = pgTable(
+  'oauthConsent',
+  {
+    id: text('id').primaryKey(),
+    clientId: text('client_id')
+      .references(() => oauthClient.clientId, { onDelete: 'cascade' })
+      .notNull(),
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    referenceId: text('reference_id'),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+  },
+  (t) => [
+    index('oauth_consent_client_id_idx').on(t.clientId),
+    index('oauth_consent_user_id_idx').on(t.userId),
+  ],
+);
+
 // Packs table
 export const packs = pgTable('packs', {
   id: text('id').primaryKey(),
@@ -554,6 +688,14 @@ export type Verification = InferSelectModel<typeof verification>;
 export type NewVerification = InferInsertModel<typeof verification>;
 export type Jwks = InferSelectModel<typeof jwks>;
 export type NewJwks = InferInsertModel<typeof jwks>;
+export type OAuthClient = InferSelectModel<typeof oauthClient>;
+export type NewOAuthClient = InferInsertModel<typeof oauthClient>;
+export type OAuthRefreshToken = InferSelectModel<typeof oauthRefreshToken>;
+export type NewOAuthRefreshToken = InferInsertModel<typeof oauthRefreshToken>;
+export type OAuthAccessToken = InferSelectModel<typeof oauthAccessToken>;
+export type NewOAuthAccessToken = InferInsertModel<typeof oauthAccessToken>;
+export type OAuthConsent = InferSelectModel<typeof oauthConsent>;
+export type NewOAuthConsent = InferInsertModel<typeof oauthConsent>;
 export type Pack = InferSelectModel<typeof packs>;
 export type PackWithItems = Pack & { items: PackItem[] };
 export type NewPack = InferInsertModel<typeof packs>;
