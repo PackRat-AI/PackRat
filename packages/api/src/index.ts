@@ -114,6 +114,31 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
+function isAllowedCorsOrigin(origin: string): boolean {
+  const allowed = [
+    /^https:\/\/(www\.)?packrat\.world$/,
+    /^https:\/\/[\w-]+\.packrat\.world$/,
+    /^https:\/\/[\w-]+\.packratai\.com$/,
+    /^http:\/\/localhost:\d+$/,
+    /^exp:\/\//,
+  ];
+  return allowed.some((re) => re.test(origin));
+}
+
+function authCorsHeaders(request: Request): Headers {
+  const headers = new Headers({
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    Vary: 'Origin',
+  });
+  const origin = request.headers.get('Origin');
+  if (origin && isAllowedCorsOrigin(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin);
+  }
+  return headers;
+}
+
 const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
@@ -122,9 +147,17 @@ const handler: ExportedHandler<Env> = {
     // Route /api/auth/** to Better Auth before Elysia sees it.
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/auth')) {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: authCorsHeaders(request) });
+      }
       const validatedEnv = getEnv();
       const auth = await getAuth(validatedEnv);
-      return auth.handler(request);
+      const response = await auth.handler(request);
+      const headers = authCorsHeaders(request);
+      for (const [key, value] of headers) {
+        response.headers.set(key, value);
+      }
+      return response;
     }
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type

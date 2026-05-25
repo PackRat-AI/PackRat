@@ -19,6 +19,7 @@ export const apiEnvSchema = z.object({
   // Better Auth
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(), // API base URL e.g. https://api.packrat.world
+  BETTER_AUTH_DISABLE_JWT: z.enum(['true', 'false']).optional(),
   // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),

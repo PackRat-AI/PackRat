@@ -30,6 +30,30 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
 
   // Use the HTTP Neon driver — no long-lived connections inside a Worker.
   const db = drizzle(neon(env.NEON_DATABASE_URL), { schema });
+  const allowLocalAuthOverrides =
+    env.ENVIRONMENT === 'development' || process.env.NODE_ENV === 'test';
+  const disableJwtPlugin =
+    allowLocalAuthOverrides &&
+    (env.BETTER_AUTH_DISABLE_JWT === 'true' || process.env.BETTER_AUTH_DISABLE_JWT === 'true');
+  const authPlugins = [
+    // Bearer: converts Authorization: Bearer <token> into a session cookie
+    // transparently so existing mobile/API clients keep working.
+    bearer(),
+
+    // JWT: issues asymmetric JWTs and exposes a JWKS endpoint at
+    // /api/auth/jwks for downstream service verification.
+    // Local E2E can disable this when pointed at a dev DB whose JWKS rows were
+    // encrypted with a secret that is intentionally unavailable locally.
+    ...(disableJwtPlugin ? [] : [jwt()]),
+
+    // Admin: role-based user management endpoints.
+    admin(),
+
+    // Expo: promotes the expo-origin header → Origin so the CSRF check
+    // passes for requests from the native app (which can't send a browser
+    // Origin header).
+    expo(),
+  ];
 
   const auth = betterAuth({
     baseURL: env.BETTER_AUTH_URL,
@@ -130,23 +154,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
         : {}),
     },
 
-    plugins: [
-      // Bearer: converts Authorization: Bearer <token> into a session cookie
-      // transparently so existing mobile/API clients keep working.
-      bearer(),
-
-      // JWT: issues asymmetric JWTs and exposes a JWKS endpoint at
-      // /api/auth/jwks for downstream service verification.
-      jwt(),
-
-      // Admin: role-based user management endpoints.
-      admin(),
-
-      // Expo: promotes the expo-origin header → Origin so the CSRF check
-      // passes for requests from the native app (which can't send a browser
-      // Origin header).
-      expo(),
-    ],
+    plugins: authPlugins,
 
     rateLimit: {
       enabled: true,
