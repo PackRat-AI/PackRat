@@ -36,6 +36,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:web": "playwright test --config playwright/playwright.config.ts",
+    "screenshots:web": "bun run playwright/capture-web-screenshots.ts",
     "test:web:ui": "playwright test --config playwright/playwright.config.ts --ui",
     "update:development": "APP_VARIANT=development eas update --branch development --environment development",
     "update:preview": "APP_VARIANT=preview eas update --branch preview --environment preview",
