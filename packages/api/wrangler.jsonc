@@ -5,9 +5,15 @@
   // Elysia 1.4+ CloudflareAdapter requires compatibility_date >= 2025-06-01.
   "compatibility_date": "2025-06-01",
   // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
-  "compatibility_flags": ["nodejs_compat"],
+  // nodejs_als is required by @sentry/cloudflare for AsyncLocalStorage-based
+  // request/workflow context propagation across awaits.
+  "compatibility_flags": ["nodejs_compat", "nodejs_als"],
   "keep_vars": true,
   "logpush": true,
+  // Generate + upload source maps to Cloudflare so Workers logs show
+  // unminified stack traces. Sentry symbolication uses a separate
+  // @sentry/cli sourcemaps upload step in CI (see deploy workflow).
+  "upload_source_maps": true,
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
@@ -89,6 +95,23 @@
   },
   "ai": {
     "binding": "AI"
+  },
+  // Catalog ETL workflow — the durable execution engine for catalog ingests.
+  // The producer endpoint at POST /catalog/etl triggers a new instance per
+  // source CSV; each chunk is a step.do call inside the workflow. Replaces
+  // the previous Queues-based path (which remains available during the
+  // coexistence window via ?engine=queue on the producer endpoint).
+  "workflows": [
+    {
+      "name": "packrat-catalog-etl",
+      "binding": "ETL_WORKFLOW",
+      "class_name": "CatalogEtlWorkflow"
+    }
+  ],
+  // Daily 09:00 UTC retention sweep of invalid_item_logs (>90 days old).
+  // Handled by the `scheduled` arm in src/index.ts.
+  "triggers": {
+    "crons": ["0 9 * * *"]
   },
   // OSM / trail database — dedicated Postgres instance with PostGIS.
   // Add a Hyperdrive binding when ready:
@@ -194,6 +217,16 @@
       },
       "ai": {
         "binding": "AI"
+      },
+      "workflows": [
+        {
+          "name": "packrat-catalog-etl-dev",
+          "binding": "ETL_WORKFLOW",
+          "class_name": "CatalogEtlWorkflow"
+        }
+      ],
+      "triggers": {
+        "crons": ["0 9 * * *"]
       },
       "containers": [
         {

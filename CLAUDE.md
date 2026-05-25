@@ -43,9 +43,13 @@ bun format            # Biome format --write
 bun check             # Biome check (no auto-fix, CI mode)
 bun check-types       # tsc --noEmit
 
-# Testing
-bun test:api:unit     # API unit tests (Vitest + Cloudflare pool)
-bun test:expo         # Expo tests (Vitest)
+# Testing — see docs/testing.md for the full policy
+bun test:api:unit       # API unit tests (Vitest, Node env, deps mocked)
+bun test:expo           # Expo pure-TS tests (Vitest)
+bun test:mcp            # MCP package tests
+bun test:scripts        # scripts/lint analyzer tests (ratchet + assertion lint)
+bun check:coverage      # Coverage ratchet — fails on regression vs coverage-baselines.json
+bun lint:weak-assertions # Catches assertion-free tests, bare .toBeDefined / .toHaveBeenCalled, oversized snapshots
 
 # Dependencies
 bun install           # Install all workspaces (takes 120s+, never cancel)
@@ -55,6 +59,10 @@ bun fix:deps          # manypkg auto-fix dependency issues
 # Versioning
 bun bump              # Bump monorepo version
 ```
+
+## Testing Policy (summary)
+
+PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
 
 ## Code Style
 
@@ -195,18 +203,23 @@ Defined in root `tsconfig.json`:
 - Migrations: **always** Drizzle Kit (`drizzle-kit generate`) — never hand-written SQL
 - Embeddings: pgvector with 1536 dimensions
 
-### Migrations — HARD RULE
+### Migration discipline (read before touching `packages/api/drizzle/`)
 
-**Do not hand-write SQL migrations.** Always use Drizzle Kit:
+1. **Always generate via drizzle-kit.** Edit `packages/api/src/db/schema.ts` (or `packages/db/src/schema.ts` for the shared workspace), then run from the API package:
 
-1. Change the schema in `packages/db/src/schema/*.ts`
-2. Run `bun --cwd packages/db drizzle-kit generate` to emit the migration SQL
-3. Review the generated `packages/db/drizzle/<NNNN>_<name>.sql` for correctness
-4. Commit both the schema change AND the generated migration in the same PR
+   ```bash
+   cd packages/api && bun run db:generate
+   ```
 
-Hand-written migrations get out of sync with the schema, drift across environments, and break the Better Auth / drizzle-zod / inferred-TS-types unified pipeline (PR #2414). If `drizzle-kit generate` produces a migration you disagree with, **fix the schema or the generator config** — do not edit the SQL by hand.
+   Drizzle-kit emits a random-name file like `0048_loud_squirrel_girl.sql`. That random name is fine — keep it. The naming convention here is "whatever drizzle-kit gives you."
 
-If you find a migration in the repo that was hand-written (no `drizzle-kit` provenance), flag it in your PR description and regenerate from schema as a follow-up commit.
+2. **Do not rename a generated migration file.** The `meta/_journal.json` `tag` field, the migration SQL filename, and the snapshot filename all encode the migration identity together. Renaming any one of them (even with corresponding journal edits) makes the migration look hand-authored and creates drift that future drizzle-kit operations can mis-handle.
+
+3. **Do not hand-edit `meta/_journal.json`, `meta/*_snapshot.json`, or the generated SQL.** If the generated migration is wrong, fix the schema, delete the bad migration + snapshot + journal entry, and regenerate. Do not patch around it.
+
+4. **Collapse additive changes into one migration when they ship together** — fewer snapshot files in the diff, easier to revert as a unit. Splitting only makes sense when migrations need to land in separate releases.
+
+5. **Verify after generating.** Run `bunx drizzle-kit check` from `packages/api/` — it validates the snapshot chain is internally consistent. Run before pushing.
 
 ## EAS Build Profiles
 
