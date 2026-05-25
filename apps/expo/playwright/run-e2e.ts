@@ -146,7 +146,11 @@ async function main() {
   const e2eEnv = parseEnvFile(envE2ePath);
   const localEnv = parseEnvFile(envLocalPath);
   const devVars = parseEnvFile(devVarsPath);
-  const merged = { ...process.env, ...exampleEnv, ...e2eEnv };
+  const explicitTestEnv: EnvMap = {};
+  if (process.env.RUN_AI_E2E) {
+    explicitTestEnv.RUN_AI_E2E = process.env.RUN_AI_E2E;
+  }
+  const merged = { ...process.env, ...exampleEnv, ...e2eEnv, ...explicitTestEnv };
 
   const apiPort = merged.API_PORT ?? '8797';
   const webPort = merged.WEB_PORT ?? '8097';
@@ -172,6 +176,7 @@ async function main() {
     ...process.env,
     ...exampleEnv,
     ...e2eEnv,
+    ...explicitTestEnv,
     ...expoPublicEnv,
     API_PORT: apiPort,
     WEB_PORT: webPort,
