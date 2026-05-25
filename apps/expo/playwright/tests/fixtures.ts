@@ -1,81 +1,36 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { type Browser, type BrowserContext, test as base, type Page } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
+import { z } from 'zod';
+import { testIds } from '../../lib/testIds';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
 export const API_URL = process.env.API_URL ?? 'http://localhost:8787';
 
 const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
+const AUTHENTICATED_APP_TEXT = /Dashboard|Packs/i;
 
-interface CachedAuth {
-  accessToken: string;
-  authMode?: 'credentials' | 'token';
-  refreshToken: string;
-  email: string;
-  password: string;
-  user: Record<string, unknown> | null;
-}
+const CachedAuthSchema = z.object({
+  accessToken: z.string(),
+  authMode: z.enum(['credentials', 'token']).optional(),
+  refreshToken: z.string(),
+  email: z.string().email(),
+  password: z.string(),
+  user: z.record(z.string(), z.unknown()).nullable(),
+});
+
+type CachedAuth = z.infer<typeof CachedAuthSchema>;
 
 export function loadCachedAuth(): CachedAuth {
   if (!fs.existsSync(TOKENS_FILE)) {
     throw new Error(`Auth tokens file not found at ${TOKENS_FILE}. Did globalSetup run?`);
   }
-  // safe-cast: JSON.parse result is validated implicitly by the known file format written by globalSetup
-  return JSON.parse(fs.readFileSync(TOKENS_FILE, 'utf-8')) as CachedAuth;
-}
-
-/**
- * Creates a browser context with auth pre-seeded in localStorage:
- *   - access_token / refresh_token  → read by expo-sqlite kv-store stub + tokenAtom
- *   - user                         → read by ObservablePersistLocalStorage to hydrate userStore
- *                                     (isAuthed is computed from userStore !== null)
- *
- * Using storageState guarantees the values are present before ANY page JS runs.
- */
-async function createAuthedContext(browser: Browser): Promise<BrowserContext> {
-  const { accessToken, authMode, email, password, refreshToken, user } = loadCachedAuth();
-
-  const localStorage = [
-    { name: 'access_token', value: accessToken },
-    { name: 'refresh_token', value: refreshToken },
-    {
-      name: 'packrat_cookie',
-      value: JSON.stringify({ 'better-auth.session_token': { value: accessToken } }),
-    },
-  ];
-
-  if (user) {
-    localStorage.push({ name: 'user', value: JSON.stringify(user) });
-  }
-
-  const context = await browser.newContext();
-  if (authMode !== 'token') {
-    const loginResponse = await context.request.post(`${API_URL}/api/auth/sign-in/email`, {
-      data: { email, password },
-      headers: { Origin: process.env.AUTH_ORIGIN ?? API_URL },
-    });
-    if (!loginResponse.ok()) {
-      throw new Error(
-        `Context login failed ${loginResponse.status()}: ${await loginResponse.text()}`,
-      );
-    }
-  }
-
-  await context.addInitScript(
-    ({ seededLocalStorage }) => {
-      for (const { name, value } of seededLocalStorage) {
-        window.localStorage.setItem(name, value);
-      }
-    },
-    { seededLocalStorage: localStorage },
-  );
-
-  return context;
+  return CachedAuthSchema.parse(JSON.parse(fs.readFileSync(TOKENS_FILE, 'utf-8')));
 }
 
 export type AuthFixtures = {
-  authedPage: Page;
   authCredentials: Pick<CachedAuth, 'email' | 'password'>;
+  signedInPage: Page;
 };
 
 export async function fillInputByTestId({
@@ -98,18 +53,32 @@ export async function fillInputByTestId({
   }, value);
 }
 
+export async function signInViaUi(page: Page, credentials: Pick<CachedAuth, 'email' | 'password'>) {
+  await page.goto(`${BASE_URL}/auth`);
+  await page.getByTestId(testIds.auth.signInEmailBtn).click();
+  await page.locator('input[type="email"]').fill(credentials.email);
+  await page.locator('input[type="password"]').fill(credentials.password);
+
+  const signInResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/sign-in/email') && response.request().method() === 'POST',
+    { timeout: 20_000 },
+  );
+  await page.getByTestId(testIds.auth.continueBtn).click();
+  expect((await signInResponse).ok()).toBeTruthy();
+  await expect(page.getByText(AUTHENTICATED_APP_TEXT).first()).toBeVisible({ timeout: 15_000 });
+}
+
 export const test = base.extend<AuthFixtures>({
-  authedPage: async ({ browser }, use) => {
-    const context = await createAuthedContext(browser);
-    const page = await context.newPage();
+  signedInPage: async ({ page, authCredentials }, use) => {
+    await signInViaUi(page, authCredentials);
     await use(page);
-    await context.close();
   },
-  authCredentials: async ({ browser: _browser }, use) => {
+  authCredentials: async ({ context: _context }, use) => {
     const { email, password } = loadCachedAuth();
     await use({ email, password });
   },
 });
 
-export { expect } from '@playwright/test';
+export { expect };
 export { BASE_URL };

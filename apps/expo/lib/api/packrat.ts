@@ -5,6 +5,7 @@ import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { authClient } from 'expo-app/lib/auth-client';
 import { secureStorage } from 'expo-app/lib/secureStorage';
+import { Platform } from 'react-native';
 import { z } from 'zod';
 
 // The expoClient plugin serialises all cookies into SecureStore under this key.
@@ -26,8 +27,18 @@ function parseSessionToken(cookieJson: string | null): string | null {
   );
 }
 
+const fetchWithWebCredentials = Object.assign(
+  (input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(
+      input,
+      Platform.OS === 'web' ? { ...init, credentials: init?.credentials ?? 'include' } : init,
+    ),
+  { preconnect: fetch.preconnect },
+);
+
 export const apiClient = createApiClient({
   baseUrl: clientEnvs.EXPO_PUBLIC_API_URL,
+  fetcher: fetchWithWebCredentials,
   auth: {
     // Read the token from SecureStore — no network call on every API request.
     getAccessToken: async () => {

@@ -6,7 +6,7 @@
  *   - Item add (manually) / edit / delete
  *   - Validation: empty name on pack and item forms
  *
- * Auth is pre-seeded via the `authedPage` fixture (storageState).
+ * Auth signs in through the UI via the `signedInPage` fixture.
  * Pack IDs are always captured from the POST /api/packs response so that
  * tests can navigate directly to detail/edit routes without relying on
  * post-submit navigation behaviour.
@@ -62,7 +62,7 @@ async function addItemViaForm(
 // ─── Pack CRUD ────────────────────────────────────────────────────────────────
 
 test.describe('Pack CRUD', () => {
-  test('create pack → appears in packs list', async ({ authedPage: page }) => {
+  test('create pack → appears in packs list', async ({ signedInPage: page }) => {
     test.setTimeout(30_000);
     const packName = `E2E-Create-${Date.now()}`;
 
@@ -72,7 +72,7 @@ test.describe('Pack CRUD', () => {
     await expect(page.getByText(packName)).toBeVisible({ timeout: 10_000 });
   });
 
-  test('edit pack name → updated name appears in detail', async ({ authedPage: page }) => {
+  test('edit pack name → updated name appears in detail', async ({ signedInPage: page }) => {
     test.setTimeout(60_000);
     const originalName = `E2E-Edit-${Date.now()}`;
     const updatedName = `${originalName}-UPDATED`;
@@ -108,7 +108,7 @@ test.describe('Pack CRUD', () => {
     await expect(page.getByText(updatedName)).toBeVisible({ timeout: 10_000 });
   });
 
-  test('delete pack → disappears from packs list', async ({ authedPage: page }) => {
+  test('delete pack → disappears from packs list', async ({ signedInPage: page }) => {
     test.setTimeout(60_000);
     const packName = `E2E-Delete-${Date.now()}`;
     const packId = await createPackViaForm(page, packName);
@@ -137,12 +137,12 @@ test.describe('Item CRUD within a pack', () => {
   // Create a fresh pack before each item test so tests are independent
   let sharedPackId: string;
 
-  test.beforeEach(async ({ authedPage: page }) => {
+  test.beforeEach(async ({ signedInPage: page }) => {
     const packName = `E2E-ItemPack-${Date.now()}`;
     sharedPackId = await createPackViaForm(page, packName);
   });
 
-  test('add item manually → appears in pack detail', async ({ authedPage: page }) => {
+  test('add item manually → appears in pack detail', async ({ signedInPage: page }) => {
     test.setTimeout(60_000);
     const itemName = `E2E-Item-${Date.now()}`;
 
@@ -152,7 +152,7 @@ test.describe('Item CRUD within a pack', () => {
     await expect(page.getByText(itemName)).toBeVisible({ timeout: 15_000 });
   });
 
-  test('edit item name → updated name appears in pack detail', async ({ authedPage: page }) => {
+  test('edit item name → updated name appears in pack detail', async ({ signedInPage: page }) => {
     test.setTimeout(90_000);
     const itemName = `E2E-EditItem-${Date.now()}`;
     const updatedItemName = `${itemName}-UPDATED`;
@@ -187,7 +187,7 @@ test.describe('Item CRUD within a pack', () => {
   });
 
   test('delete item via more-actions menu → disappears from pack detail', async ({
-    authedPage: page,
+    signedInPage: page,
   }) => {
     test.setTimeout(90_000);
     const itemName = `E2E-DeleteItem-${Date.now()}`;
@@ -225,7 +225,7 @@ test.describe('Item CRUD within a pack', () => {
 test.describe('Validation', () => {
   test.setTimeout(30_000);
 
-  test('empty pack name → form does not navigate on submit', async ({ authedPage: page }) => {
+  test('empty pack name → form does not navigate on submit', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/pack/new`);
 
     const submitButton = page.getByTestId('submit-pack-button');
@@ -242,7 +242,7 @@ test.describe('Validation', () => {
     expect(page.url()).toBe(formUrl);
   });
 
-  test('empty item name → form does not navigate on submit', async ({ authedPage: page }) => {
+  test('empty item name → form does not navigate on submit', async ({ signedInPage: page }) => {
     const packId = await createPackViaForm(page, `E2E-Validation-${Date.now()}`);
 
     await page.goto(`${BASE_URL}/item/new?packId=${packId}`);

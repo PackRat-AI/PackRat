@@ -2,7 +2,7 @@ import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, fillInputByTestId, test } from './fixtures';
 
 test.describe('Weather web flow', () => {
-  test('searches for a location and saves it locally', async ({ authedPage: page }) => {
+  test('searches for a location and saves it locally', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/weather/search`);
 
     await fillInputByTestId({ page, testID: testIds.weather.searchInput, value: 'Boulder' });
@@ -28,7 +28,7 @@ test.describe('Weather web flow', () => {
     ).toBeVisible();
   });
 
-  test('filters saved locations without touching the network', async ({ authedPage: page }) => {
+  test('filters saved locations without touching the network', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/weather`);
     await page.evaluate(() => {
       window.localStorage.setItem(

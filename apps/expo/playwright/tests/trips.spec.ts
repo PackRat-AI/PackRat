@@ -83,7 +83,7 @@ async function createTrip(
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
 test.describe('Trip CRUD', () => {
-  test('create a trip with dates → appears in list', async ({ authedPage: page }) => {
+  test('create a trip with dates → appears in list', async ({ signedInPage: page }) => {
     test.setTimeout(60_000);
     const tripName = `E2E-Trip-${Date.now()}`;
 
@@ -99,7 +99,7 @@ test.describe('Trip CRUD', () => {
   });
 
   test('create a trip with a description → description visible on detail', async ({
-    authedPage: page,
+    signedInPage: page,
   }) => {
     test.setTimeout(60_000);
     const tripName = `E2E-TripDesc-${Date.now()}`;
@@ -118,7 +118,7 @@ test.describe('Trip CRUD', () => {
     await expect(page.getByText(description)).toBeVisible({ timeout: 15_000 });
   });
 
-  test('edit trip name → updated name visible in detail', async ({ authedPage: page }) => {
+  test('edit trip name → updated name visible in detail', async ({ signedInPage: page }) => {
     test.setTimeout(90_000);
     const originalName = `E2E-EditTrip-${Date.now()}`;
     const updatedName = `${originalName}-EDITED`;
@@ -164,7 +164,7 @@ test.describe('Trip CRUD', () => {
     await expect(page.getByText(updatedName)).toBeVisible({ timeout: 15_000 });
   });
 
-  test('delete trip → disappears from list', async ({ authedPage: page }) => {
+  test('delete trip → disappears from list', async ({ signedInPage: page }) => {
     test.setTimeout(90_000);
     const tripName = `E2E-DeleteTrip-${Date.now()}`;
 
@@ -219,7 +219,7 @@ test.describe('Trip form validation', () => {
   test.setTimeout(30_000);
 
   test('empty trip name → submit button disabled or form stays on page', async ({
-    authedPage: page,
+    signedInPage: page,
   }) => {
     await page.goto(`${BASE_URL}/trip/new`);
 
@@ -249,7 +249,7 @@ test.describe('Trip form validation', () => {
     expect(page.url()).toContain('/trip/new');
   });
 
-  test('end date before start date → validation message shown', async ({ authedPage: page }) => {
+  test('end date before start date → validation message shown', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/trip/new`);
 
     await page.getByTestId('trips:name-input').fill('Validation Test Trip');
@@ -292,19 +292,19 @@ test.describe('Trip form validation', () => {
 // ─── List UI ──────────────────────────────────────────────────────────────────
 
 test.describe('Trips list', () => {
-  test('trips list shows create button', async ({ authedPage: page }) => {
+  test('trips list shows create button', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/trips`);
     await expect(page.getByTestId('create-trip-button')).toBeVisible();
   });
 
-  test('create-trip-button navigates to /trip/new', async ({ authedPage: page }) => {
+  test('create-trip-button navigates to /trip/new', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/trips`);
     await page.getByTestId('create-trip-button').click();
     await page.waitForURL(/\/trip\/new/, { timeout: 5_000 });
     expect(page.url()).toContain('/trip/new');
   });
 
-  test('trip list item links to correct trip detail', async ({ authedPage: page }) => {
+  test('trip list item links to correct trip detail', async ({ signedInPage: page }) => {
     test.setTimeout(60_000);
     const tripName = `E2E-ListItem-${Date.now()}`;
 

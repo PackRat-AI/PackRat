@@ -9,7 +9,7 @@ import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 
-test('dashboard loads authenticated', async ({ authedPage: page }) => {
+test('dashboard loads authenticated', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/`);
   // Tab bar must be visible — confirms app rendered past the auth gate
   await expect(page.getByRole('tab', { name: /Dashboard/i })).toBeVisible();
@@ -18,12 +18,12 @@ test('dashboard loads authenticated', async ({ authedPage: page }) => {
 
 // ─── Packs ───────────────────────────────────────────────────────────────────
 
-test('packs tab loads and shows create button', async ({ authedPage: page }) => {
+test('packs tab loads and shows create button', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/packs`);
   await expect(page.getByTestId('create-pack-button')).toBeVisible();
 });
 
-test('create a pack end-to-end', async ({ authedPage: page }) => {
+test('create a pack end-to-end', async ({ signedInPage: page }) => {
   const packName = `E2E-Pack-${Date.now()}`;
 
   // Use waitForResponse to capture the created pack ID.
@@ -47,7 +47,7 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
 
 // ─── Pack Detail — add items ─────────────────────────────────────────────────
 
-test('add item manually to a pack', async ({ authedPage: page }) => {
+test('add item manually to a pack', async ({ signedInPage: page }) => {
   const packName = `E2E-AddItem-${Date.now()}`;
 
   // Create a pack via API and capture the ID
@@ -88,7 +88,7 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
   await expect(page.getByText('Test Tent')).toBeVisible({ timeout: 15_000 });
 });
 
-test('add item from catalog to a pack', async ({ authedPage: page }) => {
+test('add item from catalog to a pack', async ({ signedInPage: page }) => {
   const packName = `E2E-Catalog-${Date.now()}`;
 
   // Create a pack and capture the ID
@@ -127,12 +127,12 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
 // ─── Trips ────────────────────────────────────────────────────────────────────
 
-test('trips tab loads', async ({ authedPage: page }) => {
+test('trips tab loads', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/trips`);
   await expect(page.getByText('Create New Trip')).toBeVisible();
 });
 
-test('create a trip with dates', async ({ authedPage: page }) => {
+test('create a trip with dates', async ({ signedInPage: page }) => {
   test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
 
@@ -182,13 +182,13 @@ test('create a trip with dates', async ({ authedPage: page }) => {
 
 // ─── Catalog ──────────────────────────────────────────────────────────────────
 
-test('catalog tab loads items', async ({ authedPage: page }) => {
+test('catalog tab loads items', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
   // Wait for items to load — at least one item name visible
   await expect(page.locator('text=/\\d+,?\\d+ items/i').first()).toBeVisible({ timeout: 15_000 });
 });
 
-test('catalog search filters results', async ({ authedPage: page }) => {
+test('catalog search filters results', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
   // Wait for initial load
   await page.waitForLoadState('networkidle');
@@ -205,14 +205,14 @@ test('catalog search filters results', async ({ authedPage: page }) => {
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
-test('profile screen loads user info', async ({ authedPage: page }) => {
+test('profile screen loads user info', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/profile`);
   await expect(page.getByText('Account Information')).toBeVisible();
   // User email should be visible
   await expect(page.getByText(/@/).first()).toBeVisible();
 });
 
-test('profile name edit screen', async ({ authedPage: page }) => {
+test('profile name edit screen', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/profile/name`);
   await expect(page.getByRole('heading', { name: 'Name' })).toBeVisible();
   await expect(page.getByRole('textbox')).toHaveCount(2); // First + Last
@@ -220,7 +220,7 @@ test('profile name edit screen', async ({ authedPage: page }) => {
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
-test('settings screen loads', async ({ authedPage: page }) => {
+test('settings screen loads', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText('AI Models')).toBeVisible();
   await expect(page.getByText('Danger Zone')).toBeVisible();
@@ -229,7 +229,7 @@ test('settings screen loads', async ({ authedPage: page }) => {
 
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
 
-test('AI chat sends message and gets response', async ({ authedPage: page }) => {
+test('AI chat sends message and gets response', async ({ signedInPage: page }) => {
   test.skip(
     process.env.RUN_AI_E2E !== 'true',
     'requires RUN_AI_E2E=true and real AI provider credentials on the local/dev API',
@@ -269,7 +269,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
 
 // ─── Weather ──────────────────────────────────────────────────────────────────
 
-test('weather screen loads', async ({ authedPage: page }) => {
+test('weather screen loads', async ({ signedInPage: page }) => {
   await page.goto(`${BASE_URL}/weather`);
   await expect(page.getByText('Weather', { exact: true }).first()).toBeVisible();
   // Empty state or locations list

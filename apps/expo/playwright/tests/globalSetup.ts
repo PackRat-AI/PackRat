@@ -1,14 +1,13 @@
 /**
  * Playwright global setup — runs once before all tests.
  *
- * Priority order for obtaining auth tokens:
- *   1. TEST_ACCESS_TOKEN — used directly (no API call)
- *   2. TEST_EMAIL + TEST_PASSWORD — logs in against the API (matches the
- *      iOS/Android Maestro pattern: seed the user, then log in with credentials)
- *   3. Fallback — signs up a fresh ephemeral Better Auth user.
+ * Priority order for obtaining throwaway auth credentials:
+ *   1. TEST_ACCESS_TOKEN — legacy token path, retained for CI compatibility.
+ *   2. TEST_EMAIL + TEST_PASSWORD — verifies the seeded E2E user can log in.
+ *   3. Fallback — signs up a fresh ephemeral Better Auth user for local dev.
  *
- * The resulting tokens are written to .auth-tokens.json so the authedPage
- * fixture can seed localStorage without hitting auth on every test.
+ * The resulting credentials are written to .auth-tokens.json so normal-user
+ * specs can sign in through the UI.
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';

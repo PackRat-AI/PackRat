@@ -35,6 +35,11 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
   const disableJwtPlugin =
     allowLocalAuthOverrides &&
     (env.BETTER_AUTH_DISABLE_JWT === 'true' || process.env.BETTER_AUTH_DISABLE_JWT === 'true');
+  const trustedOrigins = [
+    env.BETTER_AUTH_URL,
+    'packrat://',
+    ...(allowLocalAuthOverrides ? ['http://localhost:*'] : []),
+  ];
   const authPlugins = [
     // Bearer: converts Authorization: Bearer <token> into a session cookie
     // transparently so existing mobile/API clients keep working.
@@ -163,7 +168,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    trustedOrigins,
   });
 
   authCache.set(env as object, auth);

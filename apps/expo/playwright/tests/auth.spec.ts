@@ -102,7 +102,7 @@ test.describe('Auth web flow', () => {
     await expect(page.getByText(authCredentials.email)).toBeVisible();
   });
 
-  test('signs out from profile and returns to guest auth state', async ({ authedPage: page }) => {
+  test('signs out from profile and returns to guest auth state', async ({ signedInPage: page }) => {
     page.on('dialog', (dialog) => dialog.accept());
 
     await page.goto(`${BASE_URL}/profile`);

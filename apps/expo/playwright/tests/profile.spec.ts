@@ -1,8 +1,8 @@
 /**
  * Web E2E tests for PackRat profile functionality.
  *
- * Tests use the `authedPage` fixture which pre-seeds auth tokens in
- * localStorage before any page JS runs.
+ * Tests use the `signedInPage` fixture, which signs in through the UI before
+ * navigating to profile routes.
  *
  * TestIds match the constants in lib/testIds.ts.
  */
@@ -12,14 +12,14 @@ import { BASE_URL, expect, test } from './fixtures';
 // ─── Profile name edit ────────────────────────────────────────────────────────
 
 test.describe('Profile name edit', () => {
-  test('both name inputs are visible on /profile/name', async ({ authedPage: page }) => {
+  test('both name inputs are visible on /profile/name', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/profile/name`);
 
     await expect(page.getByTestId(testIds.profile.firstNameInput)).toBeVisible();
     await expect(page.getByTestId(testIds.profile.lastNameInput)).toBeVisible();
   });
 
-  test('save button is disabled when name is unchanged', async ({ authedPage: page }) => {
+  test('save button is disabled when name is unchanged', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/profile/name`);
 
     const saveBtn = page.getByTestId(testIds.profile.saveBtn);
@@ -30,7 +30,7 @@ test.describe('Profile name edit', () => {
     await expect(saveBtn).toHaveAttribute('aria-disabled', 'true');
   });
 
-  test('save button enables after editing first name', async ({ authedPage: page }) => {
+  test('save button enables after editing first name', async ({ signedInPage: page }) => {
     await page.goto(`${BASE_URL}/profile/name`);
 
     const firstNameInput = page.getByTestId(testIds.profile.firstNameInput);
@@ -56,7 +56,7 @@ test.describe('Profile name edit', () => {
   });
 
   test('editing name and saving navigates back to /profile with updated name', async ({
-    authedPage: page,
+    signedInPage: page,
   }) => {
     test.setTimeout(60_000);
     const newFirst = `E2E-${Date.now()}`;
@@ -120,7 +120,7 @@ test.describe('Profile name edit', () => {
 // This describe block must run last as it destroys the auth session.
 
 test.describe('Sign-out', () => {
-  test('sign-out button is visible on profile screen', async ({ authedPage: page }) => {
+  test('sign-out button is visible on profile screen', async ({ signedInPage: page }) => {
     // Full sign-out flow is skipped: "Stay logged out" sets skipped_login=true which
     // prevents the /auth redirect after reload, making the nav assertion unreliable.
     await page.goto(`${BASE_URL}/profile`);
