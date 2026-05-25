@@ -303,7 +303,7 @@ function ListFooterComponent() {
               // dialogs are not surfaced in XCTest/UIAutomator accessibility trees).
               Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
                 { text: t('common.cancel'), style: 'cancel' },
-                { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
+                { text: t('auth.proceedLogOut'), style: 'destructive', onPress: handleSignOut },
               ]);
               return;
             }

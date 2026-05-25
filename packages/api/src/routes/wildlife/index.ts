@@ -3,6 +3,7 @@ import { authPlugin } from '@packrat/api/middleware/auth';
 import { WildlifeIdentificationService } from '@packrat/api/services/wildlifeIdentificationService';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { WildlifeIdentifyRequestSchema } from '@packrat/schemas/wildlife';
 import { Elysia, status } from 'elysia';
 
@@ -39,9 +40,6 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' })
       try {
         identification = await service.identifySpecies(imageUrl);
       } catch (error) {
-        console.error('Error identifying wildlife:', error);
-
-        // Clean up temp upload on error
         await PACKRAT_BUCKET.delete(image).catch((err: unknown) => {
           console.error('Failed to delete temp upload from R2:', err);
         });
@@ -55,10 +53,15 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' })
           }
         }
 
+        captureApiException({
+          error: error,
+          operation: 'wildlife.identify',
+          userId: user.userId,
+          tags: { feature: 'wildlife' },
+        });
         return status(500, { error: 'Failed to identify species' });
       }
 
-      // Map AI results with stable IDs derived from scientific name
       const slugify = (name: string) =>
         name.toLowerCase().replaceAll(SPACES_AND_DOTS, '-').replaceAll(NON_SLUG_CHARS, '');
 

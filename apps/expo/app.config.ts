@@ -63,7 +63,7 @@ export default (): ExpoConfig =>
         [
           'llama.rn',
           {
-            enableEntitlements: false,
+            enableEntitlements: true,
             forceCxx20: true,
             enableOpenCLAndHexagon: false,
           },
@@ -146,6 +146,10 @@ export default (): ExpoConfig =>
             },
           ],
         },
+        entitlements: {
+          'com.apple.developer.kernel.extended-virtual-addressing': true,
+          'com.apple.developer.kernel.increased-memory-limit': true,
+        },
       },
       android: {
         adaptiveIcon: {
@@ -163,6 +167,7 @@ export default (): ExpoConfig =>
         eas: {
           projectId: '267945b1-d9ac-4621-8541-826a2c70576d',
         },
+        appVariant: IS_DEV ? 'development' : IS_PREVIEW ? 'preview' : 'production',
       },
       updates: {
         url: 'https://u.expo.dev/267945b1-d9ac-4621-8541-826a2c70576d',

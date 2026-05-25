@@ -1,6 +1,7 @@
 import { createOsmDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { stitchRouteGeometry } from '@packrat/api/services/trails';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { RouteDetailRowSchema, RouteSearchRowSchema } from '@packrat/schemas/trails';
 import { sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -93,7 +94,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
         }
-        console.error('Trail search error:', error);
+        captureApiException({
+          error: error,
+          operation: 'trails.search',
+          tags: { feature: 'trails' },
+          extra: { q, lat, lon, radius, sport, httpStatus: 500, errorCode: 'TRAILS_SEARCH_ERROR' },
+        });
         return status(500, { error: 'Trail search failed' });
       }
     },
@@ -175,7 +181,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
         }
-        console.error('Trail geometry error:', error);
+        captureApiException({
+          error: error,
+          operation: 'trails.geometry',
+          tags: { feature: 'trails' },
+          extra: { osmId: String(osmId), httpStatus: 500, errorCode: 'TRAILS_GEOMETRY_ERROR' },
+        });
         return status(500, { error: 'Failed to fetch trail geometry' });
       }
     },
@@ -238,7 +249,12 @@ export const trailsRoutes = new Elysia({ prefix: '/trails' })
         if (error instanceof Error && error.message.includes('not configured')) {
           return status(503, { error: 'Trail features are not enabled on this server' });
         }
-        console.error('Trail fetch error:', error);
+        captureApiException({
+          error: error,
+          operation: 'trails.getById',
+          tags: { feature: 'trails' },
+          extra: { osmId: String(osmId), httpStatus: 500, errorCode: 'TRAILS_GET_BY_ID_ERROR' },
+        });
         return status(500, { error: 'Failed to fetch trail' });
       }
     },
