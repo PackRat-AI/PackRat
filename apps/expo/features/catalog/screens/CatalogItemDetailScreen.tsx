@@ -74,7 +74,12 @@ export function CatalogItemDetailScreen() {
           <View className="mb-2">
             <View className="flex-row items-baseline justify-between">
               <View className="flex-1">
-                <Text className="text-2xl font-bold text-foreground">{item.name}</Text>
+                <Text
+                  testID={testIds.catalog.detailTitle}
+                  className="text-2xl font-bold text-foreground"
+                >
+                  {item.name}
+                </Text>
               </View>
               {item.ratingValue && (
                 <View className="flex-row items-center">
@@ -115,7 +120,10 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 flex-row flex-wrap gap-1">
             <View className="mb-2 mr-4">
-              <Text className="text-xs uppercase text-muted-foreground">
+              <Text
+                testID={testIds.catalog.detailWeight}
+                className="text-xs uppercase text-muted-foreground"
+              >
                 {t('catalog.weightLabel')}
               </Text>
               <Chip textClassName="text-center" variant="secondary">

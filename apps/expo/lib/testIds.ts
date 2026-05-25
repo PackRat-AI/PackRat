@@ -99,6 +99,15 @@ export const testIds = Object.freeze({
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
     item: (id: string | number) => `catalog:item-${id}`,
+    detailTitle: 'catalog:detail-title',
+    detailWeight: 'catalog:detail-weight',
+    packSelectionSearchInput: 'catalog:pack-selection-search-input',
+    packSelectionItem: (id: string | number) => `catalog:pack-selection-item-${id}`,
+    selectedPackName: 'catalog:selected-pack-name',
+    quantityInput: 'catalog:quantity-input',
+    notesInput: 'catalog:notes-input',
+    categoryInput: 'catalog:category-input',
+    addDetailsSubmitBtn: 'catalog:add-details-submit',
   }),
 
   // ── Profile ───────────────────────────────────────────────────────────────

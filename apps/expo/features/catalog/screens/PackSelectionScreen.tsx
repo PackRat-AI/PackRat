@@ -4,6 +4,7 @@ import { SearchInput } from 'expo-app/components/SearchInput';
 import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
@@ -82,6 +83,7 @@ export function PackSelectionScreen() {
       <View className="p-4">
         <View className="mb-4">
           <SearchInput
+            testID={testIds.catalog.packSelectionSearchInput}
             textContentType="none"
             autoComplete="off"
             value={searchQuery}
@@ -99,6 +101,7 @@ export function PackSelectionScreen() {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
+                  testID={testIds.catalog.packSelectionItem(item.id)}
                   className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
                   onPress={() => handlePackSelect(item.id)}
                   activeOpacity={0.7}

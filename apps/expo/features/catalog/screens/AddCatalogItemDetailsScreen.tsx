@@ -8,6 +8,7 @@ import { TextInput } from 'expo-app/components/TextInput';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -164,7 +165,12 @@ export function AddCatalogItemDetailsScreen() {
             <View className="flex-row items-center justify-between">
               <View>
                 <Text className="text-sm text-muted-foreground">{t('catalog.selectedPack')}</Text>
-                <Text className="text-base font-medium text-foreground">{pack.name}</Text>
+                <Text
+                  testID={testIds.catalog.selectedPackName}
+                  className="text-base font-medium text-foreground"
+                >
+                  {pack.name}
+                </Text>
                 <View className="mt-1 flex-row items-center">
                   <Icon name="basket-outline" size={14} color={colors.grey} />
                   <Text className="ml-1 text-xs text-muted-foreground">
@@ -207,6 +213,7 @@ export function AddCatalogItemDetailsScreen() {
                     <Icon name="minus" size={18} color={colors.foreground} />
                   </TouchableOpacity>
                   <TextInput
+                    testID={testIds.catalog.quantityInput}
                     className="flex-1 border-y border-border bg-background px-3 py-2 text-center text-foreground"
                     value={quantity}
                     onChangeText={setQuantity}
@@ -229,6 +236,7 @@ export function AddCatalogItemDetailsScreen() {
                   {t('catalog.notes')}
                 </Text>
                 <TextInput
+                  testID={testIds.catalog.notesInput}
                   className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
                   value={notes}
                   onChangeText={setNotes}
@@ -244,6 +252,7 @@ export function AddCatalogItemDetailsScreen() {
                   {t('catalog.category')}
                 </Text>
                 <TextInput
+                  testID={testIds.catalog.categoryInput}
                   className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
                   value={category}
                   onChangeText={setCategory}
@@ -275,7 +284,11 @@ export function AddCatalogItemDetailsScreen() {
             </View>
 
             <View className="mb-2 mt-6">
-              <Button onPress={handleAddToPack} disabled={isAdding}>
+              <Button
+                testID={testIds.catalog.addDetailsSubmitBtn}
+                onPress={handleAddToPack}
+                disabled={isAdding}
+              >
                 {isAdding ? (
                   <ActivityIndicator color={colors.foreground} />
                 ) : (
