@@ -4,7 +4,7 @@ import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { authClient } from 'expo-app/lib/auth-client';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from 'expo-app/lib/secureStorage';
 import { z } from 'zod';
 
 // The expoClient plugin serialises all cookies into SecureStore under this key.
@@ -31,7 +31,7 @@ export const apiClient = createApiClient({
   auth: {
     // Read the token from SecureStore — no network call on every API request.
     getAccessToken: async () => {
-      const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
+      const cookieStr = await secureStorage.getItemAsync(COOKIE_STORE_KEY);
       return parseSessionToken(cookieStr);
     },
     // Better Auth has no separate refresh-token endpoint; the 7-day session

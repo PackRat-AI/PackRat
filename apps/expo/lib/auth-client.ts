@@ -1,7 +1,7 @@
 import { expoClient } from '@better-auth/expo/client';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { createAuthClient } from 'better-auth/react';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from './secureStorage';
 
 export const authClient = createAuthClient({
   baseURL: clientEnvs.EXPO_PUBLIC_API_URL,
@@ -10,8 +10,8 @@ export const authClient = createAuthClient({
       scheme: 'packrat',
       storagePrefix: 'packrat',
       storage: {
-        setItem: (key: string, value: string) => SecureStore.setItem(key, value),
-        getItem: (key: string) => SecureStore.getItem(key),
+        setItem: secureStorage.setItem,
+        getItem: secureStorage.getItem,
       },
     }),
   ],
