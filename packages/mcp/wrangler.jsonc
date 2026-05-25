@@ -33,8 +33,8 @@
   "kv_namespaces": [
     {
       "binding": "OAUTH_KV",
-      "id": "__TODO_OAUTH_KV_DEV_ID__",
-      "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
+      "id": "be554ba7448c4c13a48e85d9a0cdabc8",
+      "preview_id": "be554ba7448c4c13a48e85d9a0cdabc8"
     }
   ],
   "durable_objects": {
@@ -106,7 +106,7 @@
       "kv_namespaces": [
         {
           "binding": "OAUTH_KV",
-          "id": "__TODO_OAUTH_KV_PROD_ID__"
+          "id": "0ac2e23bb4f04dc5a39cfd3d7bc900e0"
         }
       ],
       "durable_objects": {
@@ -143,8 +143,8 @@
       "kv_namespaces": [
         {
           "binding": "OAUTH_KV",
-          "id": "__TODO_OAUTH_KV_DEV_ID__",
-          "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
+          "id": "be554ba7448c4c13a48e85d9a0cdabc8",
+          "preview_id": "be554ba7448c4c13a48e85d9a0cdabc8"
         }
       ],
       "durable_objects": {
