@@ -230,7 +230,10 @@ test('settings screen loads', async ({ authedPage: page }) => {
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
 
 test('AI chat sends message and gets response', async ({ authedPage: page }) => {
-  test.skip(process.env.RUN_AI_E2E !== 'true', 'requires RUN_AI_E2E=true and a local AI provider');
+  test.skip(
+    process.env.RUN_AI_E2E !== 'true',
+    'requires RUN_AI_E2E=true and real AI provider credentials on the local/dev API',
+  );
   test.setTimeout(60_000); // AI streaming responses can take 20-30s
   // Create a pack to chat about first
   const packName = `E2E-AI-${Date.now()}`;
@@ -254,12 +257,14 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   await expect(page.getByText(/working with your/i).first()).toBeVisible();
 
   // Send a message
-  await page.getByRole('textbox', { name: /Ask about this pack/i }).fill('List 3 essential items.');
+  await page
+    .getByRole('textbox', { name: /Ask about this pack/i })
+    .fill('Reply with exactly: E2E AI OK');
   // Send button is icon-only with no accessible name; use the arrow-up icon character
   await page.getByText('󰁝').click();
 
   // Wait for AI response (streaming may take a while)
-  await expect(page.getByText(/item/i).nth(1)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/E2E AI OK/i)).toBeVisible({ timeout: 45_000 });
 });
 
 // ─── Weather ──────────────────────────────────────────────────────────────────

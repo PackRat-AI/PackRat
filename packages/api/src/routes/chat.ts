@@ -114,7 +114,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_AI_GATEWAY_ID) {
         response.headers.set('Access-Control-Allow-Origin', '*');
         response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       }
 
       return response;
