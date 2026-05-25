@@ -18,7 +18,7 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
-    video: 'on-first-retry',
+    video: 'off',
     headless: true,
   },
 
