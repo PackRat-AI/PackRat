@@ -52,7 +52,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     func testAuthenticatedVisualSurface() throws {
-        try signIn()
+        launchAuthenticated()
         capture("20-auth-home")
 
         #if os(iOS)
@@ -63,7 +63,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     func testAuthenticatedModalSurface() throws {
-        try signIn()
+        launchAuthenticated()
 
         #if os(iOS)
         capturePhoneModalSurface(mode: .authenticated)
@@ -278,34 +278,50 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func tapAndCapture(button label: String, name: String) {
-        let button = app.buttons[label]
-        guard button.waitForExistence(timeout: 3) else { return }
-        if button.isHittable {
-            button.tap()
-        } else {
-            activate(button)
-        }
+        guard let button = findButton(label: label, timeout: 3) else { return }
+        activate(button)
         capture(name)
         dismissPresentedSurface()
     }
 
     private func tapAndCapture(identifier: String, name: String) {
-        let button = app.buttons[identifier]
-        guard button.waitForExistence(timeout: 3) else { return }
-        if button.isHittable {
-            button.tap()
-        } else {
-            activate(button)
-        }
+        guard let button = findButton(identifier: identifier, timeout: 3) else { return }
+        activate(button)
         capture(name)
         dismissPresentedSurface()
     }
 
+    private func findButton(label: String, timeout: TimeInterval) -> XCUIElement? {
+        let query = app.buttons.matching(NSPredicate(format: "label == %@", label))
+        return findConcreteElement(in: query, timeout: timeout)
+    }
+
+    private func findButton(identifier: String, timeout: TimeInterval) -> XCUIElement? {
+        let query = app.buttons.matching(identifier: identifier)
+        return findConcreteElement(in: query, timeout: timeout)
+    }
+
+    private func findConcreteElement(in query: XCUIElementQuery, timeout: TimeInterval) -> XCUIElement? {
+        guard query.firstMatch.waitForExistence(timeout: timeout) else { return nil }
+        for element in query.allElementsBoundByIndex where element.exists && element.isHittable {
+            return element
+        }
+        return query.firstMatch.exists ? query.firstMatch : nil
+    }
+
     private func activate(_ element: XCUIElement) {
         #if os(macOS)
-        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        if element.isHittable {
+            element.click()
+        } else {
+            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        }
         #else
-        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        if element.isHittable {
+            element.tap()
+        } else {
+            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
         #endif
     }
 
@@ -329,36 +345,29 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
-    private func signIn() throws {
+    private func launchAuthenticated() {
         let bundle = Bundle(for: VisualScreenshotTests.self)
-        let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String) ?? ""
-        let password = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String) ?? ""
-        guard !email.isEmpty, !password.isEmpty else {
-            throw XCTSkip("PACKRAT_E2E_EMAIL / PACKRAT_E2E_PASSWORD are required for authenticated screenshots.")
-        }
+        let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
+            ?? "e2e@packrat.test"
+        let userId = ProcessInfo.processInfo.environment["E2E_TEST_USER_ID"]
+            ?? "00000000-0000-4000-8000-000000000001"
 
-        let signIn = app.buttons["auth_sign_in"]
-        XCTAssertTrue(signIn.waitForExistence(timeout: 10))
-        signIn.tap()
-
-        let emailField = app.textFields["login_email"]
-        XCTAssertTrue(emailField.waitForExistence(timeout: 10))
-        emailField.tap()
-        emailField.typeText(email)
-
-        let passwordField = app.secureTextFields["login_password"]
-        passwordField.tap()
-        passwordField.typeText(password)
-
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments = [
+            "--disable-animations",
+            "--use-userdefaults-auth",
+            "--reset-auth",
+            "--seed-e2e-auth",
+        ]
+        app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
+        app.launchEnvironment["PACKRAT_E2E_EMAIL"] = email
+        app.launchEnvironment["PACKRAT_E2E_USER_ID"] = userId
+        app.launch()
         #if os(macOS)
-        app.typeText("\u{1b}")
+        app.activate()
         #endif
-        app.buttons["login_submit"].tap()
-
-        guard waitForAuthenticatedShell() else {
-            capture("20-auth-sign-in-blocked")
-            throw XCTSkip("Authenticated visual surface unavailable: sign-in did not reach the app shell.")
-        }
+        XCTAssertTrue(waitForAuthenticatedShell(), "Authenticated visual shell must launch from seeded E2E state")
     }
 
     private func waitForAuthenticatedShell() -> Bool {
