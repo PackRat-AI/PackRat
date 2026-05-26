@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 /**
  * Run PackRat Swift XCUITests with credentials loaded from .env.local.
  *
@@ -44,9 +45,9 @@ const SQUOTE_RE = /'/g;
 
 // ── Load .env.local ───────────────────────────────────────────────────────────
 
-const envFile = resolve(REPO_ROOT, '.env.local');
-if (existsSync(envFile)) {
-  for (const line of readFileSync(envFile, 'utf8').split('\n')) {
+function loadEnvFile(path: string, override = false): void {
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
     const eq = trimmed.indexOf('=');
@@ -56,9 +57,13 @@ if (existsSync(envFile)) {
       .slice(eq + 1)
       .trim()
       .replace(QUOTE_RE, '');
-    if (process.env[key] === undefined) process.env[key] = value;
+    if (override || process.env[key] === undefined) process.env[key] = value;
   }
 }
+
+loadEnvFile(resolve(REPO_ROOT, '.env.local'));
+loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars'), true);
+loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e'), true);
 
 const { E2E_EMAIL, E2E_PASSWORD } = process.env;
 if (!E2E_EMAIL || !E2E_PASSWORD) {
@@ -66,6 +71,7 @@ if (!E2E_EMAIL || !E2E_PASSWORD) {
   process.exit(1);
 }
 const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
+const localE2ESessionToken = deriveLocalE2ESessionToken();
 
 if (!existsSync(SCHEME_PATH)) {
   console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
@@ -83,7 +89,35 @@ function escapeXml(s: string): string {
     .replace(SQUOTE_RE, '&apos;');
 }
 
-function injectScheme({ email, password }: { email: string; password: string }): void {
+function deriveLocalE2ESessionToken(): string | undefined {
+  const dbUrl = process.env.NEON_DATABASE_URL ?? '';
+  const secret = process.env.BETTER_AUTH_SECRET;
+  const email = process.env.E2E_TEST_EMAIL?.toLowerCase();
+  const userId = process.env.E2E_TEST_USER_ID;
+  if (!(dbUrl.includes('127.0.0.1') || dbUrl.includes('localhost'))) return undefined;
+  if (!secret || !email || !userId) return undefined;
+  const digest = createHash('sha256').update([secret, email, userId].join(':')).digest('hex');
+  return `e2e-local.${digest}`;
+}
+
+type SchemeEnv = {
+  email: string;
+  password: string;
+  sessionToken?: string;
+  userId?: string;
+};
+
+function environmentVariableXml(key: string, value: string): string {
+  return [
+    '         <EnvironmentVariable',
+    `            key = "${escapeXml(key)}"`,
+    `            value = "${escapeXml(value)}"`,
+    '            isEnabled = "YES">',
+    '         </EnvironmentVariable>',
+  ].join('\n');
+}
+
+function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): void {
   let content = readFileSync(SCHEME_PATH, 'utf8');
 
   // Strip any prior EnvironmentVariables block (idempotent re-runs).
@@ -92,18 +126,18 @@ function injectScheme({ email, password }: { email: string; password: string }):
   // Force TestAction to use its own env vars rather than inheriting from Run.
   content = content.replace(TEST_ACTION_INHERIT_RE, '$1shouldUseLaunchSchemeArgsEnv = "NO"');
 
+  const variables = [
+    environmentVariableXml('E2E_EMAIL', email),
+    environmentVariableXml('E2E_PASSWORD', password),
+    environmentVariableXml('PACKRAT_E2E_EMAIL', process.env.E2E_TEST_EMAIL ?? email),
+  ];
+  if (sessionToken)
+    variables.push(environmentVariableXml('PACKRAT_E2E_SESSION_TOKEN', sessionToken));
+  if (userId) variables.push(environmentVariableXml('PACKRAT_E2E_USER_ID', userId));
+
   const block = [
     '      <EnvironmentVariables>',
-    '         <EnvironmentVariable',
-    '            key = "E2E_EMAIL"',
-    `            value = "${escapeXml(email)}"`,
-    '            isEnabled = "YES">',
-    '         </EnvironmentVariable>',
-    '         <EnvironmentVariable',
-    '            key = "E2E_PASSWORD"',
-    `            value = "${escapeXml(password)}"`,
-    '            isEnabled = "YES">',
-    '         </EnvironmentVariable>',
+    ...variables,
     '      </EnvironmentVariables>',
     '',
   ].join('\n');
@@ -150,7 +184,12 @@ try {
 
 // ── Run xcodebuild ───────────────────────────────────────────────────────────
 
-injectScheme({ email: E2E_EMAIL, password: E2E_PASSWORD });
+injectScheme({
+  email: E2E_EMAIL,
+  password: E2E_PASSWORD,
+  sessionToken: localE2ESessionToken,
+  userId: process.env.E2E_TEST_USER_ID,
+});
 console.log('✓ Injected E2E credentials into scheme');
 
 const dest = pickDestination();
@@ -178,6 +217,8 @@ const args = [
   // no file patching, no .local overrides.
   `PACKRAT_E2E_EMAIL=${E2E_EMAIL}`,
   `PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}`,
+  `PACKRAT_E2E_SESSION_TOKEN=${localE2ESessionToken ?? ''}`,
+  `PACKRAT_E2E_USER_ID=${process.env.E2E_TEST_USER_ID ?? ''}`,
   `PACKRAT_ENV=${PACKRAT_ENV}`,
 ];
 
@@ -187,7 +228,12 @@ function escapeRegExp(s: string): string {
 
 function redactSecrets(output: string): string {
   let redacted = output;
-  for (const secret of [E2E_EMAIL, E2E_PASSWORD]) {
+  for (const secret of [
+    E2E_EMAIL,
+    E2E_PASSWORD,
+    process.env.E2E_TEST_EMAIL,
+    localE2ESessionToken,
+  ]) {
     if (secret) {
       redacted = redacted.replace(new RegExp(escapeRegExp(secret), 'g'), '[REDACTED]');
     }

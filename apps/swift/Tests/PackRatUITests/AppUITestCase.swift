@@ -30,6 +30,27 @@ class AppUITestCase: XCTestCase {
         // Avoid macOS Keychain access prompts when Xcode repeatedly rebuilds
         // and ad-hoc signs the test host during UI test runs.
         app.launchArguments.append("--use-userdefaults-auth")
+        // Feature suites need a fresh auth decision. AuthTests overrides setup
+        // for guest mode. Local API runs can provide the same derived E2E
+        // bearer token accepted by the worker, avoiding brittle UI sign-in
+        // while still exercising authenticated API routes.
+        app.launchArguments.append("--reset-auth")
+        let bundle = Bundle(for: AppUITestCase.self)
+        let seededAuthToken =
+            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)
+            ?? ProcessInfo.processInfo.environment["PACKRAT_E2E_SESSION_TOKEN"]
+            ?? ""
+        if !seededAuthToken.isEmpty {
+            let runnerEnvironment = ProcessInfo.processInfo.environment
+            app.launchArguments.append("--seed-e2e-auth")
+            app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = seededAuthToken
+            app.launchEnvironment["PACKRAT_E2E_EMAIL"] = runnerEnvironment["PACKRAT_E2E_EMAIL"]
+                ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
+                ?? ""
+            app.launchEnvironment["PACKRAT_E2E_USER_ID"] = runnerEnvironment["PACKRAT_E2E_USER_ID"]
+                ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
+                ?? ""
+        }
         app.launch()
         #if os(macOS)
         app.activate()
