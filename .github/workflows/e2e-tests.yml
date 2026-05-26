@@ -74,7 +74,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -420,7 +420,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-e2e-results
           path: test-results/
@@ -428,7 +428,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-e2e-failure-artifacts
           path: ~/.maestro/tests/
@@ -436,7 +436,7 @@ jobs:
 
       - name: Upload wrangler dev log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-wrangler-dev-log
           path: /tmp/wrangler-dev.log
@@ -503,7 +503,7 @@ jobs:
           free -h
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -747,7 +747,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-e2e-results
           path: test-results/
@@ -755,7 +755,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-e2e-failure-artifacts
           path: ~/.maestro/tests/
@@ -763,7 +763,7 @@ jobs:
 
       - name: Upload wrangler dev log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-wrangler-dev-log
           path: /tmp/wrangler-dev.log
