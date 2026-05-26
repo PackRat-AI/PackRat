@@ -51,7 +51,7 @@
  */
 
 import { type ApiClient, createApiClient } from '@packrat/api-client';
-import { isObject, isString } from '@packrat/guards';
+import { isNumber, isObject, isString } from '@packrat/guards';
 
 export type TokenProvider = () => string | null | undefined;
 
@@ -372,7 +372,7 @@ export const PAGINATION_LIMIT_MAX = 50;
 
 /** Clamp a caller-supplied `limit` into `[1, PAGINATION_LIMIT_MAX]`. */
 export function clampLimit(limit: number | undefined, fallback = PAGINATION_LIMIT_MAX): number {
-  if (typeof limit !== 'number' || !Number.isFinite(limit) || limit <= 0) return fallback;
+  if (!isNumber(limit) || !Number.isFinite(limit) || limit <= 0) return fallback;
   return Math.min(Math.floor(limit), PAGINATION_LIMIT_MAX);
 }
 

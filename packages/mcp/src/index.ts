@@ -40,6 +40,7 @@
  */
 
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { isFunction } from '@packrat/guards';
 import { McpAgent } from 'agents/mcp';
 import { handleHealth, handleStatus } from './auth';
 import { createMcpClients, errResponse, type McpClients, type McpToolResult } from './client';
@@ -182,7 +183,7 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
       // for the modern `registerTool` (only the deprecated `tool()` shape
       // accepts it), so we can rely on index 2 here.
       const originalHandler = args[2] as ((...handlerArgs: unknown[]) => unknown) | undefined;
-      if (typeof originalHandler === 'function') {
+      if (isFunction(originalHandler)) {
         const wrappedHandler = this.wrapHandlerWithRateLimit(name, originalHandler);
         args[2] = wrappedHandler;
       }

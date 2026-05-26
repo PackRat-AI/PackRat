@@ -39,6 +39,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { isBoolean } from '@packrat/guards';
 import { classifyTool, type ToolClassification } from '../src/scopes';
 import { registerAdminTools } from '../src/tools/admin';
 import { registerAiTools } from '../src/tools/ai';
@@ -262,10 +263,10 @@ function buildCatalog(): CatalogDump {
       domain: classifyDomain(name),
       classification: classifyTool(name),
       annotations: {
-        readOnlyHint: typeof ann.readOnlyHint === 'boolean' ? ann.readOnlyHint : null,
-        destructiveHint: typeof ann.destructiveHint === 'boolean' ? ann.destructiveHint : null,
-        idempotentHint: typeof ann.idempotentHint === 'boolean' ? ann.idempotentHint : null,
-        openWorldHint: typeof ann.openWorldHint === 'boolean' ? ann.openWorldHint : null,
+        readOnlyHint: isBoolean(ann.readOnlyHint) ? ann.readOnlyHint : null,
+        destructiveHint: isBoolean(ann.destructiveHint) ? ann.destructiveHint : null,
+        idempotentHint: isBoolean(ann.idempotentHint) ? ann.idempotentHint : null,
+        openWorldHint: isBoolean(ann.openWorldHint) ? ann.openWorldHint : null,
       },
     };
   });

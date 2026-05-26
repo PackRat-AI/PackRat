@@ -52,6 +52,7 @@
  */
 
 import type { RequestId } from '@modelcontextprotocol/sdk/types.js';
+import { isFunction, isString } from '@packrat/guards';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -174,7 +175,7 @@ export async function confirmAction(
   extra: ElicitExtra,
   opts: ConfirmActionOptions,
 ): Promise<ConfirmResult> {
-  if (typeof agent.elicitInput !== 'function') {
+  if (!isFunction(agent.elicitInput)) {
     return { confirmed: false, reason: 'unsupported' };
   }
   const fieldLabel = opts.fieldLabel ?? 'Confirmation';
@@ -212,7 +213,7 @@ export async function confirmAction(
 
   // action === 'accept' — verify the typed string matches.
   const typed = result.content?.confirmation;
-  if (typeof typed !== 'string' || typed !== opts.expectedConfirmation) {
+  if (!isString(typed) || typed !== opts.expectedConfirmation) {
     return { confirmed: false, reason: 'mismatch' };
   }
   return { confirmed: true };
@@ -241,7 +242,7 @@ export async function chooseFromList(
   extra: ElicitExtra,
   opts: ChooseFromListOptions,
 ): Promise<ChooseResult> {
-  if (typeof agent.elicitInput !== 'function') {
+  if (!isFunction(agent.elicitInput)) {
     return { chosen: null, reason: 'unsupported' };
   }
   const fieldLabel = opts.fieldLabel ?? 'Choice';
@@ -273,7 +274,7 @@ export async function chooseFromList(
   }
 
   const picked = result.content?.choice;
-  if (typeof picked !== 'string' || !opts.choices.includes(picked)) {
+  if (!isString(picked) || !opts.choices.includes(picked)) {
     return { chosen: null, reason: 'mismatch' };
   }
   return { chosen: picked };

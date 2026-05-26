@@ -46,6 +46,7 @@
  *   operational concern.
  */
 
+import { isString } from '@packrat/guards';
 import { createRemoteJWKSet, errors, jwtVerify } from 'jose';
 import { canonicalResourceUrl } from './metadata';
 import type { Env } from './types';
@@ -142,7 +143,7 @@ export async function verifyMcpToken(
   // Fail fast on obviously-bad inputs so the caller doesn't pay the
   // JWKS-fetch cost. `jose.jwtVerify` would catch these too, but the
   // try/catch + retry below is wasted work for an empty string.
-  if (!token || typeof token !== 'string') return null;
+  if (!token || !isString(token)) return null;
 
   const issuer = getIssuerUrl(opts.env);
   const audience = canonicalResourceUrl(opts.env); // 'https://mcp.packratai.com/mcp'
@@ -198,7 +199,7 @@ async function verifyOnce(token: string, args: VerifyOnceArgs): Promise<Verified
     algorithms: ['ES256', 'RS256'],
   });
 
-  const sub = typeof payload.sub === 'string' ? payload.sub : '';
+  const sub = isString(payload.sub) ? payload.sub : '';
   // `sub` is required by RFC 7519 for an access token to be useful here
   // (rate-limit key, audit log actor). A token without it is rejected —
   // the upstream JWT plugin sets it from `user.id`, so absence means
@@ -222,7 +223,7 @@ async function verifyOnce(token: string, args: VerifyOnceArgs): Promise<Verified
  * empty-scope token effectively grants nothing).
  */
 function parseScopeClaim(claim: unknown): string[] {
-  if (typeof claim !== 'string') return [];
+  if (!isString(claim)) return [];
   const trimmed = claim.trim();
   if (!trimmed) return [];
   return trimmed.split(SCOPE_SPLIT);

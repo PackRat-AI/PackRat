@@ -55,6 +55,8 @@
  *   request/response body, the user's typed elicitation answer.
  */
 
+import { isFunction, isObject } from '@packrat/guards';
+
 // ── Public types ─────────────────────────────────────────────────────────────
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -169,7 +171,7 @@ export function scrubFields(fields: Record<string, unknown> | undefined): Record
   if (!fields) return {};
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(fields)) {
-    if (typeof value === 'function') continue;
+    if (isFunction(value)) continue;
     if (!TOP_LEVEL_ALLOWLIST.has(key)) {
       out[key] = REDACTED;
       continue;
@@ -185,7 +187,7 @@ export function scrubFields(fields: Record<string, unknown> | undefined): Record
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  if (value === null || typeof value !== 'object') return false;
+  if (!isObject(value)) return false;
   // Arrays, Maps, Sets, Dates, etc. are NOT plain objects — they should
   // pass through unchanged at the top level (we trust the caller for
   // arrays of primitive scopes, etc.).
@@ -196,7 +198,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function scrubNested(obj: Record<string, unknown>, allow: Set<string>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'function') continue;
+    if (isFunction(value)) continue;
     out[key] = allow.has(key) ? value : REDACTED;
   }
   return out;
