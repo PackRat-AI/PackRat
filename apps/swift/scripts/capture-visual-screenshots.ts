@@ -22,6 +22,12 @@ type Options = {
   skipTests: boolean;
 };
 
+type ScreenshotRequirement = {
+  name: string;
+  area: 'auth' | 'crud' | 'ai' | 'navigation' | 'offline-local' | 'modal' | 'data';
+  flow: string;
+};
+
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
@@ -38,6 +44,45 @@ const CHROME_CANDIDATES = [
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
   '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+];
+const IOS_SURFACES = [
+  'packs',
+  'trips',
+  'assistant',
+  'gear-inventory',
+  'season-suggestions',
+  'pack-templates',
+  'guides',
+  'catalog',
+  'feed',
+  'trail-conditions',
+  'weather',
+  'shopping-list',
+  'wildlife',
+] as const;
+const MAC_SURFACES = [
+  'home',
+  'packs',
+  'trips',
+  'weather',
+  'assistant',
+  'catalog',
+  'pack-templates',
+  'trail-conditions',
+  'feed',
+  'guides',
+  'gear-inventory',
+  'wildlife',
+  'ai-packs',
+] as const;
+const COMMON_AUTH_REQUIREMENTS: ScreenshotRequirement[] = [
+  requirement('00-unauth-welcome', { area: 'auth', flow: 'Welcome screen' }),
+  requirement('01-unauth-register', { area: 'auth', flow: 'Register form' }),
+  requirement('02-unauth-login', { area: 'auth', flow: 'Login form with SSO options' }),
+  requirement('02a-unauth-forgot-password', { area: 'auth', flow: 'Forgot password form' }),
+  requirement('03-guest-home', { area: 'offline-local', flow: 'Guest app shell' }),
+  requirement('20-auth-home', { area: 'auth', flow: 'Seeded authenticated shell' }),
+  requirement('70-data-home', { area: 'data', flow: 'Authenticated shell with seeded data' }),
 ];
 
 function usage(): never {
@@ -99,6 +144,180 @@ function parsePlatforms(value: string): Platform[] {
   if (normalized === 'ios') return ['ios'];
   if (normalized === 'macos') return ['macos'];
   throw new Error(`Unknown platform "${value}". Expected ios, macos, or both.`);
+}
+
+function requirement(
+  name: string,
+  metadata: Omit<ScreenshotRequirement, 'name'>,
+): ScreenshotRequirement {
+  return { ...metadata, name: `${name}.png` };
+}
+
+function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
+  const surfaceRequirements =
+    platform === 'ios'
+      ? IOS_SURFACES.flatMap((surface) => [
+          requirement(`10-guest-${surface}-guest`, {
+            area: surfaceArea(surface),
+            flow: `Guest ${surface}`,
+          }),
+          requirement(`30-auth-${surface}-auth`, {
+            area: surfaceArea(surface),
+            flow: `Authenticated ${surface}`,
+          }),
+          requirement(`70-data-${surface}-data`, {
+            area: surfaceArea(surface),
+            flow: `Seeded-data ${surface}`,
+          }),
+        ])
+      : MAC_SURFACES.flatMap((surface) => [
+          requirement(`10-guest-${surface}-guest`, {
+            area: surfaceArea(surface),
+            flow: `Guest ${surface}`,
+          }),
+          requirement(`30-auth-${surface}-auth`, {
+            area: surfaceArea(surface),
+            flow: `Authenticated ${surface}`,
+          }),
+          requirement(`70-data-${surface}-data`, {
+            area: surfaceArea(surface),
+            flow: `Seeded-data ${surface}`,
+          }),
+        ]);
+
+  const modalRequirements: ScreenshotRequirement[] = [
+    ...modalSet('50-guest-modal', false),
+    ...modalSet('60-auth-modal', true),
+    ...modalSet('80-data-modal', true),
+  ];
+
+  const dataDetailRequirements =
+    platform === 'ios'
+      ? [
+          requirement('72-data-pack-detail', { area: 'crud', flow: 'Pack detail with items' }),
+          requirement('74-data-trip-detail', { area: 'crud', flow: 'Trip detail' }),
+          requirement('76-data-template-detail', { area: 'crud', flow: 'Template detail' }),
+          requirement('78-data-trail-condition-detail', {
+            area: 'crud',
+            flow: 'Trail report detail',
+          }),
+          requirement('79-data-catalog-results', {
+            area: 'data',
+            flow: 'Catalog seeded result state',
+          }),
+        ]
+      : [
+          requirement('71-data-pack-detail', { area: 'crud', flow: 'Pack split-view detail' }),
+          requirement('72-data-trip-detail', { area: 'crud', flow: 'Trip split-view detail' }),
+          requirement('73-data-template-detail', {
+            area: 'crud',
+            flow: 'Template split-view detail',
+          }),
+          requirement('74-data-trail-condition-detail', {
+            area: 'crud',
+            flow: 'Trail report split-view detail',
+          }),
+          requirement('76-data-ai-packs-results', {
+            area: 'ai',
+            flow: 'AI packs generated result state',
+          }),
+          requirement('77-data-ai-packs-confirm', {
+            area: 'ai',
+            flow: 'AI packs confirmation dialog',
+          }),
+        ];
+
+  return [
+    ...COMMON_AUTH_REQUIREMENTS,
+    ...surfaceRequirements,
+    ...modalRequirements,
+    ...dataDetailRequirements,
+  ];
+}
+
+function surfaceArea(surface: string): ScreenshotRequirement['area'] {
+  if (['assistant', 'season-suggestions', 'wildlife', 'ai-packs'].includes(surface)) return 'ai';
+  if (['packs', 'trips', 'pack-templates', 'trail-conditions', 'feed'].includes(surface))
+    return 'crud';
+  if (surface === 'gear-inventory' || surface === 'shopping-list') return 'offline-local';
+  return 'navigation';
+}
+
+function modalSet(prefix: string, includesAccountBackedCompose: boolean): ScreenshotRequirement[] {
+  const requirements = [
+    requirement(`${prefix}-global-search`, {
+      area: 'navigation',
+      flow: 'Global search presentation',
+    }),
+    requirement(`${prefix}-new-pack-sheet`, { area: 'crud', flow: 'Pack create form' }),
+    requirement(`${prefix}-new-trip-sheet`, { area: 'crud', flow: 'Trip create form' }),
+    requirement(`${prefix}-new-template-sheet`, { area: 'crud', flow: 'Template create form' }),
+    requirement(`${prefix}-trail-report-sheet`, { area: 'crud', flow: 'Trail report create form' }),
+    requirement(`${prefix}-weather-before-alerts`, {
+      area: 'modal',
+      flow: 'Weather alerts entry state',
+    }),
+  ];
+  if (includesAccountBackedCompose) {
+    requirements.push(
+      requirement(`${prefix}-feed-compose-sheet`, { area: 'crud', flow: 'Feed compose form' }),
+    );
+  }
+  return requirements;
+}
+
+function validateScreenshotMatrix(platform: Platform, screenshotDir: string): void {
+  const captured = new Set(listScreenshots(screenshotDir).map((file) => basename(file)));
+  const required = requiredScreenshots(platform);
+  const missing = required.filter((entry) => !captured.has(entry.name));
+  writeCoverageManifest({
+    platform,
+    screenshotDir,
+    required,
+    captured: [...captured].sort(),
+    missing,
+  });
+
+  if (missing.length > 0) {
+    const lines = missing
+      .map((entry) => `  - ${entry.name} (${entry.area}: ${entry.flow})`)
+      .join('\n');
+    throw new Error(
+      `Screenshot capture for ${platform} is incomplete. Missing required CRUD/auth/AI states:\n${lines}`,
+    );
+  }
+}
+
+function writeCoverageManifest({
+  platform,
+  screenshotDir,
+  required,
+  captured,
+  missing,
+}: {
+  platform: Platform;
+  screenshotDir: string;
+  required: ScreenshotRequirement[];
+  captured: string[];
+  missing: ScreenshotRequirement[];
+}): void {
+  const manifest = {
+    generatedAt: new Date().toISOString(),
+    platform,
+    screenshotDir,
+    summary: {
+      required: required.length,
+      captured: captured.length,
+      missing: missing.length,
+    },
+    required,
+    missing,
+    captured,
+  };
+  writeFileSync(
+    resolve(screenshotDir, 'coverage-manifest.json'),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
 }
 
 function loadDotEnv(): void {
@@ -564,8 +783,10 @@ async function main() {
       mkdirSync(dir, { recursive: true });
       await runXcodeVisualTest(platform, dir);
     }
+    validateScreenshotMatrix(platform, dir);
     const contactSheet = await renderContactSheet(platform, options.outDir);
     console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
+    console.log(`✓ ${platform} coverage manifest: ${resolve(dir, 'coverage-manifest.json')}`);
   }
 }
 

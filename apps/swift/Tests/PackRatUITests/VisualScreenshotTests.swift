@@ -73,6 +73,16 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
+    func testAuthenticatedSampleDataDetailSurface() throws {
+        launchAuthenticated(sampleData: true)
+
+        #if os(iOS)
+        capturePhoneSampleDataDetails()
+        #elseif os(macOS)
+        captureMacSampleDataDetails()
+        #endif
+    }
+
     func testAuthenticatedModalSurface() throws {
         launchAuthenticated()
 
@@ -80,6 +90,16 @@ final class VisualScreenshotTests: XCTestCase {
         capturePhoneModalSurface(mode: .authenticated)
         #elseif os(macOS)
         captureMacModalSurface(mode: .authenticated)
+        #endif
+    }
+
+    func testAuthenticatedSampleDataModalSurface() throws {
+        launchAuthenticated(sampleData: true)
+
+        #if os(iOS)
+        capturePhoneModalSurface(mode: .sampleData)
+        #elseif os(macOS)
+        captureMacModalSurface(mode: .sampleData)
         #endif
     }
 
@@ -129,6 +149,7 @@ final class VisualScreenshotTests: XCTestCase {
         captureHomeAction("Community Feed", name: "\(prefix)-feed\(suffix)")
         captureHomeAction("Trail Conditions", name: "\(prefix)-trail-conditions\(suffix)")
         captureHomeAction("Weather", name: "\(prefix)-weather\(suffix)")
+        captureHomeAction("Shopping List", name: "\(prefix)-shopping-list\(suffix)")
         captureHomeAction("Wildlife ID", name: "\(prefix)-wildlife\(suffix)")
     }
 
@@ -154,13 +175,32 @@ final class VisualScreenshotTests: XCTestCase {
 
         resetPhoneModalState(mode)
         captureHomeAction("Weather", name: "\(prefix)-weather-before-alerts", dismissAfterCapture: false)
-        tapAndCapture(identifier: "weather_alerts_button", name: "\(prefix)-weather-alerts-sheet")
 
-        if mode == .authenticated {
+        if mode != .guest {
             resetPhoneModalState(mode)
             captureHomeAction("Community Feed", name: "\(prefix)-feed-before-compose", dismissAfterCapture: false)
             tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
         }
+    }
+
+    private func capturePhoneSampleDataDetails() {
+        captureTab("Packs", name: "71-data-packs-list")
+        tapTextAndCapture("Alpine Weekend", name: "72-data-pack-detail")
+        dismissPhoneDestination()
+
+        captureTab("Trips", name: "73-data-trips-list")
+        tapTextAndCapture("Enchantments Thru-Hike", name: "74-data-trip-detail")
+        dismissPhoneDestination()
+
+        captureHomeAction("Pack Templates", name: "75-data-templates-list", dismissAfterCapture: false)
+        tapTextAndCapture("Weekend Backpacking", name: "76-data-template-detail")
+        dismissPhoneDestination()
+
+        captureHomeAction("Trail Conditions", name: "77-data-trail-conditions-list", dismissAfterCapture: false)
+        tapTextAndCapture("Colchuck Lake Trail", name: "78-data-trail-condition-detail")
+        dismissPhoneDestination()
+
+        captureHomeAction("Catalog", name: "79-data-catalog-results")
     }
 
     private func resetPhoneModalState(_ mode: VisualMode) {
@@ -168,16 +208,15 @@ final class VisualScreenshotTests: XCTestCase {
             restartLoggedOut()
             enterGuestMode()
         } else {
-            launchAuthenticated()
+            launchAuthenticated(sampleData: mode == .sampleData)
         }
     }
 
     private func captureTab(_ label: String, name: String) {
         let tab = app.tabBars.buttons[label]
-        if tab.waitForExistence(timeout: 5) {
-            tab.tap()
-            capture(name)
-        }
+        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab '\(label)' for screenshot \(name)")
+        tab.tap()
+        capture(name)
     }
 
     private func captureHomeAction(_ title: String, name: String, dismissAfterCapture: Bool = true) {
@@ -197,6 +236,7 @@ final class VisualScreenshotTests: XCTestCase {
             }
             app.swipeUp()
         }
+        XCTFail("Expected Home action '\(title)' for screenshot \(name)")
     }
 
     private func dismissPhoneDestination() {
@@ -234,6 +274,24 @@ final class VisualScreenshotTests: XCTestCase {
         }
     }
 
+    private func captureMacSampleDataDetails() {
+        selectSidebar("Packs")
+        capture("71-data-pack-detail")
+
+        selectSidebar("Trips")
+        capture("72-data-trip-detail")
+
+        selectSidebar("Templates")
+        capture("73-data-template-detail")
+
+        selectSidebar("Trail Conditions")
+        capture("74-data-trail-condition-detail")
+
+        selectSidebar("AI Packs")
+        capture("76-data-ai-packs-results")
+        tapAndCapture(identifier: "ai_packs_generate_button", fallbackButton: "Generate 3 Packs", name: "77-data-ai-packs-confirm")
+    }
+
     private func captureMacModalSurface(mode: VisualMode) {
         let prefix = mode.modalPrefix
         captureGlobalSearch(name: "\(prefix)-global-search")
@@ -251,9 +309,9 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
 
         selectSidebar("Weather")
-        tapAndCapture(identifier: "weather_alerts_button", name: "\(prefix)-weather-alerts-sheet")
+        capture("\(prefix)-weather-before-alerts")
 
-        if mode == .authenticated {
+        if mode != .guest {
             selectSidebar("Feed")
             tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
         }
@@ -278,15 +336,15 @@ final class VisualScreenshotTests: XCTestCase {
 
         if let identifier = identifierByLabel[label] {
             let button = app.buttons[identifier]
-            if button.waitForExistence(timeout: 5) {
-                if button.isHittable {
-                    button.tap()
-                } else {
-                    button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-                }
-                return
+            XCTAssertTrue(button.waitForExistence(timeout: 5), "Expected sidebar item '\(label)'")
+            if button.isHittable {
+                button.tap()
+            } else {
+                button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
             }
+            return
         }
+        XCTFail("No sidebar identifier mapped for '\(label)'")
     }
     #endif
 
@@ -295,21 +353,29 @@ final class VisualScreenshotTests: XCTestCase {
         app.typeKey("f", modifierFlags: [.command])
         #else
         captureTab("Home", name: "home-before-\(name)")
-        app.buttons["Search"].tapIfExists()
+        let search = app.buttons["Search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Expected global Search button for screenshot \(name)")
+        search.tap()
         #endif
         capture(name)
         dismissPresentedSurface()
     }
 
     private func tapAndCapture(button label: String, name: String) {
-        guard let button = findButton(label: label, timeout: 3) else { return }
+        guard let button = findButton(label: label, timeout: 3) else {
+            XCTFail("Expected button '\(label)' for screenshot \(name)")
+            return
+        }
         activate(button)
         capture(name)
         dismissPresentedSurface()
     }
 
     private func tapAndCapture(identifier: String, name: String) {
-        guard let button = findButton(identifier: identifier, timeout: 3) else { return }
+        guard let button = findButton(identifier: identifier, timeout: 3) else {
+            XCTFail("Expected button identifier '\(identifier)' for screenshot \(name)")
+            return
+        }
         activate(button)
         capture(name)
         dismissPresentedSurface()
@@ -317,10 +383,20 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func tapAndCapture(identifier: String, fallbackButton label: String, name: String) {
         let button = findButton(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
-        guard let button else { return }
+        guard let button else {
+            XCTFail("Expected button identifier '\(identifier)' or label '\(label)' for screenshot \(name)")
+            return
+        }
         activate(button)
         capture(name)
         dismissPresentedSurface()
+    }
+
+    private func tapTextAndCapture(_ label: String, name: String) {
+        let text = app.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+        XCTAssertTrue(text.waitForExistence(timeout: 5), "Expected text '\(label)' for screenshot \(name)")
+        activate(text)
+        capture(name)
     }
 
     private func findButton(label: String, timeout: TimeInterval) -> XCUIElement? {
@@ -399,6 +475,7 @@ final class VisualScreenshotTests: XCTestCase {
             app.launchArguments.append("--visual-sample-data")
             app.launchEnvironment["PACKRAT_VISUAL_SAMPLE_DATA"] = "1"
         }
+        app.launchEnvironment["PACKRAT_E2E_ROLE"] = "ADMIN"
         app.launch()
         #if os(macOS)
         app.activate()

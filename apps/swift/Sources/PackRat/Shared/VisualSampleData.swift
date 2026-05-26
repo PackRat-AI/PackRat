@@ -251,6 +251,44 @@ enum VisualSampleData {
             ),
         ]
 
+        appState.chatVM.messages = [
+            ChatMessage(
+                role: .assistant,
+                content: "Hi! I'm your PackRat AI assistant. I can help compare gear, plan trips, and turn pack data into practical next steps."
+            ),
+            ChatMessage(
+                role: .user,
+                content: "Help me tune my Alpine Weekend pack for a wet shoulder-season overnight."
+            ),
+            ChatMessage(
+                role: .assistant,
+                content: "Start with the shelter, sleep system, and rain layers. Your base kit is solid; I would keep the rain shell accessible, add dry socks, and double-check that insulation stays in a waterproof liner."
+            ),
+        ]
+
+        appState.aiPacksVM.generatedPacks = [
+            Pack(
+                id: "visual-ai-pack-rainy-weekend",
+                userId: userId,
+                name: "AI Rainy Weekend Kit",
+                description: "Generated shoulder-season backpacking pack focused on warmth, dry storage, and simple camp cooking.",
+                category: .backpacking,
+                isPublic: true,
+                image: nil,
+                tags: ["ai-generated", "rain"],
+                templateId: nil,
+                deleted: false,
+                isAIGenerated: true,
+                items: [],
+                totalWeight: 3950,
+                baseWeight: 2950,
+                wornWeight: 320,
+                consumableWeight: 680,
+                createdAt: now,
+                updatedAt: now
+            )
+        ]
+
         appState.selectedPackId = alpinePack.id
         appState.selectedTripId = appState.tripsVM.trips.first?.id
         appState.selectedTemplateId = appState.templatesVM.templates.first?.id
