@@ -109,6 +109,26 @@ test.describe('Profile name edit', () => {
   });
 });
 
+test.describe('Profile username', () => {
+  test('username screen loads and returns to profile when saved', async ({
+    signedInPage: page,
+  }) => {
+    await page.goto(`${BASE_URL}/profile`);
+    await page.waitForLoadState('networkidle');
+    await page.goto(`${BASE_URL}/profile/username`);
+
+    const usernameInput = page.getByRole('textbox');
+    await expect(usernameInput).toHaveCount(1);
+    await expect(usernameInput).toBeVisible();
+
+    const saveButton = page.getByText('Save', { exact: true });
+    await expect(saveButton).toBeVisible();
+
+    await usernameInput.fill(`packrat-${Date.now()}`);
+    await saveButton.click();
+  });
+});
+
 // ─── Sign-out flow ─────────────────────────────────────────────────────────────
 //
 // NOTE: Sign-out on web:

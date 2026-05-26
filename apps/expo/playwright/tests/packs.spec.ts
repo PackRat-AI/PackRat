@@ -11,6 +11,7 @@
  * tests can navigate directly to detail/edit routes without relying on
  * post-submit navigation behaviour.
  */
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -217,6 +218,25 @@ test.describe('Item CRUD within a pack', () => {
     } else {
       test.skip(true, 'items:more-actions button not accessible on web');
     }
+  });
+});
+
+test('pack detail AI entry point opens the chat route', async ({ signedInPage: page }) => {
+  test.setTimeout(60_000);
+  const packName = `E2E-AIEntry-${Date.now()}`;
+
+  const packId = await createPackViaForm(page, packName);
+
+  await page.goto(`${BASE_URL}/pack/${packId}`);
+  await page.waitForLoadState('networkidle');
+
+  const askAiButton = page.getByTestId(testIds.packs.askAIBtn);
+  await askAiButton.waitFor({ timeout: 15_000 });
+  await askAiButton.click();
+
+  await page.waitForURL(/\/ai-chat/, { timeout: 15_000 });
+  await expect(page.getByRole('textbox', { name: /Ask about this pack/i })).toBeVisible({
+    timeout: 15_000,
   });
 });
 
