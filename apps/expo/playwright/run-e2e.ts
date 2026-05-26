@@ -1,4 +1,5 @@
 import { type ChildProcess, spawn } from 'node:child_process';
+import { generateKeyPairSync } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +12,20 @@ const envLocalPath = path.join(expoRoot, '.env.local');
 const envE2ePath = path.join(expoRoot, '.env.e2e');
 const envExamplePath = path.join(__dirname, 'e2e.env.example');
 const devVarsPath = path.join(repoRoot, '.dev.vars');
+
+let e2eApplePrivateKey: string | null = null;
+
+function getE2eApplePrivateKey(): string {
+  if (e2eApplePrivateKey) return e2eApplePrivateKey;
+
+  e2eApplePrivateKey = generateKeyPairSync('ec', {
+    namedCurve: 'prime256v1',
+    privateKeyEncoding: { format: 'pem', type: 'pkcs8' },
+    publicKeyEncoding: { format: 'pem', type: 'spki' },
+  }).privateKey;
+
+  return e2eApplePrivateKey;
+}
 
 type EnvMap = Record<string, string>;
 
@@ -186,6 +201,7 @@ async function main() {
     BROWSER: 'none',
     CI: merged.CI ?? '1',
     EXPO_NO_TELEMETRY: '1',
+    EXPO_UNSTABLE_LOG_BOX: '0',
     EXPO_UNSTABLE_WEB_MODAL: '1',
     PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: chromiumPath,
     CLOUDFLARE_ACCOUNT_ID: merged.CLOUDFLARE_ACCOUNT_ID ?? devVars.CLOUDFLARE_ACCOUNT_ID,
@@ -212,7 +228,7 @@ async function main() {
       '--var',
       'APPLE_CLIENT_ID:world.packrat.e2e',
       '--var',
-      'APPLE_PRIVATE_KEY:e2e-apple-private-key',
+      `APPLE_PRIVATE_KEY:${getE2eApplePrivateKey()}`,
       '--var',
       'APPLE_KEY_ID:e2e-key',
       '--var',
