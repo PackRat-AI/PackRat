@@ -198,8 +198,8 @@ export default function AppLayout() {
           name="weather-alerts"
           options={{
             headerShown: false,
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
+            presentation: 'card',
+            animation: 'default',
           }}
         />
         <Stack.Screen
