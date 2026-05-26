@@ -28,8 +28,6 @@ function makeEnv(overrides: Partial<Env> = {}): Env {
   return {
     PackRatMCP: {} as Env['PackRatMCP'],
     PACKRAT_API_URL: 'https://api.test',
-    OAUTH_KV: {} as Env['OAUTH_KV'],
-    OAUTH_PROVIDER: {} as Env['OAUTH_PROVIDER'],
     ...overrides,
   };
 }

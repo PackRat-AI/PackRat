@@ -9,10 +9,11 @@
  *
  * U5 removed the `admin_login` and `admin_logout` tools. Admin access is no
  * longer a runtime tool-mediated handshake: admin users acquire the
- * `mcp:admin` OAuth scope automatically at `/callback` time when their
- * Better Auth role resolves to `ADMIN`. See `packages/mcp/src/auth.ts`
- * (`handleCallback`), `packages/mcp/src/scopes.ts`, and the U5/U7 sections
- * of `docs/mcp/runbook.md` for the migration story.
+ * `mcp:admin` OAuth scope automatically at token-issuance time when their
+ * Better Auth role resolves to `ADMIN` (issuance lives in the API worker
+ * via `@better-auth/oauth-provider` after U3+U4). See
+ * `packages/mcp/src/scopes.ts` and the U5/U7 sections of
+ * `docs/mcp/runbook.md` for the migration story.
  *
  * U7 namespaced every tool with the `packrat_` prefix and added the
  * connector-store annotations (`title`, `readOnlyHint`, `destructiveHint`,

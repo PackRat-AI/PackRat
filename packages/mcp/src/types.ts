@@ -12,9 +12,14 @@
  * `PackRatMCP.init()`. Tool files register admin tools normally via
  * `agent.server.registerTool(...)`; the agent walks them after init() and
  * disables anything the granted scopes don't authorize.
+ *
+ * U3+U4 (Better Auth OAuth consolidation): The MCP worker no longer hosts
+ * an OAuth Authorization Server. JWT access tokens are minted by the API
+ * worker (`api.packrat.world`) via `@better-auth/oauth-provider`; this
+ * worker verifies them locally against the JWKS and delegates to the DO.
+ * `OAUTH_KV`, `OAUTH_PROVIDER`, and `MCP_INITIAL_ACCESS_TOKEN` are gone.
  */
 
-import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpClients } from './client';
 import type { ElicitCapable } from './elicit';
@@ -51,7 +56,7 @@ export interface AgentContext {
    * runtime via `setFeatureFlag`.
    */
   registerFlaggedTool: RegisterFlaggedToolFn;
-  /** Best-effort PackRat user ID (from OAuth props). May be empty for legacy bearer flows. */
+  /** Best-effort PackRat user ID (from JWT `sub` claim, surfaced via Props). */
   userId?: string;
   /**
    * U10: MCP elicitation surface. Present on the live `PackRatMCP` agent
@@ -88,38 +93,19 @@ export interface Env {
   PackRatMCP: DurableObjectNamespace;
   /** Base URL of the PackRat API (e.g. "https://packrat.world") */
   PACKRAT_API_URL: string;
-  /** KV namespace for OAuth token storage (required by workers-oauth-provider) */
-  OAUTH_KV: KVNamespace;
-  /** OAuth helpers injected by OAuthProvider at runtime */
-  OAUTH_PROVIDER: OAuthHelpers;
-  /**
-   * Pre-shared secret for dynamic client registration. **Required as of U4**:
-   * if unset, `POST /register` returns 401 to every caller (DCR effectively
-   * disabled). Operators must set this via `wrangler secret put` before
-   * pre-registering Claude's callbacks — see `docs/mcp/runbook.md`.
-   *
-   * Typed as optional because the binding is absent in test environments
-   * and the `dcrRegisterGate` helper must handle the unset case
-   * gracefully (fail-closed).
-   */
-  MCP_INITIAL_ACCESS_TOKEN?: string;
   /** Comma-separated feature flags enabled at boot (e.g. "wildlife_id,season_suggestions"). */
   MCP_FEATURE_FLAGS?: string;
   /**
    * Workers Rate Limiting binding (U14). Configured under the
    * `rate_limiting` block in `packages/mcp/wrangler.jsonc` with a 60/60s
-   * budget. Two call sites use it:
-   *
-   *   - tool dispatch: keyed `${props.userId}:${toolName}` so per-user/
-   *     per-tool counters are independent; surfaces a `rate_limited`
-   *     `errResponse` envelope to the model when exceeded.
-   *   - `/login` POST: keyed `login:${ip || cfRay}` so anonymous bursts
-   *     can't brute-force the password form.
+   * budget. Keyed `${props.userId}:${toolName}` per-call so per-user/
+   * per-tool counters are independent; surfaces a `rate_limited`
+   * `errResponse` envelope to the model when exceeded.
    *
    * Optional in the type because the binding is absent in unit tests and
-   * may not be bound in some `wrangler dev` flows. Both call sites
-   * fall back to "allowed" when the binding is undefined — dev should
-   * never break because of a missing rate-limit binding.
+   * may not be bound in some `wrangler dev` flows. The call site falls
+   * back to "allowed" when the binding is undefined — dev should never
+   * break because of a missing rate-limit binding.
    */
   MCP_TOOLS_RL?: RateLimit;
   /**
@@ -139,17 +125,24 @@ export interface Env {
 }
 
 /**
- * Properties embedded in OAuth access tokens and passed to API handlers.
+ * Properties forwarded from the outer fetch wrapper to the MCP Durable Object
+ * via `ctx.props` (read by the `agents/mcp` SDK in `serve()`).
  *
  * U5: `scopes` is the set of OAuth scopes granted to the token at
- * `/callback` time. The DO uses this to decide which tools to disable
- * for the session. There is no longer a parallel `adminToken` field —
- * admin tools are gated by the presence of `mcp:admin` in `scopes`.
+ * issuance time. The DO uses this to decide which tools to disable
+ * for the session. Admin tools are gated by the presence of
+ * `mcp:admin` in `scopes`.
+ *
+ * U3+U4: After the cutover, the shape is sourced from the verified JWT
+ * (`sub` → `userId`, `scope` claim → `scopes`, raw JWT →
+ * `betterAuthToken`). The DO's `init()` reads `this.props?.scopes`
+ * unchanged.
  */
 export interface Props {
-  /** Better Auth session token used to authenticate PackRat API calls */
+  /** JWT access token issued by the API worker; forwarded as a Bearer credential
+   *  for proxied PackRat API calls. */
   betterAuthToken: string;
-  /** PackRat user ID */
+  /** PackRat user ID (JWT `sub` claim). */
   userId: string;
   /** OAuth scopes granted to this session (e.g. `['mcp:read', 'mcp:write']`). */
   scopes: readonly string[];

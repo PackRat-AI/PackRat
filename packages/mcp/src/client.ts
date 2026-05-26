@@ -3,14 +3,14 @@
  *
  * Two typed clients are exposed:
  *
- *  - `user`: authenticated as the OAuth-signed-in PackRat user via the Better
- *    Auth bearer that OAuthProvider injects into each request.
- *  - `admin`: authenticated with the *same* Better Auth bearer. The API
- *    enforces admin access via `user.role === 'ADMIN'` on its
- *    `adminAuthGuard` (extended in U5 to accept Better Auth bearers in
- *    addition to the legacy HS256 admin JWT). Visibility of admin tools on
- *    the MCP surface is gated by the `mcp:admin` OAuth scope, which is only
- *    granted to admin users at `/callback` time.
+ *  - `user`: authenticated as the JWT-bearing PackRat user via the access
+ *    token the outer fetch wrapper verified and forwarded into the DO
+ *    (`Props.betterAuthToken`).
+ *  - `admin`: authenticated with the *same* JWT. The API enforces admin
+ *    access via `user.role === 'ADMIN'` on its `adminAuthGuard` (extended
+ *    in U5 to accept Better Auth bearers in addition to the legacy HS256
+ *    admin JWT). Visibility of admin tools on the MCP surface is gated
+ *    by the `mcp:admin` scope claim on the JWT.
  *
  * Tool files import these from `agent.api` and call the API with end-to-end
  * type safety. The `call()` helper converts Treaty's
@@ -69,14 +69,15 @@ export type McpClients = {
 /**
  * Build user and admin Eden Treaty clients sharing a single base URL.
  *
- * Both clients use the Better Auth bearer that the OAuth provider
- * (or a manual `Authorization` header) injected into the current request.
- * The API enforces admin access on the `admin` routes via the user's role,
- * not via a separate token type.
+ * Both clients use the JWT access token the outer fetch wrapper verified
+ * and stored on `Props.betterAuthToken` (forwarded into the DO via
+ * `ctx.props` and surfaced on `this.props`). The API enforces admin
+ * access on the `admin` routes via the user's role, not via a separate
+ * token type.
  *
- * Refresh/reauth hooks are no-ops here: the MCP transport does not own session
- * lifecycle (the OAuth layer / caller does), so on 401 we surface the error
- * to the tool rather than attempting a refresh.
+ * Refresh/reauth hooks are no-ops here: the MCP transport does not own
+ * session lifecycle (the API worker / caller does), so on 401 we surface
+ * the error to the tool rather than attempting a refresh.
  */
 export function createMcpClients(opts: {
   baseUrl: string;

@@ -9,8 +9,11 @@ import {
 } from '../metadata';
 import type { Env } from '../types';
 
-// The metadata module is env-invariant in v1; the empty object cast is safe.
-const env = {} as Env;
+// After U3+U4 the `authorization_servers` value derives from
+// `env.PACKRAT_API_URL` (the API worker hosts the AS via Better Auth). The
+// resource URL is still env-invariant. We pin PACKRAT_API_URL to the prod
+// hostname here so the assertions below stay readable.
+const env = { PACKRAT_API_URL: 'https://api.packrat.world' } as Env;
 
 describe('SCOPES_SUPPORTED', () => {
   it('declares the four v1 connector-store scopes', () => {
@@ -37,8 +40,16 @@ describe('canonicalResourceUrl', () => {
 });
 
 describe('authorizationServerUrl', () => {
-  it('matches the resource hostname (single-host MCP + AS)', () => {
-    expect(authorizationServerUrl(env)).toBe('https://mcp.packratai.com');
+  it('points at the API worker (the AS is hosted there via Better Auth)', () => {
+    // After U3+U4 the MCP worker is a pure protected resource; the AS lives
+    // at the API worker, and the value here must match the JWT `iss` claim
+    // that `verifyMcpToken` validates (also derived from PACKRAT_API_URL).
+    expect(authorizationServerUrl(env)).toBe('https://api.packrat.world');
+  });
+
+  it('strips a trailing slash so it matches the canonical JWT `iss` claim', () => {
+    const slashed = { PACKRAT_API_URL: 'https://api.packrat.world/' } as Env;
+    expect(authorizationServerUrl(slashed)).toBe('https://api.packrat.world');
   });
 });
 
@@ -46,7 +57,7 @@ describe('buildResourceMetadata', () => {
   it('returns a complete RFC 9728 metadata object', () => {
     const meta = buildResourceMetadata(env);
     expect(meta.resource).toBe('https://mcp.packratai.com/mcp');
-    expect(meta.authorization_servers).toEqual(['https://mcp.packratai.com']);
+    expect(meta.authorization_servers).toEqual(['https://api.packrat.world']);
     expect(meta.scopes_supported).toEqual([...SCOPES_SUPPORTED]);
     expect(meta.bearer_methods_supported).toEqual(['header']);
     expect(meta.resource_name).toBe('PackRat MCP');

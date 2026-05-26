@@ -16,41 +16,43 @@
  *  - MCP resources: pack/trip/gear data accessible by URI.
  *  - Guided prompts: trip planning, pack optimization, gear recommendations.
  *  - Stateful sessions with hibernation (via Durable Objects).
- *  - OAuth 2.1 + PKCE authorization via @cloudflare/workers-oauth-provider.
+ *  - Pure protected resource: JWT access tokens are minted by the API worker
+ *    (`api.packrat.world`) via `@better-auth/oauth-provider`. This worker
+ *    verifies tokens locally against the JWKS — no AS state machine here.
  *  - Scope-based admin gating (U5): admin tools are visible only when the
- *    OAuth token carries the `mcp:admin` scope, which is granted at
- *    `/callback` time when the Better Auth user role resolves to ADMIN.
+ *    JWT carries the `mcp:admin` scope claim.
  *
  * Transport: Streamable HTTP (default) and SSE.
  *
- * OAuth flow:
- *   GET  /authorize  → login form redirect
- *   POST /login      → Better Auth sign-in, session stored in KV
- *   GET  /callback   → look up role, grant scopes, issue auth code
- *   POST /token      → exchange code for access token (handled by OAuthProvider)
- *   POST /register   → dynamic client registration (gated by initial access token, U4)
+ * Surface map:
+ *   GET  /.well-known/oauth-protected-resource  → RFC 9728 metadata (CORS-open
+ *                                                  for Claude origins).
+ *   GET  /health                                 → upstream API health probe,
+ *                                                  10s isolate-local cache.
+ *   GET  /status                                 → static metadata (version,
+ *                                                  scopes, commit SHA).
+ *   GET  /favicon.ico                            → embedded favicon for
+ *                                                  Anthropic's domain-ownership
+ *                                                  probe.
+ *   *    /mcp[/...]                              → JWT-gated; delegated to the
+ *                                                  PackRatMCP Durable Object.
+ *   *    *                                       → 404.
  */
 
-import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
-import { z } from 'zod';
-import { dcrRegisterGate, PackRatAuthHandler } from './auth';
+import { handleHealth, handleStatus } from './auth';
 import { createMcpClients, errResponse, type McpClients, type McpToolResult } from './client';
 import { ServiceMeta } from './constants';
 import { applyCorsHeaders } from './cors';
-import { buildResourceMetadata, SCOPES_SUPPORTED, unauthorizedResponse } from './metadata';
-import {
-  attachCorrelationId,
-  correlationIdFrom,
-  createLogger,
-  syntheticCorrelationId,
-} from './observability';
+import { faviconResponse } from './favicon';
+import { buildResourceMetadata, unauthorizedResponse } from './metadata';
+import { attachCorrelationId, correlationIdFrom } from './observability';
 import { registerPrompts } from './prompts';
 import { checkRateLimit, toolRateLimitKey } from './rate-limit';
 import { registerResources } from './resources';
-import { runScheduledPurge } from './scheduled';
 import { getVisibleTools } from './scopes';
+import { verifyMcpToken } from './token-verify';
 import { registerAdminTools } from './tools/admin';
 import { registerAiTools } from './tools/ai';
 import { registerAlltrailsTools } from './tools/alltrails';
@@ -69,20 +71,21 @@ import { registerUploadTools } from './tools/upload';
 import { registerUserTools } from './tools/user';
 import { registerWeatherTools } from './tools/weather';
 import { registerWildlifeTools } from './tools/wildlife';
-import type { AgentContext, Env } from './types';
+import type { AgentContext, Env, Props } from './types';
 
 export type { Env };
 
 // ── Session state ─────────────────────────────────────────────────────────────
 
 export interface State {
-  /** Better Auth session token, injected per-request from OAuth props or a Bearer header. */
+  /** JWT access token from the verified Authorization header, forwarded to the
+   *  PackRat API for proxied tool calls. */
   authToken: string;
 }
 
 // ── MCP Agent (Durable Object) ────────────────────────────────────────────────
 
-export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
+export class PackRatMCP extends McpAgent<Env, State, Props> {
   server = new McpServer({
     name: ServiceMeta.McpServerName,
     version: ServiceMeta.Version,
@@ -166,12 +169,6 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * lands in the map transparently. The rate-limit budget itself
    * (60/60s) is configured at the binding level in `wrangler.jsonc`, not
    * here, so operators can tune it without a code change.
-   *
-   * Why wrap inside the proxy rather than walking `_toolsByName` after
-   * registration to re-bind handlers? Re-binding would mean reaching
-   * into the SDK's `RegisteredTool` shape (private fields) to swap the
-   * callback. The proxy seam preserves the SDK contract — we only ever
-   * pass our wrapped callback into `registerTool` itself.
    */
   private installToolRegistrationProxy(): void {
     const original = this.server.registerTool.bind(this.server);
@@ -200,10 +197,10 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * `env.MCP_TOOLS_RL.limit({ key })` before the original handler runs.
    *
    * Key shape per the connector-readiness plan's K.T.D.:
-   * `${props.userId}:${toolName}`. `props.userId` is set at OAuth time
-   * (see `auth.ts/handleCallback`); legacy bearer-flow sessions where
-   * `userId` is missing collapse to `:${toolName}` — acceptable because
-   * the bearer-flow path is a rare back-compat surface.
+   * `${props.userId}:${toolName}`. `props.userId` is set at JWT-verify
+   * time in the outer fetch wrapper (from the `sub` claim); if absent
+   * (e.g. a malformed token slipped past verification — shouldn't happen,
+   * but defensive) the key collapses to `:${toolName}`.
    *
    * On exceed: returns the canonical U8 `errResponse('rate_limited', ...,
    * true)` envelope so the model gets a structured signal it can back
@@ -231,13 +228,11 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   }
 
   /**
-   * Best-effort lookup of the current OAuth user ID from `this.props`.
-   *
-   * `props` is injected by the OAuthProvider apiHandler before the DO
-   * fetch hits us; for the rare back-compat bearer-only path where
-   * `props` is undefined or `userId` is missing, returns `''` and the
-   * rate-limit key collapses to `:${toolName}` — see
-   * `wrapHandlerWithRateLimit` for the trade-off.
+   * Best-effort lookup of the current user ID from `this.props` (sourced
+   * from the verified JWT's `sub` claim in the outer fetch wrapper). If
+   * `props` is missing or malformed, returns `''` and the rate-limit key
+   * collapses to `:${toolName}` — see `wrapHandlerWithRateLimit` for the
+   * trade-off.
    */
   private currentUserId(): string {
     const props = this.props as { userId?: string } | undefined;
@@ -251,8 +246,8 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * Returns `{ userId, scopes, correlationId }` where:
    *
    *   - `userId` and `scopes` are read straight off `this.props`
-   *     (populated at OAuth `/callback` time by `auth.ts/handleCallback`).
-   *     If `props` is missing (legacy bearer flow), both collapse to
+   *     (set from the verified JWT's `sub` and `scope` claims in the
+   *     outer fetch wrapper). If `props` is missing, both collapse to
    *     empty values — the audit line still emits, just without actor
    *     attribution. That's deliberate: we'd rather record "someone
    *     unauthenticated triggered this" than silently drop the audit.
@@ -278,12 +273,12 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * intersect the granted scopes. Uses the SDK's `RegisteredTool.disable()`
    * which auto-emits `notifications/tools/list_changed`.
    *
-   * `props.scopes` is set at `/callback` time (see `auth.ts/handleCallback`).
-   * If absent (e.g. a legacy token issued before U5), we fall back to the
-   * `['mcp']` umbrella scope per the back-compat contract documented in
-   * `scopes.ts` — that scope only authorizes reads, so the worst-case
-   * misclassification is "an admin-issued legacy token loses access to
-   * admin tools until they re-auth".
+   * `props.scopes` is set from the verified JWT's `scope` claim in the
+   * outer fetch wrapper. If absent (e.g. a token without a `scope` claim
+   * or one that failed parsing), we fall back to the `['mcp']` umbrella
+   * scope per the back-compat contract documented in `scopes.ts` — that
+   * scope only authorizes reads, so the worst-case misclassification is
+   * "an admin token loses access to admin tools until they re-auth".
    */
   private applyScopeFilter(grantedScopes: readonly string[]): void {
     const isVisible = getVisibleTools(grantedScopes);
@@ -333,8 +328,8 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     // ── Admin ──────────────────────────────────────────────────────────────
     // Admin tools register as ordinary tools; visibility is decided by the
     // post-init scope filter below. The session's granted scopes live in
-    // `(this.props as { scopes?: readonly string[] }).scopes` — set at
-    // OAuth `/callback` time per the U5 model.
+    // `(this.props as { scopes?: readonly string[] }).scopes` — set in the
+    // outer fetch wrapper from the verified JWT's `scope` claim.
     registerAdminTools(this);
 
     // ── Resources + prompts ────────────────────────────────────────────────
@@ -342,9 +337,11 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     registerPrompts(this);
 
     // ── Scope-based visibility filter (U5) ─────────────────────────────────
-    // `this.props` is injected by the OAuthProvider apiHandler before the
-    // DO fetch hits us; legacy/missing scopes fall back to the umbrella
-    // `['mcp']` per the back-compat contract.
+    // `this.props` is injected by the outer fetch wrapper via `ctx.props`
+    // before the DO fetch hits us (read by the `agents/mcp` SDK's `serve()`
+    // implementation — see `node_modules/agents/dist/mcp/index.js`'s
+    // `getAgentByName(..., { props: ctx.props })`). Missing scopes fall
+    // back to the umbrella `['mcp']` per the back-compat contract.
     const props = this.props as { scopes?: readonly string[] } | undefined;
     const grantedScopes: readonly string[] =
       props?.scopes && props.scopes.length > 0 ? props.scopes : ['mcp'];
@@ -355,204 +352,29 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const BEARER_REGEX = /^Bearer\s+(\S+)/i;
+/** Bound the Authorization header we even bother to inspect — Workers caps
+ *  this around 8 KiB but 4 KiB is plenty for any JWT we expect. */
+const MAX_BEARER_HEADER_LEN = 4096;
 
 const mcpDoHandler = PackRatMCP.serve('/mcp');
 
-// ── Props schema (OAuthProvider injects this at runtime via ctx) ──────────────
-
-const PropsSchema = z.object({
-  betterAuthToken: z.string(),
-  userId: z.string(),
-  /**
-   * U5: granted OAuth scopes. Required (not optional) so a malformed grant
-   * surfaces as a 401 with `unauthorizedResponse` rather than silently
-   * defaulting to "all tools visible". Legacy tokens issued before U5
-   * landed will fail this schema and force a re-auth — acceptable for the
-   * pre-listing transition, per the connector-store plan's "no soft
-   * compat aliases" stance.
-   */
-  scopes: z.array(z.string()),
-});
-
-// ── API handler: wraps McpAgent, injecting the Better Auth token from OAuth props ──
-//
-// Adds the RFC 9728 `WWW-Authenticate: Bearer resource_metadata=...` header
-// to every 401 response so MCP clients can discover the protected-resource
-// metadata on first encounter.
-
-const mcpApiHandler = {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const rawCtx = ctx as unknown as Record<string, unknown>; // safe-cast: OAuth provider injects props at runtime; ExecutionContext has no index signature
-    const propsResult = PropsSchema.safeParse(rawCtx.props);
-    if (!propsResult.success) {
-      return unauthorizedResponse(env, 'Missing or malformed OAuth props');
-    }
-
-    const { betterAuthToken: userToken } = propsResult.data;
-
-    const headers = new Headers(request.headers);
-    if (userToken) headers.set('Authorization', `Bearer ${userToken}`);
-
-    const response = await mcpDoHandler.fetch(new Request(request, { headers }), env, ctx);
-
-    // RFC 9728 §5.1: 401 responses from a protected resource MUST include a
-    // WWW-Authenticate challenge with resource_metadata. The McpAgent
-    // doesn't add this for us, so we annotate it here when needed.
-    if (response.status === 401 && !response.headers.has('WWW-Authenticate')) {
-      const annotated = new Response(response.body, response);
-      annotated.headers.set(
-        'WWW-Authenticate',
-        `Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp"`,
-      );
-      return annotated;
-    }
-
-    return response;
-  },
-};
-
-// ── OAuthProvider — the Worker entrypoint ─────────────────────────────────────
-//
-// The provider auto-emits both well-known endpoints (RFC 8414 for AS metadata,
-// RFC 9728 for protected-resource metadata). `resourceMetadata` pins the
-// `resource` URL to our custom domain so Claude's audience-verification of
-// issued tokens matches what the metadata advertises — silent drift here is
-// a top connector-rejection cause.
-//
-// `disallowPublicClientRegistration: true` rejects public-client DCR (`none`
-// token_endpoint_auth_method) inside the library itself. We *also* wrap
-// the provider's `fetch` to gate every `/register` request on
-// `Authorization: Bearer <MCP_INITIAL_ACCESS_TOKEN>` — see `dcrRegisterGate`
-// in `auth.ts` for the rationale and fail-closed semantics. The library
-// dispatches `/register` to its internal `handleClientRegistration` *before*
-// any handler runs, so the gate must live above the provider (not inside
-// `PackRatAuthHandler`).
-
-const oauthProvider = new OAuthProvider<Env>({
-  // /mcp and sub-paths are API routes: require a valid access token
-  apiRoute: '/mcp',
-  apiHandler: mcpApiHandler,
-
-  // All other routes (/, /health, /authorize, /login, /callback) go to the auth handler
-  defaultHandler: PackRatAuthHandler,
-
-  // OAuth 2.1 endpoints (token + register are served by OAuthProvider itself)
-  authorizeEndpoint: '/authorize',
-  tokenEndpoint: '/token',
-  clientRegistrationEndpoint: '/register',
-
-  // Security: S256 PKCE only; no implicit flow; restrict DCR to confidential
-  // clients (the /register endpoint is further gated by MCP_INITIAL_ACCESS_TOKEN
-  // in the outer fetch wrapper below — see U4).
-  allowPlainPKCE: false,
-  allowImplicitFlow: false,
-  disallowPublicClientRegistration: true,
-
-  // Token lifetimes: 60-min access tokens, 30-day refresh tokens. Refresh
-  // tokens rotate by default in @cloudflare/workers-oauth-provider per
-  // OAuth 2.1 §4.3.1; the rotation is verified in U17 integration tests.
-  accessTokenTTL: 3600,
-  refreshTokenTTL: 2592000,
-
-  // Surface the full v1 scope catalog in /.well-known/oauth-authorization-server.
-  scopesSupported: [...SCOPES_SUPPORTED],
-
-  // Pin the protected-resource URL to the custom domain (env-invariant in v1).
-  resourceMetadata: buildResourceMetadata({} as Env),
-
-  // U15: forward provider-side OAuth errors to Workers Logs as structured
-  // WARN events. The provider invokes this hook for invalid_grant,
-  // invalid_client, invalid_scope, audience mismatch, etc. — every
-  // OAuth failure response the library generates. We log only the
-  // public `{ code, description, status }` fields; we never log the
-  // request body, the bearer token, or any `props` payload.
-  //
-  // `internal` (when present) carries server-side-only diagnostic
-  // context the library deliberately did NOT put on the wire (e.g. a
-  // JWT validation failure category). We DO log that, but only the
-  // `category` + `reason` strings — never `detail`, which can carry an
-  // arbitrary payload that risks leaking issuer-side material.
-  //
-  // We don't return a Response: the library's default error response
-  // shape is the right OAuth surface (RFC 6749 error envelope); we
-  // just observe it.
-  //
-  // The correlation ID is synthesised here — the OAuthProvider hook
-  // signature in v0.7.0 (see
-  // `node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:556`)
-  // does NOT expose the inbound Request, so we can't pivot to the
-  // outer wrapper's per-request stash. We use the `oauth:` namespace
-  // so an operator filter on `correlationId: oauth:*` returns every
-  // provider-side error; Workers Logs still echoes `cf-ray` alongside
-  // each line so cross-correlation with the zone log is one filter away.
-  onError: ({ code, description, status, internal }) => {
-    const log = createLogger({ correlationId: syntheticCorrelationId('oauth') });
-    log.warn('mcp.oauth.error', {
-      oauthCode: code,
-      oauthStatus: status,
-      description,
-      ...(internal
-        ? { error: { code: internal.category, message: internal.reason, retryable: false } }
-        : {}),
-    });
-  },
-});
-
 /**
- * Worker entrypoint: gate `/register` on the initial access token first,
- * apply the CORS allowlist for `/.well-known/*` to Claude origins, then
- * delegate every other path to the OAuthProvider. Also exports a
- * `scheduled` handler for the U14 KV purge cron (daily at 04:00 UTC).
+ * Extract the bearer token from an `Authorization` header value.
  *
- * Keeping the gate (and CORS) at this layer (vs. inside
- * `PackRatAuthHandler`) is load-bearing: the library routes `/register`
- * and `/.well-known/*` to its built-in handlers *before* the default
- * handler runs, so any logic inside `PackRatAuthHandler` would never fire
- * for those paths. The CORS logic itself lives in `./cors.ts` so it
- * stays testable without dragging the full agents/mcp module graph (and
- * its `cloudflare:workers` imports) into a Node-native vitest run.
- *
- * The `scheduled` handler delegates to `runScheduledPurge` in
- * `./scheduled.ts`, which calls `oauthProvider.purgeExpiredData(env)`
- * directly on the provider instance (NOT on `env.OAUTH_PROVIDER`, which
- * is the helpers object injected per-request and isn't available in a
- * scheduled handler context — see
- * `@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:1191`).
+ * Returns `null` if the header is missing, doesn't use the Bearer scheme,
+ * the token slot is empty, or the value exceeds `MAX_BEARER_HEADER_LEN`.
+ * Length-cap defense is symmetric with the deleted DCR gate helper —
+ * neither verifier nor outer wrapper should pay JWKS-fetch cost on a
+ * pathological header.
  */
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // U15: derive a correlation ID at the top of the wrapper and stash it
-    // on the Request via a WeakMap so deep handlers (`dcrRegisterGate`,
-    // `handleLoginPost`, `handleCallback`) can read it back without
-    // plumbing it through every function signature. We also echo it
-    // on every outbound response via `X-Correlation-Id` so operators
-    // can trace a single request through Workers Logs + the upstream
-    // Cloudflare zone log + Sentry by one value.
-    const correlationId = correlationIdFrom(request);
-    attachCorrelationId(request, correlationId);
-
-    const gateResponse = dcrRegisterGate(request, env);
-    if (gateResponse) return withCorrelationHeader(gateResponse, correlationId);
-
-    // OPTIONS preflight short-circuit: handled entirely here, never hits
-    // the OAuthProvider.
-    if (request.method === 'OPTIONS') {
-      const cors = applyCorsHeaders(request, null);
-      if (cors) return withCorrelationHeader(cors, correlationId);
-    }
-
-    const response = await oauthProvider.fetch(request, env, ctx);
-
-    // Annotate well-known GETs from allowed origins; everything else falls
-    // through unchanged (default-deny — see `applyCorsHeaders`).
-    const annotated = applyCorsHeaders(request, response);
-    return withCorrelationHeader(annotated ?? response, correlationId);
-  },
-
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
-    await runScheduledPurge(oauthProvider, env);
-  },
-};
+function extractBearer(headerValue: string | null): string | null {
+  if (!headerValue) return null;
+  if (headerValue.length > MAX_BEARER_HEADER_LEN) return null;
+  const match = BEARER_REGEX.exec(headerValue);
+  if (!match) return null;
+  const token = match[1]?.trim();
+  return token && token.length > 0 ? token : null;
+}
 
 /**
  * Annotate an outbound response with `X-Correlation-Id: <id>`.
@@ -568,3 +390,120 @@ function withCorrelationHeader(response: Response, correlationId: string): Respo
   annotated.headers.set('X-Correlation-Id', correlationId);
   return annotated;
 }
+
+/**
+ * Worker entrypoint (U3+U4 cutover).
+ *
+ * The MCP worker is a **pure protected resource** after this refactor:
+ * there is no OAuth state machine here, no authorize/callback/token/register
+ * endpoints, no KV state, no scheduled handler. Token issuance + DCR + consent
+ * all live in the API worker (`api.packrat.world`) via
+ * `@better-auth/oauth-provider`. This worker:
+ *
+ *   1. Serves `/.well-known/oauth-protected-resource` (RFC 9728).
+ *   2. Validates JWT access tokens locally against the API worker's JWKS
+ *      (`verifyMcpToken` — U2).
+ *   3. Delegates `/mcp` to the Durable Object, injecting the verified
+ *      claims via `ctx.props`.
+ *   4. Serves the operational surface — `/health`, `/status`, `/favicon.ico`.
+ *
+ * Props-injection mechanism (the load-bearing SDK-contract piece):
+ *   The `agents/mcp` SDK's `McpAgent.serve('/mcp')` returns a handler that
+ *   reads `ctx.props` and forwards them to the DO via
+ *   `getAgentByName(ns, name, { props: ctx.props })` (see
+ *   `node_modules/agents/dist/mcp/index.js` around line 134). To inject
+ *   props we mutate `ctx` in place with `(ctx as any).props = { ... }`
+ *   before calling `mcpDoHandler.fetch`. This matches option (a) in the
+ *   plan's discussion of injection mechanisms — direct ctx mutation —
+ *   because the SDK has no public `getProps` hook and `Object.assign`-style
+ *   wrappers around `ExecutionContext` would lose the runtime's prototype
+ *   methods (`waitUntil`, `passThroughOnException`).
+ *
+ * Audience-mismatch deferred decision (plan's D5):
+ *   `props.betterAuthToken` forwards the MCP JWT as-is to the PackRat API
+ *   for proxied calls. The JWT's `aud` is `https://mcp.packratai.com/mcp`,
+ *   NOT `api.packrat.world`, so the API's `bearer()` plugin may reject
+ *   it. The fix (when surfaced during U7+ runtime testing) is to extend
+ *   `validAudiences` in `packages/api/src/auth/index.ts:oauthProvider({
+ *   validAudiences: [...both URLs...] })` — option (a) per the plan.
+ *   For now the token forwards unchanged; if proxied calls 401 in U6/U7,
+ *   that's the one-line fix.
+ */
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // U15: derive a correlation ID at the top of the wrapper and stash it
+    // on the Request via a WeakMap so deep handlers can read it back
+    // without plumbing it through every function signature. We also echo
+    // it on every outbound response via `X-Correlation-Id` so operators
+    // can trace a single request through Workers Logs + the upstream
+    // Cloudflare zone log + Sentry by one value.
+    const correlationId = correlationIdFrom(request);
+    attachCorrelationId(request, correlationId);
+
+    const url = new URL(request.url);
+
+    // ── 1. CORS preflight short-circuit for Claude origins ───────────────────
+    // OPTIONS preflights from allowlisted origins on `/.well-known/*` get a
+    // 204 directly here so we never touch the dispatcher logic below.
+    if (request.method === 'OPTIONS') {
+      const cors = applyCorsHeaders(request, null);
+      if (cors) return withCorrelationHeader(cors, correlationId);
+    }
+
+    // ── 2. Public metadata + ops endpoints (no auth required) ────────────────
+    if (url.pathname === '/.well-known/oauth-protected-resource') {
+      const body = buildResourceMetadata(env);
+      const res = Response.json(body);
+      const annotated = applyCorsHeaders(request, res) ?? res;
+      return withCorrelationHeader(annotated, correlationId);
+    }
+    if (url.pathname === '/health' || url.pathname === '/') {
+      return withCorrelationHeader(await handleHealth(request, env), correlationId);
+    }
+    if (url.pathname === '/status') {
+      return withCorrelationHeader(handleStatus(request, env), correlationId);
+    }
+    if (url.pathname === '/favicon.ico') {
+      return withCorrelationHeader(faviconResponse(), correlationId);
+    }
+
+    // ── 3. /mcp — JWT-gated protected resource ───────────────────────────────
+    if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+      const bearer = extractBearer(request.headers.get('Authorization'));
+      if (!bearer) {
+        return withCorrelationHeader(unauthorizedResponse(env), correlationId);
+      }
+
+      const verified = await verifyMcpToken(bearer, { env, ctx });
+      if (!verified) {
+        return withCorrelationHeader(unauthorizedResponse(env), correlationId);
+      }
+
+      // Inject the verified-claim Props into ctx.props for the DO handler.
+      // The `agents/mcp` SDK reads `ctx.props` and forwards via
+      // `getAgentByName(..., { props: ctx.props })` (see SDK source). The
+      // Props shape is unchanged from the pre-cutover surface so the DO's
+      // `init()` scope-filter and `getAuditContext()` read the same fields
+      // without modification.
+      const props: Props = {
+        betterAuthToken: verified.token,
+        userId: verified.sub,
+        scopes: verified.scopes,
+      };
+      // safe-cast: ExecutionContext has no index signature for `props`, but
+      // the SDK reads it via a dynamic property access — this is the
+      // documented injection mechanism mirroring how OAuthProvider's
+      // apiHandler used to populate it.
+      (ctx as unknown as { props: Props }).props = props;
+
+      const response = await mcpDoHandler.fetch(request, env, ctx);
+      return withCorrelationHeader(response, correlationId);
+    }
+
+    // ── 4. Anything else: 404 ────────────────────────────────────────────────
+    return withCorrelationHeader(
+      Response.json({ error: 'Not Found' }, { status: 404 }),
+      correlationId,
+    );
+  },
+};

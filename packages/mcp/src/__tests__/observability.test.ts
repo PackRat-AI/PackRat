@@ -35,9 +35,6 @@ import {
   scrubFields,
   syntheticCorrelationId,
 } from '../observability';
-// (mirrors index.ts so this test stays node-native — see the
-// "OAuthProvider onError hook" describe block below for the rationale.)
-import { runScheduledPurge } from '../scheduled';
 import { registerAdminTools } from '../tools/admin';
 import type { AgentContext, Env } from '../types';
 
@@ -262,17 +259,13 @@ describe('syntheticCorrelationId', () => {
   });
 });
 
-// ── OAuthProvider onError shape (verified against the v0.7 d.ts contract) ───
-//
-// The onError hook receives `{ code, description, status, headers, internal? }`.
-// We rebuild the index.ts handler shape here (a thin lambda) to assert that
-// it (a) emits a WARN log with `oauthCode`/`oauthStatus`/`description`, and
-// (b) does NOT leak any other fields (no `headers`, no request body, no
-// props). The hook itself is exported via the OAuthProvider config in
-// `index.ts`; we reproduce its body here so this test is a node-native unit
-// test (importing `index.ts` would drag agents/mcp → cloudflare:workers).
+// ── OAuthProvider onError shape (deleted in U3+U4) ──────────────────────────
+// The library + its onError hook were removed in the Better Auth cutover.
+// The API worker now owns OAuth-provider errors; tests for that surface live
+// in `packages/api`. Kept the describe shell here as `.skip` for one release
+// so the U6 test rewrite can intentionally delete it.
 
-describe('OAuthProvider onError hook', () => {
+describe.skip('OAuthProvider onError hook (deleted in U3+U4)', () => {
   let capture: ReturnType<typeof captureLogs>;
   beforeEach(() => {
     capture = captureLogs();
@@ -509,9 +502,11 @@ describe('admin tool audit log — packrat_admin_hard_delete_user', () => {
   });
 });
 
-// ── Scheduled handler logging ───────────────────────────────────────────────
+// ── Scheduled handler logging (deleted in U3+U4) ────────────────────────────
+// `runScheduledPurge` was deleted; KV cleanup is owned by Better Auth on the
+// API worker side. Skipped pending U6 deletion.
 
-describe('runScheduledPurge structured logging', () => {
+describe.skip('runScheduledPurge structured logging (deleted in U3+U4)', () => {
   let capture: ReturnType<typeof captureLogs>;
   beforeEach(() => {
     capture = captureLogs();

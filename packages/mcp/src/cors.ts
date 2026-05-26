@@ -1,19 +1,17 @@
 /**
  * CORS allowlist for `/.well-known/*` endpoints.
  *
- * The `@cloudflare/workers-oauth-provider` library serves both well-known
- * endpoints (`oauth-protected-resource` and `oauth-authorization-server`)
- * directly — we can't intercept them inside `PackRatAuthHandler` because
- * the library routes them before the defaultHandler dispatch (same
- * constraint U4 hit with `/register`). Instead, the outer fetch wrapper
- * in `index.ts` calls `applyCorsHeaders` to:
+ * After U3+U4 the MCP worker hand-rolls the `oauth-protected-resource`
+ * document in the outer fetch wrapper (`index.ts`); the matching
+ * `oauth-authorization-server` doc is served by the API worker. Either
+ * way, Claude probes the document with an OPTIONS preflight from a
+ * Claude origin before the real GET, so the outer wrapper in `index.ts`
+ * calls `applyCorsHeaders` to:
  *
- *   - Short-circuit OPTIONS preflights from Claude origins with a 204
- *     (the library returns 405 for OPTIONS on its well-known routes,
- *     which would defeat the preflight).
+ *   - Short-circuit OPTIONS preflights from Claude origins with a 204.
  *   - Annotate GET responses from Claude origins with
- *     `Access-Control-Allow-Origin` + `Vary: Origin` after the provider
- *     returns its JSON.
+ *     `Access-Control-Allow-Origin` + `Vary: Origin` after the metadata
+ *     handler returns its JSON.
  *
  * Default-deny: any origin not in the allowlist gets the upstream
  * response unmodified (no Access-Control-Allow-Origin), so browsers from
@@ -50,9 +48,8 @@ export function applyCorsHeaders(request: Request, existing: Response | null): R
   const origin = request.headers.get('Origin');
   if (!origin || !WELL_KNOWN_ALLOWED_ORIGINS.has(origin)) return null;
 
-  // Preflight: respond directly so the OAuthProvider library never sees
-  // the OPTIONS request (it returns 405 for OPTIONS on its well-known
-  // routes, which would defeat the preflight).
+  // Preflight: respond directly so the well-known handler never sees the
+  // OPTIONS request (it only knows GET).
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -66,7 +63,7 @@ export function applyCorsHeaders(request: Request, existing: Response | null): R
     });
   }
 
-  // GET: annotate the upstream provider response. We never strip body or
+  // GET: annotate the upstream metadata response. We never strip body or
   // headers — only add the three CORS-related ones.
   if (existing && request.method === 'GET') {
     const annotated = new Response(existing.body, existing);

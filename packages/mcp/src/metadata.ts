@@ -1,17 +1,21 @@
 /**
- * RFC 9728 + RFC 8414 metadata wiring for the PackRat MCP Worker.
+ * RFC 9728 metadata for the PackRat MCP Worker (a pure protected resource).
  *
- * `@cloudflare/workers-oauth-provider` auto-emits both
- * `/.well-known/oauth-authorization-server` (RFC 8414) and
- * `/.well-known/oauth-protected-resource` (RFC 9728). We override the
- * protected-resource metadata so the `resource` URL matches our custom
- * domain (`mcp.packratai.com`) instead of the request origin — Claude
- * verifies token audience against this exact string and any mismatch
- * silently breaks discovery.
+ * After U3+U4, the MCP worker is **not** an Authorization Server — it only
+ * serves `/.well-known/oauth-protected-resource` from this module. The
+ * matching `/.well-known/oauth-authorization-server` document is served
+ * by the API worker (`api.packrat.world`) via `@better-auth/oauth-provider`
+ * (configured in `packages/api/src/auth/index.ts`).
+ *
+ * The `authorization_servers` value points at the API worker's issuer URL
+ * (derived from `env.PACKRAT_API_URL`, matching the JWT `iss` claim that
+ * `verifyMcpToken` validates). Claude follows this pointer to discover the
+ * AS metadata + endpoints (authorize, token, register, jwks) and then mints
+ * tokens against THAT origin; tokens come back with `aud = canonicalResourceUrl`
+ * which the verifier on this worker requires.
  *
  * The four scope strings here are the v1 listing surface (per the
- * connector-readiness plan). They are also passed to OAuthProvider's
- * top-level `scopesSupported` so the AS metadata advertises them.
+ * connector-readiness plan).
  */
 
 import { ServiceMeta } from './constants';
@@ -28,7 +32,13 @@ export const SCOPES_SUPPORTED = [
 export type Scope = (typeof SCOPES_SUPPORTED)[number];
 
 /**
- * Build the `resourceMetadata` option passed to `new OAuthProvider({...})`.
+ * Strip a trailing slash from a base URL. Hoisted so the regex literal isn't
+ * re-allocated on every call (Biome lint/performance/useTopLevelRegex).
+ */
+const TRAILING_SLASH = /\/$/;
+
+/**
+ * Build the body of `/.well-known/oauth-protected-resource`.
  *
  * The resource identifier is pinned to the production MCP custom domain.
  * Even in dev environments (where the request origin is *.workers.dev),
@@ -61,11 +71,21 @@ export function canonicalResourceUrl(_env: Env): string {
 }
 
 /**
- * The canonical authorization-server URL — same hostname as the resource,
- * since this Worker is both the MCP server and the AS.
+ * The canonical authorization-server URL. After U3+U4 this points at the
+ * API worker — the AS is hosted there via Better Auth, NOT on this worker.
+ *
+ * Derived from `env.PACKRAT_API_URL` so it stays in lockstep with the JWT
+ * `iss` claim the U2 verifier enforces (see `getIssuerUrl` in
+ * `token-verify.ts`). Both must be the exact same string for the discovery
+ * chain `oauth-protected-resource → oauth-authorization-server → token mint`
+ * to terminate at a JWT whose `iss` matches what `jose.jwtVerify` expects.
+ *
+ * Trailing slash stripped because JWT `iss` is byte-for-byte compared and
+ * Better Auth's plugin emits the issuer without one.
  */
-export function authorizationServerUrl(_env: Env): string {
-  return 'https://mcp.packratai.com';
+export function authorizationServerUrl(env: Env): string {
+  const base = env.PACKRAT_API_URL ?? '';
+  return base.replace(TRAILING_SLASH, '');
 }
 
 /**
@@ -75,16 +95,22 @@ export function authorizationServerUrl(_env: Env): string {
  * Includes `resource_metadata=...` so MCP clients can discover the AS
  * configuration on first encounter, and `scope=...` so they can ask for
  * exactly the right scopes on the subsequent auth flow.
+ *
+ * The `resource_metadata` URL points at THIS worker's protected-resource
+ * document — Claude reads that, follows `authorization_servers[0]` to the
+ * API worker, fetches `.well-known/oauth-authorization-server` from there,
+ * and proceeds with the authorization-code flow against the API worker.
  */
-export function buildWwwAuthenticateHeader(env: Env, scope: Scope = 'mcp'): string {
-  const metadataUrl = `${authorizationServerUrl(env)}/.well-known/oauth-protected-resource`;
+export function buildWwwAuthenticateHeader(_env: Env, scope: Scope = 'mcp'): string {
+  const metadataUrl = 'https://mcp.packratai.com/.well-known/oauth-protected-resource';
   return `Bearer resource_metadata="${metadataUrl}", scope="${scope}"`;
 }
 
 /**
  * Returns the `error: invalid_token` JSON body and a `WWW-Authenticate`
  * header for a 401 response from /mcp — convenience wrapper so the
- * apiHandler in index.ts doesn't have to reach into raw header shapes.
+ * outer fetch wrapper in index.ts doesn't have to reach into raw header
+ * shapes.
  */
 export function unauthorizedResponse(
   env: Env,

@@ -14,14 +14,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@cloudflare/workers-oauth-provider": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@packrat/api-client": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
     "agents": "^0.13.2",
     "jose": "^6.0.0",
-    "magic-regexp": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
