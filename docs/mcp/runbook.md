@@ -17,48 +17,108 @@ operates the Worker.
 | prod | `packrat-mcp`      | `https://mcp.packratai.com`          | tag push (U17) |
 | dev  | `packrat-mcp-dev`  | `https://packrat-mcp-dev.<acct>.workers.dev` | manual (`bun run deploy:dev`) |
 
+## Post-refactor: AS lives on api.packrat.world
+
+As of the 2026-05-25 OAuth consolidation refactor, the MCP worker is a
+**pure protected resource**. It no longer runs its own authorization
+server, no longer issues tokens, no longer brokers DCR or login. All of
+that lives on `api.packrat.world` via the `@better-auth/oauth-provider`
+plugin (U1 of the refactor plan).
+
+### Architecture overview
+
+| Component                       | Lives on             | Owned by                                       |
+| ------------------------------- | -------------------- | ---------------------------------------------- |
+| Authorization server (AS)       | `api.packrat.world`  | `@better-auth/oauth-provider` plugin           |
+| Consent / login UI              | `api.packrat.world`  | `consent-page.ts` (U1 of the refactor)         |
+| OAuth clients / grants / tokens | `api.packrat.world`  | Better Auth tables in Postgres + `AUTH_KV`     |
+| JWKS                            | `api.packrat.world`  | Better Auth (`/api/auth/jwks`)                 |
+| Protected resource (MCP)        | `mcp.packratai.com`  | This worker — validates JWTs only              |
+| MCP tool / resource surface     | `mcp.packratai.com`  | This worker — unchanged from U7–U16            |
+
+The MCP worker validates incoming JWTs via `verifyMcpToken`
+(`packages/mcp/src/token-verify.ts`), which fetches and caches the
+JWKS from `${PACKRAT_API_URL}/api/auth/jwks`.
+
+### Discovery chain
+
+When Claude.ai connects to the MCP for the first time:
+
+1. Claude POSTs to `https://mcp.packratai.com/mcp` with no Authorization.
+2. MCP returns 401 with
+   `WWW-Authenticate: Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource"`.
+3. Claude fetches the PRM document, which advertises
+   `authorization_servers: ["https://api.packrat.world"]`.
+4. Claude fetches
+   `https://api.packrat.world/.well-known/oauth-authorization-server`
+   to discover the AS endpoints (Better Auth's plugin serves this).
+5. Claude runs the OAuth flow entirely against `api.packrat.world`:
+   `/api/auth/oauth/authorize` → consent page → `/api/auth/oauth/token`.
+6. Claude receives the issued bearer (a JWT signed by Better Auth) and
+   redirects back to `https://claude.ai/api/mcp/auth_callback`.
+7. Claude retries the MCP request with `Authorization: Bearer <jwt>`;
+   the MCP worker validates the JWT locally (JWKS cache hit after the
+   first request per isolate) and dispatches the tool call.
+
+References:
+
+- [Refactor plan](../plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md)
+  for the architectural decision, requirements, rollout strategy, and
+  alternatives considered.
+- [Spike doc](./better-auth-oauth-provider-spike-2026-05-25.md) for the
+  empirical verification that `@better-auth/oauth-provider` carries
+  the MCP integration end-to-end.
+
+### Operator note: force isolate rotation after the deploy
+
+Better Auth is memoized in a per-isolate singleton on the API side
+(`authCache` in `packages/api/src/auth/index.ts`). The MCP worker has
+its own per-isolate JWKS cache. After the refactor deploy, existing
+isolates on both workers will keep their old config until they rotate.
+Force a rotation by bumping a benign env var on each worker so the new
+plugin config / JWKS endpoint is picked up immediately rather than
+waiting on natural isolate churn. See § "Forcing isolate rotation
+after a deploy" further down for the pattern.
+
 ## One-time operator setup
 
 These steps are required before `wrangler deploy --env prod` can succeed.
 They live outside the codebase because they touch Cloudflare account state.
 
-### 1. KV namespaces
+### 1. Deprovision the legacy `OAUTH_KV` namespaces + DCR secret
 
-**Already provisioned** on the PackRat Cloudflare account
-(`Admin@packratai.com`, account ID `a0e238a64b4bb8d9ca35c30149c26893`).
-The MCP's OAuth provider needs its own dedicated namespaces — it should
-NOT share `AUTH_KV` / `AUTH_KV_preview` with the API's Better Auth
-because (a) the U14 `purgeExpiredData` cron would iterate over unrelated
-keys, and (b) a future provider version could interpret Better Auth keys
-as orphans and delete them. Two namespaces, one per env:
+Post-refactor (2026-05-25), the MCP worker is a pure protected resource —
+no KV state, no DCR pre-shared bearer. The `OAUTH_KV` namespaces and the
+`MCP_INITIAL_ACCESS_TOKEN` secret are no longer read by any code.
 
-| CF dashboard title | Binding name | KV ID | Used by |
-| ------------------ | ------------ | ----- | ------- |
-| `MCP_OAUTH_KV`     | `OAUTH_KV` (in `env.prod`)    | `0ac2e23bb4f04dc5a39cfd3d7bc900e0` | `packrat-mcp` (prod) |
-| `MCP_OAUTH_KV_dev` | `OAUTH_KV` (top-level + `env.dev`) | `be554ba7448c4c13a48e85d9a0cdabc8` | `packrat-mcp-dev` AND `wrangler dev` preview |
-
-`OAUTH_KV` is the binding name code reads (the OAuth-provider library
-expects it); the `MCP_` prefix on the dashboard title is just for
-findability among other PackRat KV namespaces.
-
-The dev namespace doubles as both the deployed-dev-env namespace AND
-the `wrangler dev` preview namespace (so `id` and `preview_id` are the
-same value in the dev block). This is intentional: there's no
-operational value in a third namespace just for `wrangler dev` HMR
-state. Distinct from the API's `AUTH_KV_preview` naming convention —
-the `_dev` suffix more accurately describes the dual-use semantics.
-
-To recreate from scratch (rotation, fresh env, etc.):
+**Timing matters.** Per the plan's rollback safety matrix
+(`docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md`
+§ "Operational / Rollout Notes"), deprovision AFTER the new code deploys
+and you've verified `mcp.packratai.com` is healthy end-to-end. Reverse
+order (delete the binding first, then deploy) would crash every request
+during the deploy window. Verify-then-cleanup:
 
 ```bash
-wrangler kv namespace create MCP_OAUTH_KV       # prod
-wrangler kv namespace create MCP_OAUTH_KV_dev   # dev (no --preview;
-                                                #   this namespace doubles
-                                                #   as the wrangler-dev preview)
-# Paste the returned IDs into packages/mcp/wrangler.jsonc — see the file
-# header for the three slots (top-level dev id+preview_id, env.prod.id,
-# env.dev.id+preview_id).
+# Step 1: confirm the new code is live and healthy
+curl -s https://mcp.packratai.com/health | jq .status   # expect "ok"
+curl -s https://mcp.packratai.com/.well-known/oauth-protected-resource | \
+  jq .authorization_servers                              # expect ["https://api.packrat.world"]
+
+# Step 2: drop the namespaces (prod + dev IDs from the prior wrangler.jsonc)
+wrangler kv namespace delete --namespace-id 0ac2e23bb4f04dc5a39cfd3d7bc900e0   # prod
+wrangler kv namespace delete --namespace-id be554ba7448c4c13a48e85d9a0cdabc8   # dev
+
+# Step 3: delete the DCR pre-shared bearer from both envs
+wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env prod
+wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env dev
 ```
+
+No equivalent provisioning step exists anymore: Better Auth's OAuth
+provider on `api.packrat.world` owns all client / grant / token state in
+the API's Postgres + `AUTH_KV`. Pre-registered Claude clients are seeded
+once via `packages/api/scripts/seed-oauth-clients.ts` (U1 of the
+refactor) — see § "Post-refactor: AS lives on api.packrat.world" below
+for the architecture overview.
 
 ### 2. Provision the `mcp.packratai.com` custom domain
 
@@ -76,12 +136,8 @@ In the Cloudflare dashboard, on the `packratai.com` zone:
 ```bash
 # Required for both prod and dev
 wrangler secret put PACKRAT_API_URL --env prod
-# value: https://api.packrat.world
-
-wrangler secret put MCP_INITIAL_ACCESS_TOKEN --env prod
-# value: a random 32-byte bearer used to authorize POST /register;
-# generate via `openssl rand -hex 32`. Without it set, /register
-# returns 401 to every caller.
+# value: https://api.packrat.world  (the AS host — used by token-verify.ts
+# to fetch JWKS at ${PACKRAT_API_URL}/api/auth/jwks)
 
 # Optional (used by U15)
 wrangler secret put SENTRY_DSN --env prod
@@ -89,53 +145,9 @@ wrangler secret put SENTRY_DSN --env prod
 
 Repeat for `--env dev` with dev values.
 
-### 4. Pre-register Claude as a trusted OAuth client (U4)
-
-Once the worker is deployed and `MCP_INITIAL_ACCESS_TOKEN` is set, run:
-
-```bash
-# From repo root:
-bun packages/mcp/scripts/register-claude-clients.ts --env prod
-
-# Dev worker (URL must be passed explicitly — no canonical *.workers.dev URL):
-bun packages/mcp/scripts/register-claude-clients.ts --env dev \
-  --url https://packrat-mcp-dev.<your-account>.workers.dev
-```
-
-Token resolution order: `--token <value>` flag → `MCP_INITIAL_ACCESS_TOKEN`
-env var → `packages/mcp/.dev.vars`. The script POSTs to `/register` twice
-(once for `https://claude.ai/api/mcp/auth_callback`, once for
-`https://claude.com/api/mcp/auth_callback`) and prints the issued
-`client_id` + `client_secret` for each — record both immediately if you
-need to reuse them, because the Worker only retains the secret's hash.
-
-The script is idempotent: HTTP 409 or any "already exists" / "duplicate"
-response is treated as a skip, not a failure.
-
-### DCR gating contract (U4)
-
-Every `POST /register` request is gated by an outer fetch wrapper in
-`packages/mcp/src/index.ts` that calls `dcrRegisterGate` from
-`packages/mcp/src/auth.ts` *before* the OAuthProvider sees the request.
-The gate is **fail-closed**:
-
-| Authorization header                          | Result |
-| --------------------------------------------- | ------ |
-| Missing                                       | 401    |
-| Wrong scheme (`Basic ...`)                    | 401    |
-| `Bearer` but no token value                   | 401    |
-| `Bearer <wrong-token>`                        | 401    |
-| `Bearer <correct-token>`, env var **unset**   | 401    |
-| `Bearer <correct-token>`, env var matching    | passes through to `OAuthProvider.handleClientRegistration` |
-
-The same 401 is returned for non-POST `/register` requests, so an attacker
-cannot probe whether `MCP_INITIAL_ACCESS_TOKEN` is set by varying the
-method.
-
-The library option `disallowPublicClientRegistration: true` is also set
-inside the OAuthProvider config as defense-in-depth: even if the gate were
-removed, public clients (`token_endpoint_auth_method: 'none'`) would still
-be rejected.
+Pre-registration of Claude as an OAuth client now happens on the API side
+once via `packages/api/scripts/seed-oauth-clients.ts` — see U1 of the
+refactor plan and § "Post-refactor: AS lives on api.packrat.world" below.
 
 ## U5 admin scope model
 
@@ -261,70 +273,23 @@ rotated. Force a rotation by deploying a no-op env change (e.g. bumping
 a benign var) so MCP sign-ins start succeeding immediately rather than
 waiting on natural isolate churn.
 
-## Login form security (U6)
+## CORS allowlist on /.well-known/oauth-protected-resource (U6)
 
-The MCP `/login` POST has three independent checks before it forwards
-credentials to Better Auth:
+Post-refactor, the MCP worker only serves the **protected-resource**
+metadata endpoint at `/.well-known/oauth-protected-resource`. The
+authorization-server metadata (`/.well-known/oauth-authorization-server`)
+now lives on `api.packrat.world` because the AS itself runs there.
 
-| Check | Failure mode |
-| ----- | ------------ |
-| `Origin` matches `https://mcp.packratai.com` or the request URL's own origin, **or is missing** | 403 |
-| Cookie `__Host-PR_CSRF` is present and equals the form's hidden `csrf` field | 400 |
-| The same CSRF value is present in KV under `csrf:<stateKey>` (set at `/authorize`) | 400 |
-| `checkLoginRateLimit(env, ip)` returns `true` (today stubbed; U14 wires the binding) | 429 |
-
-The KV anchor is the load-bearing CSRF defense — a pure double-submit
-cookie can be forged by a subdomain XSS, but an attacker can't fabricate
-a matching `csrf:<stateKey>` entry without controlling the worker's KV.
-
-The Origin check is intentionally permissive when the header is missing:
-some MCP-flow user agents (CLI clients, headless flows) don't send an
-`Origin` header, and rejecting them would break legitimate flows. The
-CSRF and KV checks still apply.
-
-### Rate-limit hook (U14)
-
-`checkLoginRateLimit(env, ip)` in `packages/mcp/src/auth.ts` now calls
-`env.MCP_TOOLS_RL.limit({ key: \`login:${ip || cfRay}\` })` via the
-shared `checkRateLimit` helper in `packages/mcp/src/rate-limit.ts`. See
-the "U14 rate limiting + KV purge" section below for the full
-enforcement-surfaces table, the dev-fallback contract, and the
-fail-open trade-off. The handler call site at `handleLoginPost`
-prefers `cf-connecting-ip`, falling back to `x-forwarded-for` then
-`cf-ray` so missing-IP requests don't all collapse to one global
-counter.
-
-### Better Auth response mapping
-
-`/login` POST maps Better Auth's HTTP status to user-facing copy via
-`betterAuthErrorCopy(status)`:
-
-| Better Auth status | Rendered status | Copy |
-| ------------------ | --------------- | ---- |
-| 429 | 429 | "Too many sign-in attempts. Please wait a minute and try again." |
-| 423 | 423 | "This account is locked. Check your email for a reset link or contact support." |
-| 401 / other 4xx | 401 | "Invalid email or password." |
-| 5xx | 502 | "PackRat sign-in is temporarily unavailable. Try again shortly." |
-
-The non-401 4xx collapse is deliberate: don't leak "user exists but
-wrong password" vs. "no such user".
-
-## CORS allowlist on /.well-known/* (U6)
-
-The two well-known endpoints (`/.well-known/oauth-protected-resource`
-and `/.well-known/oauth-authorization-server`) accept cross-origin GET
-and OPTIONS requests **only** from:
+The PRM endpoint accepts cross-origin GET and OPTIONS requests **only**
+from:
 
 - `https://claude.ai`
 - `https://claude.com`
 
-Everything else gets the upstream OAuthProvider response unmodified
-(default-deny). The allowlist + GET annotation + OPTIONS short-circuit
-all live in `packages/mcp/src/cors.ts` (`applyCorsHeaders`), invoked by
-the outer fetch wrapper in `index.ts` — we can't add CORS inside
-`PackRatAuthHandler` because the OAuthProvider library routes the
-well-known paths before the defaultHandler dispatch (same constraint
-U4's `/register` gate hit).
+Everything else gets the response unmodified (default-deny). The
+allowlist + GET annotation + OPTIONS short-circuit all live in
+`packages/mcp/src/cors.ts` (`applyCorsHeaders`), invoked by the outer
+fetch wrapper in `index.ts`.
 
 If Anthropic adds new origins (e.g. a future Claude domain), update the
 `WELL_KNOWN_ALLOWED_ORIGINS` set in `cors.ts` and the corresponding test
@@ -760,72 +725,6 @@ so unit tests can construct an agent stub without standing up a Durable
 Object — both helpers short-circuit to `reason: 'unsupported'` when the
 method is missing, mirroring the live-client missing-capability path.
 
-## U11 login UX
-
-The login page renderer is extracted to `packages/mcp/src/login-page.ts`
-(263 lines). `renderLoginPage({ state, csrf, error?, clientName?, ssoEnabled? })`
-returns a complete HTML document. The presentation has room to breathe
-without dragging the OAuth handler internals along for the ride.
-
-### What shipped
-
-- **Brand mark + name** (inline SVG, no extra HTTP round-trip; replaceable
-  with the U13 public asset via a one-line change in `login-page.ts`).
-- **OAuth client-name disclosure** when `renderLoginPage({ ..., clientName: 'Claude' })`
-  is invoked — falls back to a generic "An MCP client is requesting access…"
-  line when omitted. `clientName` is HTML-escaped because it originates in
-  DCR metadata for non-pre-registered clients.
-- **Password-reset link** to `mailto:hello@packratai.com?subject=PackRat%20password%20reset`.
-  Better Auth's reset endpoint is POST-only with no public web page; mailto
-  is the most honest path until a web reset surface ships.
-- **Legal footer** links to Terms (U12), Privacy (U12), and Support
-  (`hello@packratai.com`). All three targets are on `packratai.com`.
-- **Accessibility**: `<main>` landmark, skip link, labelled inputs with
-  `autocomplete` hints, `role="alert"` on the error banner only when present,
-  `autofocus` on the email field, `prefers-color-scheme: dark` palette,
-  `noindex,nofollow` meta.
-
-### Stable signature for the SSO follow-up
-
-`renderLoginPage` accepts `ssoEnabled?: boolean` today; the field is
-parsed-and-ignored so the follow-up SSO PR can flip it without touching
-the handler call sites. The test suite asserts SSO buttons are NOT rendered
-in v1 (locks in the deferral).
-
-### What was NOT wired and why
-
-- **`clientName` is not threaded through at call sites yet.** The
-  `OAuthStateSchema` captures `clientId` but not the client name; to surface
-  the name in the disclosure copy, `handleAuthorize` would need to call
-  `env.OAUTH_PROVIDER.lookupClient(clientId)` and persist the name in KV
-  alongside the OAuth state. That's a one-screen change but it's not
-  required for the connector listing — Claude's name appears in the
-  consent screen Anthropic renders, not on our login form. Follow-up:
-  thread it through if a user reports the missing disclosure copy.
-- **Google + Apple SSO buttons.** Deferred per the U11 conditional
-  decision. Cookie-domain blocker: Better Auth's session cookie is
-  host-locked to `api.packrat.world`; the MCP worker at `mcp.packratai.com`
-  can't read it, and `packratai.com` and `packrat.world` share no parent
-  domain so `crossSubDomainCookies` doesn't bridge them. Realistic
-  follow-up options:
-  1. Move the API to a subdomain of `packratai.com` (e.g.
-     `api.packratai.com`) so cookies can be set on `.packratai.com`.
-  2. Extend Better Auth to encode the session token in the `callbackURL`
-     query string for the social flow (workaround for the cookie limit).
-  3. Introduce a one-time auth-code exchange endpoint between MCP and
-     the API: MCP redirects through API → API mints a short-lived code
-     bound to the Better Auth session → MCP exchanges the code for the
-     bearer server-to-server.
-  All three are non-trivial; (1) is the cleanest long-term but has
-  blast radius beyond the MCP. Worth a follow-up planning conversation.
-
-### Tests
-
-`packages/mcp/src/__tests__/login-page.test.ts` covers: document shape,
-branding, client-name disclosure (including the XSS escape), hidden-field
-escaping, helper + legal links, accessibility, and the SSO deferral
-contract. 20 tests total.
-
 ## U12 legal pages
 
 Anthropic's Software Directory Policy treats a missing or incomplete privacy
@@ -948,7 +847,7 @@ accessor; they walk the same field.
 
 | Asset | Path | Notes |
 | --- | --- | --- |
-| MCP connector mark (SVG, 256×256 viewBox) | [`apps/landing/public/mcp-logo.svg`](../../apps/landing/public/mcp-logo.svg) | Vector copy of the inline backpack mark in `packages/mcp/src/login-page.ts`. If the brand mark changes, update **all three** (`login-page.ts`, this SVG, and the favicon) in the same commit so the surfaces don't drift. |
+| MCP connector mark (SVG, 256×256 viewBox) | [`apps/landing/public/mcp-logo.svg`](../../apps/landing/public/mcp-logo.svg) | Used by the public docs page and listing materials. The MCP worker itself no longer renders any branded UI (the login page lived on the worker pre-refactor; the consent page now lives on api.packrat.world — see U1 of the 2026-05-25 refactor plan). If the brand mark changes, update this SVG and the favicon in the same commit so the listing surfaces don't drift. |
 | 1024×1024 PNG fallback for the directory listing | not in repo — render from `mcp-logo.svg` at submission time | Operator action; tracked in `docs/mcp/submission-packet.md` § "Logo / favicon checklist". |
 | Favicon (32×32 .ico) at the OAuth host | served at `https://mcp.packratai.com/favicon.ico` by the worker | Implementation: [`packages/mcp/src/favicon.ts`](../../packages/mcp/src/favicon.ts) (see "Favicon at OAuth domain" below). |
 | Favicon at the brand domain | `apps/landing/public/favicon.ico` and `apps/landing/public/PackRat.ico` (legacy filename still referenced by `apps/landing/lib/metadata.ts`) | Both files exist for compat; the worker's embedded favicon is sourced from `favicon.ico`. |
@@ -985,23 +884,31 @@ The favicon test (`packages/mcp/src/__tests__/favicon.test.ts`)
 asserts the `.ico` magic bytes and a non-zero size, so a
 copy-paste mistake fails CI loudly.
 
-## U14 rate limiting + KV purge
+## U14 rate limiting
 
-PackRat's MCP Worker has **two distinct rate-limit enforcement surfaces**,
-deliberately split per the connector-store plan's K.T.D. "Rate-limit split":
+PackRat's MCP Worker rate-limits authenticated tool calls via a single
+Cloudflare Workers Rate Limiting binding:
 
 | Surface | Backed by | Keyed by | Default budget |
 | ------- | --------- | -------- | -------------- |
-| Authenticated tool calls | Workers Rate Limiting binding `MCP_TOOLS_RL` | `${props.userId}:${toolName}` | 60 calls / 60s |
-| `/login` POST            | Same binding `MCP_TOOLS_RL`                  | `login:${ip \|\| cfRay}`      | 60 attempts / 60s |
-| Anonymous discovery endpoints (`/register`, `/authorize`, `/token`) | **Zone-level WAF Rate Limiting Rules** (operator-applied; see TODO below) | client IP | 100 r/s/IP (target) |
+| Authenticated tool calls | Workers Rate Limiting binding `MCP_TOOLS_RL` | `${userId}:${toolName}` | 60 calls / 60s |
+| Anonymous AS endpoints (`/authorize`, `/token`, `/register` on api.packrat.world) | **Zone-level WAF Rate Limiting Rules on the API host** (operator-applied; see TODO below) | client IP | 100 r/s/IP (target) |
 
 The binding configuration lives in
 [`packages/mcp/wrangler.jsonc`](../../packages/mcp/wrangler.jsonc) under the
 `rate_limiting` block — present in both the top-level/dev base and the
-`env.prod` block. Block-key conventions follow
+`env.prod` and `env.dev` blocks. Block-key conventions follow
 `packages/api/wrangler.jsonc:44`: the block is `rate_limiting` (not
 `ratelimits`) and the per-binding field is `binding` (not `name`).
+
+### Binding source change, key shape unchanged
+
+Post-refactor, the **binding** (`MCP_TOOLS_RL`) and **key shape**
+(`${userId}:${toolName}`) are unchanged. What changed is the source of
+`userId`: the prior implementation read it from the OAuthProvider `props`
+object (populated by the U5 `/callback` bridge); the new implementation
+reads it from the JWT `sub` claim returned by `verifyMcpToken`. Same
+counter independence, same budget, same envelope on exceed.
 
 ### Per-user/per-tool counter independence
 
@@ -1022,7 +929,7 @@ and retry. The handler itself never runs.
 ### Dev fallback
 
 When `env.MCP_TOOLS_RL` is undefined (local `vitest`, some `wrangler dev`
-configurations), both call sites return "allowed" without consulting the
+configurations), the call site returns "allowed" without consulting the
 binding. Production deploys always bind it via `wrangler.jsonc`; the
 fallback exists so onboarding engineers don't need a bound rate-limit
 namespace to run the unit suite.
@@ -1032,86 +939,27 @@ namespace to run the unit suite.
 `checkRateLimit` in `packages/mcp/src/rate-limit.ts` swallows binding-side
 exceptions and returns `true`. The trade-off is documented at the call
 site: a brief over-allow window during a Cloudflare-side rate-limit-API
-hiccup is preferable to a hard outage of the MCP surface. U15 will add
-structured observability so we can alert on the error volume.
+hiccup is preferable to a hard outage of the MCP surface. U15
+observability lets us alert on the error volume.
 
-### KV purge cron — 04:00 UTC daily
+### KV-purge cron — removed
 
-`packages/mcp/wrangler.jsonc` declares `triggers.crons: ["0 4 * * *"]`
-in the top-level/dev base AND in `env.prod`. The `scheduled()` arm of the
-Worker default export (in `packages/mcp/src/index.ts`) delegates to
-`runScheduledPurge` (in `packages/mcp/src/scheduled.ts`), which loops:
+The previous `triggers.crons: ["0 4 * * *"]` block and the
+`runScheduledPurge` handler are both gone post-refactor. The AS now lives
+on `api.packrat.world` via `@better-auth/oauth-provider`, which handles
+its own expiry / cleanup against the API's Postgres + `AUTH_KV`. No MCP
+worker-side cron is needed.
 
-```ts
-while (!done && iterations < CRON_PURGE_MAX_ITERATIONS /* = 50 */) {
-  const result = await oauthProvider.purgeExpiredData(env, { batchSize: 100 });
-  done = result.done;
-  iterations += 1;
-}
-```
+### TODO (operator): zone-level WAF Rate Limiting Rules on api.packrat.world
 
-The purge sweeps **orphaned grants** (grants whose client was deleted)
-and **expired grants** + tokens as defense-in-depth for KV TTLs. KV TTLs
-alone handle most expiry; the cron is the operator-visible cleanup
-surface and the safety net against orphaned records that survived a
-client deletion.
+The anonymous OAuth endpoints (`/api/auth/oauth/register`,
+`/api/auth/oauth/authorize`, `/api/auth/oauth/token`) live on the API host
+now. Apply WAF Rate Limiting Rules on the `packrat.world` zone (or via
+Terraform) for that host:
 
-#### 30s CPU budget caveat
-
-Scheduled handlers have ~30s of worker CPU time. Each `purgeExpiredData`
-call does up to ~200 KV subrequests (100 keys × ~2 reads). The
-50-iteration cap is the load-bearing safety: if a pathological state
-keeps returning `done: false`, the cron exits cleanly and the next
-day's tick picks up where this one stopped. `purgeExpiredData` is safe
-to call repeatedly per its library docstring: "deleted records
-disappear from KV, so subsequent invocations naturally process fresh
-records without needing a persisted cursor."
-
-#### Why `batchSize: 100` (vs. library default of 50)
-
-We have headroom in a daily cron and want to drain backlog quickly.
-Cloudflare's 1000-subrequest-per-invocation soft limit is the real
-ceiling; 100 keys × ~2 reads = ~200 subrequests/pass, comfortably under.
-
-#### Why call the provider instance, not `env.OAUTH_PROVIDER`
-
-`env.OAUTH_PROVIDER` is the *helpers* object — injected by the library
-per-request and not available in a scheduled handler. The provider
-instance itself exposes a `purgeExpiredData(env, options)` overload for
-exactly this case (see
-`@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:1191`).
-
-### Verifying the cron ran
-
-After a deploy, after the next 04:00 UTC tick:
-
-```bash
-wrangler tail --env prod --format pretty | grep mcp.cron.purge
-# The U15 logging emits a `mcp.cron.purge.start`, one
-# `mcp.cron.purge.batch` per iteration with `grantsPurged`/`tokensPurged`,
-# and a `mcp.cron.purge.complete` line. A `mcp.cron.purge.cap_reached`
-# WARN means the 50-iteration safety cap fired without `done: true` —
-# investigate the KV scan volume.
-```
-
-If the purge ever throws, the `scheduled` arm propagates the error and
-Cloudflare records the failed cron invocation in the dashboard
-(Workers & Pages → packrat-mcp → Triggers → Cron). A repeated failure
-there is a real incident — check the `OAUTH_KV` namespace bindings
-first.
-
-### TODO (operator): zone-level WAF Rate Limiting Rules
-
-Workers Rate Limiting only protects **authenticated** tool calls and the
-login form. The anonymous OAuth endpoints (`/register`, `/authorize`,
-`/token`) are unauthenticated — they're the DoS surface. Apply
-WAF Rate Limiting Rules on the `packratai.com` zone (or via Terraform):
-
-| Path expression            | Rule | Action |
-| -------------------------- | ---- | ------ |
-| `http.request.uri.path eq "/register"`    | > 100 r/s per IP | Block 1m |
-| `http.request.uri.path eq "/authorize"`   | > 100 r/s per IP | Block 1m |
-| `http.request.uri.path eq "/token"`       | > 100 r/s per IP | Block 1m |
+| Path expression                                        | Rule              | Action   |
+| ------------------------------------------------------ | ----------------- | -------- |
+| `http.request.uri.path contains "/api/auth/oauth/"`    | > 100 r/s per IP  | Block 1m |
 
 100 r/s is generous for legitimate use: a Claude.ai user starting a fresh
 connection issues at most 3-4 requests across these endpoints. Tune
@@ -1125,8 +973,8 @@ the connector-store docs.
 The 60/60s default is configured in `wrangler.jsonc` under the
 `rate_limiting` block. To change it:
 
-1. Edit `simple.limit` and `simple.period` in both the top-level and
-   `env.prod` blocks.
+1. Edit `simple.limit` and `simple.period` in the top-level, `env.prod`,
+   and `env.dev` blocks.
 2. `wrangler deploy --env prod`.
 3. Update `docs/mcp/runbook.md` (this section) so the docs match the
    live config.
@@ -1183,11 +1031,10 @@ Required dashboard click-path (do once per environment, after the U1
    public key>` (the public key is the segment of the DSN before `@`).
 5. **Resource attributes** (recommended): `service.name=mcp`,
    `deployment.environment=prod` (or `dev`).
-6. **Sampling**: 100% on `WARN`/`ERROR`; 5% on `INFO` (cost guardrail —
-   per-batch cron INFO is high-volume but low-value individually).
+6. **Sampling**: 100% on `WARN`/`ERROR`; 5% on `INFO` (cost guardrail).
 7. Save. The pipeline activates within ~1 minute. Verify by triggering a
-   known WARN (e.g. `curl -X POST https://mcp.packratai.com/register`
-   with no Authorization header — this emits `mcp.auth.dcr_register.denied
+   known WARN (e.g. `curl -X POST https://mcp.packratai.com/mcp` with no
+   Authorization header — this emits `mcp.auth.jwt.denied
    reason=missing_bearer`) and watching Sentry's Issues view.
 
 The `SENTRY_DSN` secret (set as a placeholder by U1) is **not** read by
@@ -1226,10 +1073,11 @@ Each inbound request receives a correlation ID at the top of the outer
 - Falls back to `crypto.randomUUID()` for off-CF tests or the rare
   upstream-strip case.
 - Stashed on the Request via a per-request `WeakMap` so deep handlers
-  (`dcrRegisterGate`, `handleLoginPost`, `handleCallback`) can read it
-  via `getCorrelationId(request)` without plumbing the id through every
-  function signature. **Not AsyncLocalStorage** — Workers ALS support is
-  still gated behind a compatibility flag we don't set.
+  (the JWT verification path in `token-verify.ts`, the `/health`
+  handler, etc.) can read it via `getCorrelationId(request)` without
+  plumbing the id through every function signature. **Not
+  AsyncLocalStorage** — Workers ALS support is still gated behind a
+  compatibility flag we don't set.
 - Echoed on every outbound response as `X-Correlation-Id: <id>` so the
   caller can quote it when reporting issues.
 
@@ -1274,22 +1122,17 @@ known to the server and is recorded with the canonical error code
 
 ### Auth-failure WARN logs
 
-Every rejection path on the unauthenticated auth surface emits a
-WARN-level structured log (helpful for spotting brute-force probes):
+The MCP worker is a pure protected resource post-refactor — token
+issuance lives on `api.packrat.world`. The remaining auth-side WARN
+surface on this worker is JWT validation:
 
 | Surface              | `msg`                              | `reason` values                                                                           |
 | -------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
-| `POST /register`     | `mcp.auth.dcr_register.denied`     | `disabled`, `missing_bearer`, `token_mismatch`                                            |
-| `POST /login`        | `mcp.auth.login.denied`            | `bad_origin`, `csrf_missing`, `csrf_kv_missing`, `csrf_mismatch`, `missing_state`, `rate_limited`, `better_auth_failed` |
-| `/callback` Better Auth lookup | `mcp.auth.role_lookup.{denied,failed}` | `timeout`, `transport_error`, `non_ok_response`, `malformed_body`                |
-| OAuthProvider errors | `mcp.oauth.error`                  | Library-defined `oauthCode` (e.g. `invalid_grant`, `invalid_client`)                      |
+| `POST /mcp` (JWT validation) | `mcp.auth.jwt.denied`      | `missing_bearer`, `bad_scheme`, `invalid_token`, `expired`, `bad_audience`, `bad_issuer`, `jwks_fetch_failed` |
 
-The OAuthProvider hook is wired via the `onError` callback in
-`packages/mcp/src/index.ts`. The v0.7.0 signature is
-`({ code, description, status, headers, internal? }) => Response | void`;
-we log `oauthCode`, `oauthStatus`, `description` (and the `internal`
-`{ category, reason }` when present) and return `void` so the library's
-default RFC 6749 error envelope reaches the client unchanged.
+Better Auth's OAuth-provider plugin emits its own structured errors on
+the API side (see the API package's observability surface); reviewer
+auth-failure analysis spans both workers.
 
 ### Redaction policy — no tokens, no PII, default-deny field allowlist
 
@@ -1323,15 +1166,15 @@ the property we want for telemetry hygiene.
 
 After enabling the OTel pipeline, verify end-to-end:
 
-1. `curl -i https://mcp.packratai.com/register` (no Authorization).
+1. `curl -i -X POST https://mcp.packratai.com/mcp` (no Authorization).
 2. The response includes `X-Correlation-Id: <ray-id>` and 401 +
    `WWW-Authenticate: Bearer resource_metadata=...`.
-3. `wrangler tail --env prod --format pretty | grep dcr_register`
-   shows `{"ts":...,"level":"warn","msg":"mcp.auth.dcr_register.denied",
+3. `wrangler tail --env prod --format pretty | grep jwt.denied`
+   shows `{"ts":...,"level":"warn","msg":"mcp.auth.jwt.denied",
    "correlationId":"<ray-id>","reason":"missing_bearer",...}`.
 4. Sentry Issues view receives a matching event tagged
    `service.name=mcp`, `correlationId=<ray-id>`, with the message
-   `mcp.auth.dcr_register.denied`.
+   `mcp.auth.jwt.denied`.
 
 If steps 3 and 4 don't align within ~30 seconds, the OTel pipeline is
 mis-configured (most often: missing `x-sentry-auth` header or a typo
@@ -1346,12 +1189,12 @@ hit to verify the Worker is healthy and to read its public metadata.
 
 ### `/health` — real dependency probe
 
-`GET /health` (and `GET /`, which dispatches to the same handler) runs
-two probes in parallel and returns 200 only when both succeed:
+`GET /health` (and `GET /`, which dispatches to the same handler) probes
+the single upstream dependency (the API host that also serves the AS
+metadata + JWKS) and returns 200 only when it succeeds:
 
 | Probe | Mechanism                                                  | Pass = `'ok'`, fail = `'down'`  |
 | ----- | ---------------------------------------------------------- | ------------------------------- |
-| KV    | `env.OAUTH_KV.list({ limit: 1 })` — cheap binding ping     | Call resolved (any keys is OK)  |
 | API   | `fetch(env.PACKRAT_API_URL + '/health')` with 3s timeout   | `res.ok` (HTTP 2xx)             |
 
 The API probe hits the PackRat API's root `/health` endpoint
@@ -1359,6 +1202,9 @@ The API probe hits the PackRat API's root `/health` endpoint
 the meta route at the worker root, so the canonical URL is
 `${PACKRAT_API_URL}/health`. If we ever move the API to a versioned
 path prefix, this URL needs to update in lockstep.
+
+The prior `OAUTH_KV.list` probe is removed — the MCP worker no longer
+binds KV.
 
 Response body shape (stable — reviewers parse this):
 
@@ -1373,11 +1219,11 @@ Response body shape (stable — reviewers parse this):
   "terms":   "https://packratai.com/terms-of-service",
   "privacy": "https://packratai.com/privacy-policy",
   "support": "mailto:hello@packratai.com",
-  "probes":  { "kv": "ok" | "down", "api": "ok" | "down" }
+  "probes":  { "api": "ok" | "down" }
 }
 ```
 
-HTTP status: 200 when both probes are `'ok'`, 503 otherwise. The
+HTTP status: 200 when the probe is `'ok'`, 503 otherwise. The
 legal/support URLs (U12) are surfaced on **both** the healthy and
 degraded responses so a reviewer curling `/health` during an incident
 still finds the contact surface.
@@ -1388,18 +1234,18 @@ The probe result is cached in an isolate-local module slot
 (`packages/mcp/src/auth.ts → healthCache`) for 10 seconds. Trade-offs:
 
 - **Why cache at all?** Without it, an external uptime monitor polling
-  every 5s would synthesize 12 KV.list + 12 API fetch calls/minute per
-  isolate — easy to miss as a load source. 10s keeps the steady-state
-  probe rate ≤6/min/isolate.
+  every 5s would synthesize 12 API fetch calls/minute per isolate —
+  easy to miss as a load source. 10s keeps the steady-state probe rate
+  ≤6/min/isolate.
 - **Why 10 seconds?** Short enough that a real outage surfaces within
   one cache-window of when it began (no reviewer waits 30s for /health
   to flip red). Long enough that consecutive uptime probes hit the
   cache.
 - **Why per-isolate (not Worker-wide)?** A shared cache would mean an
-  extra KV read on every probe call — defeating the point of caching
-  to avoid load. Per-isolate scales with the isolate pool (single
-  digits for our traffic shape) so worst-case the dependency surface
-  sees ≤N probes/10s where N is the pool size.
+  extra fetch round-trip on every probe — defeating the point of
+  caching. Per-isolate scales with the isolate pool (single digits for
+  our traffic shape) so worst-case the dependency surface sees ≤N
+  probes/10s where N is the pool size.
 - **Module-level `let healthCache`** (not WeakMap / LRU) is deliberate:
   the cache holds exactly one entry, and the simplest possible
   eviction story keeps future refactors honest. The
@@ -1412,8 +1258,8 @@ The `probes` field tells you which dependency tripped:
 
 ```bash
 curl -s https://mcp.packratai.com/health | jq
-# {"status":"degraded", ..., "probes":{"kv":"ok","api":"down"}}
-#                                                    ^^^^^^^ → PackRat API outage
+# {"status":"degraded", ..., "probes":{"api":"down"}}
+#                                              ^^^^^^^ → PackRat API outage
 ```
 
 The degraded path also emits a WARN-level structured log:
@@ -1423,11 +1269,10 @@ wrangler tail --env prod --format pretty | grep mcp.health.degraded
 # {"ts":"...","level":"warn","msg":"mcp.health.degraded","reason":"api_down","statusCode":503,...}
 ```
 
-`reason` is one of `kv_down`, `api_down`, `kv_and_api_down`. The healthy
-path is silent so external uptime probes don't fill Workers Logs with
-noise. If both probes fail, check the Cloudflare status page first
-(KV outages are usually region-level and self-resolve in minutes); if
-only `api` is down, escalate to the API on-call.
+`reason` is `api_down`. The healthy path is silent so external uptime
+probes don't fill Workers Logs with noise. If the probe fails, escalate
+to the API on-call (the same probe failure also breaks JWT validation,
+since `token-verify.ts` fetches JWKS from the same host).
 
 ### `/status` — public-safe extended metadata
 
@@ -1476,7 +1321,7 @@ dev, never for prod. If `/status` returns `unknown` on a prod
 hostname, the last deploy bypassed the convention; re-run with the
 flag.
 
-### CORS + DCR gate interaction
+### CORS interaction
 
 Neither `/health` nor `/status` is annotated by the U6 CORS handler
 (`applyCorsHeaders` short-circuits on a `/.well-known/` prefix check —
@@ -1484,10 +1329,8 @@ see `packages/mcp/src/cors.ts:48`). Reviewers curl them directly so no
 CORS dance is needed; if Claude.ai ever needed to fetch them
 cross-origin, the allowlist would have to extend.
 
-Neither endpoint is gated by `dcrRegisterGate` either — the gate
-short-circuits on a `/register` pathname check
-(`packages/mcp/src/auth.ts:dcrRegisterGate`) and falls through cleanly
-for every other path.
+Neither endpoint requires auth — they're explicitly public surfaces. JWT
+validation only fires on `/mcp` (the MCP transport endpoint).
 
 ---
 
@@ -1765,13 +1608,14 @@ wrangler deploy --env prod
 wrangler tail --env prod --format pretty
 ```
 
-### Rotate `MCP_INITIAL_ACCESS_TOKEN`
+### Rotate `PACKRAT_API_URL`
 
 ```bash
-wrangler secret put MCP_INITIAL_ACCESS_TOKEN --env prod
-# Re-run the register-claude-clients.ts script if any pre-registered
-# clients need to be rotated alongside the token (rare — the token
-# only governs /register, not active OAuth grants).
+wrangler secret put PACKRAT_API_URL --env prod
+# Forces the JWKS cache on the next request to re-fetch from the new URL.
+# Use a benign env var bump alongside (per § "Forcing isolate rotation
+# after a deploy") so existing isolates rotate immediately rather than
+# waiting on natural isolate churn.
 ```
 
 ## Known issues / environment notes

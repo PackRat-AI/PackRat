@@ -1,17 +1,16 @@
 # PackRat MCP Server — local development environment variables
 # Copy this file to .dev.vars (never commit .dev.vars)
 
-# Required: URL of the PackRat API
-# Local: http://localhost:8787
-# Production: https://packrat.world
-PACKRAT_API_URL=http://localhost:8787
+# Post-refactor: this file contains only the JWKS-fetch target.
+# The MCP worker is a pure protected resource — it validates JWTs against
+# `${PACKRAT_API_URL}/api/auth/jwks` via `token-verify.ts`. No DCR / KV /
+# login state lives here anymore.
 
-# Required: pre-shared bearer used by POST /register (Dynamic Client
-# Registration). Generate via `openssl rand -hex 32`. If unset, /register
-# returns 401 to every caller (fail-closed). The script
-# `packages/mcp/scripts/register-claude-clients.ts` reads this value to
-# pre-register Claude's callback URLs.
-MCP_INITIAL_ACCESS_TOKEN=
+# Required: base URL of the PackRat API (hosting the Better Auth OAuth
+# authorization server and the JWKS endpoint).
+# Local: http://localhost:8787
+# Production: https://api.packrat.world
+PACKRAT_API_URL=http://localhost:8787
 
 # Optional: build identifier (U16). Surfaced by `/status` as `commitSha`
 # so a reviewer can correlate a running Worker with a specific commit.
@@ -27,12 +26,11 @@ MCP_INITIAL_ACCESS_TOKEN=
 # in .dev.vars. Listed here so an engineer onboarding the package can find
 # the canonical location:
 #
-#   MCP_TOOLS_RL   — Workers Rate Limiting binding (U14). Keyed per-call
-#                    for tool dispatch (`${userId}:${toolName}`) and for the
-#                    /login form (`login:${ip || cfRay}`). Configured under
-#                    the `rate_limiting` block in wrangler.jsonc with a
-#                    60/60s budget; see docs/mcp/runbook.md § "U14 rate
-#                    limiting + KV purge" for the operator overview. In
-#                    local `wrangler dev` and `vitest` runs the binding may
-#                    be absent — both call sites fall back to "allowed" so
-#                    dev doesn't break.
+#   MCP_TOOLS_RL   — Workers Rate Limiting binding. Keyed per-call for tool
+#                    dispatch (`${userId}:${toolName}`, where `userId` is the
+#                    JWT `sub` claim). Configured under the `rate_limiting`
+#                    block in wrangler.jsonc with a 60/60s budget; see
+#                    docs/mcp/runbook.md § "U14 rate limiting" for the
+#                    operator overview. In local `wrangler dev` and `vitest`
+#                    runs the binding may be absent — the call site falls
+#                    back to "allowed" so dev doesn't break.
