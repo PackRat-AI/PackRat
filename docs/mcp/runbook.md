@@ -150,6 +150,58 @@ once via `cd packages/api && bun run db:seed:oauth-clients` (script:
 `packages/api/src/db/seed-claude-oauth-client.ts`) — see U1 of the refactor
 plan and § "Post-refactor: AS lives on api.packrat.world" below.
 
+### 4. Migrate API env-var names: `BETTER_AUTH_*` → `PACKRAT_*` (2026-05-25)
+
+The API package was renamed off framework-specific env-var names so the
+backend secrets carry a `PACKRAT_*` namespace consistent with the rest of
+the monorepo (MCP and CLI already used `PACKRAT_API_URL`):
+
+| Legacy name (accepted as fallback) | New canonical name |
+|---|---|
+| `BETTER_AUTH_SECRET` | `PACKRAT_AUTH_SECRET` |
+| `BETTER_AUTH_URL` | `PACKRAT_API_URL` |
+
+The zod schema in `packages/api/src/utils/env-validation.ts` accepts BOTH
+names during the rolling migration — set EITHER one in each pair and the
+canonical `PACKRAT_*` field is resolved at validation time. Consumer code
+reads `env.PACKRAT_AUTH_SECRET` / `env.PACKRAT_API_URL` only.
+
+**Operator migration steps (per environment — `--env prod` first, then
+`--env dev`):**
+
+```bash
+# 1) Add the new-name secrets with the SAME VALUES as today. CF Worker
+#    secrets are write-only — you cannot read back the current value via
+#    `wrangler secret`. Either pull from your password manager / 1Password,
+#    OR rotate to a fresh value and accept that every Better Auth session +
+#    every HS256 admin JWT is invalidated (users + admins must re-login
+#    once; no data loss). The URL value is non-secret: `https://api.packrat.world`
+#    in prod, `http://localhost:8787` in dev.
+
+wrangler secret put PACKRAT_AUTH_SECRET --env prod   # value: current BETTER_AUTH_SECRET, or fresh random
+wrangler secret put PACKRAT_API_URL --env prod       # value: https://api.packrat.world
+
+# 2) Deploy the API. The transitional schema now reads PACKRAT_* first,
+#    falling back to BETTER_AUTH_* if PACKRAT_* is missing — both code
+#    paths are exercised here, so no downtime.
+
+# 3) Verify the API came up cleanly (no zod validation errors in
+#    `wrangler tail --env prod`, /api/health returns 200).
+
+# 4) Once you've verified, delete the legacy secrets:
+wrangler secret delete BETTER_AUTH_SECRET --env prod
+wrangler secret delete BETTER_AUTH_URL --env prod
+```
+
+**A follow-up PR will remove the `BETTER_AUTH_*` schema fallback.** Until
+that PR ships, you can leave the legacy secrets in place or delete them
+per step 4. The schema accepts either configuration.
+
+**Why this matters:** `PACKRAT_AUTH_SECRET` signs both Better Auth sessions
+AND the legacy HS256 admin JWTs used by `apps/admin`. Keep the VALUE
+identical across the rename — rotating the value would invalidate every
+existing admin token. The rename is name-only; the bytes stay the same.
+
 ## U5 admin scope model
 
 The MCP Worker advertises four coarse-grained OAuth scopes (see

@@ -2,7 +2,10 @@ import type { Container } from '@cloudflare/containers';
 import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
-// Define the Zod schema for all environment variables
+// Define the Zod schema for all environment variables.
+// `apiEnvSchema` stays a ZodObject so tests can introspect via `.shape.X`.
+// The runtime validation path uses `validatedApiEnvSchema` below, which
+// adds the BETTER_AUTH_* → PACKRAT_* migration superRefine + transform.
 export const apiEnvSchema = z.object({
   // Environment & Deployment
   ENVIRONMENT: z.enum(['development', 'production']).default('production'),
@@ -16,9 +19,23 @@ export const apiEnvSchema = z.object({
   // set to env.OSM_HYPERDRIVE.connectionString (Hyperdrive binding).
   OSM_DATABASE_URL: z.string().url().optional(),
 
-  // Better Auth
-  BETTER_AUTH_SECRET: z.string().min(32),
-  BETTER_AUTH_URL: z.string().url(), // API base URL e.g. https://api.packrat.world
+  // Auth — TRANSITIONAL (2026-05-25 rename).
+  //
+  // Canonical names: PACKRAT_AUTH_SECRET, PACKRAT_API_URL. These unify with
+  // PACKRAT_API_URL already used by the MCP worker + CLI package, and drop
+  // the framework-specific BETTER_AUTH_* prefix.
+  //
+  // Legacy fallbacks: BETTER_AUTH_SECRET, BETTER_AUTH_URL — accepted during
+  // the rolling migration. Operator must set the new-name CF secrets, then a
+  // follow-up PR removes the BETTER_AUTH_* schema entries entirely.
+  //
+  // Either set in each pair satisfies the schema. The .superRefine() below
+  // enforces "at least one of each pair"; the .transform() resolves the new
+  // name to the legacy fallback so consumer code only reads the new name.
+  PACKRAT_AUTH_SECRET: z.string().min(32).optional(),
+  PACKRAT_API_URL: z.string().url().optional(),
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  BETTER_AUTH_URL: z.string().url().optional(),
   // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
@@ -89,6 +106,35 @@ export const apiEnvSchema = z.object({
   AUTH_KV: z.unknown(),
 });
 
+// Runtime validation schema: enforces "at least one of each transitional
+// pair" (BETTER_AUTH_* OR PACKRAT_*) and resolves the canonical PACKRAT_*
+// fields from whichever name was provided. Consumer code reads
+// env.PACKRAT_AUTH_SECRET / env.PACKRAT_API_URL only.
+const validatedApiEnvSchema = apiEnvSchema
+  .superRefine((env, ctx) => {
+    if (!env.PACKRAT_AUTH_SECRET && !env.BETTER_AUTH_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['PACKRAT_AUTH_SECRET'],
+        message:
+          'PACKRAT_AUTH_SECRET (preferred) or legacy BETTER_AUTH_SECRET must be set (min 32 chars)',
+      });
+    }
+    if (!env.PACKRAT_API_URL && !env.BETTER_AUTH_URL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['PACKRAT_API_URL'],
+        message: 'PACKRAT_API_URL (preferred) or legacy BETTER_AUTH_URL must be set (URL)',
+      });
+    }
+  })
+  .transform((env) => ({
+    ...env,
+    // safe-assertion: superRefine guarantees one side of each pair is set.
+    PACKRAT_AUTH_SECRET: (env.PACKRAT_AUTH_SECRET ?? env.BETTER_AUTH_SECRET) as string,
+    PACKRAT_API_URL: (env.PACKRAT_API_URL ?? env.BETTER_AUTH_URL) as string,
+  }));
+
 // Relaxed schema for test environments
 const testEnvSchema = apiEnvSchema.partial().extend({
   ENVIRONMENT: z.enum(['development', 'production']).default('development'),
@@ -96,8 +142,12 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
   NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
   OSM_DATABASE_URL: z.string().url().optional().default('postgres://user:pass@localhost/db'),
-  BETTER_AUTH_SECRET: z.string().optional().default('test-better-auth-secret-32-chars-long!!'),
-  BETTER_AUTH_URL: z.string().url().optional().default('http://localhost:8787'),
+  // Tests may set either name; default both to a stable test value so the
+  // transform always resolves to a non-empty PACKRAT_AUTH_SECRET / PACKRAT_API_URL.
+  PACKRAT_AUTH_SECRET: z.string().optional().default('test-better-auth-secret-32-chars-long!!'),
+  PACKRAT_API_URL: z.string().url().optional().default('http://localhost:8787'),
+  BETTER_AUTH_SECRET: z.string().optional(),
+  BETTER_AUTH_URL: z.string().url().optional(),
   CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
   AI: z.unknown().optional(),
   PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
@@ -111,7 +161,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   AUTH_KV: z.unknown().optional(),
 });
 
-type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
+type ValidatedAppEnv = z.infer<typeof validatedApiEnvSchema>;
 
 // Override Cloudflare binding types with proper TypeScript types
 export type ValidatedEnv = Omit<
@@ -159,7 +209,10 @@ function isTestEnvironment(): boolean {
 }
 
 function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
-  const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
+  // Production runs through the post-transform schema so the canonical
+  // PACKRAT_* fields are always populated; tests use the relaxed schema
+  // with explicit defaults for those fields.
+  const schema = isTestEnvironment() ? testEnvSchema : validatedApiEnvSchema;
   const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);
@@ -237,7 +290,9 @@ export function getEnv(explicitEnv?: Record<string, unknown>): ValidatedEnv {
 
 /**
  * Validate Cloudflare API environment variables at build/deploy time.
+ * Uses the post-transform schema so the BETTER_AUTH_* → PACKRAT_* migration
+ * fallback is enforced (at least one of each pair must be present).
  */
 export function validateCloudflareApiEnv(env: Record<string, unknown>): void {
-  apiEnvSchema.parse(env);
+  validatedApiEnvSchema.parse(env);
 }

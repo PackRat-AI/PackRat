@@ -56,8 +56,8 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
   const db = drizzle(neon(env.NEON_DATABASE_URL), { schema });
 
   const auth = betterAuth({
-    baseURL: env.BETTER_AUTH_URL,
-    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.PACKRAT_API_URL,
+    secret: env.PACKRAT_AUTH_SECRET,
 
     advanced: {
       // All IDs are UUID-formatted text (matching the DB migration).
@@ -236,7 +236,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
     // lives entirely on api.packrat.world via the oauthProvider plugin above.
     // Keeping it in trustedOrigins would expand the CORS/CSRF bypass surface
     // for no behavioral reason.
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    trustedOrigins: [env.PACKRAT_API_URL, 'packrat://'],
   });
 
   authCache.set(env as object, auth);

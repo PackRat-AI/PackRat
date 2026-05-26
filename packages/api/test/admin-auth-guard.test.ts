@@ -38,7 +38,7 @@ function withEnv(overrides: Record<string, unknown> = {}) {
  */
 async function issueTestAdminJwt(): Promise<string> {
   const env = vi.mocked(getEnv)();
-  const secret = new TextEncoder().encode(String(env.BETTER_AUTH_SECRET ?? 'secret'));
+  const secret = new TextEncoder().encode(String(env.PACKRAT_AUTH_SECRET ?? 'secret'));
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject('admin')
@@ -272,7 +272,7 @@ describe('bypass attempts', () => {
 
   it('rejects a regular user JWT (correct secret, wrong role)', async () => {
     const env = vi.mocked(getEnv)();
-    const secret = new TextEncoder().encode(String(env.BETTER_AUTH_SECRET ?? 'secret'));
+    const secret = new TextEncoder().encode(String(env.PACKRAT_AUTH_SECRET ?? 'secret'));
     const token = await new SignJWT({ role: 'USER', userId: 42 })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject('42')

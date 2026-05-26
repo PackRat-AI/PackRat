@@ -9,8 +9,11 @@ function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unk
     NEON_DATABASE_URL: 'postgres://user:pass@host/db',
     NEON_DATABASE_URL_READONLY: 'postgres://user:pass@host/db',
     OSM_DATABASE_URL: 'postgres://user:pass@host/osm_db',
-    BETTER_AUTH_SECRET: 'a-secret-that-is-at-least-32-characters-long!!',
-    BETTER_AUTH_URL: 'https://api.packrat.world',
+    // Canonical names (post-2026-05-25 rename). The schema also accepts the
+    // legacy BETTER_AUTH_* names as transitional fallbacks (see the dedicated
+    // describe block below).
+    PACKRAT_AUTH_SECRET: 'a-secret-that-is-at-least-32-characters-long!!',
+    PACKRAT_API_URL: 'https://api.packrat.world',
     GOOGLE_CLIENT_ID: 'google-client-id',
     GOOGLE_CLIENT_SECRET: 'google-client-secret',
     APPLE_CLIENT_ID: 'world.packrat.app',
@@ -121,14 +124,14 @@ describe('env-validation', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'production';
       const rawEnv = makeRawEnv();
       const result = getEnv(rawEnv);
-      expect(result.BETTER_AUTH_SECRET).toBe('a-secret-that-is-at-least-32-characters-long!!');
+      expect(result.PACKRAT_AUTH_SECRET).toBe('a-secret-that-is-at-least-32-characters-long!!');
       expect(result.ENVIRONMENT).toBe('production');
     });
 
     it('uses relaxed validation in test environment', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'test';
-      const result = getEnv({ BETTER_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!' });
-      expect(result.BETTER_AUTH_SECRET).toBe('test-better-auth-secret-32-chars-long!!');
+      const result = getEnv({ PACKRAT_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!' });
+      expect(result.PACKRAT_AUTH_SECRET).toBe('test-better-auth-secret-32-chars-long!!');
       expect(result.ENVIRONMENT).toBe('development');
       expect(result.SENTRY_DSN).toBe('https://test@test.ingest.sentry.io/test');
     });
@@ -175,8 +178,73 @@ describe('env-validation', () => {
     });
 
     it('throws on missing required variable', () => {
-      const invalid = makeRawEnv({ BETTER_AUTH_SECRET: undefined });
+      const invalid = makeRawEnv({ PACKRAT_AUTH_SECRET: undefined });
+      // No BETTER_AUTH_SECRET fallback either → schema rejects.
       expect(() => validateCloudflareApiEnv(invalid)).toThrow();
+    });
+  });
+
+  // Transitional rename (2026-05-25): the schema accepts BETTER_AUTH_SECRET /
+  // BETTER_AUTH_URL as legacy fallbacks when the canonical PACKRAT_AUTH_SECRET /
+  // PACKRAT_API_URL names are missing, and resolves the canonical fields from
+  // whichever name was provided. A follow-up PR will drop the BETTER_AUTH_*
+  // fallback once all CF Worker secrets are renamed.
+  describe('transitional BETTER_AUTH_* → PACKRAT_* migration', () => {
+    it('falls back to BETTER_AUTH_SECRET when PACKRAT_AUTH_SECRET is missing', () => {
+      (process.env as Record<string, unknown>).NODE_ENV = 'production';
+      const result = getEnv(
+        makeRawEnv({
+          PACKRAT_AUTH_SECRET: undefined,
+          BETTER_AUTH_SECRET: 'legacy-secret-that-is-at-least-32-chars-long!!',
+        }),
+      );
+      expect(result.PACKRAT_AUTH_SECRET).toBe('legacy-secret-that-is-at-least-32-chars-long!!');
+    });
+
+    it('falls back to BETTER_AUTH_URL when PACKRAT_API_URL is missing', () => {
+      (process.env as Record<string, unknown>).NODE_ENV = 'production';
+      const result = getEnv(
+        makeRawEnv({
+          PACKRAT_API_URL: undefined,
+          BETTER_AUTH_URL: 'https://legacy.packrat.world',
+        }),
+      );
+      expect(result.PACKRAT_API_URL).toBe('https://legacy.packrat.world');
+    });
+
+    it('prefers PACKRAT_AUTH_SECRET when both names are set', () => {
+      (process.env as Record<string, unknown>).NODE_ENV = 'production';
+      const result = getEnv(
+        makeRawEnv({
+          PACKRAT_AUTH_SECRET: 'new-name-secret-that-is-at-least-32-chars!!',
+          BETTER_AUTH_SECRET: 'legacy-secret-that-is-at-least-32-chars-long!!',
+        }),
+      );
+      expect(result.PACKRAT_AUTH_SECRET).toBe('new-name-secret-that-is-at-least-32-chars!!');
+    });
+
+    it('rejects when neither PACKRAT_AUTH_SECRET nor BETTER_AUTH_SECRET is set', () => {
+      (process.env as Record<string, unknown>).NODE_ENV = 'production';
+      expect(() =>
+        getEnv(
+          makeRawEnv({
+            PACKRAT_AUTH_SECRET: undefined,
+            BETTER_AUTH_SECRET: undefined,
+          }),
+        ),
+      ).toThrow(/PACKRAT_AUTH_SECRET/);
+    });
+
+    it('rejects when neither PACKRAT_API_URL nor BETTER_AUTH_URL is set', () => {
+      (process.env as Record<string, unknown>).NODE_ENV = 'production';
+      expect(() =>
+        getEnv(
+          makeRawEnv({
+            PACKRAT_API_URL: undefined,
+            BETTER_AUTH_URL: undefined,
+          }),
+        ),
+      ).toThrow(/PACKRAT_API_URL/);
     });
   });
 });

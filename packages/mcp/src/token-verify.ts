@@ -103,9 +103,10 @@ export function __resetJwksCacheForTests(): void {
  * Resolve the OAuth issuer URL the AS metadata advertises.
  *
  * Sourced from `env.PACKRAT_API_URL` to match U1's `auth/index.ts`
- * config: `betterAuth({ baseURL: env.BETTER_AUTH_URL })`, where
- * `BETTER_AUTH_URL` is the same value as the MCP's `PACKRAT_API_URL`
- * (both point at the api worker — `https://api.packrat.world` in prod,
+ * config: `betterAuth({ baseURL: env.PACKRAT_API_URL })`. Both workers
+ * read the same env var name (post-2026-05-25 rename — the API used to
+ * call this BETTER_AUTH_URL; both names point at the api worker —
+ * `https://api.packrat.world` in prod,
  * `http://localhost:8787` in dev). Better Auth's `oauthProvider` plugin
  * defaults the `issuer` claim and AS metadata `issuer` field to
  * `ctx.context.baseURL`, so deriving from `PACKRAT_API_URL` keeps the

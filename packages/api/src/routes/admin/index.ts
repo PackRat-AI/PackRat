@@ -62,7 +62,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
 
 async function issueAdminJwt(username: string): Promise<string> {
   const env = getEnv();
-  const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
+  const secret = new TextEncoder().encode(env.PACKRAT_AUTH_SECRET);
   return new SignJWT({ role: 'admin' })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(username)
@@ -76,7 +76,7 @@ async function issueAdminJwt(username: string): Promise<string> {
 async function verifyAdminJwt(token: string): Promise<boolean> {
   try {
     const env = getEnv();
-    const secret = new TextEncoder().encode(env.BETTER_AUTH_SECRET);
+    const secret = new TextEncoder().encode(env.PACKRAT_AUTH_SECRET);
     const { payload } = await jwtVerify(token, secret, {
       issuer: ADMIN_JWT_ISSUER,
       audience: ADMIN_JWT_AUDIENCE,
