@@ -199,7 +199,7 @@ export default function AppLayout() {
           options={{
             headerShown: false,
             presentation: 'card',
-            animation: 'slide_from_bottom',
+            animation: 'default',
           }}
         />
         <Stack.Screen
