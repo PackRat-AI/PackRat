@@ -1,6 +1,7 @@
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
-import { Image, type ImageProps, type ImageStyle, Platform, View } from 'react-native';
+import { getWebImageContainmentStyle } from 'expo-app/lib/utils/imageStyles';
+import { Image, type ImageProps, Platform, View } from 'react-native';
 
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {
   imageUrl?: string | null;
@@ -8,20 +9,7 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
 
 export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps) {
   const { colors } = useColorScheme();
-  const objectFit: ImageStyle['objectFit'] =
-    imageProps.resizeMode === 'contain' || imageProps.resizeMode === 'cover'
-      ? imageProps.resizeMode
-      : imageProps.resizeMode === 'stretch'
-        ? 'fill'
-        : 'cover';
-  const webContainmentStyle: ImageProps['style'] =
-    Platform.OS === 'web'
-      ? {
-          maxWidth: '100%',
-          maxHeight: '100%',
-          objectFit,
-        }
-      : undefined;
+  const webContainmentStyle = getWebImageContainmentStyle(imageProps.resizeMode ?? 'cover');
 
   if (!imageUrl)
     return (

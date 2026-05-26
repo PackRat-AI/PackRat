@@ -3,6 +3,7 @@ import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
+import { getWebImageContainmentStyle } from 'expo-app/lib/utils/imageStyles';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
 import type { PackItem } from '../types';
@@ -30,7 +31,13 @@ export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
     );
 
   if (isRemoteUrl(item.image)) {
-    return <Image source={{ uri: item.image }} {...imageProps} />;
+    return (
+      <Image
+        source={{ uri: item.image }}
+        {...imageProps}
+        style={[getWebImageContainmentStyle(imageProps.resizeMode ?? 'cover'), imageProps.style]}
+      />
+    );
   }
 
   const imageUrl = buildImageUrl(item);
@@ -38,6 +45,12 @@ export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
   if (isItemOwnedByUser) {
     return <CachedImage imageObjectKey={item.image} imageRemoteUrl={imageUrl} {...imageProps} />;
   } else {
-    return <Image source={{ uri: imageUrl }} {...imageProps} />;
+    return (
+      <Image
+        source={{ uri: imageUrl }}
+        {...imageProps}
+        style={[getWebImageContainmentStyle(imageProps.resizeMode ?? 'cover'), imageProps.style]}
+      />
+    );
   }
 }

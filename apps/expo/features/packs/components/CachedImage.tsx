@@ -1,7 +1,8 @@
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { getWebImageContainmentStyle } from 'expo-app/lib/utils/imageStyles';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
+import { ActivityIndicator, Image, type ImageProps, Platform, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   imageObjectKey: string;
@@ -24,6 +25,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 }) => {
   const [imageLocalUri, setImageLocalUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const webContainmentStyle = getWebImageContainmentStyle(props.resizeMode ?? 'cover');
 
   useEffect(() => {
     if (!imageObjectKey) return;
@@ -53,12 +55,21 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     return (
       <View
         className={`items-center justify-center bg-muted px-2 ${props.className}`}
-        style={[{ backgroundColor: placeholderColor }]}
+        style={[
+          Platform.OS === 'web' ? { maxWidth: '100%', maxHeight: '100%' } : undefined,
+          { backgroundColor: placeholderColor },
+        ]}
       >
         <ActivityIndicator size="small" color="#999" />
       </View>
     );
   }
 
-  return <Image source={{ uri: imageLocalUri ?? undefined }} {...props} />;
+  return (
+    <Image
+      source={{ uri: imageLocalUri ?? undefined }}
+      {...props}
+      style={[webContainmentStyle, props.style]}
+    />
+  );
 };
