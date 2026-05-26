@@ -36,7 +36,7 @@ the public site).
    filing. The check 5 WARN (Claude pre-registration) is expected and
    acceptable: the AS exposes no public client-list endpoint, so the
    probe always WARNs and points operators at
-   [`packages/api/scripts/seed-claude-oauth-client.ts`](../../packages/api/scripts/seed-claude-oauth-client.ts)
+   [`packages/api/src/db/seed-claude-oauth-client.ts`](../../packages/api/src/db/seed-claude-oauth-client.ts)
    (the idempotent DB-seed script that pre-registers Claude as a trusted
    OAuth client in the `oauthClient` table).
 3. Prepare the **reviewer test account** (§ 4 below) and verify the demo
@@ -98,7 +98,7 @@ changes the form. Each row is the value the operator pastes verbatim.
 | Category (primary) | `Productivity` | Anthropic's published category taxonomy as of plan-drafting; PackRat is a planning/productivity tool first and an outdoor tool second. **TODO (operator):** confirm the exact category strings against the live form before submitting. |
 | Category (secondary) | `Travel & Outdoor` (or `Lifestyle` if Travel/Outdoor is unavailable) | Best-fit; confirm against the live taxonomy. |
 | Connector URL (Server URL) | `https://mcp.packratai.com/mcp` | Production Streamable HTTP endpoint. Probed by submission-readiness check 2. The OAuth Authorization Server lives on `https://api.packrat.world` and is reachable via the PRM discovery chain (`mcp.packratai.com/.well-known/oauth-protected-resource` → `authorization_servers: ["https://api.packrat.world"]` → `api.packrat.world/.well-known/oauth-authorization-server`); no separate AS form field is needed. |
-| OAuth callback URLs (allowlist) | `https://claude.ai/api/mcp/auth_callback`<br>`https://claude.com/api/mcp/auth_callback` | Pre-registered into the `oauthClient` table via [`packages/api/scripts/seed-claude-oauth-client.ts`](../../packages/api/scripts/seed-claude-oauth-client.ts) (idempotent — re-runs are safe). DCR is disabled at the AS (`allowDynamicClientRegistration: false`); the seed script is the only registration path. See [`runbook.md`](./runbook.md) § "Deprovision the legacy OAUTH_KV namespaces + DCR secret" for the operator setup. |
+| OAuth callback URLs (allowlist) | `https://claude.ai/api/mcp/auth_callback`<br>`https://claude.com/api/mcp/auth_callback` | Pre-registered into the `oauthClient` table via [`packages/api/src/db/seed-claude-oauth-client.ts`](../../packages/api/src/db/seed-claude-oauth-client.ts) (run with `cd packages/api && bun run db:seed:oauth-clients`; idempotent — re-runs are safe). DCR is disabled at the AS (`allowDynamicClientRegistration: false`); the seed script is the only registration path. See [`runbook.md`](./runbook.md) § "Deprovision the legacy OAUTH_KV namespaces + DCR secret" for the operator setup. |
 | Scopes advertised | `mcp`, `mcp:read`, `mcp:write`, `mcp:admin` | From `packages/mcp/src/metadata.ts` (`SCOPES_SUPPORTED`). Probed by submission-readiness checks 3 and 11b. |
 | Default scopes Claude.ai should request | `mcp:read`, `mcp:write` | Admin scope is operator-controlled; never requested by default. |
 | Privacy policy URL | `https://packratai.com/privacy-policy` | U12; the MCP addendum lives under the "MCP Connector & Third-Party Clients" section. Probed by check 9. |
@@ -135,7 +135,7 @@ check covers.
 | 2 | `/mcp` returns 401 with RFC 9728 `WWW-Authenticate: Bearer resource_metadata=...` | RS | `streamable_http_auth` | `curl -i -X POST https://mcp.packratai.com/mcp -d '{}'` |
 | 3 | `/.well-known/oauth-protected-resource` (RFC 9728) is valid JSON with all 4 scopes AND `authorization_servers` points at the AS | RS | `protected_resource_metadata` | `curl -s https://mcp.packratai.com/.well-known/oauth-protected-resource \| jq` |
 | 4 | `/.well-known/oauth-authorization-server` (RFC 8414) has `code_challenge_methods_supported: ["S256"]` (no `"plain"`) and the right grants | AS | `authorization_server_metadata` | `curl -s https://api.packrat.world/.well-known/oauth-authorization-server \| jq` |
-| 5 | Pre-registered Claude client present in the AS `oauthClient` table (always WARNs — no public list endpoint) | AS | `claude_client_registration` | Re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — no-op if already registered) or query the table directly |
+| 5 | Pre-registered Claude client present in the AS `oauthClient` table (always WARNs — no public list endpoint) | AS | `claude_client_registration` | Re-run `cd packages/api && bun run db:seed:oauth-clients` (idempotent — no-op if already registered) or query the table directly |
 | 6 | `/favicon.ico` on the MCP domain returns 200 image/x-icon with .ico magic bytes (Anthropic's domain-ownership probe target) | RS | `favicon_oauth_domain` | `curl -sI https://mcp.packratai.com/favicon.ico` |
 | 7 | Public docs page renders with PackRat / Claude.ai / scope copy | brand | `public_docs_page` | Visit <https://packratai.com/mcp> in a browser |
 | 8 | Privacy + Terms reachable AND contain MCP-specific copy | brand | `privacy_and_terms` | `curl -s https://packratai.com/privacy-policy \| grep -i 'mcp\|connector'` |
@@ -376,7 +376,7 @@ attached to the plan.)
 
 | Cause | Fix |
 | --- | --- |
-| OAuth callback URL allowlist incomplete | Add the new redirect URI to `CLAUDE_REDIRECT_URIS` in `packages/api/scripts/seed-claude-oauth-client.ts`, then re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — updates the existing `oauthClient` row). Both currently-known callbacks (`claude.ai`, `claude.com`) are pre-registered. |
+| OAuth callback URL allowlist incomplete | Add the new redirect URI to `CLAUDE_REDIRECT_URIS` in `packages/api/src/db/seed-claude-oauth-client.ts`, then re-run `cd packages/api && bun run db:seed:oauth-clients` (idempotent — updates the existing `oauthClient` row). Both currently-known callbacks (`claude.ai`, `claude.com`) are pre-registered. |
 | Audience binding rejected | The U2 OAuth provider upgrade + U3 metadata wiring should satisfy this; if not, audit `packages/mcp/src/metadata.ts` `canonicalResourceUrl` and confirm it matches the metadata's `resource` value exactly. |
 | WAF blocking Anthropic discovery probes | Add explicit allow rule for Anthropic's published IP ranges on `/.well-known/*` and `/mcp`. |
 | Connector rejected for category / audience mismatch | Re-classify per Anthropic's suggested category; update § 2. |

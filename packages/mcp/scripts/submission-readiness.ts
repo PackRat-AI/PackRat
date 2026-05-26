@@ -237,7 +237,8 @@ Notes:
   Post-refactor the AS and RS live on different origins. The legacy --url
   flag is no longer accepted — pass --rs-url and --as-url explicitly.
   Claude pre-registration is seeded directly into the API's oauthClient
-  table via packages/api/scripts/seed-claude-oauth-client.ts; the
+  table via the db:seed:oauth-clients package script
+  (packages/api/src/db/seed-claude-oauth-client.ts); the
   --claude-client-id probe is gone (the AS exposes no public list endpoint
   and the seed script is the source of truth).
 
@@ -619,7 +620,7 @@ export function checkClaudeClientRegistration(): CheckResult {
     status: 'warn',
     details:
       '@better-auth/oauth-provider exposes no public client-list endpoint. Verify manually by ' +
-      're-running `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — no-op if ' +
+      're-running `cd packages/api && bun run db:seed:oauth-clients` (idempotent — no-op if ' +
       'already registered) or inspecting the oauthClient table directly. ' +
       'See docs/mcp/runbook.md § "Deprovision the legacy OAUTH_KV namespaces + DCR secret".',
   };

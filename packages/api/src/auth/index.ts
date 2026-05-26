@@ -189,7 +189,7 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       //  - `validAudiences`: RFC 8707 — `/oauth2/authorize` rejects any
       //    `resource` parameter not in this list with 400 invalid_request.
       //  - `allowDynamicClientRegistration: false` + Claude pre-registered
-      //    via packages/api/scripts/seed-claude-oauth-client.ts — DCR is
+      //    via packages/api/src/db/seed-claude-oauth-client.ts — DCR is
       //    closed because we know our connector clients ahead of time.
       //  - `consentPage`: points at `/oauth/consent` (mounted in the worker
       //    fetch handler in src/index.ts). The consent page server-side

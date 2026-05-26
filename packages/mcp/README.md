@@ -46,7 +46,7 @@ Scope filtering happens in two places: the consent page on `api.packrat.world` f
 
 ### Pre-registration of OAuth clients
 
-DCR is disabled at the AS (`allowDynamicClientRegistration: false`). Claude.ai's two callback URLs are seeded into the `oauthClient` table via [`packages/api/scripts/seed-claude-oauth-client.ts`](../api/scripts/seed-claude-oauth-client.ts). The script is idempotent (re-runs are no-ops) and is the only registration path.
+DCR is disabled at the AS (`allowDynamicClientRegistration: false`). Claude.ai's two callback URLs are seeded into the `oauthClient` table via [`packages/api/src/db/seed-claude-oauth-client.ts`](../api/src/db/seed-claude-oauth-client.ts) (run with `cd packages/api && bun run db:seed:oauth-clients`). The script is idempotent (re-runs are no-ops) and is the only registration path.
 
 ---
 

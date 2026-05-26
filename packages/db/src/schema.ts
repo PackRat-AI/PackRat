@@ -124,7 +124,7 @@ export const jwks = pgTable('jwks', {
 
 // OAuth Client (registered relying parties — e.g. Claude, future MCP clients).
 // Pre-registered via auth.api.createOAuthClient() seed script
-// (packages/api/scripts/seed-claude-oauth-client.ts) since
+// (packages/api/src/db/seed-claude-oauth-client.ts) since
 // `allowDynamicClientRegistration: false`.
 export const oauthClient = pgTable(
   'oauthClient',

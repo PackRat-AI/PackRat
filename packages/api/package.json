@@ -22,6 +22,7 @@
     "db:migrate": "bun run ./migrate.ts",
     "db:seed": "bun run ./src/db/seed.ts",
     "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
+    "db:seed:oauth-clients": "bun run ./src/db/seed-claude-oauth-client.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "dev": "wrangler dev -e=dev",

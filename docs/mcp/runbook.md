@@ -116,9 +116,9 @@ wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env dev
 No equivalent provisioning step exists anymore: Better Auth's OAuth
 provider on `api.packrat.world` owns all client / grant / token state in
 the API's Postgres + `AUTH_KV`. Pre-registered Claude clients are seeded
-once via `packages/api/scripts/seed-oauth-clients.ts` (U1 of the
-refactor) — see § "Post-refactor: AS lives on api.packrat.world" below
-for the architecture overview.
+once via `cd packages/api && bun run db:seed:oauth-clients` (script:
+`packages/api/src/db/seed-claude-oauth-client.ts`) — see § "Post-refactor:
+AS lives on api.packrat.world" below for the architecture overview.
 
 ### 2. Provision the `mcp.packratai.com` custom domain
 
@@ -146,8 +146,9 @@ wrangler secret put SENTRY_DSN --env prod
 Repeat for `--env dev` with dev values.
 
 Pre-registration of Claude as an OAuth client now happens on the API side
-once via `packages/api/scripts/seed-oauth-clients.ts` — see U1 of the
-refactor plan and § "Post-refactor: AS lives on api.packrat.world" below.
+once via `cd packages/api && bun run db:seed:oauth-clients` (script:
+`packages/api/src/db/seed-claude-oauth-client.ts`) — see U1 of the refactor
+plan and § "Post-refactor: AS lives on api.packrat.world" below.
 
 ## U5 admin scope model
 
@@ -1512,7 +1513,7 @@ structured report suitable for piping into a CI job.
 | 2 | `/mcp` returns 401 with `WWW-Authenticate: Bearer resource_metadata=..., scope=...` (RFC 9728 §5.1) | RS | `index.ts` outer fetch wiring drifted; PRM URL stale |
 | 3 | `/.well-known/oauth-protected-resource` has `resource`, `authorization_servers`, all 4 scopes, `bearer_methods_supported: ['header']` | RS | `packages/mcp/src/metadata.ts` drifted from the plan |
 | 4 | `/.well-known/oauth-authorization-server` advertises `S256`, `authorization_code`, `refresh_token`, `code` | AS | `@better-auth/oauth-provider` config drift; `allowPlainCodeChallengeMethod` flipped on |
-| 5 | Pre-registered Claude client present in the AS `oauthClient` table — **always WARN** (no public client-list endpoint) | AS | Re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — no-op if already registered) or inspect the `oauthClient` table directly |
+| 5 | Pre-registered Claude client present in the AS `oauthClient` table — **always WARN** (no public client-list endpoint) | AS | Re-run `cd packages/api && bun run db:seed:oauth-clients` (idempotent — no-op if already registered) or inspect the `oauthClient` table directly |
 | 6 | `/favicon.ico` returns 200 image/x-icon with the .ico magic bytes (Anthropic's domain-ownership probe) | RS | `packages/mcp/src/favicon.ts` corrupted; re-embed per the U13 contract |
 | 7 | `packratai.com/mcp` renders with `PackRat`, `Claude.ai`, `scope` text present | brand | Landing site deploy failed; route 404'd |
 | 8 | `/privacy-policy` and `/terms-of-service` return 200 AND contain `mcp` or `connector` | brand | Legal pages missing the MCP addendum — Anthropic immediate-reject cause |
@@ -1533,7 +1534,7 @@ post-refactor the MCP worker has no `/register` route and the AS has
   endpoint and DCR is disabled, so the script always emits a WARN
   pointing at the seed script + the `oauthClient` table. Verify
   manually by re-running
-  `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent —
+  `cd packages/api && bun run db:seed:oauth-clients` (idempotent —
   no-op if already registered) or by querying the `oauthClient` table
   directly. This is the only check that does not assert by default.
 - WAF rule audits are not probed — they require a non-Cloudflare-egress
@@ -1705,7 +1706,7 @@ Common failure modes to look for:
   workaround within MCP/AS — fall back to the reverse-proxy plan.
 - **`invalid_client` at `/oauth2/token`** → seed script wasn't run for
   this dev env, or the dev client_id Claude is using doesn't match.
-  Re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` against
+  Re-run `cd packages/api && bun run db:seed:oauth-clients` against
   the dev DB.
 - **`invalid_audience` or 401 from MCP after a successful token grant** →
   the AS isn't sending `resource` correctly, so an opaque token was
