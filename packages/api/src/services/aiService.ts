@@ -1,5 +1,4 @@
 import { createPerplexity } from '@ai-sdk/perplexity';
-import type { AutoRAG, AutoRagSearchResponse } from '@cloudflare/workers-types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -14,15 +13,38 @@ interface SearchResult {
 const WEB_SEARCH_SYSTEM_PROMPT =
   'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
+type GuidesRagSearchResult = {
+  object: string;
+  search_query: string;
+  has_more: boolean;
+  next_page: string | null;
+  data: Array<{
+    filename: string;
+    [key: string]: unknown;
+  }>;
+};
+
+type GuidesRagClient = {
+  search(params: {
+    query: string;
+    max_num_results: number;
+    ranking_options: {
+      score_threshold: number;
+    };
+  }): Promise<GuidesRagSearchResult>;
+};
+
 export class AIService {
   private env: Env;
-  private guidesRAG: AutoRAG | null = null;
+  private guidesRAG: GuidesRagClient | null = null;
 
   constructor() {
     this.env = getEnv();
     // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
     if (this.env.AI && isFunction(this.env.AI.autorag)) {
-      this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
+      this.guidesRAG = this.env.AI.autorag(
+        this.env.PACKRAT_GUIDES_RAG_NAME,
+      ) as unknown as GuidesRagClient;
     }
   }
 
@@ -49,8 +71,8 @@ export class AIService {
     query: string,
     limit: number = 5,
   ): Promise<
-    Omit<AutoRagSearchResponse, 'data'> & {
-      data: (AutoRagSearchResponse['data'][0] & { url: string })[];
+    GuidesRagSearchResult & {
+      data: Array<{ filename: string; url: string; [key: string]: unknown }>;
     }
   > {
     // Return empty results if AI binding is not available (e.g., in test environment)
@@ -72,7 +94,7 @@ export class AIService {
       },
     });
 
-    const data = response.data.map((item: AutoRagSearchResponse['data'][number]) => ({
+    const data = response.data.map((item) => ({
       ...item,
       url: this.filenameToUrl(item.filename),
     }));
