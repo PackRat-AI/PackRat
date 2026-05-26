@@ -28,6 +28,12 @@ type ScreenshotRequirement = {
   flow: string;
 };
 
+type ContactSheetGroup = {
+  suffix: string;
+  title: string;
+  matches: (fileName: string) => boolean;
+};
+
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
@@ -37,6 +43,7 @@ const QUOTE_RE = /^["']|["']$/g;
 const LEADING_DIGIT_RE = /^\d/;
 const SCREENSHOT_PREFIX_RE = /^\d+[a-z]?-/i;
 const XCT_ATTACHMENT_SUFFIX_RE = /_\d+_[0-9A-F-]+\.png$/i;
+const DATA_DETAIL_SCREENSHOT_RE = /^7[1-9]-data-/;
 const SIPS_PIXEL_WIDTH_RE = /pixelWidth:\s*(\d+)/;
 const SIPS_PIXEL_HEIGHT_RE = /pixelHeight:\s*(\d+)/;
 const CHROME_CANDIDATES = [
@@ -75,6 +82,51 @@ const MAC_SURFACES = [
   'wildlife',
   'ai-packs',
 ] as const;
+const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
+  {
+    suffix: 'unauth',
+    title: 'Unauthenticated Entry',
+    matches: (fileName) =>
+      fileName.startsWith('00-') ||
+      fileName.startsWith('01-') ||
+      fileName.startsWith('02-') ||
+      fileName.startsWith('02a-'),
+  },
+  {
+    suffix: 'guest',
+    title: 'Guest Mode',
+    matches: (fileName) =>
+      fileName.startsWith('03-') ||
+      fileName.startsWith('10-guest-') ||
+      fileName.startsWith('50-guest-'),
+  },
+  {
+    suffix: 'auth',
+    title: 'Authenticated Empty State',
+    matches: (fileName) =>
+      fileName.startsWith('20-auth-') ||
+      fileName.startsWith('30-auth-') ||
+      fileName.startsWith('60-auth-'),
+  },
+  {
+    suffix: 'data',
+    title: 'Authenticated Sample Data',
+    matches: (fileName) => fileName.startsWith('70-data-') || fileName.startsWith('80-data-'),
+  },
+  {
+    suffix: 'detail',
+    title: 'Authenticated Detail Screens',
+    matches: (fileName) => DATA_DETAIL_SCREENSHOT_RE.test(fileName),
+  },
+  {
+    suffix: 'modals',
+    title: 'Modal and Sheet States',
+    matches: (fileName) =>
+      fileName.startsWith('50-guest-modal-') ||
+      fileName.startsWith('60-auth-modal-') ||
+      fileName.startsWith('80-data-modal-'),
+  },
+];
 const COMMON_AUTH_REQUIREMENTS: ScreenshotRequirement[] = [
   requirement('00-unauth-welcome', { area: 'auth', flow: 'Welcome screen' }),
   requirement('01-unauth-register', { area: 'auth', flow: 'Register form' }),
@@ -536,8 +588,16 @@ function screenshotDirFor(outDir: string, platform: Platform): string {
   return resolve(outDir, `${platform}-xctest`);
 }
 
-function contactSheetPathFor(outDir: string, platform: Platform): string {
-  return resolve(outDir, `${platform}-contact-sheet.png`);
+function contactSheetPathFor({
+  outDir,
+  platform,
+  suffix,
+}: {
+  outDir: string;
+  platform: Platform;
+  suffix?: string;
+}): string {
+  return resolve(outDir, `${platform}-contact-sheet${suffix ? `-${suffix}` : ''}.png`);
 }
 
 function listScreenshots(dir: string): string[] {
@@ -576,10 +636,17 @@ function escapeHtml(value: string): string {
   });
 }
 
-function buildHtml({ images, platform }: { images: string[]; platform: Platform }): string {
+function buildHtml({
+  images,
+  platform,
+  title,
+}: {
+  images: string[];
+  platform: Platform;
+  title: string;
+}): string {
   const isMac = platform === 'macos';
   const cardWidth = isMac ? 520 : 300;
-  const title = platform === 'ios' ? 'PackRat iOS Screens' : 'PackRat macOS Screens';
   const cards = images
     .map((image) => {
       const label = humanize(image);
@@ -654,8 +721,9 @@ async function renderContactSheet(platform: Platform, outDir: string): Promise<s
   }
 
   const htmlPath = resolve(outDir, `${platform}-contact-sheet.html`);
-  const outputPath = contactSheetPathFor(outDir, platform);
-  writeFileSync(htmlPath, buildHtml({ images, platform }));
+  const outputPath = contactSheetPathFor({ outDir, platform });
+  const title = platform === 'ios' ? 'PackRat iOS Screens' : 'PackRat macOS Screens';
+  writeFileSync(htmlPath, buildHtml({ images, platform, title }));
 
   await screenshotHtml({
     htmlPath,
@@ -665,6 +733,38 @@ async function renderContactSheet(platform: Platform, outDir: string): Promise<s
   });
 
   return outputPath;
+}
+
+async function renderGroupedContactSheets(platform: Platform, outDir: string): Promise<string[]> {
+  const screenshotDir = screenshotDirFor(outDir, platform);
+  const images = listScreenshots(screenshotDir);
+  const rendered: string[] = [];
+
+  for (const group of CONTACT_SHEET_GROUPS) {
+    const groupImages = images.filter((image) => group.matches(basename(image)));
+    if (groupImages.length === 0) continue;
+
+    const htmlPath = resolve(outDir, `${platform}-contact-sheet-${group.suffix}.html`);
+    const outputPath = contactSheetPathFor({ outDir, platform, suffix: group.suffix });
+    const platformName = platform === 'ios' ? 'iOS' : 'macOS';
+    writeFileSync(
+      htmlPath,
+      buildHtml({
+        images: groupImages,
+        platform,
+        title: `PackRat ${platformName}: ${group.title}`,
+      }),
+    );
+    await screenshotHtml({
+      htmlPath,
+      images: groupImages,
+      outputPath,
+      platform,
+    });
+    rendered.push(outputPath);
+  }
+
+  return rendered;
 }
 
 async function screenshotHtml({
@@ -785,7 +885,11 @@ async function main() {
     }
     validateScreenshotMatrix(platform, dir);
     const contactSheet = await renderContactSheet(platform, options.outDir);
+    const groupedContactSheets = await renderGroupedContactSheets(platform, options.outDir);
     console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
+    for (const groupedContactSheet of groupedContactSheets) {
+      console.log(`✓ ${platform} grouped contact sheet: ${groupedContactSheet}`);
+    }
     console.log(`✓ ${platform} coverage manifest: ${resolve(dir, 'coverage-manifest.json')}`);
   }
 }
