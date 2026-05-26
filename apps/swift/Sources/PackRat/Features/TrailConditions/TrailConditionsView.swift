@@ -18,7 +18,7 @@ struct TrailConditionsListView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Sign In to View Trail Reports",
+                    "Trail Reports Require an Account",
                     subtitle: "Community trail conditions are shared through your PackRat account.",
                     systemImage: "figure.hiking"
                 )

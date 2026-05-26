@@ -21,8 +21,8 @@ struct AIPacksView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Sign In to Generate AI Packs",
-                    subtitle: "AI pack generation runs on your PackRat account and is not available in guest mode.",
+                    "AI Pack Generation Requires an Account",
+                    subtitle: "Create an account to generate packs with PackRat's AI service. Local packs and trips still work in guest mode.",
                     systemImage: "sparkles"
                 )
             } else if authManager.currentUser?.isAdmin == true {
@@ -58,6 +58,75 @@ struct AIPacksView: View {
 
     @ViewBuilder
     private var adminContent: some View {
+        #if os(macOS)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                GroupBox("Generate New Packs") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Count")
+                            Spacer()
+                            Stepper(value: $viewModel.count, in: AIPacksViewModel.minCount...AIPacksViewModel.maxCount) {
+                                Text("\(viewModel.count)")
+                                    .monospacedDigit()
+                                    .frame(minWidth: 30, alignment: .trailing)
+                            }
+                            .accessibilityIdentifier("ai_packs_count_stepper")
+                        }
+
+                        Text("Up to \(AIPacksViewModel.maxCount) packs per request. Each pack is generated independently with a unique theme.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            showingConfirm = true
+                        } label: {
+                            if viewModel.isGenerating {
+                                Label("Generating...", systemImage: "hourglass")
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                Label("Generate \(viewModel.count) Pack\(viewModel.count == 1 ? "" : "s")", systemImage: "sparkles")
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(!viewModel.canGenerate)
+                        .accessibilityIdentifier("ai_packs_generate_button")
+                    }
+                    .padding(4)
+                }
+
+                if let error = viewModel.error {
+                    InlineErrorView(message: error)
+                }
+
+                if !viewModel.generatedPacks.isEmpty {
+                    GroupBox("Last Generation") {
+                        HStack {
+                            Label("\(viewModel.generatedPacks.count) pack\(viewModel.generatedPacks.count == 1 ? "" : "s") ready", systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                            Spacer()
+                            Button("View") { showingResults = true }
+                                .buttonStyle(.bordered)
+                        }
+                        .padding(4)
+                    }
+                }
+
+                Label {
+                    Text("Generated packs are public by default and tagged as AI-generated. They go through the catalog vector search so each item maps to a real product.")
+                } icon: {
+                    Image(systemName: "info.circle")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: 560, alignment: .leading)
+            .padding(24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        #else
         Form {
             generatorSection
             if let error = viewModel.error {
@@ -68,6 +137,7 @@ struct AIPacksView: View {
             }
             tipsSection
         }
+        #endif
     }
 
     // MARK: - Sections

@@ -43,28 +43,76 @@ struct GuestLimitedView: View {
     let title: String
     let subtitle: String
     let systemImage: String
+    let actionTitle: String
 
-    init(_ title: String, subtitle: String, systemImage: String = "person.crop.circle.badge.plus") {
+    init(
+        _ title: String,
+        subtitle: String,
+        systemImage: String = "person.crop.circle.badge.plus",
+        actionTitle: String = "Sign In or Create Account"
+    ) {
         self.title = title
         self.subtitle = subtitle
         self.systemImage = systemImage
+        self.actionTitle = actionTitle
     }
 
     var body: some View {
-        UnavailableStateView(
-            title: title,
-            subtitle: subtitle,
-            systemImage: systemImage
-        ) {
-            if authManager.isGuest {
-                Button("Sign In") {
-                    authManager.signOut()
+        GeometryReader { proxy in
+            if proxy.size.width < 260 {
+                compactContent
+            } else {
+                UnavailableStateView(
+                    title: title,
+                    subtitle: subtitle,
+                    systemImage: systemImage
+                ) {
+                    signInButton
                 }
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("guest_limited_sign_in")
             }
         }
         .accessibilityIdentifier("guest_limited_state")
+    }
+
+    private var compactContent: some View {
+        VStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.callout.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.82)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(4)
+                    .minimumScaleFactor(0.86)
+            }
+
+            signInButton
+                .controlSize(.small)
+        }
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var signInButton: some View {
+        if authManager.isGuest {
+            Button(actionTitle) {
+                authManager.signOut()
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("guest_limited_sign_in")
+        }
     }
 }
 

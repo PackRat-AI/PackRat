@@ -21,7 +21,7 @@ struct PackTemplatesListView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Sign In to Use Templates",
+                    "Templates Require an Account",
                     subtitle: "Pack templates sync with your account so they can be reused across devices.",
                     systemImage: "doc.on.doc"
                 )

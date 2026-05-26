@@ -119,8 +119,8 @@ struct GuidesView: View {
         Group {
             if !authManager.isAuthenticated {
                 GuestLimitedView(
-                    "Sign In to View Guides",
-                    subtitle: "Guides are loaded from your PackRat account when you are online.",
+                    "Guides Require an Account",
+                    subtitle: "Guides sync with your PackRat account when you are online.",
                     systemImage: "book"
                 )
             } else if viewModel.isLoading && viewModel.guides.isEmpty {
