@@ -8,10 +8,10 @@ struct WeatherAlertsView: View {
         NavigationStack {
             Group {
                 if alerts.isEmpty {
-                    ContentUnavailableView(
-                        "No Active Alerts",
-                        systemImage: "checkmark.shield",
-                        description: Text("No weather alerts for this location")
+                    UnavailableStateView(
+                        title: "No Active Alerts",
+                        subtitle: "No weather alerts for this location",
+                        systemImage: "checkmark.shield"
                     )
                 } else {
                     List(alerts) { alert in

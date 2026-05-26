@@ -142,12 +142,11 @@ struct WildlifeView: View {
     }
 
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Identify Wildlife", systemImage: "pawprint")
-                .symbolRenderingMode(.hierarchical)
-        } description: {
-            Text("Choose a photo of an animal or plant to identify it using AI.")
-        } actions: {
+        UnavailableStateView(
+            title: "Identify Wildlife",
+            subtitle: "Choose a photo of an animal or plant to identify it using AI.",
+            systemImage: "pawprint"
+        ) {
             PhotosPicker(selection: $photoItem, matching: .images) {
                 Label("Choose Photo", systemImage: "photo.on.rectangle")
             }

@@ -22,12 +22,11 @@ struct EmptyStateView: View {
     }
 
     var body: some View {
-        ContentUnavailableView {
-            Label(title, systemImage: systemImage)
-                .symbolRenderingMode(.hierarchical)
-        } description: {
-            if !subtitle.isEmpty { Text(subtitle) }
-        } actions: {
+        UnavailableStateView(
+            title: title,
+            subtitle: subtitle,
+            systemImage: systemImage
+        ) {
             if let action {
                 Button(actionLabel, action: action)
                     .buttonStyle(.borderedProminent)

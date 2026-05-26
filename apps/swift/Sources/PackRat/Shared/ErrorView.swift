@@ -51,12 +51,11 @@ struct AccountRequiredView: View {
     }
 
     var body: some View {
-        ContentUnavailableView {
-            Label(title, systemImage: systemImage)
-                .symbolRenderingMode(.hierarchical)
-        } description: {
-            Text(subtitle)
-        } actions: {
+        UnavailableStateView(
+            title: title,
+            subtitle: subtitle,
+            systemImage: systemImage
+        ) {
             if authManager.isGuest {
                 Button("Sign In") {
                     authManager.signOut()
@@ -89,12 +88,11 @@ private struct ErrorSurfaceView: View {
     let retry: (() async -> Void)?
 
     var body: some View {
-        ContentUnavailableView {
-            Label(presentation.title, systemImage: presentation.systemImage)
-                .symbolRenderingMode(.hierarchical)
-        } description: {
-            Text(presentation.description)
-        } actions: {
+        UnavailableStateView(
+            title: presentation.title,
+            subtitle: presentation.description,
+            systemImage: presentation.systemImage
+        ) {
             if let retry, presentation.allowsRetry {
                 AsyncButton(presentation.retryTitle, action: retry)
                     .buttonStyle(.borderedProminent)

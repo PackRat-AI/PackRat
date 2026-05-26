@@ -7,28 +7,30 @@ struct CatalogView: View {
     var body: some View {
         @Bindable var vm = appState.catalogVM
 
-        return ScrollView {
-            VStack(spacing: 16) {
-                if vm.isLoading && vm.items.isEmpty {
-                    ProgressView("Searching gear…").padding(.top, 40)
-                } else if let error = vm.error {
-                    InlineErrorView(message: error).padding(.horizontal)
-                } else if vm.items.isEmpty && vm.hasSearched {
-                    ContentUnavailableView.search(text: vm.searchText)
-                        .accessibilityIdentifier("catalog_no_results")
-                        .padding(.top, 20)
-                } else if !vm.hasSearched {
-                    EmptyStateView(
-                        "Search the Gear Catalog",
-                        subtitle: "Find weight specs, prices, and reviews for thousands of outdoor products",
-                        systemImage: "magnifyingglass"
-                    )
-                    .padding(.top, 20)
-                } else {
+        return Group {
+            if vm.isLoading && vm.items.isEmpty {
+                ProgressView("Searching gear…").frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error = vm.error {
+                ErrorView(error, retry: { await vm.search(reset: true) })
+            } else if vm.items.isEmpty && vm.hasSearched {
+                UnavailableStateView(
+                    title: "No Results",
+                    subtitle: "No gear matched “\(vm.searchText)”. Try a brand, model, or category.",
+                    systemImage: "magnifyingglass"
+                )
+                .accessibilityIdentifier("catalog_no_results")
+            } else if !vm.hasSearched {
+                EmptyStateView(
+                    "Search the Gear Catalog",
+                    subtitle: "Find weight specs, prices, and reviews for thousands of outdoor products",
+                    systemImage: "magnifyingglass"
+                )
+            } else {
+                ScrollView {
                     itemGrid(vm: vm)
+                        .padding(.bottom)
                 }
             }
-            .padding(.bottom)
         }
         .navigationTitle("Gear Catalog")
         #if os(iOS)

@@ -28,10 +28,10 @@ struct AIPacksView: View {
             } else if authManager.currentUser?.isAdmin == true {
                 adminContent
             } else {
-                ContentUnavailableView(
-                    "Admin Only",
-                    systemImage: "lock.shield",
-                    description: Text("The AI Packs generator is restricted to admin accounts. Contact a workspace admin if you need access.")
+                UnavailableStateView(
+                    title: "Admin Only",
+                    subtitle: "The AI Packs generator is restricted to admin accounts. Contact a workspace admin if you need access.",
+                    systemImage: "lock.shield"
                 )
             }
         }
@@ -164,10 +164,10 @@ private struct GeneratedPacksSheet: View {
         NavigationStack {
             Group {
                 if viewModel.generatedPacks.isEmpty {
-                    ContentUnavailableView(
-                        "No Generated Packs",
-                        systemImage: "sparkles",
-                        description: Text("Generate some packs from the main screen first.")
+                    UnavailableStateView(
+                        title: "No Generated Packs",
+                        subtitle: "Generate some packs from the main screen first.",
+                        systemImage: "sparkles"
                     )
                 } else {
                     List(viewModel.generatedPacks) { pack in

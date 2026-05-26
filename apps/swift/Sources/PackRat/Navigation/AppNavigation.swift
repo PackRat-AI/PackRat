@@ -252,7 +252,7 @@ struct AppNavigation: View {
     }
 
     private func placeholder(_ title: String, symbol: String) -> some View {
-        ContentUnavailableView(title, systemImage: symbol)
+        UnavailableStateView(title: title, systemImage: symbol)
     }
 
     // MARK: - iPhone: tab layout

@@ -340,10 +340,10 @@ private struct ApplyTemplateSheet: View {
         NavigationStack {
             Group {
                 if packs.isEmpty {
-                    ContentUnavailableView(
-                        "No Packs",
-                        systemImage: "backpack",
-                        description: Text("Create a pack first, then apply this template.")
+                    UnavailableStateView(
+                        title: "No Packs",
+                        subtitle: "Create a pack first, then apply this template.",
+                        systemImage: "backpack"
                     )
                 } else {
                     List(packs, selection: $selectedPackId) { pack in
