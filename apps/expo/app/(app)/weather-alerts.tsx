@@ -6,7 +6,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type WeatherAlert = {
   id: string;
@@ -131,11 +131,20 @@ export default function WeatherAlertsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { alerts, loading, error, activeLocation } = useWeatherAlerts();
+  const { top } = useSafeAreaInsets();
+  // LargeTitleHeader lives in the native nav controller (no React layout space).
+  // "never" stops the headerLargeStyle new-object re-render loop; offset
+  // manually clears status-bar + compact nav bar (44) + large-title row (52).
+  const scrollTopOffset = top + 44 + 52;
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />
-      <ScrollView className="flex-1 mt-20" contentInsetAdjustmentBehavior="automatic">
+      <ScrollView
+        className="flex-1"
+        style={{ marginTop: scrollTopOffset }}
+        contentInsetAdjustmentBehavior="never"
+      >
         <View className="flex-row items-center justify-between p-4">
           <Text
             variant="subhead"
