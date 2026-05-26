@@ -3,11 +3,50 @@
 PackRat's Model Context Protocol Worker. A thin, OAuth-secured façade over the PackRat API that exposes ~103 typed tools, six resources, and a handful of guided prompts to MCP-capable clients (Claude.ai, Claude Code, MCP Inspector, custom clients).
 
 - **Production transport:** Streamable HTTP at `https://mcp.packratai.com/mcp`
-- **OAuth:** 2.1 + PKCE S256 + RFC 8707 audience binding, via `@cloudflare/workers-oauth-provider`
-- **Auth backend:** Better Auth (`packages/api`), shared with the mobile + web apps
+- **OAuth posture:** This worker is a **pure protected resource**. The authorization server (AS) lives on `https://api.packrat.world` via [`@better-auth/oauth-provider`](https://github.com/better-auth/better-auth). Per RFC 8707 every access token is audience-bound to `https://mcp.packratai.com/mcp`.
+- **JWT validation:** `verifyMcpToken` ([`src/token-verify.ts`](./src/token-verify.ts)) fetches and caches the JWKS from `${PACKRAT_API_URL}/api/auth/jwks` (60s SWR cache with single-retry on stale `kid`).
 - **Runtime:** Cloudflare Workers + Durable Objects, via the [Cloudflare Agents SDK](https://github.com/cloudflare/agents)
 
 Public, user-facing docs live at [packratai.com/mcp](https://packratai.com/mcp). This README is for developers working in `packages/mcp/`.
+
+---
+
+## Architecture (post-refactor, 2026-05-25)
+
+As of the Better Auth OAuth consolidation refactor, the MCP worker no longer hosts an authorization server. The split is:
+
+| Component | Lives on | Owned by |
+| --- | --- | --- |
+| Authorization server (AS) — `/oauth2/authorize`, `/oauth2/token`, JWKS | `api.packrat.world` | `@better-auth/oauth-provider` plugin |
+| Consent / login UI | `api.packrat.world` | Branded consent page on the API |
+| OAuth clients / grants / tokens | `api.packrat.world` | Better Auth tables in Postgres |
+| Protected resource (MCP) | `mcp.packratai.com` | This worker — validates JWTs only |
+| MCP tool / resource / prompt surface | `mcp.packratai.com` | This worker — unchanged from U7–U16 of the prior plan |
+
+### Discovery chain (what Claude.ai does on first connect)
+
+1. Claude POSTs to `https://mcp.packratai.com/mcp` with no `Authorization` header.
+2. The MCP worker returns `401 + WWW-Authenticate: Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource"`.
+3. Claude fetches the PRM document; it advertises `authorization_servers: ["https://api.packrat.world"]`.
+4. Claude fetches `https://api.packrat.world/.well-known/oauth-authorization-server` (served by Better Auth's plugin) to discover the AS endpoints.
+5. Claude opens a browser to the AS's `/oauth2/authorize`; the user signs in and approves the branded consent screen, all on the API origin.
+6. Claude receives a JWT (signed by Better Auth) at the token endpoint and redirects back to `claude.ai/api/mcp/auth_callback`.
+7. Claude retries the MCP request with `Authorization: Bearer <jwt>`; the MCP worker validates the JWT locally against the JWKS cache and dispatches the tool call.
+
+### Scopes (four, coarse-grained)
+
+| Scope | Grants | Notes |
+| --- | --- | --- |
+| `mcp` | read tools only | Legacy umbrella scope, kept for back-compat with pre-split clients. |
+| `mcp:read` | `packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, plus `packrat_whoami` and a few `packrat_extract_*` / `packrat_preview_*` tools | Same as `mcp` but explicit. |
+| `mcp:write` | read + every create / update / delete / submit / record tool | The default scope Claude.ai requests alongside `mcp:read`. |
+| `mcp:admin` | read + write + every `packrat_admin_*` tool + the four explicit overrides (`packrat_execute_sql_query`, `packrat_get_database_schema`, `packrat_generate_pack_template_from_url`, `packrat_create_app_pack_template`) | Granted at consent time only when the user's Better Auth role resolves to `ADMIN`. The MCP also defense-in-depths the check at tool-dispatch time. |
+
+Scope filtering happens in two places: the consent page on `api.packrat.world` filters the scope list shown to the user (and the granted set written into the OAuth grant), and the MCP worker re-checks the `scope` JWT claim before exposing admin tools via `RegisteredTool.disable()` (which auto-emits `notifications/tools/list_changed` so the client view stays in sync).
+
+### Pre-registration of OAuth clients
+
+DCR is disabled at the AS (`allowDynamicClientRegistration: false`). Claude.ai's two callback URLs are seeded into the `oauthClient` table via [`packages/api/scripts/seed-claude-oauth-client.ts`](../api/scripts/seed-claude-oauth-client.ts). The script is idempotent (re-runs are no-ops) and is the only registration path.
 
 ---
 
@@ -15,24 +54,26 @@ Public, user-facing docs live at [packratai.com/mcp](https://packratai.com/mcp).
 
 | What you want | Where it lives |
 | --- | --- |
-| Worker entrypoint + `OAuthProvider` config | [`src/index.ts`](./src/index.ts) |
-| OAuth handler (`/authorize`, `/login`, `/callback`, `/health`, `/favicon.ico`) | [`src/auth.ts`](./src/auth.ts) |
+| Worker entrypoint (outer fetch dispatcher: well-known, /health, /status, /favicon.ico, /mcp → JWT-validate → DO) | [`src/index.ts`](./src/index.ts) |
+| JWT validation + JWKS cache | [`src/token-verify.ts`](./src/token-verify.ts) |
+| /health + /status handlers + PUBLIC_LINKS | [`src/auth.ts`](./src/auth.ts) |
 | Tool surface (~103 tools, 18 files) | [`src/tools/*.ts`](./src/tools) |
 | Resources (`packrat://...`) | [`src/resources.ts`](./src/resources.ts) |
 | Prompts (guided multi-turn flows) | [`src/prompts.ts`](./src/prompts.ts) |
 | Scope model + tool gating | [`src/scopes.ts`](./src/scopes.ts) |
-| RFC 9728 + RFC 8414 metadata | [`src/metadata.ts`](./src/metadata.ts) |
+| RFC 9728 protected-resource metadata | [`src/metadata.ts`](./src/metadata.ts) |
+| CORS allowlist (Claude origins on /.well-known/*) | [`src/cors.ts`](./src/cors.ts) |
 | Output envelope + pagination helpers | [`src/client.ts`](./src/client.ts) |
 | Elicitations (destructive admin tools) | [`src/elicit.ts`](./src/elicit.ts) |
-| Branded login page | [`src/login-page.ts`](./src/login-page.ts) |
 | Glossary resource content | [`src/glossary.ts`](./src/glossary.ts) |
-| Embedded favicon (OAuth host) | [`src/favicon.ts`](./src/favicon.ts) |
+| Embedded favicon (Anthropic domain-ownership probe) | [`src/favicon.ts`](./src/favicon.ts) |
 | Tests | [`src/__tests__/`](./src/__tests__) |
-| One-shot scripts (DCR client pre-reg, catalog dump) | [`scripts/`](./scripts) |
+| One-shot scripts (catalog dump, submission-readiness probe) | [`scripts/`](./scripts) |
 | Operator runbook | [`../../docs/mcp/runbook.md`](../../docs/mcp/runbook.md) |
-| Implementation plan | [`../../docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md`](../../docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md) |
+| Consolidation-refactor plan | [`../../docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md`](../../docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md) |
+| Connector-store readiness plan (the surface this worker exposes) | [`../../docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md`](../../docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md) |
 
-The high-level architecture (DO-backed `McpAgent` + OAuth provider + Eden Treaty client to the PackRat API) is summarised in `src/index.ts`'s top-of-file docstring.
+The high-level architecture (DO-backed `McpAgent` + JWT-validating outer fetch + Eden Treaty client to the PackRat API) is summarised in `src/index.ts`'s top-of-file docstring.
 
 ---
 
@@ -58,17 +99,17 @@ Required:
 
 | Variable | Notes |
 | --- | --- |
-| `PACKRAT_API_URL` | The PackRat API base. `http://localhost:8787` if you also run `bun api`. |
-| `MCP_INITIAL_ACCESS_TOKEN` | Pre-shared bearer that gates `POST /register`. Generate via `openssl rand -hex 32`. If unset, DCR is effectively disabled (fail-closed). |
+| `PACKRAT_API_URL` | The PackRat API base (which is also the AS host). `http://localhost:8787` if you also run `bun api`. Used by `token-verify.ts` to fetch the JWKS at `${PACKRAT_API_URL}/api/auth/jwks`. |
 
 Optional:
 
 | Variable | Notes |
 | --- | --- |
 | `MCP_FEATURE_FLAGS` | Comma-separated flags toggled at boot (e.g. `wildlife_id,season_suggestions`). |
-| `SENTRY_DSN` | Sentry DSN; populated once U15 lands. |
+| `SENTRY_DSN` | Sentry DSN (U15). |
+| `MCP_COMMIT_SHA` | Build identifier surfaced on `/status`. Stamped at deploy time by CI; manual deploys can pass `--var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)`. |
 
-KV namespaces are not required for `wrangler dev` against `--env dev`; the dev config has a placeholder ID that satisfies the wrangler schema.
+No KV bindings are required. The worker is stateless apart from its Durable Object for MCP session continuity.
 
 ### 3. Run the Worker
 
@@ -77,15 +118,18 @@ cd packages/mcp
 bun run dev
 ```
 
-That binds the worker to a local URL printed by wrangler. The `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` endpoints auto-emit from `OAuthProvider`; `/health` returns the version + legal URLs; `/mcp` requires a valid OAuth bearer.
+That binds the worker to a local URL printed by wrangler. `/.well-known/oauth-protected-resource` returns the PRM document (advertising the AS on `${PACKRAT_API_URL}`); `/health` returns the version + legal URLs; `/mcp` requires a valid JWT (validated against the JWKS on `${PACKRAT_API_URL}/api/auth/jwks`).
 
 ### 4. Verify discovery
 
 ```bash
 # Replace <local-url> with what `bun run dev` printed:
-curl -s http://localhost:8787/.well-known/oauth-protected-resource | jq
-# Expect: { resource: "https://mcp.packratai.com/mcp", scopes_supported: [...], ... }
+curl -s http://localhost:8788/.well-known/oauth-protected-resource | jq
+# Expect: { resource: "https://mcp.packratai.com/mcp",
+#          authorization_servers: ["http://localhost:8787" (or PACKRAT_API_URL)],
+#          scopes_supported: [...], ... }
 
+# The AS metadata lives on the API, not on the MCP — fetch it from the API host:
 curl -s http://localhost:8787/.well-known/oauth-authorization-server | jq '.code_challenge_methods_supported'
 # Expect: ["S256"]
 ```
@@ -93,10 +137,10 @@ curl -s http://localhost:8787/.well-known/oauth-authorization-server | jq '.code
 For a full client-side OAuth round-trip, point [MCP Inspector](https://github.com/modelcontextprotocol/inspector) at your local URL:
 
 ```bash
-bunx @modelcontextprotocol/inspector --transport streamable-http --server-url http://localhost:8787/mcp
+bunx @modelcontextprotocol/inspector --transport streamable-http --server-url http://localhost:8788/mcp
 ```
 
-The inspector will discover the well-known endpoints, walk through the OAuth flow against your local Better Auth instance, and surface every tool, resource, and prompt the connector exposes.
+The inspector will discover the PRM, follow the `authorization_servers` link to the AS metadata on the API host, walk through the OAuth flow against your local Better Auth instance, and surface every tool, resource, and prompt the connector exposes.
 
 ---
 
@@ -108,24 +152,9 @@ bun run test        # one-shot
 bun run test:watch  # watch mode
 ```
 
-The unit suite covers the OAuth handler, login page, tool annotation invariants (the U7 catalog test enumerates every registered tool), the scope-gating contract, resources, output envelopes, elicitations, and the embedded favicon. Integration tests against `@cloudflare/vitest-pool-workers` land in U17.
+The unit suite covers JWT validation + JWKS cache, the /health + /status handlers, the well-known metadata document, tool annotation invariants (the U7 catalog test enumerates every registered tool), the scope-gating contract, resources, output envelopes, elicitations, and the embedded favicon. Integration tests against `@cloudflare/vitest-pool-workers` are deferred as `it.todo` placeholders pending an upstream ajv module-resolution fix (see [`docs/mcp/runbook.md`](../../docs/mcp/runbook.md) § "vitest-pool-workers integration suite — current state").
 
 > `bun run check-types` is intentionally not run as part of the local default loop. The MCP SDK's type surface plus our own types are large enough that `tsc --noEmit` OOMs on workstations with under ~16 GB RAM. Run it locally with `NODE_OPTIONS=--max-old-space-size=16384` if you need it; the CI pipeline (U17) is the authoritative type-check.
-
----
-
-## OAuth scopes
-
-The MCP Worker advertises four coarse-grained OAuth scopes (`src/scopes.ts`, `src/metadata.ts`):
-
-| Scope | Grants | Notes |
-| --- | --- | --- |
-| `mcp` | read tools only | Legacy umbrella scope, kept for back-compat with any client that registered before the scope split. Pre-split clients only ever called read tools — quietly granting writes to them would be an escalation. |
-| `mcp:read` | `packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, plus `packrat_whoami` and a few `packrat_extract_*` / `packrat_preview_*` tools | Same as `mcp` but explicit. |
-| `mcp:write` | read + every create / update / delete / submit / record tool | The default scope Claude.ai requests. |
-| `mcp:admin` | read + write + every `packrat_admin_*` tool + the four explicit overrides (`packrat_execute_sql_query`, `packrat_get_database_schema`, `packrat_generate_pack_template_from_url`, `packrat_create_app_pack_template`) | Only granted to users whose Better Auth role resolves to `ADMIN` at `/callback` time — see [`docs/mcp/runbook.md`](../../docs/mcp/runbook.md) § "U5 admin scope model" for the role-lookup contract. |
-
-Gating is enforced after tool registration: every tool registers normally, then the agent disables anything the granted scopes don't authorize. The SDK's `RegisteredTool.disable()` auto-emits `notifications/tools/list_changed`, so the client's view of the tool list stays in sync.
 
 ---
 
@@ -165,8 +194,9 @@ Rerun the script after any tool change (new tool, rename, annotation tweak, scop
 
 ## Pointers
 
-- **Operator topics** (deploy, secrets, custom-domain provisioning, scope-grant flow, login security, CORS, output envelopes, elicitations, login UX, legal pages): [`docs/mcp/runbook.md`](../../docs/mcp/runbook.md).
-- **Implementation plan** (problem framing, scope, units, risks, sources): [`docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md`](../../docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md).
+- **Operator topics** (deploy, secrets, custom-domain provisioning, JWKS rotation, scope-grant flow, CORS, output envelopes, elicitations, legal pages, R11 dev-verification gate): [`docs/mcp/runbook.md`](../../docs/mcp/runbook.md).
+- **Consolidation-refactor plan** (architecture decision, AS-on-API migration, rollout): [`docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md`](../../docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md).
+- **Connector-store readiness plan** (the original surface scope): [`docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md`](../../docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md).
 - **Public user docs**: [packratai.com/mcp](https://packratai.com/mcp).
 - **Submission packet** (Anthropic Connector Store): [`docs/mcp/submission-packet.md`](../../docs/mcp/submission-packet.md).
 

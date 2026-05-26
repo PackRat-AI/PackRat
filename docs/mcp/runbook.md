@@ -1361,7 +1361,7 @@ Steps:
    type-validation surface** — `bun run check-types` OOMs on most
    developer workstations and the CI run is the canonical pass/fail.
 3. MCP test suite (`bun run --cwd packages/mcp test`) — runs both the
-   `mcp-unit` project (1,134 tests) and the `mcp-integration` project
+   `mcp-unit` project (1,123 tests) and the `mcp-integration` project
    (currently 21 deferred `it.todo` placeholders; see below).
 4. API unit suite (`bun run --cwd packages/api test:unit`) — re-runs
    the auth + admin guard tests so a MCP-side scope-model change
@@ -1410,7 +1410,7 @@ git push origin main mcp-v2.1.0  # tag push triggers the deploy
 
 Pre-deploy checklist (run locally before pushing the tag):
 
-- `bun run --cwd packages/mcp test` — 1,134 tests must pass.
+- `bun run --cwd packages/mcp test` — 1,123 tests must pass.
 - Verify `version` in `packages/mcp/package.json` matches
   `ServiceMeta.Version` in `packages/mcp/src/constants.ts`.
 
@@ -1419,7 +1419,7 @@ Pre-deploy checklist (run locally before pushing the tag):
 `packages/mcp/vitest.workspace.ts` declares two projects:
 
 - `mcp-unit` — Node-environment tests for pure modules (the existing
-  1,134-test surface). Fast; no workerd.
+  1,123-test surface). Fast; no workerd.
 - `mcp-integration` — wired but tests currently deferred as
   `it.todo`. The harness boots cleanly (`bun run --cwd packages/mcp
   test:integration` discovers all four integration files); the only
@@ -1443,21 +1443,28 @@ Until then the `it.todo` placeholders in
 contract intent and `vitest run` reports the deferred-todo count so
 the gap stays visible. Unit-level coverage of every deferred contract
 exists in the corresponding `../*.test.ts` files (well-known →
-`metadata.test.ts`, DCR gate + health/status → `auth.test.ts`).
+`metadata.test.ts`, health/status → `auth.test.ts`, JWT validation →
+`token-verify.test.ts`). The previous DCR-gate integration entry is
+gone — DCR was deleted in U3+U4 of the 2026-05-25 refactor.
 
 **First-invocation note (for when the integration tests light up):**
 `@cloudflare/vitest-pool-workers` downloads `workerd` on first run
 (~30s, one-time per machine + version). Subsequent runs are warm.
 
-### `OAUTH_KV` binding + miniflare synthesis
+### Miniflare bindings for the deferred integration suite
 
-The integration config (when switched back to
-`defineWorkersProject`) sets `miniflare.kvNamespaces: ['OAUTH_KV']`,
-which gives the Worker an in-memory KV binding instead of hitting the
-real `MCP_OAUTH_KV_dev` namespace declared in `wrangler.jsonc`.
+Post-refactor (2026-05-25) the MCP worker no longer binds KV at all —
+`OAUTH_KV` and `MCP_INITIAL_ACCESS_TOKEN` are gone. The integration
+config (`packages/mcp/vitest.integration.config.ts`) accordingly carries
+**no KV stubs and no DCR-token stub**; the only required binding when
+the suite eventually swaps back to `defineWorkersProject` is
+`PACKRAT_API_URL` (so `verifyMcpToken` can fetch the JWKS — either
+against a mock-fetch or a locally-running API worker). The Durable
+Object + rate-limit bindings come from `wrangler.jsonc` unchanged.
+
 **No live Cloudflare creds are needed for the test run** — miniflare
-synthesizes the binding from the array entry, and the real namespace
-ID is only consumed by `wrangler dev` and `wrangler deploy`.
+synthesises the DO + RL bindings in-process, and the JWKS fetch is the
+only outbound dependency to mock.
 
 ---
 
@@ -1469,60 +1476,66 @@ submission packet document. Together they replace the "operator reads
 13 different runbook sections and ad-hoc curls each one" pattern with a
 single command + a single doc.
 
-### `bun packages/mcp/scripts/submission-readiness.ts` — 13-check probe
+### `bun packages/mcp/scripts/submission-readiness.ts` — cross-origin probe
 
-Default target is production; pass `--url` to probe a dev or staging
-URL. The script is **a deployed-server probe** — it cannot run before
-the Worker is actually deployed, and it never mutates KV (`/register`
-is probed for rejection only).
+Default target is production. Post-refactor the AS and RS live on
+different origins, so the legacy `--url` flag is gone — pass
+`--rs-url` (MCP resource server) and `--as-url` (Better Auth AS) as
+separate args when probing a non-prod environment. The script is
+**a deployed-server probe** — it cannot run before both workers are
+deployed, and it never mutates state.
 
 ```bash
-# Default: probes https://mcp.packratai.com and packratai.com/mcp
+# Default: probes https://mcp.packratai.com (RS), https://api.packrat.world (AS),
+# and https://packratai.com (brand). Reads the catalog from apps/landing/data/mcp-catalog.json.
 bun packages/mcp/scripts/submission-readiness.ts
 
-# Against a staging worker
-bun packages/mcp/scripts/submission-readiness.ts --url https://packrat-mcp-dev.<acct>.workers.dev
+# Against staging
+bun packages/mcp/scripts/submission-readiness.ts \
+  --rs-url https://packrat-mcp-dev.<acct>.workers.dev \
+  --as-url https://packrat-api-dev.<acct>.workers.dev
 
 # CI / machine-readable
 bun packages/mcp/scripts/submission-readiness.ts --json
-
-# With a pre-registered Claude client_id (lights up check 5)
-bun packages/mcp/scripts/submission-readiness.ts --claude-client-id <id>
 ```
 
 Exit codes: `0` = every check passed; `1` = at least one check failed;
 `2` = bad CLI args. Default output is colour-coded one-line-per-check
-plus a `N/13 passed` summary; `--json` emits a structured report
-suitable for piping into a CI job.
+plus an `N passed / M warned / K failed` summary; `--json` emits a
+structured report suitable for piping into a CI job.
 
-#### The 13 checks at a glance
+#### The checks at a glance
 
-| # | What it asserts | Failure recovery |
-| - | --- | --- |
-| 1 | TLS + custom domain reachability — `GET /` returns 200 over HTTPS on the right host | DNS not propagated; cert not provisioned; worker not deployed |
-| 2 | `/mcp` returns 401 with `WWW-Authenticate: Bearer resource_metadata=..., scope=...` (RFC 9728 §5.1) | OAuthProvider misconfigured; metadata wiring drifted |
-| 3 | `/.well-known/oauth-protected-resource` has `resource`, `authorization_servers`, all 4 scopes, `bearer_methods_supported: ['header']` | `packages/mcp/src/metadata.ts` drifted from the plan |
-| 4 | `/.well-known/oauth-authorization-server` advertises `S256`, `authorization_code`, `refresh_token`, `code` | OAuthProvider version mismatch; `allowPlainPKCE` flipped on |
-| 5 | Pre-registered Claude client_id resolves at `/authorize` (WARN without `--claude-client-id` — no public list endpoint exists) | Re-run `scripts/register-claude-clients.ts` |
-| 6 | `/register` DCR gate returns 401 to no-auth AND fake-bearer probes | `dcrRegisterGate` short-circuit broken; `MCP_INITIAL_ACCESS_TOKEN` exposed |
-| 7 | `/favicon.ico` returns 200 image/x-icon with the .ico magic bytes (Anthropic's domain-ownership probe) | `packages/mcp/src/favicon.ts` corrupted; re-embed per the U13 contract |
-| 8 | `packratai.com/mcp` renders with `PackRat`, `Claude.ai`, `scope` text present | Landing site deploy failed; route 404'd |
-| 9 | `/privacy-policy` and `/terms-of-service` return 200 AND contain `mcp` or `connector` | Legal pages missing the MCP addendum — Anthropic immediate-reject cause |
-| 10 | `/health` JSON includes `support: mailto:hello@packratai.com` | U12 mapping drifted |
-| 11 | `/health` returns `status: 'ok'` with `kv: ok` + `api: ok` | One dependency is degraded; check `wrangler tail` |
-| 11b | `/status` advertises `scopes_supported` with all 4 PackRat scopes | U16 metadata drifted |
-| 12 | Every tool in the catalog has `title` + `readOnlyHint` + `destructiveHint` (when not read-only) | Re-run `bun packages/mcp/scripts/dump-catalog.ts`; the U7 annotations test should have caught this |
-| 13 | Tool descriptions contain no forbidden marketing words (`revolutionary`, `AI-powered` as a value claim, etc.) | Edit the offending description in `packages/mcp/src/tools/*.ts`; re-dump catalog |
+| # | What it asserts | Host | Failure recovery |
+| - | --- | --- | --- |
+| 1 | TLS + custom domain reachability — `GET /` returns 200 over HTTPS on the right host | RS | DNS not propagated; cert not provisioned; worker not deployed |
+| 2 | `/mcp` returns 401 with `WWW-Authenticate: Bearer resource_metadata=..., scope=...` (RFC 9728 §5.1) | RS | `index.ts` outer fetch wiring drifted; PRM URL stale |
+| 3 | `/.well-known/oauth-protected-resource` has `resource`, `authorization_servers`, all 4 scopes, `bearer_methods_supported: ['header']` | RS | `packages/mcp/src/metadata.ts` drifted from the plan |
+| 4 | `/.well-known/oauth-authorization-server` advertises `S256`, `authorization_code`, `refresh_token`, `code` | AS | `@better-auth/oauth-provider` config drift; `allowPlainCodeChallengeMethod` flipped on |
+| 5 | Pre-registered Claude client present in the AS `oauthClient` table — **always WARN** (no public client-list endpoint) | AS | Re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — no-op if already registered) or inspect the `oauthClient` table directly |
+| 6 | `/favicon.ico` returns 200 image/x-icon with the .ico magic bytes (Anthropic's domain-ownership probe) | RS | `packages/mcp/src/favicon.ts` corrupted; re-embed per the U13 contract |
+| 7 | `packratai.com/mcp` renders with `PackRat`, `Claude.ai`, `scope` text present | brand | Landing site deploy failed; route 404'd |
+| 8 | `/privacy-policy` and `/terms-of-service` return 200 AND contain `mcp` or `connector` | brand | Legal pages missing the MCP addendum — Anthropic immediate-reject cause |
+| 9 | `/health` JSON includes `support: mailto:hello@packratai.com` | RS | U12 mapping drifted |
+| 10 | `/health` returns `status: 'ok'` with `probes.api: ok` | RS | The API dependency is degraded; check `wrangler tail` |
+| 10b | `/status` advertises `scopes_supported` with all 4 PackRat scopes | RS | U16 metadata drifted |
+| 11 | Every tool in the catalog has `title` + `readOnlyHint` + `destructiveHint` (when not read-only) | local | Re-run `bun packages/mcp/scripts/dump-catalog.ts`; the U7 annotations test should have caught this |
+| 12 | Tool descriptions contain no forbidden marketing words (`revolutionary`, `AI-powered` as a value claim, etc.) | local | Edit the offending description in `packages/mcp/src/tools/*.ts`; re-dump catalog |
+
+The prior `dcr_gate` check (probe `POST /register` for 401) is **gone**:
+post-refactor the MCP worker has no `/register` route and the AS has
+`allowDynamicClientRegistration: false`, so there's nothing to probe.
 
 #### Honest gaps in automation
 
-- **Check 5** (pre-registered Claude client) cannot be fully automated:
-  `@cloudflare/workers-oauth-provider` does not expose a public
-  client-list endpoint, so the script probes `/authorize` instead. When
-  `--claude-client-id` is omitted, the check WARNs with a gap-note
-  directing the operator to verify manually via
-  `wrangler kv key list ... | grep client`. This is the only check that
-  does not assert by default.
+- **Check 5** (pre-registered Claude client) cannot be automated:
+  `@better-auth/oauth-provider` does not expose a public client-list
+  endpoint and DCR is disabled, so the script always emits a WARN
+  pointing at the seed script + the `oauthClient` table. Verify
+  manually by re-running
+  `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent —
+  no-op if already registered) or by querying the `oauthClient` table
+  directly. This is the only check that does not assert by default.
 - WAF rule audits are not probed — they require a non-Cloudflare-egress
   client to test, which a Worker-side script cannot synthesize. See
   § "TODO (operator): zone-level WAF Rate Limiting Rules" above.
@@ -1546,7 +1559,7 @@ you need to probe an older snapshot.
 
 The check primitives are pure and have a comprehensive unit suite at
 `packages/mcp/src/__tests__/submission-readiness.test.ts` (62 tests).
-The PR-gate `mcp-test.yml` runs them alongside the existing 1,134-test
+The PR-gate `mcp-test.yml` runs them alongside the existing 1,123-test
 surface. If a check's output shape ever drifts (new severity level,
 renamed status string), this suite fails loudly so the formatter, the
 CI workflow, and this runbook stay in lockstep.
@@ -1579,8 +1592,9 @@ needing local wrangler / bun.
 
 ```
 GitHub → Actions → "MCP Submission Readiness" → Run workflow →
-  target_url: https://mcp.packratai.com  (default; override for staging)
-  claude_client_id: <optional — lights up check 5>
+  rs_url:       https://mcp.packratai.com   (default; override for staging)
+  as_url:       https://api.packrat.world   (default; override for staging)
+  brand_domain: https://packratai.com       (default)
   → Run
 ```
 
@@ -1617,6 +1631,95 @@ wrangler secret put PACKRAT_API_URL --env prod
 # after a deploy") so existing isolates rotate immediately rather than
 # waiting on natural isolate churn.
 ```
+
+## Post-refactor dev verification (R11 gate)
+
+Before tagging the prod release that lands the Better Auth OAuth consolidation
+(plan: [`docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md`](../plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md)),
+the operator manually installs the connector in a real Claude.ai account
+against the dev deploy URLs to confirm the cross-origin AS flow works
+end-to-end. Anthropic has documented but unfixed issues with cross-origin
+discovery in Claude.ai (`anthropics/claude-ai-mcp#82, #248, #291` —
+closed-as-not-planned); this checklist catches them before prod.
+
+The unit + integration tests cannot prove this works — the deferred
+`it.todo` cases (per § "vitest-pool-workers integration suite — current
+state" above) are blocked on an upstream ajv module-resolution fix, and
+even when they light up they exercise the worker boundary, not Claude.ai's
+actual discovery client. **This manual install IS the integration test
+for the refactor.**
+
+### Operator steps
+
+1. Tag a dev release (`git tag mcp-v3.0.0-rc.1 && git push --tags`) — CI
+   deploys to `packrat-mcp-dev` + `packrat-api-dev` via the existing U17
+   deploy workflow.
+2. Open `https://claude.ai` in a fresh browser profile (no PackRat cookies
+   from a prior session — the AS-domain switch should be visible in the
+   address bar).
+3. Settings → Connectors → Add custom connector → URL:
+   `https://packrat-mcp-dev.<account>.workers.dev/mcp` (or whatever dev
+   URL the deploy assigns).
+4. Walk through the OAuth flow. Expected:
+   - Claude fetches `/.well-known/oauth-protected-resource` from the dev MCP.
+   - Reads `authorization_servers: ["https://packrat-api-dev.<account>.workers.dev"]`
+     (or whatever the dev API URL is).
+   - Fetches AS metadata from the dev API root
+     (`/.well-known/oauth-authorization-server`).
+   - Opens a browser to the dev API's `/oauth2/authorize`.
+   - User sees the branded consent page (PackRat logo, Claude as the
+     client name, scope checkboxes).
+5. Sign in with the reviewer test account credentials (§ 4 of
+   [`docs/mcp/submission-packet.md`](./submission-packet.md)).
+6. Approve the consent screen. Confirm the scope list shows only the
+   four MCP scopes (or fewer if the test account isn't admin — `mcp:admin`
+   should be absent for non-admin users).
+7. Confirm redirect back to Claude.ai succeeds without an error toast.
+8. In Claude, ask a simple `mcp:read` prompt: *"List the packs I have on
+   PackRat."* Confirm a tool call fires and returns expected output.
+9. Ask a `mcp:write` prompt: *"Create a new pack called 'Dev Verification
+   Test'."* Confirm the write succeeds.
+10. **Test account with admin role:** ask a `mcp:admin` prompt that confirms
+    admin tools are visible. **Test account without admin role:** confirm
+    admin tools are absent from `tools/list`.
+11. Wait at least 65 minutes (longer than the 60-min access token TTL) and
+    confirm refresh-token grant happens transparently — another tool call
+    works without re-consent.
+
+### Failure mode catalog
+
+If any step fails, escalate per the plan's HLD "Cross-origin failure-mode
+catalog" table. Realistic fallback path if Claude.ai's cross-origin
+discovery is broken: reverse-proxy the AS endpoints onto
+`mcp.packratai.com` (documented as a follow-up plan, **not built** in this
+refactor).
+
+Common failure modes to look for:
+
+- **CORS preflight failure on `/.well-known/oauth-authorization-server`
+  from `https://claude.ai`** → API worker missing the AS host in its CORS
+  allowlist for the well-known prefix. Fix on the API side.
+- **Authorization header stripped on cross-origin redirect** → Claude.ai
+  proxy stripping `Authorization` between the AS callback and the MCP
+  worker. Catchable by inspecting the network panel in DevTools. No
+  workaround within MCP/AS — fall back to the reverse-proxy plan.
+- **`invalid_client` at `/oauth2/token`** → seed script wasn't run for
+  this dev env, or the dev client_id Claude is using doesn't match.
+  Re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` against
+  the dev DB.
+- **`invalid_audience` or 401 from MCP after a successful token grant** →
+  the AS isn't sending `resource` correctly, so an opaque token was
+  issued instead of a JWT. Inspect the granted access token; if it's
+  not a JWT (no three `.`-separated base64 segments), the AS is wrong.
+- **Refresh-token rejection at the 65-min boundary** → Better Auth
+  rotation policy diverged from Claude's expectation. Capture the
+  rejection's `error` field and escalate.
+
+### Tag prod on green
+
+If verification passes: tag `mcp-vX.Y.Z` and CI deploys to prod. After the
+prod deploy lands, run the operator cleanup per § "Deprovision the legacy
+OAUTH_KV namespaces + DCR secret" above.
 
 ## Known issues / environment notes
 

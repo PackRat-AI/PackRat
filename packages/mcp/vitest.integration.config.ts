@@ -30,10 +30,16 @@ import { defineConfig } from 'vitest/config';
  *   - import `defineWorkersProject` from
  *     `@cloudflare/vitest-pool-workers/config` instead of vitest/config
  *   - point `poolOptions.workers.wrangler.configPath` at `wrangler.jsonc`
- *   - declare `miniflare.kvNamespaces: ['OAUTH_KV']` for synthesised
- *     KV (the placeholder ID in wrangler.jsonc stays harmless)
- *   - bind `PACKRAT_API_URL` + `MCP_INITIAL_ACCESS_TOKEN` via
- *     `miniflare.bindings`
+ *   - bind `PACKRAT_API_URL` via `miniflare.bindings` so
+ *     `verifyMcpToken` can resolve the JWKS endpoint against a local
+ *     mock-fetch (or a locally-running API worker)
+ *
+ * Post-refactor (2026-05-25) the MCP worker is a pure protected resource:
+ * no KV binding, no DCR pre-shared bearer. The previously-planned
+ * `miniflare.kvNamespaces: ['OAUTH_KV']` and
+ * `miniflare.bindings.MCP_INITIAL_ACCESS_TOKEN` stubs are intentionally
+ * absent — when the integration tests eventually light up, they'll
+ * exercise the JWT-validation path, which doesn't need either binding.
  */
 export default defineConfig({
   resolve: {
