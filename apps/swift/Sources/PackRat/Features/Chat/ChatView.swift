@@ -21,7 +21,7 @@ struct ChatView: View {
                     inputBar
                 }
             } else {
-                AccountRequiredView(
+                GuestLimitedView(
                     "Sign In to Use Assistant",
                     subtitle: "The AI assistant uses your PackRat account and trip context. Your local packs and trips still work in guest mode.",
                     systemImage: "sparkles"

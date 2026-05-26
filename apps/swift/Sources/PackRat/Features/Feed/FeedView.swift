@@ -9,7 +9,7 @@ struct FeedView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                AccountRequiredView(
+                GuestLimitedView(
                     "Sign In to View the Feed",
                     subtitle: "Community posts, comments, and likes sync with your PackRat account.",
                     systemImage: "person.2"

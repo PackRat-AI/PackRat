@@ -118,7 +118,7 @@ struct GuidesView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                AccountRequiredView(
+                GuestLimitedView(
                     "Sign In to View Guides",
                     subtitle: "Guides are loaded from your PackRat account when you are online.",
                     systemImage: "book"

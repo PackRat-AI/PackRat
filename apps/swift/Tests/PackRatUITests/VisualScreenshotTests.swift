@@ -557,6 +557,7 @@ final class VisualScreenshotTests: XCTestCase {
             "temporary_error_state",
             "account_required_error_state",
             "account_required_state",
+            "guest_limited_state",
             "inline_error",
         ]
         for identifier in forbiddenIdentifiers {

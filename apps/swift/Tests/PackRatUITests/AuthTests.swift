@@ -8,6 +8,8 @@ final class AuthTests: AppUITestCase {
         app.launchArguments.append("--use-userdefaults-auth")
         // Force logged-out state so the login screen is reachable.
         app.launchArguments.append("--reset-auth")
+        app.launchArguments.append("--allow-e2e-login-seed")
+        injectE2EAuthEnvironment()
         app.launch()
     }
 
@@ -213,6 +215,18 @@ final class AuthTests: AppUITestCase {
         if signIn.waitForExistence(timeout: 10) {
             signIn.tap()
         }
+    }
+
+    private func injectE2EAuthEnvironment() {
+        let bundle = Bundle(for: AppUITestCase.self)
+        app.launchEnvironment["PACKRAT_E2E_EMAIL"] =
+            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String) ?? ""
+        app.launchEnvironment["PACKRAT_E2E_PASSWORD"] =
+            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String) ?? ""
+        app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] =
+            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String) ?? ""
+        app.launchEnvironment["PACKRAT_E2E_USER_ID"] =
+            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String) ?? ""
     }
 
     #if os(iOS)

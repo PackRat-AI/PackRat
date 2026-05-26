@@ -39,6 +39,10 @@ final class AuthManager {
     /// response header; we also stash it from the JSON body as a belt-and-
     /// braces guarantee for tests / mock transports.
     func login(email: String, password: String) async throws {
+        if seedE2ELoginIfAllowed(email: email, password: password) {
+            return
+        }
+
         struct LoginBody: Encodable { let email: String; let password: String }
         struct LoginResponse: Decodable {
             let token: String?
@@ -334,6 +338,21 @@ final class AuthManager {
         isGuest = false
         currentUser = user
         SentryConfig.setUser(id: user.id, email: user.email)
+    }
+
+    private func seedE2ELoginIfAllowed(email: String, password: String) -> Bool {
+        let environment = ProcessInfo.processInfo.environment
+        guard ProcessInfo.processInfo.arguments.contains("--allow-e2e-login-seed"),
+              let expectedEmail = environment["PACKRAT_E2E_EMAIL"],
+              let expectedPassword = environment["PACKRAT_E2E_PASSWORD"],
+              email.caseInsensitiveCompare(expectedEmail) == .orderedSame,
+              password == expectedPassword
+        else {
+            return false
+        }
+
+        seedE2EAuthenticatedUser()
+        return true
     }
 }
 

@@ -37,14 +37,14 @@ struct InlineErrorView: View {
     }
 }
 
-struct AccountRequiredView: View {
+struct GuestLimitedView: View {
     @Environment(AuthManager.self) private var authManager
 
     let title: String
     let subtitle: String
     let systemImage: String
 
-    init(_ title: String, subtitle: String, systemImage: String = "person.crop.circle.badge.exclamationmark") {
+    init(_ title: String, subtitle: String, systemImage: String = "person.crop.circle.badge.plus") {
         self.title = title
         self.subtitle = subtitle
         self.systemImage = systemImage
@@ -61,10 +61,10 @@ struct AccountRequiredView: View {
                     authManager.signOut()
                 }
                 .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("account_required_sign_in")
+                .accessibilityIdentifier("guest_limited_sign_in")
             }
         }
-        .accessibilityIdentifier("account_required_state")
+        .accessibilityIdentifier("guest_limited_state")
     }
 }
 

@@ -20,7 +20,7 @@ struct AIPacksView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                AccountRequiredView(
+                GuestLimitedView(
                     "Sign In to Generate AI Packs",
                     subtitle: "AI pack generation runs on your PackRat account and is not available in guest mode.",
                     systemImage: "sparkles"
