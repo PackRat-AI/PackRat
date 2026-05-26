@@ -28,7 +28,7 @@ struct TrailConditionsListView: View {
                 ErrorView(error, retry: { await viewModel.load() })
             } else if viewModel.reports.isEmpty {
                 EmptyStateView(
-                    "No Trail Reports",
+                    "No Trail Reports Yet",
                     subtitle: "Be the first to report conditions on a trail",
                     systemImage: "figure.hiking",
                     actionLabel: "Submit Report",

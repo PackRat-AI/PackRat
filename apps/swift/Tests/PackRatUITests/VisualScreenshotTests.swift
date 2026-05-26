@@ -62,6 +62,17 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
+    func testAuthenticatedSampleDataVisualSurface() throws {
+        launchAuthenticated(sampleData: true)
+        capture("70-data-home")
+
+        #if os(iOS)
+        capturePhoneSurface(mode: .sampleData)
+        #elseif os(macOS)
+        captureMacSurface(mode: .sampleData)
+        #endif
+    }
+
     func testAuthenticatedModalSurface() throws {
         launchAuthenticated()
 
@@ -366,7 +377,7 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
-    private func launchAuthenticated() {
+    private func launchAuthenticated(sampleData: Bool = false) {
         let bundle = Bundle(for: VisualScreenshotTests.self)
         let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? "e2e@packrat.test"
@@ -384,6 +395,10 @@ final class VisualScreenshotTests: XCTestCase {
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
         app.launchEnvironment["PACKRAT_E2E_EMAIL"] = email
         app.launchEnvironment["PACKRAT_E2E_USER_ID"] = userId
+        if sampleData {
+            app.launchArguments.append("--visual-sample-data")
+            app.launchEnvironment["PACKRAT_VISUAL_SAMPLE_DATA"] = "1"
+        }
         app.launch()
         #if os(macOS)
         app.activate()
@@ -441,6 +456,7 @@ final class VisualScreenshotTests: XCTestCase {
 private enum VisualMode {
     case guest
     case authenticated
+    case sampleData
 
     var prefix: String {
         switch self {
@@ -448,6 +464,8 @@ private enum VisualMode {
             return "10-guest"
         case .authenticated:
             return "30-auth"
+        case .sampleData:
+            return "70-data"
         }
     }
 
@@ -457,6 +475,8 @@ private enum VisualMode {
             return "-guest"
         case .authenticated:
             return "-auth"
+        case .sampleData:
+            return "-data"
         }
     }
 
@@ -466,6 +486,8 @@ private enum VisualMode {
             return "50-guest-modal"
         case .authenticated:
             return "60-auth-modal"
+        case .sampleData:
+            return "80-data-modal"
         }
     }
 }

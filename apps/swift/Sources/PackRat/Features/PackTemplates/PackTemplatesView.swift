@@ -31,7 +31,7 @@ struct PackTemplatesListView: View {
                 ErrorView(error, retry: { await viewModel.load() })
             } else if viewModel.templates.isEmpty {
                 EmptyStateView(
-                    "No Templates",
+                    "No Templates Yet",
                     subtitle: "Templates let you quickly populate a pack with a standard gear list",
                     systemImage: "doc.on.doc"
                 )

@@ -27,6 +27,12 @@ final class PackTemplatesViewModel {
     var myTemplates: [PackTemplate] { filteredTemplates.filter { !$0.isOfficial } }
 
     func load() async {
+        if VisualSampleData.isEnabled && !templates.isEmpty {
+            isLoading = false
+            error = nil
+            return
+        }
+
         isLoading = true
         error = nil
         defer { isLoading = false }

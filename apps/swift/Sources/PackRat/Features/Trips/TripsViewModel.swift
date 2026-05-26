@@ -46,6 +46,12 @@ final class TripsViewModel {
     }
 
     func load(context: ModelContext? = nil) async {
+        if VisualSampleData.isEnabled && !trips.isEmpty {
+            isLoading = false
+            error = nil
+            return
+        }
+
         if let context, !isCacheLoaded {
             let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]

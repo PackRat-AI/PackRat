@@ -22,7 +22,7 @@ struct FeedView: View {
                     ErrorView(error, retry: { await viewModel.load(refresh: true) }).padding(.top, 20)
                 } else if viewModel.posts.isEmpty {
                     EmptyStateView(
-                        "Nothing here yet",
+                        "No Posts Yet",
                         subtitle: "Be the first to share a trip or pack",
                         systemImage: "newspaper",
                         actionLabel: "Write a Post",

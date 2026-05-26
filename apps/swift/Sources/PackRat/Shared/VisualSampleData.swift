@@ -1,0 +1,313 @@
+import Foundation
+
+enum VisualSampleData {
+    static var isEnabled: Bool {
+        ProcessInfo.processInfo.environment["PACKRAT_VISUAL_SAMPLE_DATA"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("--visual-sample-data")
+    }
+
+    @MainActor
+    static func apply(to appState: AppState) {
+        let now = Date.iso8601Now()
+        let userId = ProcessInfo.processInfo.environment["PACKRAT_E2E_USER_ID"]
+            ?? "00000000-0000-4000-8000-000000000001"
+
+        let alpinePack = Pack(
+            id: "visual-pack-alpine",
+            userId: userId,
+            name: "Alpine Weekend",
+            description: "Two-night shoulder-season kit with warm layers and compact shelter.",
+            category: .backpacking,
+            isPublic: true,
+            image: nil,
+            tags: ["weekend", "alpine"],
+            templateId: nil,
+            deleted: false,
+            isAIGenerated: false,
+            items: [
+                packItem("visual-item-pack", packId: "visual-pack-alpine", name: "Hyperlite 40L Pack", weight: 910, category: "pack"),
+                packItem("visual-item-shelter", packId: "visual-pack-alpine", name: "Duplex Tent", weight: 539, category: "shelter"),
+                packItem("visual-item-quilt", packId: "visual-pack-alpine", name: "20F Down Quilt", weight: 608, category: "sleep"),
+                packItem("visual-item-stove", packId: "visual-pack-alpine", name: "Titanium Stove", weight: 74, category: "kitchen"),
+                packItem("visual-item-rain", packId: "visual-pack-alpine", name: "Rain Shell", weight: 196, category: "clothing", worn: true),
+                packItem("visual-item-food", packId: "visual-pack-alpine", name: "Trail Meals", weight: 680, quantity: 2, category: "food", consumable: true),
+            ],
+            totalWeight: 4687,
+            baseWeight: 2327,
+            wornWeight: 196,
+            consumableWeight: 1360,
+            createdAt: now,
+            updatedAt: now
+        )
+
+        let desertPack = Pack(
+            id: "visual-pack-desert",
+            userId: userId,
+            name: "Desert Day Hike",
+            description: "Hot-weather route kit focused on water, shade, and navigation.",
+            category: .desert,
+            isPublic: false,
+            image: nil,
+            tags: ["desert", "day hike"],
+            templateId: nil,
+            deleted: false,
+            isAIGenerated: false,
+            items: [
+                packItem("visual-item-hydration", packId: "visual-pack-desert", name: "Hydration Reservoir", weight: 180, category: "water"),
+                packItem("visual-item-filter", packId: "visual-pack-desert", name: "Water Filter", weight: 63, category: "water"),
+                packItem("visual-item-sun", packId: "visual-pack-desert", name: "Sun Hoodie", weight: 210, category: "clothing", worn: true),
+                packItem("visual-item-first-aid", packId: "visual-pack-desert", name: "First Aid Kit", weight: 142, category: "safety"),
+            ],
+            totalWeight: 595,
+            baseWeight: 385,
+            wornWeight: 210,
+            consumableWeight: 0,
+            createdAt: now,
+            updatedAt: now
+        )
+
+        appState.packsVM.packs = [alpinePack, desertPack]
+        appState.packsVM.isCacheLoaded = true
+        appState.packsVM.hasMore = false
+
+        appState.tripsVM.trips = [
+            Trip(
+                id: "visual-trip-enchantments",
+                name: "Enchantments Thru-Hike",
+                description: "Permit-day traverse with an early start and lake lunch.",
+                notes: "Check snow line and shuttle timing before departure.",
+                location: TripLocation(latitude: 47.527, longitude: -120.821, name: "Leavenworth, WA"),
+                startDate: Calendar.current.date(byAdding: .day, value: 18, to: Date())?.iso8601String(),
+                endDate: Calendar.current.date(byAdding: .day, value: 19, to: Date())?.iso8601String(),
+                userId: userId,
+                packId: alpinePack.id,
+                deleted: false,
+                createdAt: now,
+                updatedAt: now
+            ),
+            Trip(
+                id: "visual-trip-canyonlands",
+                name: "Canyonlands Scout",
+                description: "Dry run for a spring desert loop.",
+                notes: "Carry extra water and verify road conditions.",
+                location: TripLocation(latitude: 38.326, longitude: -109.879, name: "Moab, UT"),
+                startDate: Calendar.current.date(byAdding: .day, value: -11, to: Date())?.iso8601String(),
+                endDate: Calendar.current.date(byAdding: .day, value: -10, to: Date())?.iso8601String(),
+                userId: userId,
+                packId: desertPack.id,
+                deleted: false,
+                createdAt: now,
+                updatedAt: now
+            ),
+        ]
+        appState.tripsVM.isCacheLoaded = true
+        appState.tripsVM.hasMore = false
+
+        appState.templatesVM.templates = [
+            PackTemplate(
+                id: "visual-template-weekend",
+                userId: nil,
+                name: "Weekend Backpacking",
+                description: "A balanced overnight template for three-season trips.",
+                category: "backpacking",
+                image: nil,
+                tags: ["official", "overnight"],
+                isAppTemplate: true,
+                contentSource: "PackRat",
+                items: [
+                    templateItem("visual-template-item-shelter", templateId: "visual-template-weekend", name: "Shelter", weight: 750, category: "shelter"),
+                    templateItem("visual-template-item-sleep", templateId: "visual-template-weekend", name: "Sleep System", weight: 1200, category: "sleep"),
+                    templateItem("visual-template-item-cook", templateId: "visual-template-weekend", name: "Cook Kit", weight: 320, category: "kitchen"),
+                ],
+                createdAt: now,
+                updatedAt: now
+            ),
+            PackTemplate(
+                id: "visual-template-day",
+                userId: userId,
+                name: "Fast Day Hike",
+                description: "Light, compact kit for a long single-day push.",
+                category: "hiking",
+                image: nil,
+                tags: ["day hike"],
+                isAppTemplate: false,
+                contentSource: nil,
+                items: [
+                    templateItem("visual-template-item-filter", templateId: "visual-template-day", name: "Water Filter", weight: 63, category: "water"),
+                    templateItem("visual-template-item-shell", templateId: "visual-template-day", name: "Emergency Shell", weight: 196, category: "clothing"),
+                ],
+                createdAt: now,
+                updatedAt: now
+            ),
+        ]
+
+        appState.trailConditionsVM.reports = [
+            TrailConditionReport(
+                id: "visual-trail-report-colchuck",
+                trailName: "Colchuck Lake Trail",
+                trailRegion: "Central Cascades",
+                surface: "snow",
+                overallCondition: "fair",
+                hazards: ["snow bridges", "slick rock"],
+                waterCrossings: 2,
+                waterCrossingDifficulty: "moderate",
+                notes: "Microspikes useful above the lake outlet. Creek crossings are manageable before afternoon melt.",
+                photos: [],
+                userId: userId,
+                tripId: nil,
+                deleted: false,
+                createdAt: now,
+                updatedAt: now
+            ),
+            TrailConditionReport(
+                id: "visual-trail-report-devils",
+                trailName: "Devils Garden Loop",
+                trailRegion: "Arches National Park",
+                surface: "rocky",
+                overallCondition: "good",
+                hazards: ["exposure", "limited shade"],
+                waterCrossings: 0,
+                waterCrossingDifficulty: nil,
+                notes: "Trail is dry and well marked. Start early for cooler temperatures.",
+                photos: [],
+                userId: userId,
+                tripId: nil,
+                deleted: false,
+                createdAt: now,
+                updatedAt: now
+            ),
+        ]
+
+        appState.feedVM.posts = [
+            Post(
+                id: 9001,
+                userId: userId,
+                caption: "Dialed in the Alpine Weekend pack after swapping the stove and trimming duplicate layers. Base weight finally feels honest.",
+                images: [],
+                createdAt: now,
+                updatedAt: now,
+                author: PostAuthor(id: userId, firstName: "E2E", lastName: "User"),
+                likeCount: 12,
+                commentCount: 3,
+                likedByMe: true
+            ),
+            Post(
+                id: 9002,
+                userId: "visual-user-friend",
+                caption: "Trail report from Canyonlands: water planning mattered more than shoe choice.",
+                images: [],
+                createdAt: now,
+                updatedAt: now,
+                author: PostAuthor(id: "visual-user-friend", firstName: "Sam", lastName: "Rivera"),
+                likeCount: 7,
+                commentCount: 1,
+                likedByMe: false
+            ),
+        ]
+        appState.feedVM.hasMore = false
+
+        appState.catalogVM.searchText = "tent"
+        appState.catalogVM.hasSearched = true
+        appState.catalogVM.items = [
+            CatalogItem(
+                id: 7001,
+                name: "Copper Spur HV UL2 Tent",
+                productUrl: "https://example.com/copper-spur",
+                sku: "VISUAL-COPPER-SPUR",
+                weight: 1420,
+                weightUnit: .g,
+                description: "Freestanding two-person backpacking tent.",
+                categories: ["Shelter", "Backpacking"],
+                images: nil,
+                brand: "Big Agnes",
+                model: "HV UL2",
+                ratingValue: 4.7,
+                color: "Orange",
+                size: "2P",
+                price: 549.95,
+                availability: "in_stock",
+                seller: "PackRat Demo",
+                reviewCount: 128
+            ),
+            CatalogItem(
+                id: 7002,
+                name: "Duplex Trekking Pole Shelter",
+                productUrl: "https://example.com/duplex",
+                sku: "VISUAL-DUPLEX",
+                weight: 539,
+                weightUnit: .g,
+                description: "Ultralight two-person shelter for trekking pole setups.",
+                categories: ["Shelter", "Ultralight"],
+                images: nil,
+                brand: "Zpacks",
+                model: "Duplex",
+                ratingValue: 4.6,
+                color: "Olive",
+                size: "2P",
+                price: 699.00,
+                availability: "in_stock",
+                seller: "PackRat Demo",
+                reviewCount: 89
+            ),
+        ]
+
+        appState.selectedPackId = alpinePack.id
+        appState.selectedTripId = appState.tripsVM.trips.first?.id
+        appState.selectedTemplateId = appState.templatesVM.templates.first?.id
+        appState.selectedReportId = appState.trailConditionsVM.reports.first?.id
+    }
+
+    private static func packItem(
+        _ id: String,
+        packId: String,
+        name: String,
+        weight: Double,
+        quantity: Int = 1,
+        category: String,
+        consumable: Bool = false,
+        worn: Bool = false
+    ) -> PackItem {
+        PackItem(
+            id: id,
+            packId: packId,
+            name: name,
+            description: nil,
+            weight: weight,
+            weightUnit: .g,
+            quantity: quantity,
+            category: category,
+            consumable: consumable,
+            worn: worn,
+            image: nil,
+            notes: nil,
+            catalogItemId: nil,
+            userId: nil,
+            deleted: false,
+            isAIGenerated: false,
+            templateItemId: nil,
+            createdAt: Date.iso8601Now(),
+            updatedAt: Date.iso8601Now()
+        )
+    }
+
+    private static func templateItem(
+        _ id: String,
+        templateId: String,
+        name: String,
+        weight: Double,
+        category: String
+    ) -> PackTemplateItem {
+        PackTemplateItem(
+            id: id,
+            packTemplateId: templateId,
+            name: name,
+            weight: weight,
+            weightUnit: "g",
+            quantity: 1,
+            category: category,
+            consumable: false,
+            worn: false,
+            notes: nil
+        )
+    }
+}

@@ -25,6 +25,12 @@ final class TrailConditionsViewModel {
     }
 
     func load() async {
+        if VisualSampleData.isEnabled && !reports.isEmpty {
+            isLoading = false
+            error = nil
+            return
+        }
+
         isLoading = true
         error = nil
         defer { isLoading = false }

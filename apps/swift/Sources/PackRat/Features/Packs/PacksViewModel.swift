@@ -34,6 +34,12 @@ final class PacksViewModel {
 
     // Load cached packs instantly from SwiftData, then refresh from network
     func load(context: ModelContext? = nil) async {
+        if VisualSampleData.isEnabled && !packs.isEmpty {
+            isLoading = false
+            error = nil
+            return
+        }
+
         if let context, !isCacheLoaded {
             let cached = (try? context.fetch(FetchDescriptor<CachedPack>(
                 sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]

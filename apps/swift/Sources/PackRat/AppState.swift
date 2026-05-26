@@ -26,4 +26,10 @@ final class AppState {
 
     // App-wide presentation
     var isGlobalSearchPresented = false
+
+    init() {
+        if VisualSampleData.isEnabled {
+            VisualSampleData.apply(to: self)
+        }
+    }
 }
