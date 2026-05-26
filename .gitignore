@@ -22,6 +22,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.test.local
 .env.production.local
 .env.local
+.env*.bak.*
 
 # caches
 .eslintcache
@@ -41,6 +42,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
 .dev.vars
+.dev.vars.e2e
+.dev.vars*.bak.*
 
 # Generated OG images (produced at build time by scripts/generate-og-images.ts)
 apps/landing/public/og-image.png
