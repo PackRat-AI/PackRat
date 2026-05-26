@@ -118,6 +118,13 @@ export const asArray = toArray;
 // ── Other utilities ───────────────────────────────────────────────────────
 
 /**
+ * Type guard for booleans. Mirrors radash's `isString`/`isNumber`/etc.
+ * (radash itself doesn't expose `isBoolean`, so we provide it here so the
+ * no-raw-typeof rule has a guard for every primitive.)
+ */
+export const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
+
+/**
  * Coerces null → undefined for use with `exactOptionalPropertyTypes`
  * stores that only accept `string | undefined`, not `string | null`.
  */
