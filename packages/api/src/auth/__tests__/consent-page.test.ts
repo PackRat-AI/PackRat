@@ -10,8 +10,66 @@
  *   - rendered HTML carries the expected anti-clickjacking + content-type headers
  */
 
-import { describe, expect, it, vi } from 'vitest';
-import { type ConsentPageData, handleConsentPage, renderConsentPage } from '../consent-page';
+import { Elysia } from 'elysia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ConsentPageData, renderConsentPage } from '../consent-page';
+
+// ── Route-level test setup ────────────────────────────────────────────────
+//
+// The unit-test config runs in plain Node — importing `@packrat/api/index`
+// (the full app) pulls in @cloudflare/containers which extends a Workers-only
+// base class. To exercise the /oauth/consent Elysia route in isolation, we:
+//   1. Mock the route's external deps (`getAuth`, `createDb`, `getEnv`) at
+//      module scope. vi.mock is hoisted so subsequent imports see the mocks.
+//   2. Lazy-import `consentRoute` AFTER the mocks register, and mount it on a
+//      throwaway Elysia instance for `.fetch(...)` calls.
+//
+// Each route test reshapes the mocks via mockImplementationOnce so behaviour
+// is per-test (different session, different DB row).
+
+const mockGetSession = vi.fn();
+const mockSelectChain = vi.fn();
+
+vi.mock('@packrat/api/auth', () => ({
+  getAuth: vi.fn(async () => ({
+    api: { getSession: mockGetSession },
+  })),
+}));
+
+vi.mock('@packrat/api/db', () => ({
+  createDb: vi.fn(() => ({ select: mockSelectChain })),
+}));
+
+vi.mock('@packrat/api/utils/env-validation', () => ({
+  getEnv: vi.fn(() => ({ NEON_DATABASE_URL: 'postgres://stub' })),
+}));
+
+// Cached after first import to avoid re-mounting the route per test.
+let testApp: Elysia | undefined;
+
+async function getTestApp(): Promise<Elysia> {
+  if (!testApp) {
+    const { consentRoute } = await import('../consent-route');
+    testApp = new Elysia().use(consentRoute);
+  }
+  return testApp;
+}
+
+beforeEach(() => {
+  mockGetSession.mockReset();
+  mockSelectChain.mockReset();
+});
+
+function mockSession(user: { id: string; name?: string; email: string; role?: string } | null) {
+  mockGetSession.mockResolvedValueOnce(user ? { user } : null);
+}
+
+function mockOauthClientRow(row: Record<string, unknown> | null) {
+  const limit = vi.fn().mockResolvedValue(row ? [row] : []);
+  const where = vi.fn().mockReturnValue({ limit });
+  const from = vi.fn().mockReturnValue({ where });
+  mockSelectChain.mockReturnValueOnce({ from });
+}
 
 const baseUser = { name: 'Test User', email: 'user@example.com' };
 
@@ -90,8 +148,14 @@ describe('renderConsentPage()', () => {
         client: { ...baseClient, name: '<script>alert(1)</script>' },
       }),
     );
+    // The actual XSS protection: the `<` is encoded to `&lt;` so the
+    // injected `<script>` cannot start a real script element. (kitajs's
+    // `safe` attribute escapes `<`/`&`/`"`/`'` but not `>` — encoding `<`
+    // alone is sufficient to prevent tag-break-out, and `>` alone is
+    // harmless. The old hand-rolled escape encoded both for strict-spec
+    // compliance; the security property is identical.)
     expect(html).not.toContain('<script>alert(1)</script>');
-    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('&lt;script');
   });
 
   it('renders client policy + tos links when present', () => {
@@ -118,95 +182,48 @@ describe('renderConsentPage()', () => {
   });
 });
 
-describe('handleConsentPage()', () => {
+describe('GET /oauth/consent (Elysia route)', () => {
   it('returns 400 when client_id is missing', async () => {
-    const req = new Request('https://api.packrat.world/oauth/consent?scope=mcp%3Aread');
-    const auth = { api: { getSession: vi.fn() } };
-    const db = { select: vi.fn() };
-    const schema = { oauthClient: { clientId: 'client_id' } };
-
-    const res = await handleConsentPage(req, {
-      auth: auth as never,
-      db: db as never,
-      schema: schema as never,
-    });
+    const res = await (await getTestApp()).fetch(
+      new Request('http://localhost/oauth/consent?scope=mcp%3Aread'),
+    );
     expect(res.status).toBe(400);
   });
 
   it('redirects to /api/auth/sign-in when the user is not signed in', async () => {
-    const req = new Request(
-      'https://api.packrat.world/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aread',
+    mockSession(null);
+    const res = await (await getTestApp()).fetch(
+      new Request('http://localhost/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aread'),
     );
-    const auth = { api: { getSession: vi.fn().mockResolvedValue(null) } };
-    const db = { select: vi.fn() };
-    const schema = { oauthClient: { clientId: 'client_id' } };
-
-    const res = await handleConsentPage(req, {
-      auth: auth as never,
-      db: db as never,
-      schema: schema as never,
-    });
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toContain('/api/auth/sign-in');
     expect(res.headers.get('location')).toContain('callbackURL=');
   });
 
   it('returns 404 when the client_id does not exist in oauthClient', async () => {
-    const req = new Request(
-      'https://api.packrat.world/oauth/consent?client_id=unknown&scope=mcp%3Aread',
+    mockSession({ id: 'u1', email: 'u@e.com', role: 'USER' });
+    mockOauthClientRow(null);
+    const res = await (await getTestApp()).fetch(
+      new Request('http://localhost/oauth/consent?client_id=unknown&scope=mcp%3Aread'),
     );
-    const auth = {
-      api: {
-        getSession: vi.fn().mockResolvedValue({
-          user: { id: 'u1', email: 'u@e.com', role: 'USER' },
-        }),
-      },
-    };
-    const limit = vi.fn().mockResolvedValue([]);
-    const where = vi.fn().mockReturnValue({ limit });
-    const from = vi.fn().mockReturnValue({ where });
-    const db = { select: vi.fn().mockReturnValue({ from }) };
-    const schema = { oauthClient: { clientId: 'client_id' } };
-
-    const res = await handleConsentPage(req, {
-      auth: auth as never,
-      db: db as never,
-      schema: schema as never,
-    });
     expect(res.status).toBe(404);
   });
 
   it('renders the consent page (200, text/html) with mcp:admin stripped for non-admin', async () => {
-    const req = new Request(
-      'https://api.packrat.world/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aread+mcp%3Awrite+mcp%3Aadmin&sig=abc',
-    );
-    const auth = {
-      api: {
-        getSession: vi.fn().mockResolvedValue({
-          user: { id: 'u1', name: 'Test User', email: 'u@e.com', role: 'USER' },
-        }),
-      },
-    };
-    const limit = vi.fn().mockResolvedValue([
-      {
-        clientId: 'packrat-claude-mcp',
-        name: 'Claude',
-        icon: null,
-        tos: null,
-        policy: null,
-        uri: null,
-      },
-    ]);
-    const where = vi.fn().mockReturnValue({ limit });
-    const from = vi.fn().mockReturnValue({ where });
-    const db = { select: vi.fn().mockReturnValue({ from }) };
-    const schema = { oauthClient: { clientId: 'client_id' } };
-
-    const res = await handleConsentPage(req, {
-      auth: auth as never,
-      db: db as never,
-      schema: schema as never,
+    mockSession({ id: 'u1', name: 'Test User', email: 'u@e.com', role: 'USER' });
+    mockOauthClientRow({
+      clientId: 'packrat-claude-mcp',
+      name: 'Claude',
+      icon: null,
+      tos: null,
+      policy: null,
+      uri: null,
     });
+    const res = await (await getTestApp()).fetch(
+      new Request(
+        'http://localhost/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aread+mcp%3Awrite+mcp%3Aadmin&sig=abc',
+      ),
+    );
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/html');
     expect(res.headers.get('x-frame-options')).toBe('DENY');
@@ -220,36 +237,18 @@ describe('handleConsentPage()', () => {
   });
 
   it('renders mcp:admin for an admin user', async () => {
-    const req = new Request(
-      'https://api.packrat.world/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aadmin',
-    );
-    const auth = {
-      api: {
-        getSession: vi.fn().mockResolvedValue({
-          user: { id: 'u1', email: 'admin@e.com', role: 'ADMIN' },
-        }),
-      },
-    };
-    const limit = vi.fn().mockResolvedValue([
-      {
-        clientId: 'packrat-claude-mcp',
-        name: 'Claude',
-        icon: null,
-        tos: null,
-        policy: null,
-        uri: null,
-      },
-    ]);
-    const where = vi.fn().mockReturnValue({ limit });
-    const from = vi.fn().mockReturnValue({ where });
-    const db = { select: vi.fn().mockReturnValue({ from }) };
-    const schema = { oauthClient: { clientId: 'client_id' } };
-
-    const res = await handleConsentPage(req, {
-      auth: auth as never,
-      db: db as never,
-      schema: schema as never,
+    mockSession({ id: 'u1', email: 'admin@e.com', role: 'ADMIN' });
+    mockOauthClientRow({
+      clientId: 'packrat-claude-mcp',
+      name: 'Claude',
+      icon: null,
+      tos: null,
+      policy: null,
+      uri: null,
     });
+    const res = await (await getTestApp()).fetch(
+      new Request('http://localhost/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aadmin'),
+    );
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain('value="mcp:admin"');

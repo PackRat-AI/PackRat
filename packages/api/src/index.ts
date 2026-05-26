@@ -12,9 +12,8 @@ import {
 } from '@better-auth/oauth-provider';
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
-import { neon } from '@neondatabase/serverless';
 import { getAuth } from '@packrat/api/auth';
-import { handleConsentPage } from '@packrat/api/auth/consent-page';
+import { consentRoute } from '@packrat/api/auth/consent-route';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
@@ -24,9 +23,7 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
-import * as dbSchema from '@packrat/db';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
-import { drizzle } from 'drizzle-orm/neon-http';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
@@ -94,6 +91,10 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .get('/health', () => ({ status: 'ok' as const }), {
     detail: { summary: 'Health status', tags: ['Meta'] },
   })
+  // Branded OAuth consent page — mounted at /oauth/consent. The Better Auth
+  // OAuth provider redirects the user-agent here mid-flow; the @elysiajs/html
+  // plugin (inside consentRoute) sets Content-Type: text/html on JSX returns.
+  .use(consentRoute)
   .use(routes)
   .compile();
 
@@ -148,18 +149,6 @@ const handler: ExportedHandler<Env> = {
             ? oauthProviderOpenIdConfigMetadata(auth)
             : oauthProviderAuthServerMetadata(auth);
         return handler(request);
-      }
-
-      // Branded consent page served at the path declared in the plugin's
-      // `consentPage` option. The plugin redirects the user-agent here mid-
-      // OAuth-flow; the page reads the user's session, filters scopes for
-      // non-admins, and POSTs back to /api/auth/oauth2/consent. See
-      // src/auth/consent-page.ts for the full mechanism.
-      if (url.pathname === '/oauth/consent') {
-        const validatedEnv = getEnv();
-        const auth = await getAuth(validatedEnv);
-        const db = drizzle(neon(validatedEnv.NEON_DATABASE_URL), { schema: dbSchema });
-        return handleConsentPage(request, { auth, db, schema: dbSchema });
       }
     }
 

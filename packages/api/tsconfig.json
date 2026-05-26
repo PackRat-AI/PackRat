@@ -1,13 +1,31 @@
 {
+  // Package-scoped tsconfig. The root tsconfig sets `"jsx": "react-native"`
+  // for the Expo app; the API uses @kitajs/html's string-rendering JSX runtime
+  // for server-side HTML (e.g. the OAuth consent page in
+  // src/auth/consent-page.tsx). Package-local override keeps the two
+  // contexts from colliding.
+  //
+  // JSX runtime config follows @elysiajs/html's recommended pattern:
+  // classic runtime with Html.createElement + Html.Fragment as the JSX
+  // factory. This is the form @kitajs/ts-html-plugin assumes; switching
+  // to the automatic runtime (jsxImportSource) breaks the plugin's
+  // compile-time XSS detection (error K601 for missing `safe` attribute).
+  //
+  // The ts-html-plugin runs as a TS language service plugin in IDE
+  // (surfacing K601 inline) AND ships an `xss-scan` CLI for CI pipelines.
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "jsx": "react",
+    "jsxFactory": "Html.createElement",
+    "jsxFragmentFactory": "Html.Fragment",
+    "plugins": [{ "name": "@kitajs/ts-html-plugin" }],
     "paths": {
       "@packrat/api": ["./src/index.ts"],
       "@packrat/api/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "container_src", "test", "coverage"]
 }
