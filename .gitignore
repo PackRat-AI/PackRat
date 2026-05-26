@@ -52,3 +52,6 @@ apps/guides/public/og/
 # Git worktrees
 .worktrees/
 .worktrees
+
+# Cloudflare wrangler local state (dev/test artifacts)
+.wrangler/
