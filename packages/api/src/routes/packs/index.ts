@@ -99,8 +99,11 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
   .post(
     '/',
     async ({ body, user }) => {
+      const parsed = CreatePackBodySchema.safeParse(body);
+      if (!parsed.success) return status(400, { error: 'Validation failed' });
+
       const db = createDb();
-      const data = body;
+      const data = parsed.data;
 
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
@@ -678,9 +681,12 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
   .post(
     '/:packId/items',
     async ({ params, body, user }) => {
+      const parsed = AddPackItemBodySchema.safeParse(body);
+      if (!parsed.success) return status(400, { error: 'Validation failed' });
+
       const db = createDb();
       const packId = params.packId;
-      const data = body;
+      const data = parsed.data;
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 

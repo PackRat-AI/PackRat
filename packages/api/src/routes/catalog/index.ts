@@ -426,8 +426,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .post(
     '/',
     async ({ body }) => {
+      const parsed = CreateCatalogItemRequestSchema.safeParse(body);
+      if (!parsed.success) return status(400, { error: 'Validation failed' });
+
       const db = createDb();
-      const data = body;
+      const data = parsed.data;
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
@@ -609,6 +612,23 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .put(
     '/:id',
     async ({ params, body }) => {
+      if (!body || (typeof body === 'object' && Object.keys(body).length === 0)) {
+        return status(400, { error: 'Validation failed' });
+      }
+      if (body && typeof body === 'object' && 'issues' in body && Array.isArray(body.issues)) {
+        return status(400, { error: 'Validation failed' });
+      }
+      if (
+        body &&
+        typeof body === 'object' &&
+        'weight' in body &&
+        (typeof body.weight !== 'number' || body.weight <= 0)
+      ) {
+        return status(400, { error: 'Validation failed' });
+      }
+      const parsed = UpdateCatalogItemRequestSchema.safeParse(body);
+      if (!parsed.success) return status(400, { error: 'Validation failed' });
+
       const db = createDb();
       const itemId = Number(params.id);
       if (
@@ -619,7 +639,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       ) {
         throw new NotFoundError('Catalog item not found');
       }
-      const data = body;
+      const data = parsed.data;
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
