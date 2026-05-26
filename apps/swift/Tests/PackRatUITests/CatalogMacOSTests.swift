@@ -26,7 +26,7 @@ final class CatalogMacOSTests: AppUITestCase {
     func testCatalogSearchReturnsResults() {
         goToSidebar("Catalog")
 
-        let searchField = app.textFields["Search tents, packs, sleeping bags…"]
+        let searchField = app.searchFields["Search tents, packs, sleeping bags…"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText("tent")
@@ -39,20 +39,17 @@ final class CatalogMacOSTests: AppUITestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: progressIndicator)
         _ = XCTWaiter.wait(for: [expectation], timeout: 15)
 
-        let hasResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] 'tent' OR label CONTAINS 'oz' OR label CONTAINS 'lb'")
-        ).count > 0
-        let noResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS 'No results'")
-        ).firstMatch.exists
+        let hasResults = app.descendants(matching: .any)["catalog_results_list"]
+        let noResults = app.descendants(matching: .any)["catalog_no_results"]
+        let resolved = hasResults.waitForExistence(timeout: 15) || noResults.waitForExistence(timeout: 1)
 
-        XCTAssertTrue(hasResults || noResults, "Catalog should show results or no-results state")
+        XCTAssertTrue(resolved, "Catalog should show results or no-results state")
     }
 
     func testCatalogSearchClearable() {
         goToSidebar("Catalog")
 
-        let searchField = app.textFields["Search tents, packs, sleeping bags…"]
+        let searchField = app.searchFields["Search tents, packs, sleeping bags…"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText("backpack")

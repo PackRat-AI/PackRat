@@ -17,10 +17,17 @@ struct TripDetailView: View {
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 
+    private var hasOverviewDetails: Bool {
+        !trip.dateRange.isEmpty
+        || trip.location?.name?.isEmpty == false
+        || trip.description?.isEmpty == false
+        || trip.notes?.isEmpty == false
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                metaCards.padding(.horizontal)
+                metaCards
 
                 // Map — shown when the trip has coordinates
                 if let coord = coordinate {
@@ -45,6 +52,20 @@ struct TripDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 10))
                     }
+                }
+
+                if !hasOverviewDetails {
+                    ContentUnavailableView {
+                        Label("No Trip Details", systemImage: "map")
+                            .symbolRenderingMode(.hierarchical)
+                    } description: {
+                        Text("Add dates, a location, notes, and a linked pack to make this trip easier to plan.")
+                    } actions: {
+                        Button("Edit Trip") { showingEditSheet = true }
+                            .buttonStyle(.borderedProminent)
+                    }
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, minHeight: 220)
                 }
 
                 packSection
@@ -78,58 +99,64 @@ struct TripDetailView: View {
         let linkedPack = appState.packsVM.packs.first(where: { $0.id == trip.packId })
         labeledSection("Pack") {
             if let pack = linkedPack {
-                HStack(spacing: 12) {
-                    Image(systemName: "backpack")
-                        .font(.title3)
-                        .foregroundStyle(.tint)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(pack.name).font(.callout.bold())
-                        Text("\(pack.itemCount) items")
-                            .font(.caption)
+                Button {
+                    appState.navItem = .packs
+                    appState.selectedPackId = pack.id
+                } label: {
+                    HStack(spacing: 12) {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(Color.blue.gradient)
+                            .frame(width: 30, height: 30)
+                            .overlay {
+                                Image(systemName: "backpack.fill")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pack.name).font(.callout.bold())
+                            Text("\(pack.itemCount) items")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if let total = pack.totalWeight {
+                            Text(pack.formattedWeight(total))
+                                .font(.callout.monospacedDigit().bold())
+                                .foregroundStyle(.tint)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    if let total = pack.totalWeight {
-                        Text(pack.formattedWeight(total))
-                            .font(.callout.monospacedDigit().bold())
-                            .foregroundStyle(.tint)
-                    }
-                    // Navigate to this pack
-                    Button {
-                        appState.navItem = .packs
-                        appState.selectedPackId = pack.id
-                    } label: {
-                        Label("View Pack", systemImage: "arrow.right.circle")
-                            .labelStyle(.iconOnly)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Go to pack")
                 }
+                .buttonStyle(.plain)
                 .padding(14)
-                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 10))
+                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             } else {
                 Button {
                     showingEditSheet = true
                 } label: {
-                    Label("Link a Pack to this trip", systemImage: "plus.circle")
+                    Label("Link a Pack", systemImage: "plus.circle")
                         .font(.callout)
-                        .foregroundStyle(.tint)
                 }
-                .buttonStyle(.plain)
-                .padding(.vertical, 4)
+                .buttonStyle(.bordered)
             }
         }
     }
 
+    @ViewBuilder
     private var metaCards: some View {
-        HStack(spacing: 10) {
-            if !trip.dateRange.isEmpty {
-                metaCard("Dates", trip.dateRange, symbol: "calendar", color: .blue)
+        if !trip.dateRange.isEmpty || trip.location?.name?.isEmpty == false {
+            HStack(spacing: 10) {
+                if !trip.dateRange.isEmpty {
+                    metaCard("Dates", trip.dateRange, symbol: "calendar", color: .blue)
+                }
+                if let loc = trip.location?.name, !loc.isEmpty {
+                    metaCard("Location", loc, symbol: "mappin.circle.fill", color: .red)
+                }
             }
-            if let loc = trip.location?.name {
-                metaCard("Location", loc, symbol: "mappin.circle.fill", color: .red)
-            }
+            .padding(.horizontal)
         }
     }
 
@@ -188,8 +215,8 @@ struct TripDetailView: View {
 
     private func labeledSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption.uppercaseSmallCaps())
+            Text(title.uppercased())
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             content()
         }

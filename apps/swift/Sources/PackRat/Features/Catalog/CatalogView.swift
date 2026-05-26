@@ -5,17 +5,18 @@ struct CatalogView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        let vm = appState.catalogVM
-        ScrollView {
-            VStack(spacing: 16) {
-                searchBar(vm: vm)
+        @Bindable var vm = appState.catalogVM
 
+        return ScrollView {
+            VStack(spacing: 16) {
                 if vm.isLoading && vm.items.isEmpty {
                     ProgressView("Searching gear…").padding(.top, 40)
                 } else if let error = vm.error {
                     InlineErrorView(message: error).padding(.horizontal)
                 } else if vm.items.isEmpty && vm.hasSearched {
-                    ContentUnavailableView.search(text: vm.searchText).padding(.top, 20)
+                    ContentUnavailableView.search(text: vm.searchText)
+                        .accessibilityIdentifier("catalog_no_results")
+                        .padding(.top, 20)
                 } else if !vm.hasSearched {
                     EmptyStateView(
                         "Search the Gear Catalog",
@@ -30,27 +31,24 @@ struct CatalogView: View {
             .padding(.bottom)
         }
         .navigationTitle("Gear Catalog")
-    }
-
-    private func searchBar(vm: CatalogViewModel) -> some View {
-        @Bindable var bvm = vm
-        return HStack {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField("Search tents, packs, sleeping bags…", text: $bvm.searchText)
-                .onChange(of: vm.searchText) { vm.onSearchTextChanged() }
-                .onSubmit { Task { await vm.search(reset: true) } }
-            if vm.isLoading {
-                ProgressView().controlSize(.small)
-            } else if !vm.searchText.isEmpty {
-                Button { vm.searchText = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+        #if os(iOS)
+        .searchable(
+            text: $vm.searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search tents, packs, sleeping bags…"
+        )
+        #else
+        .searchable(text: $vm.searchText, prompt: "Search tents, packs, sleeping bags…")
+        #endif
+        .onChange(of: vm.searchText) { vm.onSearchTextChanged() }
+        .onSubmit(of: .search) { Task { await vm.search(reset: true) } }
+        .toolbar {
+            if vm.isLoading && !vm.items.isEmpty {
+                ToolbarItem(placement: .secondaryAction) {
+                    ProgressView().controlSize(.small)
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(10)
-        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 10))
-        .padding(.horizontal)
     }
 
     private func itemGrid(vm: CatalogViewModel) -> some View {
@@ -68,6 +66,7 @@ struct CatalogView: View {
                 ProgressView().padding()
             }
         }
+        .accessibilityIdentifier("catalog_results_list")
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
     }
@@ -154,6 +153,8 @@ struct CatalogItemRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+        .accessibilityIdentifier("catalog_item_row_\(item.id)")
+        .accessibilityLabel(item.displayName)
     }
 }
 

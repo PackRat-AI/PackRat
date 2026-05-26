@@ -65,8 +65,7 @@ final class FeedMacOSTests: AppUITestCase {
         waitFor(app.buttons["New Post"]).click()
 
         XCTAssertTrue(
-            app.staticTexts.matching(NSPredicate(format: "label CONTAINS '/ 500'")).firstMatch
-                .waitForExistence(timeout: 5),
+            app.staticTexts["feed_compose_counter"].waitForExistence(timeout: 5),
             "Character counter must be visible"
         )
 

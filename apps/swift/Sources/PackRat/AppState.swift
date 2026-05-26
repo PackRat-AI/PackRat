@@ -23,4 +23,7 @@ final class AppState {
 
     // Active nav item
     var navItem: NavItem = .home
+
+    // App-wide presentation
+    var isGlobalSearchPresented = false
 }

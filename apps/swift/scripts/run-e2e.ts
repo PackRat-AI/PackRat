@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 /**
  * Run PackRat Swift XCUITests with credentials loaded from .env.local.
  *
@@ -65,6 +65,7 @@ if (!E2E_EMAIL || !E2E_PASSWORD) {
   console.error('❌ E2E_EMAIL and E2E_PASSWORD must be set in .env.local');
   process.exit(1);
 }
+const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
 
 if (!existsSync(SCHEME_PATH)) {
   console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
@@ -177,13 +178,46 @@ const args = [
   // no file patching, no .local overrides.
   `PACKRAT_E2E_EMAIL=${E2E_EMAIL}`,
   `PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}`,
+  `PACKRAT_ENV=${PACKRAT_ENV}`,
 ];
 
-const result = spawnSync('xcodebuild', args, {
-  cwd: SWIFT_DIR,
-  stdio: 'inherit',
-  env: process.env,
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function redactSecrets(output: string): string {
+  let redacted = output;
+  for (const secret of [E2E_EMAIL, E2E_PASSWORD]) {
+    if (secret) {
+      redacted = redacted.replace(new RegExp(escapeRegExp(secret), 'g'), '[REDACTED]');
+    }
+  }
+  redacted = redacted.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]');
+  redacted = redacted.replace(
+    /[A-Z0-9._%+-]+@[A-Z0-9._%+-]+(?:\.\.\.|[A-Z0-9.-]*)?/gi,
+    '[REDACTED_EMAIL]',
+  );
+  return redacted;
+}
+
+const resultStatus = await new Promise<number | null>((resolve) => {
+  const child = spawn('xcodebuild', args, {
+    cwd: SWIFT_DIR,
+    env: process.env,
+  });
+
+  child.stdout.on('data', (chunk) => {
+    process.stdout.write(redactSecrets(chunk.toString()));
+  });
+  child.stderr.on('data', (chunk) => {
+    process.stderr.write(redactSecrets(chunk.toString()));
+  });
+  child.on('close', (code) => resolve(code));
 });
+
+const result = {
+  status: resultStatus,
+};
 
 // xcodebuild test exits non-zero on test failure but the result bundle is still valid;
 // always try to summarize, then propagate the original exit code.

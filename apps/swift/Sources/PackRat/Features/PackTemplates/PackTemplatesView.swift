@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import SwiftData
 
 // MARK: - List Column (shown in content pane of 3-column nav)
 
@@ -7,6 +8,7 @@ struct PackTemplatesListView: View {
     @Bindable var viewModel: PackTemplatesViewModel
     @Binding var selectedId: String?
     var packsVM: PacksViewModel = PacksViewModel()
+    @Environment(AuthManager.self) private var authManager
     @State private var showingNewTemplate = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -17,7 +19,13 @@ struct PackTemplatesListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.templates.isEmpty {
+            if !authManager.isAuthenticated {
+                EmptyStateView(
+                    "Sign In to Use Templates",
+                    subtitle: "Pack templates sync with your account so they can be reused across devices.",
+                    systemImage: "doc.on.doc"
+                )
+            } else if viewModel.isLoading && viewModel.templates.isEmpty {
                 ProgressView("Loading templates…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.templates.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
@@ -33,13 +41,15 @@ struct PackTemplatesListView: View {
         }
         .navigationTitle("Pack Templates")
         .searchable(text: $viewModel.searchText, prompt: "Search templates")
-        .task { if viewModel.templates.isEmpty { await viewModel.load() } }
-        .refreshable { await viewModel.load() }
+        .task { if authManager.isAuthenticated && viewModel.templates.isEmpty { await viewModel.load() } }
+        .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("New Template", systemImage: "plus") {
                     showingNewTemplate = true
                 }
+                .accessibilityIdentifier("templates_new_template_button")
+                .disabled(!authManager.isAuthenticated)
             }
         }
         .sheet(isPresented: $showingNewTemplate) {
@@ -126,6 +136,7 @@ struct PackTemplateDetailView: View {
     let viewModel: PackTemplatesViewModel
     let packsVM: PacksViewModel
 
+    @Environment(\.modelContext) private var modelContext
     @State private var showingApplySheet = false
     @State private var showingEditTemplate = false
     @State private var showingAddItem = false
@@ -216,7 +227,7 @@ struct PackTemplateDetailView: View {
         .sheet(item: $editingItem) { item in
             PackTemplateItemFormView(viewModel: viewModel, templateId: currentTemplate.id, existingItem: item)
         }
-        .task { if packsVM.packs.isEmpty { await packsVM.load() } }
+        .task { if packsVM.packs.isEmpty { await packsVM.load(context: modelContext) } }
     }
 
     @ToolbarContentBuilder

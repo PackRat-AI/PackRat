@@ -108,9 +108,12 @@ struct PackDetailView: View {
                     Button("Edit Pack", systemImage: "pencil") {
                         showingEditSheet = true
                     }
+                    .accessibilityIdentifier("pack_detail_edit_pack")
                     .keyboardShortcut("e", modifiers: .command)
                 } label: {
                     Image(systemName: "ellipsis.circle")
+                        .accessibilityIdentifier("pack_detail_more_menu")
+                        .accessibilityLabel("More")
                 }
             }
         }

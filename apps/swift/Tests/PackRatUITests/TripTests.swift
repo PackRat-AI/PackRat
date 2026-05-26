@@ -25,8 +25,7 @@ final class TripTests: AppUITestCase {
 
     func testPlanTripButtonOpensForm() {
         goToTab("Trips")
-        // Either toolbar Plan Trip button or empty-state CTA
-        let planButton = app.buttons["Plan Trip"]
+        let planButton = app.buttons["trips_plan_trip_button"]
         waitFor(planButton)
         planButton.tap()
 
@@ -42,7 +41,7 @@ final class TripTests: AppUITestCase {
         createdTripName = tripName
 
         goToTab("Trips")
-        waitFor(app.buttons["Plan Trip"]).tap()
+        waitFor(app.buttons["trips_plan_trip_button"]).tap()
 
         let nameField = app.textFields["Trip Name"]
         waitFor(nameField)
@@ -62,7 +61,7 @@ final class TripTests: AppUITestCase {
         createdTripName = tripName
 
         goToTab("Trips")
-        waitFor(app.buttons["Plan Trip"]).tap()
+        waitFor(app.buttons["trips_plan_trip_button"]).tap()
 
         let nameField = app.textFields["Trip Name"]
         waitFor(nameField)
@@ -123,7 +122,7 @@ final class TripTests: AppUITestCase {
 
     private func createTrip(named name: String) {
         goToTab("Trips")
-        waitFor(app.buttons["Plan Trip"]).tap()
+        waitFor(app.buttons["trips_plan_trip_button"]).tap()
         let nameField = app.textFields["Trip Name"]
         waitFor(nameField)
         nameField.tap()

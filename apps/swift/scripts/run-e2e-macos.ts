@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 /**
  * Run PackRat Swift macOS tests (unit + XCUITest where possible).
  *
@@ -108,10 +108,31 @@ if (!E2E_EMAIL || !E2E_PASSWORD) {
   console.error('❌ E2E_EMAIL and E2E_PASSWORD must be set in .env.local');
   process.exit(1);
 }
+const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
 
 if (!existsSync(SCHEME_PATH)) {
   console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
   process.exit(1);
+}
+
+function assertAutomationModeAvailable(): void {
+  const result = spawnSync('automationmodetool', ['help'], {
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  if (output.includes('Automation Mode is disabled')) {
+    if (output.includes('DOES NOT REQUIRE user authentication')) {
+      console.warn(
+        '⚠️  macOS Automation Mode is currently disabled, but XCTest can enable it without password authentication.',
+      );
+      return;
+    }
+    console.error('❌ macOS Automation Mode is disabled, so XCUITest cannot run unattended.');
+    console.error(
+      '   Run `automationmodetool enable-automationmode-without-authentication` and enter the macOS password once, then rerun this command.',
+    );
+    process.exit(1);
+  }
 }
 
 function escapeXml(s: string): string {
@@ -154,6 +175,21 @@ function allocateResultBundle(): string {
   return path;
 }
 
+function withDefaultLocalSigningArgs(passthrough: readonly string[]): string[] {
+  const hasSetting = (name: string) => passthrough.some((arg) => arg.startsWith(`${name}=`));
+  const defaults = [
+    'CODE_SIGN_STYLE=Manual',
+    'DEVELOPMENT_TEAM=',
+    'CODE_SIGN_IDENTITY=-',
+    'CODE_SIGNING_ALLOWED=YES',
+    'CODE_SIGNING_REQUIRED=NO',
+  ];
+  return [
+    ...passthrough,
+    ...defaults.filter((setting) => !hasSetting(setting.slice(0, setting.indexOf('=')))),
+  ];
+}
+
 let parsed: ReturnType<typeof parseMacOSArgs>;
 try {
   parsed = parseMacOSArgs(process.argv.slice(2));
@@ -167,6 +203,7 @@ try {
 
 injectScheme({ email: E2E_EMAIL, password: E2E_PASSWORD });
 console.log('✓ Injected E2E credentials into PackRat-macOS scheme');
+assertAutomationModeAvailable();
 
 const resultBundle = allocateResultBundle();
 console.log('→ Destination: platform=macOS');
@@ -184,18 +221,51 @@ const args = [
   ...planArgs,
   '-resultBundlePath',
   resultBundle,
-  ...parsed.passthrough,
+  ...withDefaultLocalSigningArgs(parsed.passthrough),
   // Same build-setting → Info.plist → Bundle.infoDictionary path as iOS —
   // see apps/swift/scripts/run-e2e.ts for the doc comment.
   `PACKRAT_E2E_EMAIL=${E2E_EMAIL}`,
   `PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}`,
+  `PACKRAT_ENV=${PACKRAT_ENV}`,
 ];
 
-const result = spawnSync('xcodebuild', args, {
-  cwd: SWIFT_DIR,
-  stdio: 'inherit',
-  env: process.env,
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function redactSecrets(output: string): string {
+  let redacted = output;
+  for (const secret of [E2E_EMAIL, E2E_PASSWORD]) {
+    if (secret) {
+      redacted = redacted.replace(new RegExp(escapeRegExp(secret), 'g'), '[REDACTED]');
+    }
+  }
+  redacted = redacted.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]');
+  redacted = redacted.replace(
+    /[A-Z0-9._%+-]+@[A-Z0-9._%+-]+(?:\.\.\.|[A-Z0-9.-]*)?/gi,
+    '[REDACTED_EMAIL]',
+  );
+  return redacted;
+}
+
+const resultStatus = await new Promise<number | null>((resolve) => {
+  const child = spawn('xcodebuild', args, {
+    cwd: SWIFT_DIR,
+    env: process.env,
+  });
+
+  child.stdout.on('data', (chunk) => {
+    process.stdout.write(redactSecrets(chunk.toString()));
+  });
+  child.stderr.on('data', (chunk) => {
+    process.stderr.write(redactSecrets(chunk.toString()));
+  });
+  child.on('close', (code) => resolve(code));
 });
+
+const result = {
+  status: resultStatus,
+};
 
 try {
   const summary = readSummary(resultBundle);

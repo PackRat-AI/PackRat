@@ -43,8 +43,11 @@ struct PackTemplateItemFormView: View {
                         .lineLimit(2...3)
                 }
                 Section("Weight & Quantity") {
-                    HStack {
+                    LabeledContent("Weight") {
+                        HStack {
                         TextField("Weight", text: $weightText)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
@@ -53,13 +56,18 @@ struct PackTemplateItemFormView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(maxWidth: 180)
+                        }
                     }
                     Stepper("Quantity: \(quantity)", value: $quantity, in: 1...99)
                 }
-                Section("Details") {
+                Section {
                     TextField("Category (optional)", text: $category)
                     Toggle("Worn", isOn: $worn)
                     Toggle("Consumable", isOn: $consumable)
+                } header: {
+                    Text("Details")
+                } footer: {
+                    Text("Worn and consumable items are excluded from base weight totals.")
                 }
                 if let error {
                     InlineErrorView(message: error).listRowBackground(Color.clear)

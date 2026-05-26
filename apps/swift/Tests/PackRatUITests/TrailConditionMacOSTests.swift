@@ -30,7 +30,7 @@ final class TrailConditionMacOSTests: AppUITestCase {
         submitButton.click()
 
         XCTAssertTrue(
-            app.textFields["Trail Name"].waitForExistence(timeout: 5),
+            app.textFields["trail_report_name"].waitForExistence(timeout: 5),
             "Submit Report form must appear with Trail Name field"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
@@ -44,12 +44,12 @@ final class TrailConditionMacOSTests: AppUITestCase {
         goToSidebar("Trail Conditions")
         waitFor(app.buttons["Submit Report"].firstMatch).click()
 
-        let nameField = app.textFields["Trail Name"]
+        let nameField = app.textFields["trail_report_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(trailName)
 
-        let regionField = app.textFields["Region / Area (optional)"]
+        let regionField = app.textFields["trail_report_region"]
         if regionField.waitForExistence(timeout: 3) {
             regionField.click()
             regionField.typeText("Test Region")
@@ -81,8 +81,9 @@ final class TrailConditionMacOSTests: AppUITestCase {
         waitFor(app.buttons["Submit Report"].firstMatch, timeout: 20)
 
         let target = app.staticTexts[trailName]
+        let row = app.descendants(matching: .any)["trail_report_row_\(trailName)"]
         XCTAssertTrue(
-            target.waitForExistence(timeout: 10),
+            target.waitForExistence(timeout: 10) || row.waitForExistence(timeout: 1),
             "Submitted report '\(trailName)' must appear in list"
         )
     }
@@ -121,9 +122,11 @@ final class TrailConditionMacOSTests: AppUITestCase {
 
     private func cleanupReport(forTrail trail: String) {
         goToSidebar("Trail Conditions")
-        let cell = app.staticTexts[trail]
-        guard cell.waitForExistence(timeout: 5) else { return }
-        cell.rightClick()
+        let cell = app.staticTexts[trail].firstMatch
+        let row = app.descendants(matching: .any)["trail_report_row_\(trail)"].firstMatch
+        let target = cell.waitForExistence(timeout: 5) ? cell : row
+        guard target.waitForExistence(timeout: 1) else { return }
+        target.rightClick()
         let deleteButton = app.buttons["Delete"]
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()

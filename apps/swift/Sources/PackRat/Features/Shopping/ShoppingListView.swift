@@ -189,12 +189,16 @@ private struct AddShoppingItemSheet: View {
                     }
                 }
                 Section("Details") {
-                    TextField("Estimated price ($)", text: $priceText)
-                        #if os(iOS)
-                        .keyboardType(.decimalPad)
-                        #endif
+                    LabeledContent("Estimated Price") {
+                        TextField("0.00", text: $priceText)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 96)
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
+                    }
                     TextField("Notes", text: $notes, axis: .vertical)
-                        .lineLimit(3)
+                        .lineLimit(3, reservesSpace: true)
                 }
             }
             .navigationTitle("Add Item")

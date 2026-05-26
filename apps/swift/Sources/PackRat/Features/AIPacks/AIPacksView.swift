@@ -19,7 +19,13 @@ struct AIPacksView: View {
 
     var body: some View {
         Group {
-            if authManager.currentUser?.isAdmin == true {
+            if !authManager.isAuthenticated {
+                EmptyStateView(
+                    "Sign In to Generate AI Packs",
+                    subtitle: "AI pack generation runs on your PackRat account and is not available in guest mode.",
+                    systemImage: "sparkles"
+                )
+            } else if authManager.currentUser?.isAdmin == true {
                 adminContent
             } else {
                 ContentUnavailableView(

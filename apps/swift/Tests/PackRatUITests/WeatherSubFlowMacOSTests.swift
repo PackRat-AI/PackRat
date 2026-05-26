@@ -18,7 +18,8 @@ final class WeatherSubFlowMacOSTests: AppUITestCase {
         prefsButton.click()
 
         XCTAssertTrue(
-            app.staticTexts["Alert Preferences"].waitForExistence(timeout: 5),
+            app.staticTexts["Alert Preferences"].waitForExistence(timeout: 5)
+            || app.checkBoxes["Weather Notifications"].waitForExistence(timeout: 2),
             "Alert Preferences screen must appear"
         )
     }
@@ -53,15 +54,15 @@ final class WeatherSubFlowMacOSTests: AppUITestCase {
         prefsButton.click()
 
         // Ensure master toggle is on.
-        let masterSwitch = app.switches["Weather Notifications"]
-        let masterCheck = app.checkBoxes["Weather Notifications"]
+        let masterSwitch = app.switches["weather_alert_notifications_toggle"]
+        let masterCheck = app.checkBoxes["weather_alert_notifications_toggle"]
         let master: XCUIElement = masterSwitch.exists ? masterSwitch : masterCheck
-        if master.waitForExistence(timeout: 5), master.value as? String == "0" {
-            master.click()
+        if master.waitForExistence(timeout: 5), master.isOff {
+            master.clickCheckboxControl()
         }
 
-        let highWindsSwitch = app.switches["High Winds"]
-        let highWindsCheck = app.checkBoxes["High Winds"]
+        let highWindsSwitch = app.switches["weather_alert_high_winds_toggle"]
+        let highWindsCheck = app.checkBoxes["weather_alert_high_winds_toggle"]
         let highWinds: XCUIElement = highWindsSwitch.exists ? highWindsSwitch : highWindsCheck
         guard highWinds.waitForExistence(timeout: 5) else { return }
         XCTAssertTrue(
@@ -69,13 +70,41 @@ final class WeatherSubFlowMacOSTests: AppUITestCase {
             "High Winds toggle must be enabled — Weather Notifications must be on"
         )
 
-        let initialValue = highWinds.value as? String
-        highWinds.click()
-        let newValue = highWinds.value as? String
-        XCTAssertNotEqual(initialValue, newValue, "Toggle value should change after click")
+        let originalValue = highWinds.normalizedValue
+        highWinds.clickCheckboxControl()
+        let changed = highWinds.waitForValueNotEqual(to: originalValue, timeout: 3)
+        XCTAssertTrue(changed, "Toggle value should change after click")
 
         // Restore for idempotency.
-        highWinds.click()
+        highWinds.clickCheckboxControl()
     }
 }
 #endif
+
+private extension XCUIElement {
+    var normalizedValue: String? {
+        guard let value else { return nil }
+        return String(describing: value)
+    }
+
+    var isOff: Bool {
+        guard let normalizedValue else { return false }
+        return normalizedValue == "off" || normalizedValue == "0" || normalizedValue == "false"
+    }
+
+    func clickCheckboxControl() {
+        #if os(macOS)
+        coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).click()
+        #else
+        tap()
+        #endif
+    }
+
+    func waitForValueNotEqual(to originalValue: String?, timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate { element, _ in
+            guard let element = element as? XCUIElement else { return false }
+            return element.normalizedValue != originalValue
+        }
+        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: self)], timeout: timeout) == .completed
+    }
+}

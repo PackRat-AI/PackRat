@@ -25,6 +25,7 @@ struct RecentPacksView: View {
             }
         }
         .navigationTitle("Recent Packs")
+        .accessibilityIdentifier("recent_packs_view")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
         #endif

@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum NavItem: String, CaseIterable, Identifiable {
-    // Order matters: first 4 appear in iPhone tab bar, rest in "More"
+    // Order matters: first entries are the primary iPhone tab bar destinations.
     case home, packs, trips, weather, chat
     case catalog, templates, trailConditions, feed
     case guides, gearInventory, wildlife, aiPacks
@@ -30,7 +30,7 @@ enum NavItem: String, CaseIterable, Identifiable {
         case .packs:         return "backpack"
         case .trips:         return "map"
         case .weather:       return "cloud.sun"
-        case .chat:          return "bubble.left.and.sparkles"
+        case .chat:          return "bubble.left.and.text.bubble.right"
         case .catalog:       return "magnifyingglass"
         case .templates:     return "doc.on.doc"
         case .trailConditions: return "figure.hiking"
@@ -50,13 +50,42 @@ enum NavItem: String, CaseIterable, Identifiable {
     }
 }
 
+#if os(iOS)
+private enum PhoneTab: Hashable {
+    case home
+    case packs
+    case trips
+    case chat
+
+    init?(navItem: NavItem) {
+        switch navItem {
+        case .home: self = .home
+        case .packs: self = .packs
+        case .trips: self = .trips
+        case .chat: self = .chat
+        default: return nil
+        }
+    }
+
+    var navItem: NavItem? {
+        switch self {
+        case .home: return .home
+        case .packs: return .packs
+        case .trips: return .trips
+        case .chat: return .chat
+        }
+    }
+}
+#endif
+
 struct AppNavigation: View {
     @Environment(AuthManager.self) private var authManager
     @State private var appState = AppState()
-    @State private var showingSearch = false
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var phoneTab: PhoneTab = .home
+    @State private var phoneHomePath: [NavItem] = []
     #endif
 
     var body: some View {
@@ -78,41 +107,61 @@ struct AppNavigation: View {
 
         return VStack(spacing: 0) {
             OfflineBanner()
-            NavigationSplitView {
-                sidebar
-            } content: {
-                contentColumn
-            } detail: {
-                detailColumn
-            }
+            splitNavigation
         }
         .animation(.easeInOut(duration: 0.3), value: NetworkMonitor.shared.isConnected)
         .environment(appState)
         #if os(macOS)
         .navigationSplitViewStyle(.balanced)
         #endif
-        .sheet(isPresented: $showingSearch) {
+        .sheet(isPresented: $state.isGlobalSearchPresented) {
             GlobalSearchView()
                 .environment(appState)
         }
         .background {
-            Button("") { showingSearch.toggle() }
+            Button("") { state.isGlobalSearchPresented.toggle() }
                 .keyboardShortcut("f", modifiers: .command)
                 .frame(width: 0, height: 0)
                 .hidden()
         }
-        .focusedSceneValue(\.globalSearchAction, $showingSearch)
+        .focusedSceneValue(\.globalSearchAction, $state.isGlobalSearchPresented)
+        .accessibilityIdentifier("app_navigation")
+    }
+
+    @ViewBuilder
+    private var splitNavigation: some View {
+        if appState.navItem.hasListDetail {
+            NavigationSplitView {
+                sidebar
+            } content: {
+                listColumn
+            } detail: {
+                detailColumn
+            }
+        } else {
+            NavigationSplitView {
+                sidebar
+            } detail: {
+                primaryColumn
+            }
+        }
     }
 
     private var sidebar: some View {
         @Bindable var state = appState
-        let optionalNavItem = Binding<NavItem?>(
-            get: { state.navItem },
-            set: { state.navItem = $0 ?? .home }
-        )
-        return List(NavItem.allCases, selection: optionalNavItem) { item in
-            Label(item.label, systemImage: item.symbol).tag(item as NavItem?)
+        return List(NavItem.allCases) { item in
+            Button {
+                state.navItem = item
+            } label: {
+                Label(item.label, systemImage: item.symbol)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("nav_\(item.rawValue)")
+            .listRowBackground(state.navItem == item ? Color.accentColor.opacity(0.16) : Color.clear)
         }
+        .accessibilityIdentifier("app_sidebar")
         .navigationTitle("PackRat")
         #if os(macOS)
         .navigationSplitViewColumnWidth(min: 160, ideal: 190)
@@ -123,12 +172,10 @@ struct AppNavigation: View {
     }
 
     @ViewBuilder
-    private var contentColumn: some View {
+    private var listColumn: some View {
         @Bindable var state = appState
 
         switch appState.navItem {
-        case .home:
-            HomeView().environment(appState)
         case .packs:
             PacksListView(viewModel: appState.packsVM, selectedId: $state.selectedPackId)
         case .trips:
@@ -137,6 +184,16 @@ struct AppNavigation: View {
             PackTemplatesListView(viewModel: appState.templatesVM, selectedId: $state.selectedTemplateId, packsVM: appState.packsVM)
         case .trailConditions:
             TrailConditionsListView(viewModel: appState.trailConditionsVM, selectedId: $state.selectedReportId)
+        default:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private var primaryColumn: some View {
+        switch appState.navItem {
+        case .home:
+            HomeView().environment(appState)
         case .weather:
             WeatherView(viewModel: appState.weatherVM)
         case .catalog:
@@ -153,6 +210,8 @@ struct AppNavigation: View {
             WildlifeView()
         case .aiPacks:
             AIPacksView(viewModel: appState.aiPacksVM, packsVM: appState.packsVM)
+        case .packs, .trips, .templates, .trailConditions:
+            EmptyView()
         }
     }
 
@@ -200,16 +259,62 @@ struct AppNavigation: View {
 
     #if os(iOS)
     private var phoneLayout: some View {
-        TabView {
-            ForEach(NavItem.allCases) { item in
+        @Bindable var state = appState
+
+        return TabView(selection: $phoneTab) {
+            NavigationStack(path: $phoneHomePath) {
+                phoneContentView(.home)
+                    .navigationTitle(NavItem.home.label)
+                    .navigationDestination(for: NavItem.self) { item in
+                        phoneContentView(item)
+                            .navigationTitle(item.label)
+                    }
+            }
+            .tabItem { Label(NavItem.home.label, systemImage: NavItem.home.symbol) }
+            .tag(PhoneTab.home)
+
+            ForEach(phonePrimaryItems.filter { $0 != .home }) { item in
                 NavigationStack {
                     phoneContentView(item)
                         .navigationTitle(item.label)
                 }
                 .tabItem { Label(item.label, systemImage: item.symbol) }
+                .tag(PhoneTab(navItem: item)!)
+            }
+        }
+        .onChange(of: phoneTab) { _, newTab in
+            if let item = newTab.navItem {
+                state.navItem = item
+            }
+        }
+        .onChange(of: appState.navItem) { _, item in
+            if let tab = PhoneTab(navItem: item) {
+                phoneTab = tab
+                phoneHomePath.removeAll()
+            } else {
+                phoneTab = .home
+                if phoneHomePath.last != item {
+                    phoneHomePath = [item]
+                }
+            }
+        }
+        .onChange(of: phoneHomePath) { _, path in
+            if let item = path.last {
+                state.navItem = item
+            } else if phoneTab == .home {
+                state.navItem = .home
             }
         }
         .environment(appState)
+        .sheet(isPresented: $state.isGlobalSearchPresented) {
+            GlobalSearchView()
+                .environment(appState)
+        }
+        .focusedSceneValue(\.globalSearchAction, $state.isGlobalSearchPresented)
+    }
+
+    private var phonePrimaryItems: [NavItem] {
+        [.home, .packs, .trips, .chat]
     }
 
     @ViewBuilder
@@ -236,7 +341,10 @@ struct AppNavigation: View {
     // MARK: - User Footer
 
     private var userFooter: some View {
-        HStack(spacing: 8) {
+        let displayName = footerDisplayName
+        let email = authManager.currentUser?.email ?? ""
+
+        return HStack(spacing: 8) {
             Circle()
                 .fill(.tint.opacity(0.12))
                 .frame(width: 30, height: 30)
@@ -246,14 +354,21 @@ struct AppNavigation: View {
                         .foregroundStyle(.tint)
                 }
             VStack(alignment: .leading, spacing: 1) {
-                Text(authManager.currentUser?.displayName ?? "")
-                    .font(.caption.bold())
-                    .lineLimit(1)
-                Text(authManager.currentUser?.email ?? "")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                if let displayName {
+                    Text(displayName)
+                        .font(.caption.bold())
+                        .lineLimit(1)
+                    Text(email)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text(email)
+                        .font(.caption.bold())
+                        .lineLimit(1)
+                }
             }
+            .help(email)
             Spacer()
             Menu {
                 NavigationLink(destination: ProfileView()) {
@@ -271,5 +386,13 @@ struct AppNavigation: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(.bar)
+    }
+
+    private var footerDisplayName: String? {
+        guard let displayName = authManager.currentUser?.displayName.trimmingCharacters(in: .whitespacesAndNewlines),
+              !displayName.isEmpty,
+              !displayName.contains("@")
+        else { return nil }
+        return displayName
     }
 }

@@ -11,7 +11,7 @@ final class NavigationTests: AppUITestCase {
         ("Home",    "Home"),
         ("Packs",   "Packs"),
         ("Trips",   "Trips"),
-        ("Weather", "Weather"),
+        ("Assistant", "AI Assistant"),
     ]
 
     func testAllPrimaryTabsReachable() {
@@ -42,10 +42,10 @@ final class NavigationTests: AppUITestCase {
     }
 
     func testWeatherTabShowsSearchField() {
-        goToTab("Weather")
+        goToHomeAction("Weather")
         XCTAssertTrue(
-            app.textFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
-            "Weather tab must show location search field"
+            app.searchFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
+            "Weather destination must show location search field"
         )
     }
 

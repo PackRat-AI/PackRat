@@ -18,12 +18,14 @@ final class MoreTabsMacOSTests: AppUITestCase {
 
     func testHomeShowsGreeting() {
         goToSidebar("Home")
-        let greeting = app.staticTexts.matching(
-            NSPredicate(format: "label BEGINSWITH 'Good morning' OR label BEGINSWITH 'Good afternoon' OR label BEGINSWITH 'Good evening'")
-        ).firstMatch
+        let greeting = app.staticTexts["home_greeting"]
         XCTAssertTrue(
             greeting.waitForExistence(timeout: 8),
             "Home should show a time-based greeting"
+        )
+        XCTAssertFalse(
+            greeting.label.contains("@"),
+            "Home greeting should not use an email address as the display name"
         )
     }
 
@@ -31,6 +33,17 @@ final class MoreTabsMacOSTests: AppUITestCase {
         goToSidebar("Home")
         XCTAssertTrue(
             app.staticTexts["Here's your outdoor dashboard"].waitForExistence(timeout: 8)
+        )
+    }
+
+    func testHomeUsesWideMacContentArea() {
+        goToSidebar("Home")
+        let firstTile = app.buttons["My Packs, No packs yet"]
+        XCTAssertTrue(firstTile.waitForExistence(timeout: 8))
+        XCTAssertGreaterThan(
+            firstTile.frame.width,
+            220,
+            "Home cards should use the Mac detail column instead of a narrow phone-width content column"
         )
     }
 

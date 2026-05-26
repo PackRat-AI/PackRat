@@ -105,10 +105,17 @@ final class GuidesViewModel {
 struct GuidesView: View {
     @State private var viewModel = GuidesViewModel()
     @State private var selectedGuide: Guide?
+    @Environment(AuthManager.self) private var authManager
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.guides.isEmpty {
+            if !authManager.isAuthenticated {
+                EmptyStateView(
+                    "Sign In to View Guides",
+                    subtitle: "Guides are loaded from your PackRat account when you are online.",
+                    systemImage: "book"
+                )
+            } else if viewModel.isLoading && viewModel.guides.isEmpty {
                 ProgressView("Loading guides…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.guides.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
@@ -129,8 +136,8 @@ struct GuidesView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if !viewModel.categories.isEmpty { categoryBar }
         }
-        .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
+        .task { if authManager.isAuthenticated { await viewModel.load() } }
+        .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
         .sheet(item: $selectedGuide) { guide in
             NavigationStack { GuideDetailView(guide: guide) }
         }

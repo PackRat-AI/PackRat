@@ -5,6 +5,7 @@ import SwiftUI
 struct TrailConditionsListView: View {
     @Bindable var viewModel: TrailConditionsViewModel
     @Binding var selectedId: String?
+    @Environment(AuthManager.self) private var authManager
     @State private var showingSubmitSheet = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -15,7 +16,13 @@ struct TrailConditionsListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.reports.isEmpty {
+            if !authManager.isAuthenticated {
+                EmptyStateView(
+                    "Sign In to View Trail Reports",
+                    subtitle: "Community trail conditions are shared through your PackRat account.",
+                    systemImage: "figure.hiking"
+                )
+            } else if viewModel.isLoading && viewModel.reports.isEmpty {
                 ProgressView("Loading reports…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.reports.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
@@ -36,10 +43,12 @@ struct TrailConditionsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Submit Report", systemImage: "plus") { showingSubmitSheet = true }
+                    .accessibilityIdentifier("trail_conditions_submit_report_button")
+                    .disabled(!authManager.isAuthenticated)
             }
         }
-        .task { if viewModel.reports.isEmpty { await viewModel.load() } }
-        .refreshable { await viewModel.load() }
+        .task { if authManager.isAuthenticated && viewModel.reports.isEmpty { await viewModel.load() } }
+        .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
         .sheet(isPresented: $showingSubmitSheet) {
             SubmitTrailConditionView(viewModel: viewModel)
         }
@@ -59,6 +68,8 @@ struct TrailConditionsListView: View {
             }
         }
         .tag(report.id)
+        .accessibilityIdentifier("trail_report_row_\(report.trailName)")
+        .accessibilityLabel(report.trailName)
         .contextMenu {
             Button("Delete", systemImage: "trash", role: .destructive) {
                 Task { try? await viewModel.deleteReport(report.id) }
@@ -67,8 +78,10 @@ struct TrailConditionsListView: View {
     }
 
     private var reportList: some View {
-        List(viewModel.filteredReports, selection: $selectedId) { report in
-            reportRow(report)
+        List(selection: $selectedId) {
+            ForEach(viewModel.filteredReports) { report in
+                reportRow(report)
+            }
         }
     }
 }
@@ -80,6 +93,7 @@ private struct TrailReportRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(report.trailName).font(.headline)
+                    .accessibilityIdentifier("trail_report_title_\(report.trailName)")
                 Spacer()
                 conditionBadge
             }
@@ -95,7 +109,7 @@ private struct TrailReportRow: View {
 
     private var conditionBadge: some View {
         Label(
-            (report.overallCondition ?? "unknown").capitalized,
+            report.overallCondition.capitalized,
             systemImage: report.conditionSymbol
         )
         .font(.caption.bold())
@@ -197,7 +211,7 @@ struct TrailConditionDetailView: View {
             Image(systemName: report.conditionSymbol)
                 .font(.title2)
                 .foregroundStyle(color)
-            Text((report.overallCondition ?? "unknown").capitalized)
+            Text(report.overallCondition.capitalized)
                 .font(.caption.bold())
                 .foregroundStyle(color)
         }
@@ -222,7 +236,7 @@ struct SubmitTrailConditionView: View {
 
     @State private var trailName = ""
     @State private var trailRegion = ""
-    @State private var surface = ""
+    @State private var surface = TrailSurface.dirt.rawValue
     @State private var condition = "good"
     @State private var selectedHazards: Set<String> = []
     @State private var notes = ""
@@ -237,7 +251,9 @@ struct SubmitTrailConditionView: View {
             Form {
                 Section("Trail") {
                     TextField("Trail Name", text: $trailName)
+                        .accessibilityIdentifier("trail_report_name")
                     TextField("Region / Area (optional)", text: $trailRegion)
+                        .accessibilityIdentifier("trail_report_region")
                 }
                 Section("Conditions") {
                     Picker("Overall", selection: $condition) {
@@ -246,7 +262,6 @@ struct SubmitTrailConditionView: View {
                         }
                     }
                     Picker("Surface", selection: $surface) {
-                        Text("Not specified").tag("")
                         ForEach(TrailSurface.allCases, id: \.rawValue) { s in
                             Label(s.label, systemImage: s.symbol).tag(s.rawValue)
                         }
@@ -263,6 +278,7 @@ struct SubmitTrailConditionView: View {
                 Section("Notes") {
                     TextField("Describe conditions in detail…", text: $notes, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
+                        .accessibilityIdentifier("trail_report_notes")
                 }
                 if let error { Section { InlineErrorView(message: error) } }
             }
@@ -292,7 +308,7 @@ struct SubmitTrailConditionView: View {
                 try await viewModel.submitReport(
                     trailName: trailName,
                     trailRegion: trailRegion.isEmpty ? nil : trailRegion,
-                    surface: surface.isEmpty ? nil : surface,
+                    surface: surface,
                     overallCondition: condition,
                     hazards: Array(selectedHazards),
                     notes: notes.isEmpty ? nil : notes

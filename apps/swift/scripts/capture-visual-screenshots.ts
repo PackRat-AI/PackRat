@@ -30,6 +30,7 @@ const HTML_ESCAPE_RE = /[&<>"']/g;
 const QUOTE_RE = /^["']|["']$/g;
 const LEADING_DIGIT_RE = /^\d/;
 const SCREENSHOT_PREFIX_RE = /^\d+[a-z]?-/i;
+const XCT_ATTACHMENT_SUFFIX_RE = /_\d+_[0-9A-F-]+\.png$/i;
 const SIPS_PIXEL_WIDTH_RE = /pixelWidth:\s*(\d+)/;
 const SIPS_PIXEL_HEIGHT_RE = /pixelHeight:\s*(\d+)/;
 const CHROME_CANDIDATES = [
@@ -197,6 +198,9 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
     child.on('close', (code) => {
       summarizeResult(resultBundle);
       copyScreenshots(writableScreenshotDir, screenshotDir);
+      if (listScreenshots(screenshotDir).length === 0) {
+        exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
+      }
       if (code === 0) {
         resolvePromise();
       } else {
@@ -222,6 +226,55 @@ function copyScreenshots(fromDir: string, toDir: string): void {
     cpSync(resolve(fromDir, file), resolve(toDir, file), { force: true });
   }
 }
+
+function exportScreenshotsFromResultBundle(resultBundle: string, toDir: string): void {
+  const exportDir = resolve('/tmp', `packrat-xcresult-attachments-${Date.now()}`);
+  rmSync(exportDir, { recursive: true, force: true });
+  mkdirSync(exportDir, { recursive: true });
+
+  const result = spawnSync(
+    'xcrun',
+    ['xcresulttool', 'export', 'attachments', '--path', resultBundle, '--output-path', exportDir],
+    { encoding: 'utf8' },
+  );
+
+  if (result.status !== 0) {
+    console.warn(
+      `Warning: failed to export screenshots from xcresult attachments. ${result.stderr || result.stdout}`,
+    );
+    return;
+  }
+
+  const manifestPath = resolve(exportDir, 'manifest.json');
+  if (!existsSync(manifestPath)) return;
+
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as AttachmentManifestEntry[];
+  mkdirSync(toDir, { recursive: true });
+  for (const entry of manifest) {
+    for (const attachment of entry.attachments ?? []) {
+      const source = resolve(exportDir, attachment.exportedFileName);
+      if (!existsSync(source)) continue;
+      const destinationName = stableAttachmentName(attachment.suggestedHumanReadableName);
+      if (!destinationName) continue;
+      cpSync(source, resolve(toDir, destinationName), { force: true });
+    }
+  }
+}
+
+function stableAttachmentName(suggestedName: string | undefined): string | null {
+  if (!suggestedName?.toLowerCase().endsWith('.png')) return null;
+  const stable = suggestedName.replace(XCT_ATTACHMENT_SUFFIX_RE, '.png');
+  return LEADING_DIGIT_RE.test(stable) ? stable : null;
+}
+
+type AttachmentManifestEntry = {
+  attachments?: AttachmentManifestAttachment[];
+};
+
+type AttachmentManifestAttachment = {
+  exportedFileName: string;
+  suggestedHumanReadableName?: string;
+};
 
 function e2eBuildSettings(): string[] {
   const email = process.env.E2E_TEST_EMAIL ?? process.env.E2E_EMAIL;

@@ -7,14 +7,14 @@ import XCTest
 final class CatalogTests: AppUITestCase {
 
     func testCatalogTabReachable() {
-        goToTab("Catalog")
+        goToCatalog()
         XCTAssertTrue(
             app.navigationBars["Gear Catalog"].waitForExistence(timeout: 8)
         )
     }
 
     func testCatalogShowsEmptySearchPrompt() {
-        goToTab("Catalog")
+        goToCatalog()
         // Initial state: empty search prompt
         XCTAssertTrue(
             app.staticTexts["Search the Gear Catalog"].waitForExistence(timeout: 8),
@@ -23,9 +23,9 @@ final class CatalogTests: AppUITestCase {
     }
 
     func testCatalogSearchReturnsResults() {
-        goToTab("Catalog")
+        goToCatalog()
 
-        let searchField = app.textFields["Search tents, packs, sleeping bags…"]
+        let searchField = app.searchFields["Search tents, packs, sleeping bags…"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText("tent")
@@ -52,9 +52,9 @@ final class CatalogTests: AppUITestCase {
     }
 
     func testCatalogSearchClearable() {
-        goToTab("Catalog")
+        goToCatalog()
 
-        let searchField = app.textFields["Search tents, packs, sleeping bags…"]
+        let searchField = app.searchFields["Search tents, packs, sleeping bags…"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText("backpack")
@@ -71,6 +71,10 @@ final class CatalogTests: AppUITestCase {
                 "Empty state should return after clearing search"
             )
         }
+    }
+
+    private func goToCatalog() {
+        goToHomeAction("Catalog")
     }
 }
 

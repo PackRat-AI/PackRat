@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 @Observable
+@MainActor
 final class TrailConditionsViewModel {
     var reports: [TrailConditionReport] = []
     var isLoading = false
@@ -50,6 +51,8 @@ final class TrailConditionsViewModel {
             hazards: hazards,
             notes: notes
         )
+        searchText = ""
+        reports.removeAll { $0.id == report.id }
         reports.insert(report, at: 0)
     }
 

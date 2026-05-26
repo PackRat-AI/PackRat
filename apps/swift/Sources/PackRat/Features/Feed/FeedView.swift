@@ -3,12 +3,20 @@ import NukeUI
 
 struct FeedView: View {
     let viewModel: FeedViewModel
+    @Environment(AuthManager.self) private var authManager
     @State private var showingCompose = false
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                if viewModel.isLoading && viewModel.posts.isEmpty {
+                if !authManager.isAuthenticated {
+                    EmptyStateView(
+                        "Sign In to View the Feed",
+                        subtitle: "Community posts, comments, and likes sync with your PackRat account.",
+                        systemImage: "person.2"
+                    )
+                    .padding(.top, 20)
+                } else if viewModel.isLoading && viewModel.posts.isEmpty {
                     ProgressView("Loading feed…").padding(.top, 40)
                 } else if let error = viewModel.error {
                     ErrorView(error, retry: { await viewModel.load(refresh: true) }).padding(.top, 20)
@@ -41,11 +49,13 @@ struct FeedView: View {
                 Button("New Post", systemImage: "square.and.pencil") {
                     showingCompose = true
                 }
+                .accessibilityIdentifier("feed_new_post_button")
+                .disabled(!authManager.isAuthenticated)
                 .keyboardShortcut("n", modifiers: .command)
             }
         }
-        .task { if viewModel.posts.isEmpty { await viewModel.load() } }
-        .refreshable { await viewModel.load(refresh: true) }
+        .task { if authManager.isAuthenticated && viewModel.posts.isEmpty { await viewModel.load() } }
+        .refreshable { if authManager.isAuthenticated { await viewModel.load(refresh: true) } }
         .sheet(isPresented: $showingCompose) {
             ComposePostView(viewModel: viewModel)
         }

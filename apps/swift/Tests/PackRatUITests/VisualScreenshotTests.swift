@@ -124,29 +124,40 @@ final class VisualScreenshotTests: XCTestCase {
     private func capturePhoneModalSurface(mode: VisualMode) {
         let prefix = mode.modalPrefix
         captureGlobalSearch(name: "\(prefix)-global-search")
-        if mode == .guest {
-            restartLoggedOut()
-            enterGuestMode()
-        }
+        resetPhoneModalState(mode)
 
         captureTab("Packs", name: "\(prefix)-packs-before-new-pack")
-        tapAndCapture(button: "New Pack", name: "\(prefix)-new-pack-sheet")
+        tapAndCapture(identifier: "packs_new_pack_button", fallbackButton: "New Pack", name: "\(prefix)-new-pack-sheet")
 
+        resetPhoneModalState(mode)
         captureTab("Trips", name: "\(prefix)-trips-before-new-trip")
-        tapAndCapture(button: "Plan Trip", name: "\(prefix)-new-trip-sheet")
+        tapAndCapture(identifier: "trips_plan_trip_button", fallbackButton: "Plan Trip", name: "\(prefix)-new-trip-sheet")
 
-        captureHomeAction("Pack Templates", name: "\(prefix)-templates-before-new-template")
-        tapAndCapture(button: "New Template", name: "\(prefix)-new-template-sheet")
+        resetPhoneModalState(mode)
+        captureHomeAction("Pack Templates", name: "\(prefix)-templates-before-new-template", dismissAfterCapture: false)
+        tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
 
-        captureHomeAction("Trail Conditions", name: "\(prefix)-trail-conditions-before-submit")
-        tapAndCapture(button: "Submit Report", name: "\(prefix)-trail-report-sheet")
+        resetPhoneModalState(mode)
+        captureHomeAction("Trail Conditions", name: "\(prefix)-trail-conditions-before-submit", dismissAfterCapture: false)
+        tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
 
-        captureHomeAction("Weather", name: "\(prefix)-weather-before-alerts")
+        resetPhoneModalState(mode)
+        captureHomeAction("Weather", name: "\(prefix)-weather-before-alerts", dismissAfterCapture: false)
         tapAndCapture(identifier: "weather_alerts_button", name: "\(prefix)-weather-alerts-sheet")
 
         if mode == .authenticated {
-            captureHomeAction("Community Feed", name: "\(prefix)-feed-before-compose")
-            tapAndCapture(button: "New Post", name: "\(prefix)-feed-compose-sheet")
+            resetPhoneModalState(mode)
+            captureHomeAction("Community Feed", name: "\(prefix)-feed-before-compose", dismissAfterCapture: false)
+            tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
+        }
+    }
+
+    private func resetPhoneModalState(_ mode: VisualMode) {
+        if mode == .guest {
+            restartLoggedOut()
+            enterGuestMode()
+        } else {
+            launchAuthenticated()
         }
     }
 
@@ -158,7 +169,7 @@ final class VisualScreenshotTests: XCTestCase {
         }
     }
 
-    private func captureHomeAction(_ title: String, name: String) {
+    private func captureHomeAction(_ title: String, name: String, dismissAfterCapture: Bool = true) {
         captureTab("Home", name: "home-before-\(name)")
 
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
@@ -168,7 +179,9 @@ final class VisualScreenshotTests: XCTestCase {
             if action.exists, action.isHittable {
                 action.tap()
                 capture(name)
-                dismissPhoneDestination()
+                if dismissAfterCapture {
+                    dismissPhoneDestination()
+                }
                 return
             }
             app.swipeUp()
@@ -215,23 +228,23 @@ final class VisualScreenshotTests: XCTestCase {
         captureGlobalSearch(name: "\(prefix)-global-search")
 
         selectSidebar("Packs")
-        tapAndCapture(button: "New Pack", name: "\(prefix)-new-pack-sheet")
+        tapAndCapture(identifier: "packs_new_pack_button", fallbackButton: "New Pack", name: "\(prefix)-new-pack-sheet")
 
         selectSidebar("Trips")
-        tapAndCapture(button: "Plan Trip", name: "\(prefix)-new-trip-sheet")
+        tapAndCapture(identifier: "trips_plan_trip_button", fallbackButton: "Plan Trip", name: "\(prefix)-new-trip-sheet")
 
         selectSidebar("Templates")
-        tapAndCapture(button: "New Template", name: "\(prefix)-new-template-sheet")
+        tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
 
         selectSidebar("Trail Conditions")
-        tapAndCapture(button: "Submit Report", name: "\(prefix)-trail-report-sheet")
+        tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
 
         selectSidebar("Weather")
         tapAndCapture(identifier: "weather_alerts_button", name: "\(prefix)-weather-alerts-sheet")
 
         if mode == .authenticated {
             selectSidebar("Feed")
-            tapAndCapture(button: "New Post", name: "\(prefix)-feed-compose-sheet")
+            tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
         }
     }
 
@@ -286,6 +299,14 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func tapAndCapture(identifier: String, name: String) {
         guard let button = findButton(identifier: identifier, timeout: 3) else { return }
+        activate(button)
+        capture(name)
+        dismissPresentedSurface()
+    }
+
+    private func tapAndCapture(identifier: String, fallbackButton label: String, name: String) {
+        let button = findButton(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
+        guard let button else { return }
         activate(button)
         capture(name)
         dismissPresentedSurface()
@@ -374,9 +395,8 @@ final class VisualScreenshotTests: XCTestCase {
         #if os(iOS)
         return app.tabBars.firstMatch.waitForExistence(timeout: 20)
         #elseif os(macOS)
-        return app.otherElements["app_navigation"].waitForExistence(timeout: 20)
-            || app.outlines["app_sidebar"].waitForExistence(timeout: 1)
-            || app.buttons["nav_home"].waitForExistence(timeout: 1)
+        return app.buttons["nav_home"].waitForExistence(timeout: 10)
+            || app.buttons["nav_packs"].waitForExistence(timeout: 2)
         #endif
     }
 
@@ -401,7 +421,13 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func capture(_ name: String) {
         Thread.sleep(forTimeInterval: 0.35)
+        #if os(macOS)
+        app.activate()
+        let window = app.windows.firstMatch
+        let screenshot = window.waitForExistence(timeout: 2) ? window.screenshot() : app.screenshot()
+        #else
         let screenshot = app.screenshot()
+        #endif
         let url = screenshotDirectory.appendingPathComponent("\(name).png")
         try? screenshot.pngRepresentation.write(to: url, options: .atomic)
 

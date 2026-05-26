@@ -19,7 +19,7 @@ struct TripsListView: View {
             if viewModel.isLoading && viewModel.trips.isEmpty {
                 ProgressView("Loading trips…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.trips.isEmpty {
-                ErrorView(error, retry: { await viewModel.load() })
+                ErrorView(error, retry: { await viewModel.load(context: modelContext) })
             } else if viewModel.trips.isEmpty {
                 EmptyStateView(
                     "No Trips Yet",
@@ -37,6 +37,7 @@ struct TripsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
+                    .accessibilityIdentifier("trips_plan_trip_button")
                     .keyboardShortcut("n", modifiers: [.command, .shift])
             }
         }

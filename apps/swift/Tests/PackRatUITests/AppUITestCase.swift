@@ -27,7 +27,13 @@ class AppUITestCase: XCTestCase {
         app = XCUIApplication()
         // Disable animations so tests don't have to wait for spring physics
         app.launchArguments.append("--disable-animations")
+        // Avoid macOS Keychain access prompts when Xcode repeatedly rebuilds
+        // and ad-hoc signs the test host during UI test runs.
+        app.launchArguments.append("--use-userdefaults-auth")
         app.launch()
+        #if os(macOS)
+        app.activate()
+        #endif
         try loginIfNeeded()
     }
 
@@ -67,6 +73,11 @@ class AppUITestCase: XCTestCase {
             )
         }
 
+        let signIn = app.buttons["auth_sign_in"]
+        if signIn.waitForExistence(timeout: 3) {
+            signIn.tap()
+        }
+
         let emailField = app.textFields["login_email"]
         XCTAssertTrue(emailField.waitForExistence(timeout: 10), "Login screen must appear")
 
@@ -77,12 +88,23 @@ class AppUITestCase: XCTestCase {
         passwordField.tap()
         passwordField.typeText(password)
 
-        app.buttons["login_submit"].tap()
+        submitLoginForm()
 
         XCTAssertTrue(
             waitForLoggedIn(timeout: 20),
             "Logged-in landmark must appear after login — check credentials or network"
         )
+    }
+
+    func submitLoginForm() {
+        #if os(macOS)
+        // macOS can show a password/autofill popover over the submit button
+        // after typing into SecureField. Escape dismisses it before tapping.
+        app.typeText("\u{1b}")
+        app.buttons["login_submit"].tap()
+        #else
+        app.buttons["login_submit"].tap()
+        #endif
     }
 
     /// Cross-platform "is the user logged in NOW?" wait with an explicit timeout.
@@ -93,7 +115,9 @@ class AppUITestCase: XCTestCase {
         #if os(iOS)
         return app.tabBars.firstMatch.waitForExistence(timeout: timeout)
         #elseif os(macOS)
-        return app.staticTexts["Home"].waitForExistence(timeout: timeout)
+        return app.otherElements["app_navigation"].waitForExistence(timeout: timeout)
+            || app.outlines["app_sidebar"].waitForExistence(timeout: 1)
+            || app.staticTexts["Home"].waitForExistence(timeout: 1)
             || app.outlines.firstMatch.waitForExistence(timeout: 1)
         #else
         return false
@@ -108,21 +132,49 @@ class AppUITestCase: XCTestCase {
     /// label is the NavItem label. They surface as both `staticTexts` and rows
     /// inside `outlines`; this helper tries both.
     func goToSidebar(_ label: String) {
+        app.activate()
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+
+        let identifierByLabel: [String: String] = [
+            "Home": "nav_home",
+            "Packs": "nav_packs",
+            "Trips": "nav_trips",
+            "Weather": "nav_weather",
+            "Assistant": "nav_chat",
+            "Catalog": "nav_catalog",
+            "Templates": "nav_templates",
+            "Trail Conditions": "nav_trailConditions",
+            "Feed": "nav_feed",
+            "Guides": "nav_guides",
+            "Gear Inventory": "nav_gearInventory",
+            "Wildlife": "nav_wildlife",
+            "AI Packs": "nav_aiPacks",
+        ]
+        if let identifier = identifierByLabel[label] {
+            let identifiedButton = app.buttons[identifier]
+            if identifiedButton.waitForExistence(timeout: 3) {
+                if identifiedButton.isHittable {
+                    identifiedButton.tap()
+                } else {
+                    identifiedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+                }
+                return
+            }
+        }
+
         // Try the outline (the macOS NavigationSplitView sidebar is rendered as
         // an outline view). Iterate outline rows looking for one whose label
         // matches.
-        let outline = app.outlines.firstMatch
+        let identifiedOutline = app.outlines["app_sidebar"]
+        let outline = identifiedOutline.exists ? identifiedOutline : app.outlines.firstMatch
         if outline.waitForExistence(timeout: 5) {
             let outlineRow = outline.staticTexts[label]
             if outlineRow.waitForExistence(timeout: 2) {
-                outlineRow.tap()
-                return
-            }
-            // Some labels are exposed at the cell level rather than the static
-            // text level; try outline cells directly.
-            let cell = outline.cells.containing(.staticText, identifier: label).firstMatch
-            if cell.exists {
-                cell.tap()
+                if outlineRow.isHittable {
+                    outlineRow.tap()
+                } else {
+                    outlineRow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+                }
                 return
             }
         }
@@ -133,13 +185,17 @@ class AppUITestCase: XCTestCase {
             any.waitForExistence(timeout: 5),
             "Sidebar entry '\(label)' not found in macOS sidebar"
         )
-        any.tap()
+        if any.isHittable {
+            any.tap()
+        } else {
+            any.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        }
     }
     #endif
 
     #if os(iOS)
-    /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
-    /// the rest behind a "More" overflow tab — this helper handles both cases.
+    /// Navigates to a primary tab by label. Secondary feature destinations are
+    /// intentionally exposed from Home rather than the iPhone tab bar.
     func goToTab(_ label: String) {
         // Dismiss any active keyboard / search focus that could obstruct
         // tab bar interaction.
@@ -152,6 +208,24 @@ class AppUITestCase: XCTestCase {
         let direct = app.tabBars.buttons[label]
         if direct.exists {
             direct.tap()
+            return
+        }
+
+        let homeActionByLegacyTab: [String: String] = [
+            "Catalog": "Catalog",
+            "Feed": "Community Feed",
+            "Gear Inventory": "Gear Inventory",
+            "Guides": "Guides",
+            "Templates": "Pack Templates",
+            "Pack Templates": "Pack Templates",
+            "Season Suggestions": "Season Suggestions",
+            "Trail Conditions": "Trail Conditions",
+            "Weather": "Weather",
+            "Wildlife ID": "Wildlife ID",
+        ]
+        if let homeAction = homeActionByLegacyTab[label] {
+            goToTab("Home")
+            tapHomeAction(homeAction)
             return
         }
 
@@ -174,9 +248,39 @@ class AppUITestCase: XCTestCase {
 
         XCTAssertTrue(
             direct.waitForExistence(timeout: 5),
-            "Tab '\(label)' not found in tab bar or More overflow"
+            "Primary tab '\(label)' not found in tab bar"
         )
         direct.tap()
+    }
+
+    func goToHomeAction(_ title: String) {
+        goToTab("Home")
+        tapHomeAction(title)
+    }
+
+    private func tapHomeAction(_ title: String) {
+        let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
+        let action = app.buttons[identifier]
+
+        for _ in 0..<6 {
+            if action.waitForExistence(timeout: 1), action.isHittable, isSafelyVisibleAboveTabBar(action) {
+                action.tap()
+                return
+            }
+            app.swipeUp()
+        }
+
+        XCTAssertTrue(action.waitForExistence(timeout: 2), "Home action '\(title)' must exist")
+        if action.isHittable {
+            action.tap()
+        } else {
+            action.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+    }
+
+    private func isSafelyVisibleAboveTabBar(_ element: XCUIElement) -> Bool {
+        let tabBarTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
+        return element.frame.minY >= 0 && element.frame.maxY <= tabBarTop - 12
     }
     #endif
 
@@ -236,6 +340,14 @@ extension XCUIElement {
         let selectAll = XCUIApplication().menuItems["Select All"]
         if selectAll.waitForExistence(timeout: 0.5) {
             selectAll.tap()
+            if text.isEmpty {
+                #if os(iOS)
+                typeText(XCUIKeyboardKey.delete.rawValue)
+                #else
+                typeText("\u{8}")
+                #endif
+                return
+            }
         } else {
             // Fallback: move to end and backspace.
             // XCUIKeyboardKey.delete only exists on iOS; on macOS we use "\u{8}" (backspace).

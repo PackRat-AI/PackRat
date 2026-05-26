@@ -7,13 +7,14 @@ import XCTest
 final class WeatherTests: AppUITestCase {
     private let testCity = "Denver"
     private let testCityFull = "Denver"  // fragment to match in search results
+    private let weatherSearchTimeout: TimeInterval = 20
 
     // MARK: - Search
 
     func testLocationSearchReturnsResults() {
-        goToTab("Weather")
+        goToWeather()
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField, message: "Weather search field must appear")
         searchField.tap()
         searchField.typeText(testCity)
@@ -21,15 +22,15 @@ final class WeatherTests: AppUITestCase {
         // Search results should appear (they load from the WeatherAPI)
         let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
         XCTAssertTrue(
-            results.firstMatch.waitForExistence(timeout: 10),
+            results.firstMatch.waitForExistence(timeout: weatherSearchTimeout),
             "Search results for '\(testCity)' must appear"
         )
     }
 
     func testSelectLocationLoadsForecast() {
-        goToTab("Weather")
+        goToWeather()
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -38,7 +39,7 @@ final class WeatherTests: AppUITestCase {
         let firstResult = app.buttons.matching(
             NSPredicate(format: "label CONTAINS '\(testCityFull)'")
         ).firstMatch
-        waitFor(firstResult, timeout: 10)
+        waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
         // Forecast card: current temperature shows a °
@@ -52,9 +53,9 @@ final class WeatherTests: AppUITestCase {
     }
 
     func testSavedLocationAppearsAsChip() {
-        goToTab("Weather")
+        goToWeather()
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -62,7 +63,7 @@ final class WeatherTests: AppUITestCase {
         let firstResult = app.buttons.matching(
             NSPredicate(format: "label CONTAINS '\(testCityFull)'")
         ).firstMatch
-        waitFor(firstResult, timeout: 10)
+        waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
         // Clear search to show saved locations section
@@ -80,21 +81,18 @@ final class WeatherTests: AppUITestCase {
     }
 
     func testSearchClearButtonRemovesResults() {
-        goToTab("Weather")
+        goToWeather()
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
 
         // Wait for results to appear
         let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
-        waitFor(results.firstMatch, timeout: 10)
+        waitFor(results.firstMatch, timeout: weatherSearchTimeout)
 
-        // Clear via the dedicated identifier on the xmark button.
-        let clear = app.buttons["weather_search_clear"]
-        waitFor(clear, timeout: 5)
-        clear.tap()
+        searchField.clearAndTypeText("")
 
         // The location-result dropdown rows show "City, Region, Country" with
         // commas. After clearing search, those should not be visible.
@@ -108,9 +106,9 @@ final class WeatherTests: AppUITestCase {
     }
 
     func testForecastShowsDailyRows() {
-        goToTab("Weather")
+        goToWeather()
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -118,7 +116,7 @@ final class WeatherTests: AppUITestCase {
         let firstResult = app.buttons.matching(
             NSPredicate(format: "label CONTAINS '\(testCityFull)'")
         ).firstMatch
-        waitFor(firstResult, timeout: 10)
+        waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
         // 10-day forecast header
@@ -129,9 +127,9 @@ final class WeatherTests: AppUITestCase {
     }
 
     func testWeatherAlertsButtonAppearsWithForecast() {
-        goToTab("Weather")
+        goToWeather()
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText(testCity)
@@ -139,17 +137,20 @@ final class WeatherTests: AppUITestCase {
         let firstResult = app.buttons.matching(
             NSPredicate(format: "label CONTAINS '\(testCityFull)'")
         ).firstMatch
-        waitFor(firstResult, timeout: 10)
+        waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
         // Alerts toolbar button appears once forecast is loaded
-        let alertsButton = app.buttons.matching(
-            NSPredicate(format: "label == 'Alerts' OR label CONTAINS 'bell'")
-        ).firstMatch
+        let alertsButton = app.buttons["weather_alerts_button"].firstMatch
         XCTAssertTrue(
             alertsButton.waitForExistence(timeout: 20),
             "Alerts button must appear in toolbar after forecast loads"
         )
+    }
+
+    private func goToWeather() {
+        goToHomeAction("Weather")
+        XCTAssertTrue(app.navigationBars["Weather"].waitForExistence(timeout: 8))
     }
 }
 

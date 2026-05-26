@@ -25,12 +25,12 @@ final class TripMacOSTests: AppUITestCase {
 
     func testPlanTripButtonOpensForm() {
         goToSidebar("Trips")
-        let planButton = app.buttons["Plan Trip"]
+        let planButton = app.buttons["trips_plan_trip_button"]
         waitFor(planButton)
         planButton.click()
 
         XCTAssertTrue(
-            app.textFields["Trip Name"].waitForExistence(timeout: 5),
+            app.textFields["trip_name"].waitForExistence(timeout: 5),
             "Trip Name field must appear in form"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
@@ -42,9 +42,9 @@ final class TripMacOSTests: AppUITestCase {
         createdTripName = tripName
 
         goToSidebar("Trips")
-        waitFor(app.buttons["Plan Trip"]).click()
+        waitFor(app.buttons["trips_plan_trip_button"]).click()
 
-        let nameField = app.textFields["Trip Name"]
+        let nameField = app.textFields["trip_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(tripName)
@@ -62,9 +62,9 @@ final class TripMacOSTests: AppUITestCase {
         createdTripName = tripName
 
         goToSidebar("Trips")
-        waitFor(app.buttons["Plan Trip"]).click()
+        waitFor(app.buttons["trips_plan_trip_button"]).click()
 
-        let nameField = app.textFields["Trip Name"]
+        let nameField = app.textFields["trip_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(tripName)
@@ -109,7 +109,7 @@ final class TripMacOSTests: AppUITestCase {
         let cell = waitFor(app.staticTexts[tripName])
         cell.rightClick()
 
-        let deleteButton = app.buttons["Delete"]
+        let deleteButton = rowDeleteMenuItem()
         waitFor(deleteButton, timeout: 3)
         deleteButton.click()
 
@@ -128,8 +128,8 @@ final class TripMacOSTests: AppUITestCase {
 
     private func createTrip(named name: String) {
         goToSidebar("Trips")
-        waitFor(app.buttons["Plan Trip"]).click()
-        let nameField = app.textFields["Trip Name"]
+        waitFor(app.buttons["trips_plan_trip_button"]).click()
+        let nameField = app.textFields["trip_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(name)
@@ -142,9 +142,13 @@ final class TripMacOSTests: AppUITestCase {
         let cell = app.staticTexts[name]
         guard cell.waitForExistence(timeout: 5) else { return }
         cell.rightClick()
-        let deleteButton = app.buttons["Delete"]
+        let deleteButton = rowDeleteMenuItem()
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()
+    }
+
+    private func rowDeleteMenuItem() -> XCUIElement {
+        app.menuItems.matching(NSPredicate(format: "identifier == %@", "trash")).firstMatch
     }
 }
 #endif

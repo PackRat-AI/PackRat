@@ -17,6 +17,7 @@ struct PackItemRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
                     .font(.body)
+                    .accessibilityLabel(item.name)
 
                 HStack(spacing: 8) {
                     if !item.displayWeight.isEmpty {
@@ -60,6 +61,7 @@ struct PackItemRow: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
+        .accessibilityIdentifier("pack_item_row_\(item.id)")
         .contentShape(Rectangle())
         .onTapGesture { onDetail?() ?? onEdit() }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {

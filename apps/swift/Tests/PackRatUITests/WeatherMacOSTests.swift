@@ -11,7 +11,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testLocationSearchReturnsResults() {
         goToSidebar("Weather")
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField, message: "Weather search field must appear")
         searchField.click()
         searchField.typeText(testCity)
@@ -26,7 +26,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testSelectLocationLoadsForecast() {
         goToSidebar("Weather")
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -37,9 +37,7 @@ final class WeatherMacOSTests: AppUITestCase {
         waitFor(firstResult, timeout: 10)
         firstResult.click()
 
-        let tempLabel = app.staticTexts.matching(
-            NSPredicate(format: "label MATCHES '.*\\d+°.*' OR label CONTAINS '°'")
-        ).firstMatch
+        let tempLabel = app.descendants(matching: .any)["weather_current_card"]
         XCTAssertTrue(
             tempLabel.waitForExistence(timeout: 20),
             "Temperature reading must appear after selecting a location"
@@ -49,7 +47,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testSavedLocationAppearsAsChip() {
         goToSidebar("Weather")
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -60,14 +58,11 @@ final class WeatherMacOSTests: AppUITestCase {
         waitFor(firstResult, timeout: 10)
         firstResult.click()
 
-        let clearButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'xmark' OR label == 'Clear'")
-        ).firstMatch
-        if clearButton.exists { clearButton.click() }
+        searchField.clearAndTypeText("")
 
         XCTAssertTrue(
-            app.staticTexts.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'")).firstMatch
-                .waitForExistence(timeout: 5),
+            app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'weather_saved_location_'")).firstMatch
+                .waitForExistence(timeout: 10),
             "Saved location chip must appear after selecting a location"
         )
     }
@@ -75,7 +70,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testSearchClearButtonRemovesResults() {
         goToSidebar("Weather")
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -83,9 +78,7 @@ final class WeatherMacOSTests: AppUITestCase {
         let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
         waitFor(results.firstMatch, timeout: 10)
 
-        let clear = app.buttons["weather_search_clear"]
-        waitFor(clear, timeout: 5)
-        clear.click()
+        searchField.clearAndTypeText("")
 
         let dropdownResult = app.buttons.matching(
             NSPredicate(format: "label CONTAINS '\(testCityFull)' AND label CONTAINS ','")
@@ -99,7 +92,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testForecastShowsDailyRows() {
         goToSidebar("Weather")
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)
@@ -119,7 +112,7 @@ final class WeatherMacOSTests: AppUITestCase {
     func testWeatherAlertsButtonAppearsWithForecast() {
         goToSidebar("Weather")
 
-        let searchField = app.textFields["Search locations\u{2026}"]
+        let searchField = app.searchFields["Search locations\u{2026}"]
         waitFor(searchField)
         searchField.click()
         searchField.typeText(testCity)

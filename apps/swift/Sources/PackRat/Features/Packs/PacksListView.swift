@@ -30,7 +30,7 @@ struct PacksListView: View {
             if viewModel.isLoading && viewModel.packs.isEmpty && !isExplore {
                 ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
-                ErrorView(error, retry: { await viewModel.load() })
+                ErrorView(error, retry: { await viewModel.load(context: modelContext) })
             } else if isLoadingPublic && publicPacks.isEmpty {
                 ProgressView("Loading…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if displayedPacks.isEmpty && !viewModel.searchText.isEmpty {
@@ -59,6 +59,7 @@ struct PacksListView: View {
             ToolbarItemGroup(placement: .primaryAction) {
                 if !isExplore {
                     Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
+                        .accessibilityIdentifier("packs_new_pack_button")
                         .keyboardShortcut("n", modifiers: .command)
                 }
                 if viewModel.isLoading || isLoadingPublic {
@@ -76,6 +77,7 @@ struct PacksListView: View {
                 Button("Recent", systemImage: "clock") {
                     showingRecentPacks = true
                 }
+                .accessibilityIdentifier("packs_recent_button")
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {

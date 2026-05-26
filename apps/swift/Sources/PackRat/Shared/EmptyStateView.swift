@@ -24,6 +24,7 @@ struct EmptyStateView: View {
     var body: some View {
         ContentUnavailableView {
             Label(title, systemImage: systemImage)
+                .symbolRenderingMode(.hierarchical)
         } description: {
             if !subtitle.isEmpty { Text(subtitle) }
         } actions: {

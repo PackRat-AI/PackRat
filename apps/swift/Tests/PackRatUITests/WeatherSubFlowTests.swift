@@ -7,7 +7,7 @@ import XCTest
 final class WeatherSubFlowTests: AppUITestCase {
 
     func testAlertPreferencesReachableFromWeatherToolbar() {
-        goToTab("Weather")
+        goToWeather()
 
         // The Alert Preferences icon is the slider control in the toolbar
         // Alert Preferences is in .secondaryAction placement, so it collapses
@@ -32,7 +32,7 @@ final class WeatherSubFlowTests: AppUITestCase {
     }
 
     func testAlertPreferencesShowsToggles() {
-        goToTab("Weather")
+        goToWeather()
         // Alert Preferences is in .secondaryAction placement, so it collapses
         // into the nav-bar overflow menu on iPhone. Open the menu first if needed.
         let prefsButton = app.buttons["Alert Preferences"]
@@ -62,7 +62,7 @@ final class WeatherSubFlowTests: AppUITestCase {
     }
 
     func testToggleAlertPreference() {
-        goToTab("Weather")
+        goToWeather()
         // Alert Preferences is in .secondaryAction placement, so it collapses
         // into the nav-bar overflow menu on iPhone. Open the menu first if needed.
         let prefsButton = app.buttons["Alert Preferences"]
@@ -105,6 +105,11 @@ final class WeatherSubFlowTests: AppUITestCase {
 
         // Restore for idempotency
         highWinds.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+    }
+
+    private func goToWeather() {
+        goToHomeAction("Weather")
+        XCTAssertTrue(app.navigationBars["Weather"].waitForExistence(timeout: 8))
     }
 }
 

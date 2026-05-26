@@ -33,8 +33,10 @@ struct PackTemplateFormView: View {
             Form {
                 Section("Template Info") {
                     TextField("Name", text: $name)
+                        .accessibilityIdentifier("template_name")
                     TextField("Description (optional)", text: $description, axis: .vertical)
                         .lineLimit(2...4)
+                        .accessibilityIdentifier("template_description")
                 }
                 Section("Category") {
                     Picker("Category", selection: $category) {
