@@ -29,6 +29,7 @@ const baseParams = {
   provider: 'openai' as const,
   cloudflareAccountId: 'test-account',
   cloudflareGatewayId: 'test-gateway',
+  cloudflareApiToken: 'cf-token',
   cloudflareAiBinding: {} as any,
 };
 
@@ -115,6 +116,7 @@ describe('embeddingService', () => {
         provider: 'openai',
         cloudflareAccountId: 'test-account',
         cloudflareGatewayId: 'test-gateway',
+        cloudflareApiToken: 'cf-token',
         cloudflareAiBinding: expect.anything(),
       });
     });

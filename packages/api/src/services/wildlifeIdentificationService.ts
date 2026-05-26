@@ -1,5 +1,5 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
 import { z } from 'zod';
@@ -57,12 +57,26 @@ export type IdentificationResponse = z.infer<typeof identificationResponseSchema
 
 export class WildlifeIdentificationService {
   async identifySpecies(imageUrl: string): Promise<IdentificationResponse> {
-    const { OPENAI_API_KEY } = getEnv();
-    const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_AI_GATEWAY_ID,
+      CLOUDFLARE_API_TOKEN,
+      AI,
+    } = getEnv();
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: AI,
+    });
 
     try {
       const { object } = await generateObject({
-        model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+        model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
         schema: identificationResponseSchema,
         system: SPECIES_IDENTIFICATION_SYSTEM_PROMPT,
         messages: [
