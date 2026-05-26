@@ -166,7 +166,11 @@ describe('call()', () => {
       error: { status: 404, value: null },
       status: 404,
     });
-    const result = await call({ promise: mockPromise, action: 'get pack', resourceHint: 'pack p_123' });
+    const result = await call({
+      promise: mockPromise,
+      action: 'get pack',
+      resourceHint: 'pack p_123',
+    });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('404');
   });
