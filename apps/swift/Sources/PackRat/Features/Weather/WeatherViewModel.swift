@@ -21,6 +21,7 @@ final class WeatherViewModel {
 
     init(service: WeatherService = .shared) {
         self.service = service
+        guard !VisualSampleData.isScreenshotCapture else { return }
         loadSavedLocations()
         if let active = savedLocations.first(where: { $0.id == UserDefaults.standard.integer(forKey: activeLocationKey) })
             ?? savedLocations.first {
@@ -98,6 +99,12 @@ final class WeatherViewModel {
     }
 
     func loadForecast(for locationId: Int) async {
+        guard !VisualSampleData.isScreenshotCapture || VisualSampleData.isEnabled else {
+            forecastError = nil
+            forecast = nil
+            return
+        }
+
         isLoadingForecast = true
         forecastError = nil
         defer { isLoadingForecast = false }

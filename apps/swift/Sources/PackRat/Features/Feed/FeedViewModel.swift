@@ -23,6 +23,14 @@ final class FeedViewModel {
             error = nil
             return
         }
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            isRefreshing = false
+            error = nil
+            posts = []
+            hasMore = false
+            return
+        }
 
         if refresh {
             isRefreshing = true

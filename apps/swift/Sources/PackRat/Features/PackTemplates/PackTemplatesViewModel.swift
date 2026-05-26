@@ -32,6 +32,12 @@ final class PackTemplatesViewModel {
             error = nil
             return
         }
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            error = nil
+            templates = []
+            return
+        }
 
         isLoading = true
         error = nil

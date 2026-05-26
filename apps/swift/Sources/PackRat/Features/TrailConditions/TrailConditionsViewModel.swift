@@ -30,6 +30,12 @@ final class TrailConditionsViewModel {
             error = nil
             return
         }
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            error = nil
+            reports = []
+            return
+        }
 
         isLoading = true
         error = nil

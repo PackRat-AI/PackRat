@@ -51,6 +51,13 @@ final class TripsViewModel {
             error = nil
             return
         }
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            error = nil
+            isCacheLoaded = true
+            hasMore = false
+            return
+        }
 
         if let context, !isCacheLoaded {
             let cached = (try? context.fetch(FetchDescriptor<CachedTrip>(

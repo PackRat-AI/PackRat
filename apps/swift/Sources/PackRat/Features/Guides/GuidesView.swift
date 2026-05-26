@@ -78,6 +78,14 @@ final class GuidesViewModel {
     }
 
     func load() async {
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            error = nil
+            guides = []
+            categories = []
+            return
+        }
+
         isLoading = true
         error = nil
         defer { isLoading = false }

@@ -513,6 +513,7 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func capture(_ name: String) {
         Thread.sleep(forTimeInterval: 0.35)
+        assertNoUnexpectedErrorState(for: name)
         #if os(macOS)
         app.activate()
         let window = app.windows.firstMatch
@@ -527,6 +528,44 @@ final class VisualScreenshotTests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func assertNoUnexpectedErrorState(for screenshotName: String) {
+        guard shouldRequireHealthyContent(for: screenshotName) else { return }
+
+        let forbiddenIdentifiers = [
+            "connection_needed_state",
+            "temporary_error_state",
+            "account_required_error_state",
+            "account_required_state",
+            "inline_error",
+        ]
+        for identifier in forbiddenIdentifiers {
+            XCTAssertFalse(
+                app.descendants(matching: .any)[identifier].exists,
+                "Screenshot \(screenshotName) captured unexpected error/account-required state: \(identifier)"
+            )
+        }
+
+        for label in ["Connection Needed", "Temporarily Unavailable", "Sign In Required"] {
+            XCTAssertFalse(
+                app.staticTexts[label].exists,
+                "Screenshot \(screenshotName) captured unexpected error text: \(label)"
+            )
+        }
+    }
+
+    private func shouldRequireHealthyContent(for screenshotName: String) -> Bool {
+        if screenshotName.hasPrefix("00-")
+            || screenshotName.hasPrefix("01-")
+            || screenshotName.hasPrefix("02-")
+            || screenshotName.hasPrefix("02a-")
+            || screenshotName.hasPrefix("03-")
+            || screenshotName.hasPrefix("10-guest-")
+            || screenshotName.hasPrefix("50-guest-") {
+            return false
+        }
+        return true
     }
 }
 

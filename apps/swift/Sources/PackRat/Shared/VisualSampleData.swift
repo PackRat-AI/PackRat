@@ -1,6 +1,10 @@
 import Foundation
 
 enum VisualSampleData {
+    static var isScreenshotCapture: Bool {
+        ProcessInfo.processInfo.environment["PACKRAT_VISUAL_SCREENSHOTS"] == "1"
+    }
+
     static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["PACKRAT_VISUAL_SAMPLE_DATA"] == "1"
             || ProcessInfo.processInfo.arguments.contains("--visual-sample-data")
@@ -289,6 +293,65 @@ enum VisualSampleData {
             )
         ]
 
+        let denver = WeatherLocation(
+            id: 5419384,
+            name: "Denver",
+            region: "Colorado",
+            country: "United States",
+            lat: 39.74,
+            lon: -104.98
+        )
+        appState.weatherVM.savedLocations = [denver]
+        appState.weatherVM.selectedLocation = denver
+        appState.weatherVM.forecast = WeatherForecastResponse(
+            location: WeatherResponseLocation(
+                id: denver.id,
+                name: denver.name,
+                region: denver.region,
+                country: denver.country,
+                lat: denver.lat,
+                lon: denver.lon,
+                localtime: "2026-05-26 09:00",
+                localtimeEpoch: nil,
+                tzId: "America/Denver"
+            ),
+            current: WeatherCurrent(
+                tempC: 18,
+                tempF: 64,
+                feelslikeC: 18,
+                feelslikeF: 64,
+                humidity: 42,
+                windMph: 8,
+                windKph: 13,
+                windDir: "W",
+                condition: WeatherCondition(text: "Partly cloudy", icon: nil, code: 1003),
+                uv: 6,
+                visMiles: 10,
+                precipIn: 0,
+                cloud: 35,
+                isDay: 1
+            ),
+            forecast: WeatherForecast(forecastday: [
+                forecastDay(offset: 0, high: 68, low: 47, condition: "Partly cloudy", code: 1003, rain: 10),
+                forecastDay(offset: 1, high: 72, low: 49, condition: "Sunny", code: 1000, rain: 5),
+                forecastDay(offset: 2, high: 61, low: 44, condition: "Light rain", code: 1183, rain: 55),
+            ]),
+            alerts: WeatherAlertsWrapper(alert: [
+                WeatherAlert(
+                    headline: "Afternoon gusts above treeline",
+                    event: "Wind Advisory",
+                    severity: "Moderate",
+                    urgency: "Expected",
+                    areas: "Front Range",
+                    effective: now,
+                    expires: Calendar.current.date(byAdding: .hour, value: 8, to: Date())?.iso8601String(),
+                    desc: "Secure lightweight shelters and keep an extra layer accessible.",
+                    instruction: "Review campsite exposure before dark."
+                ),
+            ])
+        )
+        appState.weatherVM.forecastError = nil
+
         appState.selectedPackId = alpinePack.id
         appState.selectedTripId = appState.tripsVM.trips.first?.id
         appState.selectedTemplateId = appState.templatesVM.templates.first?.id
@@ -346,6 +409,34 @@ enum VisualSampleData {
             consumable: false,
             worn: false,
             notes: nil
+        )
+    }
+
+    private static func forecastDay(
+        offset: Int,
+        high: Double,
+        low: Double,
+        condition: String,
+        code: Int,
+        rain: Int
+    ) -> ForecastDay {
+        let date = Calendar.current.date(byAdding: .day, value: offset, to: Date()) ?? Date()
+        return ForecastDay(
+            date: date.formatted(.iso8601.year().month().day()),
+            dateEpoch: nil,
+            day: DayForecast(
+                maxtempF: high,
+                mintempF: low,
+                maxtempC: nil,
+                mintempC: nil,
+                totalprecipIn: rain > 40 ? 0.12 : 0.0,
+                avghumidity: 45 + rain / 2,
+                condition: WeatherCondition(text: condition, icon: nil, code: code),
+                uv: 5,
+                dailyChanceOfRain: rain,
+                dailyChanceOfSnow: 0
+            ),
+            astro: AstroForecast(sunrise: "5:38 AM", sunset: "8:18 PM")
         )
     }
 }
