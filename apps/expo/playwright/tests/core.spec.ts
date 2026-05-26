@@ -192,9 +192,10 @@ test('catalog search filters results', async ({ authedPage: page }) => {
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });
-  await searchBox.fill('sleeping bag');
+  // Use pressSequentially so React's onChangeText fires on each keystroke
+  await searchBox.pressSequentially('sleeping bag', { delay: 30 });
   // Results should update — check item names
-  await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 15_000 });
 });
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -218,7 +219,8 @@ test('settings screen loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText('AI Models')).toBeVisible();
   await expect(page.getByText('Danger Zone')).toBeVisible();
-  await expect(page.getByText(/PackRat v/i)).toBeVisible();
+  // App name differs by build variant (e.g. "PackRat (Dev) v2.0.26" in development)
+  await expect(page.getByText(/PackRat.*v\d/i)).toBeVisible();
 });
 
 // ─── AI Chat ──────────────────────────────────────────────────────────────────

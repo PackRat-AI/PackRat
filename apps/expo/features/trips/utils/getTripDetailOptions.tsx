@@ -23,7 +23,8 @@ export function getTripDetailOptions(id: string) {
             buttons={[
               { text: t('common.cancel'), style: 'cancel' },
               {
-                text: t('common.ok'),
+                text: t('common.delete'),
+                style: 'destructive',
                 onPress: () => {
                   deleteTrip(id);
                   if (router.canGoBack()) router.back();

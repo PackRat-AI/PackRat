@@ -23,10 +23,18 @@ export const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
 async function setup() {
   // Priority 1: pre-minted tokens provided directly
   if (process.env.TEST_ACCESS_TOKEN && process.env.TEST_REFRESH_TOKEN) {
-    const meRes = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${process.env.TEST_ACCESS_TOKEN}` },
-    });
-    const user = meRes.ok ? ((await meRes.json()) as { user: Record<string, unknown> }).user : null;
+    let user: Record<string, unknown> | null = null;
+    try {
+      const meRes = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${process.env.TEST_ACCESS_TOKEN}` },
+      });
+      user = meRes.ok ? ((await meRes.json()) as { user: Record<string, unknown> }).user : null;
+    } catch {
+      // API unreachable — trust the provided token and continue without user info
+      console.warn(
+        `[globalSetup] Could not reach ${API_URL}/api/auth/me; proceeding with provided token`,
+      );
+    }
     fs.writeFileSync(
       TOKENS_FILE,
       JSON.stringify({
@@ -79,77 +87,66 @@ async function setup() {
 
   // Priority 3: log in with the seeded E2E user via HTTP API
   if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
-    const loginRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: process.env.TEST_EMAIL, password: process.env.TEST_PASSWORD }),
-    });
+    let loginRes: Response;
+    try {
+      loginRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: API_URL },
+        body: JSON.stringify({
+          email: process.env.TEST_EMAIL,
+          password: process.env.TEST_PASSWORD,
+        }),
+      });
+    } catch (err) {
+      throw new Error(
+        `[globalSetup] Cannot reach API at ${API_URL}. ` +
+          `Ensure the API server is running (bun api) or set TEST_ACCESS_TOKEN directly.\nCause: ${err}`,
+      );
+    }
     if (!loginRes.ok) {
       const body = await loginRes.text();
       throw new Error(`Login failed ${loginRes.status}: ${body}`);
     }
-    const { session, refreshToken, user } = (await loginRes.json()) as {
-      session: { token: string };
-      refreshToken?: string;
+    const { token: accessToken, user } = (await loginRes.json()) as {
+      token: string;
       user: Record<string, unknown>;
     };
-    fs.writeFileSync(
-      TOKENS_FILE,
-      JSON.stringify({ accessToken: session.token, refreshToken: refreshToken ?? null, user }),
-    );
+    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken: null, user }));
     console.log(`[globalSetup] Logged in as ${process.env.TEST_EMAIL}`);
     return;
   }
 
-  // Priority 3: register a fresh ephemeral user (local dev fallback)
+  // Priority 4: register a fresh ephemeral user (local dev fallback)
+  // Better Auth endpoint is /sign-up/email; requireEmailVerification=false + autoSignIn=true
+  // means the response already contains a session token — no OTP step needed.
   const email = `e2e-${Date.now()}@packrat.test`;
   const password = 'E2eTest1!';
 
-  // 1. Register
-  const registerRes = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, firstName: 'E2E', lastName: 'User' }),
-  });
+  let registerRes: Response;
+  try {
+    registerRes = await fetch(`${API_URL}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: API_URL },
+      body: JSON.stringify({ email, password, name: 'E2E User' }),
+    });
+  } catch (err) {
+    throw new Error(
+      `[globalSetup] Cannot reach API at ${API_URL}. ` +
+        `For local dev, start the API server with \`bun api\` or set TEST_ACCESS_TOKEN + TEST_REFRESH_TOKEN env vars.\nCause: ${err}`,
+    );
+  }
   if (!registerRes.ok) {
     const body = await registerRes.text();
     throw new Error(`Register failed ${registerRes.status}: ${body}`);
   }
-  console.log(`[globalSetup] Registered ${email}`);
-
-  // 2. Fetch OTP directly from the database
-  const sql = neon(DB_URL);
-  const rows = await sql`
-    SELECT otp.code
-    FROM one_time_passwords otp
-    JOIN users u ON u.id = otp.user_id
-    WHERE u.email = ${email}
-    ORDER BY otp.expires_at DESC
-    LIMIT 1
-  `;
-
-  const code = (rows[0] as { code: string } | undefined)?.code;
-  if (!code) throw new Error(`No OTP found in DB for ${email}`);
-  console.log(`[globalSetup] Got OTP from DB`);
-
-  // 3. Verify email
-  const verifyRes = await fetch(`${API_URL}/api/auth/verify-email`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code }),
-  });
-  if (!verifyRes.ok) {
-    const body = await verifyRes.text();
-    throw new Error(`Verify failed ${verifyRes.status}: ${body}`);
-  }
-  const { accessToken, refreshToken, user } = (await verifyRes.json()) as {
-    accessToken: string;
-    refreshToken: string;
+  const { token: accessToken, user } = (await registerRes.json()) as {
+    token: string;
     user: Record<string, unknown>;
   };
-  console.log('[globalSetup] Email verified, tokens obtained');
+  if (!accessToken) throw new Error('No token in sign-up response');
+  console.log(`[globalSetup] Registered and signed in as ${email}`);
 
-  fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
+  fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken: null, user }));
 }
 
 export default setup;

@@ -14,9 +14,6 @@ const listTrips = async () => {
 };
 
 const createTrip = async (tripData: TripInStore) => {
-  if (!tripData.location) {
-    throw new Error('Trip location is required before sync');
-  }
   const { data, error } = await apiClient.trips.post({
     id: tripData.id,
     name: tripData.name,
