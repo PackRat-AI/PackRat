@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_DIR="$(dirname "$SCRIPT_DIR")"
 REPO_ROOT="$(cd "${API_DIR}/../.." && pwd)"
 
-E2E_DB_URL="postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e"
+E2E_DB_URL="postgres://e2e_user:e2e_pass@127.0.0.1:5435/packrat_e2e"
 OUT="${API_DIR}/.dev.vars.e2e"
 
 # Candidate source files (in order of preference)
@@ -58,6 +58,9 @@ if ! grep -q "^E2E_TEST_EMAIL=" "$OUT"; then
 fi
 if ! grep -q "^E2E_TEST_PASSWORD=" "$OUT"; then
   echo "E2E_TEST_PASSWORD=${E2E_TEST_PASSWORD:-E2eTestPass123!}" >> "$OUT"
+fi
+if ! grep -q "^E2E_TEST_USER_ID=" "$OUT"; then
+  echo "E2E_TEST_USER_ID=${E2E_TEST_USER_ID:-00000000-0000-4000-8000-000000000001}" >> "$OUT"
 fi
 
 echo "Generated: ${OUT}"

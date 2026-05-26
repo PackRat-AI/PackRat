@@ -46,6 +46,8 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
   const appleClientSecret = await generateAppleClientSecret(env);
 
   const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
+  const isLocalPostgres =
+    env.NEON_DATABASE_URL.includes('127.0.0.1') || env.NEON_DATABASE_URL.includes('localhost');
 
   const auth = betterAuth({
     baseURL: env.BETTER_AUTH_URL,
@@ -161,24 +163,33 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // than a JWK object). Better Auth creates a fresh plaintext key when the
       // filtered list is empty, resolving the "JWK must be an object" error that
       // occurs after switching from encrypted to plaintext storage.
-      jwt({
-        jwks: { disablePrivateKeyEncryption: true },
-        adapter: {
-          // biome-ignore lint/suspicious/noExplicitAny: Better Auth ctx/key/jwks generics are not expressible here
-          getJwks: async (ctx: any) => {
-            // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
-            const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
-            // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
-            return keys.filter((key: any) => {
-              try {
-                return isObject(JSON.parse(key.privateKey));
-              } catch {
-                return false;
-              }
-            });
-          },
-        },
-      }),
+      //
+      // Local e2e uses node-postgres through Wrangler/Miniflare; Better Auth's
+      // JWKS signing path can leave those requests in a canceled state there.
+      // Bearer sessions still cover native app authentication, so only omit JWT
+      // for local Postgres URLs.
+      ...(isLocalPostgres
+        ? []
+        : [
+            jwt({
+              jwks: { disablePrivateKeyEncryption: true },
+              adapter: {
+                // biome-ignore lint/suspicious/noExplicitAny: Better Auth ctx/key/jwks generics are not expressible here
+                getJwks: async (ctx: any) => {
+                  // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
+                  const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
+                  // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
+                  return keys.filter((key: any) => {
+                    try {
+                      return isObject(JSON.parse(key.privateKey));
+                    } catch {
+                      return false;
+                    }
+                  });
+                },
+              },
+            }),
+          ]),
 
       // Admin: role-based user management endpoints.
       admin(),

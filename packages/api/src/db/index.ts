@@ -25,14 +25,17 @@ const pgPools = new Map<string, Pool>();
 
 export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
+    const isLocalPostgres = url.includes('127.0.0.1') || url.includes('localhost');
     let pool = pgPools.get(url);
     if (!pool) {
       const newPool = new Pool({
         connectionString: url,
-        max: 5,
-        // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
-        // which is not supported in the Cloudflare Workers runtime (miniflare).
-        idleTimeoutMillis: 0,
+        max: isLocalPostgres ? 1 : 5,
+        // Wrangler/Miniflare can leave local pg sockets in a bad state when a
+        // Worker isolate is reused across native app smoke-test requests. Keep
+        // the local pool single-connection and short-lived; production uses
+        // Neon/Hyperdrive instead of this Docker Postgres path.
+        idleTimeoutMillis: isLocalPostgres ? 1 : 0,
         connectionTimeoutMillis: 10000,
       });
       newPool.on('error', () => {

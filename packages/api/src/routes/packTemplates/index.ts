@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createDb } from '@packrat/api/db';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { authPlugin } from '@packrat/api/middleware/auth';
 import { CatalogService } from '@packrat/api/services/catalogService';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
@@ -125,7 +125,6 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     'packTemplates.UpdatePackTemplateRequest': UpdatePackTemplateRequestSchema,
   })
   .use(authPlugin)
-  .use(adminAuthPlugin)
 
   // List all templates
   .get(
@@ -197,6 +196,8 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
   .post(
     '/generate-from-online-content',
     async ({ body, user }) => {
+      if (user.role !== 'ADMIN') return status(403, { error: 'Forbidden' });
+
       let contentUrl: string | undefined;
       try {
         const { isAppTemplate } = body;
@@ -395,7 +396,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
     },
     {
       body: 'packTemplates.GenerateFromOnlineContentRequest',
-      isAdmin: true,
+      isAuthenticated: true,
       detail: {
         tags: ['Pack Templates'],
         summary: 'Generate a pack template from an online content URL (Admin only)',

@@ -2,7 +2,7 @@ import { createDb } from '@packrat/api/db';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import { trips } from '@packrat/db';
 import { CreateTripBodySchema, TripSchema, UpdateTripBodySchema } from '@packrat/schemas/trips';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
@@ -21,10 +21,11 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
 
       try {
-        const allTrips = await db.query.trips.findMany({
-          where: and(eq(trips.userId, user.userId), eq(trips.deleted, false)),
-          orderBy: (t) => t.createdAt,
-        });
+        const allTrips = await db
+          .select()
+          .from(trips)
+          .where(and(eq(trips.userId, user.userId), eq(trips.deleted, false)))
+          .orderBy(asc(trips.createdAt));
 
         return z.array(TripSchema).parse(allTrips);
       } catch (error) {
@@ -96,9 +97,11 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
       const tripId = params.tripId;
 
-      const trip = await db.query.trips.findFirst({
-        where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
-      });
+      const [trip] = await db
+        .select()
+        .from(trips)
+        .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)))
+        .limit(1);
       if (!trip) throw new NotFoundError('Trip not found');
       return TripSchema.parse(trip);
     },
@@ -144,9 +147,11 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
           .set(updateData)
           .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)));
 
-        const updatedTrip = await db.query.trips.findFirst({
-          where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
-        });
+        const [updatedTrip] = await db
+          .select()
+          .from(trips)
+          .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)))
+          .limit(1);
 
         if (!updatedTrip) throw new NotFoundError('Trip not found');
         return TripSchema.parse(updatedTrip);

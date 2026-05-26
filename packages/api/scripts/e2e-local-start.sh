@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${API_DIR}/docker-compose.e2e.yml"
 E2E_VARS="${API_DIR}/.dev.vars.e2e"
-E2E_DB_URL="postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e"
+E2E_DB_URL="postgres://e2e_user:e2e_pass@127.0.0.1:5435/packrat_e2e"
 
 # ── Preflight ───────────────────────────────────────────────────────────────
 if ! command -v docker &>/dev/null; then
@@ -56,10 +56,11 @@ echo "▶ Running schema migrations..."
 )
 
 # ── Seed E2E user ────────────────────────────────────────────────────────────
-E2E_EMAIL="${E2E_TEST_EMAIL:-$(grep '^E2E_TEST_EMAIL=' "$E2E_VARS" 2>/dev/null || true | cut -d= -f2-)}"
-E2E_PASS="${E2E_TEST_PASSWORD:-$(grep '^E2E_TEST_PASSWORD=' "$E2E_VARS" 2>/dev/null || true | cut -d= -f2-)}"
+E2E_EMAIL="${E2E_TEST_EMAIL:-$({ grep '^E2E_TEST_EMAIL=' "$E2E_VARS" 2>/dev/null || true; } | cut -d= -f2-)}"
+E2E_PASS="${E2E_TEST_PASSWORD:-$({ grep '^E2E_TEST_PASSWORD=' "$E2E_VARS" 2>/dev/null || true; } | cut -d= -f2-)}"
 E2E_EMAIL="${E2E_EMAIL:-e2e@packrattest.local}"
 E2E_PASS="${E2E_PASS:-E2eTestPass123!}"
+E2E_EMAIL_NORMALIZED="$(printf '%s' "$E2E_EMAIL" | tr '[:upper:]' '[:lower:]')"
 
 echo "▶ Seeding E2E test user (${E2E_EMAIL})..."
 (
@@ -69,6 +70,23 @@ echo "▶ Seeding E2E test user (${E2E_EMAIL})..."
   E2E_TEST_PASSWORD="$E2E_PASS" \
   bun run db:seed:e2e-user
 )
+
+E2E_USER_ID="$(
+  docker compose -f "$COMPOSE_FILE" exec -T postgres-e2e \
+    psql -U e2e_user -d packrat_e2e -tA \
+    -c "select id from users where email = '${E2E_EMAIL_NORMALIZED}' limit 1;"
+)"
+if [[ -z "$E2E_USER_ID" ]]; then
+  echo "Error: seeded E2E user was not found."
+  exit 1
+fi
+if grep -q "^E2E_TEST_USER_ID=" "$E2E_VARS"; then
+  sed -i.bak "s/^E2E_TEST_USER_ID=.*/E2E_TEST_USER_ID=${E2E_USER_ID}/" "$E2E_VARS"
+else
+  echo "E2E_TEST_USER_ID=${E2E_USER_ID}" >> "$E2E_VARS"
+fi
+rm -f "${E2E_VARS}.bak"
+echo "  E2E user id: ${E2E_USER_ID}"
 
 # ── Wrangler dev ─────────────────────────────────────────────────────────────
 echo ""

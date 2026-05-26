@@ -1,6 +1,6 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { authPlugin } from '@packrat/api/middleware/auth';
 import { ImageDetectionService, PackService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import {
@@ -63,7 +63,6 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     'packs.UpdatePackRequest': UpdatePackRequestSchema,
   })
   .use(authPlugin)
-  .use(adminAuthPlugin)
 
   // List packs
   .get(
@@ -79,7 +78,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const result = await db.query.packs.findMany({
         where,
         with: {
-          items: includePublic ? { where: eq(packItems.deleted, false) } : true,
+          items: { where: eq(packItems.deleted, false) },
         },
       });
 
@@ -170,12 +169,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
   .post(
     '/generate-packs',
     async ({ body, user }) => {
+      if (user.role !== 'ADMIN') return status(403, { error: 'Forbidden' });
       const packService = new PackService(user.userId);
       return packService.generatePacks(body.count);
     },
     {
       body: z.object({ count: z.number().int().positive().default(1) }),
-      isAdmin: true,
+      isAuthenticated: true,
       detail: {
         tags: ['Packs'],
         summary: 'Generate sample packs (Admin only)',
@@ -684,18 +684,24 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
         getEnv();
 
-      if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
       const itemId = data.id;
 
-      const embeddingText = getEmbeddingText({ item: data });
-      const embedding = await generateEmbedding({
-        openAiApiKey: OPENAI_API_KEY,
-        value: embeddingText,
-        provider: AI_PROVIDER,
-        cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-        cloudflareAiBinding: AI,
-      });
+      let embedding: number[] | null = null;
+      if (OPENAI_API_KEY) {
+        try {
+          const embeddingText = getEmbeddingText({ item: data });
+          embedding = await generateEmbedding({
+            openAiApiKey: OPENAI_API_KEY,
+            value: embeddingText,
+            provider: AI_PROVIDER,
+            cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+            cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+            cloudflareAiBinding: AI,
+          });
+        } catch (error) {
+          console.error('Failed to generate pack item embedding:', error);
+        }
+      }
 
       const [newItem] = await db
         .insert(packItems)
@@ -705,8 +711,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
           description: data.description,
-          weight: data.weight,
-          weightUnit: data.weightUnit,
+          weight: data.weight ?? 0,
+          weightUnit: data.weightUnit ?? 'g',
           quantity: data.quantity || 1,
           category: data.category,
           consumable: data.consumable || false,

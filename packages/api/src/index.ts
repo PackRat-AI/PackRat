@@ -9,6 +9,11 @@
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
 import { getAuth } from '@packrat/api/auth';
+import {
+  isLocalE2EAuthEnabled,
+  localE2EToken,
+  makeLocalE2EUser,
+} from '@packrat/api/auth/local-e2e';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
@@ -23,6 +28,8 @@ import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
+
+const bearerPrefixRegex = /^Bearer\s+/i;
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
@@ -128,6 +135,41 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
+async function handleLocalE2EAuth(request: Request, env: Env): Promise<Response | undefined> {
+  if (!isLocalE2EAuthEnabled(env)) return undefined;
+
+  const url = new URL(request.url);
+  if (request.method === 'POST' && url.pathname === '/api/auth/sign-in/email') {
+    const body = (await request.json().catch(() => undefined)) as
+      | { email?: string; password?: string }
+      | undefined;
+    const email = body?.email?.toLowerCase();
+    if (email !== env.E2E_TEST_EMAIL?.toLowerCase() || body?.password !== env.E2E_TEST_PASSWORD) {
+      return Response.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    const token = await localE2EToken(env);
+    return Response.json(
+      {
+        redirect: false,
+        token,
+        user: makeLocalE2EUser(env),
+      },
+      { headers: { 'set-auth-token': token } },
+    );
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/auth/sign-out') {
+    const expected = await localE2EToken(env);
+    const authorization = request.headers.get('Authorization') ?? '';
+    if (authorization.replace(bearerPrefixRegex, '') === expected) {
+      return Response.json({ success: true });
+    }
+  }
+
+  return undefined;
+}
+
 const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
@@ -137,6 +179,8 @@ const workerHandler = {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/auth')) {
       const validatedEnv = getEnv();
+      const localAuthResponse = await handleLocalE2EAuth(request, validatedEnv);
+      if (localAuthResponse) return localAuthResponse;
       const auth = await getAuth(validatedEnv);
       return auth.handler(request);
     }
