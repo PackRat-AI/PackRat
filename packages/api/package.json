@@ -23,6 +23,7 @@
     "db:seed": "bun run ./src/db/seed.ts",
     "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
     "db:seed:oauth-clients": "bun run ./src/db/seed-claude-oauth-client.ts",
+    "db:seed:dev": "bun run ./src/db/seed-dev.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "dev": "wrangler dev -e=dev",
@@ -87,6 +88,7 @@
     "better-auth": "catalog:",
     "concurrently": "^8.2.2",
     "drizzle-orm": "catalog:",
+    "drizzle-seed": "^0.3.1",
     "typed-htmx": "^0.3.1",
     "vitest": "catalog:",
     "wrangler": "catalog:"
