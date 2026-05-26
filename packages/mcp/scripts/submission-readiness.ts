@@ -73,6 +73,11 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isBoolean, isObject, isString, toRecord } from '@packrat/guards';
+
+// Local helper: format an unknown thrown value's message without an `as Error` cast.
+// Node convention — many of our error handlers only need the message string.
+const errMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 // ── Public types (also re-exported for the unit tests) ────────────────────
 
@@ -323,7 +328,7 @@ export async function probe(opts: ProbeOptions): Promise<ProbeResponse> {
       headers: new Headers(),
       bodyText: '',
       url,
-      error: (err as Error).message ?? String(err),
+      error: errMessage(err),
     };
   } finally {
     clearTimeout(timer);
@@ -361,7 +366,7 @@ export function checkTlsReachability(targetUrl: string, res: ProbeResponse): Che
       };
     }
   } catch (err) {
-    return { name, label, status: 'fail', details: `URL parse error: ${(err as Error).message}` };
+    return { name, label, status: 'fail', details: `URL parse error: ${errMessage(err)}` };
   }
   return { name, label, status: 'pass', details: `200 OK over HTTPS at ${targetUrl}` };
 }
@@ -436,15 +441,15 @@ export function checkProtectedResourceMetadata(input: ProtectedResourceMetadataI
   try {
     body = JSON.parse(res.bodyText);
   } catch (err) {
-    return { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` };
+    return { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` };
   }
-  if (typeof body !== 'object' || body === null) {
+  if (!isObject(body)) {
     return { name, label, status: 'fail', details: 'body is not a JSON object' };
   }
-  const meta = body as Record<string, unknown>;
+  const meta = toRecord(body);
   // resource — must match the expected pattern.
   const expectedResource = `${rsUrl}/mcp`;
-  if (typeof meta.resource !== 'string') {
+  if (!isString(meta.resource)) {
     return { name, label, status: 'fail', details: 'missing or non-string "resource"' };
   }
   // The metadata is hard-pinned to prod; on a non-prod --rs-url we still
@@ -538,12 +543,12 @@ export function checkAuthorizationServerMetadata(res: ProbeResponse): CheckResul
   try {
     body = JSON.parse(res.bodyText);
   } catch (err) {
-    return { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` };
+    return { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` };
   }
-  if (typeof body !== 'object' || body === null) {
+  if (!isObject(body)) {
     return { name, label, status: 'fail', details: 'body is not a JSON object' };
   }
-  const meta = body as Record<string, unknown>;
+  const meta = toRecord(body);
   if (!Array.isArray(meta.code_challenge_methods_supported)) {
     return {
       name,
@@ -749,11 +754,11 @@ export function checkPrivacyAndTerms(
 export function checkSupportContact(healthBody: unknown): CheckResult {
   const name = 'support_contact';
   const label = '9. RS /health advertises a support contact';
-  if (typeof healthBody !== 'object' || healthBody === null) {
+  if (!isObject(healthBody)) {
     return { name, label, status: 'fail', details: '/health body is not a JSON object' };
   }
-  const support = (healthBody as Record<string, unknown>).support;
-  if (typeof support !== 'string' || support.length === 0) {
+  const support = toRecord(healthBody).support;
+  if (!isString(support) || support.length === 0) {
     return { name, label, status: 'fail', details: '/health is missing a "support" field' };
   }
   if (!support.startsWith('mailto:')) {
@@ -800,22 +805,19 @@ export function checkHealthStatus(res: ProbeResponse): {
     body = JSON.parse(res.bodyText);
   } catch (err) {
     return {
-      result: { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` },
+      result: { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` },
       body: null,
     };
   }
-  if (typeof body !== 'object' || body === null) {
+  if (!isObject(body)) {
     return {
       result: { name, label, status: 'fail', details: 'body is not a JSON object' },
       body,
     };
   }
-  const obj = body as Record<string, unknown>;
+  const obj = toRecord(body);
   if (obj.status !== 'ok') {
-    const probes =
-      obj.probes && typeof obj.probes === 'object'
-        ? JSON.stringify(obj.probes)
-        : '<no probes field>';
+    const probes = isObject(obj.probes) ? JSON.stringify(obj.probes) : '<no probes field>';
     return {
       result: {
         name,
@@ -849,12 +851,12 @@ export function checkStatusEndpoint(res: ProbeResponse): CheckResult {
   try {
     body = JSON.parse(res.bodyText);
   } catch (err) {
-    return { name, label, status: 'fail', details: `invalid JSON: ${(err as Error).message}` };
+    return { name, label, status: 'fail', details: `invalid JSON: ${errMessage(err)}` };
   }
-  if (typeof body !== 'object' || body === null) {
+  if (!isObject(body)) {
     return { name, label, status: 'fail', details: 'body is not a JSON object' };
   }
-  const scopes = (body as Record<string, unknown>).scopes_supported;
+  const scopes = toRecord(body).scopes_supported;
   if (!Array.isArray(scopes)) {
     return { name, label, status: 'fail', details: 'scopes_supported is not an array' };
   }
@@ -904,13 +906,13 @@ export function checkToolAnnotations(catalog: Catalog | null, source: string): C
   const offenders: string[] = [];
   for (const tool of catalog.tools) {
     const issues: string[] = [];
-    if (typeof tool.title !== 'string' || tool.title.length === 0) {
+    if (!isString(tool.title) || tool.title.length === 0) {
       issues.push('title');
     }
     const ann = tool.annotations ?? {};
-    if (typeof ann.readOnlyHint !== 'boolean') {
+    if (!isBoolean(ann.readOnlyHint)) {
       issues.push('readOnlyHint');
-    } else if (ann.readOnlyHint === false && typeof ann.destructiveHint !== 'boolean') {
+    } else if (ann.readOnlyHint === false && !isBoolean(ann.destructiveHint)) {
       issues.push('destructiveHint');
     }
     if (issues.length > 0) {
@@ -945,7 +947,7 @@ export function checkToolDescriptionsNonPromotional(catalog: Catalog | null): Ch
   }
   const flagged: string[] = [];
   for (const tool of catalog.tools) {
-    if (typeof tool.description !== 'string') continue;
+    if (!isString(tool.description)) continue;
     for (const { pattern, label: word } of FORBIDDEN_PROMO_PATTERNS) {
       if (pattern.test(tool.description)) {
         flagged.push(`${tool.name}: contains "${word}"`);
@@ -983,14 +985,21 @@ export async function loadCatalog(
       const text = await readFile(path, 'utf8');
       const parsed = JSON.parse(text);
       if (parsed && Array.isArray(parsed.tools)) {
+        // safe-cast: shape is asserted above (tools is an array); the Catalog interface's
+        // tool fields are all `unknown`, so downstream checks (checkToolAnnotations etc.)
+        // validate each field with @packrat/guards before use.
         return { catalog: parsed as Catalog, source: path };
       }
       return { catalog: null, source: `${path} (no tools array)` };
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      // Node's fs error objects expose `.code` via NodeJS.ErrnoException.
+      // Error instances aren't plain objects, so read `.code` via a typed
+      // narrowing rather than `as NodeJS.ErrnoException`.
+      const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined; // safe-cast: NodeJS.ErrnoException is just `Error & { code, errno, ... }` — `.code` is the only field we read
+      if (code !== 'ENOENT') {
         return {
           catalog: null,
-          source: `${path} (load error: ${(err as Error).message})`,
+          source: `${path} (load error: ${errMessage(err)})`,
         };
       }
     }
@@ -1158,7 +1167,7 @@ async function main(): Promise<void> {
   try {
     args = parseArgs(process.argv.slice(2));
   } catch (err) {
-    console.error(`Error: ${(err as Error).message}\n`);
+    console.error(`Error: ${errMessage(err)}\n`);
     printHelp();
     process.exit(2);
   }
@@ -1186,7 +1195,7 @@ async function main(): Promise<void> {
 // Only run main() when invoked as a script (not when imported by tests).
 if (import.meta.main) {
   main().catch((err) => {
-    console.error(`Error: ${(err as Error).message ?? err}`);
+    console.error(`Error: ${errMessage(err)}`);
     process.exit(1);
   });
 }

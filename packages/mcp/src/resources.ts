@@ -36,7 +36,7 @@
 
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
-import { isObject, isString } from '@packrat/guards';
+import { isObject, isString, toRecord } from '@packrat/guards';
 import { GLOSSARY_MARKDOWN } from './glossary';
 import type { AgentContext } from './types';
 
@@ -70,7 +70,7 @@ const SEARCH_RESULT_CAP = 20;
 function extractErrorMessage(value: unknown, fallbackStatus: number): string {
   if (isString(value)) return value;
   if (isObject(value)) {
-    const obj = value as Record<string, unknown>;
+    const obj = toRecord(value);
     if (isString(obj.message)) return obj.message;
     if (isString(obj.error)) return obj.error;
   }
