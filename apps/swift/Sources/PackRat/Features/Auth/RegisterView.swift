@@ -56,7 +56,7 @@ struct RegisterView: View {
 
                     Divider().padding(.leading, 14)
 
-                    SecureField("Password (min 8 chars)", text: $password)
+                    SecureField("Password", text: $password)
                         .textContentType(.newPassword)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)

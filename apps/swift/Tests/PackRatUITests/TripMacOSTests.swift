@@ -31,7 +31,7 @@ final class TripMacOSTests: AppUITestCase {
 
         XCTAssertTrue(
             app.textFields["trip_name"].waitForExistence(timeout: 5),
-            "Trip Name field must appear in form"
+            "Trip name field must appear in form"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
         app.buttons["Cancel"].click()

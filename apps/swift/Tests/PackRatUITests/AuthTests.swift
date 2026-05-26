@@ -220,9 +220,7 @@ final class AuthTests: AppUITestCase {
         goToTab("Packs")
         waitFor(app.buttons["New Pack"].firstMatch).tap()
 
-        let nameField = app.textFields["pack_name"].exists
-            ? app.textFields["pack_name"]
-            : app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)

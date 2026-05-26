@@ -27,9 +27,9 @@ struct PackFormView: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    TextField("Pack Name", text: $name)
+                    TextField("Name", text: $name)
                         .accessibilityIdentifier("pack_name")
-                    TextField("Description (optional)", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
                         .accessibilityIdentifier("pack_description")
                 }

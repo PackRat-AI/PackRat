@@ -151,7 +151,7 @@ final class PackTests: AppUITestCase {
         waitFor(editButton, timeout: 3)
         editButton.tap()
 
-        let nameField = app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.clearAndTypeText(updatedName)
 
@@ -189,7 +189,7 @@ final class PackTests: AppUITestCase {
         goToTab("Packs")
         waitFor(app.buttons["New Pack"]).tap()
 
-        let nameField = app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)

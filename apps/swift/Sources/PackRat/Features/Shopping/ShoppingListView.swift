@@ -180,7 +180,7 @@ private struct AddShoppingItemSheet: View {
         NavigationStack {
             Form {
                 Section("Item") {
-                    TextField("Name (required)", text: $name)
+                    TextField("Name", text: $name)
                     Picker("Category", selection: $category) {
                         Text("None").tag("")
                         ForEach(categories, id: \.self) { cat in

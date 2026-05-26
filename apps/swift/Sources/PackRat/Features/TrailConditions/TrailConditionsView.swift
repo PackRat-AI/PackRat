@@ -250,9 +250,9 @@ struct SubmitTrailConditionView: View {
         NavigationStack {
             Form {
                 Section("Trail") {
-                    TextField("Trail Name", text: $trailName)
+                    TextField("Trail", text: $trailName)
                         .accessibilityIdentifier("trail_report_name")
-                    TextField("Region / Area (optional)", text: $trailRegion)
+                    TextField("Region", text: $trailRegion)
                         .accessibilityIdentifier("trail_report_region")
                 }
                 Section("Conditions") {
@@ -273,6 +273,7 @@ struct SubmitTrailConditionView: View {
                             get: { selectedHazards.contains(hazard) },
                             set: { on in if on { selectedHazards.insert(hazard) } else { selectedHazards.remove(hazard) } }
                         ))
+                        .accessibilityIdentifier("trail_hazard_\(hazard.accessibilitySlug)")
                     }
                 }
                 Section("Notes") {
@@ -289,7 +290,9 @@ struct SubmitTrailConditionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Submit") { submit() }.disabled(!isValid || isSubmitting)
+                    Button("Submit") { submit() }
+                        .accessibilityIdentifier("trail_report_submit")
+                        .disabled(!isValid || isSubmitting)
                 }
             }
         }
@@ -316,6 +319,14 @@ struct SubmitTrailConditionView: View {
                 dismiss()
             } catch { self.error = error.localizedDescription }
         }
+    }
+}
+
+private extension String {
+    var accessibilitySlug: String {
+        lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
     }
 }
 

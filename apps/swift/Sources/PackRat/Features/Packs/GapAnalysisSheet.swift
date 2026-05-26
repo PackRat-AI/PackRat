@@ -47,8 +47,8 @@ struct GapAnalysisSheet: View {
 
     private var setupForm: some View {
         Form {
-            Section("Trip Context (optional)") {
-                TextField("Destination (e.g. Yosemite, Alps)", text: $destination)
+            Section("Trip Context") {
+                TextField("Destination", text: $destination)
                 Picker("Trip Type", selection: $tripType) {
                     Text("Any").tag("")
                     ForEach(tripTypes, id: \.self) { type in

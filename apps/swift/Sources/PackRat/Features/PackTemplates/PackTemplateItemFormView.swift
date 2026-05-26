@@ -37,9 +37,9 @@ struct PackTemplateItemFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Item Info") {
+                Section("Item") {
                     TextField("Name", text: $name)
-                    TextField("Notes (optional)", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(2...3)
                 }
                 Section("Weight & Quantity") {
@@ -61,7 +61,7 @@ struct PackTemplateItemFormView: View {
                     Stepper("Quantity: \(quantity)", value: $quantity, in: 1...99)
                 }
                 Section {
-                    TextField("Category (optional)", text: $category)
+                    TextField("Category", text: $category)
                     Toggle("Worn", isOn: $worn)
                     Toggle("Consumable", isOn: $consumable)
                 } header: {

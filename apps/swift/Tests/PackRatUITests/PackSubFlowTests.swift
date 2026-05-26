@@ -122,7 +122,7 @@ final class PackSubFlowTests: AppUITestCase {
     private func createPack(named name: String) {
         goToTab("Packs")
         waitFor(app.buttons["packs_new_pack_button"]).tap()
-        let nameField = app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)

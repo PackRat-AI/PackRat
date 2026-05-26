@@ -39,9 +39,9 @@ struct TripFormView: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    TextField("Trip Name", text: $name)
+                    TextField("Name", text: $name)
                         .accessibilityIdentifier("trip_name")
-                    TextField("Description (optional)", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
                         .accessibilityIdentifier("trip_description")
                 }
@@ -83,7 +83,7 @@ struct TripFormView: View {
                 }
 
                 Section("Pack") {
-                    Picker("Linked Pack", selection: $selectedPackId) {
+                    Picker("Pack", selection: $selectedPackId) {
                         Text("None").tag(String?.none)
                         ForEach(availablePacks) { pack in
                             Label(pack.name, systemImage: "backpack")
@@ -111,7 +111,7 @@ struct TripFormView: View {
                 }
 
                 Section("Notes") {
-                    TextField("Additional notes", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
                         .accessibilityIdentifier("trip_notes")
                 }

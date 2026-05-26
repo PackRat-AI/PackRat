@@ -101,7 +101,7 @@ struct PackItemFormView: View {
             }
 
             Section("Notes") {
-                TextField("Optional notes", text: $notes, axis: .vertical)
+                TextField("Notes", text: $notes, axis: .vertical)
                     .lineLimit(3, reservesSpace: true)
                     .accessibilityIdentifier("pack_item_notes")
             }

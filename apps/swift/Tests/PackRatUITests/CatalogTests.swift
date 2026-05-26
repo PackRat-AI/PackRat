@@ -40,13 +40,11 @@ final class CatalogTests: AppUITestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: progressIndicator)
         _ = XCTWaiter.wait(for: [expectation], timeout: 15)
 
-        // Results appear OR the no-results state
-        let hasResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] 'tent' OR label CONTAINS 'oz' OR label CONTAINS 'lb'")
-        ).count > 0
-        let noResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS 'No results'")
-        ).firstMatch.exists
+        // Results appear OR the explicit no-results state.
+        let hasResults = app.otherElements["catalog_results_list"].exists
+            || app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'catalog_item_row_'")).count > 0
+        let noResults = app.otherElements["catalog_no_results"].exists
+            || app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'No Results'")).firstMatch.exists
 
         XCTAssertTrue(hasResults || noResults, "Catalog should show results or no-results state")
     }

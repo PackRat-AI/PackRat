@@ -31,7 +31,7 @@ final class TrailConditionMacOSTests: AppUITestCase {
 
         XCTAssertTrue(
             app.textFields["trail_report_name"].waitForExistence(timeout: 5),
-            "Submit Report form must appear with Trail Name field"
+            "Submit Report form must appear with trail field"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
         app.buttons["Cancel"].click()

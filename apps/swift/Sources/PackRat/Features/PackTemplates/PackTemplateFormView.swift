@@ -31,10 +31,10 @@ struct PackTemplateFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Template Info") {
+                Section("Template") {
                     TextField("Name", text: $name)
                         .accessibilityIdentifier("template_name")
-                    TextField("Description (optional)", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(2...4)
                         .accessibilityIdentifier("template_description")
                 }
