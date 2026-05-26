@@ -65,7 +65,9 @@ final class AuthTests: AppUITestCase {
             app.staticTexts["Sign In to View the Feed"].waitForExistence(timeout: 10),
             "Guest-only account-backed screens should show a native sign-in state instead of a network error"
         )
+        XCTAssertTrue(app.buttons["Sign In"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
     }
 
     func testGuestSeesNativeSignInStateForAITools() {
@@ -76,16 +78,22 @@ final class AuthTests: AppUITestCase {
 
         goToTab("Assistant")
         XCTAssertTrue(app.staticTexts["Sign In to Use Assistant"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
 
         goToHomeAction("Season Suggestions")
         XCTAssertTrue(app.staticTexts["Sign In for Season Suggestions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
         app.buttons["Done"].tapIfExists()
 
         goToHomeAction("Wildlife ID")
         XCTAssertTrue(app.staticTexts["Sign In to Identify Wildlife"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
+        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
     }
     #endif
 

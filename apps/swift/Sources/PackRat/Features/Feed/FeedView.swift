@@ -10,7 +10,7 @@ struct FeedView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 if !authManager.isAuthenticated {
-                    EmptyStateView(
+                    AccountRequiredView(
                         "Sign In to View the Feed",
                         subtitle: "Community posts, comments, and likes sync with your PackRat account.",
                         systemImage: "person.2"

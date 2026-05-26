@@ -12,16 +12,7 @@ struct ErrorView: View {
     var body: some View {
         let presentation = FriendlyErrorPresentation(message)
 
-        ContentUnavailableView {
-            Label(presentation.title, systemImage: presentation.systemImage)
-        } description: {
-            Text(presentation.description)
-        } actions: {
-            if let retry, presentation.allowsRetry {
-                AsyncButton("Try Again", action: retry)
-                    .buttonStyle(.borderedProminent)
-            }
-        }
+        ErrorSurfaceView(presentation: presentation, retry: retry)
     }
 }
 
@@ -46,6 +37,73 @@ struct InlineErrorView: View {
     }
 }
 
+struct AccountRequiredView: View {
+    @Environment(AuthManager.self) private var authManager
+
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    init(_ title: String, subtitle: String, systemImage: String = "person.crop.circle.badge.exclamationmark") {
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        ContentUnavailableView {
+            Label(title, systemImage: systemImage)
+                .symbolRenderingMode(.hierarchical)
+        } description: {
+            Text(subtitle)
+        } actions: {
+            if authManager.isGuest {
+                Button("Sign In") {
+                    authManager.signOut()
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("account_required_sign_in")
+            }
+        }
+        .accessibilityIdentifier("account_required_state")
+    }
+}
+
+struct ConnectionUnavailableView: View {
+    let retry: (() async -> Void)?
+
+    init(retry: (() async -> Void)? = nil) {
+        self.retry = retry
+    }
+
+    var body: some View {
+        ErrorSurfaceView(
+            presentation: .connectionNeeded,
+            retry: retry
+        )
+    }
+}
+
+private struct ErrorSurfaceView: View {
+    let presentation: FriendlyErrorPresentation
+    let retry: (() async -> Void)?
+
+    var body: some View {
+        ContentUnavailableView {
+            Label(presentation.title, systemImage: presentation.systemImage)
+                .symbolRenderingMode(.hierarchical)
+        } description: {
+            Text(presentation.description)
+        } actions: {
+            if let retry, presentation.allowsRetry {
+                AsyncButton(presentation.retryTitle, action: retry)
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+        .accessibilityIdentifier(presentation.accessibilityIdentifier)
+    }
+}
+
 struct FriendlyErrorPresentation {
     let title: String
     let description: String
@@ -53,6 +111,8 @@ struct FriendlyErrorPresentation {
     let inlineSystemImage: String
     let inlineColor: Color
     let allowsRetry: Bool
+    let retryTitle: String
+    let accessibilityIdentifier: String
 
     init(_ rawMessage: String) {
         let normalized = rawMessage.lowercased()
@@ -64,40 +124,83 @@ struct FriendlyErrorPresentation {
             || normalized.contains("requires auth")
             || normalized.contains("session")
             || normalized.contains("token") {
-            title = "Sign In Required"
-            description = "This feature syncs with your PackRat account. Local packs and trips still work in guest mode."
-            systemImage = "person.crop.circle.badge.exclamationmark"
-            inlineSystemImage = "person.crop.circle.badge.exclamationmark"
-            inlineColor = .orange
-            allowsRetry = false
+            self = .accountRequired
         } else if normalized.contains("offline")
-            || normalized.contains("network")
             || normalized.contains("internet")
             || normalized.contains("not connected")
+            || normalized.contains("connection appears")
+            || normalized.contains("connection was lost")
             || normalized.contains("timed out")
             || normalized.contains("cannot connect")
-            || normalized.contains("could not connect") {
-            title = "Connection Needed"
-            description = "Connect to the internet to refresh this content. Cached and local data remain available."
-            systemImage = "wifi.exclamationmark"
-            inlineSystemImage = "wifi.exclamationmark"
-            inlineColor = .orange
-            allowsRetry = true
+            || normalized.contains("could not connect")
+            || normalized.contains("urlerror")
+            || normalized.contains("nsurlerrordomain") {
+            self = .connectionNeeded
         } else if normalized.contains("404")
             || normalized.contains("not found") {
-            title = "Not Found"
-            description = "This item is no longer available."
-            systemImage = "questionmark.folder"
-            inlineSystemImage = "questionmark.circle.fill"
-            inlineColor = .orange
-            allowsRetry = false
+            self = .notFound
         } else {
-            title = "Temporarily Unavailable"
-            description = "This content could not be loaded right now."
-            systemImage = "exclamationmark.triangle"
-            inlineSystemImage = "exclamationmark.circle.fill"
-            inlineColor = .red
-            allowsRetry = true
+            self = .temporarilyUnavailable
         }
     }
+
+    private init(
+        title: String,
+        description: String,
+        systemImage: String,
+        inlineSystemImage: String,
+        inlineColor: Color,
+        allowsRetry: Bool,
+        retryTitle: String = "Try Again",
+        accessibilityIdentifier: String
+    ) {
+        self.title = title
+        self.description = description
+        self.systemImage = systemImage
+        self.inlineSystemImage = inlineSystemImage
+        self.inlineColor = inlineColor
+        self.allowsRetry = allowsRetry
+        self.retryTitle = retryTitle
+        self.accessibilityIdentifier = accessibilityIdentifier
+    }
+
+    static let accountRequired = FriendlyErrorPresentation(
+        title: "Sign In Required",
+        description: "This feature syncs with your PackRat account. Local packs and trips still work in guest mode.",
+        systemImage: "person.crop.circle.badge.exclamationmark",
+        inlineSystemImage: "person.crop.circle.badge.exclamationmark",
+        inlineColor: .orange,
+        allowsRetry: false,
+        accessibilityIdentifier: "account_required_error_state"
+    )
+
+    static let connectionNeeded = FriendlyErrorPresentation(
+        title: "Connection Needed",
+        description: "Connect to the internet to refresh this content. Cached and local data remain available.",
+        systemImage: "wifi.exclamationmark",
+        inlineSystemImage: "wifi.exclamationmark",
+        inlineColor: .orange,
+        allowsRetry: true,
+        accessibilityIdentifier: "connection_needed_state"
+    )
+
+    static let notFound = FriendlyErrorPresentation(
+        title: "Not Found",
+        description: "This item is no longer available.",
+        systemImage: "questionmark.folder",
+        inlineSystemImage: "questionmark.circle.fill",
+        inlineColor: .orange,
+        allowsRetry: false,
+        accessibilityIdentifier: "not_found_state"
+    )
+
+    static let temporarilyUnavailable = FriendlyErrorPresentation(
+        title: "Temporarily Unavailable",
+        description: "This content could not be loaded right now.",
+        systemImage: "exclamationmark.triangle",
+        inlineSystemImage: "exclamationmark.circle.fill",
+        inlineColor: .red,
+        allowsRetry: true,
+        accessibilityIdentifier: "temporary_error_state"
+    )
 }

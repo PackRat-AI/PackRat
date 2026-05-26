@@ -100,7 +100,7 @@ struct WildlifeView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                EmptyStateView(
+                AccountRequiredView(
                     "Sign In to Identify Wildlife",
                     subtitle: "Wildlife identification uses PackRat's image service. You can still manage local packs and trips as a guest.",
                     systemImage: "pawprint"

@@ -20,7 +20,7 @@ struct PackTemplatesListView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
-                EmptyStateView(
+                AccountRequiredView(
                     "Sign In to Use Templates",
                     subtitle: "Pack templates sync with your account so they can be reused across devices.",
                     systemImage: "doc.on.doc"
