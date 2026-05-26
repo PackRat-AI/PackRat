@@ -155,7 +155,7 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func capturePhoneModalSurface(mode: VisualMode) {
         let prefix = mode.modalPrefix
-        captureGlobalSearch(name: "\(prefix)-global-search")
+        captureGlobalSearch(name: "\(prefix)-global-search", query: mode == .sampleData ? "Alpine" : nil)
         resetPhoneModalState(mode)
 
         captureTab("Packs", name: "\(prefix)-packs-before-new-pack")
@@ -294,7 +294,7 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func captureMacModalSurface(mode: VisualMode) {
         let prefix = mode.modalPrefix
-        captureGlobalSearch(name: "\(prefix)-global-search")
+        captureGlobalSearch(name: "\(prefix)-global-search", query: mode == .sampleData ? "Alpine" : nil)
 
         selectSidebar("Packs")
         tapAndCapture(identifier: "packs_new_pack_button", fallbackButton: "New Pack", name: "\(prefix)-new-pack-sheet")
@@ -348,7 +348,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
     #endif
 
-    private func captureGlobalSearch(name: String) {
+    private func captureGlobalSearch(name: String, query: String? = nil) {
         #if os(macOS)
         app.typeKey("f", modifierFlags: [.command])
         #else
@@ -358,6 +358,25 @@ final class VisualScreenshotTests: XCTestCase {
         search.tap()
         #endif
         capture(name)
+        if let query {
+            #if os(macOS)
+            let searchField = app.textFields["global_search_field"].firstMatch
+            #else
+            let searchField = app.searchFields["Search packs, trips, trails…"].firstMatch
+            #endif
+            XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Expected global search field for screenshot \(name)")
+            activate(searchField)
+            #if os(macOS)
+            app.typeText(query)
+            #else
+            searchField.typeText(query)
+            #endif
+            let resultPredicate = NSPredicate(format: "label CONTAINS %@", "Alpine Weekend")
+            let resultExists = app.staticTexts["Alpine Weekend"].waitForExistence(timeout: 2)
+                || app.buttons.matching(resultPredicate).firstMatch.waitForExistence(timeout: 3)
+            capture("\(name)-results")
+            XCTAssertTrue(resultExists, "Expected global search to show sample pack result")
+        }
         dismissPresentedSurface()
     }
 

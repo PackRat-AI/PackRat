@@ -112,7 +112,7 @@ final class MoreTabsTests: AppUITestCase {
         goToTab("Home")
         app.buttons["Search"].tap()
         XCTAssertTrue(
-            app.textFields["Search packs, trips, trails…"].waitForExistence(timeout: 8),
+            app.searchFields["Search packs, trips, trails…"].waitForExistence(timeout: 8),
             "Home should expose broad PackRat search"
         )
     }
