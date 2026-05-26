@@ -72,6 +72,8 @@ if (!E2E_EMAIL || !E2E_PASSWORD) {
 }
 const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
 const localE2ESessionToken = deriveLocalE2ESessionToken();
+const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
+const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
 
 if (!existsSync(SCHEME_PATH)) {
   console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
@@ -129,7 +131,8 @@ function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): voi
   const variables = [
     environmentVariableXml('E2E_EMAIL', email),
     environmentVariableXml('E2E_PASSWORD', password),
-    environmentVariableXml('PACKRAT_E2E_EMAIL', process.env.E2E_TEST_EMAIL ?? email),
+    environmentVariableXml('PACKRAT_E2E_EMAIL', uiTestEmail),
+    environmentVariableXml('PACKRAT_E2E_PASSWORD', uiTestPassword),
   ];
   if (sessionToken)
     variables.push(environmentVariableXml('PACKRAT_E2E_SESSION_TOKEN', sessionToken));
@@ -215,8 +218,8 @@ const args = [
   // test class reads them via Bundle.main.infoDictionary at runtime. This
   // is the documented Apple pattern for "secrets into a test bundle" —
   // no file patching, no .local overrides.
-  `PACKRAT_E2E_EMAIL=${E2E_EMAIL}`,
-  `PACKRAT_E2E_PASSWORD=${E2E_PASSWORD}`,
+  `PACKRAT_E2E_EMAIL=${uiTestEmail}`,
+  `PACKRAT_E2E_PASSWORD=${uiTestPassword}`,
   `PACKRAT_E2E_SESSION_TOKEN=${localE2ESessionToken ?? ''}`,
   `PACKRAT_E2E_USER_ID=${process.env.E2E_TEST_USER_ID ?? ''}`,
   `PACKRAT_ENV=${PACKRAT_ENV}`,
@@ -231,6 +234,8 @@ function redactSecrets(output: string): string {
   for (const secret of [
     E2E_EMAIL,
     E2E_PASSWORD,
+    uiTestEmail,
+    uiTestPassword,
     process.env.E2E_TEST_EMAIL,
     localE2ESessionToken,
   ]) {
