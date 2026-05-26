@@ -19,9 +19,12 @@ name: MCP Deploy (prod)
 #   CLOUDFLARE_ACCOUNT_ID    — visible on every page of the Cloudflare
 #                              dashboard right sidebar.
 #
-# This workflow does NOT manage KV namespace IDs, secrets, or routes —
-# those are bootstrapped manually per the runbook's "One-time operator
-# setup" section. We only push the bundle.
+# This workflow does NOT manage routes — those are bootstrapped manually
+# per the runbook's "One-time operator setup" section. We only push the
+# bundle. Post-refactor (U5) the MCP worker no longer needs KV namespaces
+# or any OAuth-state secrets; the Authorization Server lives on the API
+# worker (api.packrat.world). MCP_COMMIT_SHA is injected as a deploy-time
+# var below so /status can advertise the running build.
 
 on:
   push:

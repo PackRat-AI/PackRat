@@ -1,5 +1,6 @@
 /**
- * U18: unit tests for the submission-readiness check primitives.
+ * U18 + U7 refactor: unit tests for the submission-readiness check
+ * primitives.
  *
  * The script in `packages/mcp/scripts/submission-readiness.ts` is a runtime
  * probe — it cannot be exercised against a real deployed worker in CI
@@ -7,6 +8,14 @@
  * primitives' shape: every helper is pure (input -> CheckResult), so we
  * can feed it fixture responses and assert PASS / FAIL / WARN classifies
  * exactly as advertised in the operator-facing line of the runbook.
+ *
+ * Post-refactor (U7) the script targets two distinct origins:
+ *   - RS_TARGET = mcp.packratai.com  (the protected resource)
+ *   - AS_TARGET = api.packrat.world  (the OAuth authorization server)
+ * The DCR gate check is gone (DCR is disabled at the AS via
+ * `allowDynamicClientRegistration: false`; no /register endpoint exists
+ * to probe). The pre-registered Claude client probe is now an
+ * unconditional WARN that points operators at the seed script.
  *
  * If a CheckResult shape ever drifts (e.g. a new `severity` field is
  * added, or a status string is renamed), this suite fails loudly so the
@@ -18,7 +27,6 @@ import {
   type Catalog,
   checkAuthorizationServerMetadata,
   checkClaudeClientRegistration,
-  checkDcrGate,
   checkFaviconAtOauthDomain,
   checkHealthStatus,
   checkPrivacyAndTerms,
@@ -30,7 +38,8 @@ import {
   checkTlsReachability,
   checkToolAnnotations,
   checkToolDescriptionsNonPromotional,
-  DEFAULT_TARGET_URL,
+  DEFAULT_AS_URL,
+  DEFAULT_RS_URL,
   FORBIDDEN_PROMO_PATTERNS,
   type ProbeResponse,
   parseArgs,
@@ -38,7 +47,8 @@ import {
   summarize,
 } from '../../scripts/submission-readiness';
 
-const TARGET = DEFAULT_TARGET_URL;
+const RS_TARGET = DEFAULT_RS_URL;
+const AS_TARGET = DEFAULT_AS_URL;
 
 function makeRes(overrides: Partial<ProbeResponse> & { url?: string } = {}): ProbeResponse {
   return {
@@ -46,7 +56,7 @@ function makeRes(overrides: Partial<ProbeResponse> & { url?: string } = {}): Pro
     status: 200,
     headers: new Headers(),
     bodyText: '',
-    url: overrides.url ?? `${TARGET}/`,
+    url: overrides.url ?? `${RS_TARGET}/`,
     ...overrides,
   };
 }
@@ -56,26 +66,45 @@ function makeRes(overrides: Partial<ProbeResponse> & { url?: string } = {}): Pro
 describe('parseArgs', () => {
   it('returns defaults when no args are given', () => {
     const args = parseArgs([]);
-    expect(args.url).toBe(DEFAULT_TARGET_URL);
+    expect(args.rsUrl).toBe(DEFAULT_RS_URL);
+    expect(args.asUrl).toBe(DEFAULT_AS_URL);
     expect(args.json).toBe(false);
     expect(args.help).toBe(false);
     expect(args.catalogPath).toBeNull();
-    expect(args.claudeClientId).toBeNull();
   });
 
-  it('parses --url and strips a trailing slash', () => {
-    const args = parseArgs(['--url', 'https://staging.example.com/']);
-    expect(args.url).toBe('https://staging.example.com');
+  it('parses --rs-url and strips a trailing slash', () => {
+    const args = parseArgs(['--rs-url', 'https://staging-mcp.example.com/']);
+    expect(args.rsUrl).toBe('https://staging-mcp.example.com');
+  });
+
+  it('parses --as-url and strips a trailing slash', () => {
+    const args = parseArgs(['--as-url', 'https://staging-api.example.com/']);
+    expect(args.asUrl).toBe('https://staging-api.example.com');
+  });
+
+  it('parses --rs-url and --as-url together', () => {
+    const args = parseArgs([
+      '--rs-url',
+      'https://staging-mcp.example.com',
+      '--as-url',
+      'https://staging-api.example.com',
+    ]);
+    expect(args.rsUrl).toBe('https://staging-mcp.example.com');
+    expect(args.asUrl).toBe('https://staging-api.example.com');
+  });
+
+  it('rejects the legacy --url flag with a guidance error', () => {
+    expect(() => parseArgs(['--url', 'https://example.com'])).toThrow(/--url is no longer/);
   });
 
   it('parses --json', () => {
     expect(parseArgs(['--json']).json).toBe(true);
   });
 
-  it('parses --catalog and --claude-client-id', () => {
-    const args = parseArgs(['--catalog', '/tmp/catalog.json', '--claude-client-id', 'abc-123']);
+  it('parses --catalog', () => {
+    const args = parseArgs(['--catalog', '/tmp/catalog.json']);
     expect(args.catalogPath).toBe('/tmp/catalog.json');
-    expect(args.claudeClientId).toBe('abc-123');
   });
 
   it('throws on unknown args', () => {
@@ -83,7 +112,7 @@ describe('parseArgs', () => {
   });
 
   it('throws when a flag is missing its value', () => {
-    expect(() => parseArgs(['--url'])).toThrow(/--url requires a value/);
+    expect(() => parseArgs(['--rs-url'])).toThrow(/--rs-url requires a value/);
   });
 });
 
@@ -99,22 +128,22 @@ describe('checkTlsReachability', () => {
 
   it('fails when the fetch errored out', () => {
     const res = makeRes({ ok: false, status: 0, error: 'ECONNREFUSED' });
-    expect(checkTlsReachability(TARGET, res).status).toBe('fail');
+    expect(checkTlsReachability(RS_TARGET, res).status).toBe('fail');
   });
 
   it('fails when the status is not 200', () => {
     const res = makeRes({ ok: false, status: 503 });
-    expect(checkTlsReachability(TARGET, res).status).toBe('fail');
+    expect(checkTlsReachability(RS_TARGET, res).status).toBe('fail');
   });
 
   it('fails when the response URL host drifts from the target', () => {
     const res = makeRes({ url: 'https://other.example.com/' });
-    expect(checkTlsReachability(TARGET, res).status).toBe('fail');
+    expect(checkTlsReachability(RS_TARGET, res).status).toBe('fail');
   });
 
   it('passes on 200 + matching host', () => {
-    const res = makeRes({ url: `${TARGET}/`, status: 200 });
-    expect(checkTlsReachability(TARGET, res).status).toBe('pass');
+    const res = makeRes({ url: `${RS_TARGET}/`, status: 200 });
+    expect(checkTlsReachability(RS_TARGET, res).status).toBe('pass');
   });
 });
 
@@ -165,8 +194,9 @@ describe('checkStreamableHttpAuth', () => {
 
 describe('checkProtectedResourceMetadata', () => {
   const happyBody = {
-    resource: `${TARGET}/mcp`,
-    authorization_servers: [TARGET],
+    resource: `${RS_TARGET}/mcp`,
+    // Post-refactor the AS lives on a different origin from the RS.
+    authorization_servers: [AS_TARGET],
     scopes_supported: [...REQUIRED_SCOPES],
     bearer_methods_supported: ['header'],
     resource_name: 'PackRat MCP',
@@ -174,13 +204,15 @@ describe('checkProtectedResourceMetadata', () => {
 
   it('fails when the JSON is invalid', () => {
     const res = makeRes({ status: 200, bodyText: 'not json' });
-    expect(checkProtectedResourceMetadata(TARGET, res).status).toBe('fail');
+    expect(checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res }).status).toBe(
+      'fail',
+    );
   });
 
   it('fails when scopes_supported is missing one of the required four', () => {
     const body = { ...happyBody, scopes_supported: ['mcp', 'mcp:read', 'mcp:write'] };
     const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
-    const result = checkProtectedResourceMetadata(TARGET, res);
+    const result = checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res });
     expect(result.status).toBe('fail');
     expect(result.details).toMatch(/mcp:admin/);
   });
@@ -188,26 +220,52 @@ describe('checkProtectedResourceMetadata', () => {
   it('fails when bearer_methods_supported lacks "header"', () => {
     const body = { ...happyBody, bearer_methods_supported: ['query'] };
     const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
-    expect(checkProtectedResourceMetadata(TARGET, res).status).toBe('fail');
+    expect(checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res }).status).toBe(
+      'fail',
+    );
   });
 
   it('fails when authorization_servers is empty', () => {
     const body = { ...happyBody, authorization_servers: [] };
     const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
-    expect(checkProtectedResourceMetadata(TARGET, res).status).toBe('fail');
+    expect(checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res }).status).toBe(
+      'fail',
+    );
   });
 
-  it('passes on a well-formed metadata document', () => {
+  it('fails when authorization_servers points at the wrong host (cross-reference guard)', () => {
+    const body = { ...happyBody, authorization_servers: ['https://wrong-host.example.com'] };
+    const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
+    const result = checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res });
+    expect(result.status).toBe('fail');
+    expect(result.details).toMatch(/wrong-host\.example\.com/);
+  });
+
+  it('passes on a well-formed metadata document with the cross-origin AS', () => {
     const res = makeRes({ status: 200, bodyText: JSON.stringify(happyBody) });
-    expect(checkProtectedResourceMetadata(TARGET, res).status).toBe('pass');
+    expect(checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res }).status).toBe(
+      'pass',
+    );
   });
 
-  it('accepts the canonical prod resource URL even when probing a different --url', () => {
+  it('accepts the canonical prod resource URL even when probing a different --rs-url', () => {
     // The metadata is hard-pinned to prod per metadata.ts — so a staging
     // worker that still advertises the prod URL is fine.
-    const stagingTarget = 'https://staging.example.com';
+    const stagingRs = 'https://staging-mcp.example.com';
     const res = makeRes({ status: 200, bodyText: JSON.stringify(happyBody) });
-    expect(checkProtectedResourceMetadata(stagingTarget, res).status).toBe('pass');
+    expect(checkProtectedResourceMetadata({ rsUrl: stagingRs, asUrl: AS_TARGET, res }).status).toBe(
+      'pass',
+    );
+  });
+
+  it('accepts the canonical prod AS even when probing a different --as-url', () => {
+    // Same hard-pinning argument for the cross-reference: a staging RS
+    // can legitimately advertise the prod AS in its metadata.
+    const stagingAs = 'https://staging-api.example.com';
+    const res = makeRes({ status: 200, bodyText: JSON.stringify(happyBody) });
+    expect(checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: stagingAs, res }).status).toBe(
+      'pass',
+    );
   });
 });
 
@@ -215,7 +273,9 @@ describe('checkProtectedResourceMetadata', () => {
 
 describe('checkAuthorizationServerMetadata', () => {
   const happyBody = {
-    issuer: TARGET,
+    // Post-refactor the AS lives on api.packrat.world; the issuer claim
+    // MUST match the URL it's fetched from.
+    issuer: AS_TARGET,
     code_challenge_methods_supported: ['S256'],
     grant_types_supported: ['authorization_code', 'refresh_token'],
     response_types_supported: ['code'],
@@ -223,26 +283,54 @@ describe('checkAuthorizationServerMetadata', () => {
 
   it('fails when S256 is missing', () => {
     const body = { ...happyBody, code_challenge_methods_supported: ['plain'] };
-    const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
+    const res = makeRes({
+      status: 200,
+      bodyText: JSON.stringify(body),
+      url: `${AS_TARGET}/.well-known/oauth-authorization-server`,
+    });
     const result = checkAuthorizationServerMetadata(res);
     expect(result.status).toBe('fail');
     expect(result.details).toMatch(/S256/);
   });
 
+  it('fails when "plain" is advertised alongside S256 (allowPlainCodeChallengeMethod regression)', () => {
+    const body = { ...happyBody, code_challenge_methods_supported: ['S256', 'plain'] };
+    const res = makeRes({
+      status: 200,
+      bodyText: JSON.stringify(body),
+      url: `${AS_TARGET}/.well-known/oauth-authorization-server`,
+    });
+    const result = checkAuthorizationServerMetadata(res);
+    expect(result.status).toBe('fail');
+    expect(result.details).toMatch(/plain/);
+  });
+
   it('fails when refresh_token grant is missing', () => {
     const body = { ...happyBody, grant_types_supported: ['authorization_code'] };
-    const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
+    const res = makeRes({
+      status: 200,
+      bodyText: JSON.stringify(body),
+      url: `${AS_TARGET}/.well-known/oauth-authorization-server`,
+    });
     expect(checkAuthorizationServerMetadata(res).status).toBe('fail');
   });
 
   it('fails when response_types_supported lacks "code"', () => {
     const body = { ...happyBody, response_types_supported: ['token'] };
-    const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
+    const res = makeRes({
+      status: 200,
+      bodyText: JSON.stringify(body),
+      url: `${AS_TARGET}/.well-known/oauth-authorization-server`,
+    });
     expect(checkAuthorizationServerMetadata(res).status).toBe('fail');
   });
 
-  it('passes on a well-formed AS metadata document', () => {
-    const res = makeRes({ status: 200, bodyText: JSON.stringify(happyBody) });
+  it('passes on a well-formed AS metadata document fetched from the AS host', () => {
+    const res = makeRes({
+      status: 200,
+      bodyText: JSON.stringify(happyBody),
+      url: `${AS_TARGET}/.well-known/oauth-authorization-server`,
+    });
     expect(checkAuthorizationServerMetadata(res).status).toBe('pass');
   });
 });
@@ -250,51 +338,10 @@ describe('checkAuthorizationServerMetadata', () => {
 // ── checkClaudeClientRegistration ─────────────────────────────────────────
 
 describe('checkClaudeClientRegistration', () => {
-  it('warns when no client_id was provided', () => {
-    const result = checkClaudeClientRegistration(null, null);
+  it('always WARNs and points at the seed script (no public list endpoint)', () => {
+    const result = checkClaudeClientRegistration();
     expect(result.status).toBe('warn');
-    expect(result.details).toMatch(/no --claude-client-id/);
-  });
-
-  it('fails when /authorize returns 400 + "unknown client"', () => {
-    const res = makeRes({
-      status: 400,
-      bodyText: '{"error":"invalid_client","error_description":"unknown client"}',
-    });
-    const result = checkClaudeClientRegistration('claude-id', res);
-    expect(result.status).toBe('fail');
-  });
-
-  it('fails on 5xx /authorize errors', () => {
-    const res = makeRes({ status: 502, bodyText: 'bad gateway' });
-    expect(checkClaudeClientRegistration('claude-id', res).status).toBe('fail');
-  });
-
-  it('passes on any other (non-error) response — /authorize redirects, prompts, etc.', () => {
-    const res = makeRes({ status: 302, bodyText: '' });
-    expect(checkClaudeClientRegistration('claude-id', res).status).toBe('pass');
-  });
-});
-
-// ── checkDcrGate ──────────────────────────────────────────────────────────
-
-describe('checkDcrGate', () => {
-  it('fails when /register without auth returns anything but 401', () => {
-    const noAuth = makeRes({ status: 201 });
-    const fake = makeRes({ status: 401 });
-    expect(checkDcrGate(noAuth, fake).status).toBe('fail');
-  });
-
-  it('fails when /register with a fake bearer is accepted', () => {
-    const noAuth = makeRes({ status: 401 });
-    const fake = makeRes({ status: 201 });
-    expect(checkDcrGate(noAuth, fake).status).toBe('fail');
-  });
-
-  it('passes when both probes return 401', () => {
-    const noAuth = makeRes({ status: 401 });
-    const fake = makeRes({ status: 401 });
-    expect(checkDcrGate(noAuth, fake).status).toBe('pass');
+    expect(result.details).toMatch(/seed-claude-oauth-client/);
   });
 });
 

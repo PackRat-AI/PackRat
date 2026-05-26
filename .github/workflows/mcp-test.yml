@@ -1,12 +1,17 @@
 name: MCP Tests
 
-# U17: PR gate for the PackRat MCP Worker. Runs on any PR that touches the
-# MCP package, the api-client (consumed by every tool), the API auth surface
-# (which the OAuth-token bridge depends on), or the API admin routes (which
-# the U5 scope-based admin gate calls into). This deliberately mirrors the
-# trust boundary the MCP worker straddles — anything that can silently
-# break scope enforcement, DCR gating, or tool dispatch should re-run this
-# gate before it merges.
+# U17 + U7 refactor: PR gate for the PackRat MCP Worker. Runs on any PR
+# that touches the MCP package, the api-client (consumed by every tool),
+# the API auth surface (which now hosts the OAuth Authorization Server
+# via `@better-auth/oauth-provider` per the U1 refactor), the API admin
+# routes (which the scope-based admin gate calls into), or the shared
+# DB schema (which carries the Better Auth `oauthClient` +
+# `oauthAccessToken` + `oauthRefreshToken` + `oauthConsent` tables that
+# back the AS — a schema regression here breaks token issuance and
+# silently invalidates every MCP install). This deliberately mirrors
+# the cross-origin trust boundary the MCP worker straddles — anything
+# that can silently break scope enforcement, JWT validation, or tool
+# dispatch should re-run this gate before it merges.
 
 on:
   push:
@@ -16,6 +21,7 @@ on:
       - 'packages/api-client/**'
       - 'packages/api/src/auth/**'
       - 'packages/api/src/routes/admin/**'
+      - 'packages/db/src/schema.ts'
       - '.github/workflows/mcp-test.yml'
   pull_request:
     branches: ['**']
@@ -24,6 +30,7 @@ on:
       - 'packages/api-client/**'
       - 'packages/api/src/auth/**'
       - 'packages/api/src/routes/admin/**'
+      - 'packages/db/src/schema.ts'
       - '.github/workflows/mcp-test.yml'
   workflow_dispatch:
 
@@ -71,5 +78,10 @@ jobs:
 
       # Re-run the API auth + admin guard tests so a MCP-side scope-model
       # change can't silently break the API-side enforcement contract.
+      # Post-refactor (U1) this is doubly load-bearing: the API now hosts
+      # the OAuth Authorization Server, so any MCP-side change to the
+      # JWT-validation contract (token-verify.ts) should re-validate the
+      # AS-side token-issuance contract (auth/index.ts +
+      # auth/consent-page.ts) before merge.
       - name: Run API unit tests (auth + admin guard)
         run: bun run --cwd packages/api test:unit

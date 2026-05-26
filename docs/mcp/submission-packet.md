@@ -22,17 +22,23 @@ the public site).
 1. Confirm the worker is **deployed to prod** (`mcp.packratai.com` returns
    HTTP 200 with HTTPS) — see [`runbook.md`](./runbook.md) §
    "Domains & environments".
-2. Run the **submission-readiness probe** (U18) and confirm
-   `13/13 passed`:
+2. Run the **submission-readiness probe** (U18, updated by U7 for the
+   cross-origin AS architecture) and confirm `12/13 passed` (with 1 WARN
+   — see below):
    ```bash
    bun packages/mcp/scripts/submission-readiness.ts
    # …or from CI: GitHub → Actions → "MCP Submission Readiness" →
-   #   "Run workflow" → leave URL as default → Run.
+   #   "Run workflow" → leave RS / AS URLs as defaults → Run.
    ```
-   All checks must pass before filing. Warnings on check 5 (Claude
-   client_id probe) are acceptable if you do not have the client_id at
-   hand — verify pre-registration manually via
-   `wrangler kv key list ... | grep client`.
+   The probe targets two distinct hosts: `mcp.packratai.com` (resource
+   server) and `api.packrat.world` (authorization server, hosting
+   `@better-auth/oauth-provider`). All non-WARN checks must pass before
+   filing. The check 5 WARN (Claude pre-registration) is expected and
+   acceptable: the AS exposes no public client-list endpoint, so the
+   probe always WARNs and points operators at
+   [`packages/api/scripts/seed-claude-oauth-client.ts`](../../packages/api/scripts/seed-claude-oauth-client.ts)
+   (the idempotent DB-seed script that pre-registers Claude as a trusted
+   OAuth client in the `oauthClient` table).
 3. Prepare the **reviewer test account** (§ 4 below) and verify the demo
    prompts work end-to-end.
 4. **Logo PNGs are pre-rendered** and committed under `apps/landing/public/`:
@@ -91,8 +97,8 @@ changes the form. Each row is the value the operator pastes verbatim.
 | Long description (≤ 500 chars) | See "Description draft" below. | ≈ 470 chars; trim further if the form caps lower. |
 | Category (primary) | `Productivity` | Anthropic's published category taxonomy as of plan-drafting; PackRat is a planning/productivity tool first and an outdoor tool second. **TODO (operator):** confirm the exact category strings against the live form before submitting. |
 | Category (secondary) | `Travel & Outdoor` (or `Lifestyle` if Travel/Outdoor is unavailable) | Best-fit; confirm against the live taxonomy. |
-| Connector URL (Server URL) | `https://mcp.packratai.com/mcp` | Production Streamable HTTP endpoint. Probed by submission-readiness check 2. |
-| OAuth callback URLs (allowlist) | `https://claude.ai/api/mcp/auth_callback`<br>`https://claude.com/api/mcp/auth_callback` | Pre-registered via [`scripts/register-claude-clients.ts`](../../packages/mcp/scripts/register-claude-clients.ts). See [`runbook.md`](./runbook.md) § "Pre-register Claude as a trusted OAuth client". |
+| Connector URL (Server URL) | `https://mcp.packratai.com/mcp` | Production Streamable HTTP endpoint. Probed by submission-readiness check 2. The OAuth Authorization Server lives on `https://api.packrat.world` and is reachable via the PRM discovery chain (`mcp.packratai.com/.well-known/oauth-protected-resource` → `authorization_servers: ["https://api.packrat.world"]` → `api.packrat.world/.well-known/oauth-authorization-server`); no separate AS form field is needed. |
+| OAuth callback URLs (allowlist) | `https://claude.ai/api/mcp/auth_callback`<br>`https://claude.com/api/mcp/auth_callback` | Pre-registered into the `oauthClient` table via [`packages/api/scripts/seed-claude-oauth-client.ts`](../../packages/api/scripts/seed-claude-oauth-client.ts) (idempotent — re-runs are safe). DCR is disabled at the AS (`allowDynamicClientRegistration: false`); the seed script is the only registration path. See [`runbook.md`](./runbook.md) § "Deprovision the legacy OAUTH_KV namespaces + DCR secret" for the operator setup. |
 | Scopes advertised | `mcp`, `mcp:read`, `mcp:write`, `mcp:admin` | From `packages/mcp/src/metadata.ts` (`SCOPES_SUPPORTED`). Probed by submission-readiness checks 3 and 11b. |
 | Default scopes Claude.ai should request | `mcp:read`, `mcp:write` | Admin scope is operator-controlled; never requested by default. |
 | Privacy policy URL | `https://packratai.com/privacy-policy` | U12; the MCP addendum lives under the "MCP Connector & Third-Party Clients" section. Probed by check 9. |
@@ -123,22 +129,31 @@ Anthropic's documented intake heuristics, mapped to the
 invocation; this table is the human-readable expansion of what each
 check covers.
 
-| # | Check | Readiness-script ID | How to verify manually if needed |
-| - | --- | --- | --- |
-| 1 | Streamable HTTP at `mcp.packratai.com/mcp` reachable over HTTPS | `tls_reachability` | `curl -i https://mcp.packratai.com/` |
-| 2 | `/mcp` returns 401 with RFC 9728 `WWW-Authenticate: Bearer resource_metadata=...` | `streamable_http_auth` | `curl -i -X POST https://mcp.packratai.com/mcp -d '{}'` |
-| 3 | `/.well-known/oauth-protected-resource` (RFC 9728) is valid JSON with all 4 scopes | `protected_resource_metadata` | `curl -s https://mcp.packratai.com/.well-known/oauth-protected-resource \| jq` |
-| 4 | `/.well-known/oauth-authorization-server` (RFC 8414) has `code_challenge_methods_supported: ["S256"]` and the right grants | `authorization_server_metadata` | `curl -s https://mcp.packratai.com/.well-known/oauth-authorization-server \| jq` |
-| 5 | Pre-registered Claude client_id is recognised by `/authorize` | `claude_client_registration` (WARNs without `--claude-client-id`) | `wrangler kv key list --namespace-id <prod-id> \| grep client` — confirm two `client:` entries (claude.ai + claude.com) |
-| 6 | `/register` DCR gate rejects unauthenticated + fake-bearer probes with 401 | `dcr_gate` | `curl -i -X POST https://mcp.packratai.com/register` |
-| 7 | `/favicon.ico` on the OAuth domain returns 200 image/x-icon with .ico magic bytes | `favicon_oauth_domain` | `curl -sI https://mcp.packratai.com/favicon.ico` |
-| 8 | Public docs page renders with PackRat / Claude.ai / scope copy | `public_docs_page` | Visit <https://packratai.com/mcp> in a browser |
-| 9 | Privacy + Terms reachable AND contain MCP-specific copy | `privacy_and_terms` | `curl -s https://packratai.com/privacy-policy \| grep -i 'mcp\|connector'` |
-| 10 | `/health` advertises a `support: mailto:hello@packratai.com` contact | `support_contact` | `curl -s https://mcp.packratai.com/health \| jq .support` |
-| 11 | `/health` returns `{ status: 'ok', probes: { kv: 'ok', api: 'ok' } }` | `health_status` | `curl -s https://mcp.packratai.com/health \| jq` |
-| 11b | `/status` advertises `scopes_supported` with all 4 PackRat scopes | `status_endpoint` | `curl -s https://mcp.packratai.com/status \| jq .scopes_supported` |
-| 12 | Every tool has `title` + `readOnlyHint` (+ `destructiveHint` when not read-only) | `tool_annotations` | `bun packages/mcp/scripts/dump-catalog.ts` then inspect `apps/landing/data/mcp-catalog.json` |
-| 13 | Tool descriptions contain no forbidden marketing words | `tool_descriptions_non_promotional` | Read the descriptions in `apps/landing/data/mcp-catalog.json` |
+| # | Check | Host | Readiness-script ID | How to verify manually if needed |
+| - | --- | --- | --- | --- |
+| 1 | Streamable HTTP at `mcp.packratai.com/mcp` reachable over HTTPS | RS | `tls_reachability` | `curl -i https://mcp.packratai.com/` |
+| 2 | `/mcp` returns 401 with RFC 9728 `WWW-Authenticate: Bearer resource_metadata=...` | RS | `streamable_http_auth` | `curl -i -X POST https://mcp.packratai.com/mcp -d '{}'` |
+| 3 | `/.well-known/oauth-protected-resource` (RFC 9728) is valid JSON with all 4 scopes AND `authorization_servers` points at the AS | RS | `protected_resource_metadata` | `curl -s https://mcp.packratai.com/.well-known/oauth-protected-resource \| jq` |
+| 4 | `/.well-known/oauth-authorization-server` (RFC 8414) has `code_challenge_methods_supported: ["S256"]` (no `"plain"`) and the right grants | AS | `authorization_server_metadata` | `curl -s https://api.packrat.world/.well-known/oauth-authorization-server \| jq` |
+| 5 | Pre-registered Claude client present in the AS `oauthClient` table (always WARNs — no public list endpoint) | AS | `claude_client_registration` | Re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — no-op if already registered) or query the table directly |
+| 6 | `/favicon.ico` on the MCP domain returns 200 image/x-icon with .ico magic bytes (Anthropic's domain-ownership probe target) | RS | `favicon_oauth_domain` | `curl -sI https://mcp.packratai.com/favicon.ico` |
+| 7 | Public docs page renders with PackRat / Claude.ai / scope copy | brand | `public_docs_page` | Visit <https://packratai.com/mcp> in a browser |
+| 8 | Privacy + Terms reachable AND contain MCP-specific copy | brand | `privacy_and_terms` | `curl -s https://packratai.com/privacy-policy \| grep -i 'mcp\|connector'` |
+| 9 | `/health` advertises a `support: mailto:hello@packratai.com` contact | RS | `support_contact` | `curl -s https://mcp.packratai.com/health \| jq .support` |
+| 10 | `/health` returns `{ status: 'ok', probes: { ... all green } }` | RS | `health_status` | `curl -s https://mcp.packratai.com/health \| jq` |
+| 10b | `/status` advertises `scopes_supported` with all 4 PackRat scopes | RS | `status_endpoint` | `curl -s https://mcp.packratai.com/status \| jq .scopes_supported` |
+| 11 | Every tool has `title` + `readOnlyHint` (+ `destructiveHint` when not read-only) | local | `tool_annotations` | `bun packages/mcp/scripts/dump-catalog.ts` then inspect `apps/landing/data/mcp-catalog.json` |
+| 12 | Tool descriptions contain no forbidden marketing words | local | `tool_descriptions_non_promotional` | Read the descriptions in `apps/landing/data/mcp-catalog.json` |
+
+The prior `dcr_gate` check (probe `POST /register` for 401) is **deleted**:
+post-refactor the MCP worker has no `/register` route and the AS has
+`allowDynamicClientRegistration: false`, so there's nothing to probe.
+
+"Host" column legend:
+- **RS** = `mcp.packratai.com` (the MCP Streamable HTTP resource server)
+- **AS** = `api.packrat.world` (the OAuth Authorization Server hosted by `@better-auth/oauth-provider` on the API worker)
+- **brand** = `packratai.com` (the landing site)
+- **local** = a filesystem file (the dumped tool catalog in `apps/landing/data/mcp-catalog.json`)
 
 **Additional manual checks (not automated):**
 
@@ -361,7 +376,7 @@ attached to the plan.)
 
 | Cause | Fix |
 | --- | --- |
-| OAuth callback URL allowlist incomplete | Run `bun packages/mcp/scripts/register-claude-clients.ts --env prod` to register any additional callback URL Anthropic flags. (Both currently-known callbacks are pre-registered.) |
+| OAuth callback URL allowlist incomplete | Add the new redirect URI to `CLAUDE_REDIRECT_URIS` in `packages/api/scripts/seed-claude-oauth-client.ts`, then re-run `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — updates the existing `oauthClient` row). Both currently-known callbacks (`claude.ai`, `claude.com`) are pre-registered. |
 | Audience binding rejected | The U2 OAuth provider upgrade + U3 metadata wiring should satisfy this; if not, audit `packages/mcp/src/metadata.ts` `canonicalResourceUrl` and confirm it matches the metadata's `resource` value exactly. |
 | WAF blocking Anthropic discovery probes | Add explicit allow rule for Anthropic's published IP ranges on `/.well-known/*` and `/mcp`. |
 | Connector rejected for category / audience mismatch | Re-classify per Anthropic's suggested category; update § 2. |
@@ -401,7 +416,9 @@ it as a learning event:
 - [`packages/mcp/README.md`](../../packages/mcp/README.md) —
   developer-facing README.
 - [`packages/mcp/scripts/submission-readiness.ts`](../../packages/mcp/scripts/submission-readiness.ts)
-  — the 13-check pre-submission probe.
+  — the cross-origin pre-submission probe (12 numbered checks plus the
+  10b `/status` cross-check; updated by U7 for the AS-on-`api.packrat.world`
+  architecture).
 - [`apps/landing/app/mcp/page.tsx`](../../apps/landing/app/mcp/page.tsx)
   — public docs page rendered at `packratai.com/mcp`.
 - [`docs/plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md`](../plans/2026-05-22-001-feat-mcp-connector-store-readiness-plan.md)

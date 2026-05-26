@@ -1,46 +1,62 @@
 #!/usr/bin/env bun
 /**
- * U18: pre-submission readiness probe for the PackRat MCP Worker.
+ * U18 + U7 refactor: pre-submission readiness probe for the PackRat MCP
+ * Worker, updated for the cross-origin AS architecture.
  *
  * Operator runs this before filing Anthropic's Connector Store form
  * (https://clau.de/mcp-directory-submission). CI can run it via
  * `workflow_dispatch` from `.github/workflows/mcp-readiness.yml`. The script
- * probes a target URL (default `https://mcp.packratai.com`) plus the brand
- * domain (`packratai.com`) and emits a clear PASS/FAIL/WARN line per check.
- * Exits 0 only when every check passes; CI gates the deploy tag on green.
+ * probes two distinct hosts:
+ *
+ *   - RS (resource server)      = https://mcp.packratai.com
+ *                                 hosts /mcp + PRM + /health + /status + favicon
+ *   - AS (authorization server) = https://api.packrat.world
+ *                                 hosts AS metadata + /oauth2/* + JWKS
+ *
+ * plus the brand domain (`packratai.com`) for the public docs / privacy /
+ * terms pages. The probe emits a clear PASS / FAIL / WARN line per check
+ * and exits 0 only when every check passes; CI gates the deploy tag on
+ * green.
  *
  * Why this exists separately from the unit tests:
  *   The unit suite (`packages/mcp/src/__tests__/*.test.ts`) asserts the
  *   in-process shape of the worker. This script is the **deployed-server**
  *   probe — it catches the gaps the unit suite cannot:
- *     - DNS / TLS / custom-domain reachability
- *     - WAF blocks of Anthropic's discovery probes
- *     - The KV-backed Claude pre-registration actually landing
+ *     - DNS / TLS / custom-domain reachability on both hosts
+ *     - WAF blocks of Anthropic's discovery probes against the AS
+ *     - The PRM / AS metadata cross-reference still pointing at the right host
  *     - The brand domain rendering the public docs page
  *
  * Anthropic's documented rejection-reason taxonomy (per the connector-store
- * docs as of plan-drafting) shapes the check order:
- *   1.  TLS reachability                         — table-stakes
- *   2.  /mcp returns 401 WWW-Authenticate        — RFC 9728 §5.1
- *   3.  /.well-known/oauth-protected-resource    — RFC 9728 metadata
- *   4.  /.well-known/oauth-authorization-server  — RFC 8414 metadata
- *   5.  Pre-registered Claude clients reachable  — install flow gate
- *   6.  DCR gate active (401 without bearer)     — security posture
- *   7.  Favicon at OAuth domain                  — domain-ownership probe
- *   8.  Public docs URL                          — reviewer-facing
- *   9.  Privacy + Terms reachable                — immediate-reject cause
- *  10.  Support contact resolvable               — listing requirement
- *  11.  /health is healthy                       — operator + uptime gate
- *  12.  Tool annotations on every tool           — #1 rejection cause
- *  13.  Tool descriptions non-promotional        — content rules
+ * docs as of plan-drafting) shapes the check order. Post-refactor the DCR
+ * gate check is gone (DCR is disabled at the AS via
+ * `allowDynamicClientRegistration: false`; there's no `/register` route to
+ * probe), leaving 12 checks:
+ *   1.  TLS reachability (RS)                          — table-stakes
+ *   2.  RS /mcp returns 401 WWW-Authenticate           — RFC 9728 §5.1
+ *   3.  RS /.well-known/oauth-protected-resource       — RFC 9728 metadata
+ *   4.  AS /.well-known/oauth-authorization-server     — RFC 8414 metadata
+ *   5.  Pre-registered Claude client recognised by AS  — install flow gate (WARN)
+ *   6.  Favicon at RS                                  — domain-ownership probe
+ *   7.  Public docs URL (brand domain)                 — reviewer-facing
+ *   8.  Privacy + Terms reachable (brand domain)       — immediate-reject cause
+ *   9.  Support contact resolvable via RS /health      — listing requirement
+ *  10.  RS /health is healthy                          — operator + uptime gate
+ *  10b. RS /status advertises scopes_supported         — cross-check
+ *  11.  Tool annotations on every tool                 — #1 rejection cause
+ *  12.  Tool descriptions non-promotional              — content rules
  *
  * CLI:
  *   bun packages/mcp/scripts/submission-readiness.ts
- *   bun packages/mcp/scripts/submission-readiness.ts --url https://staging.example.com
+ *   bun packages/mcp/scripts/submission-readiness.ts \
+ *     --rs-url https://staging-mcp.example.com \
+ *     --as-url https://staging-api.example.com
  *   bun packages/mcp/scripts/submission-readiness.ts --json
  *
  * Output:
- *   Default — colour-coded one-line-per-check + a `N/13 passed` summary.
+ *   Default — colour-coded one-line-per-check + a `N/13 passed` summary
+ *             (12 numbered checks plus the 10b /status cross-check; the
+ *             prior 14th DCR-gate check is deleted).
  *   --json  — `{ checks: [...], summary: { passed, failed, warned } }`.
  *
  * Exit codes:
@@ -49,8 +65,9 @@
  *   2 — bad CLI args
  *
  * Run env: Bun runtime (Node APIs are available). Do NOT run this against
- * production until the worker has actually been deployed; the operator runs
- * it once the deploy is live, and CI runs it on-demand via workflow_dispatch.
+ * production until both workers have actually been deployed; the operator
+ * runs it once the deploy is live, and CI runs it on-demand via
+ * workflow_dispatch.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -79,7 +96,8 @@ export interface ReadinessSummary {
 }
 
 export interface ReadinessReport {
-  url: string;
+  rsUrl: string;
+  asUrl: string;
   brandDomain: string;
   checks: CheckResult[];
   summary: ReadinessSummary;
@@ -87,8 +105,20 @@ export interface ReadinessReport {
 
 // ── Defaults & constants ──────────────────────────────────────────────────
 
-export const DEFAULT_TARGET_URL = 'https://mcp.packratai.com';
+/** Resource server (the MCP worker). */
+export const DEFAULT_RS_URL = 'https://mcp.packratai.com';
+/** Authorization server (the API worker hosting @better-auth/oauth-provider). */
+export const DEFAULT_AS_URL = 'https://api.packrat.world';
 export const DEFAULT_BRAND_DOMAIN = 'https://packratai.com';
+
+/**
+ * Backwards-compat alias for the prior single-target constant. Resolves to
+ * the resource-server URL (which is where the prior single-target probe
+ * actually pointed for most checks). Retained so existing imports don't
+ * blow up; tests should prefer `DEFAULT_RS_URL` / `DEFAULT_AS_URL`.
+ * @deprecated Use DEFAULT_RS_URL instead.
+ */
+export const DEFAULT_TARGET_URL = DEFAULT_RS_URL;
 
 /**
  * Marketing-claim words that get listings rejected for promotional language.
@@ -120,33 +150,43 @@ const SCOPE_PARAM_RE = /scope=/i;
 // ── CLI parsing ───────────────────────────────────────────────────────────
 
 interface CliArgs {
-  url: string;
+  rsUrl: string;
+  asUrl: string;
   brandDomain: string;
   json: boolean;
   catalogPath: string | null;
-  /**
-   * Operator-facing override for the Claude client_id probe (check 5).
-   * If unset the check WARNs with the gap-note rather than asserting.
-   */
-  claudeClientId: string | null;
   help: boolean;
 }
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = {
-    url: DEFAULT_TARGET_URL,
+    rsUrl: DEFAULT_RS_URL,
+    asUrl: DEFAULT_AS_URL,
     brandDomain: DEFAULT_BRAND_DOMAIN,
     json: false,
     catalogPath: null,
-    claudeClientId: null,
     help: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     switch (arg) {
-      case '--url':
-        args.url = stripTrailingSlash(requireValue({ argv, idx: ++i, name: '--url' }));
+      case '--rs-url':
+        args.rsUrl = stripTrailingSlash(requireValue({ argv, idx: ++i, name: '--rs-url' }));
         break;
+      case '--as-url':
+        args.asUrl = stripTrailingSlash(requireValue({ argv, idx: ++i, name: '--as-url' }));
+        break;
+      case '--url':
+        // Legacy single-target form. The pre-refactor script probed one
+        // host for both the resource server and the authorization server,
+        // but post-refactor those are different origins. Rather than
+        // silently guessing the AS URL (e.g. by string-munging the RS
+        // host), error out and tell the operator to pass both explicitly.
+        throw new Error(
+          '--url is no longer supported (AS and RS are on different origins post-refactor). ' +
+            'Pass --rs-url and --as-url explicitly. ' +
+            `Prod defaults: --rs-url ${DEFAULT_RS_URL} --as-url ${DEFAULT_AS_URL}`,
+        );
       case '--brand-domain':
         args.brandDomain = stripTrailingSlash(
           requireValue({ argv, idx: ++i, name: '--brand-domain' }),
@@ -154,9 +194,6 @@ export function parseArgs(argv: readonly string[]): CliArgs {
         break;
       case '--catalog':
         args.catalogPath = requireValue({ argv, idx: ++i, name: '--catalog' });
-        break;
-      case '--claude-client-id':
-        args.claudeClientId = requireValue({ argv, idx: ++i, name: '--claude-client-id' });
         break;
       case '--json':
         args.json = true;
@@ -186,16 +223,23 @@ function printHelp(): void {
   console.log(`submission-readiness — pre-submission probe for the PackRat MCP Worker
 
 Usage:
-  bun packages/mcp/scripts/submission-readiness.ts [--url URL] [--brand-domain URL] [--catalog PATH] [--claude-client-id ID] [--json]
+  bun packages/mcp/scripts/submission-readiness.ts [--rs-url URL] [--as-url URL] [--brand-domain URL] [--catalog PATH] [--json]
 
 Flags:
-  --url <url>               MCP Worker base URL (default: ${DEFAULT_TARGET_URL})
+  --rs-url <url>            MCP resource-server base URL (default: ${DEFAULT_RS_URL})
+  --as-url <url>            OAuth authorization-server base URL (default: ${DEFAULT_AS_URL})
   --brand-domain <url>      PackRat brand domain (default: ${DEFAULT_BRAND_DOMAIN})
   --catalog <path>          Override the catalog JSON path (default: auto-detect)
-  --claude-client-id <id>   Pre-registered Claude client_id to probe (check 5).
-                            Without it, check 5 WARNs and surfaces the gap-note.
   --json                    Emit machine-readable JSON; suppresses colour.
   -h, --help                Print this help.
+
+Notes:
+  Post-refactor the AS and RS live on different origins. The legacy --url
+  flag is no longer accepted — pass --rs-url and --as-url explicitly.
+  Claude pre-registration is seeded directly into the API's oauthClient
+  table via packages/api/scripts/seed-claude-oauth-client.ts; the
+  --claude-client-id probe is gone (the AS exposes no public list endpoint
+  and the seed script is the source of truth).
 
 Exit codes:
   0  every check passed
@@ -288,13 +332,13 @@ export async function probe(opts: ProbeOptions): Promise<ProbeResponse> {
 // ── Check primitives (exported for unit tests) ────────────────────────────
 
 /**
- * Check 1 — TLS + custom domain reachability. The worker root MUST return
- * 200 over HTTPS, with no insecure redirect, and the URL host must match
- * the targeted hostname.
+ * Check 1 — TLS + custom domain reachability on the resource server. The
+ * worker root MUST return 200 over HTTPS, with no insecure redirect, and
+ * the URL host must match the targeted hostname.
  */
 export function checkTlsReachability(targetUrl: string, res: ProbeResponse): CheckResult {
   const name = 'tls_reachability';
-  const label = '1. TLS + custom domain reachability';
+  const label = '1. TLS + custom domain reachability (RS)';
   if (!targetUrl.startsWith('https://')) {
     return { name, label, status: 'fail', details: `target URL is not HTTPS: ${targetUrl}` };
   }
@@ -328,7 +372,7 @@ export function checkTlsReachability(targetUrl: string, res: ProbeResponse): Che
  */
 export function checkStreamableHttpAuth(res: ProbeResponse): CheckResult {
   const name = 'streamable_http_auth';
-  const label = '2. /mcp returns 401 with RFC 9728 WWW-Authenticate';
+  const label = '2. RS /mcp returns 401 with RFC 9728 WWW-Authenticate';
   if (res.error) {
     return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
   }
@@ -364,14 +408,23 @@ export function checkStreamableHttpAuth(res: ProbeResponse): CheckResult {
 }
 
 /**
- * Check 3 — `/.well-known/oauth-protected-resource` (RFC 9728) returns a
- * valid JSON document with `resource`, `authorization_servers`,
- * `scopes_supported` (containing all four PackRat scopes), and
- * `bearer_methods_supported` (including `'header'`).
+ * Check 3 — RS `/.well-known/oauth-protected-resource` (RFC 9728) returns
+ * a valid JSON document with `resource`, `authorization_servers` (which
+ * MUST advertise the cross-origin AS URL — post-refactor this is
+ * `api.packrat.world`, NOT `mcp.packratai.com`), `scopes_supported`
+ * (containing all four PackRat scopes), and `bearer_methods_supported`
+ * (including `'header'`).
  */
-export function checkProtectedResourceMetadata(targetUrl: string, res: ProbeResponse): CheckResult {
+export interface ProtectedResourceMetadataInput {
+  rsUrl: string;
+  asUrl: string;
+  res: ProbeResponse;
+}
+
+export function checkProtectedResourceMetadata(input: ProtectedResourceMetadataInput): CheckResult {
+  const { rsUrl, asUrl, res } = input;
   const name = 'protected_resource_metadata';
-  const label = '3. /.well-known/oauth-protected-resource is well-formed';
+  const label = '3. RS /.well-known/oauth-protected-resource is well-formed';
   if (res.error) {
     return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
   }
@@ -389,15 +442,15 @@ export function checkProtectedResourceMetadata(targetUrl: string, res: ProbeResp
   }
   const meta = body as Record<string, unknown>;
   // resource — must match the expected pattern.
-  const expectedResource = `${targetUrl}/mcp`;
+  const expectedResource = `${rsUrl}/mcp`;
   if (typeof meta.resource !== 'string') {
     return { name, label, status: 'fail', details: 'missing or non-string "resource"' };
   }
-  // The metadata is hard-pinned to prod; on a non-prod --url we still
+  // The metadata is hard-pinned to prod; on a non-prod --rs-url we still
   // expect the metadata's `resource` to advertise the prod canonical URL.
   // Accept either an exact match to the target's /mcp path or the canonical
   // production URL — the canonical path is the binding-truth.
-  const canonicalProd = `${DEFAULT_TARGET_URL}/mcp`;
+  const canonicalProd = `${DEFAULT_RS_URL}/mcp`;
   if (meta.resource !== expectedResource && meta.resource !== canonicalProd) {
     return {
       name,
@@ -406,13 +459,27 @@ export function checkProtectedResourceMetadata(targetUrl: string, res: ProbeResp
       details: `resource "${meta.resource}" matches neither ${expectedResource} nor ${canonicalProd}`,
     };
   }
-  // authorization_servers — array with ≥1 entry.
+  // authorization_servers — array with ≥1 entry pointing at the AS.
   if (!Array.isArray(meta.authorization_servers) || meta.authorization_servers.length === 0) {
     return {
       name,
       label,
       status: 'fail',
       details: 'authorization_servers must be a non-empty array',
+    };
+  }
+  const asEntries = meta.authorization_servers as unknown[];
+  // Cross-reference check: at least one entry must point at the AS we're
+  // about to probe (either the operator-supplied --as-url or the canonical
+  // prod AS). Otherwise we'd silently probe the wrong host in check 4.
+  const canonicalAs = DEFAULT_AS_URL;
+  const asMatches = asEntries.some((entry) => entry === asUrl || entry === canonicalAs);
+  if (!asMatches) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details: `authorization_servers ${JSON.stringify(asEntries)} does not include ${asUrl} or ${canonicalAs}`,
     };
   }
   // scopes_supported — array containing all four PackRat scopes.
@@ -445,20 +512,21 @@ export function checkProtectedResourceMetadata(targetUrl: string, res: ProbeResp
     name,
     label,
     status: 'pass',
-    details: `resource=${meta.resource}, scopes_supported has all 4 PackRat scopes`,
+    details: `resource=${meta.resource}, AS=${JSON.stringify(asEntries)}, scopes_supported has all 4 PackRat scopes`,
   };
 }
 
 /**
- * Check 4 — `/.well-known/oauth-authorization-server` (RFC 8414) returns a
- * valid JSON document with `code_challenge_methods_supported: ["S256"]`
- * (mandatory — MCP clients refuse to proceed without it), the right grant
- * types (`authorization_code`, `refresh_token`), and `response_types`
- * containing `code`.
+ * Check 4 — AS `/.well-known/oauth-authorization-server` (RFC 8414)
+ * returns a valid JSON document with `code_challenge_methods_supported:
+ * ["S256"]` (mandatory — MCP clients refuse to proceed without it), the
+ * right grant types (`authorization_code`, `refresh_token`), and
+ * `response_types` containing `code`. Post-refactor this lives on
+ * `api.packrat.world`, NOT on the MCP worker.
  */
 export function checkAuthorizationServerMetadata(res: ProbeResponse): CheckResult {
   const name = 'authorization_server_metadata';
-  const label = '4. /.well-known/oauth-authorization-server has S256 + correct grants';
+  const label = '4. AS /.well-known/oauth-authorization-server has S256 + correct grants';
   if (res.error) {
     return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
   }
@@ -489,6 +557,18 @@ export function checkAuthorizationServerMetadata(res: ProbeResponse): CheckResul
       label,
       status: 'fail',
       details: 'code_challenge_methods_supported must include "S256"',
+    };
+  }
+  // Verify allowPlainCodeChallengeMethod: false took effect — if the AS
+  // advertises "plain" in addition to S256, MCP clients may negotiate down
+  // to it. The plan's R4 mandates S256-only.
+  if ((meta.code_challenge_methods_supported as unknown[]).includes('plain')) {
+    return {
+      name,
+      label,
+      status: 'fail',
+      details:
+        'code_challenge_methods_supported advertises "plain" — should be S256-only (check allowPlainCodeChallengeMethod: false in auth/index.ts)',
     };
   }
   if (!Array.isArray(meta.grant_types_supported)) {
@@ -525,104 +605,36 @@ export function checkAuthorizationServerMetadata(res: ProbeResponse): CheckResul
 }
 
 /**
- * Check 5 — Claude client_id is recognised by /authorize. The OAuth
- * provider does not expose a public client-list endpoint, so we probe
- * /authorize and treat a 400 with "unknown client" as a failure. Without
- * a `--claude-client-id` arg the check WARNs and surfaces the gap.
+ * Check 5 — Pre-registered Claude client is recognised by the AS. The
+ * `@better-auth/oauth-provider` plugin exposes no public client-list
+ * endpoint and `allowDynamicClientRegistration: false`, so the only way
+ * to verify pre-registration without admin credentials is to inspect the
+ * `oauthClient` table directly (or re-run the seed script). This check
+ * always WARNs and points at the seed script + runbook.
  */
-export function checkClaudeClientRegistration(
-  clientId: string | null,
-  res: ProbeResponse | null,
-): CheckResult {
-  const name = 'claude_client_registration';
-  const label = '5. Pre-registered Claude client recognised by /authorize';
-  if (!clientId || !res) {
-    return {
-      name,
-      label,
-      status: 'warn',
-      details:
-        'no --claude-client-id provided; library exposes no list endpoint. Verify manually via `wrangler kv key list ... | grep client`.',
-    };
-  }
-  if (res.error) {
-    return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
-  }
-  const lowerBody = res.bodyText.toLowerCase();
-  if (
-    res.status === 400 &&
-    (lowerBody.includes('unknown client') || lowerBody.includes('invalid_client'))
-  ) {
-    return {
-      name,
-      label,
-      status: 'fail',
-      details: `/authorize rejected client_id=${clientId} with "unknown client" — pre-registration is missing`,
-    };
-  }
-  if (res.status >= 500) {
-    return {
-      name,
-      label,
-      status: 'fail',
-      details: `/authorize returned ${res.status} (server error)`,
-    };
-  }
+export function checkClaudeClientRegistration(): CheckResult {
   return {
-    name,
-    label,
-    status: 'pass',
-    details: `/authorize accepts client_id=${clientId} (status ${res.status})`,
+    name: 'claude_client_registration',
+    label: '5. Pre-registered Claude client present in AS oauthClient table',
+    status: 'warn',
+    details:
+      '@better-auth/oauth-provider exposes no public client-list endpoint. Verify manually by ' +
+      're-running `bun packages/api/scripts/seed-claude-oauth-client.ts` (idempotent — no-op if ' +
+      'already registered) or inspecting the oauthClient table directly. ' +
+      'See docs/mcp/runbook.md § "Deprovision the legacy OAUTH_KV namespaces + DCR secret".',
   };
 }
 
 /**
- * Check 6 — DCR gate is active. `POST /register` MUST return 401 both
- * without any Authorization header AND with a wrong Bearer token. We
- * don't probe the success path here — that would mutate KV.
- */
-export function checkDcrGate(noAuth: ProbeResponse, fakeBearer: ProbeResponse): CheckResult {
-  const name = 'dcr_gate';
-  const label = '6. /register DCR gate rejects unauthenticated and fake-bearer probes';
-  if (noAuth.error) {
-    return { name, label, status: 'fail', details: `no-auth fetch error: ${noAuth.error}` };
-  }
-  if (noAuth.status !== 401) {
-    return {
-      name,
-      label,
-      status: 'fail',
-      details: `POST /register w/o Authorization returned ${noAuth.status} (expected 401)`,
-    };
-  }
-  if (fakeBearer.error) {
-    return {
-      name,
-      label,
-      status: 'fail',
-      details: `fake-bearer fetch error: ${fakeBearer.error}`,
-    };
-  }
-  if (fakeBearer.status !== 401) {
-    return {
-      name,
-      label,
-      status: 'fail',
-      details: `POST /register w/ fake bearer returned ${fakeBearer.status} (expected 401)`,
-    };
-  }
-  return { name, label, status: 'pass', details: 'both probes correctly rejected with 401' };
-}
-
-/**
- * Check 7 — Favicon at the OAuth domain returns 200 with the right
+ * Check 6 — Favicon at the OAuth domain returns 200 with the right
  * Content-Type and valid .ico magic bytes. Anthropic's domain-ownership
- * probe targets the OAuth host (not the brand site), so a 404 here would
- * fail intake silently.
+ * probe targets the MCP host (not the brand site), so a 404 here would
+ * fail intake silently. Post-refactor the favicon still lives on the RS
+ * (the MCP worker serves it from `packages/mcp/src/favicon.ts`).
  */
 export function checkFaviconAtOauthDomain(res: ProbeResponse, body: Uint8Array): CheckResult {
   const name = 'favicon_oauth_domain';
-  const label = '7. /favicon.ico at the OAuth domain has the right shape';
+  const label = '6. RS /favicon.ico has the right shape (domain-ownership probe target)';
   if (res.error) {
     return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
   }
@@ -659,13 +671,13 @@ export function checkFaviconAtOauthDomain(res: ProbeResponse, body: Uint8Array):
 }
 
 /**
- * Check 8 — Public docs page on the brand domain renders. We don't parse
+ * Check 7 — Public docs page on the brand domain renders. We don't parse
  * the full DOM; we smoke-check that the page contains the three strings a
  * reviewer would expect on the MCP page: "PackRat", "Claude.ai", "scope".
  */
 export function checkPublicDocsPage(res: ProbeResponse, requiredTerms: string[]): CheckResult {
   const name = 'public_docs_page';
-  const label = '8. Public docs URL (packratai.com/mcp) renders';
+  const label = '7. Public docs URL (packratai.com/mcp) renders';
   if (res.error) {
     return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
   }
@@ -691,7 +703,7 @@ export function checkPublicDocsPage(res: ProbeResponse, requiredTerms: string[])
 }
 
 /**
- * Check 9 — Privacy + Terms reachable on the brand domain AND contain
+ * Check 8 — Privacy + Terms reachable on the brand domain AND contain
  * MCP-specific copy (not just generic legal boilerplate). A missing
  * MCP-specific section is an Anthropic immediate-reject cause.
  */
@@ -700,7 +712,7 @@ export function checkPrivacyAndTerms(
   termsRes: ProbeResponse,
 ): CheckResult {
   const name = 'privacy_and_terms';
-  const label = '9. /privacy-policy and /terms-of-service include MCP-specific copy';
+  const label = '8. /privacy-policy and /terms-of-service include MCP-specific copy';
   for (const [pageName, res] of [
     ['privacy-policy', privacyRes],
     ['terms-of-service', termsRes],
@@ -730,12 +742,12 @@ export function checkPrivacyAndTerms(
 }
 
 /**
- * Check 10 — Support contact is resolvable from /health. The contact is
+ * Check 9 — Support contact is resolvable from RS /health. The contact is
  * also printed so the operator can confirm it matches the listing.
  */
 export function checkSupportContact(healthBody: unknown): CheckResult {
   const name = 'support_contact';
-  const label = '10. /health advertises a support contact';
+  const label = '9. RS /health advertises a support contact';
   if (typeof healthBody !== 'object' || healthBody === null) {
     return { name, label, status: 'fail', details: '/health body is not a JSON object' };
   }
@@ -755,8 +767,8 @@ export function checkSupportContact(healthBody: unknown): CheckResult {
 }
 
 /**
- * Check 11 — /health returns `{ status: 'ok', probes: { kv, api } }` with
- * both probes green. A degraded surface fails with the per-probe outcomes
+ * Check 10 — RS /health returns `{ status: 'ok', probes: { ... } }` with
+ * all probes green. A degraded surface fails with the per-probe outcomes
  * so an operator can see exactly which dependency tripped.
  */
 export function checkHealthStatus(res: ProbeResponse): {
@@ -764,7 +776,7 @@ export function checkHealthStatus(res: ProbeResponse): {
   body: unknown;
 } {
   const name = 'health_status';
-  const label = '11. /health returns status: ok with both probes green';
+  const label = '10. RS /health returns status: ok with all probes green';
   if (res.error) {
     return {
       result: { name, label, status: 'fail', details: `fetch error: ${res.error}` },
@@ -820,13 +832,12 @@ export function checkHealthStatus(res: ProbeResponse): {
 }
 
 /**
- * Check 11b (rolled into the /health probe) — /status advertises
- * scopes_supported, used as a sanity cross-check that the deployed worker
- * matches the metadata we expect.
+ * Check 10b — RS /status advertises scopes_supported, used as a sanity
+ * cross-check that the deployed worker matches the metadata we expect.
  */
 export function checkStatusEndpoint(res: ProbeResponse): CheckResult {
   const name = 'status_endpoint';
-  const label = '11b. /status advertises scopes_supported';
+  const label = '10b. RS /status advertises scopes_supported';
   if (res.error) {
     return { name, label, status: 'fail', details: `fetch error: ${res.error}` };
   }
@@ -859,7 +870,7 @@ export function checkStatusEndpoint(res: ProbeResponse): CheckResult {
 }
 
 /**
- * Check 12 — Every tool in the catalog has `title`, `readOnlyHint`
+ * Check 11 — Every tool in the catalog has `title`, `readOnlyHint`
  * explicitly set, and (for non-read-only tools) `destructiveHint`
  * explicitly set. This is Anthropic's #1 published rejection cause.
  */
@@ -882,7 +893,7 @@ export interface Catalog {
 
 export function checkToolAnnotations(catalog: Catalog | null, source: string): CheckResult {
   const name = 'tool_annotations';
-  const label = '12. Every tool has title + readOnlyHint + destructiveHint (when applicable)';
+  const label = '11. Every tool has title + readOnlyHint + destructiveHint (when applicable)';
   if (!catalog) {
     return { name, label, status: 'fail', details: `catalog not loaded (source: ${source})` };
   }
@@ -922,12 +933,12 @@ export function checkToolAnnotations(catalog: Catalog | null, source: string): C
 }
 
 /**
- * Check 13 — Tool descriptions are non-promotional. Scans every
+ * Check 12 — Tool descriptions are non-promotional. Scans every
  * description for the FORBIDDEN_PROMO_PATTERNS list and flags matches.
  */
 export function checkToolDescriptionsNonPromotional(catalog: Catalog | null): CheckResult {
   const name = 'tool_descriptions_non_promotional';
-  const label = '13. Tool descriptions free of forbidden marketing words';
+  const label = '12. Tool descriptions free of forbidden marketing words';
   if (!catalog || !Array.isArray(catalog.tools)) {
     return { name, label, status: 'fail', details: 'catalog not loaded' };
   }
@@ -989,10 +1000,10 @@ export async function loadCatalog(
 // ── Runner ────────────────────────────────────────────────────────────────
 
 export interface RunOptions {
-  url?: string;
+  rsUrl?: string;
+  asUrl?: string;
   brandDomain?: string;
   catalogPath?: string | null;
-  claudeClientId?: string | null;
   fetchImpl?: typeof fetch;
 }
 
@@ -1001,65 +1012,49 @@ export interface RunOptions {
  * callers (CLI, unit tests, CI) can format it however they need.
  */
 export async function runReadinessChecks(opts: RunOptions = {}): Promise<ReadinessReport> {
-  const url = stripTrailingSlash(opts.url ?? DEFAULT_TARGET_URL);
+  const rsUrl = stripTrailingSlash(opts.rsUrl ?? DEFAULT_RS_URL);
+  const asUrl = stripTrailingSlash(opts.asUrl ?? DEFAULT_AS_URL);
   const brandDomain = stripTrailingSlash(opts.brandDomain ?? DEFAULT_BRAND_DOMAIN);
   const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
 
-  // Issue the network probes in parallel where independent.
+  // Issue the network probes in parallel where independent. Note the
+  // host split: PRM + WWW-Authenticate + /health + /status + favicon all
+  // live on the RS; AS metadata lives on the AS; docs + privacy + terms
+  // live on the brand domain.
   const [
     rootRes,
     mcpRes,
     protectedResourceRes,
     asMetaRes,
-    registerNoAuth,
-    registerFakeBearer,
     faviconRes,
     docsRes,
     privacyRes,
     termsRes,
     healthRes,
     statusRes,
-    authorizeRes,
   ] = await Promise.all([
-    probe({ url: `${url}/`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${rsUrl}/`, init: { method: 'GET' }, fetchImpl }),
     probe({
-      url: `${url}/mcp`,
+      url: `${rsUrl}/mcp`,
       init: { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' },
       fetchImpl,
     }),
     probe({
-      url: `${url}/.well-known/oauth-protected-resource`,
+      url: `${rsUrl}/.well-known/oauth-protected-resource`,
       init: { method: 'GET' },
       fetchImpl,
     }),
     probe({
-      url: `${url}/.well-known/oauth-authorization-server`,
+      url: `${asUrl}/.well-known/oauth-authorization-server`,
       init: { method: 'GET' },
       fetchImpl,
     }),
-    probe({ url: `${url}/register`, init: { method: 'POST', body: '{}' }, fetchImpl }),
-    probe({
-      url: `${url}/register`,
-      init: {
-        method: 'POST',
-        body: '{}',
-        headers: { Authorization: 'Bearer not-a-real-token' },
-      },
-      fetchImpl,
-    }),
-    probe({ url: `${url}/favicon.ico`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${rsUrl}/favicon.ico`, init: { method: 'GET' }, fetchImpl }),
     probe({ url: `${brandDomain}/mcp`, init: { method: 'GET' }, fetchImpl }),
     probe({ url: `${brandDomain}/privacy-policy`, init: { method: 'GET' }, fetchImpl }),
     probe({ url: `${brandDomain}/terms-of-service`, init: { method: 'GET' }, fetchImpl }),
-    probe({ url: `${url}/health`, init: { method: 'GET' }, fetchImpl }),
-    probe({ url: `${url}/status`, init: { method: 'GET' }, fetchImpl }),
-    opts.claudeClientId
-      ? probe({
-          url: `${url}/authorize?client_id=${encodeURIComponent(opts.claudeClientId)}&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/api/mcp/auth_callback')}&code_challenge=test&code_challenge_method=S256&scope=mcp`,
-          init: { method: 'GET' },
-          fetchImpl,
-        })
-      : Promise.resolve(null),
+    probe({ url: `${rsUrl}/health`, init: { method: 'GET' }, fetchImpl }),
+    probe({ url: `${rsUrl}/status`, init: { method: 'GET' }, fetchImpl }),
   ]);
 
   // Catalog is filesystem-backed; load it in parallel with the network.
@@ -1071,7 +1066,7 @@ export async function runReadinessChecks(opts: RunOptions = {}): Promise<Readine
   let faviconBody = new Uint8Array(0);
   if (faviconRes.status === 200) {
     try {
-      const raw = await fetchImpl(`${url}/favicon.ico`, { method: 'GET' });
+      const raw = await fetchImpl(`${rsUrl}/favicon.ico`, { method: 'GET' });
       faviconBody = new Uint8Array(await raw.arrayBuffer());
     } catch {
       // Leave faviconBody empty — checkFaviconAtOauthDomain will FAIL.
@@ -1079,12 +1074,11 @@ export async function runReadinessChecks(opts: RunOptions = {}): Promise<Readine
   }
 
   const checks: CheckResult[] = [];
-  checks.push(checkTlsReachability(url, rootRes));
+  checks.push(checkTlsReachability(rsUrl, rootRes));
   checks.push(checkStreamableHttpAuth(mcpRes));
-  checks.push(checkProtectedResourceMetadata(url, protectedResourceRes));
+  checks.push(checkProtectedResourceMetadata({ rsUrl, asUrl, res: protectedResourceRes }));
   checks.push(checkAuthorizationServerMetadata(asMetaRes));
-  checks.push(checkClaudeClientRegistration(opts.claudeClientId ?? null, authorizeRes));
-  checks.push(checkDcrGate(registerNoAuth, registerFakeBearer));
+  checks.push(checkClaudeClientRegistration());
   checks.push(checkFaviconAtOauthDomain(faviconRes, faviconBody));
   checks.push(checkPublicDocsPage(docsRes, ['PackRat', 'Claude.ai', 'scope']));
   checks.push(checkPrivacyAndTerms(privacyRes, termsRes));
@@ -1097,7 +1091,7 @@ export async function runReadinessChecks(opts: RunOptions = {}): Promise<Readine
   checks.push(checkToolDescriptionsNonPromotional(catalog));
 
   const summary = summarize(checks);
-  return { url, brandDomain, checks, summary };
+  return { rsUrl, asUrl, brandDomain, checks, summary };
 }
 
 export function summarize(checks: CheckResult[]): ReadinessSummary {
@@ -1116,7 +1110,9 @@ export function summarize(checks: CheckResult[]): ReadinessSummary {
 
 export function formatReport(report: ReadinessReport): string {
   const lines: string[] = [];
-  lines.push(colorize(`PackRat MCP submission readiness — target: ${report.url}`, 'bold'));
+  lines.push(
+    colorize(`PackRat MCP submission readiness — RS: ${report.rsUrl}, AS: ${report.asUrl}`, 'bold'),
+  );
   lines.push(colorize(`Brand domain: ${report.brandDomain}`, 'dim'));
   lines.push('');
   for (const check of report.checks) {
@@ -1138,7 +1134,8 @@ export function formatReport(report: ReadinessReport): string {
 export function formatJsonReport(report: ReadinessReport): string {
   return JSON.stringify(
     {
-      url: report.url,
+      rsUrl: report.rsUrl,
+      asUrl: report.asUrl,
       brandDomain: report.brandDomain,
       checks: report.checks.map((c) => ({
         name: c.name,
@@ -1170,10 +1167,10 @@ async function main(): Promise<void> {
   }
 
   const report = await runReadinessChecks({
-    url: args.url,
+    rsUrl: args.rsUrl,
+    asUrl: args.asUrl,
     brandDomain: args.brandDomain,
     catalogPath: args.catalogPath,
-    claudeClientId: args.claudeClientId,
   });
 
   if (args.json) {
