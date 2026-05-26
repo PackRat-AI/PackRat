@@ -9,8 +9,8 @@
     "deploy:dev": "wrangler deploy --minify -e dev",
     "dev": "wrangler dev -e dev",
     "test": "vitest run",
-    "test:unit": "vitest run --project mcp-unit",
     "test:integration": "vitest run --project mcp-integration",
+    "test:unit": "vitest run --project mcp-unit",
     "test:watch": "vitest"
   },
   "dependencies": {

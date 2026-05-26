@@ -11,9 +11,9 @@
  * reproducible-randomness via a fixed numeric seed so re-runs produce the
  * same data; pair with `reset()` if you want a clean re-seed.
  *
- * NOT for production. The script refuses to run against a Neon-hosted URL
- * unless `FORCE_SEED_DEV=1` is set, because drizzle-seed expects to TRUNCATE
- * tables and a stray prod run would wipe real user data. The 3 prod-config
+ * NOT for production. The script HARD-refuses to run against a Neon-hosted
+ * URL (no override flag) — drizzle-seed expects to TRUNCATE tables and a
+ * stray prod run would wipe real user data. The 3 prod-config
  * seeds (`seed.ts`, `seed-e2e-user.ts`, `seed-claude-oauth-client.ts`) are
  * the correct path for production-row management — they use plain
  * `db.insert()` with idempotency checks, not drizzle-seed.
@@ -192,7 +192,6 @@ const POST_CAPTIONS = [
 // ── Safety guard ────────────────────────────────────────────────────────
 
 function assertNotProduction(dbUrl: string): void {
-  if (process.env.FORCE_SEED_DEV === '1') return;
   const host = (() => {
     try {
       return new URL(dbUrl).hostname.toLowerCase();
@@ -209,7 +208,7 @@ function assertNotProduction(dbUrl: string): void {
     throw new Error(
       `Refusing to seed-dev against a Neon-hosted URL (${host}). drizzle-seed ` +
         'TRUNCATEs tables before inserting, which would destroy production data. ' +
-        'Set FORCE_SEED_DEV=1 to override (you almost certainly should not).',
+        'There is no override flag — point at a local/docker Postgres instead.',
     );
   }
 }

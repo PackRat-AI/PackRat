@@ -44,8 +44,8 @@ development + QA only):
 | `bun run db:seed:dev` | `src/db/seed-dev.ts` | Populate a fresh local DB with ~50 users, 150 packs, 1500 items, 100 catalog items, 80 posts, 200 comments — randomized via drizzle-seed's `f.fullName()` / `f.email()` / `f.loremIpsum()` |
 
 `db:seed:dev` **TRUNCATEs the affected tables before inserting** (per
-`drizzle-seed`'s default behavior). It refuses to run against a Neon-hosted
-URL unless `FORCE_SEED_DEV=1` is set, to prevent accidentally wiping prod
+`drizzle-seed`'s default behavior). It **hard-refuses** to run against a
+Neon-hosted URL — no override flag — so a stray prod run cannot wipe user
 data. The seed RNG is fixed (`seed=42`) so re-runs produce the same content.
 
 Typical onboarding flow against the docker-compose test DB:
