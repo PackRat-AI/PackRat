@@ -341,7 +341,7 @@ describe('checkClaudeClientRegistration', () => {
   it('always WARNs and points at the seed script (no public list endpoint)', () => {
     const result = checkClaudeClientRegistration();
     expect(result.status).toBe('warn');
-    expect(result.details).toMatch(/seed-claude-oauth-client/);
+    expect(result.details).toMatch(/db:seed:oauth-clients/);
   });
 });
 
