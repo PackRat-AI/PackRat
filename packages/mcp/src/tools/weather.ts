@@ -30,7 +30,8 @@ export function registerWeatherTools(agent: AgentContext): void {
       },
     },
     async ({ location }) =>
-      call(agent.api.user.weather['by-name'].get({ query: { q: location } }), {
+      call({
+        promise: agent.api.user.weather['by-name'].get({ query: { q: location } }),
         action: 'fetch weather forecast',
         resourceHint: location,
         structured: true,
@@ -53,7 +54,8 @@ export function registerWeatherTools(agent: AgentContext): void {
       },
     },
     async ({ query }) =>
-      call(agent.api.user.weather.search.get({ query: { q: query } }), {
+      call({
+        promise: agent.api.user.weather.search.get({ query: { q: query } }),
         action: 'search weather location',
         resourceHint: query,
       }),
@@ -78,12 +80,12 @@ export function registerWeatherTools(agent: AgentContext): void {
       },
     },
     async ({ latitude, longitude }) =>
-      call(
-        agent.api.user.weather['search-by-coordinates'].get({
+      call({
+        promise: agent.api.user.weather['search-by-coordinates'].get({
           query: { lat: latitude, lon: longitude },
         }),
-        { action: 'search weather by coordinates' },
-      ),
+        action: 'search weather by coordinates',
+      }),
   );
 
   // ── Forecast by location id ───────────────────────────────────────────────
@@ -103,7 +105,8 @@ export function registerWeatherTools(agent: AgentContext): void {
       },
     },
     async ({ location_id }) =>
-      call(agent.api.user.weather.forecast.get({ query: { id: String(location_id) } }), {
+      call({
+        promise: agent.api.user.weather.forecast.get({ query: { id: String(location_id) } }),
         action: 'get weather forecast',
         resourceHint: `location ${location_id}`,
       }),

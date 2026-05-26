@@ -246,9 +246,9 @@ export type CallOptions = {
  * when the caller opted in.
  */
 export async function call<T>(
-  promise: Promise<TreatyResponse<T>>,
-  options: CallOptions = {},
+  args: { promise: Promise<TreatyResponse<T>> } & CallOptions,
 ): Promise<McpToolResult> {
+  const { promise, ...options } = args;
   try {
     const result = await promise;
     if (result.error || result.data == null) {

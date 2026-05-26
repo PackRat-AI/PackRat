@@ -82,7 +82,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id }) =>
-      call(agent.api.user.packs({ packId: pack_id }).get(), {
+      call({
+        promise: agent.api.user.packs({ packId: pack_id }).get(),
         action: 'get pack',
         resourceHint: `pack ${pack_id}`,
         structured: true,
@@ -117,8 +118,8 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ name, description, category, is_public, tags }) => {
       const now = nowIso();
-      return call(
-        agent.api.user.packs.post({
+      return call({
+        promise: agent.api.user.packs.post({
           name,
           description,
           category,
@@ -127,8 +128,8 @@ export function registerPackTools(agent: AgentContext): void {
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
-        { action: 'create pack' },
-      );
+        action: 'create pack',
+      });
     },
   );
 
@@ -162,7 +163,8 @@ export function registerPackTools(agent: AgentContext): void {
       if (category !== undefined) body.category = category;
       if (is_public !== undefined) body.isPublic = is_public;
       if (tags !== undefined) body.tags = tags;
-      return call(agent.api.user.packs({ packId: pack_id }).put(body), {
+      return call({
+        promise: agent.api.user.packs({ packId: pack_id }).put(body),
         action: 'update pack',
         resourceHint: `pack ${pack_id}`,
       });
@@ -188,7 +190,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id }) =>
-      call(agent.api.user.packs({ packId: pack_id }).delete(), {
+      call({
+        promise: agent.api.user.packs({ packId: pack_id }).delete(),
         action: 'delete pack',
         resourceHint: `pack ${pack_id}`,
       }),
@@ -210,7 +213,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id }) =>
-      call(agent.api.user.packs({ packId: pack_id }).items.get(), {
+      call({
+        promise: agent.api.user.packs({ packId: pack_id }).items.get(),
         action: 'list pack items',
         resourceHint: `pack ${pack_id}`,
       }),
@@ -232,7 +236,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ item_id }) =>
-      call(agent.api.user.packs.items({ itemId: item_id }).get(), {
+      call({
+        promise: agent.api.user.packs.items({ itemId: item_id }).get(),
         action: 'get pack item',
         resourceHint: `item ${item_id}`,
       }),
@@ -283,8 +288,8 @@ export function registerPackTools(agent: AgentContext): void {
       is_worn,
       notes,
     }) =>
-      call(
-        agent.api.user.packs({ packId: pack_id }).items.post({
+      call({
+        promise: agent.api.user.packs({ packId: pack_id }).items.post({
           name,
           category,
           weight: weight_grams,
@@ -294,8 +299,9 @@ export function registerPackTools(agent: AgentContext): void {
           worn: is_worn,
           notes,
         }),
-        { action: 'add pack item', resourceHint: `pack ${pack_id}` },
-      ),
+        action: 'add pack item',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Update pack item ──────────────────────────────────────────────────────
@@ -332,7 +338,8 @@ export function registerPackTools(agent: AgentContext): void {
       if (is_consumable !== undefined) body.consumable = is_consumable;
       if (is_worn !== undefined) body.worn = is_worn;
       if (notes !== undefined) body.notes = notes;
-      return call(agent.api.user.packs.items({ itemId: item_id }).patch(body), {
+      return call({
+        promise: agent.api.user.packs.items({ itemId: item_id }).patch(body),
         action: 'update pack item',
         resourceHint: `item ${item_id}`,
       });
@@ -356,7 +363,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ item_id }) =>
-      call(agent.api.user.packs.items({ itemId: item_id }).delete(), {
+      call({
+        promise: agent.api.user.packs.items({ itemId: item_id }).delete(),
         action: 'delete pack item',
         resourceHint: `item ${item_id}`,
       }),
@@ -383,13 +391,14 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id, item_id, limit, threshold }) =>
-      call(
-        agent.api.user
+      call({
+        promise: agent.api.user
           .packs({ packId: pack_id })
           .items({ itemId: item_id })
           .similar.get({ query: { limit, ...(threshold !== undefined ? { threshold } : {}) } }),
-        { action: 'find similar items', resourceHint: `item ${item_id}` },
-      ),
+        action: 'find similar items',
+        resourceHint: `item ${item_id}`,
+      }),
   );
 
   // ── Pack item suggestions ─────────────────────────────────────────────────
@@ -411,12 +420,13 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id, existing_catalog_item_ids }) =>
-      call(
-        agent.api.user
+      call({
+        promise: agent.api.user
           .packs({ packId: pack_id })
           ['item-suggestions'].post({ existingCatalogItemIds: existing_catalog_item_ids }),
-        { action: 'suggest pack items', resourceHint: `pack ${pack_id}` },
-      ),
+        action: 'suggest pack items',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Weight history ────────────────────────────────────────────────────────
@@ -435,7 +445,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async () =>
-      call(agent.api.user.packs['weight-history'].get(), {
+      call({
+        promise: agent.api.user.packs['weight-history'].get(),
         action: 'list pack weight history',
       }),
   );
@@ -455,12 +466,13 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id, weight_grams }) =>
-      call(
-        agent.api.user
+      call({
+        promise: agent.api.user
           .packs({ packId: pack_id })
           ['weight-history'].post({ weight: weight_grams, localCreatedAt: nowIso() }),
-        { action: 'record pack weight', resourceHint: `pack ${pack_id}` },
-      ),
+        action: 'record pack weight',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Pack weight analysis (server-computed breakdown) ─────────────────────
@@ -479,7 +491,8 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id }) =>
-      call(agent.api.user.packs({ packId: pack_id })['weight-breakdown'].get(), {
+      call({
+        promise: agent.api.user.packs({ packId: pack_id })['weight-breakdown'].get(),
         action: 'analyze pack weight',
         resourceHint: `pack ${pack_id}`,
       }),
@@ -509,16 +522,17 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ pack_id, destination, trip_type, duration_days, start_date, end_date }) =>
-      call(
-        agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
+      call({
+        promise: agent.api.user.packs({ packId: pack_id })['gap-analysis'].post({
           destination,
           tripType: trip_type,
           duration: duration_days,
           startDate: start_date,
           endDate: end_date,
         }),
-        { action: 'analyze pack gaps', resourceHint: `pack ${pack_id}` },
-      ),
+        action: 'analyze pack gaps',
+        resourceHint: `pack ${pack_id}`,
+      }),
   );
 
   // ── Image-based gear detection ───────────────────────────────────────────
@@ -548,9 +562,12 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ image_key, match_limit }) =>
-      call(
-        agent.api.user.packs['analyze-image'].post({ image: image_key, matchLimit: match_limit }),
-        { action: 'analyze pack image' },
-      ),
+      call({
+        promise: agent.api.user.packs['analyze-image'].post({
+          image: image_key,
+          matchLimit: match_limit,
+        }),
+        action: 'analyze pack image',
+      }),
   );
 }

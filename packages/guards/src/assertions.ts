@@ -48,10 +48,13 @@ export function assertIsBoolean(
   if (typeof value !== 'boolean') throw new Error(message);
 }
 
-export function assertAllDefined(
-  values: readonly unknown[],
+export function assertAllDefined({
+  values,
   message = 'All values must be defined',
-): void {
+}: {
+  values: readonly unknown[];
+  message?: string;
+}): void {
   for (let i = 0; i < values.length; i++) {
     if (values[i] === undefined) {
       throw new Error(`${message} (index ${i})`);

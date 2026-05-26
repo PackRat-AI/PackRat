@@ -18,7 +18,8 @@ export function registerAlltrailsTools(agent: AgentContext): void {
       },
     },
     async ({ url }) =>
-      call(agent.api.user.alltrails.preview.post({ url }), {
+      call({
+        promise: agent.api.user.alltrails.preview.post({ url }),
         action: 'preview AllTrails URL',
         resourceHint: url,
       }),

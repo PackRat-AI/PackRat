@@ -18,7 +18,7 @@ export function useRecentPacks() {
 
     const sortedPacksWithWeights = sortedPacks.map((pack) => {
       const items = getPackItems(pack.id);
-      const packWithWeights = computePackWeights({ ...pack, items });
+      const packWithWeights = computePackWeights({ pack: { ...pack, items } });
       return packWithWeights;
     });
 

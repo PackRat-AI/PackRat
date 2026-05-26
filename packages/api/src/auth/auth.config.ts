@@ -77,7 +77,7 @@ export const auth = betterAuth({
 
   plugins: [
     bearer(),
-    jwt(),
+    jwt({ jwks: { disablePrivateKeyEncryption: true } }),
     admin(),
     // OAuth 2.1 provider — schema-affecting; mirrors index.ts. See the
     // runtime config in src/auth/index.ts for the option rationale.

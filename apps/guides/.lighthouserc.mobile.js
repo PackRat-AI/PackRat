@@ -17,28 +17,20 @@ module.exports = {
       },
     },
     assert: {
-      assertMatrix: [
-        {
-          matchingUrlPattern: '.*/(404|500)\\.html$',
-        },
-        {
-          matchingUrlPattern: '.*\\.html$',
-          assertions: {
-            'categories:performance': ['error', { minScore: 0.8 }],
-            'categories:accessibility': ['error', { minScore: 0.9 }],
-            'categories:best-practices': ['error', { minScore: 0.9 }],
-            'categories:seo': ['error', { minScore: 0.9 }],
-            'first-contentful-paint': ['error', { maxNumericValue: 3000 }],
-            'largest-contentful-paint': ['error', { maxNumericValue: 4000 }],
-            'total-blocking-time': ['error', { maxNumericValue: 600 }],
-            'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-            'meta-description': 'error',
-            'document-title': 'error',
-            'html-has-lang': 'error',
-            'image-alt': 'error',
-          },
-        },
-      ],
+      assertions: {
+        'categories:performance': ['error', { minScore: 0.8 }],
+        'categories:accessibility': ['error', { minScore: 0.9 }],
+        'categories:best-practices': ['error', { minScore: 0.9 }],
+        'categories:seo': ['error', { minScore: 0.9 }],
+        'first-contentful-paint': ['error', { maxNumericValue: 3000 }],
+        'largest-contentful-paint': ['error', { maxNumericValue: 4000 }],
+        'total-blocking-time': ['error', { maxNumericValue: 600 }],
+        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        'meta-description': 'error',
+        'document-title': 'error',
+        'html-has-lang': 'error',
+        'image-alt': 'error',
+      },
     },
     upload: {
       target: 'temporary-public-storage',

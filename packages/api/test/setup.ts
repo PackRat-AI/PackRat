@@ -344,10 +344,13 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      async batchVectorSearch(
-        queries: string[],
-        _limit?: number,
-      ): Promise<BatchVectorSearchResult> {
+      async batchVectorSearch({
+        queries,
+        limit: _limit,
+      }: {
+        queries: string[];
+        limit?: number;
+      }): Promise<BatchVectorSearchResult> {
         return {
           items: queries.map(() => [
             {

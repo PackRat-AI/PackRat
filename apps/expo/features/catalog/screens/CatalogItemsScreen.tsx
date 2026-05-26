@@ -287,4 +287,4 @@ function CatalogItemsScreen() {
   );
 }
 
-export default withAuthWall(CatalogItemsScreen, CatalogItemsAuthWall);
+export default withAuthWall({ Component: CatalogItemsScreen, AuthWall: CatalogItemsAuthWall });

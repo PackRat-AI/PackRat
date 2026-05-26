@@ -19,8 +19,8 @@ const searchCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client.trails.search.get({
+    const data = await runApi({
+      promise: client.trails.search.get({
         query: {
           q: args.q,
           lat: args.lat ? Number.parseFloat(args.lat) : undefined,
@@ -31,21 +31,21 @@ const searchCmd = defineCommand({
           offset: Number.parseInt(args.offset, 10),
         },
       }),
-      { action: 'search trails' },
-    );
+      action: 'search trails',
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(toRecord(data).trails).map((t) => ({
+    printTable({
+      rows: toRecordArray(toRecord(data).trails).map((t) => ({
         osmId: t.osmId,
         name: t.name,
         sport: t.sport,
         distance: t.distance,
       })),
-      { title: 'Trails' },
-    );
+      options: { title: 'Trails' },
+    });
   },
 });
 
@@ -55,7 +55,8 @@ const getCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const trail = await runApi(client.trails({ osmId: args.id }).get(), {
+    const trail = await runApi({
+      promise: client.trails({ osmId: args.id }).get(),
       action: 'get trail',
       resourceHint: `trail ${args.id}`,
     });
@@ -69,7 +70,8 @@ const geometryCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.trails({ osmId: args.id }).geometry.get(), {
+    const data = await runApi({
+      promise: client.trails({ osmId: args.id }).geometry.get(),
       action: 'get trail geometry',
       resourceHint: `trail ${args.id}`,
     });

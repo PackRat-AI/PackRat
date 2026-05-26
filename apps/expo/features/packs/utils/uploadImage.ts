@@ -2,7 +2,13 @@ import { userStore } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import * as FileSystem from 'expo-file-system/legacy';
 
-export const uploadImage = async (fileName: string, uri: string): Promise<string | undefined> => {
+export const uploadImage = async ({
+  fileName,
+  uri,
+}: {
+  fileName: string;
+  uri: string;
+}): Promise<string | undefined> => {
   if (!fileName || fileName.trim() === '') {
     console.warn('Skipping upload: fileName is empty');
     return;
@@ -12,7 +18,10 @@ export const uploadImage = async (fileName: string, uri: string): Promise<string
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
     const remoteFileName = `${userStore.id.peek()}-${fileName}`;
-    const { url: presignedUrl } = await getPresignedUrl(remoteFileName, type);
+    const { url: presignedUrl } = await getPresignedUrl({
+      fileName: remoteFileName,
+      contentType: type,
+    });
 
     const uploadResult = await FileSystem.uploadAsync(presignedUrl, uri, {
       httpMethod: 'PUT',
@@ -32,7 +41,13 @@ export const uploadImage = async (fileName: string, uri: string): Promise<string
   }
 };
 
-const getPresignedUrl = async (fileName: string, contentType: string) => {
+const getPresignedUrl = async ({
+  fileName,
+  contentType,
+}: {
+  fileName: string;
+  contentType: string;
+}) => {
   const { data, error } = await apiClient.upload.presigned.get({
     query: { fileName, contentType },
   });

@@ -102,6 +102,55 @@ features/{name}/
 - TanStack React Query for data fetching
 - Zod for form validation
 
+### Monitoring (Sentry)
+
+All new code that performs async operations or calls external services must include Sentry instrumentation. Sentry is already initialised per-platform — you only need to import and call the helpers.
+
+**Expo / React Native** — import from `@sentry/react-native`:
+
+```ts
+import * as Sentry from '@sentry/react-native';
+
+// Before an async operation
+Sentry.addBreadcrumb({ category: 'feature', message: 'Action started', level: 'info', data: { ... } });
+
+// In every catch block — capture the original error, never a re-wrapped one
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { feature: 'myFeature', action: 'doThing' },
+    extra: { userId, relevantId },
+  });
+  throw error;
+}
+```
+
+- **Never wrap the root error** in `new Error(...)` before passing to `captureException` — that loses the original stack and context.
+- **Better Auth errors** (plain objects with `{ message, status, code }`) are not JS Errors. Use `toAuthError` from `expo-app/features/auth/lib/authErrors` to convert them into an `AuthClientError` that carries `status` and `code`. Capture and throw that — do not create a separate synthetic error for Sentry and another for throwing.
+- Include `httpStatus` and `errorCode` in `extra` for any HTTP error so they're searchable in Sentry.
+
+**API / Cloudflare Workers** — use helpers from `@packrat/api/utils/sentry`:
+
+```ts
+import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+
+// Breadcrumb before significant async steps
+apiAddBreadcrumb({ category: 'feature', message: 'Fetching external data', level: 'info' });
+
+// In every catch block
+} catch (error) {
+  captureApiException(error, {
+    operation: 'featureName.action',
+    userId,
+    tags: { feature: 'myFeature' },
+    extra: { relevantId },
+  });
+  throw error; // or return an error response
+}
+```
+
+- Use `captureApiException` (not raw `captureException`) — it wraps the call with structured operation context and also logs to console for wrangler dev output.
+- Every route `catch` block and service method that interacts with the DB or an external API must have a `captureApiException` call.
+
 ### API Client (`@packrat/api-client`)
 
 Use `createApiClient` from `@packrat/api-client` for all PackRat API calls in web apps. **Never write manual fetch wrappers for PackRat API endpoints.**

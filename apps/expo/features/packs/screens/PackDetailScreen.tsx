@@ -40,7 +40,7 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    obs(packingModeStore, id).get() || {},
+    obs({ store: packingModeStore, id: id }).get() || {},
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
@@ -103,7 +103,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    obs(packingModeStore, id).set({ ...packedItems });
+    obs({ store: packingModeStore, id: id }).set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
     Burnt.toast({
@@ -116,10 +116,10 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      setPackedItems(obs(packingModeStore, id).get() || {});
+      setPackedItems(obs({ store: packingModeStore, id: id }).get() || {});
     };
 
-    const packingState = obs(packingModeStore, id).get() || {};
+    const packingState = obs({ store: packingModeStore, id: id }).get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>

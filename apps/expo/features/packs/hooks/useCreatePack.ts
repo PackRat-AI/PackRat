@@ -18,7 +18,7 @@ export function useCreatePack() {
       deleted: false,
     };
 
-    obs(packsStore, id).set(newPack);
+    obs({ store: packsStore, id: id }).set(newPack);
 
     return id;
   }, []);

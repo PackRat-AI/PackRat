@@ -28,14 +28,22 @@ export class TrailQueryBuilder {
     return this;
   }
 
-  // biome-ignore lint/complexity/useMaxParams: geographic coords require 3 args
-  around(lat: number, lon: number, radiusM: number): this {
+  around({ lat, lon, radiusM }: { lat: number; lon: number; radiusM: number }): this {
     this._spatial = `(around:${Math.round(radiusM)},${lat},${lon})`;
     return this;
   }
 
-  // biome-ignore lint/complexity/useMaxParams: bbox requires 4 coordinate args
-  bbox(south: number, west: number, north: number, east: number): this {
+  bbox({
+    south,
+    west,
+    north,
+    east,
+  }: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  }): this {
     this._spatial = `(${south},${west},${north},${east})`;
     return this;
   }

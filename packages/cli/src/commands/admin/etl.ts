@@ -9,12 +9,13 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.catalog.etl.get({
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.etl.get({
         query: { limit: Number.parseInt(args.limit, 10) },
       }),
-      { action: 'admin list ETL jobs', requiresAdmin: true },
-    );
+      action: 'admin list ETL jobs',
+      requiresAdmin: true,
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -25,12 +26,13 @@ const failureSummaryCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.catalog.etl['failure-summary'].get({
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.etl['failure-summary'].get({
         query: { limit: Number.parseInt(args.limit, 10) },
       }),
-      { action: 'admin ETL failure summary', requiresAdmin: true },
-    );
+      action: 'admin ETL failure summary',
+      requiresAdmin: true,
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -44,12 +46,14 @@ const jobFailuresCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.catalog.etl({ jobId: args.id }).failures.get({
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.etl({ jobId: args.id }).failures.get({
         query: { limit: Number.parseInt(args.limit, 10) },
       }),
-      { action: 'admin ETL job failures', resourceHint: `job ${args.id}`, requiresAdmin: true },
-    );
+      action: 'admin ETL job failures',
+      resourceHint: `job ${args.id}`,
+      requiresAdmin: true,
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -59,7 +63,8 @@ const resetStuckCmd = defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.analytics.catalog.etl['reset-stuck'].post({}), {
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.etl['reset-stuck'].post({}),
       action: 'admin reset stuck ETL',
       requiresAdmin: true,
     });
@@ -73,10 +78,12 @@ const retryCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.catalog.etl({ jobId: args.id }).retry.post({}),
-      { action: 'admin retry ETL job', resourceHint: `job ${args.id}`, requiresAdmin: true },
-    );
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.etl({ jobId: args.id }).retry.post({}),
+      action: 'admin retry ETL job',
+      resourceHint: `job ${args.id}`,
+      requiresAdmin: true,
+    });
     consola.success(`Retried: ${JSON.stringify(data)}`);
   },
 });

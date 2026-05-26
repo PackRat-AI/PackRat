@@ -20,7 +20,8 @@ export function registerAiTools(agent: AgentContext): void {
       },
     },
     async ({ query }) =>
-      call(agent.api.user.ai['web-search'].get({ query: { q: query } }), {
+      call({
+        promise: agent.api.user.ai['web-search'].get({ query: { q: query } }),
         action: 'web search',
       }),
   );
@@ -49,7 +50,8 @@ export function registerAiTools(agent: AgentContext): void {
       },
     },
     async ({ query, limit }) =>
-      call(agent.api.user.ai['execute-sql'].post({ query, limit }), {
+      call({
+        promise: agent.api.user.ai['execute-sql'].post({ query, limit }),
         action: 'execute SQL',
       }),
   );
@@ -71,6 +73,6 @@ export function registerAiTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async () => call(agent.api.user.ai['db-schema'].get(), { action: 'fetch DB schema' }),
+    async () => call({ promise: agent.api.user.ai['db-schema'].get(), action: 'fetch DB schema' }),
   );
 }

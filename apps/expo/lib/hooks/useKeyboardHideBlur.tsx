@@ -9,10 +9,13 @@ import { Keyboard } from 'react-native';
  * @param options - Optional configuration
  * @param options.enabled - Whether the hook should be active (default: true)
  */
-export function useKeyboardHideBlur(
-  textInputRef: React.RefObject<{ blur?: () => void } | null>,
-  options?: { enabled?: boolean },
-) {
+export function useKeyboardHideBlur({
+  textInputRef,
+  options,
+}: {
+  textInputRef: React.RefObject<{ blur?: () => void } | null>;
+  options?: { enabled?: boolean };
+}) {
   const { enabled = true } = options ?? {};
 
   useEffect(() => {

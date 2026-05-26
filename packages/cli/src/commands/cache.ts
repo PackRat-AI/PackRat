@@ -59,29 +59,29 @@ async function showStatus(): Promise<void> {
     }
     consola.start('Fetching catalog stats...');
     const stats = await cache.getLiveStats();
-    printSummary(
-      {
+    printSummary({
+      data: {
         Mode: 'catalog (R2 Data Catalog / Iceberg)',
         Records: stats.recordCount.toLocaleString(),
         Sites: stats.sites.join(', ') || '(none)',
       },
-      'Cache Status',
-    );
+      title: 'Cache Status',
+    });
   } else {
     const cache = await getCache();
     const stats = cache.getCacheStats();
     if (stats.recordCount === 0) {
       consola.info('Cache is empty. Run with --refresh to populate.');
     } else {
-      printSummary(
-        {
+      printSummary({
+        data: {
           Mode: 'local (DuckDB file)',
           Records: stats.recordCount.toLocaleString(),
           Sites: stats.sites.join(', '),
           'Last Updated': stats.updatedAt ?? 'Never',
         },
-        'Cache Status',
-      );
+        title: 'Cache Status',
+      });
     }
   }
 }

@@ -12,7 +12,13 @@ type IconMapping = {
   materialCommunityIcon: MaterialCommunityIconsProps['name'] | null;
 };
 
-export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: string): IconMapping {
+export function getIconNames({
+  namingScheme,
+  name,
+}: {
+  namingScheme: 'sfSymbol' | 'material';
+  name?: string;
+}): IconMapping {
   if (!name) {
     return {
       sfSymbol: null,

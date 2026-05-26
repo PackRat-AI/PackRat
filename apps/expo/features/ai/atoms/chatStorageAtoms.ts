@@ -82,7 +82,13 @@ export async function loadChatMessages(context: ChatContext): Promise<UIMessage[
  * Saves chat messages to AsyncStorage
  */
 
-export async function saveChatMessages(context: ChatContext, messages: UIMessage[]): Promise<void> {
+export async function saveChatMessages({
+  context,
+  messages,
+}: {
+  context: ChatContext;
+  messages: UIMessage[];
+}): Promise<void> {
   try {
     const key = getChatStorageKey(context);
     await AsyncStorage.setItem(key, JSON.stringify(messages));

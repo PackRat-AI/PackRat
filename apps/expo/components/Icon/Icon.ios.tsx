@@ -15,7 +15,7 @@ function Icon({
   materialIcon,
 }: IconProps) {
   const { useMaterialIcon, ...sfSymbolProps } = ios ?? {};
-  const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
+  const iconNames = useMemo(() => getIconNames({ namingScheme, name }), [namingScheme, name]);
 
   // Use Material icons on iOS when useMaterialIcon is true
   if (useMaterialIcon) {

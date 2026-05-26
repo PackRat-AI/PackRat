@@ -3,6 +3,7 @@ import { authPlugin } from '@packrat/api/middleware/auth';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
 import { reportedContent } from '@packrat/db';
 import {
   ChatRequestSchema,
@@ -93,8 +94,28 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       });
 
       if (!aiProvider) {
+        captureApiException({
+          error: new Error('AI provider not configured'),
+          operation: 'chat.stream',
+          userId: user.userId,
+          tags: { ai_provider: AI_PROVIDER },
+          extra: { httpStatus: 500, errorCode: 'AI_PROVIDER_NOT_CONFIGURED' },
+        });
         return status(500, { error: 'AI provider not configured' });
       }
+
+      apiAddBreadcrumb({
+        category: 'ai.chat',
+        message: 'Starting AI chat stream',
+        level: 'info',
+        data: {
+          userId: user.userId,
+          contextType,
+          packId,
+          itemId,
+          messageCount: messages?.length ?? 0,
+        },
+      });
 
       const result = streamText({
         model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
@@ -105,7 +126,13 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         temperature: 0.7,
         stopWhen: stepCountIs(5),
         onError: ({ error }) => {
-          console.error('streaming error', error);
+          captureApiException({
+            error: error,
+            operation: 'chat.stream.onError',
+            userId: user.userId,
+            tags: { ai_provider: AI_PROVIDER, context_type: contextType ?? 'none' },
+            extra: { packId, itemId, messageCount: messages?.length ?? 0 },
+          });
         },
       });
 

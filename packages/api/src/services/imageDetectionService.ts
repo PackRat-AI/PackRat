@@ -83,10 +83,13 @@ export class ImageDetectionService {
    * Detect items in an image and find matching catalog items
    */
 
-  async detectAndMatchItems(
-    imageUrl: string,
-    matchLimit: number = 3,
-  ): Promise<DetectedItemWithMatches[]> {
+  async detectAndMatchItems({
+    imageUrl,
+    matchLimit = 3,
+  }: {
+    imageUrl: string;
+    matchLimit?: number;
+  }): Promise<DetectedItemWithMatches[]> {
     try {
       // First, detect items in the image
       const analysis = await this.analyzeImage(imageUrl);
@@ -105,7 +108,10 @@ export class ImageDetectionService {
       const searchQueries = highConfidenceItems.map((detected) =>
         `${detected.name} ${detected.description}`.trim(),
       );
-      const result = await catalogService.batchVectorSearch(searchQueries, matchLimit);
+      const result = await catalogService.batchVectorSearch({
+        queries: searchQueries,
+        limit: matchLimit,
+      });
 
       // Combine detected items with their catalog matches
       const itemsWithMatches: DetectedItemWithMatches[] = highConfidenceItems

@@ -195,7 +195,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Platform Stats', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
-      call(agent.api.admin.admin.stats.get(), {
+      call({
+        promise: agent.api.admin.admin.stats.get(),
         action: 'fetch admin stats',
         structured: true,
         ...ADMIN,
@@ -218,12 +219,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: List Users', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset }) =>
-      call(
-        agent.api.admin.admin['users-list'].get({
+      call({
+        promise: agent.api.admin.admin['users-list'].get({
           query: { q, limit: clampLimit(limit), offset },
         }),
-        { action: 'list users', ...ADMIN },
-      ),
+        action: 'list users',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -270,14 +272,12 @@ export function registerAdminTools(agent: AgentContext): void {
         });
         return elicitFailureResponse(confirm.reason);
       }
-      const result = await call(
-        agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }),
-        {
-          action: 'hard-delete user',
-          resourceHint: `user ${user_id}`,
-          ...ADMIN,
-        },
-      );
+      const result = await call({
+        promise: agent.api.admin.admin.users({ id: user_id }).hard.delete({ reason }),
+        action: 'hard-delete user',
+        resourceHint: `user ${user_id}`,
+        ...ADMIN,
+      });
       audit(logger, 'admin_hard_delete_user', { actor, target, ...auditOutcome(result) });
       return result;
     },
@@ -299,12 +299,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: List Packs', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset, include_deleted }) =>
-      call(
-        agent.api.admin.admin['packs-list'].get({
+      call({
+        promise: agent.api.admin.admin['packs-list'].get({
           query: { q, limit: clampLimit(limit), offset, includeDeleted: include_deleted },
         }),
-        { action: 'list packs (admin)', ...ADMIN },
-      ),
+        action: 'list packs (admin)',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -339,7 +340,8 @@ export function registerAdminTools(agent: AgentContext): void {
         });
         return elicitFailureResponse(confirm.reason);
       }
-      const result = await call(agent.api.admin.admin.packs({ id: pack_id }).delete(), {
+      const result = await call({
+        promise: agent.api.admin.admin.packs({ id: pack_id }).delete(),
         action: 'admin delete pack',
         resourceHint: `pack ${pack_id}`,
         ...ADMIN,
@@ -364,12 +366,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: List Catalog Items', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, limit, offset }) =>
-      call(
-        agent.api.admin.admin['catalog-list'].get({
+      call({
+        promise: agent.api.admin.admin['catalog-list'].get({
           query: { q, limit: clampLimit(limit), offset },
         }),
-        { action: 'list catalog (admin)', ...ADMIN },
-      ),
+        action: 'list catalog (admin)',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -404,7 +407,8 @@ export function registerAdminTools(agent: AgentContext): void {
       if (weight_unit !== undefined) body.weightUnit = weight_unit;
       if (price !== undefined) body.price = price;
       if (description !== undefined) body.description = description;
-      return call(agent.api.admin.admin.catalog({ id: String(item_id) }).patch(body), {
+      return call({
+        promise: agent.api.admin.admin.catalog({ id: String(item_id) }).patch(body),
         action: 'admin update catalog item',
         resourceHint: `catalog item ${item_id}`,
         ...ADMIN,
@@ -443,7 +447,8 @@ export function registerAdminTools(agent: AgentContext): void {
         });
         return elicitFailureResponse(confirm.reason);
       }
-      const result = await call(agent.api.admin.admin.catalog({ id: String(item_id) }).delete(), {
+      const result = await call({
+        promise: agent.api.admin.admin.catalog({ id: String(item_id) }).delete(),
         action: 'admin delete catalog item',
         resourceHint: `catalog item ${item_id}`,
         ...ADMIN,
@@ -471,12 +476,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Search Trails', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ q, sport, limit, offset }) =>
-      call(
-        agent.api.admin.admin.trails.search.get({
+      call({
+        promise: agent.api.admin.admin.trails.search.get({
           query: { q, sport, limit: clampLimit(limit), offset },
         }),
-        { action: 'admin search trails', ...ADMIN },
-      ),
+        action: 'admin search trails',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -488,7 +494,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Get Trail', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ osm_id }) =>
-      call(agent.api.admin.admin.trails({ osmId: osm_id }).get(), {
+      call({
+        promise: agent.api.admin.admin.trails({ osmId: osm_id }).get(),
         action: 'admin get trail',
         resourceHint: `trail ${osm_id}`,
         ...ADMIN,
@@ -504,7 +511,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Get Trail Geometry', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ osm_id }) =>
-      call(agent.api.admin.admin.trails({ osmId: osm_id }).geometry.get(), {
+      call({
+        promise: agent.api.admin.admin.trails({ osmId: osm_id }).geometry.get(),
         action: 'admin get trail geometry',
         resourceHint: `trail ${osm_id}`,
         ...ADMIN,
@@ -530,12 +538,13 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ q, limit, offset, include_deleted }) =>
-      call(
-        agent.api.admin.admin.trails.conditions.get({
+      call({
+        promise: agent.api.admin.admin.trails.conditions.get({
           query: { q, limit: clampLimit(limit), offset, includeDeleted: include_deleted },
         }),
-        { action: 'list trail condition reports (admin)', ...ADMIN },
-      ),
+        action: 'list trail condition reports (admin)',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -570,14 +579,12 @@ export function registerAdminTools(agent: AgentContext): void {
         });
         return elicitFailureResponse(confirm.reason);
       }
-      const result = await call(
-        agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(),
-        {
-          action: 'admin delete trail report',
-          resourceHint: `report ${report_id}`,
-          ...ADMIN,
-        },
-      );
+      const result = await call({
+        promise: agent.api.admin.admin.trails.conditions({ reportId: report_id }).delete(),
+        action: 'admin delete trail report',
+        resourceHint: `report ${report_id}`,
+        ...ADMIN,
+      });
       audit(logger, 'admin_delete_trail_condition_report', {
         actor,
         target,
@@ -603,7 +610,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Analytics Growth', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ period, range }) =>
-      call(agent.api.admin.admin.analytics.platform.growth.get({ query: { period, range } }), {
+      call({
+        promise: agent.api.admin.admin.analytics.platform.growth.get({ query: { period, range } }),
         action: 'admin analytics growth',
         ...ADMIN,
       }),
@@ -623,7 +631,10 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Analytics Activity', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ period, range }) =>
-      call(agent.api.admin.admin.analytics.platform.activity.get({ query: { period, range } }), {
+      call({
+        promise: agent.api.admin.admin.analytics.platform.activity.get({
+          query: { period, range },
+        }),
         action: 'admin analytics activity',
         ...ADMIN,
       }),
@@ -640,7 +651,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Active Users', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
-      call(agent.api.admin.admin.analytics.platform['active-users'].get(), {
+      call({
+        promise: agent.api.admin.admin.analytics.platform['active-users'].get(),
         action: 'admin analytics active users',
         structured: true,
         ...ADMIN,
@@ -658,7 +670,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Pack Breakdown', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
-      call(agent.api.admin.admin.analytics.platform.breakdown.get(), {
+      call({
+        promise: agent.api.admin.admin.analytics.platform.breakdown.get(),
         action: 'admin analytics breakdown',
         ...ADMIN,
       }),
@@ -677,7 +690,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Catalog Overview', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
-      call(agent.api.admin.admin.analytics.catalog.overview.get(), {
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.overview.get(),
         action: 'admin catalog overview',
         structured: true,
         ...ADMIN,
@@ -695,10 +709,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Top Brands', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
-      call(
-        agent.api.admin.admin.analytics.catalog.brands.get({ query: { limit: clampLimit(limit) } }),
-        { action: 'admin catalog brands', ...ADMIN },
-      ),
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.brands.get({
+          query: { limit: clampLimit(limit) },
+        }),
+        action: 'admin catalog brands',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -710,7 +727,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Catalog Prices', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
-      call(agent.api.admin.admin.analytics.catalog.prices.get(), {
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.prices.get(),
         action: 'admin catalog prices',
         ...ADMIN,
       }),
@@ -725,7 +743,8 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: Catalog Embedding Stats', ...READ_ADMIN_ANNOTATIONS },
     },
     async () =>
-      call(agent.api.admin.admin.analytics.catalog.embeddings.get(), {
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.embeddings.get(),
         action: 'admin catalog embedding stats',
         ...ADMIN,
       }),
@@ -742,13 +761,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: ETL Jobs', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
-      call(
-        agent.api.admin.admin.analytics.catalog.etl.get({ query: { limit: clampLimit(limit) } }),
-        {
-          action: 'admin ETL jobs',
-          ...ADMIN,
-        },
-      ),
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.etl.get({
+          query: { limit: clampLimit(limit) },
+        }),
+        action: 'admin ETL jobs',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -762,12 +781,13 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: ETL Failure Summary', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ limit }) =>
-      call(
-        agent.api.admin.admin.analytics.catalog.etl['failure-summary'].get({
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.etl['failure-summary'].get({
           query: { limit: clampLimit(limit) },
         }),
-        { action: 'admin ETL failure summary', ...ADMIN },
-      ),
+        action: 'admin ETL failure summary',
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -784,12 +804,14 @@ export function registerAdminTools(agent: AgentContext): void {
       annotations: { title: 'Admin: ETL Job Failures', ...READ_ADMIN_ANNOTATIONS },
     },
     async ({ job_id, limit }) =>
-      call(
-        agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).failures.get({
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).failures.get({
           query: { limit: clampLimit(limit) },
         }),
-        { action: 'admin ETL job failures', resourceHint: `job ${job_id}`, ...ADMIN },
-      ),
+        action: 'admin ETL job failures',
+        resourceHint: `job ${job_id}`,
+        ...ADMIN,
+      }),
   );
 
   agent.server.registerTool(
@@ -807,7 +829,8 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async () =>
-      call(agent.api.admin.admin.analytics.catalog.etl['reset-stuck'].post({}), {
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.etl['reset-stuck'].post({}),
         action: 'admin ETL reset stuck',
         ...ADMIN,
       }),
@@ -828,7 +851,8 @@ export function registerAdminTools(agent: AgentContext): void {
       },
     },
     async ({ job_id }) =>
-      call(agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).retry.post({}), {
+      call({
+        promise: agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).retry.post({}),
         action: 'admin ETL retry job',
         resourceHint: `job ${job_id}`,
         ...ADMIN,

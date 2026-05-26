@@ -14,7 +14,7 @@ export function getMdxContent(slug: string): string {
   return postContent[slug] || `<p>Content not found for ${slug}</p>`;
 }
 
-export function getRelatedPosts(post: Post, count = 3): Post[] {
+export function getRelatedPosts({ post, count = 3 }: { post: Post; count?: number }): Post[] {
   // Filter out the current post
   const otherPosts = posts.filter((p) => p.slug !== post.slug);
 

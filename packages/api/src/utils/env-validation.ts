@@ -10,6 +10,7 @@ export const apiEnvSchema = z.object({
   // Environment & Deployment
   ENVIRONMENT: z.enum(['development', 'production']).default('production'),
   SENTRY_DSN: z.string().url().optional(),
+  SENTRY_RELEASE: z.string().optional(),
 
   // Database
   NEON_DATABASE_URL: z.string().url(),

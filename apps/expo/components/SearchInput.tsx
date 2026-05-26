@@ -15,7 +15,7 @@ export const SearchInput = forwardRef<
   const searchInputRef = useRef<React.ComponentRef<typeof NativeWindUISearchInput>>(null);
 
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(asNonNullableRef(searchInputRef));
+  useKeyboardHideBlur({ textInputRef: asNonNullableRef(searchInputRef) });
 
   // Forward ref methods to the internal ref
   useImperativeHandle(ref, () => {

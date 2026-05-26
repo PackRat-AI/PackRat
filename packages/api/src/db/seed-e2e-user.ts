@@ -70,45 +70,65 @@ async function seedE2EUser(): Promise<void> {
       .where(eq(schema.users.email, normalizedEmail))
       .limit(1);
 
+    let userId: string;
     const existingUser = existing[0];
     if (existingUser) {
       // drizzle-seed has no UPDATE primitive; use db.update for the
       // password-refresh path. Insert path below uses drizzle-seed.
+      userId = existingUser.id;
       await db
         .update(schema.users)
         .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
-        .where(eq(schema.users.id, existingUser.id));
-      console.log(`E2E user refreshed: ${normalizedEmail} (id=${existingUser.id})`);
-      return;
+        .where(eq(schema.users.id, userId));
+      console.log(`E2E user refreshed: ${normalizedEmail} (id=${userId})`);
+    } else {
+      userId = crypto.randomUUID();
+      const now = new Date();
+      await seed(db, { users: schema.users }).refine((f) => ({
+        users: {
+          count: 1,
+          columns: {
+            id: f.default({ defaultValue: userId }),
+            name: f.default({ defaultValue: 'E2E Automation' }),
+            email: f.default({ defaultValue: normalizedEmail }),
+            emailVerified: f.default({ defaultValue: true }),
+            image: f.default({ defaultValue: null }),
+            role: f.default({ defaultValue: 'USER' }),
+            banned: f.default({ defaultValue: false }),
+            banReason: f.default({ defaultValue: null }),
+            banExpires: f.default({ defaultValue: null }),
+            firstName: f.default({ defaultValue: 'E2E' }),
+            lastName: f.default({ defaultValue: 'Automation' }),
+            avatarUrl: f.default({ defaultValue: null }),
+            passwordHash: f.default({ defaultValue: passwordHash }),
+            createdAt: f.default({ defaultValue: now }),
+            updatedAt: f.default({ defaultValue: now }),
+          },
+        },
+      }));
+      console.log(`E2E user created: ${normalizedEmail} (id=${userId})`);
     }
 
-    const id = crypto.randomUUID();
-    const now = new Date();
-
-    await seed(db, { users: schema.users }).refine((f) => ({
-      users: {
-        count: 1,
-        columns: {
-          id: f.default({ defaultValue: id }),
-          name: f.default({ defaultValue: 'E2E Automation' }),
-          email: f.default({ defaultValue: normalizedEmail }),
-          emailVerified: f.default({ defaultValue: true }),
-          image: f.default({ defaultValue: null }),
-          role: f.default({ defaultValue: 'USER' }),
-          banned: f.default({ defaultValue: false }),
-          banReason: f.default({ defaultValue: null }),
-          banExpires: f.default({ defaultValue: null }),
-          firstName: f.default({ defaultValue: 'E2E' }),
-          lastName: f.default({ defaultValue: 'Automation' }),
-          avatarUrl: f.default({ defaultValue: null }),
-          passwordHash: f.default({ defaultValue: passwordHash }),
-          createdAt: f.default({ defaultValue: now }),
-          updatedAt: f.default({ defaultValue: now }),
-        },
-      },
-    }));
-
-    console.log(`E2E user created: ${normalizedEmail} (id=${id})`);
+    // Upsert the credential account row that better-auth looks up during sign-in.
+    // better-auth sets accountId = email for the 'credential' provider.
+    // (drizzle-seed has no upsert; this requires onConflictDoUpdate so we use
+    // db.insert directly here rather than drizzle-seed's refine path.)
+    await db
+      .insert(schema.account)
+      .values({
+        id: crypto.randomUUID(),
+        accountId: normalizedEmail,
+        providerId: 'credential',
+        userId,
+        password: passwordHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [schema.account.providerId, schema.account.accountId],
+        set: { userId, password: passwordHash, updatedAt: new Date() },
+      });
+    console.log(`E2E credential account upserted for: ${normalizedEmail}`);
   } finally {
     await pgClient?.end();
   }

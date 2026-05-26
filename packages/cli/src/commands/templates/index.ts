@@ -11,20 +11,23 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client['pack-templates'].get(), { action: 'list pack templates' });
+    const data = await runApi({
+      promise: client['pack-templates'].get(),
+      action: 'list pack templates',
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(data).map((r) => ({
+    printTable({
+      rows: toRecordArray(data).map((r) => ({
         id: r.id,
         name: r.name,
         category: r.category,
         isApp: r.isAppTemplate,
       })),
-      { title: 'Pack templates' },
-    );
+      options: { title: 'Pack templates' },
+    });
   },
 });
 
@@ -34,7 +37,8 @@ const getCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client['pack-templates']({ templateId: args.id }).get(), {
+    const data = await runApi({
+      promise: client['pack-templates']({ templateId: args.id }).get(),
       action: 'get pack template',
       resourceHint: `template ${args.id}`,
     });
@@ -58,8 +62,8 @@ const createCmd = defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const now = nowIso();
-    const data = await runApi(
-      client['pack-templates'].post({
+    const data = await runApi({
+      promise: client['pack-templates'].post({
         id: shortId('pt'),
         name: args.name,
         description: args.description,
@@ -68,8 +72,8 @@ const createCmd = defineCommand({
         localCreatedAt: now,
         localUpdatedAt: now,
       }),
-      { action: 'create pack template' },
-    );
+      action: 'create pack template',
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -80,7 +84,8 @@ const deleteCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    await runApi(client['pack-templates']({ templateId: args.id }).delete(), {
+    await runApi({
+      promise: client['pack-templates']({ templateId: args.id }).delete(),
       action: 'delete pack template',
       resourceHint: `template ${args.id}`,
     });

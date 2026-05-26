@@ -250,7 +250,7 @@ export default function AIChat() {
     }
 
     const timeoutId = setTimeout(() => {
-      saveChatMessages(context, messages);
+      saveChatMessages({ context, messages });
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -269,10 +269,13 @@ export default function AIChat() {
 
     // Guard: local mode but model not ready
     if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
-      Burnt.toast({
-        title: t('ai.modelNotReady'),
-        preset: 'error',
-      });
+      const toastTitle =
+        modelStatus === 'downloading'
+          ? t('ai.modelStillDownloading')
+          : modelStatus === 'preparing' || modelStatus === 'checking'
+            ? t('ai.modelStillLoading')
+            : t('ai.modelNotReady');
+      Burnt.toast({ title: toastTitle, preset: 'error' });
       return;
     }
 

@@ -22,7 +22,7 @@ const Ctx = createContext<WeightCtx>({
 export function WeightProvider({ children }: { children: React.ReactNode }) {
   const [unit, setUnit] = useAtom(weightUnitAtom);
   const toggleUnit = () => setUnit((u) => (u === 'g' ? 'oz' : 'g'));
-  const fw = (grams: number) => fmt(grams, unit);
+  const fw = (grams: number) => fmt({ grams, unit });
   return <Ctx.Provider value={{ unit, setUnit, toggleUnit, fw }}>{children}</Ctx.Provider>;
 }
 

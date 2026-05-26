@@ -43,8 +43,8 @@ export function registerCatalogTools(agent: AgentContext): void {
       },
     },
     async ({ query, category, limit, page, sort_by, sort_order }) =>
-      call(
-        agent.api.user.catalog.get({
+      call({
+        promise: agent.api.user.catalog.get({
           query: {
             q: query,
             category,
@@ -53,8 +53,8 @@ export function registerCatalogTools(agent: AgentContext): void {
             sort: sort_by ? { field: sort_by, order: sort_order } : undefined,
           },
         }),
-        { action: 'search catalog' },
-      ),
+        action: 'search catalog',
+      }),
   );
 
   // ── Semantic/vector search ────────────────────────────────────────────────
@@ -77,7 +77,8 @@ export function registerCatalogTools(agent: AgentContext): void {
       },
     },
     async ({ query, limit }) =>
-      call(agent.api.user.catalog['vector-search'].get({ query: { q: query, limit } }), {
+      call({
+        promise: agent.api.user.catalog['vector-search'].get({ query: { q: query, limit } }),
         action: 'semantic catalog search',
       }),
   );
@@ -101,7 +102,8 @@ export function registerCatalogTools(agent: AgentContext): void {
       },
     },
     async ({ item_id }) =>
-      call(agent.api.user.catalog({ id: String(item_id) }).get(), {
+      call({
+        promise: agent.api.user.catalog({ id: String(item_id) }).get(),
         action: 'get catalog item',
         resourceHint: `catalog item ${item_id}`,
       }),
@@ -127,12 +129,13 @@ export function registerCatalogTools(agent: AgentContext): void {
       },
     },
     async ({ item_id, limit, threshold }) =>
-      call(
-        agent.api.user.catalog({ id: String(item_id) }).similar.get({
+      call({
+        promise: agent.api.user.catalog({ id: String(item_id) }).similar.get({
           query: { limit, ...(threshold !== undefined ? { threshold } : {}) },
         }),
-        { action: 'find similar catalog items', resourceHint: `catalog item ${item_id}` },
-      ),
+        action: 'find similar catalog items',
+        resourceHint: `catalog item ${item_id}`,
+      }),
   );
 
   // ── List categories ───────────────────────────────────────────────────────
@@ -152,7 +155,8 @@ export function registerCatalogTools(agent: AgentContext): void {
       },
     },
     async ({ limit }) =>
-      call(agent.api.user.catalog.categories.get({ query: { limit } }), {
+      call({
+        promise: agent.api.user.catalog.categories.get({ query: { limit } }),
         action: 'list catalog categories',
       }),
   );
@@ -197,8 +201,8 @@ export function registerCatalogTools(agent: AgentContext): void {
       rating,
       product_url,
     }) =>
-      call(
-        agent.api.user.catalog.post({
+      call({
+        promise: agent.api.user.catalog.post({
           name,
           description,
           brand,
@@ -210,8 +214,8 @@ export function registerCatalogTools(agent: AgentContext): void {
           rating,
           productUrl: product_url,
         }),
-        { action: 'create catalog item' },
-      ),
+        action: 'create catalog item',
+      }),
   );
 
   // ── Compare items (API-side path proposed; until then, multi-fetch) ───────
@@ -235,7 +239,8 @@ export function registerCatalogTools(agent: AgentContext): void {
       },
     },
     async ({ item_ids }) =>
-      call(agent.api.user.catalog.compare.post({ ids: item_ids }), {
+      call({
+        promise: agent.api.user.catalog.compare.post({ ids: item_ids }),
         action: 'compare catalog items',
       }),
   );

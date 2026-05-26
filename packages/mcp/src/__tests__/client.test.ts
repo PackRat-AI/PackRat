@@ -92,7 +92,7 @@ describe('nowIso()', () => {
 describe('call()', () => {
   it('returns ok result when promise resolves with data', async () => {
     const mockPromise = Promise.resolve({ data: { id: 'pack-1' }, error: null, status: 200 });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.isError).toBeUndefined();
     expect(result.content[0].text).toContain('"id": "pack-1"');
   });
@@ -103,27 +103,27 @@ describe('call()', () => {
       error: { status: 404, value: 'Not Found' },
       status: 404,
     });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('404');
   });
 
   it('returns error result when data is null', async () => {
     const mockPromise = Promise.resolve({ data: null, error: null, status: 200 });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
   });
 
   it('returns error result when promise rejects', async () => {
     const mockPromise = Promise.reject(new Error('network failure'));
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('network failure');
   });
 
   it('uses action from options in error messages', async () => {
     const mockPromise = Promise.reject(new Error('timeout'));
-    const result = await call(mockPromise, { action: 'fetch pack' });
+    const result = await call({ promise: mockPromise, action: 'fetch pack' });
     expect(result.content[0].text).toContain('fetch pack');
   });
 
@@ -133,7 +133,7 @@ describe('call()', () => {
       error: { status: 401, value: null },
       status: 401,
     });
-    const result = await call(mockPromise, { action: 'list packs' });
+    const result = await call({ promise: mockPromise, action: 'list packs' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('authentication');
   });
@@ -144,7 +144,7 @@ describe('call()', () => {
       error: { status: 401, value: null },
       status: 401,
     });
-    const result = await call(mockPromise, { action: 'list packs', requiresAdmin: true });
+    const result = await call({ promise: mockPromise, action: 'list packs', requiresAdmin: true });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('admin');
   });
@@ -155,7 +155,7 @@ describe('call()', () => {
       error: { status: 403, value: null },
       status: 403,
     });
-    const result = await call(mockPromise, { action: 'delete pack' });
+    const result = await call({ promise: mockPromise, action: 'delete pack' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('forbidden');
   });
@@ -166,7 +166,7 @@ describe('call()', () => {
       error: { status: 404, value: null },
       status: 404,
     });
-    const result = await call(mockPromise, { action: 'get pack', resourceHint: 'pack p_123' });
+    const result = await call({ promise: mockPromise, action: 'get pack', resourceHint: 'pack p_123' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('404');
   });
@@ -177,7 +177,7 @@ describe('call()', () => {
       error: { status: 409, value: null },
       status: 409,
     });
-    const result = await call(mockPromise, { action: 'create pack' });
+    const result = await call({ promise: mockPromise, action: 'create pack' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('conflict');
   });
@@ -188,7 +188,7 @@ describe('call()', () => {
       error: { status: 422, value: null },
       status: 422,
     });
-    const result = await call(mockPromise, { action: 'update pack' });
+    const result = await call({ promise: mockPromise, action: 'update pack' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('validation');
   });
@@ -199,7 +199,7 @@ describe('call()', () => {
       error: { status: 429, value: null },
       status: 429,
     });
-    const result = await call(mockPromise, { action: 'search' });
+    const result = await call({ promise: mockPromise, action: 'search' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('rate limit');
   });
@@ -210,7 +210,7 @@ describe('call()', () => {
       error: { status: 503, value: null },
       status: 503,
     });
-    const result = await call(mockPromise, { action: 'fetch data' });
+    const result = await call({ promise: mockPromise, action: 'fetch data' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('503');
   });
@@ -221,13 +221,13 @@ describe('call()', () => {
       error: { status: 400, value: { message: 'invalid input' } },
       status: 400,
     });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.content[0].text).toContain('invalid input');
   });
 
   it('handles non-Error thrown exceptions', async () => {
     const mockPromise = Promise.reject('string error');
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('string error');
   });
@@ -238,7 +238,7 @@ describe('call()', () => {
       error: { status: 403, value: null },
       status: 403,
     });
-    const result = await call(mockPromise, { action: 'delete user', requiresAdmin: true });
+    const result = await call({ promise: mockPromise, action: 'delete user', requiresAdmin: true });
     expect(result.isError).toBe(true);
     expect(result.content[0].text.toLowerCase()).toContain('admin');
     expect(result.content[0].text.toLowerCase()).toContain('forbidden');
@@ -250,7 +250,7 @@ describe('call()', () => {
       error: { status: 400, value: { error: 'bad request detail' } },
       status: 400,
     });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.content[0].text).toContain('bad request detail');
   });
 
@@ -260,7 +260,7 @@ describe('call()', () => {
       error: { status: 400, value: { code: 42, detail: 'some info' } },
       status: 400,
     });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.content[0].text).toContain('42');
   });
 
@@ -270,7 +270,7 @@ describe('call()', () => {
       error: { status: 500, value: 12345 },
       status: 500,
     });
-    const result = await call(mockPromise);
+    const result = await call({ promise: mockPromise });
     expect(result.content[0].text).toContain('12345');
   });
 });
@@ -460,10 +460,10 @@ describe('U8 errMessage() carries structured error envelope', () => {
 
 describe('U8 call() maps errors to structured envelopes', () => {
   it('maps 500 to api_error with retryable: true', async () => {
-    const result = await call(
-      Promise.resolve({ data: null, error: { status: 500, value: null }, status: 500 }),
-      { action: 'fetch x' },
-    );
+    const result = await call({
+      promise: Promise.resolve({ data: null, error: { status: 500, value: null }, status: 500 }),
+      action: 'fetch x',
+    });
     expect(result.isError).toBe(true);
     expect(result.structuredContent).toMatchObject({
       error: { code: 'api_error', retryable: true },
@@ -471,52 +471,55 @@ describe('U8 call() maps errors to structured envelopes', () => {
   });
 
   it('maps 401 to unauthorized with retryable: false', async () => {
-    const result = await call(
-      Promise.resolve({ data: null, error: { status: 401, value: null }, status: 401 }),
-    );
+    const result = await call({
+      promise: Promise.resolve({ data: null, error: { status: 401, value: null }, status: 401 }),
+    });
     expect(result.structuredContent).toMatchObject({
       error: { code: 'unauthorized', retryable: false },
     });
   });
 
   it('maps 403 to forbidden with retryable: false', async () => {
-    const result = await call(
-      Promise.resolve({ data: null, error: { status: 403, value: null }, status: 403 }),
-    );
+    const result = await call({
+      promise: Promise.resolve({ data: null, error: { status: 403, value: null }, status: 403 }),
+    });
     expect(result.structuredContent).toMatchObject({
       error: { code: 'forbidden', retryable: false },
     });
   });
 
   it('maps 404 to not_found', async () => {
-    const result = await call(
-      Promise.resolve({ data: null, error: { status: 404, value: null }, status: 404 }),
-    );
+    const result = await call({
+      promise: Promise.resolve({ data: null, error: { status: 404, value: null }, status: 404 }),
+    });
     expect(result.structuredContent).toMatchObject({
       error: { code: 'not_found', retryable: false },
     });
   });
 
   it('maps 429 to rate_limited with retryable: true', async () => {
-    const result = await call(
-      Promise.resolve({ data: null, error: { status: 429, value: null }, status: 429 }),
-    );
+    const result = await call({
+      promise: Promise.resolve({ data: null, error: { status: 429, value: null }, status: 429 }),
+    });
     expect(result.structuredContent).toMatchObject({
       error: { code: 'rate_limited', retryable: true },
     });
   });
 
   it('maps 422 to validation_error', async () => {
-    const result = await call(
-      Promise.resolve({ data: null, error: { status: 422, value: null }, status: 422 }),
-    );
+    const result = await call({
+      promise: Promise.resolve({ data: null, error: { status: 422, value: null }, status: 422 }),
+    });
     expect(result.structuredContent).toMatchObject({
       error: { code: 'validation_error', retryable: false },
     });
   });
 
   it('maps a thrown network error to network_error with retryable: true (no escape)', async () => {
-    const result = await call(Promise.reject(new Error('socket hang up')), { action: 'fetch x' });
+    const result = await call({
+      promise: Promise.reject(new Error('socket hang up')),
+      action: 'fetch x',
+    });
     expect(result.isError).toBe(true);
     expect(result.structuredContent).toMatchObject({
       error: { code: 'network_error', retryable: true },
@@ -530,12 +533,13 @@ describe('U8 call() maps errors to structured envelopes', () => {
     // runtime fault inside the API client is recoverable from Claude's
     // perspective.
     await expect(
-      call(Promise.reject('not even an Error instance'), { action: 'fetch' }),
+      call({ promise: Promise.reject('not even an Error instance'), action: 'fetch' }),
     ).resolves.toMatchObject({ isError: true });
   });
 
   it('emits structuredContent on success when structured: true is set', async () => {
-    const result = await call(Promise.resolve({ data: { ok: 'yes' }, error: null, status: 200 }), {
+    const result = await call({
+      promise: Promise.resolve({ data: { ok: 'yes' }, error: null, status: 200 }),
       structured: true,
     });
     expect(result.isError).toBeUndefined();
@@ -543,7 +547,9 @@ describe('U8 call() maps errors to structured envelopes', () => {
   });
 
   it('omits structuredContent on success when structured is not set', async () => {
-    const result = await call(Promise.resolve({ data: { ok: 'yes' }, error: null, status: 200 }));
+    const result = await call({
+      promise: Promise.resolve({ data: { ok: 'yes' }, error: null, status: 200 }),
+    });
     expect(result.structuredContent).toBeUndefined();
   });
 });

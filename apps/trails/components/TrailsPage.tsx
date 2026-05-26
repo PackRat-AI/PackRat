@@ -59,7 +59,7 @@ export function TrailsPage() {
       }
 
       try {
-        const trails = await loadNearbyTrails(center[0], center[1]);
+        const trails = await loadNearbyTrails({ lat: center[0], lon: center[1] });
         if (!cancelled) setPublicTrails(trails);
       } catch {
         // Overpass failure is non-fatal; map still shows with no trails

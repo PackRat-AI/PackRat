@@ -36,10 +36,16 @@ const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
 const ADMIN_JWT_AUDIENCE = 'packrat-admin';
 
-function checkAdminCredentials(username: string, password: string): boolean {
+function checkAdminCredentials({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}): boolean {
   const env = getEnv();
-  const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
-  const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
+  const userOk = timingSafeEqual({ a: username, b: env.ADMIN_USERNAME });
+  const passOk = timingSafeEqual({ a: password, b: env.ADMIN_PASSWORD });
   return userOk && passOk;
 }
 
@@ -53,7 +59,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
     if (sep === -1) return { authorized: false };
     const username = decoded.slice(0, sep);
     const password = decoded.slice(sep + 1);
-    if (checkAdminCredentials(username, password)) return { authorized: true };
+    if (checkAdminCredentials({ username, password })) return { authorized: true };
   } catch {
     return { authorized: false };
   }
@@ -182,9 +188,12 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
 
   // When CF Access is configured, verify the CF JWT injected by the CF edge.
   if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    const cfIdentity = await verifyCFAccessRequest(request, {
-      teamDomain: CF_ACCESS_TEAM_DOMAIN,
-      aud: CF_ACCESS_AUD,
+    const cfIdentity = await verifyCFAccessRequest({
+      request,
+      opts: {
+        teamDomain: CF_ACCESS_TEAM_DOMAIN,
+        aud: CF_ACCESS_AUD,
+      },
     });
     if (cfIdentity) return true;
   }
@@ -242,13 +251,16 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       }
       const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(request, {
-          teamDomain: CF_ACCESS_TEAM_DOMAIN,
-          aud: CF_ACCESS_AUD,
+        const cfIdentity = await verifyCFAccessRequest({
+          request,
+          opts: {
+            teamDomain: CF_ACCESS_TEAM_DOMAIN,
+            aud: CF_ACCESS_AUD,
+          },
         });
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
-      if (!checkAdminCredentials(body.username, body.password)) {
+      if (!checkAdminCredentials({ username: body.username, password: body.password })) {
         return status(401, { error: 'Invalid username or password' });
       }
       const token = await issueAdminJwt(body.username);
@@ -290,9 +302,12 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
       // Basic credentials are always required and remain the primary gate.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(request, {
-          teamDomain: CF_ACCESS_TEAM_DOMAIN,
-          aud: CF_ACCESS_AUD,
+        const cfIdentity = await verifyCFAccessRequest({
+          request,
+          opts: {
+            teamDomain: CF_ACCESS_TEAM_DOMAIN,
+            aud: CF_ACCESS_AUD,
+          },
         });
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
@@ -341,7 +356,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
           .where(eq(packs.deleted, false));
         const [itemCount] = await db.select({ count: count() }).from(catalogItems);
 
-        assertAllDefined([userCount, packCount, itemCount]);
+        assertAllDefined({ values: [userCount, packCount, itemCount] });
 
         return {
           users: userCount?.count ?? 0,

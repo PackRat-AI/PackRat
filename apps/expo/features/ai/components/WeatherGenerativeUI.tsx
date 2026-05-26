@@ -139,10 +139,10 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
             <View className="mb-4 flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <Icon
-                  name={getWeatherIconByCondition(
-                    toolInvocation.output.data.condition,
-                    toolInvocation.output.data.details.isDay,
-                  )}
+                  name={getWeatherIconByCondition({
+                    condition: toolInvocation.output.data.condition,
+                    isDay: toolInvocation.output.data.details.isDay,
+                  })}
                   size={48}
                   color="#3b82f6"
                 />

@@ -11,12 +11,12 @@ const ragCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client.ai['rag-search'].get({
+    const data = await runApi({
+      promise: client.ai['rag-search'].get({
         query: { q: args.q, limit: Number.parseInt(args.limit, 10) },
       }),
-      { action: 'rag search' },
-    );
+      action: 'rag search',
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -27,7 +27,8 @@ const webCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.ai['web-search'].get({ query: { q: args.q } }), {
+    const data = await runApi({
+      promise: client.ai['web-search'].get({ query: { q: args.q } }),
       action: 'web search',
     });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
@@ -43,13 +44,13 @@ const sqlCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(
-      client.ai['execute-sql'].post({
+    const data = await runApi({
+      promise: client.ai['execute-sql'].post({
         query: args.query,
         limit: Number.parseInt(args.limit, 10),
       }),
-      { action: 'execute sql' },
-    );
+      action: 'execute sql',
+    });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });
@@ -59,7 +60,7 @@ const schemaCmd = defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.ai['db-schema'].get(), { action: 'fetch db schema' });
+    const data = await runApi({ promise: client.ai['db-schema'].get(), action: 'fetch db schema' });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
   },
 });

@@ -31,7 +31,7 @@ describe('SQLFragments', () => {
 
   describe('safeCoalesce', () => {
     it('generates COALESCE for name field with all variations', () => {
-      const sql = SQLFragments.safeCoalesce('name');
+      const sql = SQLFragments.safeCoalesce({ field: 'name' });
       expect(sql).toContain('COALESCE(');
       expect(sql).toContain('name'); // column name from FIELD_MAPPINGS
       expect(sql).toContain("'Unknown'"); // default
@@ -39,12 +39,12 @@ describe('SQLFragments', () => {
     });
 
     it('uses custom default value', () => {
-      const sql = SQLFragments.safeCoalesce('brand', "'N/A'");
+      const sql = SQLFragments.safeCoalesce({ field: 'brand', defaultValue: "'N/A'" });
       expect(sql).toContain("'N/A'");
     });
 
     it('wraps unquoted default in quotes', () => {
-      const sql = SQLFragments.safeCoalesce('brand', 'N/A');
+      const sql = SQLFragments.safeCoalesce({ field: 'brand', defaultValue: 'N/A' });
       expect(sql).toContain("'N/A'");
     });
   });
@@ -70,14 +70,17 @@ describe('SQLFragments', () => {
 
   describe('readCsvSource', () => {
     it('generates read_csv_auto with bucket path', () => {
-      const sql = SQLFragments.readCsvSource('s3://my-bucket');
+      const sql = SQLFragments.readCsvSource({ bucketPath: 's3://my-bucket' });
       expect(sql).toContain("'s3://my-bucket/v2/*/*.csv'");
       expect(sql).toContain('union_by_name=true');
       expect(sql).toContain('filename=true');
     });
 
     it('uses custom glob patterns', () => {
-      const sql = SQLFragments.readCsvSource('s3://b', ['custom/*.csv']);
+      const sql = SQLFragments.readCsvSource({
+        bucketPath: 's3://b',
+        globPatterns: ['custom/*.csv'],
+      });
       expect(sql).toContain("'s3://b/custom/*.csv'");
       expect(sql).not.toContain('v1');
     });
@@ -139,24 +142,24 @@ describe('SQLFragments', () => {
 
   describe('priceRangeFilter', () => {
     it('generates min price condition', () => {
-      const conditions = SQLFragments.priceRangeFilter(10);
+      const conditions = SQLFragments.priceRangeFilter({ minPrice: 10 });
       expect(conditions.length).toBe(1);
       expect(conditions[0]).toContain('>= 10');
     });
 
     it('generates max price condition', () => {
-      const conditions = SQLFragments.priceRangeFilter(undefined, 100);
+      const conditions = SQLFragments.priceRangeFilter({ maxPrice: 100 });
       expect(conditions.length).toBe(1);
       expect(conditions[0]).toContain('<= 100');
     });
 
     it('generates both conditions', () => {
-      const conditions = SQLFragments.priceRangeFilter(10, 100);
+      const conditions = SQLFragments.priceRangeFilter({ minPrice: 10, maxPrice: 100 });
       expect(conditions.length).toBe(2);
     });
 
     it('returns empty array when no range', () => {
-      expect(SQLFragments.priceRangeFilter()).toEqual([]);
+      expect(SQLFragments.priceRangeFilter({})).toEqual([]);
     });
   });
 });
@@ -166,7 +169,7 @@ describe('QueryBuilder', () => {
 
   describe('searchQuery', () => {
     it('generates valid search SQL', () => {
-      const sql = qb.searchQuery('tent');
+      const sql = qb.searchQuery({ keyword: 'tent' });
       expect(sql).toContain('SELECT');
       expect(sql).toContain('FROM read_csv_auto');
       expect(sql).toContain('WHERE');
@@ -176,25 +179,25 @@ describe('QueryBuilder', () => {
     });
 
     it('applies site filter', () => {
-      const sql = qb.searchQuery('tent', { sites: ['rei'] });
+      const sql = qb.searchQuery({ keyword: 'tent', opts: { sites: ['rei'] } });
       expect(sql).toContain("'rei'");
     });
 
     it('applies price range', () => {
-      const sql = qb.searchQuery('tent', { minPrice: 50, maxPrice: 200 });
+      const sql = qb.searchQuery({ keyword: 'tent', opts: { minPrice: 50, maxPrice: 200 } });
       expect(sql).toContain('>= 50');
       expect(sql).toContain('<= 200');
     });
 
     it('uses custom limit', () => {
-      const sql = qb.searchQuery('tent', { limit: 50 });
+      const sql = qb.searchQuery({ keyword: 'tent', opts: { limit: 50 } });
       expect(sql).toContain('LIMIT 50');
     });
   });
 
   describe('priceComparisonQuery', () => {
     it('generates GROUP BY site query', () => {
-      const sql = qb.priceComparisonQuery('tent');
+      const sql = qb.priceComparisonQuery({ keyword: 'tent' });
       expect(sql).toContain('WITH base AS');
       expect(sql).toContain('GROUP BY site');
       expect(sql).toContain('avg_price');
@@ -204,20 +207,20 @@ describe('QueryBuilder', () => {
 
   describe('brandAnalysisQuery', () => {
     it('filters by brand name', () => {
-      const sql = qb.brandAnalysisQuery('patagonia');
+      const sql = qb.brandAnalysisQuery({ brandName: 'patagonia' });
       expect(sql).toContain("'%patagonia%'");
       expect(sql).toContain('GROUP BY site, category');
     });
 
     it('escapes brand name', () => {
-      const sql = qb.brandAnalysisQuery("Arc'teryx");
+      const sql = qb.brandAnalysisQuery({ brandName: "Arc'teryx" });
       expect(sql).toContain("arc''teryx");
     });
   });
 
   describe('categoryInsightsQuery', () => {
     it('filters by category and groups by site', () => {
-      const sql = qb.categoryInsightsQuery('jackets');
+      const sql = qb.categoryInsightsQuery({ categoryKeyword: 'jackets' });
       expect(sql).toContain("'%jackets%'");
       expect(sql).toContain('brand_count');
       expect(sql).toContain('GROUP BY site');
@@ -226,20 +229,20 @@ describe('QueryBuilder', () => {
 
   describe('dealsQuery', () => {
     it('filters by max price', () => {
-      const sql = qb.dealsQuery(50);
+      const sql = qb.dealsQuery({ maxPrice: 50 });
       expect(sql).toContain('<= 50');
       expect(sql).toContain('ORDER BY price ASC');
     });
 
     it('filters by category', () => {
-      const sql = qb.dealsQuery(100, { category: 'tents' });
+      const sql = qb.dealsQuery({ maxPrice: 100, opts: { category: 'tents' } });
       expect(sql).toContain("'%tents%'");
     });
   });
 
   describe('trendsQuery', () => {
     it('generates time-series aggregation', () => {
-      const sql = qb.trendsQuery('tent');
+      const sql = qb.trendsQuery({ keyword: 'tent' });
       expect(sql).toContain('scrape_date');
       expect(sql).toContain('avg_price');
       expect(sql).toContain('observations');
@@ -247,7 +250,7 @@ describe('QueryBuilder', () => {
     });
 
     it('uses custom days parameter', () => {
-      const sql = qb.trendsQuery('tent', { days: 30 });
+      const sql = qb.trendsQuery({ keyword: 'tent', opts: { days: 30 } });
       expect(sql).toContain("INTERVAL '30 days'");
     });
   });

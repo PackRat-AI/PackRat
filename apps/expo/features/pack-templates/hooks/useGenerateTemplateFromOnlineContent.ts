@@ -79,7 +79,7 @@ export function useGenerateTemplateFromOnlineContent() {
     },
     onSuccess: (data) => {
       const { items, ...template } = data;
-      obs(packTemplatesStore, template.id).set(template);
+      obs({ store: packTemplatesStore, id: template.id }).set(template);
       for (const item of items) {
         if (!isWeightUnit(item.weightUnit)) {
           throw new Error(`Unsupported weightUnit "${item.weightUnit}" for item ${item.id}`);
@@ -103,7 +103,7 @@ export function useGenerateTemplateFromOnlineContent() {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         };
-        obs(packTemplateItemsStore, item.id).set(storeItem);
+        obs({ store: packTemplateItemsStore, id: item.id }).set(storeItem);
       }
     },
   });

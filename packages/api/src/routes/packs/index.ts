@@ -12,6 +12,7 @@ import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import {
   catalogItems,
   type NewPack,
@@ -70,7 +71,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return z.array(PackWithWeightsSchema).parse(computePacksWeights(result));
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
@@ -111,7 +112,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return PackWithWeightsSchema.parse(computePackWeights(packWithItems));
+      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
       body: CreatePackBodySchema,
@@ -189,13 +190,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         const imageDetectionService = new ImageDetectionService();
-        const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
+        const result = await imageDetectionService.detectAndMatchItems({ imageUrl, matchLimit });
 
         await PACKRAT_BUCKET.delete(image);
 
         return result;
       } catch (error) {
-        console.error('Error analyzing image:', error);
         if (error instanceof Error) {
           if (
             error.message.includes('Invalid image') ||
@@ -204,8 +204,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           ) {
             return status(400, { error: error.message });
           }
-          return status(500, { error: `Failed to analyze image: ${error.message}` });
         }
+        captureApiException({
+          error: error,
+          operation: 'packs.analyzeImage',
+          tags: { feature: 'packs' },
+          extra: { httpStatus: 500, errorCode: 'PACKS_ANALYZE_IMAGE_ERROR' },
+        });
         return status(500, { error: 'Failed to analyze image' });
       }
     },
@@ -231,7 +236,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       });
 
       if (!pack) throw new NotFoundError('Pack not found');
-      return PackWithWeightsSchema.parse(computePackWeights(pack));
+      return PackWithWeightsSchema.parse(computePackWeights({ pack }));
     },
     {
       params: z.object({ packId: z.string() }),
@@ -259,7 +264,16 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (!canAccess) return status(403, { error: 'Unauthorized' });
         return computePackBreakdown(pack);
       } catch (error) {
-        console.error('Error computing pack breakdown:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.weightBreakdown',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_BREAKDOWN_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to compute breakdown' });
       }
     },
@@ -306,9 +320,19 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return computePackWeights({ pack: updatedPack });
       } catch (error) {
-        console.error('Error updating pack:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.update',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_UPDATE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to update pack' });
       }
     },
@@ -429,7 +453,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           updatedAt: entry.createdAt,
         }));
       } catch (error) {
-        console.error('Pack weight history API error:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.createWeightHistory',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_HISTORY_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to create weight history entry' });
       }
     },
@@ -458,7 +492,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packDetails = await getPackDetails({ packId: params.packId });
         if (!packDetails) return status(404, { error: 'Pack not found' });
 
-        const pack = computePackWeights(packDetails);
+        const pack = computePackWeights({ pack: packDetails });
 
         if (pack.userId !== user.userId) {
           return status(403, { error: 'Forbidden' });
@@ -633,7 +667,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
       const itemId = data.id;
 
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
@@ -735,8 +769,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!existingItem) throw new NotFoundError('Pack item not found');
 
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       const updateData: Partial<typeof packItems.$inferInsert> = {};
       if ('name' in data) updateData.name = data.name;

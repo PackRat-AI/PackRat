@@ -37,10 +37,10 @@ export type RegisterFlaggedToolFn = <
   // The TS types here mirror McpServer['registerTool']; we accept any args after
   // the flag name and rely on the SDK to validate downstream.
   TArgs extends Parameters<RegisterToolFn>,
->(
-  flag: string,
-  ...args: TArgs
-) => ReturnType<RegisterToolFn>;
+>(args: {
+  flag: string;
+  args: TArgs;
+}) => ReturnType<RegisterToolFn>;
 
 export interface AgentContext {
   server: McpServer;
@@ -49,7 +49,7 @@ export interface AgentContext {
   /** Base URL of the PackRat API (e.g. "https://packrat.world"). */
   apiBaseUrl: string;
   /** Toggle a feature flag at runtime (debug / admin-set). */
-  setFeatureFlag: (flag: string, enabled: boolean) => void;
+  setFeatureFlag: (args: { flag: string; enabled: boolean }) => void;
   /**
    * Register a tool gated on a named feature flag. The tool is hidden unless
    * the flag is present in `MCP_FEATURE_FLAGS` or has been toggled on at

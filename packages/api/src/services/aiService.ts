@@ -44,10 +44,13 @@ export class AIService {
     }
   }
 
-  async searchPackratOutdoorGuidesRAG(
-    query: string,
-    limit: number = 5,
-  ): Promise<
+  async searchPackratOutdoorGuidesRAG({
+    query,
+    limit = 5,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<
     Omit<AutoRagSearchResponse, 'data'> & {
       data: (AutoRagSearchResponse['data'][0] & { url: string })[];
     }

@@ -121,7 +121,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async () => call(agent.api.user['pack-templates'].get(), { action: 'list pack templates' }),
+    async () =>
+      call({ promise: agent.api.user['pack-templates'].get(), action: 'list pack templates' }),
   );
 
   agent.server.registerTool(
@@ -138,7 +139,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ template_id }) =>
-      call(agent.api.user['pack-templates']({ templateId: template_id }).get(), {
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).get(),
         action: 'get pack template',
         resourceHint: `template ${template_id}`,
       }),
@@ -171,8 +173,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     },
     async ({ name, description, category, image, tags }) => {
       const now = nowIso();
-      return call(
-        agent.api.user['pack-templates'].post({
+      return call({
+        promise: agent.api.user['pack-templates'].post({
           name,
           description,
           category,
@@ -182,8 +184,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
-        { action: 'create pack template' },
-      );
+        action: 'create pack template',
+      });
     },
   );
 
@@ -237,8 +239,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         return elicitFailureResponse(confirm.reason);
       }
       const now = nowIso();
-      const result = await call(
-        agent.api.user['pack-templates'].post({
+      const result = await call({
+        promise: agent.api.user['pack-templates'].post({
           name,
           description,
           category,
@@ -248,8 +250,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
-        { action: 'create app pack template', requiresAdmin: true },
-      );
+        action: 'create app pack template',
+        requiresAdmin: true,
+      });
       audit(logger, 'create_app_pack_template', { actor, target, ...auditOutcome(result) });
       return result;
     },
@@ -283,7 +286,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       if (category !== undefined) body.category = category;
       if (image !== undefined) body.image = image;
       if (tags !== undefined) body.tags = tags;
-      return call(agent.api.user['pack-templates']({ templateId: template_id }).put(body), {
+      return call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).put(body),
         action: 'update pack template',
         resourceHint: `template ${template_id}`,
       });
@@ -305,7 +309,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ template_id }) =>
-      call(agent.api.user['pack-templates']({ templateId: template_id }).delete(), {
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).delete(),
         action: 'delete pack template',
         resourceHint: `template ${template_id}`,
       }),
@@ -327,7 +332,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ template_id }) =>
-      call(agent.api.user['pack-templates']({ templateId: template_id }).items.get(), {
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).items.get(),
         action: 'list pack template items',
         resourceHint: `template ${template_id}`,
       }),
@@ -372,8 +378,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       image,
       notes,
     }) =>
-      call(
-        agent.api.user['pack-templates']({ templateId: template_id }).items.post({
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).items.post({
           name,
           description,
           weight,
@@ -385,8 +391,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           image,
           notes,
         }),
-        { action: 'add template item', resourceHint: `template ${template_id}` },
-      ),
+        action: 'add template item',
+        resourceHint: `template ${template_id}`,
+      }),
   );
 
   agent.server.registerTool(
@@ -424,7 +431,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         if (v === undefined) continue;
         body[SNAKE_TO_CAMEL[k] ?? k] = v;
       }
-      return call(agent.api.user['pack-templates'].items({ itemId: item_id }).patch(body), {
+      return call({
+        promise: agent.api.user['pack-templates'].items({ itemId: item_id }).patch(body),
         action: 'update template item',
         resourceHint: `item ${item_id}`,
       });
@@ -446,7 +454,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ item_id }) =>
-      call(agent.api.user['pack-templates'].items({ itemId: item_id }).delete(), {
+      call({
+        promise: agent.api.user['pack-templates'].items({ itemId: item_id }).delete(),
         action: 'delete template item',
         resourceHint: `item ${item_id}`,
       }),
@@ -500,13 +509,14 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         });
         return elicitFailureResponse(confirm.reason);
       }
-      const result = await call(
-        agent.api.user['pack-templates']['generate-from-online-content'].post({
+      const result = await call({
+        promise: agent.api.user['pack-templates']['generate-from-online-content'].post({
           contentUrl: content_url,
           isAppTemplate: is_app_template,
         }),
-        { action: 'generate pack template from URL', requiresAdmin: true },
-      );
+        action: 'generate pack template from URL',
+        requiresAdmin: true,
+      });
       audit(logger, 'generate_pack_template_from_url', {
         actor,
         target,

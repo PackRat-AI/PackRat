@@ -18,7 +18,7 @@ export function registerUserTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async () => call(agent.api.user.user.profile.get(), { action: 'get profile' }),
+    async () => call({ promise: agent.api.user.user.profile.get(), action: 'get profile' }),
   );
 
   agent.server.registerTool(
@@ -46,7 +46,7 @@ export function registerUserTools(agent: AgentContext): void {
       if (last_name !== undefined) body.lastName = last_name;
       if (email !== undefined) body.email = email;
       if (avatar_url !== undefined) body.avatarUrl = avatar_url;
-      return call(agent.api.user.user.profile.put(body), { action: 'update profile' });
+      return call({ promise: agent.api.user.user.profile.put(body), action: 'update profile' });
     },
   );
 }

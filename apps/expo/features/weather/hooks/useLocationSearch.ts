@@ -34,12 +34,18 @@ export function useLocationSearch() {
     }
   };
 
-  const searchByCoordinates = async (latitude: number, longitude: number) => {
+  const searchByCoordinates = async ({
+    latitude,
+    longitude,
+  }: {
+    latitude: number;
+    longitude: number;
+  }) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const searchResults = await searchLocationsByCoordinates(latitude, longitude);
+      const searchResults = await searchLocationsByCoordinates({ latitude, longitude });
 
       if (searchResults.length === 0) {
         setError('No locations found near your current position. Please try searching manually.');

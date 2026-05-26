@@ -13,7 +13,8 @@ export default defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const pack = await runApi(client.packs({ packId: args.id }).get(), {
+    const pack = await runApi({
+      promise: client.packs({ packId: args.id }).get(),
       action: 'get pack',
       resourceHint: `pack ${args.id}`,
     });
@@ -22,8 +23,8 @@ export default defineCommand({
       return;
     }
     const p = toRecord(pack);
-    printSummary(
-      {
+    printSummary({
+      data: {
         id: p.id,
         name: p.name,
         category: p.category,
@@ -35,7 +36,7 @@ export default defineCommand({
         isPublic: p.isPublic,
         items: Array.isArray(p.items) ? p.items.length : 0,
       },
-      `Pack ${p.name ?? args.id}`,
-    );
+      title: `Pack ${p.name ?? args.id}`,
+    });
   },
 });

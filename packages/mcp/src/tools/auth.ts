@@ -47,6 +47,10 @@ export function registerAuthTools(agent: AgentContext): void {
       },
     },
     async () =>
-      call(agent.api.user.user.profile.get(), { action: 'fetch profile', structured: true }),
+      call({
+        promise: agent.api.user.user.profile.get(),
+        action: 'fetch profile',
+        structured: true,
+      }),
   );
 }

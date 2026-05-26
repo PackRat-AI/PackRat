@@ -23,7 +23,8 @@ export function registerKnowledgeTools(agent: AgentContext): void {
       },
     },
     async ({ query, limit }) =>
-      call(agent.api.user.ai['rag-search'].get({ query: { q: query, limit } }), {
+      call({
+        promise: agent.api.user.ai['rag-search'].get({ query: { q: query, limit } }),
         action: 'search outdoor guides',
       }),
   );
@@ -45,7 +46,8 @@ export function registerKnowledgeTools(agent: AgentContext): void {
       },
     },
     async ({ url }) =>
-      call(agent.api.user['knowledge-base'].reader.extract.post({ url }), {
+      call({
+        promise: agent.api.user['knowledge-base'].reader.extract.post({ url }),
         action: 'extract URL content',
         resourceHint: url,
       }),
