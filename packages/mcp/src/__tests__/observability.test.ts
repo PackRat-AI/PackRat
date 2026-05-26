@@ -1,7 +1,10 @@
 /**
  * U15 — observability tests.
  *
- * Scope:
+ * Scope (post-U3+U4 — the OAuth-provider onError hook and `runScheduledPurge`
+ * cron coverage were retired with the workers-oauth-provider cutover; OAuth
+ * error logging now lives on the API worker and is covered by
+ * `packages/api/src/auth/__tests__/`):
  *  - `createLogger` emits one JSON object per call with the canonical
  *    `{ ts, level, msg, correlationId, service }` field set; user fields
  *    pass through after `scrubFields` filtering.
@@ -11,15 +14,9 @@
  *  - `correlationIdFrom` prefers `cf-ray` and falls back to a UUID.
  *  - `attachCorrelationId` / `getCorrelationId` round-trip via the
  *    per-request WeakMap.
- *  - The OAuth provider's `onError` hook (verified live via a
- *    `console.warn` spy) emits a WARN-level structured log containing
- *    `oauthCode`, `oauthStatus`, and `description`, and never the
- *    request body, props, or token.
  *  - A successful `packrat_admin_hard_delete_user` invocation emits an
  *    `mcp.audit.admin_hard_delete_user` line carrying `actor.userId`,
  *    `target.id`, `outcome: 'success'`, and no input-arg leakage.
- *  - `runScheduledPurge` emits the start / batch / complete trio of
- *    structured logs.
  *  - `audit` wraps `logger.info` and uses the `mcp.audit.<action>` namespace.
  */
 
@@ -36,7 +33,7 @@ import {
   syntheticCorrelationId,
 } from '../observability';
 import { registerAdminTools } from '../tools/admin';
-import type { AgentContext, Env } from '../types';
+import type { AgentContext } from '../types';
 
 // ── Shared log-spy helpers ───────────────────────────────────────────────────
 
@@ -259,111 +256,6 @@ describe('syntheticCorrelationId', () => {
   });
 });
 
-// ── OAuthProvider onError shape (deleted in U3+U4) ──────────────────────────
-// The library + its onError hook were removed in the Better Auth cutover.
-// The API worker now owns OAuth-provider errors; tests for that surface live
-// in `packages/api`. Kept the describe shell here as `.skip` for one release
-// so the U6 test rewrite can intentionally delete it.
-
-describe.skip('OAuthProvider onError hook (deleted in U3+U4)', () => {
-  let capture: ReturnType<typeof captureLogs>;
-  beforeEach(() => {
-    capture = captureLogs();
-  });
-  afterEach(() => capture.restore());
-
-  it('emits a WARN-level structured log with code/status/description', () => {
-    // Mirror the lambda body from index.ts. Synthesised correlation ID
-    // via `oauth:<timestamp>` because the hook signature in
-    // @cloudflare/workers-oauth-provider 0.7.0 does not expose the
-    // inbound Request — verified in the dist d.ts at
-    // node_modules/@cloudflare/workers-oauth-provider/dist/oauth-provider.d.ts:556.
-    // Operators correlate via `cf-ray` echo from Workers Logs.
-    const onError = ({
-      code,
-      description,
-      status,
-      internal,
-    }: {
-      code: string;
-      description: string;
-      status: number;
-      headers: Record<string, string>;
-      internal?: { category: string; reason: string; detail?: unknown };
-    }) => {
-      const log = createLogger({ correlationId: syntheticCorrelationId('oauth') });
-      log.warn('mcp.oauth.error', {
-        oauthCode: code,
-        oauthStatus: status,
-        description,
-        ...(internal
-          ? { error: { code: internal.category, message: internal.reason, retryable: false } }
-          : {}),
-      });
-    };
-    onError({
-      code: 'invalid_grant',
-      description: 'Authorization code expired',
-      status: 400,
-      headers: { 'X-Some': 'value' }, // must NOT appear in the log
-    });
-    expect(capture.lines).toHaveLength(1);
-    const line = capture.lines[0];
-    expect(line.level).toBe('warn');
-    expect(line.json.level).toBe('warn');
-    expect(line.json.msg).toBe('mcp.oauth.error');
-    expect(line.json.oauthCode).toBe('invalid_grant');
-    expect(line.json.oauthStatus).toBe(400);
-    expect(line.json.description).toBe('Authorization code expired');
-    expect(String(line.json.correlationId)).toMatch(/^oauth:\d+$/);
-    // Critical: no token, no headers, no request body in the line.
-    expect(line.json).not.toHaveProperty('headers');
-    expect(line.json).not.toHaveProperty('token');
-    expect(line.json).not.toHaveProperty('props');
-    expect(line.json).not.toHaveProperty('Authorization');
-  });
-
-  it('preserves internal { category, reason } when the library marks the error as internally tagged', () => {
-    const onError = ({
-      code,
-      description,
-      status,
-      internal,
-    }: {
-      code: string;
-      description: string;
-      status: number;
-      headers: Record<string, string>;
-      internal?: { category: string; reason: string; detail?: unknown };
-    }) => {
-      const log = createLogger({ correlationId: syntheticCorrelationId('oauth') });
-      log.warn('mcp.oauth.error', {
-        oauthCode: code,
-        oauthStatus: status,
-        description,
-        ...(internal
-          ? { error: { code: internal.category, message: internal.reason, retryable: false } }
-          : {}),
-      });
-    };
-    onError({
-      code: 'invalid_token',
-      description: 'Token validation failed',
-      status: 401,
-      headers: {},
-      internal: { category: 'jwt_validation', reason: 'signature_mismatch', detail: { kid: 'k1' } },
-    });
-    const { json } = capture.lines[0];
-    expect(json.error).toEqual({
-      code: 'jwt_validation',
-      message: 'signature_mismatch',
-      retryable: false,
-    });
-    // `detail` is dropped — it can carry arbitrary issuer-side material.
-    expect(JSON.stringify(json)).not.toContain('kid');
-  });
-});
-
 // ── Admin tool audit log (live registration + tool invocation) ──────────────
 //
 // Re-uses the stub-api pattern from `tools-admin.test.ts` so this test
@@ -499,79 +391,5 @@ describe('admin tool audit log — packrat_admin_hard_delete_user', () => {
     expect(audits).toHaveLength(1);
     expect(audits[0].json.outcome).toBe('declined');
     expect(audits[0].json.error).toMatchObject({ code: 'user_cancelled' });
-  });
-});
-
-// ── Scheduled handler logging (deleted in U3+U4) ────────────────────────────
-// `runScheduledPurge` was deleted; KV cleanup is owned by Better Auth on the
-// API worker side. Skipped pending U6 deletion.
-
-describe.skip('runScheduledPurge structured logging (deleted in U3+U4)', () => {
-  let capture: ReturnType<typeof captureLogs>;
-  beforeEach(() => {
-    capture = captureLogs();
-  });
-  afterEach(() => capture.restore());
-
-  it('logs entry, per-batch results, and completion', async () => {
-    let calls = 0;
-    const provider = {
-      purgeExpiredData: vi.fn(async () => {
-        calls += 1;
-        return {
-          grantsChecked: 10,
-          grantsPurged: 3,
-          tokensChecked: 8,
-          tokensPurged: 2,
-          done: calls >= 2,
-        };
-      }),
-    };
-    const env = {
-      PackRatMCP: {} as Env['PackRatMCP'],
-      PACKRAT_API_URL: 'https://api.test',
-      OAUTH_KV: {} as Env['OAUTH_KV'],
-      OAUTH_PROVIDER: {} as Env['OAUTH_PROVIDER'],
-    } satisfies Env;
-    await runScheduledPurge(provider, env);
-
-    const msgs = capture.lines.map((l) => l.json.msg);
-    expect(msgs).toContain('mcp.cron.purge.start');
-    expect(msgs.filter((m) => m === 'mcp.cron.purge.batch')).toHaveLength(2);
-    expect(msgs).toContain('mcp.cron.purge.complete');
-    // Per-batch payloads carry the grants/tokens counters straight from
-    // PurgeResult (no synthesis).
-    const batches = capture.lines.filter((l) => l.json.msg === 'mcp.cron.purge.batch');
-    expect(batches[0].json.grantsPurged).toBe(3);
-    expect(batches[0].json.tokensPurged).toBe(2);
-    // All cron lines share a `cron:<timestamp>` correlationId.
-    const cronLines = capture.lines.filter((l) => String(l.json.msg).startsWith('mcp.cron.purge.'));
-    for (const line of cronLines) {
-      expect(String(line.json.correlationId)).toMatch(/^cron:\d+$/);
-    }
-  });
-
-  it('emits a cap-reached WARN when iterations exhaust without done=true', async () => {
-    const provider = {
-      purgeExpiredData: vi.fn(async () => ({
-        grantsChecked: 10,
-        grantsPurged: 1,
-        tokensChecked: 10,
-        tokensPurged: 1,
-        done: false,
-      })),
-    };
-    const env = {
-      PackRatMCP: {} as Env['PackRatMCP'],
-      PACKRAT_API_URL: 'https://api.test',
-      OAUTH_KV: {} as Env['OAUTH_KV'],
-      OAUTH_PROVIDER: {} as Env['OAUTH_PROVIDER'],
-    } satisfies Env;
-    await runScheduledPurge(provider, env);
-    const warn = capture.lines.find(
-      (l) => l.level === 'warn' && l.json.msg === 'mcp.cron.purge.cap_reached',
-    );
-    expect(warn).toBeDefined();
-    expect(warn?.json.cap).toBe(50);
   });
 });

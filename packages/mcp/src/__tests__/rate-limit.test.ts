@@ -20,7 +20,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { errResponse, type McpToolResult } from '../client';
-import { checkRateLimit, loginRateLimitKey, toolRateLimitKey } from '../rate-limit';
+import { checkRateLimit, toolRateLimitKey } from '../rate-limit';
 import type { Env } from '../types';
 
 /** Build a minimal Env with an optional MCP_TOOLS_RL binding. */
@@ -60,26 +60,21 @@ describe('toolRateLimitKey', () => {
     expect(toolRateLimitKey('u_123', 'packrat_get_pack')).toBe('u_123:packrat_get_pack');
   });
 
-  it('collapses to a per-tool slot when the userId is empty (back-compat bearer flow)', () => {
-    // Documented trade-off: legacy bearer-only sessions where `props.userId`
-    // is missing get a shared counter per tool. Acceptable because the
-    // bearer-flow path is rare; the modern OAuth flow always populates
-    // userId.
+  it('collapses to a per-tool slot when the userId is empty (defensive fallback)', () => {
+    // Post-U3+U4: `userId` comes from the JWT `sub` claim via `verifyMcpToken`
+    // and is always populated for an authenticated request. The empty-string
+    // case stays covered as a defensive fallback so a future regression that
+    // drops `sub` from Props degrades to a shared per-tool counter instead of
+    // silently collapsing every user into a single global counter.
     expect(toolRateLimitKey('', 'packrat_get_pack')).toBe(':packrat_get_pack');
   });
 });
 
-describe('loginRateLimitKey', () => {
-  it('prefixes the IP with the `login:` namespace so the surface stays separate', () => {
-    expect(loginRateLimitKey('1.2.3.4')).toBe('login:1.2.3.4');
-  });
-
-  it('does not collapse caller IDs across surfaces (login: vs. tool keys)', () => {
-    // The `login:` prefix is what guarantees a /login POST and a tool
-    // call from the same IP-shaped key string can't share a counter.
-    expect(loginRateLimitKey('1.2.3.4')).not.toBe(toolRateLimitKey('1.2.3.4', 'foo'));
-  });
-});
+// `loginRateLimitKey` tests retired in U6: the /login form was deleted with
+// the Better Auth cutover (U3+U4). The helper is still exported for now so
+// a future API-worker-side surface can reuse the namespace prefix shape, but
+// there is no live MCP-side caller, so the contract tests live with whichever
+// surface ends up adopting it.
 
 describe('checkRateLimit — dev fallback', () => {
   it("returns true when env.MCP_TOOLS_RL is undefined (so vitest + wrangler dev don't break)", async () => {
