@@ -74,7 +74,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -104,6 +104,15 @@ jobs:
 
       # ── Local API stack ────────────────────────────────────────────────────
 
+      - name: Cache pgvector extension (macOS)
+        id: pgvector-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pgvector-cache
+          # Keyed on OS only — we always build against postgresql@16 and the
+          # extension ABI is stable across pgvector patch releases.
+          key: pgvector-pg16-${{ runner.os }}
+
       - name: Start local Postgres with pgvector
         run: |
           PG_VER=16
@@ -117,12 +126,29 @@ jobs:
 
           brew install "postgresql@${PG_VER}"
 
-          # Build pgvector from source against postgresql@16's pg_config.
-          # Brew's pgvector formula targets whichever PG version its formula
-          # depends on (may not be @16), so we compile directly to be certain.
-          git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector-build
-          make -C /tmp/pgvector-build PG_CONFIG="$PG_BIN/pg_config"
-          make -C /tmp/pgvector-build install PG_CONFIG="$PG_BIN/pg_config"
+          # Install pgvector — use cached artifacts when available to avoid the
+          # git clone + make cost (~3-5 min) on every run.
+          PG_PKGLIBDIR="$("$PG_BIN/pg_config" --pkglibdir)"
+          PG_SHAREDIR="$("$PG_BIN/pg_config" --sharedir)/extension"
+
+          if [ "${{ steps.pgvector-cache.outputs.cache-hit }}" = 'true' ]; then
+            cp /tmp/pgvector-cache/vector.so   "$PG_PKGLIBDIR/"
+            cp /tmp/pgvector-cache/*.sql       "$PG_SHAREDIR/"
+            cp /tmp/pgvector-cache/*.control   "$PG_SHAREDIR/"
+          else
+            # Build pgvector from source against postgresql@16's pg_config.
+            # Brew's pgvector formula targets whichever PG version its formula
+            # depends on (may not be @16), so we compile directly to be certain.
+            git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+            make -C /tmp/pgvector-build PG_CONFIG="$PG_BIN/pg_config"
+            make -C /tmp/pgvector-build install PG_CONFIG="$PG_BIN/pg_config"
+
+            # Persist compiled artifacts for future runs.
+            mkdir -p /tmp/pgvector-cache
+            cp "$PG_PKGLIBDIR/vector.so"           /tmp/pgvector-cache/
+            cp "$PG_SHAREDIR"/vector*.sql           /tmp/pgvector-cache/
+            cp "$PG_SHAREDIR"/vector.control        /tmp/pgvector-cache/
+          fi
 
           "$PG_BIN/initdb" -D "$PG_DATA" --encoding=UTF8 --auth=trust
           printf '\nport = 5432\nlisten_addresses = '"'"'127.0.0.1'"'"'\n' \
@@ -260,19 +286,18 @@ jobs:
           restore-keys: |
             cocoapods-${{ runner.os }}-
 
-      - name: Cache iOS simulator build
-        id: ios-build-cache
+      - name: Cache Xcode DerivedData
         uses: actions/cache@v4
         with:
-          path: apps/expo/build/PackRat-sim.tar.gz
-          # 'local-api' suffix keeps this cache slot separate from any builds
-          # that embedded the deployed API URL.
-          key: ios-sim-${{ runner.os }}-local-api-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+          path: ~/Library/Developer/Xcode/DerivedData
+          # Keyed on native-critical files only. JS/TS changes don't invalidate
+          # compiled native objects, so Xcode does an incremental rebuild that
+          # only re-bundles the JS — typically 2-5 min instead of 30-45 min.
+          key: xcode-derived-data-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'apps/expo/app.config.ts', 'apps/expo/eas.json', 'bun.lock') }}
           restore-keys: |
-            ios-sim-${{ runner.os }}-local-api-
+            xcode-derived-data-${{ runner.os }}-
 
       - name: Pin API URL to local wrangler dev
-        if: steps.ios-build-cache.outputs.cache-hit != 'true'
         run: |
           # .env.local has highest priority in Expo's env hierarchy and
           # overrides whatever EXPO_PUBLIC_API_URL the EAS 'preview' environment
@@ -280,7 +305,6 @@ jobs:
           echo "EXPO_PUBLIC_API_URL=${{ env.E2E_API_URL }}" > apps/expo/.env.local
 
       - name: Build iOS app for simulator
-        if: steps.ios-build-cache.outputs.cache-hit != 'true'
         run: |
           cd apps/expo
           mkdir -p build
@@ -396,7 +420,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: ios-e2e-results
           path: test-results/
@@ -404,7 +428,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: ios-e2e-failure-artifacts
           path: ~/.maestro/tests/
@@ -412,7 +436,7 @@ jobs:
 
       - name: Upload wrangler dev log on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: ios-wrangler-dev-log
           path: /tmp/wrangler-dev.log
@@ -479,7 +503,7 @@ jobs:
           free -h
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -615,28 +639,20 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ~/.gradle/build-cache
+          # Include native-critical files so the build cache is invalidated when
+          # native modules change, but JS-only changes get a restore-key hit and
+          # Gradle skips recompiling unchanged native tasks.
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'apps/expo/package.json', 'apps/expo/app.config.ts', 'apps/expo/eas.json', 'bun.lock') }}
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Cache Android APK build
-        id: android-build-cache
-        uses: actions/cache@v4
-        with:
-          path: apps/expo/build/PackRat.apk
-          # Separate cache slot from non-local-api builds.
-          key: android-apk-${{ runner.os }}-local-api-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
-          restore-keys: |
-            android-apk-${{ runner.os }}-local-api-
-
       - name: Pin API URL to local wrangler dev
-        if: steps.android-build-cache.outputs.cache-hit != 'true'
         run: |
           # getApiUrl() replaces 'localhost' with '10.0.2.2' at runtime on Android.
           echo "EXPO_PUBLIC_API_URL=${{ env.E2E_API_URL }}" > apps/expo/.env.local
 
       - name: Build Android APK for emulator
-        if: steps.android-build-cache.outputs.cache-hit != 'true'
         run: |
           cd apps/expo
           mkdir -p build
@@ -731,7 +747,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: android-e2e-results
           path: test-results/
@@ -739,7 +755,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: android-e2e-failure-artifacts
           path: ~/.maestro/tests/
@@ -747,7 +763,7 @@ jobs:
 
       - name: Upload wrangler dev log on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: android-wrangler-dev-log
           path: /tmp/wrangler-dev.log
