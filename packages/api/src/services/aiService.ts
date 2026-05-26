@@ -1,4 +1,5 @@
 import { createPerplexity } from '@ai-sdk/perplexity';
+import type { AutoRAG, AutoRagSearchResponse } from '@cloudflare/workers-types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -71,7 +72,7 @@ export class AIService {
       },
     });
 
-    const data = response.data.map((item) => ({
+    const data = response.data.map((item: AutoRagSearchResponse['data'][number]) => ({
       ...item,
       url: this.filenameToUrl(item.filename),
     }));
