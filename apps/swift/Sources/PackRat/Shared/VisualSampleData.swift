@@ -10,6 +10,59 @@ enum VisualSampleData {
             || ProcessInfo.processInfo.arguments.contains("--visual-sample-data")
     }
 
+    static var guides: [Guide] {
+        [
+            Guide(
+                id: "visual-guide-backpacking-checklist",
+                title: "Three-Season Backpacking Checklist",
+                content: """
+                ## Start with the big systems
+
+                Build the pack around shelter, sleep, water, food, and weather protection. Keep rain layers and navigation reachable before the trail turns exposed.
+
+                - Shelter and stakes
+                - Quilt or sleeping bag
+                - Water treatment
+                - First aid and repair kit
+                """,
+                excerpt: "A practical packing order for shoulder-season overnight trips.",
+                category: "backpacking",
+                imageUrl: nil,
+                createdAt: Date.iso8601Now()
+            ),
+            Guide(
+                id: "visual-guide-desert-water",
+                title: "Desert Water Planning",
+                content: """
+                ## Plan water before gear
+
+                Desert routes change quickly with heat, wind, and road access. Confirm water sources, carry a reserve, and leave dry campsites with enough margin for the next exposed section.
+                """,
+                excerpt: "How to set a reliable water margin for hot, exposed routes.",
+                category: "safety",
+                imageUrl: nil,
+                createdAt: Date.iso8601Now()
+            ),
+            Guide(
+                id: "visual-guide-layering",
+                title: "Layering for Wet Alpine Starts",
+                content: """
+                ## Keep insulation dry
+
+                Pack active insulation separately from camp warmth. A waterproof liner, dry socks, and an accessible shell prevent small weather shifts from becoming trip problems.
+                """,
+                excerpt: "Simple layer choices for cold starts, wind, and afternoon rain.",
+                category: "skills",
+                imageUrl: nil,
+                createdAt: Date.iso8601Now()
+            ),
+        ]
+    }
+
+    static var guideCategories: [String] {
+        Array(Set(guides.compactMap(\.category))).sorted()
+    }
+
     @MainActor
     static func apply(to appState: AppState) {
         let now = Date.iso8601Now()

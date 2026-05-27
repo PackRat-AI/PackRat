@@ -78,6 +78,14 @@ final class GuidesViewModel {
     }
 
     func load() async {
+        if VisualSampleData.isEnabled {
+            isLoading = false
+            error = nil
+            guides = VisualSampleData.guides
+            categories = VisualSampleData.guideCategories
+            return
+        }
+
         if VisualSampleData.isScreenshotCapture {
             isLoading = false
             error = nil
@@ -141,9 +149,6 @@ struct GuidesView: View {
         }
         .navigationTitle("Guides")
         .searchable(text: $viewModel.searchText, prompt: "Search guides")
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !viewModel.categories.isEmpty { categoryBar }
-        }
         .task { if authManager.isAuthenticated { await viewModel.load() } }
         .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
         .sheet(item: $selectedGuide) { guide in
@@ -181,12 +186,22 @@ struct GuidesView: View {
     }
 
     private var guideList: some View {
-        List(viewModel.filteredGuides) { guide in
-            Button { selectedGuide = guide } label: { GuideRowView(guide: guide) }
-                .buttonStyle(.plain)
-                .task {
-                    if guide.id == viewModel.filteredGuides.last?.id { await viewModel.loadMore() }
+        List {
+            if !viewModel.categories.isEmpty {
+                Section {
+                    categoryBar
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .listRowSeparator(.hidden)
                 }
+            }
+
+            ForEach(viewModel.filteredGuides) { guide in
+                Button { selectedGuide = guide } label: { GuideRowView(guide: guide) }
+                    .buttonStyle(.plain)
+                    .task {
+                        if guide.id == viewModel.filteredGuides.last?.id { await viewModel.loadMore() }
+                    }
+            }
         }
     }
 }
