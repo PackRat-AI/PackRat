@@ -88,16 +88,17 @@ export default function AIChat() {
       packId: params.packId as string,
       packName: params.packName as string,
       contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
-      location: location ? location.name : undefined,
     }),
-    [params.itemId, params.itemName, params.packId, params.packName, params.contextType, location],
+    [params.itemId, params.itemName, params.packId, params.packName, params.contextType],
   );
-  const locationRef = React.useRef(context.location);
-  locationRef.current = context.location;
+  const locationRef = React.useRef(location?.name);
+  locationRef.current = location?.name;
 
   const { data: _authSession } = authClient.useSession();
   const token = _authSession?.session?.token ?? null;
   const userId = _authSession?.user?.id ?? '';
+  const tokenRef = React.useRef(token);
+  tokenRef.current = token;
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -178,8 +179,8 @@ export default function AIChat() {
           systemPrompt += `\n- You are currently helping with an item with ID: ${contextRef.current.itemId}.`;
         }
 
-        if (contextRef.current.location) {
-          systemPrompt += `\n- The current location of the user is: ${contextRef.current.location}.`;
+        if (locationRef.current) {
+          systemPrompt += `\n- The current location of the user is: ${locationRef.current}.`;
         }
 
         return {
@@ -193,9 +194,9 @@ export default function AIChat() {
       transport: new DefaultChatTransport({
         fetch: expoFetch as unknown as typeof globalThis.fetch,
         api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: () => ({
+          Authorization: `Bearer ${tokenRef.current}`,
+        }),
         body: () => ({
           contextType: contextRef.current.contextType,
           itemId: contextRef.current.itemId,
@@ -206,7 +207,7 @@ export default function AIChat() {
       }),
       transportKey: 'remote',
     };
-  }, [aiMode, isLocalReady, modelStatus, token, tools, userId]);
+  }, [aiMode, isLocalReady, modelStatus, tools, userId]);
 
   // transportKey forces useChat to remount when the transport type switches,
   // since useChat captures the transport reference on mount and won't update it.

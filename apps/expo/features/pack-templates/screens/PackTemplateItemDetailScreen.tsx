@@ -49,7 +49,7 @@ export function PackTemplateItemDetailScreen() {
             params: {
               itemId: item.id,
               itemName: item.name,
-              contextType: 'templateItem',
+              contextType: 'item',
             },
           }),
           showSignInCopy: 'true',
@@ -62,7 +62,7 @@ export function PackTemplateItemDetailScreen() {
       params: {
         itemId: item.id,
         itemName: item.name,
-        contextType: 'templateItem',
+        contextType: 'item',
       },
     });
   };
