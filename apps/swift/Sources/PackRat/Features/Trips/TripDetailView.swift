@@ -79,6 +79,7 @@ struct TripDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit", systemImage: "pencil") { showingEditSheet = true }
+                    .accessibilityIdentifier("trip_detail_edit_button")
             }
         }
         .sheet(isPresented: $showingEditSheet) {

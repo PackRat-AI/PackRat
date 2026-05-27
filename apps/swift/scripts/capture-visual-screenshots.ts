@@ -116,7 +116,15 @@ const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
   {
     suffix: 'detail',
     title: 'Authenticated Detail Screens',
-    matches: (fileName) => DATA_DETAIL_SCREENSHOT_RE.test(fileName),
+    matches: (fileName) =>
+      DATA_DETAIL_SCREENSHOT_RE.test(fileName) ||
+      fileName.startsWith('8') ||
+      fileName.startsWith('9'),
+  },
+  {
+    suffix: 'expanded',
+    title: 'Expanded Menus, Sheets, and Controls',
+    matches: (fileName) => fileName.startsWith('8') || fileName.startsWith('9'),
   },
   {
     suffix: 'modals',
@@ -257,6 +265,7 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
             area: 'data',
             flow: 'Catalog seeded result state',
           }),
+          ...expandedStateRequirements(platform),
         ]
       : [
           requirement('71-data-pack-detail', { area: 'crud', flow: 'Pack split-view detail' }),
@@ -277,6 +286,7 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
             area: 'ai',
             flow: 'AI packs confirmation dialog',
           }),
+          ...expandedStateRequirements(platform),
         ];
 
   return [
@@ -285,6 +295,78 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
     ...modalRequirements,
     ...dataDetailRequirements,
   ];
+}
+
+function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] {
+  const common = [
+    requirement('81-data-pack-detail-expanded', {
+      area: 'crud',
+      flow: 'Pack detail expanded review baseline',
+    }),
+    requirement('82-data-pack-add-item-sheet', {
+      area: 'crud',
+      flow: 'Pack item create sheet from pack detail',
+    }),
+    requirement('83-data-pack-more-menu', {
+      area: 'modal',
+      flow: 'Pack detail more menu',
+    }),
+    requirement('84-data-pack-item-detail', {
+      area: 'crud',
+      flow: 'Pack item detail sheet',
+    }),
+    requirement('85-data-pack-item-edit-sheet', {
+      area: 'crud',
+      flow: 'Pack item edit sheet',
+    }),
+    requirement('86-data-trip-detail-expanded', {
+      area: 'crud',
+      flow: 'Trip detail expanded review baseline',
+    }),
+    requirement('87-data-trip-edit-sheet', {
+      area: 'crud',
+      flow: 'Trip edit sheet',
+    }),
+    requirement('88-data-template-detail-expanded', {
+      area: 'crud',
+      flow: 'Template detail expanded review baseline',
+    }),
+    requirement('89-data-template-apply-sheet', {
+      area: 'crud',
+      flow: 'Apply template to pack sheet',
+    }),
+    requirement('90-data-catalog-item-detail', {
+      area: 'data',
+      flow: 'Catalog item detail sheet',
+    }),
+    requirement('91-data-catalog-add-to-pack-sheet', {
+      area: 'crud',
+      flow: 'Add catalog item to pack sheet',
+    }),
+    requirement('92-data-weather-alerts-sheet', {
+      area: 'modal',
+      flow: 'Weather alerts sheet with active alert',
+    }),
+    requirement('93-data-weather-alert-preferences', {
+      area: 'modal',
+      flow: 'Weather alert preferences controls',
+    }),
+    requirement('94-data-feed-comments-sheet', {
+      area: 'crud',
+      flow: 'Feed comments sheet',
+    }),
+  ];
+
+  if (platform === 'macos') {
+    common.push(
+      requirement('95-data-ai-packs-results-sheet', {
+        area: 'ai',
+        flow: 'Generated AI packs result sheet',
+      }),
+    );
+  }
+
+  return common;
 }
 
 function surfaceArea(surface: string): ScreenshotRequirement['area'] {

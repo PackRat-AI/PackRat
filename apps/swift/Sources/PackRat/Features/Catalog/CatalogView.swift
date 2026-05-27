@@ -83,8 +83,10 @@ struct CatalogItemRow: View {
     @State private var showingDetail = false
 
     var body: some View {
-        Button { showingDetail = true } label: { rowContent }
-            .buttonStyle(.plain)
+        rowContent
+            .contentShape(Rectangle())
+            .onTapGesture { showingDetail = true }
+            .accessibilityIdentifier("catalog_item_row_\(item.id)")
             .sheet(isPresented: $showingDetail) {
                 CatalogItemDetailView(item: item, packsViewModel: packsViewModel)
             }
@@ -151,12 +153,12 @@ struct CatalogItemRow: View {
                 }
                 .buttonStyle(.plain)
                 .help("Add to pack")
+                .accessibilityIdentifier("catalog_item_add_to_pack_\(item.id)")
+                .accessibilityLabel("Add to Pack")
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .accessibilityIdentifier("catalog_item_row_\(item.id)")
-        .accessibilityLabel(item.displayName)
     }
 }
 

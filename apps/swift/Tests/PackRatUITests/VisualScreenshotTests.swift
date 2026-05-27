@@ -103,6 +103,16 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
+    func testAuthenticatedSampleDataExpandedStateSurface() throws {
+        launchAuthenticated(sampleData: true)
+
+        #if os(iOS)
+        capturePhoneExpandedSampleDataStates()
+        #elseif os(macOS)
+        captureMacExpandedSampleDataStates()
+        #endif
+    }
+
     private func captureRegisterAndLoginStates() {
         if app.buttons["auth_signup_free"].waitForExistence(timeout: 5) {
             app.buttons["auth_signup_free"].tap()
@@ -166,11 +176,21 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "trips_plan_trip_button", fallbackButton: "Plan Trip", name: "\(prefix)-new-trip-sheet")
 
         resetPhoneModalState(mode)
-        captureHomeAction("Pack Templates", name: "\(prefix)-templates-before-new-template", dismissAfterCapture: false)
+        captureHomeAction(
+            "Pack Templates",
+            name: "\(prefix)-templates-before-new-template",
+            dismissAfterCapture: false,
+            destinationIdentifier: "templates_new_template_button"
+        )
         tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
 
         resetPhoneModalState(mode)
-        captureHomeAction("Trail Conditions", name: "\(prefix)-trail-conditions-before-submit", dismissAfterCapture: false)
+        captureHomeAction(
+            "Trail Conditions",
+            name: "\(prefix)-trail-conditions-before-submit",
+            dismissAfterCapture: false,
+            destinationIdentifier: "trail_conditions_submit_report_button"
+        )
         tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
 
         resetPhoneModalState(mode)
@@ -178,7 +198,12 @@ final class VisualScreenshotTests: XCTestCase {
 
         if mode != .guest {
             resetPhoneModalState(mode)
-            captureHomeAction("Community Feed", name: "\(prefix)-feed-before-compose", dismissAfterCapture: false)
+            captureHomeAction(
+                "Community Feed",
+                name: "\(prefix)-feed-before-compose",
+                dismissAfterCapture: false,
+                destinationIdentifier: "feed_new_post_button"
+            )
             tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
         }
     }
@@ -203,6 +228,57 @@ final class VisualScreenshotTests: XCTestCase {
         captureHomeAction("Catalog", name: "79-data-catalog-results")
     }
 
+    private func capturePhoneExpandedSampleDataStates() {
+        captureTab("Packs", name: "home-before-81-data-pack-expanded")
+        tapTextAndCapture("Alpine Weekend", name: "81-data-pack-detail-expanded")
+        tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
+        openMenuAndCapture(identifier: "pack_detail_more_menu", fallbackButton: "More", name: "83-data-pack-more-menu")
+        captureTab("Packs", name: "home-before-84-data-pack-item-detail")
+        tapTextAndCapture("Alpine Weekend", name: "84-data-pack-detail-before-item")
+        scrollToElement(identifier: "pack_item_row_visual-item-shelter")
+        tapElementAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "84-data-pack-item-detail", dismissAfterCapture: false)
+        tapAndCapture(identifier: "pack_item_detail_edit_button", fallbackButton: "Edit", name: "85-data-pack-item-edit-sheet")
+        dismissPhoneDestination()
+
+        captureTab("Trips", name: "home-before-86-data-trip-expanded")
+        tapTextAndCapture("Enchantments Thru-Hike", name: "86-data-trip-detail-expanded")
+        tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet")
+        dismissPhoneDestination()
+
+        captureHomeAction("Pack Templates", name: "home-before-88-data-template-expanded", dismissAfterCapture: false)
+        tapTextAndCapture("Weekend Backpacking", name: "88-data-template-detail-expanded")
+        tapAndCapture(button: "Apply to Pack", name: "89-data-template-apply-sheet")
+        dismissPhoneDestination()
+
+        captureHomeAction(
+            "Catalog",
+            name: "home-before-90-data-catalog-expanded",
+            dismissAfterCapture: false,
+            destinationIdentifier: "catalog_item_row_7001"
+        )
+        tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90-data-catalog-item-detail", dismissAfterCapture: false)
+        tapAndCapture(identifier: "catalog_detail_add_to_pack_button", fallbackButton: "Add to Pack", name: "91-data-catalog-add-to-pack-sheet")
+        dismissPhoneDestination()
+
+        captureHomeAction(
+            "Weather",
+            name: "home-before-92-data-weather-expanded",
+            dismissAfterCapture: false,
+            destinationIdentifier: "weather_alerts_button"
+        )
+        tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
+        tapElementAndCapture(identifier: "weather_alert_preferences_button", name: "93-data-weather-alert-preferences", dismissAfterCapture: false)
+        dismissPhoneDestination()
+
+        captureHomeAction(
+            "Community Feed",
+            name: "home-before-94-data-feed-expanded",
+            dismissAfterCapture: false,
+            destinationIdentifier: "feed_comments_button_9001"
+        )
+        tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+    }
+
     private func resetPhoneModalState(_ mode: VisualMode) {
         if mode == .guest {
             restartLoggedOut()
@@ -219,7 +295,12 @@ final class VisualScreenshotTests: XCTestCase {
         capture(name)
     }
 
-    private func captureHomeAction(_ title: String, name: String, dismissAfterCapture: Bool = true) {
+    private func captureHomeAction(
+        _ title: String,
+        name: String,
+        dismissAfterCapture: Bool = true,
+        destinationIdentifier: String? = nil
+    ) {
         captureTab("Home", name: "home-before-\(name)")
 
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
@@ -227,7 +308,14 @@ final class VisualScreenshotTests: XCTestCase {
 
         for _ in 0..<8 {
             if action.exists, action.isHittable {
-                action.tap()
+                activate(action)
+                if let destinationIdentifier {
+                    let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
+                    XCTAssertTrue(
+                        destination.waitForExistence(timeout: 5),
+                        "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
+                    )
+                }
                 capture(name)
                 if dismissAfterCapture {
                     dismissPhoneDestination()
@@ -317,6 +405,48 @@ final class VisualScreenshotTests: XCTestCase {
         }
     }
 
+    private func captureMacExpandedSampleDataStates() {
+        resetMacSampleDataSidebar("Packs")
+        capture("81-data-pack-detail-expanded")
+        tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
+        resetMacSampleDataSidebar("Packs")
+        scrollToElement(identifier: "pack_item_row_visual-item-shelter")
+        openContextMenuAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "83-data-pack-more-menu")
+        resetMacSampleDataSidebar("Packs")
+        scrollToElement(identifier: "pack_item_row_visual-item-shelter")
+        tapElementAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "84-data-pack-item-detail", dismissAfterCapture: false)
+        tapAndCapture(identifier: "pack_item_detail_edit_button", fallbackButton: "Edit", name: "85-data-pack-item-edit-sheet")
+
+        resetMacSampleDataSidebar("Trips")
+        capture("86-data-trip-detail-expanded")
+        tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet")
+
+        resetMacSampleDataSidebar("Templates")
+        capture("88-data-template-detail-expanded")
+        tapAndCapture(button: "Apply to Pack", name: "89-data-template-apply-sheet")
+
+        resetMacSampleDataSidebar("Catalog")
+        tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90-data-catalog-item-detail", dismissAfterCapture: false)
+        resetMacSampleDataSidebar("Catalog")
+        tapAndCapture(identifier: "catalog_item_add_to_pack_7001", fallbackButton: "Add to Pack", name: "91-data-catalog-add-to-pack-sheet")
+
+        resetMacSampleDataSidebar("Weather")
+        tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
+        resetMacSampleDataSidebar("Weather")
+        tapElementAndCapture(identifier: "weather_alert_preferences_button", name: "93-data-weather-alert-preferences", dismissAfterCapture: false)
+
+        resetMacSampleDataSidebar("Feed")
+        tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+
+        resetMacSampleDataSidebar("AI Packs")
+        tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
+    }
+
+    private func resetMacSampleDataSidebar(_ label: String) {
+        launchAuthenticated(sampleData: true)
+        selectSidebar(label)
+    }
+
     private func selectSidebar(_ label: String) {
         let identifierByLabel: [String: String] = [
             "Home": "nav_home",
@@ -386,6 +516,49 @@ final class VisualScreenshotTests: XCTestCase {
             return
         }
         activate(button)
+        capture(name)
+        dismissPresentedSurface()
+    }
+
+    private func tapElementAndCapture(
+        identifier: String,
+        name: String,
+        dismissAfterCapture: Bool = true
+    ) {
+        let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        XCTAssertTrue(element.waitForExistence(timeout: 5), "Expected element identifier '\(identifier)' for screenshot \(name)")
+        activate(element)
+        capture(name)
+        if dismissAfterCapture {
+            dismissPresentedSurface()
+        }
+    }
+
+    private func scrollToElement(identifier: String, maxSwipes: Int = 5) {
+        let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        for _ in 0..<maxSwipes where !element.exists {
+            app.swipeUp()
+        }
+    }
+
+    private func openMenuAndCapture(identifier: String, fallbackButton label: String, name: String) {
+        guard let button = findButton(identifier: identifier, timeout: 3) ?? findButton(label: label, timeout: 2) else {
+            XCTFail("Expected menu identifier '\(identifier)' or label '\(label)' for screenshot \(name)")
+            return
+        }
+        activate(button)
+        capture(name)
+        dismissPresentedSurface()
+    }
+
+    private func openContextMenuAndCapture(identifier: String, name: String) {
+        let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+        XCTAssertTrue(element.waitForExistence(timeout: 5), "Expected context menu element identifier '\(identifier)' for screenshot \(name)")
+        #if os(macOS)
+        element.rightClick()
+        #else
+        element.press(forDuration: 1)
+        #endif
         capture(name)
         dismissPresentedSurface()
     }

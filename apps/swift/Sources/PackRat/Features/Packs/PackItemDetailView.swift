@@ -34,6 +34,7 @@ struct PackItemDetailView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button("Edit", systemImage: "pencil") { showingEdit = true }
+                        .accessibilityIdentifier("pack_item_detail_edit_button")
                 }
             }
             .sheet(isPresented: $showingEdit) {

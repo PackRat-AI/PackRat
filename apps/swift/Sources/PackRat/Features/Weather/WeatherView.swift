@@ -80,12 +80,13 @@ struct WeatherView: View {
                     ProgressView().controlSize(.small)
                 }
             }
-            ToolbarItem(placement: .secondaryAction) {
+            ToolbarItem(placement: preferencesToolbarPlacement) {
                 NavigationLink {
                     WeatherAlertPreferencesView()
                 } label: {
                     Label("Alert Preferences", systemImage: "slider.horizontal.3")
                 }
+                .accessibilityIdentifier("weather_alert_preferences_button")
             }
         }
         .sheet(isPresented: $showingAlerts) {
@@ -98,6 +99,14 @@ struct WeatherView: View {
         .topBarTrailing
         #else
         .primaryAction
+        #endif
+    }
+
+    private var preferencesToolbarPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarTrailing
+        #else
+        .secondaryAction
         #endif
     }
 

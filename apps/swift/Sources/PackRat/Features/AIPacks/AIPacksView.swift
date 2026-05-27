@@ -109,6 +109,7 @@ struct AIPacksView: View {
                             Spacer()
                             Button("View") { showingResults = true }
                                 .buttonStyle(.bordered)
+                                .accessibilityIdentifier("ai_packs_view_results_button")
                         }
                         .padding(4)
                     }
@@ -189,6 +190,7 @@ struct AIPacksView: View {
                 Spacer()
                 Button("View") { showingResults = true }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("ai_packs_view_results_button")
             }
         }
     }

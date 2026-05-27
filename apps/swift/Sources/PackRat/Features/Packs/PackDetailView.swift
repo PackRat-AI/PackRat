@@ -79,12 +79,14 @@ struct PackDetailView: View {
         .navigationBarTitleDisplayMode(.large)
         #endif
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
+            ToolbarItem(placement: .primaryAction) {
                 Button("Add Item", systemImage: "plus") {
                     showingAddItemSheet = true
                 }
+                .accessibilityIdentifier("pack_detail_add_item_button")
                 .keyboardShortcut("i", modifiers: .command)
-
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button("Weight Analysis", systemImage: "chart.bar.fill") {
                         showingWeightAnalysis = true
@@ -111,10 +113,11 @@ struct PackDetailView: View {
                     .accessibilityIdentifier("pack_detail_edit_pack")
                     .keyboardShortcut("e", modifiers: .command)
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .accessibilityIdentifier("pack_detail_more_menu")
-                        .accessibilityLabel("More")
+                    Label("More", systemImage: "ellipsis.circle")
+                        .labelStyle(.iconOnly)
                 }
+                .accessibilityIdentifier("pack_detail_more_menu")
+                .accessibilityLabel("More")
             }
         }
         .sheet(isPresented: $showingEditSheet) {

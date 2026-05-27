@@ -150,6 +150,7 @@ struct PostCard: View {
             }
             .buttonStyle(.plain)
             .animation(.spring(response: 0.3), value: isLiked)
+            .accessibilityIdentifier("feed_like_button_\(post.id)")
 
             Button {
                 showingComments = true
@@ -159,6 +160,7 @@ struct PostCard: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("feed_comments_button_\(post.id)")
 
             Spacer()
 
