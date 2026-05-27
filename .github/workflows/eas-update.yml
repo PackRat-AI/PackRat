@@ -1,0 +1,43 @@
+name: EAS OTA Update (Development)
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_version:
+        description: 'Override runtimeVersion in app.json before publishing (optional, e.g. 1.0.0)'
+        required: false
+        type: string
+
+jobs:
+  update:
+    name: Publish EAS Update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Override runtimeVersion in app.json
+        if: ${{ inputs.runtime_version != '' }}
+        run: |
+          jq '.expo.runtimeVersion = $v' --arg v "${{ inputs.runtime_version }}" app.json > app.json.tmp
+          mv app.json.tmp app.json
+
+      - name: Publish EAS update to development channel
+        run: |
+          APP_VARIANT=development eas update \
+            --branch development \
+            --environment development \
+            --message "${{ github.ref_name }} @ ${{ github.sha }}" \
+            --non-interactive
