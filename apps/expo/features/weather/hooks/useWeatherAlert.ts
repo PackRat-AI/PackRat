@@ -248,6 +248,7 @@ export function useWeatherAlerts() {
       return;
     }
 
+    const id = locationId;
     let cancelled = false;
 
     async function fetchAlerts() {
@@ -262,7 +263,7 @@ export function useWeatherAlerts() {
       });
 
       try {
-        const data = await getWeatherData(locationId);
+        const data = await getWeatherData(id);
         if (cancelled) return;
 
         const formatted = generateAlerts({
