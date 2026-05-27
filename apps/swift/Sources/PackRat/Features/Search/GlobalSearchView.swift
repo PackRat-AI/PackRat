@@ -94,6 +94,7 @@ struct GlobalSearchView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("global_search_result_\(result.id)")
+                .accessibilityLabel("\(result.title), \(result.typeName)")
             }
             .listStyle(.inset)
         }

@@ -17,11 +17,15 @@ struct TrailConditionsListView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
+                #if os(macOS)
+                Color.clear
+                #else
                 GuestLimitedView(
                     "Trail Reports Require an Account",
                     subtitle: "Community trail conditions are shared through your PackRat account.",
                     systemImage: "figure.hiking"
                 )
+                #endif
             } else if viewModel.isLoading && viewModel.reports.isEmpty {
                 ProgressView("Loading reports…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.reports.isEmpty {

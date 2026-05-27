@@ -233,14 +233,26 @@ struct AppNavigation: View {
                 placeholder("Select a Trip", symbol: "map")
             }
         case .templates:
-            if let id = appState.selectedTemplateId,
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Templates Require an Account",
+                    subtitle: "Pack templates sync with your account so they can be reused across devices.",
+                    systemImage: "doc.on.doc"
+                )
+            } else if let id = appState.selectedTemplateId,
                let t = appState.templatesVM.templates.first(where: { $0.id == id }) {
                 PackTemplateDetailView(template: t, viewModel: appState.templatesVM, packsVM: appState.packsVM)
             } else {
                 placeholder("Select a Template", symbol: "doc.on.doc")
             }
         case .trailConditions:
-            if let id = appState.selectedReportId,
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Trail Reports Require an Account",
+                    subtitle: "Community trail conditions are shared through your PackRat account.",
+                    systemImage: "figure.hiking"
+                )
+            } else if let id = appState.selectedReportId,
                let report = appState.trailConditionsVM.reports.first(where: { $0.id == id }) {
                 TrailConditionDetailView(report: report)
             } else {

@@ -20,11 +20,15 @@ struct PackTemplatesListView: View {
     var body: some View {
         Group {
             if !authManager.isAuthenticated {
+                #if os(macOS)
+                Color.clear
+                #else
                 GuestLimitedView(
                     "Templates Require an Account",
                     subtitle: "Pack templates sync with your account so they can be reused across devices.",
                     systemImage: "doc.on.doc"
                 )
+                #endif
             } else if viewModel.isLoading && viewModel.templates.isEmpty {
                 ProgressView("Loading templates…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.templates.isEmpty {

@@ -176,22 +176,30 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "trips_plan_trip_button", fallbackButton: "Plan Trip", name: "\(prefix)-new-trip-sheet")
 
         resetPhoneModalState(mode)
-        captureHomeAction(
-            "Pack Templates",
-            name: "\(prefix)-templates-before-new-template",
-            dismissAfterCapture: false,
-            destinationIdentifier: "templates_new_template_button"
-        )
-        tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
+        if mode == .guest {
+            captureGuestLimitedHomeAction("Pack Templates", name: "50-guest-limit-new-template")
+        } else {
+            captureHomeAction(
+                "Pack Templates",
+                name: "\(prefix)-templates-before-new-template",
+                dismissAfterCapture: false,
+                destinationIdentifier: "templates_new_template_button"
+            )
+            tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
+        }
 
         resetPhoneModalState(mode)
-        captureHomeAction(
-            "Trail Conditions",
-            name: "\(prefix)-trail-conditions-before-submit",
-            dismissAfterCapture: false,
-            destinationIdentifier: "trail_conditions_submit_report_button"
-        )
-        tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
+        if mode == .guest {
+            captureGuestLimitedHomeAction("Trail Conditions", name: "50-guest-limit-trail-report")
+        } else {
+            captureHomeAction(
+                "Trail Conditions",
+                name: "\(prefix)-trail-conditions-before-submit",
+                dismissAfterCapture: false,
+                destinationIdentifier: "trail_conditions_submit_report_button"
+            )
+            tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
+        }
 
         resetPhoneModalState(mode)
         captureHomeAction("Weather", name: "\(prefix)-weather-before-alerts", dismissAfterCapture: false)
@@ -327,6 +335,12 @@ final class VisualScreenshotTests: XCTestCase {
         XCTFail("Expected Home action '\(title)' for screenshot \(name)")
     }
 
+    private func captureGuestLimitedHomeAction(_ title: String, name: String) {
+        captureHomeAction(title, name: name, dismissAfterCapture: false)
+        assertExpectedAccountRequiredState(for: name)
+        dismissPhoneDestination()
+    }
+
     private func dismissPhoneDestination() {
         if app.buttons["Done"].exists {
             app.buttons["Done"].tap()
@@ -391,10 +405,20 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "trips_plan_trip_button", fallbackButton: "Plan Trip", name: "\(prefix)-new-trip-sheet")
 
         selectSidebar("Templates")
-        tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
+        if mode == .guest {
+            capture("50-guest-limit-new-template")
+            assertExpectedAccountRequiredState(for: "50-guest-limit-new-template")
+        } else {
+            tapAndCapture(identifier: "templates_new_template_button", fallbackButton: "New Template", name: "\(prefix)-new-template-sheet")
+        }
 
         selectSidebar("Trail Conditions")
-        tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
+        if mode == .guest {
+            capture("50-guest-limit-trail-report")
+            assertExpectedAccountRequiredState(for: "50-guest-limit-trail-report")
+        } else {
+            tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
+        }
 
         selectSidebar("Weather")
         capture("\(prefix)-weather-before-alerts")
@@ -501,9 +525,10 @@ final class VisualScreenshotTests: XCTestCase {
             #else
             searchField.typeText(query)
             #endif
-            let resultPredicate = NSPredicate(format: "label CONTAINS %@", "Alpine Weekend")
-            let resultExists = app.staticTexts["Alpine Weekend"].waitForExistence(timeout: 2)
-                || app.buttons.matching(resultPredicate).firstMatch.waitForExistence(timeout: 3)
+            let sampleResult = app.descendants(matching: .any)
+                .matching(identifier: "global_search_result_pack-visual-pack-alpine")
+                .firstMatch
+            let resultExists = sampleResult.waitForExistence(timeout: 5)
             capture("\(name)-results")
             XCTAssertTrue(resultExists, "Expected global search to show sample pack result")
         }
@@ -746,6 +771,24 @@ final class VisualScreenshotTests: XCTestCase {
                 "Screenshot \(screenshotName) captured unexpected error text: \(label)"
             )
         }
+    }
+
+    private func assertExpectedAccountRequiredState(for screenshotName: String) {
+        let expectedIdentifiers = [
+            "guest_limited_state",
+            "account_required_state",
+            "account_required_error_state",
+        ]
+        let hasExpectedIdentifier = expectedIdentifiers.contains { identifier in
+            app.descendants(matching: .any)[identifier].exists
+        }
+        let hasExpectedText = app.staticTexts["Sign In Required"].exists
+            || app.staticTexts["Requires an Account"].exists
+            || app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Requires an Account")).firstMatch.exists
+        XCTAssertTrue(
+            hasExpectedIdentifier || hasExpectedText,
+            "Screenshot \(screenshotName) should show an intentional guest/account-required state"
+        )
     }
 
     private func shouldRequireHealthyContent(for screenshotName: String) -> Bool {

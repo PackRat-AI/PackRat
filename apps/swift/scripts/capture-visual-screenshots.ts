@@ -98,7 +98,13 @@ const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
     matches: (fileName) =>
       fileName.startsWith('03-') ||
       fileName.startsWith('10-guest-') ||
-      fileName.startsWith('50-guest-'),
+      fileName.startsWith('50-guest-modal-') ||
+      fileName.startsWith('50-guest-limit-'),
+  },
+  {
+    suffix: 'guest-limits',
+    title: 'Guest Account Limits',
+    matches: (fileName) => fileName.startsWith('50-guest-limit-'),
   },
   {
     suffix: 'auth',
@@ -385,16 +391,41 @@ function modalSet(prefix: string, includesAccountBackedCompose: boolean): Screen
     }),
     requirement(`${prefix}-new-pack-sheet`, { area: 'crud', flow: 'Pack create form' }),
     requirement(`${prefix}-new-trip-sheet`, { area: 'crud', flow: 'Trip create form' }),
-    requirement(`${prefix}-new-template-sheet`, { area: 'crud', flow: 'Template create form' }),
-    requirement(`${prefix}-trail-report-sheet`, { area: 'crud', flow: 'Trail report create form' }),
     requirement(`${prefix}-weather-before-alerts`, {
       area: 'modal',
       flow: 'Weather alerts entry state',
     }),
   ];
+  if (prefix === '80-data-modal') {
+    requirements.push(
+      requirement(`${prefix}-global-search-results`, {
+        area: 'navigation',
+        flow: 'Global search populated results',
+      }),
+    );
+  }
   if (includesAccountBackedCompose) {
     requirements.push(
+      requirement(`${prefix}-new-template-sheet`, {
+        area: 'crud',
+        flow: 'Template create form',
+      }),
+      requirement(`${prefix}-trail-report-sheet`, {
+        area: 'crud',
+        flow: 'Trail report create form',
+      }),
       requirement(`${prefix}-feed-compose-sheet`, { area: 'crud', flow: 'Feed compose form' }),
+    );
+  } else {
+    requirements.push(
+      requirement('50-guest-limit-new-template', {
+        area: 'auth',
+        flow: 'Guest template create account limit',
+      }),
+      requirement('50-guest-limit-trail-report', {
+        area: 'auth',
+        flow: 'Guest trail report account limit',
+      }),
     );
   }
   return requirements;
