@@ -64,6 +64,12 @@ export class ImageCacheManager {
       const downloadResult = await FileSystem.downloadAsync(remoteUrl, localUri, downloadOptions);
 
       if (downloadResult.status !== 200) {
+        // downloadAsync writes the error response body to disk even on failure;
+        // delete it so subsequent getCachedImageUri calls don't treat it as a valid cache hit.
+        const partialFile = await FileSystem.getInfoAsync(localUri);
+        if (partialFile.exists) {
+          await FileSystem.deleteAsync(localUri);
+        }
         throw new Error(`Failed to download image: ${downloadResult.status}`);
       }
     }
