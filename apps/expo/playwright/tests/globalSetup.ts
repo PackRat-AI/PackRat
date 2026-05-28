@@ -15,10 +15,10 @@ export default async function setup() {
 
   fs.mkdirSync(path.dirname(AUTH_STATE_PATH), { recursive: true });
 
-  const headless = !!process.env.CI || process.env.PWHEADLESS === '1';
+  // Headless by default; opt into a visible browser with PWHEADED=1.
   const browser = await chromium.launch({
     channel: 'chrome',
-    headless,
+    headless: process.env.PWHEADED !== '1',
     args: ['--incognito', '--no-default-browser-check', '--no-first-run', '--password-store=basic'],
   });
   const context = await browser.newContext();

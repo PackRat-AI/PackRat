@@ -20,9 +20,10 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     video: 'on-first-retry',
-    // Headless by default in CI; headed locally so you can watch the run.
-    // Override with PWHEADLESS=1 to force headless locally.
-    headless: !!process.env.CI || process.env.PWHEADLESS === '1',
+    // Headless by default everywhere. Opt into a visible browser with
+    // `PWHEADED=1` — never have the run pop windows on the dev's desktop
+    // unless explicitly requested.
+    headless: process.env.PWHEADED !== '1',
   },
 
   projects: [
