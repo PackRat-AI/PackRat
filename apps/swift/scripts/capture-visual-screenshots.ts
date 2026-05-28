@@ -12,7 +12,7 @@ import {
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { listBooted } from './lib/simctl';
-import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
+import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'macos';
 
@@ -34,6 +34,21 @@ type ContactSheetGroup = {
   matches: (fileName: string) => boolean;
 };
 
+type VisualTestResult = {
+  resultBundle: string;
+  summary: TestSummary | null;
+};
+
+type PlatformRunSummary = {
+  platform: Platform;
+  screenshotDir: string;
+  coverageManifest: string;
+  contactSheet: string;
+  groupedContactSheets: string[];
+  resultBundle?: string;
+  testSummary?: TestSummary;
+};
+
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
@@ -46,6 +61,15 @@ const XCT_ATTACHMENT_SUFFIX_RE = /_\d+_[0-9A-F-]+\.png$/i;
 const DATA_DETAIL_SCREENSHOT_RE = /^7[1-9]-data-/;
 const SIPS_PIXEL_WIDTH_RE = /pixelWidth:\s*(\d+)/;
 const SIPS_PIXEL_HEIGHT_RE = /pixelHeight:\s*(\d+)/;
+const XCODEBUILD_TIMEOUT_MS = durationFromEnv('PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS', 30 * 60_000);
+const XCRESULT_EXPORT_TIMEOUT_MS = durationFromEnv('PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS', 90_000);
+const AUTOMATION_MODE_TIMEOUT_MS = 10_000;
+const IMAGE_SIZE_TIMEOUT_MS = 5_000;
+const PLAYWRIGHT_RENDER_TIMEOUT_MS = durationFromEnv(
+  'PACKRAT_PLAYWRIGHT_RENDER_TIMEOUT_MS',
+  30_000,
+);
+const CONTACT_SHEET_RENDER_TIMEOUT_MS = 90_000;
 const CHROME_CANDIDATES = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
@@ -249,6 +273,40 @@ function requirement(
   metadata: Omit<ScreenshotRequirement, 'name'>,
 ): ScreenshotRequirement {
   return { ...metadata, name: `${name}.png` };
+}
+
+function durationFromEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function redactSecrets(output: string): string {
+  let redacted = output;
+  for (const secret of [
+    process.env.E2E_EMAIL,
+    process.env.E2E_PASSWORD,
+    process.env.E2E_TEST_EMAIL,
+    process.env.E2E_TEST_PASSWORD,
+    process.env.PACKRAT_E2E_EMAIL,
+    process.env.PACKRAT_E2E_PASSWORD,
+    process.env.PACKRAT_E2E_SESSION_TOKEN,
+    process.env.PACKRAT_E2E_USER_ID,
+  ]) {
+    if (!secret) continue;
+    redacted = redacted.replace(new RegExp(escapeRegExp(secret), 'g'), '[REDACTED]');
+  }
+  redacted = redacted.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]');
+  redacted = redacted.replace(
+    /PACKRAT_E2E_(?:EMAIL|PASSWORD|SESSION_TOKEN|USER_ID)=\S+/g,
+    (match) => `${match.slice(0, match.indexOf('=') + 1)}[REDACTED]`,
+  );
+  return redacted;
 }
 
 function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
@@ -555,7 +613,7 @@ function allocateResultBundle(platform: Platform): string {
   return path;
 }
 
-function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<void> {
+function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<VisualTestResult> {
   const resultBundle = allocateResultBundle(platform);
   const writableScreenshotDir = allocateWritableScreenshotDir(platform);
   const credentials = e2eBuildSettings();
@@ -599,6 +657,8 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
   if (platform === 'macos') assertAutomationModeAvailable();
 
   return new Promise((resolvePromise, reject) => {
+    let timedOut = false;
+    let finalized = false;
     const child = spawn('xcodebuild', args, {
       cwd: SWIFT_DIR,
       env: {
@@ -607,22 +667,56 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
         PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
       },
     });
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      console.error(
+        `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}; terminating child process.`,
+      );
+      child.kill('SIGINT');
+      setTimeout(() => {
+        if (!child.killed) child.kill('SIGKILL');
+      }, 5_000).unref();
+    }, XCODEBUILD_TIMEOUT_MS);
+    timeout.unref();
 
-    child.stdout.on('data', (chunk) => process.stdout.write(chunk));
-    child.stderr.on('data', (chunk) => process.stderr.write(chunk));
-    child.on('error', reject);
-    child.on('close', (code) => {
-      summarizeResult(resultBundle);
-      copyScreenshots(writableScreenshotDir, screenshotDir);
-      if (listScreenshots(screenshotDir).length === 0) {
-        exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
+    child.stdout.on('data', (chunk) => process.stdout.write(redactSecrets(chunk.toString())));
+    child.stderr.on('data', (chunk) => process.stderr.write(redactSecrets(chunk.toString())));
+    child.on('error', (err) => {
+      if (finalized) return;
+      finalized = true;
+      clearTimeout(timeout);
+      reject(err);
+    });
+    const finalize = (code: number | null) => {
+      if (finalized) return;
+      finalized = true;
+      clearTimeout(timeout);
+      try {
+        const summary = summarizeResult(resultBundle);
+        copyScreenshots(writableScreenshotDir, screenshotDir);
+        if (listScreenshots(screenshotDir).length === 0) {
+          exportScreenshotsFromResultBundle(resultBundle, screenshotDir);
+        }
+        if (code === 0) {
+          resolvePromise({ resultBundle, summary });
+          return;
+        }
+      } catch (err) {
+        reject(err);
+        return;
       }
-      if (code === 0) {
-        resolvePromise();
+      if (timedOut) {
+        reject(
+          new Error(
+            `xcodebuild timed out after ${Math.round(XCODEBUILD_TIMEOUT_MS / 1000)}s for ${platform}`,
+          ),
+        );
       } else {
         reject(new Error(`xcodebuild exited with ${code ?? 'unknown status'} for ${platform}`));
       }
-    });
+    };
+    child.on('exit', finalize);
+    child.on('close', finalize);
   });
 }
 
@@ -651,7 +745,7 @@ function exportScreenshotsFromResultBundle(resultBundle: string, toDir: string):
   const result = spawnSync(
     'xcrun',
     ['xcresulttool', 'export', 'attachments', '--path', resultBundle, '--output-path', exportDir],
-    { encoding: 'utf8' },
+    { encoding: 'utf8', timeout: XCRESULT_EXPORT_TIMEOUT_MS, maxBuffer: 20 * 1024 * 1024 },
   );
 
   if (result.status !== 0) {
@@ -705,7 +799,10 @@ function e2eBuildSettings(): string[] {
 }
 
 function assertAutomationModeAvailable(): void {
-  const result = spawnSync('automationmodetool', ['help'], { encoding: 'utf8' });
+  const result = spawnSync('automationmodetool', ['help'], {
+    encoding: 'utf8',
+    timeout: AUTOMATION_MODE_TIMEOUT_MS,
+  });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   if (
     output.includes('Automation Mode is disabled') &&
@@ -717,12 +814,15 @@ function assertAutomationModeAvailable(): void {
   }
 }
 
-function summarizeResult(resultBundle: string): void {
+function summarizeResult(resultBundle: string): TestSummary | null {
   try {
-    console.log(formatSummaryLine(readSummary(resultBundle)));
+    const summary = readSummary(resultBundle);
+    console.log(formatSummaryLine(summary));
+    return summary;
   } catch (err) {
     if (err instanceof XcResultError) {
       console.warn(`Warning: ${err.message}`);
+      return null;
     } else {
       throw err;
     }
@@ -925,7 +1025,7 @@ async function screenshotHtml({
 }): Promise<void> {
   try {
     const { chromium } = await import('@playwright/test');
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({ timeout: PLAYWRIGHT_RENDER_TIMEOUT_MS });
     try {
       const page = await browser.newPage({
         viewport: { width: platform === 'macos' ? 1800 : 1600, height: 1200 },
@@ -962,7 +1062,7 @@ async function screenshotHtml({
       `--screenshot=${outputPath}`,
       pathToFileURL(htmlPath).href,
     ],
-    { encoding: 'utf8' },
+    { encoding: 'utf8', timeout: CONTACT_SHEET_RENDER_TIMEOUT_MS },
   );
 
   if (result.status !== 0) {
@@ -1003,6 +1103,7 @@ function estimateContactSheetHeight({
 function readImageSize(image: string): { width: number; height: number } | null {
   const result = spawnSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', image], {
     encoding: 'utf8',
+    timeout: IMAGE_SIZE_TIMEOUT_MS,
   });
   if (result.status !== 0) return null;
   const width = result.stdout.match(SIPS_PIXEL_WIDTH_RE)?.[1];
@@ -1019,27 +1120,60 @@ async function main() {
   loadDotEnv();
   const options = parseArgs(process.argv.slice(2));
   mkdirSync(options.outDir, { recursive: true });
+  const runSummary: PlatformRunSummary[] = [];
 
   for (const platform of options.platforms) {
     const dir = screenshotDirFor(options.outDir, platform);
+    let testResult: VisualTestResult | null = null;
     mkdirSync(dir, { recursive: true });
     if (!options.skipTests) {
       rmSync(dir, { recursive: true, force: true });
       mkdirSync(dir, { recursive: true });
-      await runXcodeVisualTest(platform, dir);
+      testResult = await runXcodeVisualTest(platform, dir);
     }
     validateScreenshotMatrix(platform, dir);
     const contactSheet = await renderContactSheet(platform, options.outDir);
     const groupedContactSheets = await renderGroupedContactSheets(platform, options.outDir);
+    const coverageManifest = resolve(dir, 'coverage-manifest.json');
+    runSummary.push({
+      platform,
+      screenshotDir: dir,
+      coverageManifest,
+      contactSheet,
+      groupedContactSheets,
+      ...(testResult
+        ? {
+            resultBundle: testResult.resultBundle,
+            ...(testResult.summary ? { testSummary: testResult.summary } : {}),
+          }
+        : {}),
+    });
     console.log(`✓ ${platform} contact sheet: ${contactSheet}`);
     for (const groupedContactSheet of groupedContactSheets) {
       console.log(`✓ ${platform} grouped contact sheet: ${groupedContactSheet}`);
     }
-    console.log(`✓ ${platform} coverage manifest: ${resolve(dir, 'coverage-manifest.json')}`);
+    console.log(`✓ ${platform} coverage manifest: ${coverageManifest}`);
   }
+
+  const runSummaryPath = resolve(options.outDir, 'run-summary.json');
+  writeFileSync(
+    runSummaryPath,
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        skipTests: options.skipTests,
+        platforms: runSummary,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  console.log(`✓ screenshot run summary: ${runSummaryPath}`);
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  });
