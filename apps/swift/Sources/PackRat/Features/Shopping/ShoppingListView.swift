@@ -92,7 +92,7 @@ struct ShoppingListView: View {
             }
         }
         #if os(macOS)
-        .frame(minWidth: 380, minHeight: 480)
+        .formSheetSize(minWidth: 440, minHeight: 520)
         #endif
     }
 
@@ -215,9 +215,7 @@ private struct AddShoppingItemSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 340, minHeight: 320)
-        #endif
+        .formSheetSize(minWidth: 460, minHeight: 420)
     }
 
     private func save() {

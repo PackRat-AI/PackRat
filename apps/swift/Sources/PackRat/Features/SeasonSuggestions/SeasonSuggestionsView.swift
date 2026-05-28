@@ -100,9 +100,7 @@ struct SeasonSuggestionsView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 500)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 560)
     }
 
     private var locationForm: some View {

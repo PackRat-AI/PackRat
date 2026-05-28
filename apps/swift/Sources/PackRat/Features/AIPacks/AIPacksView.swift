@@ -257,9 +257,7 @@ private struct GeneratedPacksSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 380)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 480)
     }
 }
 

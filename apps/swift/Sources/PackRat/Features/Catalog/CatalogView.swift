@@ -222,7 +222,7 @@ struct AddCatalogItemToPackSheet: View {
                 }
             }
         }
-        .frame(minWidth: 360, minHeight: 300)
+        .formSheetSize(minWidth: 480, minHeight: 380)
     }
 
     private func addToPack() async {

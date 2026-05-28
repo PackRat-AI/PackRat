@@ -38,9 +38,7 @@ struct GapAnalysisSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 480)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 560)
     }
 
     // MARK: - Setup Form

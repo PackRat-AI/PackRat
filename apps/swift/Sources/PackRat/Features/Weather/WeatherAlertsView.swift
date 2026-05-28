@@ -32,9 +32,7 @@ struct WeatherAlertsView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 480, minHeight: 360)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 420)
     }
 }
 
