@@ -56,6 +56,7 @@ const IOS_SURFACES = [
   'packs',
   'trips',
   'assistant',
+  'ai-packs',
   'gear-inventory',
   'season-suggestions',
   'pack-templates',
@@ -81,6 +82,7 @@ const MAC_SURFACES = [
   'gear-inventory',
   'wildlife',
   'ai-packs',
+  'season-suggestions',
 ] as const;
 const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
   {
@@ -105,6 +107,11 @@ const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
     suffix: 'guest-limits',
     title: 'Guest Account Limits',
     matches: (fileName) => fileName.startsWith('50-guest-limit-'),
+  },
+  {
+    suffix: 'offline',
+    title: 'Offline and Cached Data',
+    matches: (fileName) => fileName.startsWith('4') && fileName.includes('-offline-'),
   },
   {
     suffix: 'auth',
@@ -149,6 +156,31 @@ const COMMON_AUTH_REQUIREMENTS: ScreenshotRequirement[] = [
   requirement('03-guest-home', { area: 'offline-local', flow: 'Guest app shell' }),
   requirement('20-auth-home', { area: 'auth', flow: 'Seeded authenticated shell' }),
   requirement('70-data-home', { area: 'data', flow: 'Authenticated shell with seeded data' }),
+  requirement('40-offline-guest-home', { area: 'offline-local', flow: 'Guest offline shell' }),
+  requirement('41-offline-auth-home', {
+    area: 'offline-local',
+    flow: 'Authenticated offline shell',
+  }),
+  requirement('42-offline-data-home', {
+    area: 'offline-local',
+    flow: 'Authenticated offline shell with cached sample data',
+  }),
+  requirement('43-offline-data-packs', {
+    area: 'offline-local',
+    flow: 'Offline cached packs',
+  }),
+  requirement('44-offline-data-trips', {
+    area: 'offline-local',
+    flow: 'Offline cached trips',
+  }),
+  requirement('45-offline-data-assistant', {
+    area: 'offline-local',
+    flow: 'Offline assistant cached state',
+  }),
+  requirement('46-offline-data-weather', {
+    area: 'offline-local',
+    flow: 'Offline weather cached or connection-needed state',
+  }),
 ];
 
 function usage(): never {
@@ -363,7 +395,7 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
     }),
   ];
 
-  if (platform === 'macos') {
+  if (platform === 'macos' || platform === 'ios') {
     common.push(
       requirement('95-data-ai-packs-results-sheet', {
         area: 'ai',

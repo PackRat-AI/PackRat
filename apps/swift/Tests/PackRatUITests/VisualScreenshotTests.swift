@@ -113,6 +113,34 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
+    func testOfflineVisualSurface() throws {
+        launchLoggedOut(forceOffline: true)
+        enterGuestMode()
+        capture("40-offline-guest-home")
+
+        launchAuthenticated(forceOffline: true)
+        capture("41-offline-auth-home")
+
+        launchAuthenticated(sampleData: true, forceOffline: true)
+        capture("42-offline-data-home")
+
+        #if os(iOS)
+        captureTab("Packs", name: "43-offline-data-packs")
+        captureTab("Trips", name: "44-offline-data-trips")
+        captureTab("Assistant", name: "45-offline-data-assistant")
+        captureHomeAction("Weather", name: "46-offline-data-weather")
+        #elseif os(macOS)
+        selectSidebar("Packs")
+        capture("43-offline-data-packs")
+        selectSidebar("Trips")
+        capture("44-offline-data-trips")
+        selectSidebar("Assistant")
+        capture("45-offline-data-assistant")
+        selectSidebar("Weather")
+        capture("46-offline-data-weather")
+        #endif
+    }
+
     private func captureRegisterAndLoginStates() {
         if app.buttons["auth_signup_free"].waitForExistence(timeout: 5) {
             app.buttons["auth_signup_free"].tap()
@@ -151,6 +179,7 @@ final class VisualScreenshotTests: XCTestCase {
         captureTab("Trips", name: "\(prefix)-trips\(suffix)")
         captureTab("Assistant", name: "\(prefix)-assistant\(suffix)")
 
+        captureHomeAction("AI Packs", name: "\(prefix)-ai-packs\(suffix)")
         captureHomeAction("Gear Inventory", name: "\(prefix)-gear-inventory\(suffix)")
         captureHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
         captureHomeAction("Pack Templates", name: "\(prefix)-pack-templates\(suffix)")
@@ -285,6 +314,14 @@ final class VisualScreenshotTests: XCTestCase {
             destinationIdentifier: "feed_comments_button_9001"
         )
         tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+
+        captureHomeAction(
+            "AI Packs",
+            name: "home-before-95-data-ai-packs-expanded",
+            dismissAfterCapture: false,
+            destinationIdentifier: "ai_packs_view_results_button"
+        )
+        tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
     }
 
     private func resetPhoneModalState(_ mode: VisualMode) {
@@ -309,7 +346,8 @@ final class VisualScreenshotTests: XCTestCase {
         dismissAfterCapture: Bool = true,
         destinationIdentifier: String? = nil
     ) {
-        captureTab("Home", name: "home-before-\(name)")
+        let baselineName = name.hasPrefix("home-before-") ? name : "home-before-\(name)"
+        captureTab("Home", name: baselineName)
 
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
         let action = app.buttons[identifier]
@@ -374,6 +412,8 @@ final class VisualScreenshotTests: XCTestCase {
             selectSidebar(label)
             capture(name)
         }
+
+        captureMacHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
     }
 
     private func captureMacSampleDataDetails() {
@@ -499,6 +539,25 @@ final class VisualScreenshotTests: XCTestCase {
             return
         }
         XCTFail("No sidebar identifier mapped for '\(label)'")
+    }
+
+    private func captureMacHomeAction(_ title: String, name: String, dismissAfterCapture: Bool = true) {
+        selectSidebar("Home")
+        let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
+        let action = app.buttons[identifier]
+
+        for _ in 0..<8 {
+            if action.exists, action.isHittable {
+                activate(action)
+                capture(name)
+                if dismissAfterCapture {
+                    dismissPresentedSurface()
+                }
+                return
+            }
+            app.swipeUp()
+        }
+        XCTFail("Expected Home action '\(title)' for screenshot \(name)")
     }
     #endif
 
@@ -670,7 +729,7 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
-    private func launchAuthenticated(sampleData: Bool = false) {
+    private func launchAuthenticated(sampleData: Bool = false, forceOffline: Bool = false) {
         let bundle = Bundle(for: VisualScreenshotTests.self)
         let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
             ?? "e2e@packrat.test"
@@ -692,6 +751,9 @@ final class VisualScreenshotTests: XCTestCase {
             app.launchArguments.append("--visual-sample-data")
             app.launchEnvironment["PACKRAT_VISUAL_SAMPLE_DATA"] = "1"
         }
+        if forceOffline {
+            app.launchArguments.append("--force-offline")
+        }
         app.launchEnvironment["PACKRAT_E2E_ROLE"] = "ADMIN"
         app.launch()
         #if os(macOS)
@@ -709,13 +771,16 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
     }
 
-    private func launchLoggedOut() {
+    private func launchLoggedOut(forceOffline: Bool = false) {
         app = XCUIApplication()
         app.launchArguments = [
             "--disable-animations",
             "--use-userdefaults-auth",
             "--reset-auth",
         ]
+        if forceOffline {
+            app.launchArguments.append("--force-offline")
+        }
         app.launchEnvironment["PACKRAT_VISUAL_SCREENSHOTS"] = "1"
         app.launch()
         #if os(macOS)
@@ -798,6 +863,13 @@ final class VisualScreenshotTests: XCTestCase {
             || screenshotName.hasPrefix("02a-")
             || screenshotName.hasPrefix("03-")
             || screenshotName.hasPrefix("10-guest-")
+            || screenshotName.hasPrefix("40-offline-")
+            || screenshotName.hasPrefix("41-offline-")
+            || screenshotName.hasPrefix("42-offline-")
+            || screenshotName.hasPrefix("43-offline-")
+            || screenshotName.hasPrefix("44-offline-")
+            || screenshotName.hasPrefix("45-offline-")
+            || screenshotName.hasPrefix("46-offline-")
             || screenshotName.hasPrefix("50-guest-") {
             return false
         }
