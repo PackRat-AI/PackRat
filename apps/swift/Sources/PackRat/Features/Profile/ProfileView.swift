@@ -4,6 +4,7 @@ import UserNotifications
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.openURL) private var openURL
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var isSaving = false
@@ -175,7 +176,7 @@ struct ProfileView: View {
                     #if os(iOS)
                     Button("Open Settings") {
                         if let url = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(url)
+                            openURL(url)
                         }
                     }
                     .font(.callout)

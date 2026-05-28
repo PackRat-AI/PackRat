@@ -43,13 +43,7 @@ struct GlobalSearchView: View {
                         Button("Done") { dismiss() }
                     }
                 }
-                #if os(iOS)
-                .searchable(
-                    text: $query,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: "Search packs, trips, trails…"
-                )
-                #endif
+                .globalSearchField(text: $query)
         }
         #if os(iOS)
         .presentationDetents([.medium, .large])
@@ -62,20 +56,7 @@ struct GlobalSearchView: View {
 
     @ViewBuilder
     private var content: some View {
-        #if os(macOS)
-        VStack(spacing: 0) {
-            TextField("Search packs, trips, trails…", text: $query)
-                .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier("global_search_field")
-                .padding()
-
-            Divider()
-
-            resultsContent
-        }
-        #else
         resultsContent
-        #endif
     }
 
     @ViewBuilder
@@ -112,6 +93,21 @@ struct GlobalSearchView: View {
             appState.navItem = .trailConditions
             appState.selectedReportId = r.id
         }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func globalSearchField(text: Binding<String>) -> some View {
+        #if os(iOS)
+        self.searchable(
+            text: text,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search packs, trips, trails…"
+        )
+        #else
+        self.searchable(text: text, prompt: "Search packs, trips, trails…")
+        #endif
     }
 }
 

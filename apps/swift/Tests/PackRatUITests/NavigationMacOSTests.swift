@@ -72,8 +72,9 @@ final class NavigationMacOSTests: AppUITestCase {
     func testPacksCategoryFilterBarVisible() {
         goToSidebar("Packs")
         XCTAssertTrue(
-            app.buttons["All"].waitForExistence(timeout: 8),
-            "'All' category chip must be visible in Packs content pane"
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 8)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2),
+            "Category filter picker must be visible in Packs content pane"
         )
     }
 
@@ -120,7 +121,8 @@ final class NavigationMacOSTests: AppUITestCase {
             return app.staticTexts["Here's your outdoor dashboard"].waitForExistence(timeout: timeout)
         case "Packs":
             return app.buttons["New Pack"].waitForExistence(timeout: timeout)
-                || app.buttons["All"].waitForExistence(timeout: 1)
+                || app.buttons["packs_category_filter"].waitForExistence(timeout: 1)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 1)
         case "Trips":
             return app.buttons["Plan Trip"].waitForExistence(timeout: timeout)
                 || app.tables.firstMatch.waitForExistence(timeout: 1)

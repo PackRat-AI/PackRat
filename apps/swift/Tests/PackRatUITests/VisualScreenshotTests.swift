@@ -825,18 +825,10 @@ final class VisualScreenshotTests: XCTestCase {
         #endif
         capture(name)
         if let query {
-            #if os(macOS)
-            let searchField = app.textFields["global_search_field"].firstMatch
-            #else
             let searchField = app.searchFields["Search packs, trips, trails…"].firstMatch
-            #endif
             XCTAssertTrue(searchField.waitForExistence(timeout: 5), "Expected global search field for screenshot \(name)")
             activate(searchField)
-            #if os(macOS)
-            app.typeText(query)
-            #else
             searchField.typeText(query)
-            #endif
             let sampleResult = app.descendants(matching: .any)
                 .matching(identifier: "global_search_result_pack-visual-pack-alpine")
                 .firstMatch

@@ -78,10 +78,11 @@ final class NavigationTests: AppUITestCase {
 
     func testPacksCategoryFilterBarVisible() {
         goToTab("Packs")
-        // Category filter chips (All, Hiking, Backpacking, …) are in a scroll view above the list
+        // Category filtering should use the native SwiftUI picker/menu control.
         XCTAssertTrue(
-            app.buttons["All"].waitForExistence(timeout: 8),
-            "'All' category chip must be visible in Packs tab"
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 8)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2),
+            "Category filter picker must be visible in Packs tab"
         )
     }
 

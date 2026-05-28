@@ -87,7 +87,10 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         createPack(named: packName)
         goToSidebar("Packs")
 
-        XCTAssertTrue(app.buttons["All"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 5)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2)
+        )
 
         // Right-click triggers context menu on macOS.
         let cell = waitFor(app.staticTexts[packName])

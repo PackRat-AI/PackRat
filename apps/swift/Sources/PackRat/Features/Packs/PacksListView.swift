@@ -108,32 +108,27 @@ struct PacksListView: View {
     // MARK: - Category Filter Bar
 
     private var categoryFilterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                categoryChip(nil, label: "All")
+        HStack {
+            Picker("Category", selection: $selectedCategory) {
+                Label("All", systemImage: "line.3.horizontal.decrease.circle")
+                    .tag(nil as PackCategory?)
                 ForEach(PackCategory.allCases, id: \.self) { cat in
-                    categoryChip(cat, label: cat.label)
+                    Label(cat.label, systemImage: cat.symbol)
+                        .tag(Optional(cat))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-        }
-        .background(.bar)
-    }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("packs_category_filter")
 
-    private func categoryChip(_ cat: PackCategory?, label: String) -> some View {
-        let isSelected = selectedCategory == cat
-        return Button {
-            withAnimation(.spring(duration: 0.2)) { selectedCategory = cat }
-        } label: {
-            Text(label)
-                .font(.caption.bold())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color.accentColor.opacity(0.1), in: Capsule())
-                .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+            Spacer()
+
+            Text(selectedCategory?.label ?? "All")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.bar)
     }
 
     // MARK: - Pack Row
