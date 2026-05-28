@@ -41,7 +41,7 @@ struct PackItemFormView: View {
                         Button("Cancel") { dismiss() }
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(isLoading ? "Saving..." : (isEditing ? "Save" : "Add")) { submit() }
+                        Button(isLoading ? "Saving…" : (isEditing ? "Save" : "Add")) { submit() }
                             .disabled(!isValid || isLoading)
                     }
                 }

@@ -27,7 +27,7 @@ struct WeatherView: View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
             } else if viewModel.isLoadingForecast {
-                ProgressView("Loading forecast...")
+                ProgressView("Loading forecast…")
                     .frame(maxWidth: .infinity)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
