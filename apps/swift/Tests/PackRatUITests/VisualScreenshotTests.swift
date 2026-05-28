@@ -25,6 +25,12 @@ final class VisualScreenshotTests: XCTestCase {
             withIntermediateDirectories: true
         )
 
+        #if os(macOS)
+        addUIInterruptionMonitor(withDescription: "System onboarding dialogs") { [weak self] interruption in
+            self?.dismissInterruption(in: interruption) ?? false
+        }
+        #endif
+
         launchLoggedOut()
     }
 
@@ -35,43 +41,106 @@ final class VisualScreenshotTests: XCTestCase {
         capture("03-guest-home")
 
         #if os(iOS)
-        capturePhoneSurface(mode: .guest)
+        capturePhoneCoreSurface(mode: .guest)
         #elseif os(macOS)
         captureMacSurface(mode: .guest)
         #endif
     }
 
+    #if os(iOS)
+    func testGuestPrimaryHomeActionVisualSurface() throws {
+        enterGuestMode()
+        capturePhoneHomeActionSurface(mode: .guest, actions: primaryPhoneHomeActions)
+    }
+
+    func testGuestExploreHomeActionVisualSurface() throws {
+        enterGuestMode()
+        capturePhoneHomeActionSurface(mode: .guest, actions: explorePhoneHomeActions)
+    }
+
+    func testGuestDeepHomeActionVisualSurface() throws {
+        enterGuestMode()
+        capturePhoneHomeActionSurface(mode: .guest, actions: deepPhoneHomeActions)
+    }
+    #endif
+
     func testGuestModalSurface() throws {
         enterGuestMode()
 
         #if os(iOS)
-        capturePhoneModalSurface(mode: .guest)
+        capturePhoneModalCoreSurface(mode: .guest)
         #elseif os(macOS)
         captureMacModalSurface(mode: .guest)
         #endif
     }
+
+    #if os(iOS)
+    func testGuestPlanningModalSurface() throws {
+        enterGuestMode()
+        capturePhoneModalPlanningSurface(mode: .guest)
+    }
+
+    func testGuestConnectedModalSurface() throws {
+        enterGuestMode()
+        capturePhoneModalConnectedSurface(mode: .guest)
+    }
+    #endif
 
     func testAuthenticatedVisualSurface() throws {
         launchAuthenticated()
         capture("20-auth-home")
 
         #if os(iOS)
-        capturePhoneSurface(mode: .authenticated)
+        capturePhoneCoreSurface(mode: .authenticated)
         #elseif os(macOS)
         captureMacSurface(mode: .authenticated)
         #endif
     }
+
+    #if os(iOS)
+    func testAuthenticatedPrimaryHomeActionVisualSurface() throws {
+        launchAuthenticated()
+        capturePhoneHomeActionSurface(mode: .authenticated, actions: primaryPhoneHomeActions)
+    }
+
+    func testAuthenticatedExploreHomeActionVisualSurface() throws {
+        launchAuthenticated()
+        capturePhoneHomeActionSurface(mode: .authenticated, actions: explorePhoneHomeActions)
+    }
+
+    func testAuthenticatedDeepHomeActionVisualSurface() throws {
+        launchAuthenticated()
+        capturePhoneHomeActionSurface(mode: .authenticated, actions: deepPhoneHomeActions)
+    }
+    #endif
 
     func testAuthenticatedSampleDataVisualSurface() throws {
         launchAuthenticated(sampleData: true)
         capture("70-data-home")
 
         #if os(iOS)
-        capturePhoneSurface(mode: .sampleData)
+        capturePhoneCoreSurface(mode: .sampleData)
         #elseif os(macOS)
         captureMacSurface(mode: .sampleData)
         #endif
     }
+
+    #if os(iOS)
+    func testAuthenticatedSampleDataPrimaryHomeActionVisualSurface() throws {
+        launchAuthenticated(sampleData: true)
+        capturePhoneHomeActionSurface(mode: .sampleData, actions: primaryPhoneHomeActions)
+    }
+
+    func testAuthenticatedSampleDataExploreHomeActionVisualSurface() throws {
+        launchAuthenticated(sampleData: true)
+        capturePhoneHomeActionSurface(mode: .sampleData, actions: explorePhoneHomeActions)
+    }
+
+    func testAuthenticatedSampleDataDeepHomeActionVisualSurface() throws {
+        launchAuthenticated(sampleData: true)
+        capturePhoneHomeActionSurface(mode: .sampleData, actions: deepPhoneHomeActions)
+    }
+    #endif
 
     func testAuthenticatedSampleDataDetailSurface() throws {
         launchAuthenticated(sampleData: true)
@@ -87,29 +156,73 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated()
 
         #if os(iOS)
-        capturePhoneModalSurface(mode: .authenticated)
+        capturePhoneModalCoreSurface(mode: .authenticated)
         #elseif os(macOS)
         captureMacModalSurface(mode: .authenticated)
         #endif
     }
 
+    #if os(iOS)
+    func testAuthenticatedPlanningModalSurface() throws {
+        launchAuthenticated()
+        capturePhoneModalPlanningSurface(mode: .authenticated)
+    }
+
+    func testAuthenticatedConnectedModalSurface() throws {
+        launchAuthenticated()
+        capturePhoneModalConnectedSurface(mode: .authenticated)
+    }
+    #endif
+
     func testAuthenticatedSampleDataModalSurface() throws {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneModalSurface(mode: .sampleData)
+        capturePhoneModalCoreSurface(mode: .sampleData)
         #elseif os(macOS)
         captureMacModalSurface(mode: .sampleData)
         #endif
     }
 
-    func testAuthenticatedSampleDataExpandedStateSurface() throws {
+    #if os(iOS)
+    func testAuthenticatedSampleDataPlanningModalSurface() throws {
+        launchAuthenticated(sampleData: true)
+        capturePhoneModalPlanningSurface(mode: .sampleData)
+    }
+
+    func testAuthenticatedSampleDataConnectedModalSurface() throws {
+        launchAuthenticated(sampleData: true)
+        capturePhoneModalConnectedSurface(mode: .sampleData)
+    }
+    #endif
+
+    func testAuthenticatedSampleDataPackExpandedStateSurface() throws {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneExpandedSampleDataStates()
+        capturePhoneExpandedPackStates()
         #elseif os(macOS)
-        captureMacExpandedSampleDataStates()
+        captureMacExpandedPackStates()
+        #endif
+    }
+
+    func testAuthenticatedSampleDataPlanningExpandedStateSurface() throws {
+        launchAuthenticated(sampleData: true)
+
+        #if os(iOS)
+        capturePhoneExpandedPlanningStates()
+        #elseif os(macOS)
+        captureMacExpandedPlanningStates()
+        #endif
+    }
+
+    func testAuthenticatedSampleDataConnectedExpandedStateSurface() throws {
+        launchAuthenticated(sampleData: true)
+
+        #if os(iOS)
+        capturePhoneExpandedConnectedStates()
+        #elseif os(macOS)
+        captureMacExpandedConnectedStates()
         #endif
     }
 
@@ -172,27 +285,60 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     #if os(iOS)
-    private func capturePhoneSurface(mode: VisualMode) {
+    private func capturePhoneCoreSurface(mode: VisualMode) {
         let prefix = mode.prefix
         let suffix = mode.suffix
         captureTab("Packs", name: "\(prefix)-packs\(suffix)")
         captureTab("Trips", name: "\(prefix)-trips\(suffix)")
         captureTab("Assistant", name: "\(prefix)-assistant\(suffix)")
+    }
 
-        captureHomeAction("AI Packs", name: "\(prefix)-ai-packs\(suffix)")
-        captureHomeAction("Gear Inventory", name: "\(prefix)-gear-inventory\(suffix)")
-        captureHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
-        captureHomeAction("Pack Templates", name: "\(prefix)-pack-templates\(suffix)")
-        captureHomeAction("Guides", name: "\(prefix)-guides\(suffix)")
-        captureHomeAction("Catalog", name: "\(prefix)-catalog\(suffix)")
-        captureHomeAction("Community Feed", name: "\(prefix)-feed\(suffix)")
-        captureHomeAction("Trail Conditions", name: "\(prefix)-trail-conditions\(suffix)")
-        captureHomeAction("Weather", name: "\(prefix)-weather\(suffix)")
-        captureHomeAction("Shopping List", name: "\(prefix)-shopping-list\(suffix)")
-        captureHomeAction("Wildlife ID", name: "\(prefix)-wildlife\(suffix)")
+    private typealias PhoneHomeActionScreenshot = (title: String, slug: String)
+
+    private var primaryPhoneHomeActions: [PhoneHomeActionScreenshot] {
+        [
+            ("AI Packs", "ai-packs"),
+            ("Gear Inventory", "gear-inventory"),
+            ("Season Suggestions", "season-suggestions"),
+            ("Pack Templates", "pack-templates"),
+            ("Guides", "guides"),
+        ]
+    }
+
+    private var explorePhoneHomeActions: [PhoneHomeActionScreenshot] {
+        [
+            ("Catalog", "catalog"),
+            ("Community Feed", "feed"),
+            ("Trail Conditions", "trail-conditions"),
+            ("Weather", "weather"),
+            ("Shopping List", "shopping-list"),
+        ]
+    }
+
+    private var deepPhoneHomeActions: [PhoneHomeActionScreenshot] {
+        [
+            ("Wildlife ID", "wildlife"),
+        ]
+    }
+
+    private func capturePhoneHomeActionSurface(
+        mode: VisualMode,
+        actions: [PhoneHomeActionScreenshot]
+    ) {
+        let prefix = mode.prefix
+        let suffix = mode.suffix
+        for action in actions {
+            captureHomeAction(action.title, name: "\(prefix)-\(action.slug)\(suffix)")
+        }
     }
 
     private func capturePhoneModalSurface(mode: VisualMode) {
+        capturePhoneModalCoreSurface(mode: mode)
+        capturePhoneModalPlanningSurface(mode: mode)
+        capturePhoneModalConnectedSurface(mode: mode)
+    }
+
+    private func capturePhoneModalCoreSurface(mode: VisualMode) {
         let prefix = mode.modalPrefix
         captureGlobalSearch(name: "\(prefix)-global-search", query: mode == .sampleData ? "Alpine" : nil)
         resetPhoneModalState(mode)
@@ -203,7 +349,10 @@ final class VisualScreenshotTests: XCTestCase {
         resetPhoneModalState(mode)
         captureTab("Trips", name: "\(prefix)-trips-before-new-trip")
         tapAndCapture(identifier: "trips_plan_trip_button", fallbackButton: "Plan Trip", name: "\(prefix)-new-trip-sheet")
+    }
 
+    private func capturePhoneModalPlanningSurface(mode: VisualMode) {
+        let prefix = mode.modalPrefix
         resetPhoneModalState(mode)
         if mode == .guest {
             captureGuestLimitedHomeAction("Pack Templates", name: "50-guest-limit-new-template")
@@ -229,7 +378,10 @@ final class VisualScreenshotTests: XCTestCase {
             )
             tapAndCapture(identifier: "trail_conditions_submit_report_button", fallbackButton: "Submit Report", name: "\(prefix)-trail-report-sheet")
         }
+    }
 
+    private func capturePhoneModalConnectedSurface(mode: VisualMode) {
+        let prefix = mode.modalPrefix
         resetPhoneModalState(mode)
         captureHomeAction("Weather", name: "\(prefix)-weather-before-alerts", dismissAfterCapture: false)
 
@@ -265,7 +417,7 @@ final class VisualScreenshotTests: XCTestCase {
         captureHomeAction("Catalog", name: "79-data-catalog-results")
     }
 
-    private func capturePhoneExpandedSampleDataStates() {
+    private func capturePhoneExpandedPackStates() {
         captureTab("Packs", name: "home-before-81-data-pack-expanded")
         tapTextAndCapture("Alpine Weekend", name: "81-data-pack-detail-expanded")
         tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
@@ -276,7 +428,9 @@ final class VisualScreenshotTests: XCTestCase {
         tapElementAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "84-data-pack-item-detail", dismissAfterCapture: false)
         tapAndCapture(identifier: "pack_item_detail_edit_button", fallbackButton: "Edit", name: "85-data-pack-item-edit-sheet")
         dismissPhoneDestination()
+    }
 
+    private func capturePhoneExpandedPlanningStates() {
         captureTab("Trips", name: "home-before-86-data-trip-expanded")
         tapTextAndCapture("Enchantments Thru-Hike", name: "86-data-trip-detail-expanded")
         tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet")
@@ -296,16 +450,16 @@ final class VisualScreenshotTests: XCTestCase {
         tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90-data-catalog-item-detail", dismissAfterCapture: false)
         tapAndCapture(identifier: "catalog_detail_add_to_pack_button", fallbackButton: "Add to Pack", name: "91-data-catalog-add-to-pack-sheet")
         dismissPhoneDestination()
+    }
 
+    private func capturePhoneExpandedConnectedStates() {
         captureHomeAction(
             "Weather",
             name: "home-before-92-data-weather-expanded",
-            dismissAfterCapture: false,
-            destinationIdentifier: "weather_alerts_button"
+            dismissAfterCapture: false
         )
         tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
-        tapElementAndCapture(identifier: "weather_alert_preferences_button", name: "93-data-weather-alert-preferences", dismissAfterCapture: false)
-        dismissPhoneDestination()
+        tapAndCapture(identifier: "weather_alert_preferences_button", fallbackButton: "Alert Preferences", name: "93-data-weather-alert-preferences")
 
         captureHomeAction(
             "Community Feed",
@@ -319,8 +473,9 @@ final class VisualScreenshotTests: XCTestCase {
             "AI Packs",
             name: "home-before-95-data-ai-packs-expanded",
             dismissAfterCapture: false,
-            destinationIdentifier: "ai_packs_view_results_button"
+            destinationIdentifier: "ai_packs_generate_button"
         )
+        scrollToElement(identifier: "ai_packs_view_results_button", maxSwipes: 3)
         tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
     }
 
@@ -351,9 +506,22 @@ final class VisualScreenshotTests: XCTestCase {
 
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
         let action = app.buttons[identifier]
+        var visibleCandidate: XCUIElement?
 
-        for _ in 0..<8 {
-            if action.exists, action.isHittable {
+        if title == "Wildlife ID" {
+            openHomeActionUsingSearch(title: title, identifier: identifier)
+            capture(name)
+            if dismissAfterCapture {
+                dismissPhoneDestination()
+            }
+            return
+        }
+
+        for _ in 0..<12 {
+            if action.exists {
+                visibleCandidate = action
+            }
+            if action.exists, action.isHittable, actionIsClearOfBottomBar(action) {
                 activate(action)
                 if let destinationIdentifier {
                     let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
@@ -368,9 +536,77 @@ final class VisualScreenshotTests: XCTestCase {
                 }
                 return
             }
-            app.swipeUp()
+            if action.exists, action.frame.minY < 140 {
+                smallScrollDown()
+            } else {
+                smallScrollUp()
+            }
+        }
+        if let visibleCandidate, visibleCandidate.exists, actionIsClearOfBottomBar(visibleCandidate) {
+            activate(visibleCandidate)
+            if let destinationIdentifier {
+                let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
+                XCTAssertTrue(
+                    destination.waitForExistence(timeout: 5),
+                    "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
+                )
+            }
+            capture(name)
+            if dismissAfterCapture {
+                dismissPhoneDestination()
+            }
+            return
         }
         XCTFail("Expected Home action '\(title)' for screenshot \(name)")
+    }
+
+    private func openHomeActionUsingSearch(title: String, identifier: String) {
+        let searchField = app.searchFields.firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 3), "Expected Home search field before opening '\(title)'")
+        activate(searchField)
+        searchField.typeText(title)
+        if app.keyboards.buttons["Search"].exists {
+            app.keyboards.buttons["Search"].tap()
+        }
+
+        let action = app.buttons[identifier]
+        XCTAssertTrue(action.waitForExistence(timeout: 5), "Expected filtered Home action '\(title)'")
+        activate(action)
+
+        if title == "Wildlife ID" {
+            XCTAssertTrue(
+                app.navigationBars["Wildlife ID"].waitForExistence(timeout: 5),
+                "Expected Home action '\(title)' to open Wildlife ID"
+            )
+        }
+    }
+
+    private func actionIsClearOfBottomBar(_ element: XCUIElement) -> Bool {
+        #if os(iOS)
+        element.frame.minY > 140 && element.frame.midY < app.frame.maxY - 170
+        #else
+        true
+        #endif
+    }
+
+    private func smallScrollUp() {
+        #if os(iOS)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.56))
+        start.press(forDuration: 0.01, thenDragTo: end)
+        #else
+        app.swipeUp()
+        #endif
+    }
+
+    private func smallScrollDown() {
+        #if os(iOS)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.38))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.54))
+        start.press(forDuration: 0.01, thenDragTo: end)
+        #else
+        app.swipeDown()
+        #endif
     }
 
     private func captureGuestLimitedHomeAction(_ title: String, name: String) {
@@ -469,7 +705,7 @@ final class VisualScreenshotTests: XCTestCase {
         }
     }
 
-    private func captureMacExpandedSampleDataStates() {
+    private func captureMacExpandedPackStates() {
         resetMacSampleDataSidebar("Packs")
         capture("81-data-pack-detail-expanded")
         tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
@@ -480,7 +716,9 @@ final class VisualScreenshotTests: XCTestCase {
         scrollToElement(identifier: "pack_item_row_visual-item-shelter")
         tapElementAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "84-data-pack-item-detail", dismissAfterCapture: false)
         tapAndCapture(identifier: "pack_item_detail_edit_button", fallbackButton: "Edit", name: "85-data-pack-item-edit-sheet")
+    }
 
+    private func captureMacExpandedPlanningStates() {
         resetMacSampleDataSidebar("Trips")
         capture("86-data-trip-detail-expanded")
         tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet")
@@ -493,7 +731,9 @@ final class VisualScreenshotTests: XCTestCase {
         tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90-data-catalog-item-detail", dismissAfterCapture: false)
         resetMacSampleDataSidebar("Catalog")
         tapAndCapture(identifier: "catalog_item_add_to_pack_7001", fallbackButton: "Add to Pack", name: "91-data-catalog-add-to-pack-sheet")
+    }
 
+    private func captureMacExpandedConnectedStates() {
         resetMacSampleDataSidebar("Weather")
         tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
         resetMacSampleDataSidebar("Weather")
@@ -503,6 +743,7 @@ final class VisualScreenshotTests: XCTestCase {
         tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
 
         resetMacSampleDataSidebar("AI Packs")
+        scrollToElement(identifier: "ai_packs_view_results_button", maxSwipes: 3)
         tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
     }
 
@@ -512,6 +753,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func selectSidebar(_ label: String) {
+        dismissSystemInterruptions()
         let identifierByLabel: [String: String] = [
             "Home": "nav_home",
             "Packs": "nav_packs",
@@ -536,6 +778,7 @@ final class VisualScreenshotTests: XCTestCase {
             } else {
                 button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
             }
+            dismissSystemInterruptions()
             return
         }
         XCTFail("No sidebar identifier mapped for '\(label)'")
@@ -694,6 +937,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private func activate(_ element: XCUIElement) {
+        dismissSystemInterruptions()
         #if os(macOS)
         if element.isHittable {
             element.click()
@@ -707,6 +951,7 @@ final class VisualScreenshotTests: XCTestCase {
             element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         }
         #endif
+        dismissSystemInterruptions()
     }
 
     private func dismissPresentedSurface() {
@@ -758,6 +1003,7 @@ final class VisualScreenshotTests: XCTestCase {
         app.launch()
         #if os(macOS)
         app.activate()
+        dismissSystemInterruptions()
         #endif
         XCTAssertTrue(waitForAuthenticatedShell(), "Authenticated visual shell must launch from seeded E2E state")
     }
@@ -785,6 +1031,7 @@ final class VisualScreenshotTests: XCTestCase {
         app.launch()
         #if os(macOS)
         app.activate()
+        dismissSystemInterruptions()
         #endif
     }
 
@@ -795,9 +1042,11 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func capture(_ name: String) {
         Thread.sleep(forTimeInterval: 0.35)
+        dismissSystemInterruptions()
         assertNoUnexpectedErrorState(for: name)
         #if os(macOS)
         app.activate()
+        dismissSystemInterruptions()
         let window = app.windows.firstMatch
         let screenshot = window.waitForExistence(timeout: 2) ? window.screenshot() : app.screenshot()
         #else
@@ -874,6 +1123,39 @@ final class VisualScreenshotTests: XCTestCase {
             return false
         }
         return true
+    }
+
+    @discardableResult
+    private func dismissInterruption(in container: XCUIElement) -> Bool {
+        #if os(macOS)
+        for label in ["Remind Me Later", "Not Now", "Continue", "OK", "Allow", "Dismiss", "Close"] {
+            let button = container.buttons[label]
+            if button.exists {
+                if button.isHittable {
+                    button.click()
+                } else {
+                    button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+                }
+                return true
+            }
+        }
+        #endif
+        return false
+    }
+
+    private func dismissSystemInterruptions() {
+        #if os(macOS)
+        for bundleIdentifier in [
+            "com.apple.ContinuityCaptureOnboardingUI",
+            "com.apple.UserNotificationCenter",
+            "com.apple.systempreferences",
+        ] {
+            let systemApp = XCUIApplication(bundleIdentifier: bundleIdentifier)
+            if systemApp.exists, dismissInterruption(in: systemApp) {
+                Thread.sleep(forTimeInterval: 0.2)
+            }
+        }
+        #endif
     }
 }
 
