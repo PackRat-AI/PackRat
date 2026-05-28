@@ -72,6 +72,9 @@ export const nodeEnvSchema = z.object({
   // ── E2E test credentials ──────────────────────────────────────────
   E2E_TEST_EMAIL: z.string().email().optional(),
   E2E_TEST_PASSWORD: z.string().min(1).optional(),
+
+  // ── OpenAI (packages/api/src/db/seed-e2e-catalog.ts) ──────────────
+  OPENAI_API_KEY: z.string().min(1).optional(),
 });
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
@@ -107,4 +110,5 @@ export const nodeEnv = nodeEnvSchema.parse({
   DEBUG: process.env.DEBUG,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 });

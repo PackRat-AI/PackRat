@@ -155,7 +155,7 @@ async function embedAll(values: string[], openAiKey: string): Promise<number[][]
 
 async function seedCatalog() {
   const dbUrl = nodeEnv.NEON_DATABASE_URL;
-  const openAiKey = process.env.OPENAI_API_KEY;
+  const openAiKey = nodeEnv.OPENAI_API_KEY;
   if (!dbUrl) throw new Error('NEON_DATABASE_URL is required');
   if (!openAiKey) throw new Error('OPENAI_API_KEY is required');
 

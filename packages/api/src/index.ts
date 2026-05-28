@@ -29,7 +29,7 @@ import type { CatalogETLMessage } from './services/etl/types';
 // WebSocket /v2 endpoint (used by neon-serverless Pool) — so prod and local
 // share the exact same driver code paths with no adapter switch.
 let neonLocalConfigured = false;
-function maybeConfigureLocalNeon(databaseUrl: string): void {
+function maybeConfigureLocalNeon(databaseUrl: string, proxyPortOverride?: string): void {
   if (neonLocalConfigured) return;
   try {
     const u = new URL(databaseUrl);
@@ -40,7 +40,7 @@ function maybeConfigureLocalNeon(databaseUrl: string): void {
       host === 'neon.com' ||
       host.endsWith('.neon.com');
     if (isNeon) return;
-    const proxyPort = process.env.NEON_LOCAL_PROXY_PORT ?? '4444';
+    const proxyPort = proxyPortOverride ?? '4444';
     neonConfig.fetchEndpoint = (h) =>
       h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
     neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
@@ -122,7 +122,7 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
-    maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
+    maybeConfigureLocalNeon(e.NEON_DATABASE_URL, e.NEON_LOCAL_PROXY_PORT);
 
     // Route /api/auth/** to Better Auth before Elysia sees it.
     const url = new URL(request.url);
