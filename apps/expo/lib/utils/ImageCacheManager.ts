@@ -61,7 +61,13 @@ export class ImageCacheManager {
           Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
         },
       };
-      const downloadResult = await FileSystem.downloadAsync(remoteUrl, localUri, downloadOptions);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Image download timed out')), 15_000),
+      );
+      const downloadResult = await Promise.race([
+        FileSystem.downloadAsync(remoteUrl, localUri, downloadOptions),
+        timeout,
+      ]);
 
       if (downloadResult.status !== 200) {
         // downloadAsync writes the error response body to disk even on failure;
