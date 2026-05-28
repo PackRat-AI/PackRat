@@ -5,6 +5,7 @@ import AuthenticationServices
 
 struct LoginView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.colorScheme) private var colorScheme
     let onRegisterTapped: () -> Void
     let onForgotPasswordTapped: () -> Void
 
@@ -101,7 +102,7 @@ struct LoginView: View {
                     } onCompletion: { result in
                         signInWithApple(result)
                     }
-                    .signInWithAppleButtonStyle(.whiteOutline)
+                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
                     .frame(height: 44)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .disabled(isLoading)
@@ -178,11 +179,16 @@ struct LoginView: View {
 @ViewBuilder
 func authContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
     #if os(macOS)
-    content()
-        .padding(40)
-        .frame(width: 400)
-        .frame(maxHeight: .infinity)
-        .background(.background)
+    VStack {
+        Spacer(minLength: 32)
+        content()
+            .padding(40)
+            .frame(width: 420)
+            .fixedSize(horizontal: false, vertical: true)
+        Spacer(minLength: 32)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(.background)
     #else
     ScrollView {
         content()
