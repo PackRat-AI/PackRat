@@ -721,11 +721,18 @@ final class VisualScreenshotTests: XCTestCase {
     private func captureMacExpandedPlanningStates() {
         resetMacSampleDataSidebar("Trips")
         capture("86-data-trip-detail-expanded")
-        tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet")
+        tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet", dismissAfterCapture: false)
+        tapElementAndCapture(identifier: "trip_location_search_button", name: "87a-data-trip-location-search-sheet")
 
         resetMacSampleDataSidebar("Templates")
         capture("88-data-template-detail-expanded")
         tapAndCapture(button: "Apply to Pack", name: "89-data-template-apply-sheet")
+        resetMacSampleDataSidebar("Templates")
+        tapElementAndCapture(identifier: "template_row_visual-template-day", name: "89a-data-custom-template-detail", dismissAfterCapture: false)
+        tapAndCapture(identifier: "template_detail_add_item_button", fallbackButton: "Add Item", name: "89b-data-template-add-item-sheet")
+        resetMacSampleDataSidebar("Templates")
+        tapElementAndCapture(identifier: "template_row_visual-template-day", name: "89c-data-custom-template-before-edit", dismissAfterCapture: false)
+        tapAndCapture(identifier: "template_detail_edit_button", fallbackButton: "Edit", name: "89d-data-template-edit-sheet")
 
         resetMacSampleDataSidebar("Catalog")
         tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90-data-catalog-item-detail", dismissAfterCapture: false)
@@ -745,6 +752,9 @@ final class VisualScreenshotTests: XCTestCase {
         resetMacSampleDataSidebar("AI Packs")
         scrollToElement(identifier: "ai_packs_view_results_button", maxSwipes: 3)
         tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
+
+        captureMacHomeAction("Shopping List", name: "96-data-shopping-list", dismissAfterCapture: false)
+        tapAndCapture(identifier: "shopping_add_item_button", fallbackButton: "Add Item", name: "97-data-shopping-add-item-sheet")
     }
 
     private func resetMacSampleDataSidebar(_ label: String) {
@@ -900,7 +910,12 @@ final class VisualScreenshotTests: XCTestCase {
         dismissPresentedSurface()
     }
 
-    private func tapAndCapture(identifier: String, fallbackButton label: String, name: String) {
+    private func tapAndCapture(
+        identifier: String,
+        fallbackButton label: String,
+        name: String,
+        dismissAfterCapture: Bool = true
+    ) {
         let button = findButton(identifier: identifier, timeout: 1) ?? findButton(label: label, timeout: 3)
         guard let button else {
             XCTFail("Expected button identifier '\(identifier)' or label '\(label)' for screenshot \(name)")
@@ -908,7 +923,9 @@ final class VisualScreenshotTests: XCTestCase {
         }
         activate(button)
         capture(name)
-        dismissPresentedSurface()
+        if dismissAfterCapture {
+            dismissPresentedSurface()
+        }
     }
 
     private func tapTextAndCapture(_ label: String, name: String) {

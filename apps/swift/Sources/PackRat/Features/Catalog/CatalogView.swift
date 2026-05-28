@@ -206,6 +206,7 @@ struct AddCatalogItemToPackSheet: View {
                     }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle("Add to Pack")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

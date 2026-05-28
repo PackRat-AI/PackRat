@@ -14,4 +14,9 @@ extension View {
         self
         #endif
     }
+
+    @ViewBuilder
+    func packRatFormStyle() -> some View {
+        self.formStyle(.grouped)
+    }
 }

@@ -60,6 +60,7 @@ struct TripFormView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("trip_location_search_button")
                     if !locationName.isEmpty {
                         Button("Clear Location", systemImage: "xmark.circle") {
                             locationName = ""; locationLat = 0; locationLon = 0
@@ -120,6 +121,7 @@ struct TripFormView: View {
                     Section { InlineErrorView(message: error) }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Trip" : "Plan Trip")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

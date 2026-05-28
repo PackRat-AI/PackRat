@@ -73,6 +73,7 @@ struct PackTemplateItemFormView: View {
                     InlineErrorView(message: error).listRowBackground(Color.clear)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Item" : "Add Item")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

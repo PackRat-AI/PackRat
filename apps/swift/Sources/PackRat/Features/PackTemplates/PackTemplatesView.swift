@@ -101,6 +101,7 @@ struct PackTemplatesListView: View {
             }
         }
         .tag(template.id)
+        .accessibilityIdentifier("template_row_\(template.id)")
     }
 }
 
@@ -241,11 +242,13 @@ struct PackTemplateDetailView: View {
                 Button("Add Item", systemImage: "plus") {
                     showingAddItem = true
                 }
+                .accessibilityIdentifier("template_detail_add_item_button")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button("Edit", systemImage: "pencil") {
                     showingEditTemplate = true
                 }
+                .accessibilityIdentifier("template_detail_edit_button")
             }
         }
         ToolbarItem(placement: .primaryAction) {
@@ -286,6 +289,7 @@ struct PackTemplateDetailView: View {
     @ViewBuilder
     private func templateItemRow(_ item: PackTemplateItem) -> some View {
         TemplateItemRow(item: item)
+            .accessibilityIdentifier("template_item_row_\(item.id)")
             .contextMenu {
                 if !currentTemplate.isOfficial {
                     Button("Edit", systemImage: "pencil") {

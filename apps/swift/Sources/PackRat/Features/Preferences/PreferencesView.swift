@@ -63,7 +63,7 @@ struct PreferencesView: View {
                 .pickerStyle(.segmented)
             }
         }
-        .formStyle(.grouped)
+        .packRatFormStyle()
     }
 
     private var unitsTab: some View {
@@ -77,7 +77,7 @@ struct PreferencesView: View {
                 Toggle("Prefer metric display", isOn: $preferMetric)
             }
         }
-        .formStyle(.grouped)
+        .packRatFormStyle()
     }
 
     private var effectiveURL: String {
@@ -119,7 +119,7 @@ struct PreferencesView: View {
                 }
             }
         }
-        .formStyle(.grouped)
+        .packRatFormStyle()
     }
 
     private func resetDefaults() {

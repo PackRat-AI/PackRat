@@ -50,6 +50,7 @@ struct PackTemplateFormView: View {
                     InlineErrorView(message: error).listRowBackground(Color.clear)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Template" : "New Template")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

@@ -74,6 +74,7 @@ struct GapAnalysisSheet: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .packRatFormStyle()
     }
 
     // MARK: - Result

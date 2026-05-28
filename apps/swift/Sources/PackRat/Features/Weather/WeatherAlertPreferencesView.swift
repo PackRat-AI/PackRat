@@ -111,6 +111,7 @@ struct WeatherAlertPreferencesView: View {
             }
             .disabled(!weatherNotifications)
         }
+        .packRatFormStyle()
         .navigationTitle("Alert Preferences")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

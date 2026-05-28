@@ -287,6 +287,7 @@ struct SubmitTrailConditionView: View {
                 }
                 if let error { Section { InlineErrorView(message: error) } }
             }
+            .packRatFormStyle()
             .navigationTitle("Submit Report")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

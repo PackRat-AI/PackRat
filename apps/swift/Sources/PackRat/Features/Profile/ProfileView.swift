@@ -91,7 +91,7 @@ struct ProfileView: View {
 
             notificationSection
         }
-        .formStyle(.grouped)
+        .packRatFormStyle()
     }
 
     private var profileForm: some View {
@@ -157,7 +157,7 @@ struct ProfileView: View {
                 .disabled(isDeletingAccount)
             }
         }
-        .formStyle(.grouped)
+        .packRatFormStyle()
         #if os(macOS)
         .frame(maxWidth: 500)
         #endif

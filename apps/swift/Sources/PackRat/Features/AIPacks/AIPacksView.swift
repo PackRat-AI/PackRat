@@ -138,6 +138,7 @@ struct AIPacksView: View {
             }
             tipsSection
         }
+        .packRatFormStyle()
         #endif
     }
 

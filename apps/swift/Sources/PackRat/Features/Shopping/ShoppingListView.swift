@@ -73,6 +73,7 @@ struct ShoppingListView: View {
                     Button { showingAddSheet = true } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("shopping_add_item_button")
                 }
                 if !items.isEmpty {
                     ToolbarItem(placement: .secondaryAction) {
@@ -201,6 +202,7 @@ private struct AddShoppingItemSheet: View {
                         .lineLimit(3, reservesSpace: true)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle("Add Item")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

@@ -110,6 +110,7 @@ struct PackItemFormView: View {
                 }
             }
         }
+        .packRatFormStyle()
     }
 
     private func prefill() {

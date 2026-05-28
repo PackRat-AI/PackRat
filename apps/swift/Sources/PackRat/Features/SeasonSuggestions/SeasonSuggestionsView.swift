@@ -130,6 +130,7 @@ struct SeasonSuggestionsView: View {
                 .disabled(viewModel.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
             }
         }
+        .packRatFormStyle()
         #if os(iOS)
         .listStyle(.insetGrouped)
         #endif

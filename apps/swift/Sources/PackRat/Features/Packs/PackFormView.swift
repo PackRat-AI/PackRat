@@ -57,6 +57,7 @@ struct PackFormView: View {
                     }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Pack" : "New Pack")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
