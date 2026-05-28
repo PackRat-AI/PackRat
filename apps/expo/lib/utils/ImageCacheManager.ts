@@ -69,14 +69,23 @@ export class ImageCacheManager {
         timeout,
       ]);
 
-      if (downloadResult.status !== 200) {
-        // downloadAsync writes the error response body to disk even on failure;
+      const contentType =
+        downloadResult.headers?.['content-type'] ?? downloadResult.headers?.['Content-Type'] ?? '';
+      const invalidContent =
+        downloadResult.status !== 200 || (!contentType.startsWith('image/') && contentType !== '');
+
+      if (invalidContent) {
+        // downloadAsync writes the response body to disk even on failure or wrong content type;
         // delete it so subsequent getCachedImageUri calls don't treat it as a valid cache hit.
         const partialFile = await FileSystem.getInfoAsync(localUri);
         if (partialFile.exists) {
           await FileSystem.deleteAsync(localUri);
         }
-        throw new Error(`Failed to download image: ${downloadResult.status}`);
+        throw new Error(
+          downloadResult.status !== 200
+            ? `Failed to download image: ${downloadResult.status}`
+            : `Invalid content type: ${contentType}`,
+        );
       }
     }
 
