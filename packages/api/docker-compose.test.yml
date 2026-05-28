@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: test_password
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5433:5432"
+      - "${POSTGRES_TEST_HOST_PORT:-5433}:5432"
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
     healthcheck:
@@ -32,7 +32,7 @@ services:
       ALLOW_ADDR_REGEX: ".*"
       LOG_CONN_INFO: "true"
     ports:
-      - "5434:80"
+      - "${WSPROXY_HOST_PORT:-5434}:80"
     depends_on:
       postgres-test:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
     environment:
       PG_CONNECTION_STRING: postgres://test_user:test_password@postgres-test:5432/packrat_test
     ports:
-      - "4444:4444"
+      - "${NEON_PROXY_HOST_PORT:-4444}:4444"
     depends_on:
       postgres-test:
         condition: service_healthy
