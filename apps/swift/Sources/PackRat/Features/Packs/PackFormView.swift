@@ -72,9 +72,7 @@ struct PackFormView: View {
             }
             .onAppear { prefill() }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 300)
-        #endif
+        .formSheetSize(minWidth: 500, minHeight: 400)
     }
 
     private func prefill() {

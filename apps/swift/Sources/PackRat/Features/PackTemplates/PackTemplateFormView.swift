@@ -66,9 +66,7 @@ struct PackTemplateFormView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 360, minHeight: 280)
-        #endif
+        .formSheetSize(minWidth: 500, minHeight: 380)
     }
 
     private func save() async {

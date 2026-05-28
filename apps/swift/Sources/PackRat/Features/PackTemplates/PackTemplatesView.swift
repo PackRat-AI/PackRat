@@ -376,9 +376,7 @@ private struct ApplyTemplateSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 340, minHeight: 280)
-        #endif
+        .formSheetSize(minWidth: 480, minHeight: 420)
     }
 }
 

@@ -47,9 +47,7 @@ struct PackItemFormView: View {
                 }
                 .onAppear { prefill() }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 460)
-        #endif
+        .formSheetSize(minWidth: 540, minHeight: 560)
     }
 
     private var formContent: some View {

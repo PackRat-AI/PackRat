@@ -300,9 +300,7 @@ struct SubmitTrailConditionView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 500)
-        #endif
+        .formSheetSize(minWidth: 560, minHeight: 680)
     }
 
     private func submit() {

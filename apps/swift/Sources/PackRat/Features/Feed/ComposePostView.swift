@@ -70,7 +70,7 @@ struct ComposePostView: View {
                 }
             }
         }
-        .frame(minWidth: 400, minHeight: 260)
+        .formSheetSize(minWidth: 500, minHeight: 360)
     }
 
     private func post() async {

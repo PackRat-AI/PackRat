@@ -142,9 +142,7 @@ struct TripFormView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 420)
-        #endif
+        .formSheetSize(minWidth: 560, minHeight: 620)
     }
 
     private func prefill() {
