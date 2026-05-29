@@ -1023,6 +1023,12 @@ async function screenshotHtml({
   outputPath: string;
   platform: Platform;
 }): Promise<void> {
+  const chrome = CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
+  if (chrome) {
+    renderWithSystemChrome({ chrome, htmlPath, images, outputPath, platform });
+    return;
+  }
+
   try {
     const { chromium } = await import('@playwright/test');
     const browser = await chromium.launch({ timeout: PLAYWRIGHT_RENDER_TIMEOUT_MS });
@@ -1038,18 +1044,25 @@ async function screenshotHtml({
       await browser.close();
     }
   } catch (err) {
-    console.warn(
-      `Playwright screenshot unavailable; falling back to system Chrome. ${formatError(err)}`,
-    );
-  }
-
-  const chrome = CHROME_CANDIDATES.find((candidate) => existsSync(candidate));
-  if (!chrome) {
     throw new Error(
-      `No browser renderer found. Open ${htmlPath} manually, or run \`bunx playwright install chromium\`.`,
+      `No contact sheet renderer found. System Chrome is unavailable and Playwright failed: ${formatError(err)}`,
     );
   }
+}
 
+function renderWithSystemChrome({
+  chrome,
+  htmlPath,
+  images,
+  outputPath,
+  platform,
+}: {
+  chrome: string;
+  htmlPath: string;
+  images: string[];
+  outputPath: string;
+  platform: Platform;
+}): void {
   const width = platform === 'macos' ? 1800 : 1600;
   const height = estimateContactSheetHeight({ images, platform, width });
   const result = spawnSync(
