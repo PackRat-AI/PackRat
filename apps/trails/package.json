@@ -1,6 +1,6 @@
 {
   "name": "packrat-trails-app",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "scripts": {
     "build": "bun run generate-og-images && next build",
