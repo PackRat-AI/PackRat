@@ -125,6 +125,9 @@ struct AppNavigation: View {
                 .hidden()
         }
         .focusedSceneValue(\.globalSearchAction, $state.isGlobalSearchPresented)
+        #if os(iOS)
+        .watchCompanionSync(appState)
+        #endif
         .accessibilityIdentifier("app_navigation")
     }
 
@@ -323,6 +326,7 @@ struct AppNavigation: View {
                 .environment(appState)
         }
         .focusedSceneValue(\.globalSearchAction, $state.isGlobalSearchPresented)
+        .watchCompanionSync(appState)
     }
 
     private var phonePrimaryItems: [NavItem] {
@@ -408,3 +412,27 @@ struct AppNavigation: View {
         return displayName
     }
 }
+
+#if os(iOS)
+private extension View {
+    func watchCompanionSync(_ appState: AppState) -> some View {
+        task {
+            WatchCompanionService.shared.activate()
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(15))
+                WatchCompanionService.shared.publishSnapshot(from: appState)
+            }
+        }
+        .onChange(of: appState.navItem) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+        .onChange(of: appState.selectedPackId) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+        .onChange(of: appState.selectedTripId) { _, _ in
+            WatchCompanionService.shared.publishSnapshot(from: appState)
+        }
+    }
+}
+#endif

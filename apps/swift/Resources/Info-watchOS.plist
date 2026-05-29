@@ -24,5 +24,7 @@
 	<false/>
 	<key>WKApplication</key>
 	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.andrewbierman.packrat</string>
 </dict>
 </plist>

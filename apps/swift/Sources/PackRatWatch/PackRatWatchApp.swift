@@ -2,25 +2,49 @@ import SwiftUI
 
 @main
 struct PackRatWatchApp: App {
+    @State private var connectivity = WatchConnectivityStore()
+
     var body: some Scene {
         WindowGroup {
+            WatchRootView()
+                .environment(connectivity)
+                .task {
+                    connectivity.activate()
+                }
+        }
+    }
+}
+
+private struct WatchRootView: View {
+    @Environment(WatchConnectivityStore.self) private var connectivity
+
+    var body: some View {
+        switch ProcessInfo.processInfo.environment["PACKRAT_WATCH_SCREENSHOT_ROUTE"] {
+        case "checklist":
+            WatchChecklistView(pack: connectivity.snapshot.pack)
+        case "weather":
+            WatchWeatherView(weather: connectivity.snapshot.weather)
+        case "trail-report":
+            WatchTrailReportView(trail: connectivity.snapshot.trail)
+        default:
             WatchDashboardView()
         }
     }
 }
 
 private struct WatchDashboardView: View {
+    @Environment(WatchConnectivityStore.self) private var connectivity
     @State private var selectedTab = 0
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            TrailReadyView()
+            TrailReadyView(snapshot: connectivity.snapshot, isPhoneReachable: connectivity.isPhoneReachable)
                 .tag(0)
-            WatchChecklistView()
+            WatchChecklistView(pack: connectivity.snapshot.pack)
                 .tag(1)
-            WatchWeatherView()
+            WatchWeatherView(weather: connectivity.snapshot.weather)
                 .tag(2)
-            WatchTrailReportView()
+            WatchTrailReportView(trail: connectivity.snapshot.trail)
                 .tag(3)
         }
         .tabViewStyle(.verticalPage)
@@ -28,16 +52,19 @@ private struct WatchDashboardView: View {
 }
 
 private struct TrailReadyView: View {
+    let snapshot: PackRatWatchSnapshot
+    let isPhoneReachable: Bool
+
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Trail Ready", systemImage: "checkmark.seal.fill")
+                        Label(snapshot.pack.name, systemImage: "checkmark.seal.fill")
                             .font(.headline)
                             .foregroundStyle(.green)
 
-                        Text("Quick wrist access for the next pack, weather, and trail notes.")
+                        Text(snapshot.trip?.name ?? "Quick wrist access for the next pack, weather, and trail notes.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -45,9 +72,23 @@ private struct TrailReadyView: View {
                 }
 
                 Section("Today") {
-                    WatchMetricRow(title: "Base Weight", value: "18.4 lb", symbol: "scalemass")
-                    WatchMetricRow(title: "Packed", value: "12 of 15", symbol: "backpack")
-                    WatchMetricRow(title: "Weather", value: "64° Clear", symbol: "sun.max")
+                    WatchMetricRow(title: "Base Weight", value: snapshot.pack.baseWeightText, symbol: "scalemass")
+                    WatchMetricRow(
+                        title: "Packed",
+                        value: "\(snapshot.pack.packedItemCount) of \(snapshot.pack.totalItemCount)",
+                        symbol: "backpack"
+                    )
+                    WatchMetricRow(
+                        title: "Weather",
+                        value: "\(snapshot.weather.temperatureText) \(snapshot.weather.conditionText)",
+                        symbol: snapshot.weather.symbolName
+                    )
+                }
+
+                Section {
+                    Label(isPhoneReachable ? "iPhone Nearby" : "Last Synced", systemImage: isPhoneReachable ? "iphone" : "clock")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("PackRat")
@@ -56,19 +97,19 @@ private struct TrailReadyView: View {
 }
 
 private struct WatchChecklistView: View {
-    @AppStorage("watch.checklist.shelter") private var shelterPacked = true
-    @AppStorage("watch.checklist.water") private var waterPacked = false
-    @AppStorage("watch.checklist.firstAid") private var firstAidPacked = true
-    @AppStorage("watch.checklist.layers") private var layersPacked = false
+    let pack: WatchPackSnapshot
 
     var body: some View {
         NavigationStack {
             List {
                 Section("Pack") {
-                    WatchChecklistToggle(title: "Shelter", symbol: "tent", isOn: $shelterPacked)
-                    WatchChecklistToggle(title: "Water", symbol: "drop", isOn: $waterPacked)
-                    WatchChecklistToggle(title: "First Aid", symbol: "cross.case", isOn: $firstAidPacked)
-                    WatchChecklistToggle(title: "Layers", symbol: "jacket", isOn: $layersPacked)
+                    if pack.checklist.isEmpty {
+                        ContentUnavailableView("No Items", systemImage: "checklist", description: Text("Open a pack on iPhone to sync checklist items."))
+                    } else {
+                        ForEach(pack.checklist) { item in
+                            WatchChecklistToggle(item: item)
+                        }
+                    }
                 }
             }
             .navigationTitle("Checklist")
@@ -77,26 +118,26 @@ private struct WatchChecklistView: View {
 }
 
 private struct WatchWeatherView: View {
+    let weather: WatchWeatherSnapshot
+
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
-                        Label("Denver", systemImage: "location.fill")
+                        Label(weather.locationName, systemImage: "location.fill")
                             .font(.headline)
-                        Text("64°")
+                        Text(weather.temperatureText)
                             .font(.system(size: 38, weight: .semibold, design: .rounded))
-                        Text("Clear. Wind 5 mph.")
+                        Text(weather.conditionText)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 4)
                 }
 
-                Section("Next 3 hours") {
-                    WatchMetricRow(title: "Now", value: "64°", symbol: "sun.max")
-                    WatchMetricRow(title: "1 PM", value: "67°", symbol: "sun.max")
-                    WatchMetricRow(title: "2 PM", value: "68°", symbol: "cloud.sun")
+                Section("Trail") {
+                    WatchMetricRow(title: "Condition", value: weather.conditionText, symbol: weather.symbolName)
                 }
             }
             .navigationTitle("Weather")
@@ -105,12 +146,20 @@ private struct WatchWeatherView: View {
 }
 
 private struct WatchTrailReportView: View {
+    @Environment(WatchConnectivityStore.self) private var connectivity
     @State private var selectedCondition = "Good"
+    @State private var note = ""
     private let conditions = ["Good", "Muddy", "Snow", "Closed"]
+    let trail: WatchTrailSnapshot
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    WatchMetricRow(title: trail.title, value: trail.conditionText, symbol: "figure.hiking")
+                    WatchMetricRow(title: "Hazards", value: "\(trail.hazardCount)", symbol: "exclamationmark.triangle")
+                }
+
                 Section("Condition") {
                     Picker("Condition", selection: $selectedCondition) {
                         ForEach(conditions, id: \.self) { condition in
@@ -119,8 +168,13 @@ private struct WatchTrailReportView: View {
                     }
                 }
 
+                Section("Note") {
+                    TextField("Optional note", text: $note)
+                }
+
                 Section {
                     Button {
+                        connectivity.saveTrailDraft(condition: selectedCondition, note: note)
                     } label: {
                         Label("Save Draft", systemImage: "square.and.pencil")
                     }
@@ -128,7 +182,7 @@ private struct WatchTrailReportView: View {
                 }
 
                 Section {
-                    Text("Drafts sync when the iPhone app connection is available.")
+                    Text(connectivity.lastDraft == nil ? "Drafts sync when the iPhone app connection is available." : "Draft saved for iPhone sync.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -159,13 +213,17 @@ private struct WatchMetricRow: View {
 }
 
 private struct WatchChecklistToggle: View {
-    let title: String
-    let symbol: String
-    @Binding var isOn: Bool
+    let item: WatchChecklistItemSnapshot
+    @State private var isOn: Bool
+
+    init(item: WatchChecklistItemSnapshot) {
+        self.item = item
+        _isOn = State(initialValue: item.isPacked)
+    }
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            Label(title, systemImage: symbol)
+            Label(item.title, systemImage: item.symbolName)
         }
     }
 }

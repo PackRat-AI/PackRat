@@ -58,6 +58,7 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - Sources/PackRat
+      - Sources/PackRatShared
     resources:
       - Resources/Assets.xcassets
     entitlements:
@@ -133,6 +134,7 @@ targets:
     deploymentTarget: "10.0"
     sources:
       - Sources/PackRatWatch
+      - Sources/PackRatShared
     info:
       path: Resources/Info-watchOS.plist
       properties:
@@ -140,6 +142,7 @@ targets:
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         WKApplication: true
+        WKCompanionAppBundleIdentifier: com.andrewbierman.packrat
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:
@@ -157,6 +160,7 @@ targets:
     deploymentTarget: "14.0"
     sources:
       - Sources/PackRat
+      - Sources/PackRatShared
     resources:
       - Resources/Assets.xcassets
     entitlements:

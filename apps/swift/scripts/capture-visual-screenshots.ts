@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 import { listBooted } from './lib/simctl';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
-type Platform = 'ios' | 'ipad' | 'macos';
+type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
 
 type Options = {
   platforms: Platform[];
@@ -213,13 +213,15 @@ function usage(): never {
   bun swift:screenshots --platform ios
   bun swift:screenshots --platform ipad
   bun swift:screenshots --platform macos
+  bun swift:screenshots --platform watch
   bun swift:screenshots --skip-tests
   bun swift:screenshots --out artifacts/screenshots
 
 Captures guest and authenticated visual surfaces through VisualScreenshotTests and assembles:
   artifacts/screenshots/ios-contact-sheet.png
   artifacts/screenshots/ipad-contact-sheet.png
-  artifacts/screenshots/macos-contact-sheet.png`);
+  artifacts/screenshots/macos-contact-sheet.png
+  artifacts/screenshots/watch-contact-sheet.png`);
   process.exit(0);
 }
 
@@ -265,10 +267,12 @@ function parseArgs(argv: readonly string[]): Options {
 function parsePlatforms(value: string): Platform[] {
   const normalized = value.toLowerCase();
   if (normalized === 'both') return ['ios', 'ipad', 'macos'];
+  if (normalized === 'all') return ['ios', 'ipad', 'macos', 'watch'];
   if (normalized === 'ios') return ['ios'];
   if (normalized === 'ipad') return ['ipad'];
   if (normalized === 'macos') return ['macos'];
-  throw new Error(`Unknown platform "${value}". Expected ios, ipad, macos, or both.`);
+  if (normalized === 'watch' || normalized === 'watchos') return ['watch'];
+  throw new Error(`Unknown platform "${value}". Expected ios, ipad, macos, watch, both, or all.`);
 }
 
 function requirement(
@@ -313,6 +317,27 @@ function redactSecrets(output: string): string {
 }
 
 function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
+  if (platform === 'watch') {
+    return [
+      requirement('00-watch-dashboard', {
+        area: 'offline-local',
+        flow: 'Watch companion dashboard fallback or synced summary',
+      }),
+      requirement('01-watch-checklist', {
+        area: 'crud',
+        flow: 'Watch checklist page',
+      }),
+      requirement('02-watch-weather', {
+        area: 'data',
+        flow: 'Watch weather page',
+      }),
+      requirement('03-watch-trail-report', {
+        area: 'crud',
+        flow: 'Watch trail report draft page',
+      }),
+    ];
+  }
+
   const surfaceRequirements =
     platform === 'ios'
       ? IOS_SURFACES.flatMap((surface) => [
@@ -639,6 +664,8 @@ function allocateResultBundle(platform: Platform): string {
 }
 
 function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<VisualTestResult> {
+  if (platform === 'watch') return runWatchVisualCapture(screenshotDir);
+
   const resultBundle = allocateResultBundle(platform);
   const writableScreenshotDir = allocateWritableScreenshotDir(platform);
   const credentials = e2eBuildSettings();
@@ -744,6 +771,167 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
     child.on('exit', finalize);
     child.on('close', finalize);
   });
+}
+
+async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestResult> {
+  const destination = pickAvailableWatchDestination();
+  const deviceId = destination.deviceId;
+  const buildArgs = [
+    '-project',
+    'PackRat.xcodeproj',
+    '-scheme',
+    'PackRat-Watch',
+    '-destination',
+    `platform=watchOS Simulator,id=${deviceId}`,
+    '-configuration',
+    'Debug',
+    'build',
+  ];
+
+  console.log('→ Capturing watch screenshots');
+  console.log(`→ Watch simulator: ${destination.name} (${deviceId})`);
+  console.log(`→ Screenshot dir: ${screenshotDir}`);
+  runChecked({
+    command: 'xcodebuild',
+    args: buildArgs,
+    cwd: SWIFT_DIR,
+    timeout: XCODEBUILD_TIMEOUT_MS,
+  });
+
+  const appPath = resolveWatchAppPath(deviceId);
+  runChecked({
+    command: 'xcrun',
+    args: ['simctl', 'boot', deviceId],
+    cwd: SWIFT_DIR,
+    timeout: 30_000,
+    allowFailure: true,
+  });
+  runChecked({
+    command: 'xcrun',
+    args: ['simctl', 'install', deviceId, appPath],
+    cwd: SWIFT_DIR,
+    timeout: 60_000,
+  });
+  mkdirSync(screenshotDir, { recursive: true });
+  for (const route of [
+    { name: '00-watch-dashboard.png', value: '' },
+    { name: '01-watch-checklist.png', value: 'checklist' },
+    { name: '02-watch-weather.png', value: 'weather' },
+    { name: '03-watch-trail-report.png', value: 'trail-report' },
+  ]) {
+    const env = route.value ? { SIMCTL_CHILD_PACKRAT_WATCH_SCREENSHOT_ROUTE: route.value } : {};
+    runChecked({
+      command: 'xcrun',
+      args: [
+        'simctl',
+        'launch',
+        '--terminate-running-process',
+        deviceId,
+        'com.andrewbierman.packrat.watchkitapp',
+      ],
+      cwd: SWIFT_DIR,
+      timeout: 30_000,
+      env,
+    });
+
+    await sleep(1_500);
+    const tmpScreenshot = resolve('/tmp', `packrat-watch-${Date.now()}-${route.name}`);
+    runChecked({
+      command: 'xcrun',
+      args: ['simctl', 'io', deviceId, 'screenshot', tmpScreenshot],
+      cwd: SWIFT_DIR,
+      timeout: 30_000,
+    });
+    cpSync(tmpScreenshot, resolve(screenshotDir, route.name));
+    rmSync(tmpScreenshot, { force: true });
+  }
+  return { resultBundle: '', summary: null };
+}
+
+function pickAvailableWatchDestination(): { deviceId: string; name: string } {
+  const result = spawnSync('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    throw new Error(`Unable to list watch simulators: ${result.stderr || result.stdout}`);
+  }
+
+  const parsed = JSON.parse(result.stdout) as {
+    devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
+  };
+  for (const devices of Object.values(parsed.devices ?? {})) {
+    const watch = devices.find(
+      (device) => device.isAvailable && device.udid && device.name?.includes('Apple Watch'),
+    );
+    if (watch?.udid && watch.name) return { deviceId: watch.udid, name: watch.name };
+  }
+
+  throw new Error('No available Apple Watch simulator found. Install a watchOS runtime first.');
+}
+
+function resolveWatchAppPath(deviceId: string): string {
+  const result = spawnSync(
+    'xcodebuild',
+    [
+      '-project',
+      'PackRat.xcodeproj',
+      '-scheme',
+      'PackRat-Watch',
+      '-destination',
+      `platform=watchOS Simulator,id=${deviceId}`,
+      '-configuration',
+      'Debug',
+      '-showBuildSettings',
+      '-json',
+    ],
+    {
+      cwd: SWIFT_DIR,
+      encoding: 'utf8',
+      timeout: 30_000,
+      maxBuffer: 10 * 1024 * 1024,
+    },
+  );
+  if (result.status !== 0) {
+    throw new Error(`Unable to resolve Watch app path: ${result.stderr || result.stdout}`);
+  }
+
+  const settings = JSON.parse(result.stdout) as Array<{
+    buildSettings?: { BUILT_PRODUCTS_DIR?: string; WRAPPER_NAME?: string };
+  }>;
+  const buildSettings = settings.find(
+    (entry) => entry.buildSettings?.BUILT_PRODUCTS_DIR,
+  )?.buildSettings;
+  if (!buildSettings?.BUILT_PRODUCTS_DIR || !buildSettings.WRAPPER_NAME) {
+    throw new Error('Watch build settings did not include BUILT_PRODUCTS_DIR/WRAPPER_NAME.');
+  }
+  return resolve(buildSettings.BUILT_PRODUCTS_DIR, buildSettings.WRAPPER_NAME);
+}
+
+function runChecked(options: {
+  command: string;
+  args: string[];
+  cwd: string;
+  timeout: number;
+  allowFailure?: boolean;
+  env?: NodeJS.ProcessEnv;
+}): void {
+  const result = spawnSync(options.command, options.args, {
+    cwd: options.cwd,
+    env: { ...process.env, ...options.env },
+    encoding: 'utf8',
+    timeout: options.timeout,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  if (result.status === 0 || options.allowFailure) return;
+  throw new Error(
+    `${options.command} ${options.args.join(' ')} failed: ${result.stderr || result.stdout}`,
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
 
 function allocateWritableScreenshotDir(platform: Platform): string {
@@ -879,6 +1067,8 @@ function platformDisplayName(platform: Platform): string {
       return 'iPad';
     case 'macos':
       return 'macOS';
+    case 'watch':
+      return 'watchOS';
   }
 }
 
@@ -928,7 +1118,7 @@ function buildHtml({
   title: string;
 }): string {
   const isMac = platform === 'macos';
-  const cardWidth = isMac ? 520 : 300;
+  const cardWidth = platform === 'watch' ? 220 : isMac ? 520 : 300;
   const cards = images
     .map((image) => {
       const label = humanize(image);
@@ -1133,14 +1323,14 @@ function estimateContactSheetHeight({
 }): number {
   const horizontalPadding = 64;
   const gridGap = 18;
-  const cardWidth = platform === 'ios' ? 300 : 520;
+  const cardWidth = platform === 'watch' ? 220 : platform === 'ios' ? 300 : 520;
   const columns = Math.max(
     1,
     Math.floor((width - horizontalPadding + gridGap) / (cardWidth + gridGap)),
   );
   const cardHeights = images.map((image) => {
     const size = readImageSize(image);
-    if (!size) return platform === 'ios' ? 720 : 420;
+    if (!size) return platform === 'watch' ? 280 : platform === 'ios' ? 720 : 420;
     return Math.ceil((size.height / size.width) * cardWidth) + 42;
   });
   const rows: number[] = [];
