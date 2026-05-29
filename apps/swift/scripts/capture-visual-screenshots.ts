@@ -11,7 +11,6 @@ import {
 } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { listBooted } from './lib/simctl';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
@@ -625,15 +624,29 @@ function loadEnvFile(envFile: string): void {
 }
 
 function pickIOSDestination(platform: Extract<Platform, 'ios' | 'ipad'>): string {
-  if (platform === 'ipad') return pickAvailableIPadDestination();
-  try {
-    const booted = listBooted();
-    if (booted.length > 0) return `platform=iOS Simulator,id=${booted[0]}`;
-  } catch {}
-  return 'platform=iOS Simulator,name=iPhone 17 Pro';
+  if (platform === 'ipad') {
+    return pickAvailableIOSDestination({
+      preferredNames: ['iPad Pro 13-inch (M5)', 'iPad Pro 11-inch (M5)', 'iPad Air 13-inch (M4)'],
+      fallbackName: 'iPad Pro 13-inch (M5)',
+      nameIncludes: 'iPad',
+    });
+  }
+  return pickAvailableIOSDestination({
+    preferredNames: ['iPhone 17 Pro', 'iPhone 17', 'iPhone Air'],
+    fallbackName: 'iPhone 17 Pro',
+    nameIncludes: 'iPhone',
+  });
 }
 
-function pickAvailableIPadDestination(): string {
+function pickAvailableIOSDestination({
+  preferredNames,
+  fallbackName,
+  nameIncludes,
+}: {
+  preferredNames: string[];
+  fallbackName: string;
+  nameIncludes: string;
+}): string {
   const result = spawnSync('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], {
     encoding: 'utf8',
     timeout: 10_000,
@@ -644,13 +657,22 @@ function pickAvailableIPadDestination(): string {
       const parsed = JSON.parse(result.stdout) as {
         devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
       };
+      const availableDevices = Object.values(parsed.devices ?? {}).flat();
+      for (const preferredName of preferredNames) {
+        const preferred = availableDevices.find(
+          (device) => device.isAvailable && device.name === preferredName,
+        );
+        if (preferred?.udid) return `platform=iOS Simulator,id=${preferred.udid}`;
+      }
       for (const devices of Object.values(parsed.devices ?? {})) {
-        const ipad = devices.find((device) => device.isAvailable && device.name?.includes('iPad'));
-        if (ipad?.udid) return `platform=iOS Simulator,id=${ipad.udid}`;
+        const device = devices.find(
+          (candidate) => candidate.isAvailable && candidate.name?.includes(nameIncludes),
+        );
+        if (device?.udid) return `platform=iOS Simulator,id=${device.udid}`;
       }
     } catch {}
   }
-  return 'platform=iOS Simulator,name=iPad Pro 13-inch (M5)';
+  return `platform=iOS Simulator,name=${fallbackName}`;
 }
 
 function allocateResultBundle(platform: Platform): string {
