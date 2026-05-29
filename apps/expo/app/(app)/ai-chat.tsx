@@ -361,7 +361,7 @@ export default function AIChat() {
           <View>
             <View
               style={{
-                height: Platform.OS === 'ios' ? insets.top + 44 : HEADER_HEIGHT + insets.top,
+                height: Platform.OS === 'ios' ? insets.top + 52 : HEADER_HEIGHT + insets.top,
               }}
             />
             <LocationContext location={location} onSetLocation={setLocation} />
