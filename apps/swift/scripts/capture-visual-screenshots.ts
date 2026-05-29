@@ -321,7 +321,7 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
     return [
       requirement('00-watch-dashboard', {
         area: 'offline-local',
-        flow: 'Watch companion dashboard fallback or synced summary',
+        flow: 'Watch companion unsynced dashboard',
       }),
       requirement('01-watch-checklist', {
         area: 'crud',

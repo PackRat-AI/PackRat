@@ -54,35 +54,48 @@ private struct WatchDashboardView: View {
 private struct TrailReadyView: View {
     let snapshot: PackRatWatchSnapshot
     let isPhoneReachable: Bool
+    private var hasSyncedPack: Bool {
+        snapshot.pack.totalItemCount > 0 || !snapshot.pack.checklist.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(snapshot.pack.name, systemImage: "checkmark.seal.fill")
-                            .font(.headline)
-                            .foregroundStyle(.green)
+                if hasSyncedPack {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(snapshot.pack.name, systemImage: "checkmark.seal.fill")
+                                .font(.headline)
+                                .foregroundStyle(.green)
 
-                        Text(snapshot.trip?.name ?? "Quick wrist access for the next pack, weather, and trail notes.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            Text(snapshot.trip?.name ?? "Quick wrist access for the next pack, weather, and trail notes.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
-                }
 
-                Section("Today") {
-                    WatchMetricRow(title: "Base Weight", value: snapshot.pack.baseWeightText, symbol: "scalemass")
-                    WatchMetricRow(
-                        title: "Packed",
-                        value: "\(snapshot.pack.packedItemCount) of \(snapshot.pack.totalItemCount)",
-                        symbol: "backpack"
-                    )
-                    WatchMetricRow(
-                        title: "Weather",
-                        value: "\(snapshot.weather.temperatureText) \(snapshot.weather.conditionText)",
-                        symbol: snapshot.weather.symbolName
-                    )
+                    Section("Today") {
+                        WatchMetricRow(title: "Base Weight", value: snapshot.pack.baseWeightText, symbol: "scalemass")
+                        WatchMetricRow(
+                            title: "Packed",
+                            value: "\(snapshot.pack.packedItemCount) of \(snapshot.pack.totalItemCount)",
+                            symbol: "backpack"
+                        )
+                        WatchMetricRow(
+                            title: "Weather",
+                            value: "\(snapshot.weather.temperatureText) \(snapshot.weather.conditionText)",
+                            symbol: snapshot.weather.symbolName
+                        )
+                    }
+                } else {
+                    Section {
+                        ContentUnavailableView(
+                            "Sync from iPhone",
+                            systemImage: "iphone",
+                            description: Text("Open PackRat on iPhone to send your active pack, weather, and trail context.")
+                        )
+                    }
                 }
 
                 Section {

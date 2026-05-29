@@ -4,14 +4,27 @@ import Testing
 
 @Suite("Watch snapshot")
 struct WatchSnapshotTests {
-    @Test("fallback snapshot is useful before phone sync")
-    func fallbackSnapshotIsUsefulBeforePhoneSync() throws {
+    @Test("fallback snapshot is clearly unsynced before phone data arrives")
+    func fallbackSnapshotIsClearlyUnsyncedBeforePhoneDataArrives() throws {
         let snapshot = PackRatWatchSnapshot.fallback
 
-        #expect(snapshot.pack.name == "Alpine Weekend")
-        #expect(!snapshot.pack.checklist.isEmpty)
-        #expect(snapshot.weather.temperatureText == "64°")
-        #expect(snapshot.trail.conditionText == "Good")
+        #expect(snapshot.pack.name == "No Pack Synced")
+        #expect(snapshot.pack.checklist.isEmpty)
+        #expect(snapshot.pack.totalItemCount == 0)
+        #expect(snapshot.trip == nil)
+        #expect(snapshot.weather.locationName == "No Location")
+        #expect(snapshot.weather.temperatureText == "--")
+        #expect(snapshot.trail.conditionText == "None")
+    }
+
+    @Test("fallback snapshot does not contain screenshot fixture content")
+    func fallbackSnapshotDoesNotContainScreenshotFixtureContent() throws {
+        let encoded = try JSONEncoder().encode(PackRatWatchSnapshot.fallback)
+        let payload = String(decoding: encoded, as: UTF8.self)
+
+        #expect(!payload.contains("Alpine Weekend"))
+        #expect(!payload.contains("Denver"))
+        #expect(!payload.contains("Local Trail Prep"))
     }
 
     @Test("snapshot round-trips through JSON")

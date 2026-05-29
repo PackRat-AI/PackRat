@@ -10,32 +10,22 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
     static let fallback = PackRatWatchSnapshot(
         updatedAt: Date(timeIntervalSince1970: 0),
         pack: WatchPackSnapshot(
-            name: "Alpine Weekend",
-            baseWeightText: "18.4 lb",
-            packedItemCount: 5,
-            totalItemCount: 7,
-            checklist: [
-                WatchChecklistItemSnapshot(id: "fallback-shelter", title: "Shelter", symbolName: "tent", isPacked: true),
-                WatchChecklistItemSnapshot(id: "fallback-water", title: "Water", symbolName: "drop", isPacked: true),
-                WatchChecklistItemSnapshot(id: "fallback-first-aid", title: "First Aid", symbolName: "cross.case", isPacked: true),
-                WatchChecklistItemSnapshot(id: "fallback-layers", title: "Rain Layers", symbolName: "jacket", isPacked: false),
-                WatchChecklistItemSnapshot(id: "fallback-food", title: "Trail Meals", symbolName: "fork.knife", isPacked: false),
-            ]
+            name: "No Pack Synced",
+            baseWeightText: "--",
+            packedItemCount: 0,
+            totalItemCount: 0,
+            checklist: []
         ),
-        trip: WatchTripSnapshot(
-            name: "Local Trail Prep",
-            locationName: "Offline",
-            dateText: "Today"
-        ),
+        trip: nil,
         weather: WatchWeatherSnapshot(
-            locationName: "Denver",
-            temperatureText: "64°",
-            conditionText: "Clear",
-            symbolName: "sun.max"
+            locationName: "No Location",
+            temperatureText: "--",
+            conditionText: "Open iPhone app to sync weather.",
+            symbolName: "cloud"
         ),
         trail: WatchTrailSnapshot(
             title: "Trail Report",
-            conditionText: "Good",
+            conditionText: "None",
             hazardCount: 0
         )
     )

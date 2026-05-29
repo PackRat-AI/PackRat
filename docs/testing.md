@@ -229,17 +229,21 @@ bun swift:screenshots --out artifacts/screenshots
 
 # Platform-specific runs while iterating.
 bun swift:screenshots --platform ios --out artifacts/screenshots
+bun swift:screenshots --platform ipad --out artifacts/screenshots
 bun swift:screenshots --platform macos --out artifacts/screenshots
+bun swift:screenshots --platform watch --out artifacts/screenshots
 
 # Rebuild contact sheets from existing captured PNGs without rerunning Xcode.
 bun swift:screenshots --skip-tests --out artifacts/screenshots
 ```
 
 The runner writes:
-- `ios-contact-sheet.png` / `macos-contact-sheet.png` for the full spread.
+- `ios-contact-sheet.png` / `ipad-contact-sheet.png` / `macos-contact-sheet.png` / `watch-contact-sheet.png` for the full spread.
 - Grouped sheets for unauthenticated, guest, guest limits, offline, authenticated, seeded data, detail, expanded controls, and modal states.
-- `ios-xctest/coverage-manifest.json` and `macos-xctest/coverage-manifest.json`, which map required screenshot names to feature areas and flows.
+- `<platform>-xctest/coverage-manifest.json`, which maps required screenshot names to feature areas and flows.
 - `run-summary.json` with artifact paths and xcresult summaries when tests ran.
+
+Screenshot fixture data must stay behind `PACKRAT_VISUAL_SCREENSHOTS` / `PACKRAT_VISUAL_SAMPLE_DATA` or explicit visual-test launch arguments. Production fallback and offline states should use honest empty or unsynced copy, not realistic dummy packs, trips, or weather that could be mistaken for user data.
 
 CI runs the same catalog through `.github/workflows/swift-visual.yml` on a nightly schedule and by manual dispatch. The workflow uploads the contact sheets and visual `.xcresult` bundles as `swift-visual-screenshots`. macOS visual runs require Automation Mode to be available on the runner; locally, run `automationmodetool enable-automationmode-without-authentication` once before leaving the suite unattended.
 
