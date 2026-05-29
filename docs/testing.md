@@ -219,6 +219,30 @@ Run with `bun test` from `packages/api/`. Requires Docker (Postgres + neon-wspro
 
 Test fixtures must seed users through `userService.createUser`. Do not write new integration tests that `db.insert(users).values(...)` directly.
 
+### Pattern 5 — Swift visual E2E catalog
+
+The native Swift apps have a visual catalog runner that drives `VisualScreenshotTests` on iOS and macOS, exports every named screenshot, validates the required surface matrix, and renders contact sheets for review.
+
+```bash
+# Full iOS + macOS visual pass. Requires E2E credentials.
+bun swift:screenshots --out artifacts/screenshots
+
+# Platform-specific runs while iterating.
+bun swift:screenshots --platform ios --out artifacts/screenshots
+bun swift:screenshots --platform macos --out artifacts/screenshots
+
+# Rebuild contact sheets from existing captured PNGs without rerunning Xcode.
+bun swift:screenshots --skip-tests --out artifacts/screenshots
+```
+
+The runner writes:
+- `ios-contact-sheet.png` / `macos-contact-sheet.png` for the full spread.
+- Grouped sheets for unauthenticated, guest, guest limits, offline, authenticated, seeded data, detail, expanded controls, and modal states.
+- `ios-xctest/coverage-manifest.json` and `macos-xctest/coverage-manifest.json`, which map required screenshot names to feature areas and flows.
+- `run-summary.json` with artifact paths and xcresult summaries when tests ran.
+
+CI runs the same catalog through `.github/workflows/swift-visual.yml` on a nightly schedule and by manual dispatch. The workflow uploads the contact sheets and visual `.xcresult` bundles as `swift-visual-screenshots`. macOS visual runs require Automation Mode to be available on the runner; locally, run `automationmodetool enable-automationmode-without-authentication` once before leaving the suite unattended.
+
 ---
 
 ## What to Test (Priority Order)
@@ -259,6 +283,11 @@ bun lint:weak-assertions   # custom lint over test files
 
 # Scripts test suite (ratchet + lint analyzer)
 bun test:scripts
+
+# Swift native apps
+bun swift                 # regenerate the Xcode project after project.yml or source tree changes
+bun test:swift:scripts    # TypeScript helper tests for simctl/xcresult/script parsing
+bun swift:screenshots     # visual E2E catalog for iOS + macOS
 ```
 
 Coverage reports for each workspace:
