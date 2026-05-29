@@ -334,6 +334,22 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
         area: 'crud',
         flow: 'Watch trail report draft page',
       }),
+      requirement('10-watch-synced-dashboard', {
+        area: 'data',
+        flow: 'Watch synced dashboard',
+      }),
+      requirement('11-watch-synced-checklist', {
+        area: 'data',
+        flow: 'Watch synced checklist',
+      }),
+      requirement('12-watch-synced-weather', {
+        area: 'data',
+        flow: 'Watch synced weather',
+      }),
+      requirement('13-watch-synced-trail-report', {
+        area: 'crud',
+        flow: 'Watch synced trail report draft page',
+      }),
     ];
   }
 
@@ -835,13 +851,23 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     timeout: 60_000,
   });
   mkdirSync(screenshotDir, { recursive: true });
+  const syncedSnapshot = watchSyncedSnapshotBase64();
   for (const route of [
-    { name: '00-watch-dashboard.png', value: '' },
-    { name: '01-watch-checklist.png', value: 'checklist' },
-    { name: '02-watch-weather.png', value: 'weather' },
-    { name: '03-watch-trail-report.png', value: 'trail-report' },
-  ]) {
-    const env = route.value ? { SIMCTL_CHILD_PACKRAT_WATCH_SCREENSHOT_ROUTE: route.value } : {};
+    { name: '00-watch-dashboard.png', value: '', snapshot: 'reset' },
+    { name: '01-watch-checklist.png', value: 'checklist', snapshot: 'reset' },
+    { name: '02-watch-weather.png', value: 'weather', snapshot: 'reset' },
+    { name: '03-watch-trail-report.png', value: 'trail-report', snapshot: 'reset' },
+    { name: '10-watch-synced-dashboard.png', value: '', snapshot: 'synced' },
+    { name: '11-watch-synced-checklist.png', value: 'checklist', snapshot: 'synced' },
+    { name: '12-watch-synced-weather.png', value: 'weather', snapshot: 'synced' },
+    { name: '13-watch-synced-trail-report.png', value: 'trail-report', snapshot: 'synced' },
+  ] as const) {
+    const env = {
+      ...(route.value ? { SIMCTL_CHILD_PACKRAT_WATCH_SCREENSHOT_ROUTE: route.value } : {}),
+      ...(route.snapshot === 'reset'
+        ? { SIMCTL_CHILD_PACKRAT_WATCH_RESET_SNAPSHOT: '1' }
+        : { SIMCTL_CHILD_PACKRAT_WATCH_SNAPSHOT_BASE64: syncedSnapshot }),
+    };
     runChecked({
       command: 'xcrun',
       args: [
@@ -868,6 +894,62 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     rmSync(tmpScreenshot, { force: true });
   }
   return { resultBundle: '', summary: null };
+}
+
+function watchSyncedSnapshotBase64(): string {
+  return Buffer.from(
+    JSON.stringify({
+      updatedAt: new Date('2026-05-29T16:00:00.000Z').toISOString(),
+      pack: {
+        name: 'Alpine Weekend',
+        baseWeightText: '10.4 lb',
+        packedItemCount: 6,
+        totalItemCount: 8,
+        checklist: [
+          {
+            id: 'visual-watch-shelter',
+            title: 'Copper Spur Tent',
+            symbolName: 'tent',
+            isPacked: true,
+          },
+          {
+            id: 'visual-watch-filter',
+            title: 'Water Filter',
+            symbolName: 'drop',
+            isPacked: true,
+          },
+          {
+            id: 'visual-watch-jacket',
+            title: 'Rain Shell',
+            symbolName: 'jacket',
+            isPacked: false,
+          },
+          {
+            id: 'visual-watch-kit',
+            title: 'First Aid Kit',
+            symbolName: 'cross.case',
+            isPacked: true,
+          },
+        ],
+      },
+      trip: {
+        name: 'Indian Peaks Overnight',
+        locationName: 'Brainard Lake',
+        dateText: 'Jun 12-13',
+      },
+      weather: {
+        locationName: 'Brainard Lake',
+        temperatureText: '64°',
+        conditionText: 'Partly Cloudy',
+        symbolName: 'cloud.sun',
+      },
+      trail: {
+        title: 'Pawnee Pass',
+        conditionText: 'Muddy',
+        hazardCount: 2,
+      },
+    }),
+  ).toString('base64');
 }
 
 function pickAvailableWatchDestination(): { deviceId: string; name: string } {

@@ -17,6 +17,12 @@ final class WatchConnectivityStore: NSObject {
         super.init()
         encoder.dateEncodingStrategy = .iso8601
         decoder.dateDecodingStrategy = .iso8601
+        if ProcessInfo.processInfo.environment["PACKRAT_WATCH_RESET_SNAPSHOT"] == "1" {
+            UserDefaults.standard.removeObject(forKey: snapshotKey)
+        }
+        if loadInjectedSnapshot() {
+            return
+        }
         loadSnapshot()
     }
 
@@ -59,6 +65,16 @@ final class WatchConnectivityStore: NSObject {
               let cached = try? decoder.decode(PackRatWatchSnapshot.self, from: data)
         else { return }
         snapshot = cached
+    }
+
+    private func loadInjectedSnapshot() -> Bool {
+        guard let encoded = ProcessInfo.processInfo.environment["PACKRAT_WATCH_SNAPSHOT_BASE64"],
+              let data = Data(base64Encoded: encoded),
+              let injected = try? decoder.decode(PackRatWatchSnapshot.self, from: data)
+        else { return false }
+        snapshot = injected
+        UserDefaults.standard.set(data, forKey: snapshotKey)
+        return true
     }
 }
 

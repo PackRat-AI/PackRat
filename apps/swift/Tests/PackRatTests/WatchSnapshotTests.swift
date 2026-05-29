@@ -39,4 +39,16 @@ struct WatchSnapshotTests {
 
         #expect(decoded == PackRatWatchSnapshot.fallback)
     }
+
+    @Test("visual synced sample represents a real companion sync")
+    func visualSyncedSampleRepresentsRealCompanionSync() throws {
+        let snapshot = PackRatWatchSnapshot.visualSyncedSample
+
+        #expect(snapshot.pack.name == "Alpine Weekend")
+        #expect(snapshot.pack.totalItemCount > 0)
+        #expect(!snapshot.pack.checklist.isEmpty)
+        #expect(snapshot.trip?.name == "Indian Peaks Overnight")
+        #expect(snapshot.weather.temperatureText != "--")
+        #expect(snapshot.trail.hazardCount > 0)
+    }
 }

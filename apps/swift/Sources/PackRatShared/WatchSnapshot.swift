@@ -29,6 +29,38 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
             hazardCount: 0
         )
     )
+
+    static let visualSyncedSample = PackRatWatchSnapshot(
+        updatedAt: Date(timeIntervalSince1970: 1_779_984_000),
+        pack: WatchPackSnapshot(
+            name: "Alpine Weekend",
+            baseWeightText: "10.4 lb",
+            packedItemCount: 6,
+            totalItemCount: 8,
+            checklist: [
+                WatchChecklistItemSnapshot(id: "visual-watch-shelter", title: "Copper Spur Tent", symbolName: "tent", isPacked: true),
+                WatchChecklistItemSnapshot(id: "visual-watch-filter", title: "Water Filter", symbolName: "drop", isPacked: true),
+                WatchChecklistItemSnapshot(id: "visual-watch-jacket", title: "Rain Shell", symbolName: "jacket", isPacked: false),
+                WatchChecklistItemSnapshot(id: "visual-watch-kit", title: "First Aid Kit", symbolName: "cross.case", isPacked: true),
+            ]
+        ),
+        trip: WatchTripSnapshot(
+            name: "Indian Peaks Overnight",
+            locationName: "Brainard Lake",
+            dateText: "Jun 12-13"
+        ),
+        weather: WatchWeatherSnapshot(
+            locationName: "Brainard Lake",
+            temperatureText: "64°",
+            conditionText: "Partly Cloudy",
+            symbolName: "cloud.sun"
+        ),
+        trail: WatchTrailSnapshot(
+            title: "Pawnee Pass",
+            conditionText: "Muddy",
+            hazardCount: 2
+        )
+    )
 }
 
 struct WatchPackSnapshot: Codable, Equatable, Sendable {
