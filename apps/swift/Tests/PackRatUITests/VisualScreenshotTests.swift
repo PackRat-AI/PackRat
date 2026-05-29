@@ -4,6 +4,12 @@ final class VisualScreenshotTests: XCTestCase {
     private var app: XCUIApplication!
     private var screenshotDirectory: URL!
 
+    private enum MacSurfaceScope {
+        case all
+        case primary
+        case secondary
+    }
+
     override var executionTimeAllowance: TimeInterval {
         get { 10 * 60 }
         set { _ = newValue }
@@ -34,12 +40,14 @@ final class VisualScreenshotTests: XCTestCase {
         launchLoggedOut()
     }
 
-    #if os(iOS)
     private var isPadVisualRun: Bool {
+        #if os(iOS)
         ProcessInfo.processInfo.environment["PACKRAT_VISUAL_PLATFORM"] == "ipad"
             || screenshotDirectory?.path.contains("ipad") == true
+        #else
+        false
+        #endif
     }
-    #endif
 
     func testGuestVisualSurface() throws {
         capture("00-unauth-welcome")
@@ -50,9 +58,16 @@ final class VisualScreenshotTests: XCTestCase {
         #if os(iOS)
         isPadVisualRun ? captureMacSurface(mode: .guest) : capturePhoneCoreSurface(mode: .guest)
         #elseif os(macOS)
-        captureMacSurface(mode: .guest)
+        captureMacSurface(mode: .guest, scope: .primary)
         #endif
     }
+
+    #if os(macOS)
+    func testGuestSecondaryVisualSurface() throws {
+        enterGuestMode()
+        captureMacSurface(mode: .guest, scope: .secondary)
+    }
+    #endif
 
     #if os(iOS)
     func testGuestPrimaryHomeActionVisualSurface() throws {
@@ -105,9 +120,16 @@ final class VisualScreenshotTests: XCTestCase {
         #if os(iOS)
         isPadVisualRun ? captureMacSurface(mode: .authenticated) : capturePhoneCoreSurface(mode: .authenticated)
         #elseif os(macOS)
-        captureMacSurface(mode: .authenticated)
+        captureMacSurface(mode: .authenticated, scope: .primary)
         #endif
     }
+
+    #if os(macOS)
+    func testAuthenticatedSecondaryVisualSurface() throws {
+        launchAuthenticated()
+        captureMacSurface(mode: .authenticated, scope: .secondary)
+    }
+    #endif
 
     #if os(iOS)
     func testAuthenticatedPrimaryHomeActionVisualSurface() throws {
@@ -136,9 +158,16 @@ final class VisualScreenshotTests: XCTestCase {
         #if os(iOS)
         isPadVisualRun ? captureMacSurface(mode: .sampleData) : capturePhoneCoreSurface(mode: .sampleData)
         #elseif os(macOS)
-        captureMacSurface(mode: .sampleData)
+        captureMacSurface(mode: .sampleData, scope: .primary)
         #endif
     }
+
+    #if os(macOS)
+    func testAuthenticatedSampleDataSecondaryVisualSurface() throws {
+        launchAuthenticated(sampleData: true)
+        captureMacSurface(mode: .sampleData, scope: .secondary)
+    }
+    #endif
 
     #if os(iOS)
     func testAuthenticatedSampleDataPrimaryHomeActionVisualSurface() throws {
@@ -234,9 +263,16 @@ final class VisualScreenshotTests: XCTestCase {
         #if os(iOS)
         isPadVisualRun ? captureMacExpandedPlanningStates() : capturePhoneExpandedPlanningStates()
         #elseif os(macOS)
-        captureMacExpandedPlanningStates()
+        captureMacExpandedPlanningStates(includeCatalog: false)
         #endif
     }
+
+    #if os(macOS)
+    func testAuthenticatedSampleDataCatalogExpandedStateSurface() throws {
+        launchAuthenticated(sampleData: true)
+        captureMacExpandedCatalogStates()
+    }
+    #endif
 
     func testAuthenticatedSampleDataConnectedExpandedStateSurface() throws {
         launchAuthenticated(sampleData: true)
@@ -662,16 +698,18 @@ final class VisualScreenshotTests: XCTestCase {
     #endif
 
     #if os(macOS) || os(iOS)
-    private func captureMacSurface(mode: VisualMode) {
+    private func captureMacSurface(mode: VisualMode, scope: MacSurfaceScope = .all) {
         let prefix = mode.prefix
         let suffix = mode.suffix
-        let entries = [
+        let primaryEntries = [
             ("Home", "\(prefix)-home\(suffix)"),
             ("Packs", "\(prefix)-packs\(suffix)"),
             ("Trips", "\(prefix)-trips\(suffix)"),
             ("Weather", "\(prefix)-weather\(suffix)"),
             ("Assistant", "\(prefix)-assistant\(suffix)"),
             ("Catalog", "\(prefix)-catalog\(suffix)"),
+        ]
+        let secondaryEntries = [
             ("Templates", "\(prefix)-pack-templates\(suffix)"),
             ("Trail Conditions", "\(prefix)-trail-conditions\(suffix)"),
             ("Feed", "\(prefix)-feed\(suffix)"),
@@ -680,13 +718,24 @@ final class VisualScreenshotTests: XCTestCase {
             ("Wildlife", "\(prefix)-wildlife\(suffix)"),
             ("AI Packs", "\(prefix)-ai-packs\(suffix)"),
         ]
+        let entries: [(String, String)]
+        switch scope {
+        case .all:
+            entries = primaryEntries + secondaryEntries
+        case .primary:
+            entries = primaryEntries
+        case .secondary:
+            entries = secondaryEntries
+        }
 
         for (label, name) in entries {
             selectSidebar(label)
             capture(name)
         }
 
-        captureMacHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
+        if scope != .primary {
+            captureMacHomeAction("Season Suggestions", name: "\(prefix)-season-suggestions\(suffix)")
+        }
     }
 
     private func captureMacSampleDataDetails() {
@@ -759,7 +808,7 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "pack_item_detail_edit_button", fallbackButton: "Edit", name: "85-data-pack-item-edit-sheet")
     }
 
-    private func captureMacExpandedPlanningStates() {
+    private func captureMacExpandedPlanningStates(includeCatalog: Bool = true) {
         resetMacSampleDataSidebar("Trips")
         capture("86-data-trip-detail-expanded")
         tapAndCapture(identifier: "trip_detail_edit_button", fallbackButton: "Edit", name: "87-data-trip-edit-sheet", dismissAfterCapture: false)
@@ -775,10 +824,17 @@ final class VisualScreenshotTests: XCTestCase {
         tapElementAndCapture(identifier: "template_row_visual-template-day", name: "89c-data-custom-template-before-edit", dismissAfterCapture: false)
         tapAndCapture(identifier: "template_detail_edit_button", fallbackButton: "Edit", name: "89d-data-template-edit-sheet")
 
+        if includeCatalog {
+            captureMacExpandedCatalogStates()
+        }
+    }
+
+    private func captureMacExpandedCatalogStates() {
         resetMacSampleDataSidebar("Catalog")
         tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90-data-catalog-item-detail", dismissAfterCapture: false)
         resetMacSampleDataSidebar("Catalog")
-        tapAndCapture(identifier: "catalog_item_add_to_pack_7001", fallbackButton: "Add to Pack", name: "91-data-catalog-add-to-pack-sheet")
+        tapElementAndCapture(identifier: "catalog_item_row_7001", name: "90a-data-catalog-item-before-add", dismissAfterCapture: false)
+        tapAndCapture(identifier: "catalog_detail_add_to_pack_button", fallbackButton: "Add to Pack", name: "91-data-catalog-add-to-pack-sheet")
     }
 
     private func captureMacExpandedConnectedStates() {
