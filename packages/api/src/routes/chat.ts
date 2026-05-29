@@ -58,9 +58,9 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       - Current date is ${date}`;
 
       if (contextType === 'pack' && packId) {
-        systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}.`;
+        systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}. Use the getPackDetails tool to fetch its contents.`;
       } else if (contextType === 'item' && itemId) {
-        systemPrompt += `\n- You are currently helping with an item with ID: ${itemId}.`;
+        systemPrompt += `\n- You are currently helping with an item with ID: ${itemId}. Use the getPackItemDetails tool to fetch its details.`;
       }
 
       if (location) {
