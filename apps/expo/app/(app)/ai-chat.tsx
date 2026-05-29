@@ -224,7 +224,7 @@ export default function AIChat() {
     messages: initialMessages,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onToolCall: ({ toolCall }) => {
-      if (!toolCall.dynamic) return;
+      if (toolCall.dynamic) return;
 
       if (toolCall.toolName === 'getPackDetails') {
         const { packId } = toolCall.input as { packId: string };
