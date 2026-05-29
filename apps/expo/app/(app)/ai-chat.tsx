@@ -359,7 +359,11 @@ export default function AIChat() {
           }}
         >
           <View>
-            <View style={{ height: HEADER_HEIGHT + insets.top }} />
+            <View
+              style={{
+                height: Platform.OS === 'ios' ? insets.top + 52 : HEADER_HEIGHT + insets.top,
+              }}
+            />
             <LocationContext location={location} onSetLocation={setLocation} />
             <DateSeparator
               date={new Date().toLocaleDateString('en-US', {
