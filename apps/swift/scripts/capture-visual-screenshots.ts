@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 import { listBooted } from './lib/simctl';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
-type Platform = 'ios' | 'macos';
+type Platform = 'ios' | 'ipad' | 'macos';
 
 type Options = {
   platforms: Platform[];
@@ -211,18 +211,20 @@ function usage(): never {
   console.log(`Usage:
   bun swift:screenshots
   bun swift:screenshots --platform ios
+  bun swift:screenshots --platform ipad
   bun swift:screenshots --platform macos
   bun swift:screenshots --skip-tests
   bun swift:screenshots --out artifacts/screenshots
 
 Captures guest and authenticated visual surfaces through VisualScreenshotTests and assembles:
   artifacts/screenshots/ios-contact-sheet.png
+  artifacts/screenshots/ipad-contact-sheet.png
   artifacts/screenshots/macos-contact-sheet.png`);
   process.exit(0);
 }
 
 function parseArgs(argv: readonly string[]): Options {
-  let platforms: Platform[] = ['ios', 'macos'];
+  let platforms: Platform[] = ['ios', 'ipad', 'macos'];
   let outDir = DEFAULT_OUT_DIR;
   let skipTests = false;
 
@@ -236,7 +238,7 @@ function parseArgs(argv: readonly string[]): Options {
     }
     if (arg === '--platform') {
       const value = argv[++i];
-      if (!value) throw new Error('--platform requires ios, macos, or both');
+      if (!value) throw new Error('--platform requires ios, ipad, macos, or both');
       platforms = parsePlatforms(value);
       continue;
     }
@@ -262,10 +264,11 @@ function parseArgs(argv: readonly string[]): Options {
 
 function parsePlatforms(value: string): Platform[] {
   const normalized = value.toLowerCase();
-  if (normalized === 'both') return ['ios', 'macos'];
+  if (normalized === 'both') return ['ios', 'ipad', 'macos'];
   if (normalized === 'ios') return ['ios'];
+  if (normalized === 'ipad') return ['ipad'];
   if (normalized === 'macos') return ['macos'];
-  throw new Error(`Unknown platform "${value}". Expected ios, macos, or both.`);
+  throw new Error(`Unknown platform "${value}". Expected ios, ipad, macos, or both.`);
 }
 
 function requirement(
@@ -453,7 +456,7 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
     }),
   ];
 
-  if (platform === 'macos' || platform === 'ios') {
+  if (platform === 'macos' || platform === 'ios' || platform === 'ipad') {
     common.push(
       requirement('95-data-ai-packs-results-sheet', {
         area: 'ai',
@@ -596,7 +599,8 @@ function loadEnvFile(envFile: string): void {
   }
 }
 
-function pickIOSDestination(): string {
+function pickIOSDestination(platform: Extract<Platform, 'ios' | 'ipad'>): string {
+  if (platform === 'ipad') return pickAvailableIPadDestination();
   try {
     const booted = listBooted();
     if (booted.length > 0) return `platform=iOS Simulator,id=${booted[0]}`;
@@ -604,10 +608,31 @@ function pickIOSDestination(): string {
   return 'platform=iOS Simulator,name=iPhone 17 Pro';
 }
 
+function pickAvailableIPadDestination(): string {
+  const result = spawnSync('xcrun', ['simctl', 'list', 'devices', 'available', '-j'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.status === 0) {
+    try {
+      const parsed = JSON.parse(result.stdout) as {
+        devices?: Record<string, Array<{ name?: string; udid?: string; isAvailable?: boolean }>>;
+      };
+      for (const devices of Object.values(parsed.devices ?? {})) {
+        const ipad = devices.find((device) => device.isAvailable && device.name?.includes('iPad'));
+        if (ipad?.udid) return `platform=iOS Simulator,id=${ipad.udid}`;
+      }
+    } catch {}
+  }
+  return 'platform=iOS Simulator,name=iPad Pro 13-inch (M5)';
+}
+
 function allocateResultBundle(platform: Platform): string {
   if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });
   const stamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
-  const prefix = platform === 'ios' ? 'visual-iOS' : 'visual-macOS';
+  const prefix =
+    platform === 'macos' ? 'visual-macOS' : platform === 'ipad' ? 'visual-iPad' : 'visual-iOS';
   const path = resolve(RESULTS_DIR, `${prefix}-${stamp}.xcresult`);
   if (existsSync(path)) rmSync(path, { recursive: true, force: true });
   return path;
@@ -624,13 +649,13 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
     `PACKRAT_SCREENSHOT_DIR=${writableScreenshotDir}`,
   ];
   const args =
-    platform === 'ios'
+    platform === 'ios' || platform === 'ipad'
       ? [
           ...commonArgs,
           '-scheme',
           'PackRat-iOS',
           '-destination',
-          pickIOSDestination(),
+          pickIOSDestination(platform),
           '-only-testing:PackRatUITests/VisualScreenshotTests',
           ...credentials,
         ]
@@ -665,6 +690,7 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
         ...process.env,
         PACKRAT_ENV: process.env.PACKRAT_ENV ?? 'local',
         PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
+        PACKRAT_VISUAL_PLATFORM: platform,
       },
     });
     const timeout = setTimeout(() => {
@@ -845,6 +871,17 @@ function contactSheetPathFor({
   return resolve(outDir, `${platform}-contact-sheet${suffix ? `-${suffix}` : ''}.png`);
 }
 
+function platformDisplayName(platform: Platform): string {
+  switch (platform) {
+    case 'ios':
+      return 'iOS';
+    case 'ipad':
+      return 'iPad';
+    case 'macos':
+      return 'macOS';
+  }
+}
+
 function listScreenshots(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
@@ -967,7 +1004,7 @@ async function renderContactSheet(platform: Platform, outDir: string): Promise<s
 
   const htmlPath = resolve(outDir, `${platform}-contact-sheet.html`);
   const outputPath = contactSheetPathFor({ outDir, platform });
-  const title = platform === 'ios' ? 'PackRat iOS Screens' : 'PackRat macOS Screens';
+  const title = `PackRat ${platformDisplayName(platform)} Screens`;
   writeFileSync(htmlPath, buildHtml({ images, platform, title }));
 
   await screenshotHtml({
@@ -991,7 +1028,7 @@ async function renderGroupedContactSheets(platform: Platform, outDir: string): P
 
     const htmlPath = resolve(outDir, `${platform}-contact-sheet-${group.suffix}.html`);
     const outputPath = contactSheetPathFor({ outDir, platform, suffix: group.suffix });
-    const platformName = platform === 'ios' ? 'iOS' : 'macOS';
+    const platformName = platformDisplayName(platform);
     writeFileSync(
       htmlPath,
       buildHtml({
@@ -1034,7 +1071,7 @@ async function screenshotHtml({
     const browser = await chromium.launch({ timeout: PLAYWRIGHT_RENDER_TIMEOUT_MS });
     try {
       const page = await browser.newPage({
-        viewport: { width: platform === 'macos' ? 1800 : 1600, height: 1200 },
+        viewport: { width: platform === 'ios' ? 1600 : 1800, height: 1200 },
         deviceScaleFactor: 1,
       });
       await page.goto(pathToFileURL(htmlPath).href);
@@ -1063,7 +1100,7 @@ function renderWithSystemChrome({
   outputPath: string;
   platform: Platform;
 }): void {
-  const width = platform === 'macos' ? 1800 : 1600;
+  const width = platform === 'ios' ? 1600 : 1800;
   const height = estimateContactSheetHeight({ images, platform, width });
   const result = spawnSync(
     chrome,
@@ -1096,14 +1133,14 @@ function estimateContactSheetHeight({
 }): number {
   const horizontalPadding = 64;
   const gridGap = 18;
-  const cardWidth = platform === 'macos' ? 520 : 300;
+  const cardWidth = platform === 'ios' ? 300 : 520;
   const columns = Math.max(
     1,
     Math.floor((width - horizontalPadding + gridGap) / (cardWidth + gridGap)),
   );
   const cardHeights = images.map((image) => {
     const size = readImageSize(image);
-    if (!size) return platform === 'macos' ? 420 : 720;
+    if (!size) return platform === 'ios' ? 720 : 420;
     return Math.ceil((size.height / size.width) * cardWidth) + 42;
   });
   const rows: number[] = [];

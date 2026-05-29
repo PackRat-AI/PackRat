@@ -34,6 +34,13 @@ final class VisualScreenshotTests: XCTestCase {
         launchLoggedOut()
     }
 
+    #if os(iOS)
+    private var isPadVisualRun: Bool {
+        ProcessInfo.processInfo.environment["PACKRAT_VISUAL_PLATFORM"] == "ipad"
+            || screenshotDirectory?.path.contains("ipad") == true
+    }
+    #endif
+
     func testGuestVisualSurface() throws {
         capture("00-unauth-welcome")
         captureRegisterAndLoginStates()
@@ -41,7 +48,7 @@ final class VisualScreenshotTests: XCTestCase {
         capture("03-guest-home")
 
         #if os(iOS)
-        capturePhoneCoreSurface(mode: .guest)
+        isPadVisualRun ? captureMacSurface(mode: .guest) : capturePhoneCoreSurface(mode: .guest)
         #elseif os(macOS)
         captureMacSurface(mode: .guest)
         #endif
@@ -49,16 +56,19 @@ final class VisualScreenshotTests: XCTestCase {
 
     #if os(iOS)
     func testGuestPrimaryHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         enterGuestMode()
         capturePhoneHomeActionSurface(mode: .guest, actions: primaryPhoneHomeActions)
     }
 
     func testGuestExploreHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         enterGuestMode()
         capturePhoneHomeActionSurface(mode: .guest, actions: explorePhoneHomeActions)
     }
 
     func testGuestDeepHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         enterGuestMode()
         capturePhoneHomeActionSurface(mode: .guest, actions: deepPhoneHomeActions)
     }
@@ -68,7 +78,7 @@ final class VisualScreenshotTests: XCTestCase {
         enterGuestMode()
 
         #if os(iOS)
-        capturePhoneModalCoreSurface(mode: .guest)
+        isPadVisualRun ? captureMacModalSurface(mode: .guest) : capturePhoneModalCoreSurface(mode: .guest)
         #elseif os(macOS)
         captureMacModalSurface(mode: .guest)
         #endif
@@ -76,11 +86,13 @@ final class VisualScreenshotTests: XCTestCase {
 
     #if os(iOS)
     func testGuestPlanningModalSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Planning modals are covered by the iPad sidebar modal sweep.") }
         enterGuestMode()
         capturePhoneModalPlanningSurface(mode: .guest)
     }
 
     func testGuestConnectedModalSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Connected modals are covered by the iPad sidebar modal sweep.") }
         enterGuestMode()
         capturePhoneModalConnectedSurface(mode: .guest)
     }
@@ -91,7 +103,7 @@ final class VisualScreenshotTests: XCTestCase {
         capture("20-auth-home")
 
         #if os(iOS)
-        capturePhoneCoreSurface(mode: .authenticated)
+        isPadVisualRun ? captureMacSurface(mode: .authenticated) : capturePhoneCoreSurface(mode: .authenticated)
         #elseif os(macOS)
         captureMacSurface(mode: .authenticated)
         #endif
@@ -99,16 +111,19 @@ final class VisualScreenshotTests: XCTestCase {
 
     #if os(iOS)
     func testAuthenticatedPrimaryHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         launchAuthenticated()
         capturePhoneHomeActionSurface(mode: .authenticated, actions: primaryPhoneHomeActions)
     }
 
     func testAuthenticatedExploreHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         launchAuthenticated()
         capturePhoneHomeActionSurface(mode: .authenticated, actions: explorePhoneHomeActions)
     }
 
     func testAuthenticatedDeepHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         launchAuthenticated()
         capturePhoneHomeActionSurface(mode: .authenticated, actions: deepPhoneHomeActions)
     }
@@ -119,7 +134,7 @@ final class VisualScreenshotTests: XCTestCase {
         capture("70-data-home")
 
         #if os(iOS)
-        capturePhoneCoreSurface(mode: .sampleData)
+        isPadVisualRun ? captureMacSurface(mode: .sampleData) : capturePhoneCoreSurface(mode: .sampleData)
         #elseif os(macOS)
         captureMacSurface(mode: .sampleData)
         #endif
@@ -127,16 +142,19 @@ final class VisualScreenshotTests: XCTestCase {
 
     #if os(iOS)
     func testAuthenticatedSampleDataPrimaryHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         launchAuthenticated(sampleData: true)
         capturePhoneHomeActionSurface(mode: .sampleData, actions: primaryPhoneHomeActions)
     }
 
     func testAuthenticatedSampleDataExploreHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         launchAuthenticated(sampleData: true)
         capturePhoneHomeActionSurface(mode: .sampleData, actions: explorePhoneHomeActions)
     }
 
     func testAuthenticatedSampleDataDeepHomeActionVisualSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Compact Home action catalog is covered by iPhone; iPad uses sidebar visual coverage.") }
         launchAuthenticated(sampleData: true)
         capturePhoneHomeActionSurface(mode: .sampleData, actions: deepPhoneHomeActions)
     }
@@ -146,7 +164,7 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneSampleDataDetails()
+        isPadVisualRun ? captureMacSampleDataDetails() : capturePhoneSampleDataDetails()
         #elseif os(macOS)
         captureMacSampleDataDetails()
         #endif
@@ -156,7 +174,7 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated()
 
         #if os(iOS)
-        capturePhoneModalCoreSurface(mode: .authenticated)
+        isPadVisualRun ? captureMacModalSurface(mode: .authenticated) : capturePhoneModalCoreSurface(mode: .authenticated)
         #elseif os(macOS)
         captureMacModalSurface(mode: .authenticated)
         #endif
@@ -164,11 +182,13 @@ final class VisualScreenshotTests: XCTestCase {
 
     #if os(iOS)
     func testAuthenticatedPlanningModalSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Planning modals are covered by the iPad sidebar modal sweep.") }
         launchAuthenticated()
         capturePhoneModalPlanningSurface(mode: .authenticated)
     }
 
     func testAuthenticatedConnectedModalSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Connected modals are covered by the iPad sidebar modal sweep.") }
         launchAuthenticated()
         capturePhoneModalConnectedSurface(mode: .authenticated)
     }
@@ -178,7 +198,7 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneModalCoreSurface(mode: .sampleData)
+        isPadVisualRun ? captureMacModalSurface(mode: .sampleData) : capturePhoneModalCoreSurface(mode: .sampleData)
         #elseif os(macOS)
         captureMacModalSurface(mode: .sampleData)
         #endif
@@ -186,11 +206,13 @@ final class VisualScreenshotTests: XCTestCase {
 
     #if os(iOS)
     func testAuthenticatedSampleDataPlanningModalSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Planning modals are covered by the iPad sidebar modal sweep.") }
         launchAuthenticated(sampleData: true)
         capturePhoneModalPlanningSurface(mode: .sampleData)
     }
 
     func testAuthenticatedSampleDataConnectedModalSurface() throws {
+        if isPadVisualRun { throw XCTSkip("Connected modals are covered by the iPad sidebar modal sweep.") }
         launchAuthenticated(sampleData: true)
         capturePhoneModalConnectedSurface(mode: .sampleData)
     }
@@ -200,7 +222,7 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneExpandedPackStates()
+        isPadVisualRun ? captureMacExpandedPackStates() : capturePhoneExpandedPackStates()
         #elseif os(macOS)
         captureMacExpandedPackStates()
         #endif
@@ -210,7 +232,7 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneExpandedPlanningStates()
+        isPadVisualRun ? captureMacExpandedPlanningStates() : capturePhoneExpandedPlanningStates()
         #elseif os(macOS)
         captureMacExpandedPlanningStates()
         #endif
@@ -220,7 +242,7 @@ final class VisualScreenshotTests: XCTestCase {
         launchAuthenticated(sampleData: true)
 
         #if os(iOS)
-        capturePhoneExpandedConnectedStates()
+        isPadVisualRun ? captureMacExpandedConnectedStates() : capturePhoneExpandedConnectedStates()
         #elseif os(macOS)
         captureMacExpandedConnectedStates()
         #endif
@@ -238,10 +260,21 @@ final class VisualScreenshotTests: XCTestCase {
         capture("42-offline-data-home")
 
         #if os(iOS)
-        captureTab("Packs", name: "43-offline-data-packs")
-        captureTab("Trips", name: "44-offline-data-trips")
-        captureTab("Assistant", name: "45-offline-data-assistant")
-        captureHomeAction("Weather", name: "46-offline-data-weather")
+        if isPadVisualRun {
+            selectSidebar("Packs")
+            capture("43-offline-data-packs")
+            selectSidebar("Trips")
+            capture("44-offline-data-trips")
+            selectSidebar("Assistant")
+            capture("45-offline-data-assistant")
+            selectSidebar("Weather")
+            capture("46-offline-data-weather")
+        } else {
+            captureTab("Packs", name: "43-offline-data-packs")
+            captureTab("Trips", name: "44-offline-data-trips")
+            captureTab("Assistant", name: "45-offline-data-assistant")
+            captureHomeAction("Weather", name: "46-offline-data-weather")
+        }
         #elseif os(macOS)
         selectSidebar("Packs")
         capture("43-offline-data-packs")
@@ -278,7 +311,11 @@ final class VisualScreenshotTests: XCTestCase {
         guestButton.tap()
 
         #if os(iOS)
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10))
+        if isPadVisualRun {
+            XCTAssertTrue(app.buttons["nav_home"].waitForExistence(timeout: 10))
+        } else {
+            XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10))
+        }
         #elseif os(macOS)
         XCTAssertTrue(app.buttons["nav_home"].waitForExistence(timeout: 10))
         #endif
@@ -624,7 +661,7 @@ final class VisualScreenshotTests: XCTestCase {
     }
     #endif
 
-    #if os(macOS)
+    #if os(macOS) || os(iOS)
     private func captureMacSurface(mode: VisualMode) {
         let prefix = mode.prefix
         let suffix = mode.suffix
@@ -711,7 +748,11 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "pack_detail_add_item_button", fallbackButton: "Add Item", name: "82-data-pack-add-item-sheet")
         resetMacSampleDataSidebar("Packs")
         scrollToElement(identifier: "pack_item_row_visual-item-shelter")
-        openContextMenuAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "83-data-pack-more-menu")
+        if isPadVisualRun {
+            openMenuAndCapture(identifier: "pack_detail_more_menu", fallbackButton: "More", name: "83-data-pack-more-menu")
+        } else {
+            openContextMenuAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "83-data-pack-more-menu")
+        }
         resetMacSampleDataSidebar("Packs")
         scrollToElement(identifier: "pack_item_row_visual-item-shelter")
         tapElementAndCapture(identifier: "pack_item_row_visual-item-shelter", name: "84-data-pack-item-detail", dismissAfterCapture: false)
@@ -783,11 +824,7 @@ final class VisualScreenshotTests: XCTestCase {
         if let identifier = identifierByLabel[label] {
             let button = app.buttons[identifier]
             XCTAssertTrue(button.waitForExistence(timeout: 5), "Expected sidebar item '\(label)'")
-            if button.isHittable {
-                button.tap()
-            } else {
-                button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-            }
+            activate(button)
             dismissSystemInterruptions()
             return
         }
@@ -818,7 +855,12 @@ final class VisualScreenshotTests: XCTestCase {
         #if os(macOS)
         app.typeKey("f", modifierFlags: [.command])
         #else
-        captureTab("Home", name: "home-before-\(name)")
+        if isPadVisualRun {
+            selectSidebar("Home")
+            capture("home-before-\(name)")
+        } else {
+            captureTab("Home", name: "home-before-\(name)")
+        }
         let search = app.buttons["Search"]
         XCTAssertTrue(search.waitForExistence(timeout: 5), "Expected global Search button for screenshot \(name)")
         search.tap()
@@ -1019,6 +1061,10 @@ final class VisualScreenshotTests: XCTestCase {
 
     private func waitForAuthenticatedShell() -> Bool {
         #if os(iOS)
+        if isPadVisualRun {
+            return app.buttons["nav_home"].waitForExistence(timeout: 20)
+                || app.buttons["nav_packs"].waitForExistence(timeout: 2)
+        }
         return app.tabBars.firstMatch.waitForExistence(timeout: 20)
         #elseif os(macOS)
         return app.buttons["nav_home"].waitForExistence(timeout: 10)

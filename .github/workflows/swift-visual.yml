@@ -13,6 +13,7 @@ on:
         options:
           - both
           - ios
+          - ipad
           - macos
 
 concurrency:
@@ -84,8 +85,16 @@ jobs:
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID"
 
+      - name: Boot iPad simulator
+        if: ${{ (github.event.inputs.platform || 'both') == 'ipad' || (github.event.inputs.platform || 'both') == 'both' }}
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[][] | select(.isAvailable == true and (.name | contains("iPad")))] | .[0].udid')
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID"
+
       - name: Check macOS Automation Mode
-        if: ${{ (github.event.inputs.platform || 'both') != 'ios' }}
+        if: ${{ (github.event.inputs.platform || 'both') == 'macos' || (github.event.inputs.platform || 'both') == 'both' }}
         run: automationmodetool help
 
       - name: Capture Swift visual screenshots
