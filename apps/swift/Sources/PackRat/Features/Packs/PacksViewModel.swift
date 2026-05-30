@@ -183,6 +183,7 @@ final class PacksViewModel {
         guard let idx = packs.firstIndex(where: { $0.id == packId }) else { return }
         let removed = packs.remove(at: idx)
         deleteCachedPack(packId, context: context)
+        guard !packId.hasPrefix("local-") else { return }
         guard canUseRemotePersonalStore else { return }
         do {
             try await service.deletePack(packId)

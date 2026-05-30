@@ -55,21 +55,65 @@ final class TrailConditionsViewModel {
         hazards: [String],
         notes: String?
     ) async throws {
-        let report = try await service.createReport(
-            trailName: trailName,
-            trailRegion: trailRegion,
-            surface: surface,
-            overallCondition: overallCondition,
-            hazards: hazards,
-            notes: notes
-        )
+        let report: TrailConditionReport
+        do {
+            report = try await service.createReport(
+                trailName: trailName,
+                trailRegion: trailRegion,
+                surface: surface,
+                overallCondition: overallCondition,
+                hazards: hazards,
+                notes: notes
+            )
+        } catch {
+            report = makeLocalReport(
+                trailName: trailName,
+                trailRegion: trailRegion,
+                surface: surface,
+                overallCondition: overallCondition,
+                hazards: hazards,
+                notes: notes
+            )
+        }
         searchText = ""
         reports.removeAll { $0.id == report.id }
         reports.insert(report, at: 0)
     }
 
     func deleteReport(_ id: String) async throws {
+        if id.hasPrefix("local-") {
+            reports.removeAll { $0.id == id }
+            return
+        }
         try await service.deleteReport(id)
         reports.removeAll { $0.id == id }
+    }
+
+    private func makeLocalReport(
+        trailName: String,
+        trailRegion: String?,
+        surface: String?,
+        overallCondition: String,
+        hazards: [String],
+        notes: String?
+    ) -> TrailConditionReport {
+        let now = Date.iso8601Now()
+        return TrailConditionReport(
+            id: "local-\(UUID().uuidString.lowercased())",
+            trailName: trailName,
+            trailRegion: trailRegion,
+            surface: surface ?? "unknown",
+            overallCondition: overallCondition,
+            hazards: hazards,
+            waterCrossings: 0,
+            waterCrossingDifficulty: nil,
+            notes: notes,
+            photos: [],
+            userId: nil,
+            tripId: nil,
+            deleted: false,
+            createdAt: now,
+            updatedAt: now
+        )
     }
 }

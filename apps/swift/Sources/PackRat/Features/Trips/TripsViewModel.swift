@@ -188,6 +188,7 @@ final class TripsViewModel {
         guard let idx = trips.firstIndex(where: { $0.id == tripId }) else { return }
         let removed = trips.remove(at: idx)
         deleteCachedTrip(tripId, context: context)
+        guard !tripId.hasPrefix("local-") else { return }
         guard canUseRemotePersonalStore else { return }
         do {
             try await service.deleteTrip(tripId)
