@@ -90,8 +90,14 @@ export default function AIChat() {
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
-  const { data: _authSession } = authClient.useSession();
-  const token = _authSession?.session?.token ?? null;
+  // We deliberately don't read `useSession()` data into the transport
+  // closure. On first render `data?.session?.token` is null, the transport
+  // builds with `Authorization: Bearer null`, and the very first send hits
+  // /api/chat unauthenticated — the API responds 401 and useChat shows the
+  // generic "something went wrong" UI. Reading the token lazily via
+  // `authClient.getSession()` at each request (below) avoids that race
+  // entirely; getSession is cached after the first call so this is cheap.
+  authClient.useSession();
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -133,8 +139,12 @@ export default function AIChat() {
     return new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
+      headers: async () => {
+        const { data } = await authClient.getSession();
+        const token = data?.session?.token ?? '';
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        return headers;
       },
       body: () => ({
         contextType: contextRef.current.contextType,
@@ -144,7 +154,7 @@ export default function AIChat() {
         date: new Date().toLocaleString(),
       }),
     });
-  }, [aiMode, isLocalReady, token, tools]);
+  }, [aiMode, isLocalReady, tools]);
 
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport,

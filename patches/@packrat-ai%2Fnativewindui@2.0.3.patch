@@ -17,7 +17,7 @@ index 786b62c4a216c360beb193b96092186319a634cb..741aefba1ddf080c103cfca27b14b10c
  import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
  import type { SymbolViewProps } from 'expo-symbols';
 diff --git a/src/components/LargeTitleHeader/LargeTitleHeader.tsx b/src/components/LargeTitleHeader/LargeTitleHeader.tsx
-index 95c66bbdece307542084c2e510c847543134f63e..d9bf7337f45a9b49f69863a16a24672363a3b8af 100644
+index 95c66bbdece307542084c2e510c847543134f63e..1d51bc059291f852567c8123ee93ef5f433a9dfb 100644
 --- a/src/components/LargeTitleHeader/LargeTitleHeader.tsx
 +++ b/src/components/LargeTitleHeader/LargeTitleHeader.tsx
 @@ -1,3 +1,4 @@
@@ -25,3 +25,11 @@ index 95c66bbdece307542084c2e510c847543134f63e..d9bf7337f45a9b49f69863a16a246723
  import { useRoute } from '@react-navigation/native';
  import { useAugmentedRef } from '@rn-primitives/hooks';
  import { Portal } from '@rn-primitives/portal';
+@@ -157,6 +158,7 @@ export function LargeTitleHeader(props: LargeTitleHeaderProps) {
+           <View className="flex-row justify-center gap-3 pr-2">
+             {!!props.searchBar && (
+               <Button
++                testID={props.searchBar.testID}
+                 onPress={() => {
+                   setShowSearchBar(true);
+                   props.searchBar?.onSearchButtonPress?.();

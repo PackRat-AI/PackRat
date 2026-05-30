@@ -199,7 +199,14 @@ export async function getAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    trustedOrigins: [
+      env.BETTER_AUTH_URL,
+      'packrat://',
+      // Local web dev — accept any localhost port so parallel agents on
+      // bumped ports (e.g. 18082) don't need an allowlist update. Gated on
+      // the API URL pointing at localhost so prod never widens trust.
+      ...(env.BETTER_AUTH_URL.startsWith('http://localhost') ? ['http://localhost:*'] : []),
+    ],
   });
 
   authCache.set(env as object, auth);

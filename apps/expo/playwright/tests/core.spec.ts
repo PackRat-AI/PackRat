@@ -239,7 +239,8 @@ test('settings screen loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText('AI Models')).toBeVisible();
   await expect(page.getByText('Danger Zone')).toBeVisible();
-  await expect(page.getByText(/PackRat v/i)).toBeVisible();
+  // Dev/preview builds prepend an environment tag, e.g. "PackRat (Dev) v2.0.26"
+  await expect(page.getByText(/PackRat(?: \([^)]+\))? v\d/i)).toBeVisible();
 });
 
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
