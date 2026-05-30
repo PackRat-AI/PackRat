@@ -563,14 +563,21 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         const { generateObject } = await import('ai');
         const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
 
-        const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-          getEnv();
+        const {
+          AI_PROVIDER,
+          OPENAI_API_KEY,
+          CLOUDFLARE_ACCOUNT_ID,
+          CLOUDFLARE_AI_GATEWAY_ID,
+          CLOUDFLARE_API_TOKEN,
+          AI,
+        } = getEnv();
 
         const aiProvider = createAIProvider({
           openAiApiKey: OPENAI_API_KEY,
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
 
@@ -661,10 +668,14 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const packId = params.packId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
       const itemId = data.id;
 
       const embeddingText = getEmbeddingText({ item: data });
@@ -674,6 +685,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
@@ -758,10 +770,14 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
@@ -792,6 +808,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
       }

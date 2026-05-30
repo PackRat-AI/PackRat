@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { apiEnvSchema, getEnv, validateCloudflareApiEnv } from '../env-validation';
+import {
+  apiEnvObjectSchema,
+  apiEnvSchema,
+  getEnv,
+  validateCloudflareApiEnv,
+} from '../env-validation';
 
 // Minimal helper – returns a plain record matching the shape of CF Worker env bindings.
 function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -32,6 +37,7 @@ function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unk
     WEATHER_API_KEY: 'weather-api',
     CLOUDFLARE_ACCOUNT_ID: 'cf',
     CLOUDFLARE_AI_GATEWAY_ID: 'gateway',
+    CLOUDFLARE_API_TOKEN: 'cf-token',
     R2_ACCESS_KEY_ID: 'access',
     R2_SECRET_ACCESS_KEY: 'secret',
     PACKRAT_BUCKET_R2_BUCKET_NAME: 'bucket',
@@ -48,7 +54,9 @@ function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unk
     ETL_QUEUE: {},
     LOGS_QUEUE: {},
     EMBEDDINGS_QUEUE: {},
+    ETL_WORKFLOW: {},
     APP_CONTAINER: {},
+    AUTH_KV: {},
     ...overrides,
   };
 }
@@ -72,47 +80,91 @@ describe('env-validation', () => {
     });
 
     it('validates SENTRY_DSN as URL', () => {
-      expect(apiEnvSchema.shape.SENTRY_DSN.safeParse('https://sentry.io/123').success).toBe(true);
+      expect(apiEnvObjectSchema.shape.SENTRY_DSN.safeParse('https://sentry.io/123').success).toBe(
+        true,
+      );
     });
 
     it('rejects invalid SENTRY_DSN', () => {
-      expect(apiEnvSchema.shape.SENTRY_DSN.safeParse('not-a-url').success).toBe(false);
+      expect(apiEnvObjectSchema.shape.SENTRY_DSN.safeParse('not-a-url').success).toBe(false);
     });
 
     it('accepts missing SENTRY_DSN for local development', () => {
-      expect(apiEnvSchema.shape.SENTRY_DSN.safeParse(undefined).success).toBe(true);
+      expect(apiEnvObjectSchema.shape.SENTRY_DSN.safeParse(undefined).success).toBe(true);
     });
 
     it('validates OPENAI_API_KEY starts with sk-', () => {
-      expect(apiEnvSchema.shape.OPENAI_API_KEY.safeParse('sk-test123').success).toBe(true);
+      expect(apiEnvObjectSchema.shape.OPENAI_API_KEY.safeParse('sk-test123').success).toBe(true);
     });
 
     it('rejects OPENAI_API_KEY without sk- prefix', () => {
-      expect(apiEnvSchema.shape.OPENAI_API_KEY.safeParse('invalid-key').success).toBe(false);
+      expect(apiEnvObjectSchema.shape.OPENAI_API_KEY.safeParse('invalid-key').success).toBe(false);
+    });
+
+    it('requires provider keys even when Cloudflare unified billing is configured', () => {
+      const result = apiEnvSchema.safeParse(
+        makeRawEnv({ OPENAI_API_KEY: undefined, GOOGLE_GENERATIVE_AI_API_KEY: undefined }),
+      );
+      expect(result.success).toBe(false);
+    });
+
+    it('validates direct OpenAI fallback with OPENAI_API_KEY and no Cloudflare token', () => {
+      const result = apiEnvSchema.safeParse(makeRawEnv({ CLOUDFLARE_API_TOKEN: undefined }));
+      expect(result.success).toBe(true);
+    });
+
+    it('validates direct OpenAI fallback without Cloudflare AI Gateway config', () => {
+      const result = apiEnvSchema.safeParse(
+        makeRawEnv({
+          CLOUDFLARE_AI_GATEWAY_ID: undefined,
+          CLOUDFLARE_API_TOKEN: undefined,
+        }),
+      );
+      expect(result.success).toBe(true);
+    });
+
+    it('requires OPENAI_API_KEY', () => {
+      const result = apiEnvSchema.safeParse(makeRawEnv({ OPENAI_API_KEY: undefined }));
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Required');
+      }
+    });
+
+    it('requires GOOGLE_GENERATIVE_AI_API_KEY', () => {
+      const result = apiEnvSchema.safeParse(
+        makeRawEnv({ GOOGLE_GENERATIVE_AI_API_KEY: undefined }),
+      );
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Required');
+      }
     });
 
     it('validates AI_PROVIDER enum', () => {
-      expect(apiEnvSchema.shape.AI_PROVIDER.safeParse('openai').success).toBe(true);
-      expect(apiEnvSchema.shape.AI_PROVIDER.safeParse('cloudflare-workers-ai').success).toBe(true);
-      expect(apiEnvSchema.shape.AI_PROVIDER.safeParse('invalid').success).toBe(false);
+      expect(apiEnvObjectSchema.shape.AI_PROVIDER.safeParse('openai').success).toBe(true);
+      expect(apiEnvObjectSchema.shape.AI_PROVIDER.safeParse('cloudflare-workers-ai').success).toBe(
+        true,
+      );
+      expect(apiEnvObjectSchema.shape.AI_PROVIDER.safeParse('invalid').success).toBe(false);
     });
 
     it('validates EMAIL_PROVIDER enum', () => {
-      expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('resend').success).toBe(true);
-      expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('ses').success).toBe(true);
-      expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('invalid').success).toBe(false);
+      expect(apiEnvObjectSchema.shape.EMAIL_PROVIDER.safeParse('resend').success).toBe(true);
+      expect(apiEnvObjectSchema.shape.EMAIL_PROVIDER.safeParse('ses').success).toBe(true);
+      expect(apiEnvObjectSchema.shape.EMAIL_PROVIDER.safeParse('invalid').success).toBe(false);
     });
 
     it('validates CONTAINER_PORT as numeric string', () => {
-      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('8080').success).toBe(true);
+      expect(apiEnvObjectSchema.shape.CONTAINER_PORT.safeParse('8080').success).toBe(true);
     });
 
     it('rejects non-numeric CONTAINER_PORT', () => {
-      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('not-a-port').success).toBe(false);
+      expect(apiEnvObjectSchema.shape.CONTAINER_PORT.safeParse('not-a-port').success).toBe(false);
     });
 
     it('makes CONTAINER_PORT optional', () => {
-      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse(undefined).success).toBe(true);
+      expect(apiEnvObjectSchema.shape.CONTAINER_PORT.safeParse(undefined).success).toBe(true);
     });
   });
 

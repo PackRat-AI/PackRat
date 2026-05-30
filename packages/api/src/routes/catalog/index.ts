@@ -315,13 +315,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) {
-        // Configuration error: surface as a 500 with a clear message
-        throw new Error('Service unavailable: OpenAI API key not configured');
-      }
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
@@ -330,6 +331,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
@@ -503,13 +505,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) {
-        // Configuration error: surface as a 500 with a clear message
-        throw new Error('Service unavailable: OpenAI API key not configured');
-      }
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const existingItem = await db.query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),
@@ -530,6 +533,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
       }

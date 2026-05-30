@@ -7,10 +7,11 @@ import { embed, embedMany } from 'ai';
 const NEWLINE = /\n/g;
 
 type GenerateEmbeddingBaseParams = {
-  openAiApiKey: string;
+  openAiApiKey?: string;
   provider: AIProvider;
-  cloudflareAccountId: string;
-  cloudflareGatewayId: string;
+  cloudflareAccountId?: string;
+  cloudflareGatewayId?: string;
+  cloudflareApiToken?: string;
   cloudflareAiBinding: Env['AI'];
 };
 
