@@ -3,6 +3,33 @@ appId: ${APP_ID}
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 
+- runFlow:
+    when:
+      visible:
+        text: "http://.*"
+    commands:
+      - tapOn:
+          text: "http://.*"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Runtime version:.*"
+    commands:
+      - tapOn:
+          text: "Close"
+      - waitForAnimationToEnd
+
 # Dismiss Android ANR dialog that can appear during emulator boot before first interaction
 - runFlow:
     when:

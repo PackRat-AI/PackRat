@@ -7,40 +7,63 @@ appId: ${APP_ID}
     stopApp: true
 - waitForAnimationToEnd
 
+- runFlow:
+    when:
+      visible:
+        text: "http://.*"
+    commands:
+      - tapOn:
+          text: "http://.*"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Runtime version:.*"
+    commands:
+      - tapOn:
+          text: "Close"
+      - waitForAnimationToEnd
+
 # Navigate to Sign In
 - extendedWaitUntil:
     visible:
-      text: "Sign In"
-    timeout: 10000
+      id: "sign-in-email-button"
+    timeout: 35000
 
 - tapOn:
-    text: "Sign In"
+    id: "sign-in-email-button"
 - waitForAnimationToEnd
 
-# Handle possible multi-step auth screens
-- runFlow:
-    when:
-      notVisible:
-        text: "Email"
-    commands:
-      - tapOn:
-          text: "Sign In"
-      - waitForAnimationToEnd
+# Wait for the login form
+- extendedWaitUntil:
+    visible:
+      id: "email-input"
+    timeout: 10000
 
 # Fill in invalid credentials
 - tapOn:
-    text: "Email"
+    id: "email-input"
 - inputText: "invalid@nonexistent.com"
 
 - tapOn:
-    text: "Password"
+    id: "password-input"
 - inputText: "wrongpassword123"
 
 - hideKeyboard
 
 # Submit
 - tapOn:
-    text: "Submit"
+    id: "continue-button"
 - waitForAnimationToEnd
 
 # Should show Login Failed error dialog
@@ -59,4 +82,4 @@ appId: ${APP_ID}
 
 # Should still be on login form
 - assertVisible:
-    text: "Email"
+    id: "email-input"

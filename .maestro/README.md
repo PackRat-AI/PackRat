@@ -7,7 +7,7 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 ```text
 .maestro/
 ├── config.yaml                    # Workspace configuration (test discovery, env vars)
-├── config-android.yaml            # Android-specific workspace configuration 
+├── config-android.yaml            # Android-specific workspace configuration
 ├── master-flow.yaml               # Main orchestration flow (iOS)
 ├── master-flow-android.yaml       # Android orchestration flow
 └── flows/
@@ -38,13 +38,14 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 ## Prerequisites
 
 1. **Install Maestro CLI**:
+
    ```bash
    curl -Ls "https://get.maestro.mobile.dev" | bash
    ```
 
 2. **Set up test credentials** (will be passed to Maestro via `-e` flags):
    - TEST_EMAIL: your test account email
-   - TEST_PASSWORD: your test account password  
+   - TEST_PASSWORD: your test account password
    - APP_ID: com.andrewbierman.packrat.preview (iOS) or com.packratai.mobile.preview (Android)
 
 3. **Build and install the app** on a simulator/device (run from `apps/expo/`):
@@ -58,6 +59,7 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 ## Running Tests
 
 ### Run iOS test suite
+
 ```bash
 maestro test \
   -e TEST_EMAIL="your-test-account@example.com" \
@@ -69,6 +71,7 @@ maestro test \
 ```
 
 ### Run Android test suite
+
 ```bash
 maestro test \
   --config .maestro/config-android.yaml \
@@ -80,7 +83,18 @@ maestro test \
   .maestro/master-flow-android.yaml
 ```
 
+### Run with the local suite runner
+
+```bash
+TEST_EMAIL="your-test-account@example.com" \
+TEST_PASSWORD="your-test-password" \
+.maestro/run-suite.sh android --device "<adb-device-id>"
+```
+
+`android` is the runner default. Use `adb devices` to find a physical device ID. If you run on a physical Android device against a local API, build the app with an `EXPO_PUBLIC_API_URL` reachable from the device, such as your machine's LAN IP instead of `localhost`.
+
 ### Run a single flow
+
 ```bash
 maestro test \
   -e TEST_EMAIL="your-test-account@example.com" \
@@ -89,6 +103,7 @@ maestro test \
 ```
 
 ### Run with JUnit output (for CI)
+
 ```bash
 maestro test \
   --format junit \
@@ -102,6 +117,7 @@ maestro test \
 ```
 
 ### Run on a specific simulator
+
 ```bash
 maestro --device <UDID> test .maestro/config.yaml
 ```
@@ -109,6 +125,7 @@ maestro --device <UDID> test .maestro/config.yaml
 ## CI/CD
 
 Tests run automatically via GitHub Actions (`.github/workflows/e2e-tests.yml`) on:
+
 - Every push to `main` or `development` that touches `apps/expo/**`, `.maestro/**`, or `.github/workflows/e2e-tests.yml`
 - Every pull request targeting `main` or `development` that touches the same paths
 
@@ -118,11 +135,11 @@ Tests run automatically via GitHub Actions (`.github/workflows/e2e-tests.yml`) o
 
 Configure these GitHub repository secrets for CI:
 
-| Secret | Description |
-|--------|-------------|
-| `EXPO_TOKEN` | Expo access token for EAS builds |
-| `E2E_TEST_EMAIL` | Email address of the E2E test account |
-| `E2E_TEST_PASSWORD` | Password of the E2E test account |
+| Secret                               | Description                             |
+| ------------------------------------ | --------------------------------------- |
+| `EXPO_TOKEN`                         | Expo access token for EAS builds        |
+| `E2E_TEST_EMAIL`                     | Email address of the E2E test account   |
+| `E2E_TEST_PASSWORD`                  | Password of the E2E test account        |
 | `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` | GitHub token for private package access |
 
 ## Writing New Tests
@@ -130,6 +147,7 @@ Configure these GitHub repository secrets for CI:
 Flows are standard YAML files following the [Maestro flow syntax](https://maestro.mobile.dev/api-reference/commands).
 
 Key conventions:
+
 - All flows start with `appId: ${APP_ID}` (uses environment variable for platform-specific bundle IDs)
 - Prefer `testID` / `accessibilityIdentifier` selectors first (e.g., `tapOn: { id: "submitButton" }`); use `text` to match an element's iOS `accessibilityLabel` or visible text (e.g., `tapOn: { text: "Submit" }`); `accessibilityLabel` is **not** a valid Maestro selector key
 - Use `waitForAnimationToEnd` after navigation actions

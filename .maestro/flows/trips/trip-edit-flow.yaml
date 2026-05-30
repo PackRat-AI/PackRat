@@ -5,22 +5,34 @@ appId: ${APP_ID}
 # and the presence of action icons rather than tapping through to edit form
 - launchApp
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Trips"
+    timeout: 30000
 
 # Navigate to Trips tab
 - tapOn:
     text: "Trips"
 - waitForAnimationToEnd
 
-# Tap into existing Maestro Test Trip
+# Tap into the trip created earlier in this run
+- scrollUntilVisible:
+    element:
+      id: "trips:list-item-${TRIP_NAME}"
+    direction: DOWN
+    timeout: 60000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - tapOn:
-    text: "Maestro Test Trip"
+    id: "trips:list-item-${TRIP_NAME}"
 - waitForAnimationToEnd
 
 # Assert trip detail loaded with all expected content
 - assertVisible:
     text: "Trip Details"
 - assertVisible:
-    text: "Maestro Test Trip"
+    text: ${TRIP_NAME}
 - assertVisible:
     text: "Dates"
 - assertVisible:
@@ -32,13 +44,22 @@ appId: ${APP_ID}
 
 # Verify the trip description is shown
 - assertVisible:
-    text: ".*Maestro.*"
+    text: ".*Maestro E2E.*"
+- assertVisible:
+    id: "trips:edit"
+- assertVisible:
+    id: "trips:delete"
 
-# Scroll to check for pack section
-- scrollUntilVisible:
-    element:
-      text: ".*pack.*"
-    direction: DOWN
+# Open the edit form from the header action and verify the existing trip loads.
+- tapOn:
+    id: "trips:edit"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "trips:name-input"
+- assertVisible:
+    text: ${TRIP_NAME}
+- back
+- waitForAnimationToEnd
 
 # Go back to trips list
 - back

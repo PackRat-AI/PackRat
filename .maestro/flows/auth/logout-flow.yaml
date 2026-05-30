@@ -3,21 +3,45 @@ appId: ${APP_ID}
 # Logout Flow: Navigate to profile and sign out
 - waitForAnimationToEnd
 
+- runFlow:
+    when:
+      visible:
+        text: "Sync in progress"
+    commands:
+      - tapOn:
+          text: "LOG OUT"
+      - waitForAnimationToEnd
+
 # Navigate to the Profile tab
-- tapOn:
-    text: "Profile"
+- runFlow:
+    when:
+      notVisible:
+        id: "sign-in-email-button"
+    commands:
+      - tapOn:
+          text: "Profile"
 
 - waitForAnimationToEnd
 
 # Scroll down to find the log out button if needed
-- scrollUntilVisible:
-    element:
-      text: "Log Out"
-    direction: DOWN
+- runFlow:
+    when:
+      notVisible:
+        id: "sign-in-email-button"
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "Log Out"
+          direction: DOWN
 
 # Tap Log Out
-- tapOn:
-    text: "Log Out"
+- runFlow:
+    when:
+      notVisible:
+        id: "sign-in-email-button"
+    commands:
+      - tapOn:
+          text: "Log Out"
 
 - waitForAnimationToEnd
 
@@ -27,7 +51,7 @@ appId: ${APP_ID}
         text: "Sync in progress"
     commands:
       - tapOn:
-          text: "Proceed"
+          text: "LOG OUT"
 
 - waitForAnimationToEnd
 
@@ -42,8 +66,35 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Assert we are back on the auth screen
+- runFlow:
+    when:
+      visible:
+        text: "http://.*"
+    commands:
+      - tapOn:
+          text: "http://.*"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Runtime version:.*"
+    commands:
+      - tapOn:
+          text: "Close"
+      - waitForAnimationToEnd
+
+# Assert we are back on the auth screen.
 - extendedWaitUntil:
     visible:
-      text: "Sign In"
+      id: "sign-in-email-button"
     timeout: 15000

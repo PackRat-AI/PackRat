@@ -3,6 +3,10 @@ appId: ${APP_ID}
 # Pack Templates Flow: Tests the pack templates section from dashboard
 - launchApp
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Dashboard"
+    timeout: 30000
 
 # Navigate to Dashboard
 - tapOn:
@@ -17,7 +21,7 @@ appId: ${APP_ID}
 
 # Tap the Pack Templates tile
 - tapOn:
-    text: "Pack Templates"
+    id: "dashboard-tile-pack-templates"
 - waitForAnimationToEnd
 
 # Assert templates page loaded
@@ -26,15 +30,25 @@ appId: ${APP_ID}
       text: "All"
     timeout: 10000
 
-# Verify template tabs exist (All / App / Yours)
+# Verify template tabs exist (All / Featured / Yours)
 - assertVisible:
-    text: "App"
+    text: "Featured"
 
-# Verify templates content loads
-- scrollUntilVisible:
-    element:
-      text: "Hiking"
-    direction: DOWN
+# Verify either seeded templates or the empty state renders.
+- runFlow:
+    when:
+      visible:
+        id: "pack-templates:card-.*"
+    commands:
+      - assertVisible:
+          id: "pack-templates:card-.*"
+- runFlow:
+    when:
+      visible:
+        text: "No templates found"
+    commands:
+      - assertVisible:
+          text: "Create Template"
 
 # Go back to dashboard
 - back

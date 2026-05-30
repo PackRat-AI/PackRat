@@ -5,15 +5,47 @@ appId: ${APP_ID}
 # NOTE: This test intentionally does NOT tap Ask AI to avoid session destruction
 - launchApp
 - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Software update"
+          commands:
+            - back
+            - waitForAnimationToEnd
+            - launchApp
+      - runFlow:
+          when:
+            visible:
+              text: "Update ready to install"
+          commands:
+            - back
+            - waitForAnimationToEnd
+            - launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Packs"
+    timeout: 60000
 
 # Navigate to Packs tab
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
 
-# Tap into Maestro Test Pack
+# Tap into the pack created earlier in this run
+- scrollUntilVisible:
+    element:
+      id: "packs:list-item-${PACK_NAME}"
+    direction: DOWN
+    timeout: 60000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - tapOn:
-    text: "Maestro Test Pack"
+    id: "packs:list-item-${PACK_NAME}"
 - waitForAnimationToEnd
 
 # Assert pack detail loaded
@@ -36,7 +68,7 @@ appId: ${APP_ID}
 #     text: "Ask AI"
 # - waitForAnimationToEnd
 # - assertVisible:
-#     text: "Maestro Test Pack"
+#     text: ${PACK_NAME}
 # - back
 # - waitForAnimationToEnd
 

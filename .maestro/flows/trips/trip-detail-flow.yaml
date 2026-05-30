@@ -8,7 +8,15 @@ appId: ${APP_ID}
     text: "Trips"
 - waitForAnimationToEnd
 
-# Tap the test trip
+# Tap the trip created earlier in this run
+- scrollUntilVisible:
+    element:
+      id: "trips:list-item-${TRIP_NAME}"
+    direction: DOWN
+    timeout: 60000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - tapOn:
     id: "trips:list-item-${TRIP_NAME}"
 - waitForAnimationToEnd
