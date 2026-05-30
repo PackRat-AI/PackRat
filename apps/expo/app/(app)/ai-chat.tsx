@@ -142,7 +142,9 @@ export default function AIChat() {
       headers: async () => {
         const { data } = await authClient.getSession();
         const token = data?.session?.token ?? '';
-        return token ? { Authorization: `Bearer ${token}` } : {};
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        return headers;
       },
       body: () => ({
         contextType: contextRef.current.contextType,
