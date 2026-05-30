@@ -1,32 +1,34 @@
 {
-  // Package-scoped tsconfig used by `bun run check-types`. The API is excluded
-  // from the ROOT tsconfig so its @kitajs/html JSX can't pollute the React/RN
-  // apps' global JSX namespace (see the root tsconfig `exclude`). It EXTENDS the
-  // root so it inherits the same target/lib/module/moduleResolution/paths/
-  // strictness environment that the rest of the monorepo is checked under — and
-  // the Cloudflare Workers types loaded via `src/global.d.ts`. It only overrides
-  // the JSX runtime.
+  // Package-scoped tsconfig. The root tsconfig sets `"jsx": "react-native"`
+  // for the Expo app; the API uses @kitajs/html's string-rendering JSX runtime
+  // for server-side HTML (e.g. the OAuth consent page in
+  // src/auth/consent-page.tsx). Package-local override keeps the two
+  // contexts from colliding.
   //
-  // JSX runtime: classic `Html.createElement` / `Html.Fragment` — the form
-  // @elysiajs/html + @kitajs/ts-html-plugin assume for the server-rendered HTML
-  // (e.g. the OAuth consent page in src/auth/consent-page.tsx). Switching to the
-  // automatic runtime (jsxImportSource) breaks the plugin's compile-time XSS
-  // detection (error K601). The ts-html-plugin runs in the IDE and ships the
-  // `xss-scan` CLI for CI.
-  "extends": "../../tsconfig.json",
+  // JSX runtime config follows @elysiajs/html's recommended pattern:
+  // classic runtime with Html.createElement + Html.Fragment as the JSX
+  // factory. This is the form @kitajs/ts-html-plugin assumes; switching
+  // to the automatic runtime (jsxImportSource) breaks the plugin's
+  // compile-time XSS detection (error K601 for missing `safe` attribute).
+  //
+  // The ts-html-plugin runs as a TS language service plugin in IDE
+  // (surfacing K601 inline) AND ships an `xss-scan` CLI for CI pipelines.
+  // The package's @kitajs/html JSX files (auth/consent-*.tsx) + the worker
+  // entry that imports them (src/index.ts) are excluded from the ROOT
+  // tsconfig so their global JSX namespace can't pollute the React apps —
+  // see the root tsconfig `exclude`.
   "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "jsx": "react",
     "jsxFactory": "Html.createElement",
     "jsxFragmentFactory": "Html.Fragment",
-    // Load the Cloudflare Workers global types explicitly via a DATED subpath.
-    // In the root program these come from `src/global.d.ts`'s triple-slash
-    // reference, but standalone the bindings (R2Bucket, Queue, Ai, AutoRAG,
-    // KVNamespace, ...) go missing. The bare package name doesn't resolve in a
-    // `types` array (its package.json has no `types` field); the dated/`latest`
-    // entrypoints are the ambient-global declaration files. `latest` carries the
-    // newest bindings (Ai, AutoRAG, AutoRagSearchResponse) this package uses.
-    "types": ["@cloudflare/workers-types/latest"],
-    "plugins": [{ "name": "@kitajs/ts-html-plugin" }]
+    "plugins": [{ "name": "@kitajs/ts-html-plugin" }],
+    "paths": {
+      "@packrat/api": ["./src/index.ts"],
+      "@packrat/api/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "container_src", "test", "coverage"]

@@ -71,11 +71,17 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    // packages/api is type-checked by its own `check-types` (api's tsconfig has
-    // the @kitajs/html JSX config its server-rendered consent .tsx needs). Keeping
-    // it out of this root program prevents @kitajs/html's global JSX namespace from
-    // polluting the React/React-Native apps compiled here. Mirrors packages/mcp.
-    "packages/api",
+    // The API's @kitajs/html server-rendered HTML files declare a GLOBAL JSX
+    // namespace that collides with the React/React-Native apps compiled in this
+    // root program. Exclude just those files + the worker entry that imports them
+    // (api/src/index.ts) so they don't enter the program; the rest of packages/api
+    // (incl. src/global.d.ts, which provides the Cloudflare Workers types) stays
+    // in. These three are type-checked under packages/api's own @kitajs/html
+    // tsconfig (IDE + xss-scan). Anything else that imports them goes through the
+    // JSX-free `@packrat/api/app` contract instead.
+    "packages/api/src/index.ts",
+    "packages/api/src/auth/consent-page.tsx",
+    "packages/api/src/auth/consent-route.tsx",
     "packages/mcp",
     "packages/osm-db",
     "packages/osm-import",

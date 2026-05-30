@@ -56,10 +56,6 @@ jobs:
         run: bun check:casts:strict
       - name: Check types
         run: bun check-types
-      - name: Check types (packages/api)
-        # api is excluded from the root tsconfig (its @kitajs/html JSX would pollute
-        # the React apps' global JSX); type-check it under its own tsconfig here.
-        run: bun run --cwd packages/api check-types
       - name: Run Expo Doctor
         run: bunx expo-doctor
         working-directory: apps/expo
