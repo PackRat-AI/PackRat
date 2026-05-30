@@ -67,7 +67,13 @@ export const CATALOG_LIST_CAP = 25;
 /** Default page size for the search resource template. */
 const SEARCH_RESULT_CAP = 20;
 
-function extractErrorMessage(value: unknown, fallbackStatus: number): string {
+function extractErrorMessage({
+  value,
+  fallbackStatus,
+}: {
+  value: unknown;
+  fallbackStatus: number;
+}): string {
   if (isString(value)) return value;
   if (isObject(value)) {
     const obj = toRecord(value);
@@ -89,7 +95,7 @@ function extractErrorMessage(value: unknown, fallbackStatus: number): string {
  */
 function throwReadError(args: { uri: string; status: number; value: unknown }): never {
   const { uri, status, value } = args;
-  const detail = extractErrorMessage(value, status);
+  const detail = extractErrorMessage({ value, fallbackStatus: status });
   // The MCP type set has only InvalidParams / InternalError / etc.
   // 404 and most 4xx map cleanly onto InvalidParams (the caller asked
   // for a thing that doesn't exist / they don't have access to);
@@ -98,10 +104,13 @@ function throwReadError(args: { uri: string; status: number; value: unknown }): 
   throw new McpError(code, `Failed to read ${uri}: ${detail}`, { status });
 }
 
-async function readJsonResource(
-  uri: string,
-  promise: Promise<TreatyResult>,
-): Promise<{ contents: Array<{ uri: string; mimeType: string; text: string }> }> {
+async function readJsonResource({
+  uri,
+  promise,
+}: {
+  uri: string;
+  promise: Promise<TreatyResult>;
+}): Promise<{ contents: Array<{ uri: string; mimeType: string; text: string }> }> {
   let result: TreatyResult;
   try {
     result = await promise;
@@ -129,10 +138,13 @@ async function readJsonResource(
  * 500 the entire endpoint and hide the catalog, glossary, and other
  * resources the user could still consume.
  */
-async function safeList(
-  label: string,
-  fn: () => Promise<ResourceDescriptor[]>,
-): Promise<{ resources: ResourceDescriptor[] }> {
+async function safeList({
+  label,
+  fn,
+}: {
+  label: string;
+  fn: () => Promise<ResourceDescriptor[]>;
+}): Promise<{ resources: ResourceDescriptor[] }> {
   try {
     return { resources: await fn() };
   } catch (e) {
@@ -144,28 +156,40 @@ async function safeList(
   }
 }
 
-function packName(p: { name?: unknown; id?: unknown }, fallback: string): string {
-  if (isString(p.name) && p.name.trim().length > 0) return p.name;
-  if (isString(p.id)) return `Pack ${p.id}`;
+function packName({
+  pack,
+  fallback,
+}: {
+  pack: { name?: unknown; id?: unknown };
+  fallback: string;
+}): string {
+  if (isString(pack.name) && pack.name.trim().length > 0) return pack.name;
+  if (isString(pack.id)) return `Pack ${pack.id}`;
   return fallback;
 }
 
-function tripName(
-  t: { name?: unknown; destination?: unknown; id?: unknown },
-  fallback: string,
-): string {
-  if (isString(t.name) && t.name.trim().length > 0) return t.name;
-  if (isString(t.destination) && t.destination.trim().length > 0) return t.destination;
-  if (isString(t.id)) return `Trip ${t.id}`;
+function tripName({
+  trip,
+  fallback,
+}: {
+  trip: { name?: unknown; destination?: unknown; id?: unknown };
+  fallback: string;
+}): string {
+  if (isString(trip.name) && trip.name.trim().length > 0) return trip.name;
+  if (isString(trip.destination) && trip.destination.trim().length > 0) return trip.destination;
+  if (isString(trip.id)) return `Trip ${trip.id}`;
   return fallback;
 }
 
-function catalogName(
-  c: { name?: unknown; brand?: unknown; id?: unknown },
-  fallback: string,
-): string {
-  const base = isString(c.name) && c.name.trim().length > 0 ? c.name : fallback;
-  if (isString(c.brand) && c.brand.trim().length > 0) return `${c.brand} ${base}`;
+function catalogName({
+  item,
+  fallback,
+}: {
+  item: { name?: unknown; brand?: unknown; id?: unknown };
+  fallback: string;
+}): string {
+  const base = isString(item.name) && item.name.trim().length > 0 ? item.name : fallback;
+  if (isString(item.brand) && item.brand.trim().length > 0) return `${item.brand} ${base}`;
   return base;
 }
 
@@ -175,21 +199,24 @@ export function registerResources(agent: AgentContext): void {
     'pack',
     new ResourceTemplate('packrat://packs/{packId}', {
       list: () =>
-        safeList('packs', async () => {
-          const result = await agent.api.user.packs.get({ query: { includePublic: 0 } });
-          if (result.error || result.data == null) return [];
-          const items = Array.isArray(result.data) ? result.data : [];
-          return items
-            .filter(
-              (p: unknown): p is { id: string; name?: string } =>
-                isObject(p) && isString((p as { id?: unknown }).id),
-            )
-            .map((p, idx) => ({
-              uri: `packrat://packs/${p.id}`,
-              name: packName(p, `Pack ${idx + 1}`),
-              description: 'PackRat packing list with items, weights, and computed totals.',
-              mimeType: 'application/json',
-            }));
+        safeList({
+          label: 'packs',
+          fn: async () => {
+            const result = await agent.api.user.packs.get({ query: { includePublic: 0 } });
+            if (result.error || result.data == null) return [];
+            const items = Array.isArray(result.data) ? result.data : [];
+            return items
+              .filter(
+                (p: unknown): p is { id: string; name?: string } =>
+                  isObject(p) && isString((p as { id?: unknown }).id),
+              )
+              .map((p, idx) => ({
+                uri: `packrat://packs/${p.id}`,
+                name: packName({ pack: p, fallback: `Pack ${idx + 1}` }),
+                description: 'PackRat packing list with items, weights, and computed totals.',
+                mimeType: 'application/json',
+              }));
+          },
         }),
     }),
     {
@@ -198,7 +225,10 @@ export function registerResources(agent: AgentContext): void {
       mimeType: 'application/json',
     },
     (uri, { packId }) =>
-      readJsonResource(uri.href, agent.api.user.packs({ packId: String(packId) }).get()),
+      readJsonResource({
+        uri: uri.href,
+        promise: agent.api.user.packs({ packId: String(packId) }).get(),
+      }),
   );
 
   // ── Trip resource ─────────────────────────────────────────────────────────
@@ -206,21 +236,24 @@ export function registerResources(agent: AgentContext): void {
     'trip',
     new ResourceTemplate('packrat://trips/{tripId}', {
       list: () =>
-        safeList('trips', async () => {
-          const result = await agent.api.user.trips.get();
-          if (result.error || result.data == null) return [];
-          const items = Array.isArray(result.data) ? result.data : [];
-          return items
-            .filter(
-              (t: unknown): t is { id: string; name?: string; destination?: string } =>
-                isObject(t) && isString((t as { id?: unknown }).id),
-            )
-            .map((t, idx) => ({
-              uri: `packrat://trips/${t.id}`,
-              name: tripName(t, `Trip ${idx + 1}`),
-              description: 'PackRat trip plan with destination, dates, and linked pack.',
-              mimeType: 'application/json',
-            }));
+        safeList({
+          label: 'trips',
+          fn: async () => {
+            const result = await agent.api.user.trips.get();
+            if (result.error || result.data == null) return [];
+            const items = Array.isArray(result.data) ? result.data : [];
+            return items
+              .filter(
+                (t: unknown): t is { id: string; name?: string; destination?: string } =>
+                  isObject(t) && isString((t as { id?: unknown }).id),
+              )
+              .map((t, idx) => ({
+                uri: `packrat://trips/${t.id}`,
+                name: tripName({ trip: t, fallback: `Trip ${idx + 1}` }),
+                description: 'PackRat trip plan with destination, dates, and linked pack.',
+                mimeType: 'application/json',
+              }));
+          },
         }),
     }),
     {
@@ -229,7 +262,10 @@ export function registerResources(agent: AgentContext): void {
       mimeType: 'application/json',
     },
     (uri, { tripId }) =>
-      readJsonResource(uri.href, agent.api.user.trips({ tripId: String(tripId) }).get()),
+      readJsonResource({
+        uri: uri.href,
+        promise: agent.api.user.trips({ tripId: String(tripId) }).get(),
+      }),
   );
 
   // ── Catalog item resource ─────────────────────────────────────────────────
@@ -241,31 +277,34 @@ export function registerResources(agent: AgentContext): void {
       // model can still page deeper via the search resource template
       // (`packrat://search?q=...`) or the catalog search tool.
       list: () =>
-        safeList('catalog', async () => {
-          const result = await agent.api.user.catalog.get({
-            query: { limit: CATALOG_LIST_CAP, page: 1 },
-          });
-          if (result.error || result.data == null) return [];
-          const data = result.data as unknown;
-          const items: unknown[] = Array.isArray(data)
-            ? data
-            : isObject(data) && Array.isArray((data as { items?: unknown[] }).items)
-              ? (data as { items: unknown[] }).items
-              : [];
-          return items
-            .slice(0, CATALOG_LIST_CAP)
-            .filter(
-              (c): c is { id: string | number; name?: string; brand?: string } =>
-                isObject(c) &&
-                (isString((c as { id?: unknown }).id) ||
-                  typeof (c as { id?: unknown }).id === 'number'),
-            )
-            .map((c, idx) => ({
-              uri: `packrat://catalog/${String(c.id)}`,
-              name: catalogName(c, `Catalog item ${idx + 1}`),
-              description: 'PackRat catalog item — specs, weight, price, availability.',
-              mimeType: 'application/json',
-            }));
+        safeList({
+          label: 'catalog',
+          fn: async () => {
+            const result = await agent.api.user.catalog.get({
+              query: { limit: CATALOG_LIST_CAP, page: 1 },
+            });
+            if (result.error || result.data == null) return [];
+            const data = result.data as unknown;
+            const items: unknown[] = Array.isArray(data)
+              ? data
+              : isObject(data) && Array.isArray((data as { items?: unknown[] }).items)
+                ? (data as { items: unknown[] }).items
+                : [];
+            return items
+              .slice(0, CATALOG_LIST_CAP)
+              .filter(
+                (c): c is { id: string | number; name?: string; brand?: string } =>
+                  isObject(c) &&
+                  (isString((c as { id?: unknown }).id) ||
+                    typeof (c as { id?: unknown }).id === 'number'),
+              )
+              .map((c, idx) => ({
+                uri: `packrat://catalog/${String(c.id)}`,
+                name: catalogName({ item: c, fallback: `Catalog item ${idx + 1}` }),
+                description: 'PackRat catalog item — specs, weight, price, availability.',
+                mimeType: 'application/json',
+              }));
+          },
         }),
     }),
     {
@@ -274,7 +313,10 @@ export function registerResources(agent: AgentContext): void {
       mimeType: 'application/json',
     },
     (uri, { itemId }) =>
-      readJsonResource(uri.href, agent.api.user.catalog({ id: String(itemId) }).get()),
+      readJsonResource({
+        uri: uri.href,
+        promise: agent.api.user.catalog({ id: String(itemId) }).get(),
+      }),
   );
 
   // ── Gear categories list (static URI) ─────────────────────────────────────
@@ -286,7 +328,11 @@ export function registerResources(agent: AgentContext): void {
         'Complete list of gear categories available in the PackRat catalog. Use this to discover what types of gear are available.',
       mimeType: 'application/json',
     },
-    (uri) => readJsonResource(uri.href, agent.api.user.catalog.categories.get({ query: {} })),
+    (uri) =>
+      readJsonResource({
+        uri: uri.href,
+        promise: agent.api.user.catalog.categories.get({ query: {} }),
+      }),
   );
 
   // ── Search resource template ──────────────────────────────────────────────
@@ -308,12 +354,12 @@ export function registerResources(agent: AgentContext): void {
       mimeType: 'application/json',
     },
     (uri, { query }) =>
-      readJsonResource(
-        uri.href,
-        agent.api.user.catalog.get({
+      readJsonResource({
+        uri: uri.href,
+        promise: agent.api.user.catalog.get({
           query: { q: String(query), limit: SEARCH_RESULT_CAP, page: 1 },
         }),
-      ),
+      }),
   );
 
   // ── Glossary (static markdown) ────────────────────────────────────────────
