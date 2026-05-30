@@ -82,7 +82,7 @@ describe('createLogger', () => {
 
   it('emits one JSON object per call with ts, level, msg, correlationId, service', () => {
     const log = createLogger({ correlationId: 'cf-ray-abc' });
-    log.info('hello', { statusCode: 200 });
+    log.info({ msg: 'hello', fields: { statusCode: 200 } });
     expect(capture.lines).toHaveLength(1);
     const { json, level } = capture.lines[0];
     expect(level).toBe('log');
@@ -96,16 +96,16 @@ describe('createLogger', () => {
 
   it('uses the user-supplied service name when provided', () => {
     const log = createLogger({ correlationId: 'c1', service: 'mcp-test' });
-    log.info('x');
+    log.info({ msg: 'x' });
     expect(capture.lines[0].json.service).toBe('mcp-test');
   });
 
   it('routes warn to console.warn and error to console.error', () => {
     const log = createLogger({ correlationId: 'c1' });
-    log.debug('d');
-    log.info('i');
-    log.warn('w');
-    log.error('e');
+    log.debug({ msg: 'd' });
+    log.info({ msg: 'i' });
+    log.warn({ msg: 'w' });
+    log.error({ msg: 'e' });
     const levels = capture.lines.map((l) => l.level);
     expect(levels).toEqual(['log', 'log', 'warn', 'error']);
     const jsonLevels = capture.lines.map((l) => l.json.level);
@@ -115,7 +115,7 @@ describe('createLogger', () => {
   it('default-deny: an unknown field becomes "[redacted]" but the key is preserved', () => {
     const log = createLogger({ correlationId: 'c1' });
     // Common slip: developer logs the bearer token alongside a safe field.
-    log.info('failed', { token: 'super-secret', userId: 'u1' });
+    log.info({ msg: 'failed', fields: { token: 'super-secret', userId: 'u1' } });
     // Note: `userId` is not in the top-level allowlist (only nested under
     // `actor`), so it should also be redacted. This is the intended
     // strict behavior: every direct top-level field must be explicitly
@@ -130,10 +130,13 @@ describe('createLogger', () => {
 
   it('scrubs unknown nested keys under actor/target/error', () => {
     const log = createLogger({ correlationId: 'c1' });
-    log.info('audit', {
-      actor: { userId: 'u1', scopes: ['mcp:admin'], secret: 'nope' },
-      target: { type: 'user', id: 'u-42', secret: 'nope' },
-      error: { code: 'e', message: 'm', retryable: false, secret: 'nope' },
+    log.info({
+      msg: 'audit',
+      fields: {
+        actor: { userId: 'u1', scopes: ['mcp:admin'], secret: 'nope' },
+        target: { type: 'user', id: 'u-42', secret: 'nope' },
+        error: { code: 'e', message: 'm', retryable: false, secret: 'nope' },
+      },
     });
     const { json } = capture.lines[0];
     expect(json.actor).toEqual({ userId: 'u1', scopes: ['mcp:admin'], secret: '[redacted]' });

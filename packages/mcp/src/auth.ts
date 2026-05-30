@@ -169,9 +169,12 @@ export async function handleHealth(request: Request, env: Env): Promise<Response
   if (!allOk) {
     const correlationId = getCorrelationId(request) ?? correlationIdFrom(request);
     const log = createLogger({ correlationId });
-    log.warn('mcp.health.degraded', {
-      reason: 'api_down',
-      statusCode: status,
+    log.warn({
+      msg: 'mcp.health.degraded',
+      fields: {
+        reason: 'api_down',
+        statusCode: status,
+      },
     });
   }
 

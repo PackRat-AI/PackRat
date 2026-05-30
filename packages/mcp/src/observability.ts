@@ -61,11 +61,13 @@ import { isFunction, isObject } from '@packrat/guards';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+export type LogArgs = { msg: string; fields?: Record<string, unknown> };
+
 export interface Logger {
-  debug(msg: string, fields?: Record<string, unknown>): void;
-  info(msg: string, fields?: Record<string, unknown>): void;
-  warn(msg: string, fields?: Record<string, unknown>): void;
-  error(msg: string, fields?: Record<string, unknown>): void;
+  debug(args: LogArgs): void;
+  info(args: LogArgs): void;
+  warn(args: LogArgs): void;
+  error(args: LogArgs): void;
 }
 
 export interface CreateLoggerOptions {
@@ -228,12 +230,17 @@ function scrubNested(obj: Record<string, unknown>, allow: Set<string>): Record<s
  */
 export function createLogger(opts: CreateLoggerOptions): Logger {
   const { correlationId, service = 'mcp' } = opts;
-  // The trio (level, msg, fields) matches every call site's mental model;
-  // collapsing to an options object would make every log line read as
-  // `emit({ level: 'warn', msg: '...', fields: {...} })`, which is louder
-  // than the standard `logger.warn(msg, fields)` signature we expose.
-  // biome-ignore lint/complexity/useMaxParams: matches the public Logger.{debug,info,warn,error}(msg, fields) signature; an options-object refactor would change every call site for no readability gain.
-  function emit(level: LogLevel, msg: string, fields?: Record<string, unknown>): void {
+  // Single object param `{ level, msg, fields }` — the public Logger methods and
+  // every call site take one object, per the no-owned-max-params convention.
+  function emit({
+    level,
+    msg,
+    fields,
+  }: {
+    level: LogLevel;
+    msg: string;
+    fields?: Record<string, unknown>;
+  }): void {
     const payload = {
       ts: new Date().toISOString(),
       level,
@@ -252,10 +259,10 @@ export function createLogger(opts: CreateLoggerOptions): Logger {
     }
   }
   return {
-    debug: (msg, fields) => emit('debug', msg, fields),
-    info: (msg, fields) => emit('info', msg, fields),
-    warn: (msg, fields) => emit('warn', msg, fields),
-    error: (msg, fields) => emit('error', msg, fields),
+    debug: ({ msg, fields }) => emit({ level: 'debug', msg, fields }),
+    info: ({ msg, fields }) => emit({ level: 'info', msg, fields }),
+    warn: ({ msg, fields }) => emit({ level: 'warn', msg, fields }),
+    error: ({ msg, fields }) => emit({ level: 'error', msg, fields }),
   };
 }
 
@@ -346,7 +353,7 @@ export function getCorrelationId(request: Request): string | undefined {
  */
 // biome-ignore lint/complexity/useMaxParams: the (logger, action, fields) trio matches the calling pattern in every admin tool's audit-call site. Folding into an options object would require `audit({ logger, action, fields })` at every site for no gain.
 export function audit(logger: Logger, action: string, fields: Record<string, unknown>): void {
-  logger.info(`mcp.audit.${action}`, { ...fields, action });
+  logger.info({ msg: `mcp.audit.${action}`, fields: { ...fields, action } });
 }
 
 /**
