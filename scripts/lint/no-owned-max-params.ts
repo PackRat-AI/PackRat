@@ -28,7 +28,16 @@ const EXCLUDED_DIRS = new Set([
   'coverage',
 ]);
 
-const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
+const EXCLUDED_PATH_PARTS = [
+  '/test/',
+  '/__tests__/',
+  // Hand-written stubs of external/framework classes (e.g. the Cloudflare
+  // `WorkflowEntrypoint` base) must mirror the framework's positional
+  // constructor/method signatures, not our object-param convention.
+  '/__test-stubs__/',
+  '/mocks/',
+  '/playwright/',
+];
 const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
@@ -38,8 +47,14 @@ const EXCLUDED_FILES = new Set([
   'apps/landing/scripts/generate-og-images.ts',
   'apps/guides/scripts/generate-og-images.ts',
   'apps/trails/scripts/generate-og-images.ts',
+  // CLI dev script: its two 2-param functions are a JS `Proxy` `get` trap
+  // (signature fixed by the language) and an inline `AgentContext.registerFlaggedTool`
+  // implementation (signature fixed by that interface) — neither is an owned API.
+  'packages/mcp/scripts/dump-catalog.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
+// Cloudflare Workers/Workflows runtime entrypoint handlers — the runtime calls
+// these with fixed positional args, exactly like `fetch`/`queue`.
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'scheduled', 'run', 'resolveRequest']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'keyExtractor',

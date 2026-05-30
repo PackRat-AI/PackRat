@@ -149,33 +149,25 @@ function truncateForResponse<T>(data: T): { json: string; truncated: boolean } {
   return { json: pretty.slice(0, room) + TRUNCATION_MARKER, truncated: true };
 }
 
-export type OkOptions = {
-  /**
-   * Emit a `structuredContent` field alongside the text fallback. Only set
-   * this when the tool registered an `outputSchema` — the SDK validates
-   * `structuredContent` against the schema before sending, so emitting
-   * structured output without a schema is harmless but emitting a payload
-   * that doesn't match the declared schema throws at runtime.
-   */
-  structured?: boolean;
-};
-
 /**
  * Success envelope.
  *
  * Always emits `content[0].text` as the pretty-printed JSON of `data`
  * (so clients without structured-output support still see the payload).
- * When `opts.structured === true` and the payload fits under the size cap,
+ * When `structured === true` and the payload fits under the size cap,
  * additionally emits `structuredContent: data` for clients that can
- * consume it natively.
+ * consume it natively. Only set `structured` when the tool registered an
+ * `outputSchema` — the SDK validates `structuredContent` against the
+ * schema before sending, so emitting a payload that doesn't match the
+ * declared schema throws at runtime.
  */
-export function ok<T>(data: T, opts?: OkOptions): McpToolResult {
+export function ok<T>({ data, structured }: { data: T; structured?: boolean }): McpToolResult {
   const { json, truncated } = truncateForResponse(data);
   const content: McpToolResult['content'] = [{ type: 'text', text: json }];
   // Truncation invalidates the JSON shape, so structured consumers would
   // fail to parse it. Drop structuredContent on truncation and let the
   // text content carry the (truncated) signal.
-  if (opts?.structured && !truncated) {
+  if (structured && !truncated) {
     // safe-cast: the SDK types `structuredContent` as an object record; tools
     // that opt into structured output always return an object payload (their
     // declared `outputSchema` is an object schema), and there is no schema in
@@ -200,8 +192,15 @@ export function ok<T>(data: T, opts?: OkOptions): McpToolResult {
  * protocol-level violations the SDK should surface as JSON-RPC errors
  * (e.g. unknown method, malformed params).
  */
-// biome-ignore lint/complexity/useMaxParams: idiomatic error-helper signature (code, message, retryable); an options object would hurt readability at every formatError branch.
-export function errResponse(code: string, message: string, retryable = false): McpToolResult {
+export function errResponse({
+  code,
+  message,
+  retryable = false,
+}: {
+  code: string;
+  message: string;
+  retryable?: boolean;
+}): McpToolResult {
   return {
     isError: true,
     content: [{ type: 'text', text: message }],
@@ -271,14 +270,18 @@ export async function call<T>(
       const body = isObject(e) && 'value' in e ? e.value : e;
       return formatError({ status: result.status, body, opts: options });
     }
-    return ok(result.data, { structured: options.structured });
+    return ok({ data: result.data, structured: options.structured });
   } catch (e) {
     // Network errors / thrown exceptions inside Treaty land here. These
     // are recoverable — they could succeed on retry — so we don't let
     // them escape as protocol violations.
     const message = e instanceof Error ? e.message : String(e);
     const action = options.action ?? 'request';
-    return errResponse('network_error', `${action} failed: ${message}`, true);
+    return errResponse({
+      code: 'network_error',
+      message: `${action} failed: ${message}`,
+      retryable: true,
+    });
   }
 }
 
@@ -294,56 +297,66 @@ function formatError(args: { status: number; body: unknown; opts: CallOptions })
       // U5: the MCP admin tools are gated by the `mcp:admin` OAuth scope.
       // A 401 from the API on an admin route means the bearer wasn't
       // recognized at all (not a scope/role rejection — that's 403).
-      return errResponse(
-        'unauthorized',
-        `Admin authentication required to ${action}${resource}. Sign in with an admin PackRat ` +
+      return errResponse({
+        code: 'unauthorized',
+        message:
+          `Admin authentication required to ${action}${resource}. Sign in with an admin PackRat ` +
           `account and re-authorize this MCP client with the mcp:admin scope.${suffix}`,
-      );
+      });
     }
-    return errResponse(
-      'unauthorized',
-      `Authentication required to ${action}${resource}. Sign in via OAuth or refresh your ` +
+    return errResponse({
+      code: 'unauthorized',
+      message:
+        `Authentication required to ${action}${resource}. Sign in via OAuth or refresh your ` +
         `MCP session.${suffix}`,
-    );
+    });
   }
   if (status === 403) {
     if (opts.requiresAdmin) {
-      return errResponse(
-        'forbidden',
-        `Forbidden: this operation is admin-only (${action}${resource}). Your token does not ` +
+      return errResponse({
+        code: 'forbidden',
+        message:
+          `Forbidden: this operation is admin-only (${action}${resource}). Your token does not ` +
           `carry the admin role.${suffix}`,
-      );
+      });
     }
-    return errResponse(
-      'forbidden',
-      `Forbidden: you don't own this resource (${action}${resource}), or the API rejected ` +
+    return errResponse({
+      code: 'forbidden',
+      message:
+        `Forbidden: you don't own this resource (${action}${resource}), or the API rejected ` +
         `access. Soft-deleted or other-user resources are not visible.${suffix}`,
-    );
+    });
   }
   if (status === 404) {
-    return errResponse('not_found', `Not found: ${action}${resource} returned 404.${suffix}`);
+    return errResponse({
+      code: 'not_found',
+      message: `Not found: ${action}${resource} returned 404.${suffix}`,
+    });
   }
   if (status === 409) {
-    return errResponse('conflict', `Conflict on ${action}${resource}.${suffix}`);
+    return errResponse({ code: 'conflict', message: `Conflict on ${action}${resource}.${suffix}` });
   }
   if (status === 422) {
-    return errResponse('validation_error', `Validation failed on ${action}${resource}.${suffix}`);
+    return errResponse({
+      code: 'validation_error',
+      message: `Validation failed on ${action}${resource}.${suffix}`,
+    });
   }
   if (status === 429) {
-    return errResponse(
-      'rate_limited',
-      `Rate limited on ${action}${resource}. Try again shortly.${suffix}`,
-      true,
-    );
+    return errResponse({
+      code: 'rate_limited',
+      message: `Rate limited on ${action}${resource}. Try again shortly.${suffix}`,
+      retryable: true,
+    });
   }
   // 5xx and other non-success statuses are retryable: the request might
   // succeed on retry once the upstream stabilizes.
   const retryable = status >= 500 && status < 600;
-  return errResponse(
-    'api_error',
-    `${action}${resource} failed (HTTP ${status})${suffix}`,
+  return errResponse({
+    code: 'api_error',
+    message: `${action}${resource} failed (HTTP ${status})${suffix}`,
     retryable,
-  );
+  });
 }
 
 function extractErrorMessage(body: unknown): string | null {
@@ -388,9 +401,15 @@ export function nowIso(): string {
 export const PAGINATION_LIMIT_MAX = 50;
 
 /** Clamp a caller-supplied `limit` into `[1, PAGINATION_LIMIT_MAX]`. */
-export function clampLimit(limit: number | undefined, fallback = PAGINATION_LIMIT_MAX): number {
-  if (!isNumber(limit) || !Number.isFinite(limit) || limit <= 0) return fallback;
-  return Math.min(Math.floor(limit), PAGINATION_LIMIT_MAX);
+export function clampLimit({
+  value,
+  max = PAGINATION_LIMIT_MAX,
+}: {
+  value: number | undefined;
+  max?: number;
+}): number {
+  if (!isNumber(value) || !Number.isFinite(value) || value <= 0) return max;
+  return Math.min(Math.floor(value), PAGINATION_LIMIT_MAX);
 }
 
 /**

@@ -169,12 +169,15 @@ export interface ConfirmActionOptions {
  *     capability, no transport is live, or the SDK threw something we
  *     can't classify (treat as unsupported and let the tool degrade).
  */
-// biome-ignore lint/complexity/useMaxParams: the (agent, extra, opts) trio mirrors the MCP server.elicitInput signature; collapsing into an options object would make each call site read as `confirmAction({ agent, extra, ...opts })` which is louder, not quieter.
-export async function confirmAction(
-  agent: ElicitAgent,
-  extra: ElicitExtra,
-  opts: ConfirmActionOptions,
-): Promise<ConfirmResult> {
+export async function confirmAction({
+  agent,
+  extra,
+  opts,
+}: {
+  agent: ElicitAgent;
+  extra: ElicitExtra;
+  opts: ConfirmActionOptions;
+}): Promise<ConfirmResult> {
   if (!isFunction(agent.elicitInput)) {
     return { confirmed: false, reason: 'unsupported' };
   }
@@ -236,12 +239,15 @@ export interface ChooseFromListOptions {
  * Uses a JSON-Schema `enum` on the `choice` property so the client UI
  * can render a dropdown rather than a free-text field.
  */
-// biome-ignore lint/complexity/useMaxParams: matches the (agent, extra, opts) shape of confirmAction so both helpers read uniformly at call sites.
-export async function chooseFromList(
-  agent: ElicitAgent,
-  extra: ElicitExtra,
-  opts: ChooseFromListOptions,
-): Promise<ChooseResult> {
+export async function chooseFromList({
+  agent,
+  extra,
+  opts,
+}: {
+  agent: ElicitAgent;
+  extra: ElicitExtra;
+  opts: ChooseFromListOptions;
+}): Promise<ChooseResult> {
   if (!isFunction(agent.elicitInput)) {
     return { chosen: null, reason: 'unsupported' };
   }

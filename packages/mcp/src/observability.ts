@@ -180,7 +180,7 @@ export function scrubFields(fields: Record<string, unknown> | undefined): Record
     }
     const nestedAllow = NESTED_ALLOWLIST[key];
     if (nestedAllow && isPlainObject(value)) {
-      out[key] = scrubNested(value, nestedAllow);
+      out[key] = scrubNested({ obj: value, allow: nestedAllow });
       continue;
     }
     out[key] = value;
@@ -197,7 +197,13 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return proto === Object.prototype || proto === null;
 }
 
-function scrubNested(obj: Record<string, unknown>, allow: Set<string>): Record<string, unknown> {
+function scrubNested({
+  obj,
+  allow,
+}: {
+  obj: Record<string, unknown>;
+  allow: Set<string>;
+}): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (isFunction(value)) continue;
@@ -308,7 +314,7 @@ export function correlationIdFrom(request: Request): string {
  */
 const correlationIdByRequest = new WeakMap<Request, string>();
 
-export function attachCorrelationId(request: Request, id: string): void {
+export function attachCorrelationId({ request, id }: { request: Request; id: string }): void {
   correlationIdByRequest.set(request, id);
 }
 
@@ -351,8 +357,15 @@ export function getCorrelationId(request: Request): string | undefined {
  * tag-only convention) because some log-pipeline configurations strip
  * tags on transit but the message text always survives.
  */
-// biome-ignore lint/complexity/useMaxParams: the (logger, action, fields) trio matches the calling pattern in every admin tool's audit-call site. Folding into an options object would require `audit({ logger, action, fields })` at every site for no gain.
-export function audit(logger: Logger, action: string, fields: Record<string, unknown>): void {
+export function audit({
+  logger,
+  action,
+  fields,
+}: {
+  logger: Logger;
+  action: string;
+  fields: Record<string, unknown>;
+}): void {
   logger.info({ msg: `mcp.audit.${action}`, fields: { ...fields, action } });
 }
 

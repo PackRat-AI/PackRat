@@ -39,7 +39,13 @@ import type { Env } from './types';
  * that one slot. Acceptable: the bearer-flow path is the rare back-compat
  * surface; the modern OAuth flow always populates `userId`.
  */
-export function toolRateLimitKey(userId: string, toolName: string): string {
+export function toolRateLimitKey({
+  userId,
+  toolName,
+}: {
+  userId: string;
+  toolName: string;
+}): string {
   return `${userId}:${toolName}`;
 }
 
@@ -76,7 +82,7 @@ export function loginRateLimitKey(ipOrRay: string): string {
  * requests. The trade-off is intentional — a brief over-allow window is
  * preferable to a hard outage when the limiter itself is down.
  */
-export async function checkRateLimit(env: Env, key: string): Promise<boolean> {
+export async function checkRateLimit({ env, key }: { env: Env; key: string }): Promise<boolean> {
   const binding = env.MCP_TOOLS_RL;
   if (!binding) return true;
   try {

@@ -19,7 +19,7 @@ vi.mock('@packrat/api-client', () => ({
 
 describe('ok()', () => {
   it('wraps data as pretty-printed JSON in MCP text content', () => {
-    const result = ok({ id: 'pack-1', name: 'My Pack' });
+    const result = ok({ data: { id: 'pack-1', name: 'My Pack' } });
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
     expect(result.content[0].text).toContain('"id": "pack-1"');
@@ -27,12 +27,12 @@ describe('ok()', () => {
   });
 
   it('handles null data', () => {
-    const result = ok(null);
+    const result = ok({ data: null });
     expect(result.content[0].text).toBe('null');
   });
 
   it('handles array data', () => {
-    const result = ok([1, 2, 3]);
+    const result = ok({ data: [1, 2, 3] });
     expect(result.content[0].text).toContain('1');
   });
 });
@@ -383,7 +383,7 @@ describe('createMcpClients()', () => {
 describe('U8 ok() with structured: true', () => {
   it('emits both content (text JSON) and structuredContent on opt-in', () => {
     const data = { id: 'pack-1', name: 'My Pack' };
-    const result = ok(data, { structured: true });
+    const result = ok({ data, structured: true });
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
     expect(result.content[0].text).toContain('"id": "pack-1"');
@@ -391,12 +391,12 @@ describe('U8 ok() with structured: true', () => {
   });
 
   it('omits structuredContent when structured is not requested', () => {
-    const result = ok({ foo: 1 });
+    const result = ok({ data: { foo: 1 } });
     expect(result.structuredContent).toBeUndefined();
   });
 
   it('omits structuredContent when structured: false explicitly', () => {
-    const result = ok({ foo: 1 }, { structured: false });
+    const result = ok({ data: { foo: 1 }, structured: false });
     expect(result.structuredContent).toBeUndefined();
   });
 });
@@ -407,31 +407,31 @@ describe('U8 ok() truncation', () => {
   const buildLarge = () => Array.from({ length: 200_000 }, () => 'x');
 
   it('passes through a small payload unchanged', () => {
-    const result = ok({ small: true });
+    const result = ok({ data: { small: true } });
     expect(result.content[0].text).toContain('"small": true');
   });
 
   it('truncates payloads exceeding RESPONSE_SIZE_LIMIT_CHARS with a marker', () => {
-    const result = ok(buildLarge());
+    const result = ok({ data: buildLarge() });
     expect(result.content[0].text.length).toBeLessThanOrEqual(RESPONSE_SIZE_LIMIT_CHARS);
     expect(result.content[0].text).toContain('[truncated: response exceeded 150k chars]');
   });
 
   it('drops structuredContent on truncation (would be unparseable)', () => {
-    const result = ok(buildLarge(), { structured: true });
+    const result = ok({ data: buildLarge(), structured: true });
     expect(result.content[0].text).toContain('[truncated:');
     expect(result.structuredContent).toBeUndefined();
   });
 
   it('does NOT set isError on truncation (truncation is shape, not failure)', () => {
-    const result = ok(buildLarge(), { structured: true });
+    const result = ok({ data: buildLarge(), structured: true });
     expect(result.isError).toBeUndefined();
   });
 });
 
 describe('U8 errResponse()', () => {
   it('returns the canonical envelope with code, message, retryable defaulting to false', () => {
-    const result = errResponse('api_error', 'boom');
+    const result = errResponse({ code: 'api_error', message: 'boom' });
     expect(result.isError).toBe(true);
     expect(result.content[0].type).toBe('text');
     expect(result.content[0].text).toBe('boom');
@@ -441,14 +441,14 @@ describe('U8 errResponse()', () => {
   });
 
   it('propagates the retryable flag when set to true', () => {
-    const result = errResponse('rate_limited', 'too many', true);
+    const result = errResponse({ code: 'rate_limited', message: 'too many', retryable: true });
     expect(result.structuredContent).toEqual({
       error: { code: 'rate_limited', message: 'too many', retryable: true },
     });
   });
 
   it('emits the message verbatim in content[0].text (no Error: prefix)', () => {
-    const result = errResponse('forbidden', 'No access');
+    const result = errResponse({ code: 'forbidden', message: 'No access' });
     expect(result.content[0].text).toBe('No access');
   });
 });
@@ -560,32 +560,32 @@ describe('U8 call() maps errors to structured envelopes', () => {
 
 describe('U8 pagination helpers', () => {
   it('clampLimit returns the fallback when limit is undefined', () => {
-    expect(clampLimit(undefined)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: undefined })).toBe(PAGINATION_LIMIT_MAX);
   });
 
   it('clampLimit respects an alternate fallback', () => {
-    expect(clampLimit(undefined, 20)).toBe(20);
+    expect(clampLimit({ value: undefined, max: 20 })).toBe(20);
   });
 
   it('clampLimit clamps values above PAGINATION_LIMIT_MAX', () => {
-    expect(clampLimit(500)).toBe(PAGINATION_LIMIT_MAX);
-    expect(clampLimit(PAGINATION_LIMIT_MAX + 1)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: 500 })).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: PAGINATION_LIMIT_MAX + 1 })).toBe(PAGINATION_LIMIT_MAX);
   });
 
   it('clampLimit passes through valid in-range values', () => {
-    expect(clampLimit(10)).toBe(10);
-    expect(clampLimit(PAGINATION_LIMIT_MAX)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: 10 })).toBe(10);
+    expect(clampLimit({ value: PAGINATION_LIMIT_MAX })).toBe(PAGINATION_LIMIT_MAX);
   });
 
   it('clampLimit floors fractional limits', () => {
-    expect(clampLimit(10.7)).toBe(10);
+    expect(clampLimit({ value: 10.7 })).toBe(10);
   });
 
   it('clampLimit rejects non-positive / non-finite inputs', () => {
-    expect(clampLimit(0)).toBe(PAGINATION_LIMIT_MAX);
-    expect(clampLimit(-5)).toBe(PAGINATION_LIMIT_MAX);
-    expect(clampLimit(Number.NaN)).toBe(PAGINATION_LIMIT_MAX);
-    expect(clampLimit(Number.POSITIVE_INFINITY)).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: 0 })).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: -5 })).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: Number.NaN })).toBe(PAGINATION_LIMIT_MAX);
+    expect(clampLimit({ value: Number.POSITIVE_INFINITY })).toBe(PAGINATION_LIMIT_MAX);
   });
 
   it('withNextOffset advertises a next offset when page is full', () => {

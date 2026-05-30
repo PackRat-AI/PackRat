@@ -136,22 +136,27 @@ export interface VerifyOpts {
  * @returns `{ sub, scopes, token }` on success, `null` on ANY failure.
  *          Never throws — caller maps `null` to a 401 + WWW-Authenticate.
  */
-export async function verifyMcpToken(
-  token: string,
-  opts: VerifyOpts,
-): Promise<VerifiedToken | null> {
+export async function verifyMcpToken({
+  token,
+  env,
+  ctx: _ctx,
+}: {
+  token: string;
+  env: Env;
+  ctx: ExecutionContext;
+}): Promise<VerifiedToken | null> {
   // Fail fast on obviously-bad inputs so the caller doesn't pay the
   // JWKS-fetch cost. `jose.jwtVerify` would catch these too, but the
   // try/catch + retry below is wasted work for an empty string.
   if (!token || !isString(token)) return null;
 
-  const issuer = getIssuerUrl(opts.env);
-  const audience = canonicalResourceUrl(opts.env); // 'https://mcp.packratai.com/mcp'
+  const issuer = getIssuerUrl(env);
+  const audience = canonicalResourceUrl(env); // 'https://mcp.packratai.com/mcp'
   const jwks = getJwks(issuer);
   const verifyArgs = { jwks, issuer, audience };
 
   try {
-    return await verifyOnce(token, verifyArgs);
+    return await verifyOnce({ token, verifyArgs });
   } catch (err) {
     // Stale-while-revalidate retry. A signature failure is most often
     // caused by the JWKS cache missing a freshly-rotated `kid`. We force
@@ -161,10 +166,10 @@ export async function verifyMcpToken(
       try {
         // `jwks.reload()` returns a Promise; we await it because the
         // retry must use the freshly-fetched keys synchronously. The
-        // `opts.ctx` is available if a future tweak wants to fire a
+        // `ctx` is available if a future tweak wants to fire a
         // background refresh via `waitUntil` instead.
         await jwks.reload();
-        return await verifyOnce(token, verifyArgs);
+        return await verifyOnce({ token, verifyArgs });
       } catch {
         return null;
       }
@@ -187,10 +192,16 @@ interface VerifyOnceArgs {
   audience: string;
 }
 
-async function verifyOnce(token: string, args: VerifyOnceArgs): Promise<VerifiedToken> {
-  const { payload } = await jwtVerify(token, args.jwks, {
-    issuer: args.issuer,
-    audience: args.audience,
+async function verifyOnce({
+  token,
+  verifyArgs,
+}: {
+  token: string;
+  verifyArgs: VerifyOnceArgs;
+}): Promise<VerifiedToken> {
+  const { payload } = await jwtVerify(token, verifyArgs.jwks, {
+    issuer: verifyArgs.issuer,
+    audience: verifyArgs.audience,
     // Algorithm allowlist — defends against `alg: none` and HS256-with-
     // public-key confusion attacks. Better Auth's `jwt()` plugin signs
     // with ES256 by default; RS256 is supported as a future migration

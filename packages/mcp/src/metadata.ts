@@ -101,7 +101,13 @@ export function authorizationServerUrl(env: Env): string {
  * API worker, fetches `.well-known/oauth-authorization-server` from there,
  * and proceeds with the authorization-code flow against the API worker.
  */
-export function buildWwwAuthenticateHeader(_env: Env, scope: Scope = 'mcp'): string {
+export function buildWwwAuthenticateHeader({
+  env: _env,
+  scope = 'mcp',
+}: {
+  env: Env;
+  scope?: Scope;
+}): string {
   const metadataUrl = 'https://mcp.packratai.com/.well-known/oauth-protected-resource';
   return `Bearer resource_metadata="${metadataUrl}", scope="${scope}"`;
 }
@@ -112,15 +118,18 @@ export function buildWwwAuthenticateHeader(_env: Env, scope: Scope = 'mcp'): str
  * outer fetch wrapper in index.ts doesn't have to reach into raw header
  * shapes.
  */
-export function unauthorizedResponse(
-  env: Env,
+export function unauthorizedResponse({
+  env,
   message = 'Missing or invalid bearer token',
-): Response {
+}: {
+  env: Env;
+  message?: string;
+}): Response {
   return new Response(JSON.stringify({ error: 'invalid_token', error_description: message }), {
     status: 401,
     headers: {
       'Content-Type': 'application/json',
-      'WWW-Authenticate': buildWwwAuthenticateHeader(env),
+      'WWW-Authenticate': buildWwwAuthenticateHeader({ env }),
     },
   });
 }

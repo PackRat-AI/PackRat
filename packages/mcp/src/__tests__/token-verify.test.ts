@@ -150,7 +150,7 @@ async function makeJwt(opts: MakeJwtOpts = {}): Promise<string> {
 describe('verifyMcpToken — happy paths', () => {
   it('returns { sub, scopes, token } for a valid ES256 JWT with all claims', async () => {
     const token = await makeJwt({ sub: 'user-abc', scope: 'mcp:read mcp:write' });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).not.toBeNull();
     expect(result?.sub).toBe('user-abc');
     expect(result?.scopes).toEqual(['mcp:read', 'mcp:write']);
@@ -159,34 +159,34 @@ describe('verifyMcpToken — happy paths', () => {
 
   it('splits the scope claim on whitespace, tolerating multiple-space separators', async () => {
     const token = await makeJwt({ scope: 'mcp:read   mcp:write  mcp:admin' });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result?.scopes).toEqual(['mcp:read', 'mcp:write', 'mcp:admin']);
   });
 
   it('returns scopes: [] when the JWT has no scope claim', async () => {
     const token = await makeJwt({ scope: undefined });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).not.toBeNull();
     expect(result?.scopes).toEqual([]);
   });
 
   it('returns scopes: [] when the scope claim is an empty string', async () => {
     const token = await makeJwt({ scope: '' });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).not.toBeNull();
     expect(result?.scopes).toEqual([]);
   });
 
   it('accepts a JWT whose aud claim is an array including the MCP audience', async () => {
     const token = await makeJwt({ aud: [AUDIENCE, 'https://other.example/api'] });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).not.toBeNull();
     expect(result?.sub).toBe('user-123');
   });
 
   it('accepts a JWT whose aud claim is an array of one (the MCP audience)', async () => {
     const token = await makeJwt({ aud: [AUDIENCE] });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).not.toBeNull();
   });
 });
@@ -194,13 +194,13 @@ describe('verifyMcpToken — happy paths', () => {
 describe('verifyMcpToken — error paths', () => {
   it('returns null for a JWT with the wrong issuer', async () => {
     const token = await makeJwt({ iss: 'https://evil.example' });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 
   it('returns null for a JWT with the wrong audience', async () => {
     const token = await makeJwt({ aud: 'https://other-rs.example/api' });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 
@@ -208,31 +208,31 @@ describe('verifyMcpToken — error paths', () => {
     // exp 60s in the past — well past jose's default clock tolerance (0).
     const expSecs = Math.floor(Date.now() / 1000) - 60;
     const token = await makeJwt({ exp: expSecs });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 
   it('returns null for a not-yet-valid JWT (nbf in the future)', async () => {
     const nbfSecs = Math.floor(Date.now() / 1000) + 300;
     const token = await makeJwt({ nbf: nbfSecs });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 
   it('returns null for a malformed JWT (not three base64 segments)', async () => {
-    const result = await verifyMcpToken('not.a.jwt.shape.at.all', { env, ctx });
+    const result = await verifyMcpToken({ token: 'not.a.jwt.shape.at.all', env, ctx });
     expect(result).toBeNull();
   });
 
   it('returns null for a completely empty token string', async () => {
-    const result = await verifyMcpToken('', { env, ctx });
+    const result = await verifyMcpToken({ token: '', env, ctx });
     expect(result).toBeNull();
   });
 
   it('returns null for a null/undefined token (caller bug — defensive)', async () => {
-    const resultUndef = await verifyMcpToken(undefined as any, { env, ctx });
+    const resultUndef = await verifyMcpToken({ token: undefined as any, env, ctx });
     expect(resultUndef).toBeNull();
-    const resultNull = await verifyMcpToken(null as any, { env, ctx });
+    const resultNull = await verifyMcpToken({ token: null as any, env, ctx });
     expect(resultNull).toBeNull();
   });
 
@@ -249,7 +249,7 @@ describe('verifyMcpToken — error paths', () => {
       }),
     ).toString('base64url');
     const unsigned = `${header}.${payload}.`;
-    const result = await verifyMcpToken(unsigned, { env, ctx });
+    const result = await verifyMcpToken({ token: unsigned, env, ctx });
     expect(result).toBeNull();
   });
 
@@ -265,7 +265,7 @@ describe('verifyMcpToken — error paths', () => {
       }),
     );
     const token = await makeJwt();
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 
@@ -279,7 +279,7 @@ describe('verifyMcpToken — error paths', () => {
       .setAudience(AUDIENCE)
       .setExpirationTime('1h');
     const token = await jwt.sign(privateKey);
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 });
@@ -321,7 +321,7 @@ describe('verifyMcpToken — stale-while-revalidate', () => {
       });
     });
 
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).not.toBeNull();
     expect(result?.sub).toBe('user-123');
     // Exactly two fetches happened: the initial JWKS load + the forced
@@ -340,7 +340,7 @@ describe('verifyMcpToken — stale-while-revalidate', () => {
     });
 
     const token = await makeJwt({ signingKey: privateKey, signingKid: kid });
-    const result = await verifyMcpToken(token, { env, ctx });
+    const result = await verifyMcpToken({ token, env, ctx });
     expect(result).toBeNull();
   });
 });
@@ -350,8 +350,8 @@ describe('verifyMcpToken — JWKS caching behavior', () => {
     const t1 = await makeJwt({ sub: 'user-1' });
     const t2 = await makeJwt({ sub: 'user-2' });
 
-    const r1 = await verifyMcpToken(t1, { env, ctx });
-    const r2 = await verifyMcpToken(t2, { env, ctx });
+    const r1 = await verifyMcpToken({ token: t1, env, ctx });
+    const r2 = await verifyMcpToken({ token: t2, env, ctx });
 
     expect(r1?.sub).toBe('user-1');
     expect(r2?.sub).toBe('user-2');

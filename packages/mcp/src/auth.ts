@@ -135,7 +135,13 @@ async function probeApi(env: Env): Promise<boolean> {
  * Note: KV is no longer a dependency — the U3+U4 cutover removed all KV
  * usage from the worker, so only the API probe survives.
  */
-export async function handleHealth(request: Request, env: Env): Promise<Response> {
+export async function handleHealth({
+  request,
+  env,
+}: {
+  request: Request;
+  env: Env;
+}): Promise<Response> {
   const now = Date.now();
   if (healthCache && healthCache.expiresAt > now) {
     return Response.json(healthCache.body, { status: healthCache.status });
@@ -200,7 +206,7 @@ export async function handleHealth(request: Request, env: Env): Promise<Response
  * anything from `props`, any token, any runtime feature-flag value
  * beyond the canonical scope list.
  */
-export function handleStatus(_request: Request, env: Env): Response {
+export function handleStatus({ request: _request, env }: { request: Request; env: Env }): Response {
   return Response.json({
     service: ServiceMeta.Name,
     version: ServiceMeta.Version,

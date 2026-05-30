@@ -57,7 +57,9 @@ function makeMockBinding(perKeyBudget = 60): {
 
 describe('toolRateLimitKey', () => {
   it('produces the canonical userId-colon-toolName shape (per the K.T.D.)', () => {
-    expect(toolRateLimitKey('u_123', 'packrat_get_pack')).toBe('u_123:packrat_get_pack');
+    expect(toolRateLimitKey({ userId: 'u_123', toolName: 'packrat_get_pack' })).toBe(
+      'u_123:packrat_get_pack',
+    );
   });
 
   it('collapses to a per-tool slot when the userId is empty (defensive fallback)', () => {
@@ -66,7 +68,9 @@ describe('toolRateLimitKey', () => {
     // case stays covered as a defensive fallback so a future regression that
     // drops `sub` from Props degrades to a shared per-tool counter instead of
     // silently collapsing every user into a single global counter.
-    expect(toolRateLimitKey('', 'packrat_get_pack')).toBe(':packrat_get_pack');
+    expect(toolRateLimitKey({ userId: '', toolName: 'packrat_get_pack' })).toBe(
+      ':packrat_get_pack',
+    );
   });
 });
 
@@ -79,7 +83,7 @@ describe('toolRateLimitKey', () => {
 describe('checkRateLimit — dev fallback', () => {
   it("returns true when env.MCP_TOOLS_RL is undefined (so vitest + wrangler dev don't break)", async () => {
     const env = makeEnv();
-    expect(await checkRateLimit(env, 'u:packrat_get_pack')).toBe(true);
+    expect(await checkRateLimit({ env, key: 'u:packrat_get_pack' })).toBe(true);
   });
 });
 
@@ -89,7 +93,7 @@ describe('checkRateLimit — binding present', () => {
     const env = makeEnv({
       MCP_TOOLS_RL: binding as unknown as Env['MCP_TOOLS_RL'],
     });
-    expect(await checkRateLimit(env, 'u:packrat_get_pack')).toBe(true);
+    expect(await checkRateLimit({ env, key: 'u:packrat_get_pack' })).toBe(true);
     expect(binding.limit).toHaveBeenCalledWith({ key: 'u:packrat_get_pack' });
   });
 
@@ -99,7 +103,7 @@ describe('checkRateLimit — binding present', () => {
     const env = makeEnv({
       MCP_TOOLS_RL: binding as unknown as Env['MCP_TOOLS_RL'],
     });
-    expect(await checkRateLimit(env, 'u:packrat_get_pack')).toBe(false);
+    expect(await checkRateLimit({ env, key: 'u:packrat_get_pack' })).toBe(false);
   });
 
   it('fails open (returns true) when the binding throws — never black-holes legit requests', async () => {
@@ -110,7 +114,7 @@ describe('checkRateLimit — binding present', () => {
     // Documented trade-off in rate-limit.ts: a transient Cloudflare-side
     // rate-limit-API outage must not black-hole legitimate requests. U15
     // will add structured observability so we can alert on this volume.
-    expect(await checkRateLimit(env, 'u:packrat_get_pack')).toBe(true);
+    expect(await checkRateLimit({ env, key: 'u:packrat_get_pack' })).toBe(true);
   });
 });
 
@@ -142,10 +146,14 @@ interface RateLimitedCallArgs {
 
 async function rateLimitedCall(args: RateLimitedCallArgs): Promise<McpToolResult> {
   const { env, userId, toolName, handler } = args;
-  const key = toolRateLimitKey(userId, toolName);
-  const allowed = await checkRateLimit(env, key);
+  const key = toolRateLimitKey({ userId, toolName });
+  const allowed = await checkRateLimit({ env, key });
   if (!allowed) {
-    return errResponse('rate_limited', 'Rate limit exceeded; try again in a moment.', true);
+    return errResponse({
+      code: 'rate_limited',
+      message: 'Rate limit exceeded; try again in a moment.',
+      retryable: true,
+    });
   }
   return handler();
 }

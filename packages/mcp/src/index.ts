@@ -222,14 +222,14 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
   }): (...handlerArgs: unknown[]) => unknown {
     return async (...handlerArgs: unknown[]): Promise<unknown> => {
       const userId = this.currentUserId();
-      const key = toolRateLimitKey(userId, toolName);
-      const allowed = await checkRateLimit(this.env, key);
+      const key = toolRateLimitKey({ userId, toolName });
+      const allowed = await checkRateLimit({ env: this.env, key });
       if (!allowed) {
-        const rateLimited: McpToolResult = errResponse(
-          'rate_limited',
-          'Rate limit exceeded; try again in a moment.',
-          true,
-        );
+        const rateLimited: McpToolResult = errResponse({
+          code: 'rate_limited',
+          message: 'Rate limit exceeded; try again in a moment.',
+          retryable: true,
+        });
         return rateLimited;
       }
       return handler(...handlerArgs);
@@ -453,7 +453,7 @@ export default {
     // can trace a single request through Workers Logs + the upstream
     // Cloudflare zone log + Sentry by one value.
     const correlationId = correlationIdFrom(request);
-    attachCorrelationId(request, correlationId);
+    attachCorrelationId({ request, id: correlationId });
 
     const url = new URL(request.url);
 
@@ -473,10 +473,13 @@ export default {
       return withCorrelationHeader({ response: annotated, correlationId });
     }
     if (url.pathname === '/health' || url.pathname === '/') {
-      return withCorrelationHeader({ response: await handleHealth(request, env), correlationId });
+      return withCorrelationHeader({
+        response: await handleHealth({ request, env }),
+        correlationId,
+      });
     }
     if (url.pathname === '/status') {
-      return withCorrelationHeader({ response: handleStatus(request, env), correlationId });
+      return withCorrelationHeader({ response: handleStatus({ request, env }), correlationId });
     }
     if (url.pathname === '/favicon.ico') {
       return withCorrelationHeader({ response: faviconResponse(), correlationId });
@@ -486,12 +489,12 @@ export default {
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
       const bearer = extractBearer(request.headers.get('Authorization'));
       if (!bearer) {
-        return withCorrelationHeader({ response: unauthorizedResponse(env), correlationId });
+        return withCorrelationHeader({ response: unauthorizedResponse({ env }), correlationId });
       }
 
-      const verified = await verifyMcpToken(bearer, { env, ctx });
+      const verified = await verifyMcpToken({ token: bearer, env, ctx });
       if (!verified) {
-        return withCorrelationHeader({ response: unauthorizedResponse(env), correlationId });
+        return withCorrelationHeader({ response: unauthorizedResponse({ env }), correlationId });
       }
 
       // Inject the verified-claim Props into ctx.props for the DO handler.

@@ -214,7 +214,7 @@ describe('correlationIdFrom', () => {
 describe('attachCorrelationId / getCorrelationId WeakMap', () => {
   it('round-trips an attached id', () => {
     const req = new Request('https://x/');
-    attachCorrelationId(req, 'corr-1');
+    attachCorrelationId({ request: req, id: 'corr-1' });
     expect(getCorrelationId(req)).toBe('corr-1');
   });
 
@@ -235,10 +235,14 @@ describe('audit', () => {
 
   it('emits an `mcp.audit.<action>` line via the supplied logger', () => {
     const log = createLogger({ correlationId: 'c1' });
-    audit(log, 'admin_hard_delete_user', {
-      actor: { userId: 'u1', scopes: ['mcp:admin'] },
-      target: { type: 'user', id: 'u-42' },
-      outcome: 'success',
+    audit({
+      logger: log,
+      action: 'admin_hard_delete_user',
+      fields: {
+        actor: { userId: 'u1', scopes: ['mcp:admin'] },
+        target: { type: 'user', id: 'u-42' },
+        outcome: 'success',
+      },
     });
     expect(capture.lines).toHaveLength(1);
     const { json } = capture.lines[0];

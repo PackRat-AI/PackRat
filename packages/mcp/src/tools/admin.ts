@@ -53,25 +53,29 @@ import type { AgentContext } from '../types';
 function elicitFailureResponse(reason: ConfirmReason) {
   switch (reason) {
     case 'cancelled':
-      return errResponse('user_cancelled', 'Action cancelled — confirmation not provided', false);
+      return errResponse({
+        code: 'user_cancelled',
+        message: 'Action cancelled — confirmation not provided',
+        retryable: false,
+      });
     case 'mismatch':
-      return errResponse(
-        'confirmation_mismatch',
-        'Action cancelled — the confirmation text did not match',
-        false,
-      );
+      return errResponse({
+        code: 'confirmation_mismatch',
+        message: 'Action cancelled — the confirmation text did not match',
+        retryable: false,
+      });
     case 'timeout':
-      return errResponse(
-        'confirmation_timeout',
-        'Confirmation prompt timed out before the user responded',
-        true,
-      );
+      return errResponse({
+        code: 'confirmation_timeout',
+        message: 'Confirmation prompt timed out before the user responded',
+        retryable: true,
+      });
     case 'unsupported':
-      return errResponse(
-        'elicitation_unsupported',
-        'This tool requires user confirmation, which your MCP client does not support',
-        false,
-      );
+      return errResponse({
+        code: 'elicitation_unsupported',
+        message: 'This tool requires user confirmation, which your MCP client does not support',
+        retryable: false,
+      });
   }
 }
 
@@ -225,7 +229,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset }) =>
       call({
         promise: agent.api.admin.admin['users-list'].get({
-          query: { q, limit: clampLimit(limit), offset },
+          query: { q, limit: clampLimit({ value: limit }), offset },
         }),
         action: 'list users',
         ...ADMIN,
@@ -258,21 +262,29 @@ export function registerAdminTools(agent: AgentContext): void {
       // `/users-list` and the DELETE exist). Keeping the prompt to "type
       // the id you passed" avoids an extra failable read while still
       // forcing a deliberate confirmation step.
-      const confirm = await confirmAction(agent, extra, {
-        message:
-          `Confirm hard-delete of user ${user_id}. ` +
-          `Reason on record: "${reason}". ` +
-          `This is irreversible (GDPR-style). ` +
-          `Type the user id (${user_id}) to proceed:`,
-        expectedConfirmation: user_id,
-        fieldLabel: 'User ID',
+      const confirm = await confirmAction({
+        agent,
+        extra,
+        opts: {
+          message:
+            `Confirm hard-delete of user ${user_id}. ` +
+            `Reason on record: "${reason}". ` +
+            `This is irreversible (GDPR-style). ` +
+            `Type the user id (${user_id}) to proceed:`,
+          expectedConfirmation: user_id,
+          fieldLabel: 'User ID',
+        },
       });
       if (!confirm.confirmed) {
-        audit(logger, 'admin_hard_delete_user', {
-          actor,
-          target,
-          outcome: 'declined',
-          error: auditElicitDeclined(confirm.reason),
+        audit({
+          logger,
+          action: 'admin_hard_delete_user',
+          fields: {
+            actor,
+            target,
+            outcome: 'declined',
+            error: auditElicitDeclined(confirm.reason),
+          },
         });
         return elicitFailureResponse(confirm.reason);
       }
@@ -282,7 +294,11 @@ export function registerAdminTools(agent: AgentContext): void {
         resourceHint: `user ${user_id}`,
         ...ADMIN,
       });
-      audit(logger, 'admin_hard_delete_user', { actor, target, ...auditOutcome(result) });
+      audit({
+        logger,
+        action: 'admin_hard_delete_user',
+        fields: { actor, target, ...auditOutcome(result) },
+      });
       return result;
     },
   );
@@ -305,7 +321,12 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset, include_deleted }) =>
       call({
         promise: agent.api.admin.admin['packs-list'].get({
-          query: { q, limit: clampLimit(limit), offset, includeDeleted: include_deleted },
+          query: {
+            q,
+            limit: clampLimit({ value: limit }),
+            offset,
+            includeDeleted: include_deleted,
+          },
         }),
         action: 'list packs (admin)',
         ...ADMIN,
@@ -331,16 +352,24 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ pack_id }, extra) => {
       const { logger, actor } = auditCtxFor(agent);
       const target = { type: 'pack', id: pack_id };
-      const confirm = await confirmAction(agent, extra, {
-        message: `Confirm delete of pack ${pack_id}. Type DELETE to proceed:`,
-        expectedConfirmation: 'DELETE',
+      const confirm = await confirmAction({
+        agent,
+        extra,
+        opts: {
+          message: `Confirm delete of pack ${pack_id}. Type DELETE to proceed:`,
+          expectedConfirmation: 'DELETE',
+        },
       });
       if (!confirm.confirmed) {
-        audit(logger, 'admin_delete_pack', {
-          actor,
-          target,
-          outcome: 'declined',
-          error: auditElicitDeclined(confirm.reason),
+        audit({
+          logger,
+          action: 'admin_delete_pack',
+          fields: {
+            actor,
+            target,
+            outcome: 'declined',
+            error: auditElicitDeclined(confirm.reason),
+          },
         });
         return elicitFailureResponse(confirm.reason);
       }
@@ -350,7 +379,11 @@ export function registerAdminTools(agent: AgentContext): void {
         resourceHint: `pack ${pack_id}`,
         ...ADMIN,
       });
-      audit(logger, 'admin_delete_pack', { actor, target, ...auditOutcome(result) });
+      audit({
+        logger,
+        action: 'admin_delete_pack',
+        fields: { actor, target, ...auditOutcome(result) },
+      });
       return result;
     },
   );
@@ -372,7 +405,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset }) =>
       call({
         promise: agent.api.admin.admin['catalog-list'].get({
-          query: { q, limit: clampLimit(limit), offset },
+          query: { q, limit: clampLimit({ value: limit }), offset },
         }),
         action: 'list catalog (admin)',
         ...ADMIN,
@@ -438,16 +471,24 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ item_id }, extra) => {
       const { logger, actor } = auditCtxFor(agent);
       const target = { type: 'catalog_item', id: String(item_id) };
-      const confirm = await confirmAction(agent, extra, {
-        message: `Confirm delete of catalog item ${item_id}. Type DELETE to proceed:`,
-        expectedConfirmation: 'DELETE',
+      const confirm = await confirmAction({
+        agent,
+        extra,
+        opts: {
+          message: `Confirm delete of catalog item ${item_id}. Type DELETE to proceed:`,
+          expectedConfirmation: 'DELETE',
+        },
       });
       if (!confirm.confirmed) {
-        audit(logger, 'admin_delete_catalog_item', {
-          actor,
-          target,
-          outcome: 'declined',
-          error: auditElicitDeclined(confirm.reason),
+        audit({
+          logger,
+          action: 'admin_delete_catalog_item',
+          fields: {
+            actor,
+            target,
+            outcome: 'declined',
+            error: auditElicitDeclined(confirm.reason),
+          },
         });
         return elicitFailureResponse(confirm.reason);
       }
@@ -457,7 +498,11 @@ export function registerAdminTools(agent: AgentContext): void {
         resourceHint: `catalog item ${item_id}`,
         ...ADMIN,
       });
-      audit(logger, 'admin_delete_catalog_item', { actor, target, ...auditOutcome(result) });
+      audit({
+        logger,
+        action: 'admin_delete_catalog_item',
+        fields: { actor, target, ...auditOutcome(result) },
+      });
       return result;
     },
   );
@@ -482,7 +527,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, sport, limit, offset }) =>
       call({
         promise: agent.api.admin.admin.trails.search.get({
-          query: { q, sport, limit: clampLimit(limit), offset },
+          query: { q, sport, limit: clampLimit({ value: limit }), offset },
         }),
         action: 'admin search trails',
         ...ADMIN,
@@ -544,7 +589,12 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ q, limit, offset, include_deleted }) =>
       call({
         promise: agent.api.admin.admin.trails.conditions.get({
-          query: { q, limit: clampLimit(limit), offset, includeDeleted: include_deleted },
+          query: {
+            q,
+            limit: clampLimit({ value: limit }),
+            offset,
+            includeDeleted: include_deleted,
+          },
         }),
         action: 'list trail condition reports (admin)',
         ...ADMIN,
@@ -570,16 +620,24 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ report_id }, extra) => {
       const { logger, actor } = auditCtxFor(agent);
       const target = { type: 'trail_condition_report', id: report_id };
-      const confirm = await confirmAction(agent, extra, {
-        message: `Confirm delete of trail condition report ${report_id}. Type DELETE to proceed:`,
-        expectedConfirmation: 'DELETE',
+      const confirm = await confirmAction({
+        agent,
+        extra,
+        opts: {
+          message: `Confirm delete of trail condition report ${report_id}. Type DELETE to proceed:`,
+          expectedConfirmation: 'DELETE',
+        },
       });
       if (!confirm.confirmed) {
-        audit(logger, 'admin_delete_trail_condition_report', {
-          actor,
-          target,
-          outcome: 'declined',
-          error: auditElicitDeclined(confirm.reason),
+        audit({
+          logger,
+          action: 'admin_delete_trail_condition_report',
+          fields: {
+            actor,
+            target,
+            outcome: 'declined',
+            error: auditElicitDeclined(confirm.reason),
+          },
         });
         return elicitFailureResponse(confirm.reason);
       }
@@ -589,10 +647,14 @@ export function registerAdminTools(agent: AgentContext): void {
         resourceHint: `report ${report_id}`,
         ...ADMIN,
       });
-      audit(logger, 'admin_delete_trail_condition_report', {
-        actor,
-        target,
-        ...auditOutcome(result),
+      audit({
+        logger,
+        action: 'admin_delete_trail_condition_report',
+        fields: {
+          actor,
+          target,
+          ...auditOutcome(result),
+        },
       });
       return result;
     },
@@ -715,7 +777,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ limit }) =>
       call({
         promise: agent.api.admin.admin.analytics.catalog.brands.get({
-          query: { limit: clampLimit(limit) },
+          query: { limit: clampLimit({ value: limit }) },
         }),
         action: 'admin catalog brands',
         ...ADMIN,
@@ -767,7 +829,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ limit }) =>
       call({
         promise: agent.api.admin.admin.analytics.catalog.etl.get({
-          query: { limit: clampLimit(limit) },
+          query: { limit: clampLimit({ value: limit }) },
         }),
         action: 'admin ETL jobs',
         ...ADMIN,
@@ -787,7 +849,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ limit }) =>
       call({
         promise: agent.api.admin.admin.analytics.catalog.etl['failure-summary'].get({
-          query: { limit: clampLimit(limit) },
+          query: { limit: clampLimit({ value: limit }) },
         }),
         action: 'admin ETL failure summary',
         ...ADMIN,
@@ -810,7 +872,7 @@ export function registerAdminTools(agent: AgentContext): void {
     async ({ job_id, limit }) =>
       call({
         promise: agent.api.admin.admin.analytics.catalog.etl({ jobId: job_id }).failures.get({
-          query: { limit: clampLimit(limit) },
+          query: { limit: clampLimit({ value: limit }) },
         }),
         action: 'admin ETL job failures',
         resourceHint: `job ${job_id}`,

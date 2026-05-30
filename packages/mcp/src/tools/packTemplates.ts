@@ -36,25 +36,29 @@ import type { AgentContext } from '../types';
 function elicitFailureResponse(reason: ConfirmReason) {
   switch (reason) {
     case 'cancelled':
-      return errResponse('user_cancelled', 'Action cancelled — confirmation not provided', false);
+      return errResponse({
+        code: 'user_cancelled',
+        message: 'Action cancelled — confirmation not provided',
+        retryable: false,
+      });
     case 'mismatch':
-      return errResponse(
-        'confirmation_mismatch',
-        'Action cancelled — the confirmation text did not match',
-        false,
-      );
+      return errResponse({
+        code: 'confirmation_mismatch',
+        message: 'Action cancelled — the confirmation text did not match',
+        retryable: false,
+      });
     case 'timeout':
-      return errResponse(
-        'confirmation_timeout',
-        'Confirmation prompt timed out before the user responded',
-        true,
-      );
+      return errResponse({
+        code: 'confirmation_timeout',
+        message: 'Confirmation prompt timed out before the user responded',
+        retryable: true,
+      });
     case 'unsupported':
-      return errResponse(
-        'elicitation_unsupported',
-        'This tool requires user confirmation, which your MCP client does not support',
-        false,
-      );
+      return errResponse({
+        code: 'elicitation_unsupported',
+        message: 'This tool requires user confirmation, which your MCP client does not support',
+        retryable: false,
+      });
   }
 }
 
@@ -227,19 +231,27 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       // Target is the template name (no id yet — pre-create). The model can
       // re-derive the created id from the response if it cares.
       const target = { type: 'app_pack_template', id: name };
-      const confirm = await confirmAction(agent, extra, {
-        message:
-          `Confirm publish of app-wide pack template "${name}". ` +
-          `This is visible to every PackRat user and not easily unpublished. ` +
-          `Type PUBLISH to proceed:`,
-        expectedConfirmation: 'PUBLISH',
+      const confirm = await confirmAction({
+        agent,
+        extra,
+        opts: {
+          message:
+            `Confirm publish of app-wide pack template "${name}". ` +
+            `This is visible to every PackRat user and not easily unpublished. ` +
+            `Type PUBLISH to proceed:`,
+          expectedConfirmation: 'PUBLISH',
+        },
       });
       if (!confirm.confirmed) {
-        audit(logger, 'create_app_pack_template', {
-          actor,
-          target,
-          outcome: 'declined',
-          error: auditElicitDeclined(confirm.reason),
+        audit({
+          logger,
+          action: 'create_app_pack_template',
+          fields: {
+            actor,
+            target,
+            outcome: 'declined',
+            error: auditElicitDeclined(confirm.reason),
+          },
         });
         return elicitFailureResponse(confirm.reason);
       }
@@ -259,7 +271,11 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         action: 'create app pack template',
         requiresAdmin: true,
       });
-      audit(logger, 'create_app_pack_template', { actor, target, ...auditOutcome(result) });
+      audit({
+        logger,
+        action: 'create_app_pack_template',
+        fields: { actor, target, ...auditOutcome(result) },
+      });
       return result;
     },
   );
@@ -502,20 +518,28 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       // We deliberately do NOT log the LLM-fetched body or any derived
       // template fields.
       const target = { type: 'pack_template_source', id: content_url };
-      const confirm = await confirmAction(agent, extra, {
-        message:
-          `Confirm generate template from ${content_url}. ` +
-          `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
-          `The fetched content will be processed by an LLM and the resulting template will be created. ` +
-          `Type GENERATE to proceed:`,
-        expectedConfirmation: 'GENERATE',
+      const confirm = await confirmAction({
+        agent,
+        extra,
+        opts: {
+          message:
+            `Confirm generate template from ${content_url}. ` +
+            `${is_app_template ? '(App-wide template — visible to every user.) ' : ''}` +
+            `The fetched content will be processed by an LLM and the resulting template will be created. ` +
+            `Type GENERATE to proceed:`,
+          expectedConfirmation: 'GENERATE',
+        },
       });
       if (!confirm.confirmed) {
-        audit(logger, 'generate_pack_template_from_url', {
-          actor,
-          target,
-          outcome: 'declined',
-          error: auditElicitDeclined(confirm.reason),
+        audit({
+          logger,
+          action: 'generate_pack_template_from_url',
+          fields: {
+            actor,
+            target,
+            outcome: 'declined',
+            error: auditElicitDeclined(confirm.reason),
+          },
         });
         return elicitFailureResponse(confirm.reason);
       }
@@ -527,10 +551,14 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         action: 'generate pack template from URL',
         requiresAdmin: true,
       });
-      audit(logger, 'generate_pack_template_from_url', {
-        actor,
-        target,
-        ...auditOutcome(result),
+      audit({
+        logger,
+        action: 'generate_pack_template_from_url',
+        fields: {
+          actor,
+          target,
+          ...auditOutcome(result),
+        },
       });
       return result;
     },

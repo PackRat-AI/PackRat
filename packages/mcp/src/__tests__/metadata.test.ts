@@ -66,42 +66,42 @@ describe('buildResourceMetadata', () => {
 
 describe('buildWwwAuthenticateHeader', () => {
   it('includes resource_metadata pointing at the well-known endpoint', () => {
-    const header = buildWwwAuthenticateHeader(env);
+    const header = buildWwwAuthenticateHeader({ env });
     expect(header).toContain(
       'resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource"',
     );
   });
 
   it('defaults the scope hint to "mcp"', () => {
-    expect(buildWwwAuthenticateHeader(env)).toContain('scope="mcp"');
+    expect(buildWwwAuthenticateHeader({ env })).toContain('scope="mcp"');
   });
 
   it('passes through a specific requested scope when provided', () => {
-    expect(buildWwwAuthenticateHeader(env, 'mcp:admin')).toContain('scope="mcp:admin"');
+    expect(buildWwwAuthenticateHeader({ env, scope: 'mcp:admin' })).toContain('scope="mcp:admin"');
   });
 
   it('uses the Bearer auth scheme', () => {
-    expect(buildWwwAuthenticateHeader(env).startsWith('Bearer ')).toBe(true);
+    expect(buildWwwAuthenticateHeader({ env }).startsWith('Bearer ')).toBe(true);
   });
 });
 
 describe('unauthorizedResponse', () => {
   it('returns 401 with WWW-Authenticate set', () => {
-    const res = unauthorizedResponse(env);
+    const res = unauthorizedResponse({ env });
     expect(res.status).toBe(401);
     expect(res.headers.get('WWW-Authenticate')).toContain('resource_metadata=');
     expect(res.headers.get('Content-Type')).toBe('application/json');
   });
 
   it('encodes a JSON error body with invalid_token code', async () => {
-    const res = unauthorizedResponse(env);
+    const res = unauthorizedResponse({ env });
     const body = (await res.json()) as { error: string; error_description: string };
     expect(body.error).toBe('invalid_token');
     expect(body.error_description).toBe('Missing or invalid bearer token');
   });
 
   it('passes through a custom error message', async () => {
-    const res = unauthorizedResponse(env, 'Token audience mismatch');
+    const res = unauthorizedResponse({ env, message: 'Token audience mismatch' });
     const body = (await res.json()) as { error_description: string };
     expect(body.error_description).toBe('Token audience mismatch');
   });

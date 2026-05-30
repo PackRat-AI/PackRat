@@ -43,14 +43,17 @@ export function registerTripTools(agent: AgentContext): void {
       },
     },
     async ({ limit, offset }) => {
-      const clamped = clampLimit(limit);
+      const clamped = clampLimit({ value: limit });
       const result = await agent.api.user.trips.get();
       if (result.error || result.data == null) {
         return call({ promise: Promise.resolve(result), action: 'list trips' });
       }
       const items = Array.isArray(result.data) ? result.data : [];
       const page = items.slice(offset, offset + clamped);
-      return ok(withNextOffset({ items: page, offset, limit: clamped }), { structured: true });
+      return ok({
+        data: withNextOffset({ items: page, offset, limit: clamped }),
+        structured: true,
+      });
     },
   );
 

@@ -44,7 +44,7 @@ export function registerPackTools(agent: AgentContext): void {
       },
     },
     async ({ include_public, limit, offset }) => {
-      const clamped = clampLimit(limit);
+      const clamped = clampLimit({ value: limit });
       const result = await agent.api.user.packs.get({
         query: { includePublic: include_public ? 1 : 0 },
       });
@@ -57,7 +57,10 @@ export function registerPackTools(agent: AgentContext): void {
       // slice here using the clamped limit + offset. This keeps the
       // structured envelope honest about page size and `nextOffset`.
       const page = items.slice(offset, offset + clamped);
-      return ok(withNextOffset({ items: page, offset, limit: clamped }), { structured: true });
+      return ok({
+        data: withNextOffset({ items: page, offset, limit: clamped }),
+        structured: true,
+      });
     },
   );
 

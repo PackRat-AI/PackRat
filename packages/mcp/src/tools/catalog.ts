@@ -48,7 +48,7 @@ export function registerCatalogTools(agent: AgentContext): void {
           query: {
             q: query,
             category,
-            limit: clampLimit(limit),
+            limit: clampLimit({ value: limit }),
             page,
             sort: sort_by ? { field: sort_by, order: sort_order } : undefined,
           },

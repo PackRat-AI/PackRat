@@ -54,7 +54,10 @@ describe('handleHealth', () => {
 
   it('returns 200 + status=ok when the API probe succeeds', async () => {
     fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
-    const res = await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
     expect(res.status).toBe(200);
     const body = (await res.json()) as HealthProbeBody;
     expect(body.status).toBe('ok');
@@ -69,7 +72,10 @@ describe('handleHealth', () => {
 
   it('returns 503 + status=degraded when the API probe returns 500', async () => {
     fetchSpy.mockResolvedValue(new Response(null, { status: 500 }));
-    const res = await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
     expect(res.status).toBe(503);
     const body = (await res.json()) as HealthProbeBody;
     expect(body.status).toBe('degraded');
@@ -78,7 +84,10 @@ describe('handleHealth', () => {
 
   it('returns 503 + status=degraded when the API probe throws', async () => {
     fetchSpy.mockRejectedValue(new Error('network unreachable'));
-    const res = await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
     expect(res.status).toBe(503);
     const body = (await res.json()) as HealthProbeBody;
     expect(body.probes.api).toBe('down');
@@ -86,16 +95,28 @@ describe('handleHealth', () => {
 
   it('caches the result for 10s within a single isolate', async () => {
     fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
-    await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
-    await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
-    await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
+    await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
     // 3 calls, 1 upstream probe — cache hits on the next two.
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   it('surfaces the brand-aligned legal/support URLs on the body', async () => {
     fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
-    const res = await handleHealth(new Request('https://mcp.packratai.com/health'), makeEnv());
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
     const body = (await res.json()) as HealthProbeBody;
     expect(body.docs).toBe('https://packratai.com/mcp');
     expect(body.terms).toBe('https://packratai.com/terms-of-service');
@@ -108,7 +129,10 @@ describe('handleHealth', () => {
 
 describe('handleStatus', () => {
   it('returns the public-safe metadata block (no probes, no upstream calls)', async () => {
-    const res = handleStatus(new Request('https://mcp.packratai.com/status'), makeEnv());
+    const res = handleStatus({
+      request: new Request('https://mcp.packratai.com/status'),
+      env: makeEnv(),
+    });
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       service: string;
@@ -130,19 +154,19 @@ describe('handleStatus', () => {
   });
 
   it('surfaces MCP_COMMIT_SHA verbatim when bound', async () => {
-    const res = handleStatus(
-      new Request('https://mcp.packratai.com/status'),
-      makeEnv({ MCP_COMMIT_SHA: 'abc1234' }),
-    );
+    const res = handleStatus({
+      request: new Request('https://mcp.packratai.com/status'),
+      env: makeEnv({ MCP_COMMIT_SHA: 'abc1234' }),
+    });
     const body = (await res.json()) as { commitSha: string };
     expect(body.commitSha).toBe('abc1234');
   });
 
   it('never includes any internal/binding identifiers', async () => {
-    const res = handleStatus(
-      new Request('https://mcp.packratai.com/status'),
-      makeEnv({ MCP_COMMIT_SHA: 'abc1234' }),
-    );
+    const res = handleStatus({
+      request: new Request('https://mcp.packratai.com/status'),
+      env: makeEnv({ MCP_COMMIT_SHA: 'abc1234' }),
+    });
     const text = await res.clone().text();
     expect(text).not.toContain('api.test'); // PACKRAT_API_URL must not leak
     expect(text).not.toContain('PACKRAT_API_URL');

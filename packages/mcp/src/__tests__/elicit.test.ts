@@ -68,9 +68,13 @@ describe('confirmAction', () => {
       action: 'accept',
       content: { confirmation: 'DELETE' },
     });
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE to proceed',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE to proceed',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: true });
   });
@@ -80,36 +84,52 @@ describe('confirmAction', () => {
       action: 'accept',
       content: { confirmation: 'delete' }, // wrong case
     });
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE to proceed',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE to proceed',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'mismatch' });
   });
 
   it("returns reason 'mismatch' when the confirmation field is missing", async () => {
     const { agent } = agentResolving({ action: 'accept' });
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'mismatch' });
   });
 
   it("returns reason 'cancelled' on user cancel", async () => {
     const { agent } = agentResolving({ action: 'cancel' });
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'cancelled' });
   });
 
   it("returns reason 'cancelled' on user decline (treated same as cancel)", async () => {
     const { agent } = agentResolving({ action: 'decline' });
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'cancelled' });
   });
@@ -121,9 +141,13 @@ describe('confirmAction', () => {
     const { agent } = agentRejecting(
       new Error('Client does not support elicitation (required for elicitation/create)'),
     );
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'unsupported' });
   });
@@ -133,27 +157,39 @@ describe('confirmAction', () => {
     // the elicitation can be delivered. Functionally equivalent to
     // unsupported from the tool's perspective.
     const { agent } = agentRejecting(new Error('No active connections available for elicitation'));
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'unsupported' });
   });
 
   it("returns reason 'timeout' on the SDK's 60s elicitation timeout", async () => {
     const { agent } = agentRejecting(new Error('Elicitation request timed out'));
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'timeout' });
   });
 
   it("falls back to 'unsupported' for unclassified thrown errors", async () => {
     const { agent } = agentRejecting(new Error('random transport blowup'));
-    const result = await confirmAction(agent, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'unsupported' });
   });
@@ -162,9 +198,13 @@ describe('confirmAction', () => {
     // Mirrors the `AgentContext.elicitInput?` absence path — unit tests
     // build a stub agent without the method; the helper short-circuits
     // before touching the SDK.
-    const result = await confirmAction({} as { elicitInput?: undefined }, makeExtra(), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    const result = await confirmAction({
+      agent: {} as { elicitInput?: undefined },
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(result).toEqual({ confirmed: false, reason: 'unsupported' });
   });
@@ -174,9 +214,13 @@ describe('confirmAction', () => {
       action: 'accept',
       content: { confirmation: 'DELETE' },
     });
-    await confirmAction(agent, makeExtra('req-abc-123'), {
-      message: 'Type DELETE',
-      expectedConfirmation: 'DELETE',
+    await confirmAction({
+      agent,
+      extra: makeExtra('req-abc-123'),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
     });
     expect(spy).toHaveBeenCalledTimes(1);
     const [params, options] = spy.mock.calls[0];
@@ -193,9 +237,13 @@ describe('confirmAction', () => {
       action: 'accept',
       content: { confirmation: 'X' },
     });
-    await confirmAction(agent, makeExtra(42), {
-      message: 'Type X',
-      expectedConfirmation: 'X',
+    await confirmAction({
+      agent,
+      extra: makeExtra(42),
+      opts: {
+        message: 'Type X',
+        expectedConfirmation: 'X',
+      },
     });
     expect(spy.mock.calls[0][1]).toEqual({ relatedRequestId: 42 });
   });
@@ -205,10 +253,14 @@ describe('confirmAction', () => {
       action: 'accept',
       content: { confirmation: 'admin-user-1' },
     });
-    await confirmAction(agent, makeExtra(), {
-      message: 'Confirm delete',
-      expectedConfirmation: 'admin-user-1',
-      fieldLabel: 'User ID',
+    await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Confirm delete',
+        expectedConfirmation: 'admin-user-1',
+        fieldLabel: 'User ID',
+      },
     });
     const [params] = spy.mock.calls[0];
     const properties = (
@@ -226,27 +278,39 @@ describe('chooseFromList', () => {
       action: 'accept',
       content: { choice: 'Yosemite Falls' },
     });
-    const result = await chooseFromList(agent, makeExtra(), {
-      message: 'Which trail?',
-      choices: ['Yosemite Falls', 'Half Dome', 'Mist Trail'],
+    const result = await chooseFromList({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Which trail?',
+        choices: ['Yosemite Falls', 'Half Dome', 'Mist Trail'],
+      },
     });
     expect(result).toEqual({ chosen: 'Yosemite Falls' });
   });
 
   it('returns { chosen: null } on cancel', async () => {
     const { agent } = agentResolving({ action: 'cancel' });
-    const result = await chooseFromList(agent, makeExtra(), {
-      message: 'Which trail?',
-      choices: ['A', 'B'],
+    const result = await chooseFromList({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Which trail?',
+        choices: ['A', 'B'],
+      },
     });
     expect(result).toEqual({ chosen: null, reason: 'cancelled' });
   });
 
   it('returns { chosen: null } on decline', async () => {
     const { agent } = agentResolving({ action: 'decline' });
-    const result = await chooseFromList(agent, makeExtra(), {
-      message: 'Pick one',
-      choices: ['A'],
+    const result = await chooseFromList({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Pick one',
+        choices: ['A'],
+      },
     });
     expect(result).toEqual({ chosen: null, reason: 'cancelled' });
   });
@@ -258,9 +322,13 @@ describe('chooseFromList', () => {
       action: 'accept',
       content: { choice: 'Mount Everest' },
     });
-    const result = await chooseFromList(agent, makeExtra(), {
-      message: 'Pick one',
-      choices: ['A', 'B'],
+    const result = await chooseFromList({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Pick one',
+        choices: ['A', 'B'],
+      },
     });
     expect(result).toEqual({ chosen: null, reason: 'mismatch' });
   });
@@ -269,9 +337,13 @@ describe('chooseFromList', () => {
     const { agent } = agentRejecting(
       new Error('Client does not support elicitation (required for elicitation/create)'),
     );
-    const result = await chooseFromList(agent, makeExtra(), {
-      message: 'Pick one',
-      choices: ['A'],
+    const result = await chooseFromList({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Pick one',
+        choices: ['A'],
+      },
     });
     expect(result).toEqual({ chosen: null, reason: 'unsupported' });
   });
@@ -281,9 +353,13 @@ describe('chooseFromList', () => {
       action: 'accept',
       content: { choice: 'A' },
     });
-    await chooseFromList(agent, makeExtra('req-xyz'), {
-      message: 'Pick',
-      choices: ['A', 'B', 'C'],
+    await chooseFromList({
+      agent,
+      extra: makeExtra('req-xyz'),
+      opts: {
+        message: 'Pick',
+        choices: ['A', 'B', 'C'],
+      },
     });
     const [params, options] = spy.mock.calls[0];
     expect(options).toEqual({ relatedRequestId: 'req-xyz' });
@@ -293,9 +369,13 @@ describe('chooseFromList', () => {
   });
 
   it("returns reason 'unsupported' immediately when agent.elicitInput is undefined", async () => {
-    const result = await chooseFromList({} as { elicitInput?: undefined }, makeExtra(), {
-      message: 'Pick',
-      choices: ['A'],
+    const result = await chooseFromList({
+      agent: {} as { elicitInput?: undefined },
+      extra: makeExtra(),
+      opts: {
+        message: 'Pick',
+        choices: ['A'],
+      },
     });
     expect(result).toEqual({ chosen: null, reason: 'unsupported' });
   });
