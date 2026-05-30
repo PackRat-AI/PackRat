@@ -82,6 +82,10 @@
     "packages/api/src/index.ts",
     "packages/api/src/auth/consent-page.tsx",
     "packages/api/src/auth/consent-route.tsx",
+    // This test imports the @kitajs/html consent files above, which would pull
+    // their global JSX back into this program. It's exercised by vitest, not the
+    // root tsc.
+    "packages/api/src/auth/__tests__/consent-page.test.ts",
     "packages/mcp",
     "packages/osm-db",
     "packages/osm-import",
