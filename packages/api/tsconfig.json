@@ -18,12 +18,14 @@
     "jsx": "react",
     "jsxFactory": "Html.createElement",
     "jsxFragmentFactory": "Html.Fragment",
-    // Load the Cloudflare Workers global types explicitly. In the root program
-    // these come from `src/global.d.ts`'s triple-slash reference, but that does
-    // not resolve when this package is type-checked standalone — so the bindings
-    // (R2Bucket, Queue, Ai, AutoRAG, KVNamespace, ...) go missing. Mirrors how
-    // packages/mcp loads them.
-    "types": ["@cloudflare/workers-types"],
+    // Load the Cloudflare Workers global types explicitly via a DATED subpath.
+    // In the root program these come from `src/global.d.ts`'s triple-slash
+    // reference, but standalone the bindings (R2Bucket, Queue, Ai, AutoRAG,
+    // KVNamespace, ...) go missing. The bare package name doesn't resolve in a
+    // `types` array (its package.json has no `types` field); the dated/`latest`
+    // entrypoints are the ambient-global declaration files. `latest` carries the
+    // newest bindings (Ai, AutoRAG, AutoRagSearchResponse) this package uses.
+    "types": ["@cloudflare/workers-types/latest"],
     "plugins": [{ "name": "@kitajs/ts-html-plugin" }]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
