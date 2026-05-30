@@ -269,7 +269,7 @@ function isTty(): boolean {
   return Boolean(process.stdout.isTTY);
 }
 
-function colorize(text: string, color: keyof typeof ANSI): string {
+function colorize({ text, color }: { text: string; color: keyof typeof ANSI }): string {
   return isTty() ? `${ANSI[color]}${text}${ANSI.reset}` : text;
 }
 
@@ -342,7 +342,13 @@ export async function probe(opts: ProbeOptions): Promise<ProbeResponse> {
  * worker root MUST return 200 over HTTPS, with no insecure redirect, and
  * the URL host must match the targeted hostname.
  */
-export function checkTlsReachability(targetUrl: string, res: ProbeResponse): CheckResult {
+export function checkTlsReachability({
+  targetUrl,
+  res,
+}: {
+  targetUrl: string;
+  res: ProbeResponse;
+}): CheckResult {
   const name = 'tls_reachability';
   const label = '1. TLS + custom domain reachability (RS)';
   if (!targetUrl.startsWith('https://')) {
@@ -638,7 +644,13 @@ export function checkClaudeClientRegistration(): CheckResult {
  * fail intake silently. Post-refactor the favicon still lives on the RS
  * (the MCP worker serves it from `packages/mcp/src/favicon.ts`).
  */
-export function checkFaviconAtOauthDomain(res: ProbeResponse, body: Uint8Array): CheckResult {
+export function checkFaviconAtOauthDomain({
+  res,
+  body,
+}: {
+  res: ProbeResponse;
+  body: Uint8Array;
+}): CheckResult {
   const name = 'favicon_oauth_domain';
   const label = '6. RS /favicon.ico has the right shape (domain-ownership probe target)';
   if (res.error) {
@@ -681,7 +693,13 @@ export function checkFaviconAtOauthDomain(res: ProbeResponse, body: Uint8Array):
  * the full DOM; we smoke-check that the page contains the three strings a
  * reviewer would expect on the MCP page: "PackRat", "Claude.ai", "scope".
  */
-export function checkPublicDocsPage(res: ProbeResponse, requiredTerms: string[]): CheckResult {
+export function checkPublicDocsPage({
+  res,
+  requiredTerms,
+}: {
+  res: ProbeResponse;
+  requiredTerms: string[];
+}): CheckResult {
   const name = 'public_docs_page';
   const label = '7. Public docs URL (packratai.com/mcp) renders';
   if (res.error) {
@@ -713,10 +731,13 @@ export function checkPublicDocsPage(res: ProbeResponse, requiredTerms: string[])
  * MCP-specific copy (not just generic legal boilerplate). A missing
  * MCP-specific section is an Anthropic immediate-reject cause.
  */
-export function checkPrivacyAndTerms(
-  privacyRes: ProbeResponse,
-  termsRes: ProbeResponse,
-): CheckResult {
+export function checkPrivacyAndTerms({
+  privacyRes,
+  termsRes,
+}: {
+  privacyRes: ProbeResponse;
+  termsRes: ProbeResponse;
+}): CheckResult {
   const name = 'privacy_and_terms';
   const label = '8. /privacy-policy and /terms-of-service include MCP-specific copy';
   for (const [pageName, res] of [
@@ -894,7 +915,13 @@ export interface Catalog {
   totalTools?: number;
 }
 
-export function checkToolAnnotations(catalog: Catalog | null, source: string): CheckResult {
+export function checkToolAnnotations({
+  catalog,
+  source,
+}: {
+  catalog: Catalog | null;
+  source: string;
+}): CheckResult {
   const name = 'tool_annotations';
   const label = '11. Every tool has title + readOnlyHint + destructiveHint (when applicable)';
   if (!catalog) {
@@ -1084,20 +1111,22 @@ export async function runReadinessChecks(opts: RunOptions = {}): Promise<Readine
   }
 
   const checks: CheckResult[] = [];
-  checks.push(checkTlsReachability(rsUrl, rootRes));
+  checks.push(checkTlsReachability({ targetUrl: rsUrl, res: rootRes }));
   checks.push(checkStreamableHttpAuth(mcpRes));
   checks.push(checkProtectedResourceMetadata({ rsUrl, asUrl, res: protectedResourceRes }));
   checks.push(checkAuthorizationServerMetadata(asMetaRes));
   checks.push(checkClaudeClientRegistration());
-  checks.push(checkFaviconAtOauthDomain(faviconRes, faviconBody));
-  checks.push(checkPublicDocsPage(docsRes, ['PackRat', 'Claude.ai', 'scope']));
-  checks.push(checkPrivacyAndTerms(privacyRes, termsRes));
+  checks.push(checkFaviconAtOauthDomain({ res: faviconRes, body: faviconBody }));
+  checks.push(
+    checkPublicDocsPage({ res: docsRes, requiredTerms: ['PackRat', 'Claude.ai', 'scope'] }),
+  );
+  checks.push(checkPrivacyAndTerms({ privacyRes, termsRes }));
 
   const healthCheck = checkHealthStatus(healthRes);
   checks.push(checkSupportContact(healthCheck.body));
   checks.push(healthCheck.result);
   checks.push(checkStatusEndpoint(statusRes));
-  checks.push(checkToolAnnotations(catalog, catalogSource));
+  checks.push(checkToolAnnotations({ catalog, source: catalogSource }));
   checks.push(checkToolDescriptionsNonPromotional(catalog));
 
   const summary = summarize(checks);
@@ -1121,22 +1150,27 @@ export function summarize(checks: CheckResult[]): ReadinessSummary {
 export function formatReport(report: ReadinessReport): string {
   const lines: string[] = [];
   lines.push(
-    colorize(`PackRat MCP submission readiness — RS: ${report.rsUrl}, AS: ${report.asUrl}`, 'bold'),
+    colorize({
+      text: `PackRat MCP submission readiness — RS: ${report.rsUrl}, AS: ${report.asUrl}`,
+      color: 'bold',
+    }),
   );
-  lines.push(colorize(`Brand domain: ${report.brandDomain}`, 'dim'));
+  lines.push(colorize({ text: `Brand domain: ${report.brandDomain}`, color: 'dim' }));
   lines.push('');
   for (const check of report.checks) {
-    const glyph = colorize(STATUS_GLYPH[check.status], STATUS_COLOR[check.status]);
+    const glyph = colorize({ text: STATUS_GLYPH[check.status], color: STATUS_COLOR[check.status] });
     lines.push(`  ${glyph}  ${check.label}`);
-    lines.push(colorize(`      ${check.details}`, 'dim'));
+    lines.push(colorize({ text: `      ${check.details}`, color: 'dim' }));
   }
   lines.push('');
   const summary = `${report.summary.passed}/${report.summary.total} passed`;
   const summaryColor: keyof typeof ANSI =
     report.summary.failed === 0 ? (report.summary.warned === 0 ? 'green' : 'yellow') : 'red';
-  lines.push(colorize(summary, summaryColor));
+  lines.push(colorize({ text: summary, color: summaryColor }));
   if (report.summary.warned > 0) {
-    lines.push(colorize(`(${report.summary.warned} warned — see notes above)`, 'yellow'));
+    lines.push(
+      colorize({ text: `(${report.summary.warned} warned — see notes above)`, color: 'yellow' }),
+    );
   }
   return lines.join('\n');
 }

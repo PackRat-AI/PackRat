@@ -47,7 +47,7 @@ describe('sweepInvalidItemLogs', () => {
 
   it('returns deleted=0 / iterations=1 when the first batch is empty', async () => {
     setBatches([[]]);
-    const result = await sweepInvalidItemLogs({} as Env);
+    const result = await sweepInvalidItemLogs({ env: {} as Env });
     expect(result.deleted).toBe(0);
     expect(result.iterations).toBe(1);
     expect(result.capped).toBe(false);
@@ -58,7 +58,7 @@ describe('sweepInvalidItemLogs', () => {
     const fullBatch: FakeRow[] = Array.from({ length: 10_000 }, () => ({ id: 1 }));
     setBatches([fullBatch, fullBatch, [{ id: 1 }], []]);
 
-    const result = await sweepInvalidItemLogs({} as Env);
+    const result = await sweepInvalidItemLogs({ env: {} as Env });
 
     expect(result.deleted).toBe(20_001);
     expect(result.iterations).toBe(4);
@@ -69,7 +69,7 @@ describe('sweepInvalidItemLogs', () => {
     const fullBatch: FakeRow[] = Array.from({ length: 100 }, () => ({ id: 1 }));
     setBatches([fullBatch, fullBatch, fullBatch, fullBatch, fullBatch]);
 
-    const result = await sweepInvalidItemLogs({} as Env, { maxIterations: 3 });
+    const result = await sweepInvalidItemLogs({ env: {} as Env, options: { maxIterations: 3 } });
 
     expect(result.iterations).toBe(3);
     expect(result.capped).toBe(true);
@@ -78,13 +78,13 @@ describe('sweepInvalidItemLogs', () => {
 
   it('honors a custom retentionDays option', async () => {
     setBatches([[]]);
-    const result = await sweepInvalidItemLogs({} as Env, { retentionDays: 30 });
+    const result = await sweepInvalidItemLogs({ env: {} as Env, options: { retentionDays: 30 } });
     expect(result.retentionDays).toBe(30);
   });
 
   it('falls back to the default retentionDays when the option is zero or negative', async () => {
     setBatches([[]]);
-    const result = await sweepInvalidItemLogs({} as Env, { retentionDays: 0 });
+    const result = await sweepInvalidItemLogs({ env: {} as Env, options: { retentionDays: 0 } });
     expect(result.retentionDays).toBe(90);
   });
 });
