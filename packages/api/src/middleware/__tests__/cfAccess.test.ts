@@ -10,15 +10,12 @@
  * trusted keypair, exports the public JWK, and stores a createLocalJWKSet
  * keyset in that global. Tests then call verifyCFAccessRequest directly.
  */
-import {
-  createLocalJWKSet,
-  exportJWK,
-  generateKeyPair,
-  type JWTPayload,
-  type KeyLike,
-  SignJWT,
-} from 'jose';
+import { createLocalJWKSet, exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+
+// jose 6 dropped the `KeyLike` export; derive the key type from what
+// `generateKeyPair` actually returns (a `CryptoKey | KeyObject` union).
+type KeyLike = Awaited<ReturnType<typeof generateKeyPair>>['privateKey'];
 
 // ---------------------------------------------------------------------------
 // Mock jose before cfAccess.ts is loaded so createRemoteJWKSet is intercepted.
