@@ -229,7 +229,11 @@ export function errMessage(message: string): McpToolResult {
  */
 export type TreatyResponse<T> = {
   data: T | null;
-  error: { status: number; value: unknown } | null;
+  // Eden types `error` as `unknown` because the API declares error-status response
+  // bodies as `z.any()` (forced by Elysia's invariant response validation — see
+  // packages/schemas/src/admin.ts). Accept `unknown` and narrow the runtime
+  // `{ value }` envelope defensively in `call()`.
+  error: unknown;
   status: number;
 };
 
@@ -261,7 +265,11 @@ export async function call<T>(
   try {
     const result = await promise;
     if (result.error || result.data == null) {
-      return formatError({ status: result.status, body: result.error?.value, opts: options });
+      // Eden's error envelope is `{ status, value }` at runtime but typed `unknown`
+      // (see TreatyResponse). Pull `value` out when present, else pass it through.
+      const e = result.error;
+      const body = isObject(e) && 'value' in e ? e.value : e;
+      return formatError({ status: result.status, body, opts: options });
     }
     return ok(result.data, { structured: options.structured });
   } catch (e) {

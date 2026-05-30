@@ -2,13 +2,16 @@ import { z } from 'zod';
 
 // ─── Error responses ──────────────────────────────────────────────────────────
 
-// Canonical error-response body. Every admin error handler returns exactly
-// `{ error: string }`, some also `{ error, code }`. An *explicit* object schema
-// (no `.passthrough()` index signature) gives Eden Treaty a real `error` type to
-// infer — so the typed MCP `call()` helper consumes a proper `{ status, value }`
-// union instead of `unknown` — while still satisfying Elysia's response
-// invariance (handler returns are assignable to `{ error: string; code?: string }`).
-const Err = z.object({ error: z.string(), code: z.string().optional() });
+// z.any() mirrors t.Unsafe<any>. Elysia's response validation is *invariant*:
+// it rejects any typed schema (even `z.object({ error, code? })`) against handlers
+// that `return status(code, { ...literal })`, because the literal return type
+// doesn't bidirectionally match the schema. Both `.passthrough()` and an explicit
+// object schema break ~30 handlers; only `z.any()` (which disables the check)
+// compiles. The consequence: Eden Treaty types the client `error` as `unknown`,
+// so the MCP `call()` helper (packages/mcp/src/client.ts) accepts `unknown` and
+// narrows the `{ value }` envelope defensively. The `unknown` is forced by the
+// framework here, not a missing type.
+const Err = z.any();
 export const AdminErrorResponses = {
   400: Err,
   401: Err,
