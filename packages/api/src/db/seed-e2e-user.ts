@@ -64,21 +64,20 @@ async function seedE2EUser() {
       .where(eq(schema.users.email, normalizedEmail))
       .limit(1);
 
-    let userId: string;
     const existingUser = existing[0];
+    let userId = existingUser?.id;
+
     if (existingUser) {
-      userId = existingUser.id;
       await db
         .update(schema.users)
         .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
-        .where(eq(schema.users.id, userId));
-      console.log(`E2E user refreshed: ${normalizedEmail} (id=${userId})`);
+        .where(eq(schema.users.id, existingUser.id));
+      console.log(`E2E user refreshed: ${normalizedEmail} (id=${existingUser.id})`);
     } else {
-      userId = crypto.randomUUID();
       const [inserted] = await db
         .insert(schema.users)
         .values({
-          id: userId,
+          id: crypto.randomUUID(),
           name: 'E2E Automation',
           email: normalizedEmail,
           passwordHash,
@@ -88,28 +87,32 @@ async function seedE2EUser() {
           role: 'USER',
         })
         .returning();
-      userId = inserted?.id ?? userId;
-      console.log(`E2E user created: ${normalizedEmail} (id=${userId})`);
+      userId = inserted?.id;
+      console.log(`E2E user created: ${normalizedEmail} (id=${inserted?.id})`);
     }
 
+    if (!userId) throw new Error(`Failed to resolve E2E user id for ${normalizedEmail}`);
+
     // Upsert the credential account row that better-auth looks up during sign-in.
-    // better-auth sets accountId = email for the 'credential' provider.
+    // better-auth sets accountId = user.id for the 'credential' provider.
     await db
       .insert(schema.account)
       .values({
         id: crypto.randomUUID(),
-        accountId: normalizedEmail,
+        accountId: userId,
         providerId: 'credential',
         userId,
         password: passwordHash,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: [schema.account.providerId, schema.account.accountId],
-        set: { userId, password: passwordHash, updatedAt: new Date() },
+        set: {
+          userId,
+          password: passwordHash,
+          updatedAt: new Date(),
+        },
       });
-    console.log(`E2E credential account upserted for: ${normalizedEmail}`);
+    console.log(`E2E credential account refreshed: ${normalizedEmail}`);
   } finally {
     await pgClient?.end();
   }

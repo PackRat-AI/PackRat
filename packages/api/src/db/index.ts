@@ -1,4 +1,4 @@
-import { Pool as NeonPool, neon } from '@neondatabase/serverless';
+import { Pool as NeonPool, neon, neonConfig } from '@neondatabase/serverless';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db/schema';
@@ -30,10 +30,31 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
+const shouldUseNeonWsProxy = (url: string) => {
+  if (process.env.PACKRAT_USE_NEON_WSPROXY === 'true') return true;
+
+  try {
+    const u = new URL(url);
+    return u.hostname === 'localhost' && u.port === '5432';
+  } catch {
+    return false;
+  }
+};
+
 const pgPools = new Map<string, Pool>();
 
 export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
+    if (shouldUseNeonWsProxy(url)) {
+      neonConfig.wsProxy = () =>
+        process.env.NEON_WS_PROXY ?? 'localhost:5434/v1?address=postgres-test:5432';
+      neonConfig.useSecureWebSocket = false;
+      neonConfig.pipelineConnect = false;
+      neonConfig.pipelineTLS = false;
+      const neonPool = new NeonPool({ connectionString: url });
+      return drizzleServerless(neonPool, { schema });
+    }
+
     let pool = pgPools.get(url);
     if (!pool) {
       const newPool = new Pool({
