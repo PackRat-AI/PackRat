@@ -397,9 +397,25 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
   const dataDetailRequirements =
     platform === 'ios'
       ? [
+          requirement('71-data-packs-list', {
+            area: 'crud',
+            flow: 'Packs list with seeded data',
+          }),
           requirement('72-data-pack-detail', { area: 'crud', flow: 'Pack detail with items' }),
+          requirement('73-data-trips-list', {
+            area: 'crud',
+            flow: 'Trips list with seeded data',
+          }),
           requirement('74-data-trip-detail', { area: 'crud', flow: 'Trip detail' }),
+          requirement('75-data-templates-list', {
+            area: 'crud',
+            flow: 'Templates list with seeded data',
+          }),
           requirement('76-data-template-detail', { area: 'crud', flow: 'Template detail' }),
+          requirement('77-data-trail-conditions-list', {
+            area: 'crud',
+            flow: 'Trail conditions list with seeded data',
+          }),
           requirement('78-data-trail-condition-detail', {
             area: 'crud',
             flow: 'Trail report detail',
@@ -505,6 +521,43 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
       requirement('95-data-ai-packs-results-sheet', {
         area: 'ai',
         flow: 'Generated AI packs result sheet',
+      }),
+    );
+  }
+
+  if (platform === 'macos' || platform === 'ipad') {
+    common.push(
+      requirement('87a-data-trip-location-search-sheet', {
+        area: 'crud',
+        flow: 'Trip location search sheet',
+      }),
+      requirement('89a-data-custom-template-detail', {
+        area: 'crud',
+        flow: 'Custom template detail',
+      }),
+      requirement('89b-data-template-add-item-sheet', {
+        area: 'crud',
+        flow: 'Template item create sheet',
+      }),
+      requirement('89c-data-custom-template-before-edit', {
+        area: 'crud',
+        flow: 'Custom template detail before editing',
+      }),
+      requirement('89d-data-template-edit-sheet', {
+        area: 'crud',
+        flow: 'Template edit sheet',
+      }),
+      requirement('90a-data-catalog-item-before-add', {
+        area: 'data',
+        flow: 'Catalog item detail before adding to pack',
+      }),
+      requirement('96-data-shopping-list', {
+        area: 'offline-local',
+        flow: 'Shopping list with seeded data',
+      }),
+      requirement('97-data-shopping-add-item-sheet', {
+        area: 'offline-local',
+        flow: 'Shopping list item create sheet',
       }),
     );
   }
