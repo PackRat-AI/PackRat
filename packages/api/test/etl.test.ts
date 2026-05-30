@@ -74,6 +74,7 @@ const TEST_ENV = {
   AI_PROVIDER: 'openai',
   CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
   CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway-id',
+  CLOUDFLARE_API_TOKEN: 'test-cloudflare-token',
 } as unknown as Parameters<typeof processCatalogETL>[0]['env'];
 
 function makeMessage(jobId: string) {

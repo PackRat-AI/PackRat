@@ -52,6 +52,7 @@ const testEnv = {
 
   CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
   CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway-id',
+  CLOUDFLARE_API_TOKEN: 'test-cloudflare-token',
   R2_ACCESS_KEY_ID: 'test-access-key',
   R2_SECRET_ACCESS_KEY: 'test-secret-key',
   PACKRAT_BUCKET_R2_BUCKET_NAME: 'test-bucket',

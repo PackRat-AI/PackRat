@@ -2,11 +2,11 @@ import type { Container } from '@cloudflare/containers';
 import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
-// Define the Zod schema for all environment variables.
-// `apiEnvSchema` stays a ZodObject so tests can introspect via `.shape.X`.
-// The runtime validation path uses `validatedApiEnvSchema` below, which
-// adds the BETTER_AUTH_* → PACKRAT_* migration superRefine + transform.
-export const apiEnvSchema = z.object({
+// Base Zod schema for all environment variables. Stays a ZodObject so tests can
+// introspect via `.shape.X` (re-exported as `apiEnvSchema` below). The runtime
+// validation path uses `validatedApiEnvSchema`, which adds the
+// BETTER_AUTH_* → PACKRAT_* migration superRefine + transform.
+export const apiEnvObjectSchema = z.object({
   // Environment & Deployment
   ENVIRONMENT: z.enum(['development', 'production']).default('production'),
   SENTRY_DSN: z.string().url().optional(),
@@ -71,7 +71,8 @@ export const apiEnvSchema = z.object({
 
   // Cloudflare R2 Storage (config values)
   CLOUDFLARE_ACCOUNT_ID: z.string(),
-  CLOUDFLARE_AI_GATEWAY_ID: z.string(),
+  CLOUDFLARE_AI_GATEWAY_ID: z.string().optional(),
+  CLOUDFLARE_API_TOKEN: z.string().min(1).optional(),
   R2_ACCESS_KEY_ID: z.string(),
   R2_SECRET_ACCESS_KEY: z.string(),
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),
@@ -107,11 +108,15 @@ export const apiEnvSchema = z.object({
   AUTH_KV: z.unknown(),
 });
 
+// Re-export the object schema under its historical name for tests/consumers
+// that introspect `.shape`.
+export const apiEnvSchema = apiEnvObjectSchema;
+
 // Runtime validation schema: enforces "at least one of each transitional
 // pair" (BETTER_AUTH_* OR PACKRAT_*) and resolves the canonical PACKRAT_*
 // fields from whichever name was provided. Consumer code reads
 // env.PACKRAT_AUTH_SECRET / env.PACKRAT_API_URL only.
-const validatedApiEnvSchema = apiEnvSchema
+const validatedApiEnvSchema = apiEnvObjectSchema
   .superRefine((env, ctx) => {
     if (!env.PACKRAT_AUTH_SECRET && !env.BETTER_AUTH_SECRET) {
       ctx.addIssue({
@@ -137,7 +142,7 @@ const validatedApiEnvSchema = apiEnvSchema
   }));
 
 // Relaxed schema for test environments
-const testEnvSchema = apiEnvSchema.partial().extend({
+const testEnvSchema = apiEnvObjectSchema.partial().extend({
   ENVIRONMENT: z.enum(['development', 'production']).default('development'),
   SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
   NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),

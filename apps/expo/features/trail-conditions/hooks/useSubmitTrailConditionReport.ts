@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -97,6 +98,7 @@ function waitForSyncDrain(signal: { cancelled: boolean }): Promise<SyncDrainResu
 }
 
 export function useSubmitTrailConditionReport(): SubmitResult {
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
@@ -149,6 +151,9 @@ export function useSubmitTrailConditionReport(): SubmitResult {
         // the user's perspective — their data is safely persisted locally.
         await waitForSyncDrain(signal);
         if (!mountedRef.current || signal.cancelled) return id;
+        // Invalidate the list query so the screen reflects the new report
+        // without requiring an app reload.
+        await queryClient.invalidateQueries({ queryKey: ['trailConditionReports'] });
         setIsPending(false);
         options?.onSuccess?.(id);
         return id;
@@ -162,7 +167,7 @@ export function useSubmitTrailConditionReport(): SubmitResult {
         throw asError;
       }
     },
-    [],
+    [queryClient],
   );
 
   const reset = useCallback(() => {

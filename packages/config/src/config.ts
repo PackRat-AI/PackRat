@@ -68,7 +68,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableShoppingList]: false,
     [FeatureFlag.EnableSharedPacks]: false,
     [FeatureFlag.EnablePackTemplates]: true,
-    [FeatureFlag.EnableTrailConditions]: false,
+    [FeatureFlag.EnableTrailConditions]: true,
     [FeatureFlag.EnableFeed]: false,
     [FeatureFlag.EnableWildlifeIdentification]: false,
     [FeatureFlag.EnableLocalAI]: true,

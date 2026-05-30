@@ -1,17 +1,9 @@
-import {
-  AIService,
-  CatalogService,
-  PackItemService,
-  PackService,
-  WeatherService,
-} from '@packrat/api/services';
+import { AIService, CatalogService, WeatherService } from '@packrat/api/services';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { tool } from 'ai';
 import { z } from 'zod';
 
 export function createTools(userId: string) {
-  const packService = new PackService(userId);
-  const packItemService = new PackItemService(userId);
   const weatherService = new WeatherService();
   const catalogService = new CatalogService();
   const aiService = new AIService();
@@ -19,49 +11,18 @@ export function createTools(userId: string) {
   return {
     getPackDetails: tool({
       description:
-        'Get detailed information about a specific pack including all items, weights, and categories.',
+        'Get detailed information about a specific pack including all items, weights, and categories. Executed client-side from local device data.',
       inputSchema: z.object({
         packId: z.string().describe('The ID of the pack to get details for'),
       }),
-      execute: async ({ packId }) => {
-        try {
-          const pack = await packService.getPackDetails(packId);
-          if (!pack) return { success: false, error: 'Pack not found' };
-
-          const categories = Array.from(
-            new Set(pack.items.map((item) => item.category || 'Uncategorized')),
-          );
-
-          return { success: true, data: { ...pack, categories } };
-        } catch (error) {
-          console.error('getPackDetails tool error', error);
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to get pack details',
-          };
-        }
-      },
     }),
 
     getPackItemDetails: tool({
       description:
-        'Get detailed information about a specific item in a pack including its catalog details.',
+        'Get detailed information about a specific item in a pack including its catalog details. Executed client-side from local device data.',
       inputSchema: z.object({
         itemId: z.string().describe('The ID of the item to get details for'),
       }),
-      execute: async ({ itemId }) => {
-        try {
-          const item = await packItemService.getPackItemDetails(itemId);
-          if (!item) return { success: false, error: 'Item not found' };
-          return { success: true, data: item };
-        } catch (error) {
-          console.error('getPackItemDetails tool error', error);
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to get item details',
-          };
-        }
-      },
     }),
 
     getWeatherForLocation: tool({
