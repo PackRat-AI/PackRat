@@ -10,6 +10,7 @@ const config = getSentryExpoConfig(__dirname);
 config.resolver = {
   ...config.resolver,
   assetExts: [...(config.resolver?.assetExts ?? []), 'wasm'],
+  blockList: /node_modules\/.*\/android\/\.cxx\/.*/,
   // Enable package.json "exports" field resolution so workspace packages with
   // subpath exports (e.g. @packrat/schemas/constants) resolve correctly.
   unstable_enablePackageExports: true,
@@ -44,11 +45,17 @@ config.resolver = {
   // biome-ignore lint/complexity/useMaxParams: Metro resolveRequest requires exactly 3 params
   resolveRequest: (context, moduleName, platform) => {
     if (platform === 'web' && WEB_STUBS[moduleName]) {
-      return { filePath: path.join(__dirname, WEB_STUBS[moduleName]), type: 'sourceFile' };
+      return {
+        filePath: path.join(__dirname, WEB_STUBS[moduleName]),
+        type: 'sourceFile',
+      };
     }
     if (originalResolveRequest) return originalResolveRequest(context, moduleName, platform);
     return context.resolveRequest(context, moduleName, platform);
   },
 };
 
-module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });
+module.exports = withNativeWind(config, {
+  input: './global.css',
+  inlineRem: 16,
+});

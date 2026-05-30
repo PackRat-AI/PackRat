@@ -58,6 +58,13 @@ export default (): ExpoConfig =>
         ],
         'expo-secure-store',
         'expo-web-browser',
+        [
+          'expo-dev-client',
+          {
+            android: { toolsButton: false },
+            ios: { toolsButton: false },
+          },
+        ],
         'expo-apple-authentication',
         'expo-localization',
         [

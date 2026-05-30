@@ -2,6 +2,7 @@ import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useDeleteTrip } from '../hooks';
@@ -31,12 +32,13 @@ export function getTripDetailOptions(id: string) {
               },
             ]}
           >
-            <Button variant="plain" size="icon">
+            <Button testID={testIds.trips.deleteBtn} variant="plain" size="icon">
               <Icon name="trash-can-outline" color={colors.grey2} />
             </Button>
           </Alert>
 
           <Button
+            testID={testIds.trips.editBtn}
             variant="plain"
             size="icon"
             onPress={() => router.push({ pathname: '/trip/[id]/edit', params: { id } })}
@@ -47,7 +49,12 @@ export function getTripDetailOptions(id: string) {
           <Button
             variant="plain"
             size="icon"
-            onPress={() => router.push({ pathname: '/trip/new', params: { copyFromTripId: id } })}
+            onPress={() =>
+              router.push({
+                pathname: '/trip/new',
+                params: { copyFromTripId: id },
+              })
+            }
           >
             <Icon name="plus" color={colors.grey2} />
           </Button>

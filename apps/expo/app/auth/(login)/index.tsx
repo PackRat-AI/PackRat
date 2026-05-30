@@ -119,6 +119,7 @@ export default function LoginScreen() {
                       {(field) => (
                         <TextField
                           testID={testIds.auth.emailInput}
+                          containerTestID={testIds.auth.emailInput}
                           placeholder={Platform.select({
                             ios: 'Email',
                             default: '',
@@ -151,6 +152,7 @@ export default function LoginScreen() {
                     {(field) => (
                       <TextField
                         testID={testIds.auth.passwordInput}
+                        containerTestID={testIds.auth.passwordInput}
                         accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Password',

@@ -8,6 +8,7 @@ import { TextInput } from 'expo-app/components/TextInput';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -271,7 +272,11 @@ export function AddCatalogItemDetailsScreen() {
             </View>
 
             <View className="mb-2 mt-6">
-              <Button onPress={handleAddToPack} disabled={isAdding}>
+              <Button
+                testID={testIds.items.catalogConfirmAddBtn}
+                onPress={handleAddToPack}
+                disabled={isAdding}
+              >
                 {isAdding ? (
                   <ActivityIndicator color={colors.foreground} />
                 ) : (

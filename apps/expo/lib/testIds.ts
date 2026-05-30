@@ -32,6 +32,7 @@ export const testIds = Object.freeze({
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
+    emptyCreateBtn: 'create-pack-empty-button',
     cancelBtn: 'cancel-pack-form-button', // keep Maestro value
     nameInput: 'pack-name-input', // keep Playwright + Maestro value
     descriptionInput: 'pack-description-input', // keep Playwright + Maestro value
@@ -68,6 +69,7 @@ export const testIds = Object.freeze({
   // ── Trips ─────────────────────────────────────────────────────────────────
   trips: Object.freeze({
     createBtn: 'create-trip-button', // keep Maestro value
+    emptyCreateBtn: 'create-trip-empty-button',
     cancelBtn: 'cancel-trip-form-button', // keep Maestro value
     nameInput: 'trips:name-input',
     descriptionInput: 'trips:description-input',
@@ -89,7 +91,19 @@ export const testIds = Object.freeze({
     totalItemsCount: 'catalog:total-items-count',
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
+    packOption: (id: string | number) => `catalog:pack-option-${id}`,
     item: (id: string | number) => `catalog:item-${id}`,
+  }),
+
+  // ── Guides ────────────────────────────────────────────────────────────────
+  guides: Object.freeze({
+    card: (id: string | number) => `guides:card-${id}`,
+  }),
+
+  // ── Pack templates ────────────────────────────────────────────────────────
+  packTemplates: Object.freeze({
+    dashboardTile: 'dashboard-tile-pack-templates',
+    card: (id: string | number) => `pack-templates:card-${id}`,
   }),
 
   // ── Profile ───────────────────────────────────────────────────────────────

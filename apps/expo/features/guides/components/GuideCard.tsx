@@ -1,5 +1,6 @@
 import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { TouchableOpacity, View } from 'react-native';
 import type { Guide } from '../types';
 
@@ -12,7 +13,12 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
   const { t } = useTranslation();
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} className="pt-4">
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      className="pt-4"
+      testID={testIds.guides.card(guide.id)}
+    >
       <Card className="mb-3">
         <CardContent className="p-4">
           <View className="flex-row items-start justify-between">
