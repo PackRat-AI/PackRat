@@ -121,29 +121,29 @@ describe('parseArgs', () => {
 describe('checkTlsReachability', () => {
   it('fails when the target URL is not HTTPS', () => {
     const res = makeRes({ url: 'http://example.com/' });
-    const result = checkTlsReachability('http://example.com', res);
+    const result = checkTlsReachability({ targetUrl: 'http://example.com', res });
     expect(result.status).toBe('fail');
     expect(result.details).toMatch(/not HTTPS/);
   });
 
   it('fails when the fetch errored out', () => {
     const res = makeRes({ ok: false, status: 0, error: 'ECONNREFUSED' });
-    expect(checkTlsReachability(RS_TARGET, res).status).toBe('fail');
+    expect(checkTlsReachability({ targetUrl: RS_TARGET, res }).status).toBe('fail');
   });
 
   it('fails when the status is not 200', () => {
     const res = makeRes({ ok: false, status: 503 });
-    expect(checkTlsReachability(RS_TARGET, res).status).toBe('fail');
+    expect(checkTlsReachability({ targetUrl: RS_TARGET, res }).status).toBe('fail');
   });
 
   it('fails when the response URL host drifts from the target', () => {
     const res = makeRes({ url: 'https://other.example.com/' });
-    expect(checkTlsReachability(RS_TARGET, res).status).toBe('fail');
+    expect(checkTlsReachability({ targetUrl: RS_TARGET, res }).status).toBe('fail');
   });
 
   it('passes on 200 + matching host', () => {
     const res = makeRes({ url: `${RS_TARGET}/`, status: 200 });
-    expect(checkTlsReachability(RS_TARGET, res).status).toBe('pass');
+    expect(checkTlsReachability({ targetUrl: RS_TARGET, res }).status).toBe('pass');
   });
 });
 
@@ -351,7 +351,9 @@ describe('checkFaviconAtOauthDomain', () => {
   const validIco = new Uint8Array([0x00, 0x00, 0x01, 0x00, 0xde, 0xad, 0xbe, 0xef]);
 
   it('fails on non-200', () => {
-    expect(checkFaviconAtOauthDomain(makeRes({ status: 404 }), validIco).status).toBe('fail');
+    expect(
+      checkFaviconAtOauthDomain({ res: makeRes({ status: 404 }), body: validIco }).status,
+    ).toBe('fail');
   });
 
   it('fails when Content-Type is not image/x-icon', () => {
@@ -359,7 +361,7 @@ describe('checkFaviconAtOauthDomain', () => {
       status: 200,
       headers: new Headers({ 'Content-Type': 'text/html' }),
     });
-    expect(checkFaviconAtOauthDomain(res, validIco).status).toBe('fail');
+    expect(checkFaviconAtOauthDomain({ res, body: validIco }).status).toBe('fail');
   });
 
   it('fails when the body lacks .ico magic bytes', () => {
@@ -368,7 +370,7 @@ describe('checkFaviconAtOauthDomain', () => {
       status: 200,
       headers: new Headers({ 'Content-Type': 'image/x-icon' }),
     });
-    expect(checkFaviconAtOauthDomain(res, badIco).status).toBe('fail');
+    expect(checkFaviconAtOauthDomain({ res, body: badIco }).status).toBe('fail');
   });
 
   it('fails when the body is too short', () => {
@@ -376,7 +378,7 @@ describe('checkFaviconAtOauthDomain', () => {
       status: 200,
       headers: new Headers({ 'Content-Type': 'image/x-icon' }),
     });
-    expect(checkFaviconAtOauthDomain(res, new Uint8Array(0)).status).toBe('fail');
+    expect(checkFaviconAtOauthDomain({ res, body: new Uint8Array(0) }).status).toBe('fail');
   });
 
   it('passes on 200 + image/x-icon + magic bytes', () => {
@@ -384,7 +386,7 @@ describe('checkFaviconAtOauthDomain', () => {
       status: 200,
       headers: new Headers({ 'Content-Type': 'image/x-icon' }),
     });
-    expect(checkFaviconAtOauthDomain(res, validIco).status).toBe('pass');
+    expect(checkFaviconAtOauthDomain({ res, body: validIco }).status).toBe('pass');
   });
 
   it('also accepts image/vnd.microsoft.icon (RFC 2361 alternate)', () => {
@@ -392,7 +394,7 @@ describe('checkFaviconAtOauthDomain', () => {
       status: 200,
       headers: new Headers({ 'Content-Type': 'image/vnd.microsoft.icon' }),
     });
-    expect(checkFaviconAtOauthDomain(res, validIco).status).toBe('pass');
+    expect(checkFaviconAtOauthDomain({ res, body: validIco }).status).toBe('pass');
   });
 });
 
@@ -401,19 +403,23 @@ describe('checkFaviconAtOauthDomain', () => {
 describe('checkPublicDocsPage', () => {
   it('fails when the page does not contain a required term', () => {
     const res = makeRes({ status: 200, bodyText: '<html><body>foo</body></html>' });
-    const result = checkPublicDocsPage(res, ['PackRat', 'Claude.ai']);
+    const result = checkPublicDocsPage({ res, requiredTerms: ['PackRat', 'Claude.ai'] });
     expect(result.status).toBe('fail');
     expect(result.details).toMatch(/PackRat/);
   });
 
   it('fails on non-200', () => {
-    expect(checkPublicDocsPage(makeRes({ status: 404 }), ['PackRat']).status).toBe('fail');
+    expect(
+      checkPublicDocsPage({ res: makeRes({ status: 404 }), requiredTerms: ['PackRat'] }).status,
+    ).toBe('fail');
   });
 
   it('passes when every required term is present (case-insensitive)', () => {
     const body = 'Welcome to PackRat. Connect via claude.ai using the mcp:read scope.';
     const res = makeRes({ status: 200, bodyText: body });
-    expect(checkPublicDocsPage(res, ['PackRat', 'Claude.ai', 'scope']).status).toBe('pass');
+    expect(
+      checkPublicDocsPage({ res, requiredTerms: ['PackRat', 'Claude.ai', 'scope'] }).status,
+    ).toBe('pass');
   });
 });
 
@@ -426,19 +432,19 @@ describe('checkPrivacyAndTerms', () => {
   it('fails when privacy lacks MCP-specific copy', () => {
     const privacy = makeRes({ status: 200, bodyText: 'generic privacy text' });
     const terms = makeRes({ status: 200, bodyText: termsBody });
-    expect(checkPrivacyAndTerms(privacy, terms).status).toBe('fail');
+    expect(checkPrivacyAndTerms({ privacyRes: privacy, termsRes: terms }).status).toBe('fail');
   });
 
   it('fails when terms returns non-200', () => {
     const privacy = makeRes({ status: 200, bodyText: privacyBody });
     const terms = makeRes({ status: 404 });
-    expect(checkPrivacyAndTerms(privacy, terms).status).toBe('fail');
+    expect(checkPrivacyAndTerms({ privacyRes: privacy, termsRes: terms }).status).toBe('fail');
   });
 
   it('passes when both pages return 200 and reference MCP/connector', () => {
     const privacy = makeRes({ status: 200, bodyText: privacyBody });
     const terms = makeRes({ status: 200, bodyText: termsBody });
-    expect(checkPrivacyAndTerms(privacy, terms).status).toBe('pass');
+    expect(checkPrivacyAndTerms({ privacyRes: privacy, termsRes: terms }).status).toBe('pass');
   });
 });
 
@@ -525,7 +531,7 @@ describe('checkStatusEndpoint', () => {
 
 describe('checkToolAnnotations', () => {
   it('fails when the catalog is missing', () => {
-    expect(checkToolAnnotations(null, 'nowhere').status).toBe('fail');
+    expect(checkToolAnnotations({ catalog: null, source: 'nowhere' }).status).toBe('fail');
   });
 
   it('flags a tool that lacks a title', () => {
@@ -538,7 +544,7 @@ describe('checkToolAnnotations', () => {
         },
       ],
     };
-    const result = checkToolAnnotations(catalog, 'fixture');
+    const result = checkToolAnnotations({ catalog, source: 'fixture' });
     expect(result.status).toBe('fail');
     expect(result.details).toMatch(/title/);
   });
@@ -553,7 +559,7 @@ describe('checkToolAnnotations', () => {
         },
       ],
     };
-    expect(checkToolAnnotations(catalog, 'fixture').status).toBe('fail');
+    expect(checkToolAnnotations({ catalog, source: 'fixture' }).status).toBe('fail');
   });
 
   it('passes when every tool has title + readOnlyHint (and destructiveHint when needed)', () => {
@@ -571,7 +577,7 @@ describe('checkToolAnnotations', () => {
         },
       ],
     };
-    expect(checkToolAnnotations(catalog, 'fixture').status).toBe('pass');
+    expect(checkToolAnnotations({ catalog, source: 'fixture' }).status).toBe('pass');
   });
 });
 
