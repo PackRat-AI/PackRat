@@ -1,6 +1,6 @@
 import { openai } from '@ai-sdk/openai';
 import { treaty } from '@elysiajs/eden';
-import type { App } from '@packrat/api';
+import type { App } from '@packrat/api/app';
 import { guideEnv } from '@packrat/env/next';
 import { generateText, tool } from 'ai';
 import { z } from 'zod';

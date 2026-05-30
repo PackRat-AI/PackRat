@@ -71,6 +71,11 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
+    // packages/api is type-checked by its own `check-types` (api's tsconfig has
+    // the @kitajs/html JSX config its server-rendered consent .tsx needs). Keeping
+    // it out of this root program prevents @kitajs/html's global JSX namespace from
+    // polluting the React/React-Native apps compiled here. Mirrors packages/mcp.
+    "packages/api",
     "packages/mcp",
     "packages/osm-db",
     "packages/osm-import",
