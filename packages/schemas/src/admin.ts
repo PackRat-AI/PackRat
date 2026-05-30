@@ -2,15 +2,13 @@ import { z } from 'zod';
 
 // ─── Error responses ──────────────────────────────────────────────────────────
 
-// z.any() mirrors t.Unsafe<any> — Elysia invariance requires the handler return
-// type to be assignable to the declared response type, and error bodies frequently
-// carry extra fields (e.g. `code`). Using any sidesteps the invariance check the
-// same way t.Unsafe<any> did with TypeBox.
-//
-// NOTE: this makes Eden Treaty type the client `error` as `unknown`, so the MCP
-// `call()` helper (packages/mcp/src/client.ts) is written to accept `unknown`
-// errors and narrow defensively rather than rely on a typed error union here.
-const Err = z.any();
+// Canonical error-response body. Every admin error handler returns exactly
+// `{ error: string }`, some also `{ error, code }`. An *explicit* object schema
+// (no `.passthrough()` index signature) gives Eden Treaty a real `error` type to
+// infer — so the typed MCP `call()` helper consumes a proper `{ status, value }`
+// union instead of `unknown` — while still satisfying Elysia's response
+// invariance (handler returns are assignable to `{ error: string; code?: string }`).
+const Err = z.object({ error: z.string(), code: z.string().optional() });
 export const AdminErrorResponses = {
   400: Err,
   401: Err,
