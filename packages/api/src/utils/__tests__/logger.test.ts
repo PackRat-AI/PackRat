@@ -1,7 +1,17 @@
 // Unit tests for the structured logger.
 
 import { logger } from '@packrat/api/utils/logger';
+import * as Sentry from '@sentry/cloudflare';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Default to "not initialized" so the base console-only tests below match the
+// real unit-test runtime. The Sentry-forwarding block flips it to true.
+vi.mock('@sentry/cloudflare', () => ({
+  isInitialized: vi.fn(() => false),
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  addBreadcrumb: vi.fn(),
+}));
 
 describe('logger', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
@@ -93,6 +103,66 @@ describe('logger', () => {
       expect(line.errorName).toBeUndefined();
       expect(line.errorMessage).toBeUndefined();
       expect(line.errorStack).toBeUndefined();
+    });
+  });
+
+  describe('Sentry forwarding (when initialized)', () => {
+    beforeEach(() => {
+      vi.mocked(Sentry.isInitialized).mockReturnValue(true);
+      vi.mocked(Sentry.captureException).mockClear();
+      vi.mocked(Sentry.captureMessage).mockClear();
+      vi.mocked(Sentry.addBreadcrumb).mockClear();
+    });
+
+    afterEach(() => {
+      vi.mocked(Sentry.isInitialized).mockReturnValue(false);
+    });
+
+    it('forwards ERROR with ctx.err to captureException, splitting scalar tags from object extras', () => {
+      const err = new Error('boom');
+      logger.error('etl.failed', { jobId: 'j6', count: 3, ok: true, meta: { nested: 1 }, err });
+      expect(Sentry.captureException).toHaveBeenCalledOnce();
+      const [captured, opts] = vi.mocked(Sentry.captureException).mock.calls[0] ?? [];
+      expect(captured).toBe(err);
+      expect(opts?.tags).toMatchObject({
+        event: 'etl.failed',
+        jobId: 'j6',
+        count: '3',
+        ok: 'true',
+      });
+      expect(opts?.extra).toMatchObject({ event: 'etl.failed', meta: { nested: 1 } });
+    });
+
+    it('forwards ERROR without ctx.err to captureMessage at error level', () => {
+      logger.error('etl.failed', { jobId: 'j7' });
+      expect(Sentry.captureMessage).toHaveBeenCalledOnce();
+      const [event, opts] = vi.mocked(Sentry.captureMessage).mock.calls[0] ?? [];
+      expect(event).toBe('etl.failed');
+      expect(opts?.level).toBe('error');
+      expect(opts?.tags).toMatchObject({ jobId: 'j7' });
+    });
+
+    it('forwards WARN to an addBreadcrumb with warning level', () => {
+      logger.warn('etl.fallback', { jobId: 'j8' });
+      expect(Sentry.addBreadcrumb).toHaveBeenCalledOnce();
+      const [crumb] = vi.mocked(Sentry.addBreadcrumb).mock.calls[0] ?? [];
+      expect(crumb?.category).toBe('etl.fallback');
+      expect(crumb?.level).toBe('warning');
+      expect(crumb?.data).toMatchObject({ jobId: 'j8' });
+    });
+
+    it('forwards INFO to an addBreadcrumb with info level', () => {
+      logger.info('etl.start', { jobId: 'j9' });
+      expect(Sentry.addBreadcrumb).toHaveBeenCalledOnce();
+      const [crumb] = vi.mocked(Sentry.addBreadcrumb).mock.calls[0] ?? [];
+      expect(crumb?.level).toBe('info');
+    });
+
+    it('swallows Sentry errors so logging never throws', () => {
+      vi.mocked(Sentry.addBreadcrumb).mockImplementationOnce(() => {
+        throw new Error('sentry down');
+      });
+      expect(() => logger.info('etl.start', { jobId: 'j10' })).not.toThrow();
     });
   });
 });
