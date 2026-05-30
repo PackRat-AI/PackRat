@@ -252,7 +252,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       //    spike §Q4). Claude.ai sends `resource` per the MCP 2025-11-25
       //    spec. Verified in U9 dev verification.
       oauthProvider({
-        scopes: MCP_OAUTH_SCOPES,
+        scopes: [...MCP_OAUTH_SCOPES],
         validAudiences: [MCP_AUDIENCE],
         allowDynamicClientRegistration: false,
         allowUnauthenticatedClientRegistration: false,

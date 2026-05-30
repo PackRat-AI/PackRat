@@ -181,7 +181,7 @@ export function registerResources(agent: AgentContext): void {
           const items = Array.isArray(result.data) ? result.data : [];
           return items
             .filter(
-              (p): p is { id: string; name?: string } =>
+              (p: unknown): p is { id: string; name?: string } =>
                 isObject(p) && isString((p as { id?: unknown }).id),
             )
             .map((p, idx) => ({
@@ -212,7 +212,7 @@ export function registerResources(agent: AgentContext): void {
           const items = Array.isArray(result.data) ? result.data : [];
           return items
             .filter(
-              (t): t is { id: string; name?: string; destination?: string } =>
+              (t: unknown): t is { id: string; name?: string; destination?: string } =>
                 isObject(t) && isString((t as { id?: unknown }).id),
             )
             .map((t, idx) => ({

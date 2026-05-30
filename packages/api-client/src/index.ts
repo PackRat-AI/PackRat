@@ -160,7 +160,8 @@ export function createApiClient(config: ApiClientConfig) {
   // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
   // this, every Zod z.string().datetime() field in API response schemas fails.
   return treaty<App>(config.baseUrl, {
-    fetcher: ((input, init) => authFetcher({ input, init })) as unknown as typeof fetch,
+    fetcher: ((input: Parameters<typeof fetch>[0], init: Parameters<typeof fetch>[1]) =>
+      authFetcher({ input, init })) as unknown as typeof fetch,
     parseDate: false,
   }).api;
 }

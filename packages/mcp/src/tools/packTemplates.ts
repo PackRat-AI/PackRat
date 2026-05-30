@@ -87,9 +87,13 @@ function auditElicitDeclined(reason: ConfirmReason): { code: string; retryable: 
   }
 }
 
+// Structural subset of `McpToolResult` (client.ts) that `auditOutcome` reads.
+// Mirrors the post-SDK-1.29 shape: `isError` is `boolean`, `structuredContent`
+// is an open record. The error envelope is always written by `errResponse` /
+// `errMessage`, so the cast below is safe.
 type ToolResult = {
-  isError?: true;
-  structuredContent?: { error?: { code: string; retryable: boolean } };
+  isError?: boolean;
+  structuredContent?: Record<string, unknown>;
 };
 
 function auditOutcome(result: ToolResult): {
@@ -97,7 +101,7 @@ function auditOutcome(result: ToolResult): {
   error?: { code: string; retryable: boolean };
 } {
   if (result.isError === true) {
-    const e = result.structuredContent?.error;
+    const e = result.structuredContent?.error as { code: string; retryable: boolean } | undefined;
     return e
       ? { outcome: 'failure', error: { code: e.code, retryable: e.retryable } }
       : { outcome: 'failure' };

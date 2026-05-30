@@ -127,7 +127,9 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
   registerFlaggedTool: AgentContext['registerFlaggedTool'] = ({ flag, args }) => {
     // safe-cast: McpServer.registerTool's overloads collapse at the implementation level;
     // forwarding via spread requires a single call signature here.
-    const tool = (this.server.registerTool as (...a: unknown[]) => RegisteredTool)(...args);
+    const tool = (this.server.registerTool as (...a: unknown[]) => RegisteredTool)(
+      ...(args as unknown[]),
+    );
     const bucket = this._flaggedTools.get(flag) ?? [];
     bucket.push(tool);
     this._flaggedTools.set(flag, bucket);

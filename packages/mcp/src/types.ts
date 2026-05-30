@@ -138,7 +138,11 @@ export interface Env {
  * `betterAuthToken`). The DO's `init()` reads `this.props?.scopes`
  * unchanged.
  */
-export interface Props {
+// `type` (not `interface`) so the shape carries an implicit string index
+// signature and satisfies the `McpAgent<Env, State, Props>` constraint
+// (`Props extends Record<string, unknown>`) — interfaces are not assignable
+// to `Record<string, unknown>` without an explicit index signature.
+export type Props = {
   /** JWT access token issued by the API worker; forwarded as a Bearer credential
    *  for proxied PackRat API calls. */
   betterAuthToken: string;
@@ -146,4 +150,4 @@ export interface Props {
   userId: string;
   /** OAuth scopes granted to this session (e.g. `['mcp:read', 'mcp:write']`). */
   scopes: readonly string[];
-}
+};

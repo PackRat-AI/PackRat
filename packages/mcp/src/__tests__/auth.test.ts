@@ -42,7 +42,7 @@ interface HealthProbeBody {
 // ── /health ─────────────────────────────────────────────────────────────────
 
 describe('handleHealth', () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn>;
+  let fetchSpy: ReturnType<typeof vi.spyOn<typeof globalThis, 'fetch'>>;
   beforeEach(() => {
     __resetHealthCacheForTests();
     fetchSpy = vi.spyOn(globalThis, 'fetch');

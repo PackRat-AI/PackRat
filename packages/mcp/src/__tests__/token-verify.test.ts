@@ -11,7 +11,7 @@
  * `jwks.reload()` retry succeeds (fresh key).
  */
 
-import { exportJWK, generateKeyPair, type JWK, type KeyLike, SignJWT } from 'jose';
+import { exportJWK, generateKeyPair, type JWK, SignJWT } from 'jose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __resetJwksCacheForTests, verifyMcpToken } from '../token-verify';
 import type { Env } from '../types';
@@ -35,7 +35,7 @@ const ctx = {
 // Keypair + JWKS fixtures
 // ---------------------------------------------------------------------------
 
-let privateKey: KeyLike;
+let privateKey: CryptoKey;
 let publicJwk: JWK;
 let kid: string;
 
@@ -50,7 +50,7 @@ let altKid: string;
 // calls lets us model JWKS rotation for the SWR retry test.
 let currentJwksKeys: JWK[] = [];
 
-let fetchSpy: ReturnType<typeof vi.spyOn>;
+let fetchSpy: ReturnType<typeof vi.spyOn<typeof globalThis, 'fetch'>>;
 
 beforeEach(async () => {
   const pair = await generateKeyPair('ES256', { extractable: true });
@@ -106,7 +106,7 @@ interface MakeJwtOpts {
   aud?: string | string[];
   exp?: number | string;
   nbf?: number;
-  signingKey?: KeyLike;
+  signingKey?: CryptoKey;
   signingKid?: string;
   alg?: string;
 }

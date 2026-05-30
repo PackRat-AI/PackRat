@@ -369,7 +369,7 @@ describe('createMcpClients()', () => {
       getUserToken: () => null,
     });
     const auth = (
-      spy.mock.calls[0]?.[0] as {
+      spy.mock.calls[0]?.[0] as unknown as {
         auth: { onAccessTokenRefreshed: () => void; onNeedsReauth: () => void };
       }
     ).auth;

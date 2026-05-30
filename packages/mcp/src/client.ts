@@ -50,6 +50,7 @@
  *    response-shaping concern, not a failure.
  */
 
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { type ApiClient, createApiClient } from '@packrat/api-client';
 import { isNumber, isObject, isString } from '@packrat/guards';
 
@@ -110,10 +111,10 @@ function noopHooks(getToken: TokenProvider) {
  * signals recoverable failures.
  */
 export type McpToolResult = {
-  content: [{ type: 'text'; text: string }];
-  isError?: true;
+  content: CallToolResult['content'];
+  isError?: boolean;
   /** Present when the tool declared an `outputSchema` and the payload fits. */
-  structuredContent?: unknown;
+  structuredContent?: CallToolResult['structuredContent'];
 };
 
 /**
@@ -171,7 +172,11 @@ export function ok<T>(data: T, opts?: OkOptions): McpToolResult {
   // fail to parse it. Drop structuredContent on truncation and let the
   // text content carry the (truncated) signal.
   if (opts?.structured && !truncated) {
-    return { content, structuredContent: data };
+    // safe-cast: the SDK types `structuredContent` as an object record; tools
+    // that opt into structured output always return an object payload (their
+    // declared `outputSchema` is an object schema), and there is no schema in
+    // scope here to route through a @packrat/guards parser.
+    return { content, structuredContent: data as Record<string, unknown> };
   }
   return { content };
 }

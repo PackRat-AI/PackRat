@@ -9,6 +9,13 @@
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    // The typed Eden Treaty client (`@packrat/api-client`) references the API's
+    // `App` type, which transitively pulls `packages/api/src/auth/consent-route.tsx`
+    // into this program. Mirror the API package's `@kitajs/html` JSX settings so
+    // tsc can parse those `.tsx` files (otherwise: TS6142 "--jsx is not set").
+    "jsx": "react",
+    "jsxFactory": "Html.createElement",
+    "jsxFragmentFactory": "Html.Fragment",
     "baseUrl": ".",
     "paths": {
       "@packrat/api-client": ["../api-client/src/index.ts"],
