@@ -350,6 +350,10 @@ function requiredScreenshots(platform: Platform): ScreenshotRequirement[] {
         area: 'crud',
         flow: 'Watch synced trail report draft page',
       }),
+      requirement('14-watch-synced-trail-draft-saved', {
+        area: 'crud',
+        flow: 'Watch trail report draft queued for iPhone sync',
+      }),
     ];
   }
 
@@ -861,26 +865,23 @@ async function runWatchVisualCapture(screenshotDir: string): Promise<VisualTestR
     { name: '11-watch-synced-checklist.png', value: 'checklist', snapshot: 'synced' },
     { name: '12-watch-synced-weather.png', value: 'weather', snapshot: 'synced' },
     { name: '13-watch-synced-trail-report.png', value: 'trail-report', snapshot: 'synced' },
+    {
+      name: '14-watch-synced-trail-draft-saved.png',
+      value: 'trail-report-draft',
+      snapshot: 'synced',
+      draftSaved: true,
+    },
   ] as const) {
     const env = {
       ...(route.value ? { SIMCTL_CHILD_PACKRAT_WATCH_SCREENSHOT_ROUTE: route.value } : {}),
       ...(route.snapshot === 'reset'
         ? { SIMCTL_CHILD_PACKRAT_WATCH_RESET_SNAPSHOT: '1' }
         : { SIMCTL_CHILD_PACKRAT_WATCH_SNAPSHOT_BASE64: syncedSnapshot }),
+      ...('draftSaved' in route && route.draftSaved
+        ? { SIMCTL_CHILD_PACKRAT_WATCH_DRAFT_SAVED: '1' }
+        : {}),
     };
-    runChecked({
-      command: 'xcrun',
-      args: [
-        'simctl',
-        'launch',
-        '--terminate-running-process',
-        deviceId,
-        'com.andrewbierman.packrat.watchkitapp',
-      ],
-      cwd: SWIFT_DIR,
-      timeout: 30_000,
-      env,
-    });
+    await launchWatchRouteWithRetry({ deviceId, appPath, env });
 
     await sleep(1_500);
     const tmpScreenshot = resolve('/tmp', `packrat-watch-${Date.now()}-${route.name}`);
@@ -903,8 +904,8 @@ function watchSyncedSnapshotBase64(): string {
       pack: {
         name: 'Alpine Weekend',
         baseWeightText: '10.4 lb',
-        packedItemCount: 6,
-        totalItemCount: 8,
+        packedItemCount: 3,
+        totalItemCount: 4,
         checklist: [
           {
             id: 'visual-watch-shelter',
@@ -1032,6 +1033,47 @@ function runChecked(options: {
   throw new Error(
     `${options.command} ${options.args.join(' ')} failed: ${result.stderr || result.stdout}`,
   );
+}
+
+async function launchWatchRouteWithRetry(options: {
+  deviceId: string;
+  appPath: string;
+  env: NodeJS.ProcessEnv;
+}): Promise<void> {
+  const { deviceId, appPath, env } = options;
+  let lastOutput = '';
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    if (attempt === 3) {
+      runChecked({
+        command: 'xcrun',
+        args: ['simctl', 'install', deviceId, appPath],
+        cwd: SWIFT_DIR,
+        timeout: 60_000,
+        allowFailure: true,
+      });
+    }
+    const result = spawnSync(
+      'xcrun',
+      [
+        'simctl',
+        'launch',
+        '--terminate-running-process',
+        deviceId,
+        'com.andrewbierman.packrat.watchkitapp',
+      ],
+      {
+        cwd: SWIFT_DIR,
+        env: { ...process.env, ...env },
+        encoding: 'utf8',
+        timeout: 30_000,
+        maxBuffer: 20 * 1024 * 1024,
+      },
+    );
+    if (result.status === 0) return;
+    lastOutput = result.stderr || result.stdout;
+    await sleep(1_500);
+  }
+  throw new Error(`Unable to launch PackRat Watch for screenshot capture: ${lastOutput}`);
 }
 
 function sleep(ms: number): Promise<void> {

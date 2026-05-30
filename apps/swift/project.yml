@@ -117,6 +117,7 @@ targets:
         product: Sentry
       - package: GoogleSignIn
         product: GoogleSignIn
+      - target: PackRat-Watch
     settings:
       base:
         SWIFT_VERSION: "5.9"

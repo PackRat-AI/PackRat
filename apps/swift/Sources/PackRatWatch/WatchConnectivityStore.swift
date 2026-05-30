@@ -21,9 +21,11 @@ final class WatchConnectivityStore: NSObject {
             UserDefaults.standard.removeObject(forKey: snapshotKey)
         }
         if loadInjectedSnapshot() {
+            loadInjectedDraft()
             return
         }
         loadSnapshot()
+        loadInjectedDraft()
     }
 
     func activate() {
@@ -75,6 +77,15 @@ final class WatchConnectivityStore: NSObject {
         snapshot = injected
         UserDefaults.standard.set(data, forKey: snapshotKey)
         return true
+    }
+
+    private func loadInjectedDraft() {
+        guard ProcessInfo.processInfo.environment["PACKRAT_WATCH_DRAFT_SAVED"] == "1" else { return }
+        lastDraft = WatchTrailReportDraft(
+            condition: "Muddy",
+            note: "Creek crossing is high near the bridge.",
+            createdAt: Date(timeIntervalSince1970: 1_779_984_300)
+        )
     }
 }
 

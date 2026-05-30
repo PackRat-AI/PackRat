@@ -35,8 +35,8 @@ struct PackRatWatchSnapshot: Codable, Equatable, Sendable {
         pack: WatchPackSnapshot(
             name: "Alpine Weekend",
             baseWeightText: "10.4 lb",
-            packedItemCount: 6,
-            totalItemCount: 8,
+            packedItemCount: 3,
+            totalItemCount: 4,
             checklist: [
                 WatchChecklistItemSnapshot(id: "visual-watch-shelter", title: "Copper Spur Tent", symbolName: "tent", isPacked: true),
                 WatchChecklistItemSnapshot(id: "visual-watch-filter", title: "Water Filter", symbolName: "drop", isPacked: true),

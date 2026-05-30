@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ArgsError, parseArgs } from './lib/args';
-import { listBooted } from './lib/simctl';
+import { listBootedIOS } from './lib/simctl';
 import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
@@ -155,7 +155,7 @@ function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): voi
 
 function pickDestination(): string {
   try {
-    const booted = listBooted();
+    const booted = listBootedIOS();
     if (booted.length > 0) return `platform=iOS Simulator,id=${booted[0]}`;
   } catch {}
   return 'platform=iOS Simulator,name=iPhone 17 Pro';

@@ -52,8 +52,18 @@ export function listBootedFromJson(json: string): string[] {
     .map((d) => d.udid);
 }
 
+export function listBootedIOSFromJson(json: string): string[] {
+  return parseDeviceListJson(json)
+    .filter((d) => d.state === 'Booted' && d.runtime.includes('SimRuntime.iOS'))
+    .map((d) => d.udid);
+}
+
 export function listBooted(): string[] {
   return listBootedFromJson(runSimctl(['list', 'devices', '-j']));
+}
+
+export function listBootedIOS(): string[] {
+  return listBootedIOSFromJson(runSimctl(['list', 'devices', '-j']));
 }
 
 export function findDeviceUDIDFromJson({ json, name }: { json: string; name: string }): string {

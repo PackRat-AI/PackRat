@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findDeviceUDIDFromJson, isUDID, listBootedFromJson, SimctlError } from '../lib/simctl';
+import {
+  findDeviceUDIDFromJson,
+  isUDID,
+  listBootedFromJson,
+  listBootedIOSFromJson,
+  SimctlError,
+} from '../lib/simctl';
 
 const FIXTURE = readFileSync(resolve(__dirname, 'fixtures/devices-booted.json'), 'utf8');
 
@@ -20,6 +26,31 @@ describe('listBootedFromJson', () => {
 
   it('throws SimctlError on malformed JSON', () => {
     expect(() => listBootedFromJson('not json')).toThrow(SimctlError);
+  });
+});
+
+describe('listBootedIOSFromJson', () => {
+  it('ignores booted watchOS devices when selecting an iOS destination', () => {
+    const json = JSON.stringify({
+      devices: {
+        'com.apple.CoreSimulator.SimRuntime.watchOS-26-5': [
+          {
+            udid: '0A38C857-C0E9-4056-8B0B-E6545F072439',
+            name: 'Apple Watch Series 11 (46mm)',
+            state: 'Booted',
+          },
+        ],
+        'com.apple.CoreSimulator.SimRuntime.iOS-26-5': [
+          {
+            udid: '80CB45AB-289A-49C9-BCF6-DC2FEE265A68',
+            name: 'iPhone 17 Pro Max',
+            state: 'Booted',
+          },
+        ],
+      },
+    });
+
+    expect(listBootedIOSFromJson(json)).toEqual(['80CB45AB-289A-49C9-BCF6-DC2FEE265A68']);
   });
 });
 
