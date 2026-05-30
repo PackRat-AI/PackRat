@@ -177,12 +177,15 @@ export function registerCatalogTools(agent: AgentContext): void {
         description: z.string().optional(),
         brand: z.string().optional(),
         model: z.string().optional(),
-        weight: z.number().min(0).optional(),
-        weight_unit: z.enum(['g', 'oz', 'kg', 'lb']).optional(),
+        // weight, weight_unit, product_url are required by the catalog-create API
+        // schema (CatalogCreateSchema): a catalog entry is a real product with a
+        // known weight and source URL.
+        weight: z.number().positive(),
+        weight_unit: z.enum(['g', 'oz', 'kg', 'lb']),
         categories: z.array(z.string()).optional(),
         images: z.array(z.string()).optional(),
         rating: z.number().min(0).max(5).optional(),
-        product_url: z.string().url().optional(),
+        product_url: z.string().url(),
       },
       annotations: {
         title: 'Create Catalog Item',

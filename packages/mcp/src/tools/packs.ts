@@ -120,6 +120,7 @@ export function registerPackTools(agent: AgentContext): void {
       const now = nowIso();
       return call({
         promise: agent.api.user.packs.post({
+          id: crypto.randomUUID(),
           name,
           description,
           category,
@@ -290,9 +291,11 @@ export function registerPackTools(agent: AgentContext): void {
     }) =>
       call({
         promise: agent.api.user.packs({ packId: pack_id }).items.post({
+          id: crypto.randomUUID(),
           name,
           category,
           weight: weight_grams,
+          weightUnit: 'g',
           quantity,
           catalogItemId: catalog_item_id,
           consumable: is_consumable,
@@ -395,7 +398,12 @@ export function registerPackTools(agent: AgentContext): void {
         promise: agent.api.user
           .packs({ packId: pack_id })
           .items({ itemId: item_id })
-          .similar.get({ query: { limit, ...(threshold !== undefined ? { threshold } : {}) } }),
+          .similar.get({
+            query: {
+              limit: String(limit),
+              ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+            },
+          }),
         action: 'find similar items',
         resourceHint: `item ${item_id}`,
       }),
@@ -467,9 +475,11 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id, weight_grams }) =>
       call({
-        promise: agent.api.user
-          .packs({ packId: pack_id })
-          ['weight-history'].post({ weight: weight_grams, localCreatedAt: nowIso() }),
+        promise: agent.api.user.packs({ packId: pack_id })['weight-history'].post({
+          id: crypto.randomUUID(),
+          weight: weight_grams,
+          localCreatedAt: nowIso(),
+        }),
         action: 'record pack weight',
         resourceHint: `pack ${pack_id}`,
       }),

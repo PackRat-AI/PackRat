@@ -110,6 +110,7 @@ export function registerTripTools(agent: AgentContext): void {
       const now = nowIso();
       return call({
         promise: agent.api.user.trips.post({
+          id: crypto.randomUUID(),
           name,
           description,
           location: location ?? null,

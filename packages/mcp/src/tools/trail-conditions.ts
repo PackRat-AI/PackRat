@@ -104,6 +104,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       const now = nowIso();
       return call({
         promise: agent.api.user['trail-conditions'].post({
+          id: crypto.randomUUID(),
           trailName: trail_name,
           trailRegion: trail_region ?? null,
           surface,

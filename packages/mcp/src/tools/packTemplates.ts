@@ -179,6 +179,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       const now = nowIso();
       return call({
         promise: agent.api.user['pack-templates'].post({
+          id: crypto.randomUUID(),
           name,
           description,
           category,
@@ -245,6 +246,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       const now = nowIso();
       const result = await call({
         promise: agent.api.user['pack-templates'].post({
+          id: crypto.randomUUID(),
           name,
           description,
           category,
@@ -283,19 +285,22 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         openWorldHint: false,
       },
     },
-    async ({ template_id, name, description, category, image, tags }) => {
-      const body: Record<string, unknown> = { localUpdatedAt: nowIso() };
-      if (name !== undefined) body.name = name;
-      if (description !== undefined) body.description = description;
-      if (category !== undefined) body.category = category;
-      if (image !== undefined) body.image = image;
-      if (tags !== undefined) body.tags = tags;
-      return call({
-        promise: agent.api.user['pack-templates']({ templateId: template_id }).put(body),
+    async ({ template_id, name, description, category, image, tags }) =>
+      call({
+        // The API's PUT is a full-replace: description/image/tags are required
+        // (nullable). Map unset optional inputs to null; name/category stay
+        // optional. Builds a typed literal so Eden validates the body shape.
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).put({
+          ...(name !== undefined ? { name } : {}),
+          ...(category !== undefined ? { category } : {}),
+          description: description ?? null,
+          image: image ?? null,
+          tags: tags ?? null,
+          localUpdatedAt: nowIso(),
+        }),
         action: 'update pack template',
         resourceHint: `template ${template_id}`,
-      });
-    },
+      }),
   );
 
   agent.server.registerTool(
@@ -384,6 +389,7 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     }) =>
       call({
         promise: agent.api.user['pack-templates']({ templateId: template_id }).items.post({
+          id: crypto.randomUUID(),
           name,
           description,
           weight,

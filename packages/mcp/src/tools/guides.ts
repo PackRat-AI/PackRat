@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { call } from '../client';
-import { SortOrder } from '../enums';
 import type { AgentContext } from '../types';
 
 export function registerGuidesTools(agent: AgentContext): void {
@@ -13,8 +12,8 @@ export function registerGuidesTools(agent: AgentContext): void {
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(50).default(20),
         category: z.string().optional(),
-        sort_field: z.string().optional(),
-        sort_order: z.nativeEnum(SortOrder).optional(),
+        sort_field: z.enum(['title', 'category', 'createdAt', 'updatedAt']).optional(),
+        sort_order: z.enum(['asc', 'desc']).optional(),
       },
       annotations: {
         title: 'List Outdoor Guides',
@@ -30,8 +29,7 @@ export function registerGuidesTools(agent: AgentContext): void {
             page,
             limit,
             category,
-            'sort[field]': sort_field,
-            'sort[order]': sort_order,
+            ...(sort_field ? { sort: { field: sort_field, order: sort_order ?? 'asc' } } : {}),
           },
         }),
         action: 'list guides',
