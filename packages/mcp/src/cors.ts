@@ -41,7 +41,13 @@ const WELL_KNOWN_PREFIX = '/.well-known/';
  * Returns `null` when the request is not a well-known path or not an
  * allowlisted origin — caller passes the request through unchanged.
  */
-export function applyCorsHeaders(request: Request, existing: Response | null): Response | null {
+export function applyCorsHeaders({
+  request,
+  existing,
+}: {
+  request: Request;
+  existing: Response | null;
+}): Response | null {
   const url = new URL(request.url);
   if (!url.pathname.startsWith(WELL_KNOWN_PREFIX)) return null;
 

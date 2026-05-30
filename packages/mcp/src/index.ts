@@ -186,7 +186,10 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
       // accepts it), so we can rely on index 2 here.
       const originalHandler = args[2] as ((...handlerArgs: unknown[]) => unknown) | undefined;
       if (isFunction(originalHandler)) {
-        const wrappedHandler = this.wrapHandlerWithRateLimit(name, originalHandler);
+        const wrappedHandler = this.wrapHandlerWithRateLimit({
+          toolName: name,
+          handler: originalHandler,
+        });
         args[2] = wrappedHandler;
       }
       const tool = (original as (...a: unknown[]) => RegisteredTool)(...args);
@@ -210,10 +213,13 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
    * off and retry against. The wrapper does NOT alter `arguments` /
    * `extra` shape — the SDK validates the rest of the request boundary.
    */
-  private wrapHandlerWithRateLimit(
-    toolName: string,
-    handler: (...handlerArgs: unknown[]) => unknown,
-  ): (...handlerArgs: unknown[]) => unknown {
+  private wrapHandlerWithRateLimit({
+    toolName,
+    handler,
+  }: {
+    toolName: string;
+    handler: (...handlerArgs: unknown[]) => unknown;
+  }): (...handlerArgs: unknown[]) => unknown {
     return async (...handlerArgs: unknown[]): Promise<unknown> => {
       const userId = this.currentUserId();
       const key = toolRateLimitKey(userId, toolName);
@@ -387,7 +393,13 @@ function extractBearer(headerValue: string | null): string | null {
  * `new Response(body, init)` shape. The body is streamed through
  * unchanged (no buffering).
  */
-function withCorrelationHeader(response: Response, correlationId: string): Response {
+function withCorrelationHeader({
+  response,
+  correlationId,
+}: {
+  response: Response;
+  correlationId: string;
+}): Response {
   if (response.headers.has('X-Correlation-Id')) return response;
   const annotated = new Response(response.body, response);
   annotated.headers.set('X-Correlation-Id', correlationId);
@@ -449,37 +461,37 @@ export default {
     // OPTIONS preflights from allowlisted origins on `/.well-known/*` get a
     // 204 directly here so we never touch the dispatcher logic below.
     if (request.method === 'OPTIONS') {
-      const cors = applyCorsHeaders(request, null);
-      if (cors) return withCorrelationHeader(cors, correlationId);
+      const cors = applyCorsHeaders({ request, existing: null });
+      if (cors) return withCorrelationHeader({ response: cors, correlationId });
     }
 
     // ── 2. Public metadata + ops endpoints (no auth required) ────────────────
     if (url.pathname === '/.well-known/oauth-protected-resource') {
       const body = buildResourceMetadata(env);
       const res = Response.json(body);
-      const annotated = applyCorsHeaders(request, res) ?? res;
-      return withCorrelationHeader(annotated, correlationId);
+      const annotated = applyCorsHeaders({ request, existing: res }) ?? res;
+      return withCorrelationHeader({ response: annotated, correlationId });
     }
     if (url.pathname === '/health' || url.pathname === '/') {
-      return withCorrelationHeader(await handleHealth(request, env), correlationId);
+      return withCorrelationHeader({ response: await handleHealth(request, env), correlationId });
     }
     if (url.pathname === '/status') {
-      return withCorrelationHeader(handleStatus(request, env), correlationId);
+      return withCorrelationHeader({ response: handleStatus(request, env), correlationId });
     }
     if (url.pathname === '/favicon.ico') {
-      return withCorrelationHeader(faviconResponse(), correlationId);
+      return withCorrelationHeader({ response: faviconResponse(), correlationId });
     }
 
     // ── 3. /mcp — JWT-gated protected resource ───────────────────────────────
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
       const bearer = extractBearer(request.headers.get('Authorization'));
       if (!bearer) {
-        return withCorrelationHeader(unauthorizedResponse(env), correlationId);
+        return withCorrelationHeader({ response: unauthorizedResponse(env), correlationId });
       }
 
       const verified = await verifyMcpToken(bearer, { env, ctx });
       if (!verified) {
-        return withCorrelationHeader(unauthorizedResponse(env), correlationId);
+        return withCorrelationHeader({ response: unauthorizedResponse(env), correlationId });
       }
 
       // Inject the verified-claim Props into ctx.props for the DO handler.
@@ -500,13 +512,13 @@ export default {
       (ctx as unknown as { props: Props }).props = props;
 
       const response = await mcpDoHandler.fetch(request, env, ctx);
-      return withCorrelationHeader(response, correlationId);
+      return withCorrelationHeader({ response, correlationId });
     }
 
     // ── 4. Anything else: 404 ────────────────────────────────────────────────
-    return withCorrelationHeader(
-      Response.json({ error: 'Not Found' }, { status: 404 }),
+    return withCorrelationHeader({
+      response: Response.json({ error: 'Not Found' }, { status: 404 }),
       correlationId,
-    );
+    });
   },
 };
