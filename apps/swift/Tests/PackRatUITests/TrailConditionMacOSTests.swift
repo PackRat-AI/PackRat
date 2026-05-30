@@ -94,13 +94,17 @@ final class TrailConditionMacOSTests: AppUITestCase {
 
         // On macOS Toggle is rendered as a checkbox; queryable via `switches`
         // (XCUI maps both UISwitches and NSButton checkboxes there) or
-        // `checkBoxes`. Try switches first, then checkboxes.
+        // `checkBoxes`. Prefer the stable identifier SwiftUI exposes across
+        // label rendering differences, then fall back to control labels.
         let hazardLabels = ["Downed trees", "Muddy sections", "Ice"]
         for hazard in hazardLabels {
+            let byIdentifier = app.descendants(matching: .any)["trail_hazard_\(hazard.uiTestSlug)"]
             let asSwitch = app.switches[hazard]
             let asCheck = app.checkBoxes[hazard]
             XCTAssertTrue(
-                asSwitch.waitForExistence(timeout: 3) || asCheck.waitForExistence(timeout: 2),
+                byIdentifier.waitForExistence(timeout: 3) ||
+                    asSwitch.waitForExistence(timeout: 1) ||
+                    asCheck.waitForExistence(timeout: 1),
                 "Hazard toggle '\(hazard)' must exist"
             )
         }
@@ -133,3 +137,11 @@ final class TrailConditionMacOSTests: AppUITestCase {
     }
 }
 #endif
+
+private extension String {
+    var uiTestSlug: String {
+        lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
+    }
+}

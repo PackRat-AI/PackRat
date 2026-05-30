@@ -30,21 +30,36 @@ final class WeatherSubFlowMacOSTests: AppUITestCase {
         guard prefsButton.waitForExistence(timeout: 8) else { return }
         prefsButton.click()
 
-        // Master toggle — on macOS it's a checkbox.
+        // Master toggle — on macOS it's a checkbox. Query the stable
+        // automation identifier first, since SwiftUI can expose Form toggle
+        // labels differently from the control itself.
         XCTAssertTrue(
-            app.switches["Weather Notifications"].waitForExistence(timeout: 5)
-            || app.checkBoxes["Weather Notifications"].waitForExistence(timeout: 2),
+            toggle(named: "weather_alert_notifications_toggle", label: "Weather Notifications").waitForExistence(timeout: 5),
             "Weather Notifications toggle must be visible"
         )
 
-        let alertTypes = ["Severe Storms", "Tornado Warnings", "Flood Alerts", "Fire Danger"]
+        let alertTypes = [
+            ("weather_alert_severe_storms_toggle", "Severe Storms"),
+            ("weather_alert_tornado_warnings_toggle", "Tornado Warnings"),
+            ("weather_alert_flood_alerts_toggle", "Flood Alerts"),
+            ("weather_alert_fire_danger_toggle", "Fire Danger")
+        ]
         for type in alertTypes {
             XCTAssertTrue(
-                app.switches[type].waitForExistence(timeout: 3)
-                || app.checkBoxes[type].waitForExistence(timeout: 2),
-                "Alert type toggle '\(type)' must be visible"
+                toggle(named: type.0, label: type.1).waitForExistence(timeout: 3),
+                "Alert type toggle '\(type.1)' must be visible"
             )
         }
+    }
+
+    private func toggle(named identifier: String, label: String) -> XCUIElement {
+        let identifierSwitch = app.switches[identifier]
+        if identifierSwitch.exists { return identifierSwitch }
+        let identifierCheck = app.checkBoxes[identifier]
+        if identifierCheck.exists { return identifierCheck }
+        let labelSwitch = app.switches[label]
+        if labelSwitch.exists { return labelSwitch }
+        return app.checkBoxes[label]
     }
 
     func testToggleAlertPreference() {

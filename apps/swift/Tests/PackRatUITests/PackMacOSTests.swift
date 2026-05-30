@@ -95,7 +95,7 @@ final class PackMacOSTests: AppUITestCase {
         app.buttons["Add"].click()
 
         XCTAssertTrue(
-            app.staticTexts[itemName].waitForExistence(timeout: 15),
+            packItemRow(containing: itemName).waitForExistence(timeout: 15),
             "Added item '\(itemName)' must appear in pack detail"
         )
     }
@@ -117,8 +117,8 @@ final class PackMacOSTests: AppUITestCase {
 
         for item in uniqueItems {
             XCTAssertTrue(
-                staticText(containing: item).firstMatch
-                    .waitForExistence(timeout: 5),
+                packItemRow(containing: item)
+                    .waitForExistence(timeout: 10),
                 "Item '\(item)' should appear in pack"
             )
         }
@@ -191,16 +191,6 @@ final class PackMacOSTests: AppUITestCase {
         nameField.click()
         nameField.typeText(name)
 
-        // The API requires a non-null category for create; pick Hiking.
-        let categoryButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Category' OR label == 'None'")
-        ).firstMatch
-        if categoryButton.waitForExistence(timeout: 3) {
-            categoryButton.click()
-            let hiking = app.buttons["Hiking"].firstMatch
-            if hiking.waitForExistence(timeout: 3) { hiking.click() }
-        }
-
         app.buttons["Create"].click()
         waitFor(app.staticTexts[name], timeout: 15)
     }
@@ -233,7 +223,7 @@ final class PackMacOSTests: AppUITestCase {
         // Wait for the form sheet to dismiss (Add Item button visible again).
         waitFor(app.buttons["Add Item"].firstMatch, timeout: 10)
 
-        let target = app.staticTexts[name]
+        let target = packItemRow(containing: name)
         waitFor(target, timeout: 10, message: "Item '\(name)' must appear in pack detail")
     }
 
@@ -251,10 +241,10 @@ final class PackMacOSTests: AppUITestCase {
         app.menuItems.matching(NSPredicate(format: "identifier == %@", "trash")).firstMatch
     }
 
-    private func staticText(containing text: String) -> XCUIElementQuery {
-        app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", text, text)
-        )
+    private func packItemRow(containing text: String) -> XCUIElement {
+        app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "pack_item_row_", text)
+        ).firstMatch
     }
 }
 #endif

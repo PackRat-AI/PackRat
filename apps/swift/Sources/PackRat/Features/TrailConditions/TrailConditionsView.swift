@@ -278,6 +278,7 @@ struct SubmitTrailConditionView: View {
                             set: { on in if on { selectedHazards.insert(hazard) } else { selectedHazards.remove(hazard) } }
                         ))
                         .accessibilityIdentifier("trail_hazard_\(hazard.accessibilitySlug)")
+                        .accessibilityLabel(hazard)
                     }
                 }
                 Section("Notes") {

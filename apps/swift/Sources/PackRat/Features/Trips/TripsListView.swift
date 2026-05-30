@@ -28,6 +28,7 @@ struct TripsListView: View {
                     actionLabel: "Plan Trip",
                     action: { showingCreateSheet = true }
                 )
+                .accessibilityIdentifier("trips_empty_state")
             } else {
                 tripList
             }
@@ -56,21 +57,34 @@ struct TripsListView: View {
     @ViewBuilder
     private var tripList: some View {
         List(selection: $selectedId) {
-            if !viewModel.upcomingTrips.isEmpty {
+            if !upcomingTrips.isEmpty {
                 Section("Upcoming") {
-                    ForEach(viewModel.upcomingTrips) { trip in
+                    ForEach(upcomingTrips) { trip in
                         tripRow(trip)
                     }
                 }
             }
-            if !viewModel.pastTrips.isEmpty {
+            if !pastTrips.isEmpty {
                 Section("Past") {
-                    ForEach(viewModel.pastTrips) { trip in
+                    ForEach(pastTrips) { trip in
                         tripRow(trip)
                     }
                 }
             }
         }
+        .accessibilityIdentifier("trips_list")
+    }
+
+    private var upcomingTrips: [Trip] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return viewModel.filteredTrips
+            .filter { ($0.startDate?.toDate() ?? .distantPast) >= today }
+            .sorted { ($0.startDate ?? "") < ($1.startDate ?? "") }
+    }
+
+    private var pastTrips: [Trip] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return viewModel.filteredTrips.filter { ($0.startDate?.toDate() ?? .distantPast) < today }
     }
 
     @ViewBuilder

@@ -194,17 +194,6 @@ final class PackTests: AppUITestCase {
         nameField.tap()
         nameField.typeText(name)
 
-        // Pick a category — the API rejects pack creation with no category
-        // (DB column is NOT NULL). Open the picker, choose Hiking.
-        let categoryButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Category' OR label == 'None'")
-        ).firstMatch
-        if categoryButton.waitForExistence(timeout: 3) {
-            categoryButton.tap()
-            let hiking = app.buttons["Hiking"].firstMatch
-            if hiking.waitForExistence(timeout: 3) { hiking.tap() }
-        }
-
         app.buttons["Create"].tap()
         waitFor(app.staticTexts[name], timeout: 15)
     }

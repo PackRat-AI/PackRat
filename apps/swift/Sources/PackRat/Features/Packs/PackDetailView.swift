@@ -4,7 +4,7 @@ import Collections
 
 struct PackDetailView: View {
     let pack: Pack
-    let viewModel: PacksViewModel
+    @Bindable var viewModel: PacksViewModel
 
     @State private var showingEditSheet = false
     @State private var showingAddItemSheet = false
@@ -16,10 +16,14 @@ struct PackDetailView: View {
     @State private var dropTargetCategory: String?
     @State private var triggerShare = false
 
-    private var items: [PackItem] { pack.activeItems }
+    private var currentPack: Pack {
+        viewModel.packs.first { $0.id == pack.id } ?? pack
+    }
+
+    private var items: [PackItem] { currentPack.activeItems }
 
     private var packShareURL: URL? {
-        URL(string: "https://packrat.world/packs/\(pack.id)")
+        URL(string: "https://packrat.world/packs/\(currentPack.id)")
     }
 
     var body: some View {
@@ -28,7 +32,7 @@ struct PackDetailView: View {
                 weightSummary
                     .padding(.horizontal)
 
-                PackWeightChart(pack: pack)
+                PackWeightChart(pack: currentPack)
 
                 if let error {
                     InlineErrorView(message: error)
@@ -45,7 +49,7 @@ struct PackDetailView: View {
                                 } onDelete: {
                                     Task {
                                         do {
-                                            try await viewModel.deleteItem(item.id, from: pack.id)
+                                    try await viewModel.deleteItem(item.id, from: currentPack.id)
                                         } catch {
                                             self.error = error.localizedDescription
                                         }
@@ -74,7 +78,7 @@ struct PackDetailView: View {
             }
             .padding(.bottom)
         }
-        .navigationTitle(pack.name)
+        .navigationTitle(currentPack.name)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
         #endif
@@ -98,8 +102,8 @@ struct PackDetailView: View {
                     }
                     .disabled(items.isEmpty)
 
-                    if pack.isPublic == true, let shareURL = packShareURL {
-                        ShareLink(item: shareURL, subject: Text(pack.name),
+                    if currentPack.isPublic == true, let shareURL = packShareURL {
+                        ShareLink(item: shareURL, subject: Text(currentPack.name),
                                   message: Text("Check out my pack on PackRat")) {
                             Label("Share", systemImage: "square.and.arrow.up")
                         }
@@ -121,26 +125,26 @@ struct PackDetailView: View {
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            PackFormView(viewModel: viewModel, existingPack: pack)
+            PackFormView(viewModel: viewModel, existingPack: currentPack)
         }
         .sheet(isPresented: $showingAddItemSheet) {
-            PackItemFormView(packId: pack.id, viewModel: viewModel)
+            PackItemFormView(packId: currentPack.id, viewModel: viewModel)
         }
         .sheet(item: $editingItem) { item in
-            PackItemFormView(packId: pack.id, viewModel: viewModel, existingItem: item)
+            PackItemFormView(packId: currentPack.id, viewModel: viewModel, existingItem: item)
         }
         .sheet(item: $detailItem) { item in
-            PackItemDetailView(item: item, packId: pack.id, viewModel: viewModel)
+            PackItemDetailView(item: item, packId: currentPack.id, viewModel: viewModel)
         }
         .sheet(isPresented: $showingGapAnalysis) {
-            GapAnalysisSheet(pack: pack, service: viewModel.service)
+            GapAnalysisSheet(pack: currentPack, service: viewModel.service)
         }
         .navigationDestination(isPresented: $showingWeightAnalysis) {
-            PackWeightAnalysisView(pack: pack)
+            PackWeightAnalysisView(pack: currentPack)
         }
         .focusedSceneValue(\.sharePackAction, $triggerShare)
         .onChange(of: triggerShare) { _, new in
-            if new, pack.isPublic == true, let url = packShareURL {
+            if new, currentPack.isPublic == true, let url = packShareURL {
                 #if os(macOS)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.absoluteString, forType: .string)
@@ -178,7 +182,7 @@ struct PackDetailView: View {
             Task {
                 do {
                     try await viewModel.updateItem(
-                        itemId, in: pack.id,
+                        itemId, in: currentPack.id,
                         name: item.name,
                         weight: item.weight,
                         weightUnit: item.weightUnit.rawValue,
@@ -212,7 +216,7 @@ struct PackDetailView: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(pack.formattedWeight(value))
+            Text(currentPack.formattedWeight(value))
                 .font(.callout.monospacedDigit().bold())
                 .foregroundStyle(color)
         }

@@ -34,10 +34,12 @@ final class NavigationTests: AppUITestCase {
 
     func testTripsTabShowsListOrEmpty() {
         goToTab("Trips")
-        let hasList = app.collectionViews.firstMatch.waitForExistence(timeout: 8)
-        let hasEmpty = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS 'No Trips'")
-        ).firstMatch.waitForExistence(timeout: 2)
+        let hasList = app.collectionViews["trips_list"].waitForExistence(timeout: 8)
+            || app.collectionViews.firstMatch.waitForExistence(timeout: 2)
+        let hasEmpty = app.otherElements["trips_empty_state"].waitForExistence(timeout: 2)
+            || app.staticTexts.matching(
+                NSPredicate(format: "label CONTAINS 'No Trips'")
+            ).firstMatch.waitForExistence(timeout: 2)
         XCTAssertTrue(hasList || hasEmpty, "Trips tab must show list or empty state")
     }
 
