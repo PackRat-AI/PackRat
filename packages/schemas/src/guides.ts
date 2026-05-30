@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import { z } from 'zod';
 
 export const GuideSchema = z.object({
@@ -8,7 +9,11 @@ export const GuideSchema = z.object({
   categories: z.array(z.string()).optional(),
   description: z.string(),
   author: z.string().optional(),
-  readingTime: z.number().optional(),
+  readingTime: z.preprocess((val) => {
+    if (val === undefined || val === null) return undefined;
+    const n = isString(val) ? parseFloat(val) : val;
+    return Number.isFinite(n) ? n : undefined;
+  }, z.number().optional()),
   difficulty: z.string().optional(),
   content: z.string().optional(),
   createdAt: z.string().datetime(),

@@ -12,6 +12,7 @@ import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import {
   catalogItems,
   type NewPack,
@@ -195,7 +196,6 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
 
         return result;
       } catch (error) {
-        console.error('Error analyzing image:', error);
         if (error instanceof Error) {
           if (
             error.message.includes('Invalid image') ||
@@ -204,8 +204,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           ) {
             return status(400, { error: error.message });
           }
-          return status(500, { error: `Failed to analyze image: ${error.message}` });
         }
+        captureApiException({
+          error: error,
+          operation: 'packs.analyzeImage',
+          tags: { feature: 'packs' },
+          extra: { httpStatus: 500, errorCode: 'PACKS_ANALYZE_IMAGE_ERROR' },
+        });
         return status(500, { error: 'Failed to analyze image' });
       }
     },
@@ -259,7 +264,16 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (!canAccess) return status(403, { error: 'Unauthorized' });
         return computePackBreakdown(pack);
       } catch (error) {
-        console.error('Error computing pack breakdown:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.weightBreakdown',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_BREAKDOWN_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to compute breakdown' });
       }
     },
@@ -308,7 +322,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (!updatedPack) return status(404, { error: 'Pack not found' });
         return computePackWeights({ pack: updatedPack });
       } catch (error) {
-        console.error('Error updating pack:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.update',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_UPDATE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to update pack' });
       }
     },
@@ -429,7 +453,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           updatedAt: entry.createdAt,
         }));
       } catch (error) {
-        console.error('Pack weight history API error:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.createWeightHistory',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_HISTORY_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to create weight history entry' });
       }
     },
@@ -529,14 +563,21 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         const { generateObject } = await import('ai');
         const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
 
-        const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-          getEnv();
+        const {
+          AI_PROVIDER,
+          OPENAI_API_KEY,
+          CLOUDFLARE_ACCOUNT_ID,
+          CLOUDFLARE_AI_GATEWAY_ID,
+          CLOUDFLARE_API_TOKEN,
+          AI,
+        } = getEnv();
 
         const aiProvider = createAIProvider({
           openAiApiKey: OPENAI_API_KEY,
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
 
@@ -627,10 +668,14 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const packId = params.packId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
       const itemId = data.id;
 
       const embeddingText = getEmbeddingText({ item: data });
@@ -640,6 +685,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
@@ -724,10 +770,14 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
@@ -758,6 +808,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
       }

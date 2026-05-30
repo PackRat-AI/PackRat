@@ -2,6 +2,7 @@ import '../polyfills';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-app/lib/devClient';
+import Constants from 'expo-constants';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
@@ -9,7 +10,6 @@ import '../global.css';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
-import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
@@ -17,17 +17,36 @@ import { useEffect, useRef } from 'react';
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
-  // Disable Sentry in local development or when no DSN is configured.
   enabled: clientEnvs.NODE_ENV !== 'development' && !!clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
-});
 
-const user = userStore.peek();
-if (user) {
-  Sentry.setUser(user);
-}
+  // PII: email, IP, device fingerprint — off by default for GDPR; enable if you have consent.
+  sendDefaultPii: false,
+
+  // Sample 20% of sessions for performance; 100% of errors always reach Sentry.
+  tracesSampleRate: 0.2,
+
+  // Tag every event with environment so you can filter in the Sentry UI.
+  // APP_VARIANT is set per EAS build profile and exposed via app.config.ts extra.
+  // Using it instead of NODE_ENV prevents all EAS builds from reporting as 'production'.
+  environment: (Constants.expoConfig?.extra?.appVariant as string) ?? 'production',
+
+  // Scrub sensitive query parameters from all HTTP breadcrumbs to prevent token leakage.
+  beforeBreadcrumb(breadcrumb) {
+    if (breadcrumb.type === 'http' && breadcrumb.data?.url) {
+      try {
+        const parsed = new URL(String(breadcrumb.data.url));
+        const SENSITIVE_PARAMS = ['token', 'access_token', 'auth', 'password', 'jwt', 'session'];
+        for (const key of SENSITIVE_PARAMS) {
+          if (parsed.searchParams.has(key)) parsed.searchParams.set(key, '[REDACTED]');
+        }
+        breadcrumb.data.url = parsed.toString();
+      } catch {
+        // URL parsing failed — leave breadcrumb unchanged
+      }
+    }
+    return breadcrumb;
+  },
+});
 
 export {
   // Catch any errors thrown by the Layout component.

@@ -1,7 +1,11 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { DefaultChatTransport, type TextUIPart } from 'ai';
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithToolCalls,
+  type TextUIPart,
+} from 'ai';
 import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
@@ -24,6 +28,8 @@ import {
   releaseLocalModel,
 } from 'expo-app/features/ai/lib/localModelManager';
 import { createLocalTools } from 'expo-app/features/ai/lib/tools';
+import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
+import { packsStore } from 'expo-app/features/packs/store/packs';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { authClient } from 'expo-app/lib/auth-client';
@@ -210,12 +216,55 @@ export default function AIChat() {
 
   // transportKey forces useChat to remount when the transport type switches,
   // since useChat captures the transport reference on mount and won't update it.
-  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
+  const { messages, setMessages, error, sendMessage, stop, status, addToolOutput } = useChat({
     id: transportKey,
     transport,
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200,
     messages: initialMessages,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    onToolCall: ({ toolCall }) => {
+      if (toolCall.dynamic) return;
+
+      if (toolCall.toolName === 'getPackDetails') {
+        const { packId } = toolCall.input as { packId: string };
+        const pack = packsStore.get()[packId];
+        if (!pack || pack.deleted) {
+          addToolOutput({
+            tool: 'getPackDetails',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Pack not found' },
+          });
+          return;
+        }
+        const items = getPackItems(packId);
+        const categories = Array.from(new Set(items.map((i) => i.category || 'Uncategorized')));
+        addToolOutput({
+          tool: 'getPackDetails',
+          toolCallId: toolCall.toolCallId,
+          output: { success: true, data: { ...pack, items, categories } },
+        });
+        return;
+      }
+
+      if (toolCall.toolName === 'getPackItemDetails') {
+        const { itemId } = toolCall.input as { itemId: string };
+        const item = packItemsStore.get()[itemId];
+        if (!item || item.deleted) {
+          addToolOutput({
+            tool: 'getPackItemDetails',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Item not found' },
+          });
+          return;
+        }
+        addToolOutput({
+          tool: 'getPackItemDetails',
+          toolCallId: toolCall.toolCallId,
+          output: { success: true, data: item },
+        });
+      }
+    },
   });
 
   // Load persisted messages on mount and when context changes
@@ -269,10 +318,13 @@ export default function AIChat() {
 
     // Guard: local mode but model not ready
     if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
-      Burnt.toast({
-        title: t('ai.modelNotReady'),
-        preset: 'error',
-      });
+      const toastTitle =
+        modelStatus === 'downloading'
+          ? t('ai.modelStillDownloading')
+          : modelStatus === 'preparing' || modelStatus === 'checking'
+            ? t('ai.modelStillLoading')
+            : t('ai.modelNotReady');
+      Burnt.toast({ title: toastTitle, preset: 'error' });
       return;
     }
 
@@ -356,7 +408,11 @@ export default function AIChat() {
           }}
         >
           <View>
-            <View style={{ height: HEADER_HEIGHT + insets.top }} />
+            <View
+              style={{
+                height: Platform.OS === 'ios' ? insets.top + 52 : HEADER_HEIGHT + insets.top,
+              }}
+            />
             <LocationContext location={location} onSetLocation={setLocation} />
             <DateSeparator
               date={new Date().toLocaleDateString('en-US', {

@@ -19,7 +19,7 @@ export function TrailConditionsTile() {
     router.push('/trail-conditions');
   };
 
-  if (!featureFlags.enableTrips) return null;
+  if (!featureFlags.enableTrailConditions) return null;
 
   return (
     <>

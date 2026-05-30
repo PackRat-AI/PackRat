@@ -199,7 +199,7 @@ export default function AppLayout() {
           options={{
             headerShown: false,
             presentation: 'card',
-            animation: 'slide_from_bottom',
+            animation: 'default',
           }}
         />
         <Stack.Screen
@@ -222,7 +222,7 @@ export default function AppLayout() {
           name="gear-inventory"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
           }}
         />

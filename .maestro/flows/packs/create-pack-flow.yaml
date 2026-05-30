@@ -3,11 +3,15 @@ appId: ${APP_ID}
 # Create Pack Flow: Navigate to packs tab and create a new pack
 - waitForAnimationToEnd
 
-# Navigate to the Packs tab
+# Navigate to the Packs tab and wait until the header create button is visible.
+# Use extendedWaitUntil rather than a bare tap+wait to handle cases where the
+# animation from the previous flow hasn't fully settled.
 - tapOn:
     text: "Packs"
-
-- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "create-pack-button"
+    timeout: 10000
 
 # Tap the header "+" button (testID: create-pack-button) to open the pack creation form
 - tapOn:
