@@ -11,23 +11,21 @@ import {
   oauthProviderOpenIdConfigMetadata,
 } from '@better-auth/oauth-provider';
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
-import { cors } from '@elysiajs/cors';
+import { type App, appBase } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
 import { consentRoute } from '@packrat/api/auth/consent-route';
 import { AppContainer } from '@packrat/api/containers';
-import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
-import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
-import { Elysia } from 'elysia';
-import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
+
+export type { App };
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
@@ -42,77 +40,12 @@ function sentryOptions(env: Env) {
   };
 }
 
-export const app = new Elysia({ adapter: CloudflareAdapter })
-  .use(
-    cors({
-      // Better Auth uses cookies — credentials must be true and origins must
-      // be explicit (not wildcard) so the browser sends cookies cross-origin.
-      credentials: true,
-      origin: (request) => {
-        const origin = request.headers.get('Origin');
-        if (!origin) return false;
-        // Allow the API base URL and any subdomain of packrat.world
-        const allowed = [
-          /^https:\/\/(www\.)?packrat\.world$/,
-          /^https:\/\/[\w-]+\.packrat\.world$/,
-          /^https:\/\/[\w-]+\.packratai\.com$/,
-          /^https?:\/\/[\w-]+\.workers\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-          /^exp:\/\//,
-        ];
-        return allowed.some((re) => re.test(origin));
-      },
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    }),
-  )
-  .use(packratOpenApi)
-  .onError(({ error, code, request }) => {
-    // Only report unexpected server errors — not user-input or routing errors.
-    if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
-      captureApiException({
-        error: error,
-        operation: 'elysia.onError',
-        tags: {
-          error_code: String(code),
-          method: request?.method ?? 'UNKNOWN',
-          path: request ? new URL(request.url).pathname : 'UNKNOWN',
-        },
-        extra: { errorCode: String(code), httpStatus: 500 },
-      });
-    }
-
-    if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(JSON.stringify({ error: 'Validation failed' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    if (code === 'NOT_FOUND') {
-      return new Response(JSON.stringify({ error: 'Not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  })
-  .get('/', () => 'PackRat API is running!', {
-    detail: { summary: 'Health check', tags: ['Meta'] },
-  })
-  .get('/health', () => ({ status: 'ok' as const }), {
-    detail: { summary: 'Health status', tags: ['Meta'] },
-  })
-  // Branded OAuth consent page — mounted at /oauth/consent. The Better Auth
-  // OAuth provider redirects the user-agent here mid-flow; the @elysiajs/html
-  // plugin (inside consentRoute) sets Content-Type: text/html on JSX returns.
-  .use(consentRoute)
-  .use(routes)
-  .compile();
-
-export type App = typeof app;
+// Runtime instance: same routes as `App` (defined in `./app`) plus the branded
+// OAuth consent page,
+// mounted at /oauth/consent. The Better Auth OAuth provider redirects the
+// user-agent here mid-flow; the @elysiajs/html plugin (inside consentRoute)
+// sets Content-Type: text/html on JSX returns. `workerHandler` serves this.
+export const app = appBase.use(consentRoute).compile();
 
 export { AppContainer };
 

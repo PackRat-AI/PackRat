@@ -4,23 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ESNext"],
-    // The API's server-rendered `.tsx` (consent page/route) is pulled into this
-    // program by the typed Eden client. `@kitajs/html` supplies the global JSX
-    // namespace (the `'safe'` type, `JSX.Element`) and `/register` supplies the
-    // global `Html` factory value those files rely on — both otherwise excluded
-    // by this package's restricted `types` list.
-    "types": ["@cloudflare/workers-types/2022-10-31", "@kitajs/html", "@kitajs/html/register"],
+    "types": ["@cloudflare/workers-types/2022-10-31"],
     "strict": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    // The typed Eden Treaty client (`@packrat/api-client`) references the API's
-    // `App` type, which transitively pulls `packages/api/src/auth/consent-route.tsx`
-    // into this program. Mirror the API package's `@kitajs/html` JSX settings so
-    // tsc can parse those `.tsx` files (otherwise: TS6142 "--jsx is not set").
-    "jsx": "react",
-    "jsxFactory": "Html.createElement",
-    "jsxFragmentFactory": "Html.Fragment",
     "baseUrl": ".",
     "paths": {
       "@packrat/api-client": ["../api-client/src/index.ts"],

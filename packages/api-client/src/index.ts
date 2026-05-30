@@ -1,5 +1,9 @@
 import { treaty } from '@elysiajs/eden';
-import type { App } from '@packrat/api';
+// Import from `@packrat/api/app` (the JSX-free Elysia contract), NOT the worker
+// entry `@packrat/api`. The entry mounts the server-rendered OAuth consent page
+// (@kitajs/html), whose JSX types would otherwise leak into every consumer of
+// this client (packages/mcp, apps/*) via the `App` type.
+import type { App } from '@packrat/api/app';
 import { isObject, isString } from '@packrat/guards';
 
 /**
