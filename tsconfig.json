@@ -86,6 +86,10 @@
     // their global JSX back into this program. It's exercised by vitest, not the
     // root tsc.
     "packages/api/src/auth/__tests__/consent-page.test.ts",
+    // The API's integration tests import the worker entry (../src/index), which
+    // pulls the @kitajs/html consent route back into this program. They run under
+    // vitest, not the root tsc.
+    "packages/api/test",
     "packages/mcp",
     "packages/osm-db",
     "packages/osm-import",

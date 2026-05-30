@@ -125,7 +125,10 @@ describe('logger', () => {
         ctx: { jobId: 'j6', count: 3, ok: true, meta: { nested: 1 }, err },
       });
       expect(Sentry.captureException).toHaveBeenCalledOnce();
-      const [captured, opts] = vi.mocked(Sentry.captureException).mock.calls[0] ?? [];
+      const [captured, rawOpts] = vi.mocked(Sentry.captureException).mock.calls[0] ?? [];
+      const opts = rawOpts as
+        | { tags?: Record<string, string>; extra?: Record<string, unknown> }
+        | undefined;
       expect(captured).toBe(err);
       expect(opts?.tags).toMatchObject({
         event: 'etl.failed',
@@ -139,7 +142,8 @@ describe('logger', () => {
     it('forwards ERROR without ctx.err to captureMessage at error level', () => {
       logger.error({ event: 'etl.failed', ctx: { jobId: 'j7' } });
       expect(Sentry.captureMessage).toHaveBeenCalledOnce();
-      const [event, opts] = vi.mocked(Sentry.captureMessage).mock.calls[0] ?? [];
+      const [event, rawOpts] = vi.mocked(Sentry.captureMessage).mock.calls[0] ?? [];
+      const opts = rawOpts as { level?: string; tags?: Record<string, string> } | undefined;
       expect(event).toBe('etl.failed');
       expect(opts?.level).toBe('error');
       expect(opts?.tags).toMatchObject({ jobId: 'j7' });

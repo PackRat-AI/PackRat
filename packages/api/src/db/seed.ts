@@ -1947,7 +1947,7 @@ async function seed() {
             id: f.valuesFromArray({ values: items.map((i) => i.id) }),
             name: f.valuesFromArray({ values: items.map((i) => i.name) }),
             description: f.valuesFromArray({
-              values: items.map((i) => i.description ?? null),
+              values: items.map((i) => i.description ?? undefined),
             }),
             weight: f.valuesFromArray({ values: items.map((i) => i.weight) }),
             weightUnit: f.valuesFromArray({ values: items.map((i) => i.weightUnit) }),
@@ -1956,7 +1956,7 @@ async function seed() {
             consumable: f.valuesFromArray({ values: items.map((i) => i.consumable) }),
             worn: f.valuesFromArray({ values: items.map((i) => i.worn) }),
             image: f.default({ defaultValue: null }),
-            notes: f.valuesFromArray({ values: items.map((i) => i.notes ?? null) }),
+            notes: f.valuesFromArray({ values: items.map((i) => i.notes ?? undefined) }),
             packTemplateId: f.default({ defaultValue: templateDef.id }),
             catalogItemId: f.default({ defaultValue: null }),
             userId: f.default({ defaultValue: adminUserId }),
