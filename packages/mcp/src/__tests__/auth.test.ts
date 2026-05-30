@@ -14,7 +14,7 @@
  *     URLs). No probe; no cache.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { __resetHealthCacheForTests, handleHealth, handleStatus } from '../auth';
 import type { Env } from '../types';
 
@@ -42,7 +42,7 @@ interface HealthProbeBody {
 // ── /health ─────────────────────────────────────────────────────────────────
 
 describe('handleHealth', () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn<typeof globalThis, 'fetch'>>;
+  let fetchSpy: MockInstance<typeof fetch>;
   beforeEach(() => {
     __resetHealthCacheForTests();
     fetchSpy = vi.spyOn(globalThis, 'fetch');

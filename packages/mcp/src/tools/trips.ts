@@ -46,7 +46,7 @@ export function registerTripTools(agent: AgentContext): void {
       const clamped = clampLimit(limit);
       const result = await agent.api.user.trips.get();
       if (result.error || result.data == null) {
-        return call(Promise.resolve(result), { action: 'list trips' });
+        return call({ promise: Promise.resolve(result), action: 'list trips' });
       }
       const items = Array.isArray(result.data) ? result.data : [];
       const page = items.slice(offset, offset + clamped);

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { call, clampLimit, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
+import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import { GetPackOutputSchema, ListPacksOutputSchema } from '../output-schemas';
 import type { AgentContext } from '../types';
@@ -50,7 +50,7 @@ export function registerPackTools(agent: AgentContext): void {
       });
       if (result.error || result.data == null) {
         // Defer to the standard error envelope for failure consistency.
-        return call(Promise.resolve(result), { action: 'list packs' });
+        return call({ promise: Promise.resolve(result), action: 'list packs' });
       }
       const items = Array.isArray(result.data) ? result.data : [];
       // U8 server-side pagination: the API doesn't slice today, so we

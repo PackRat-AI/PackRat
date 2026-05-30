@@ -111,7 +111,11 @@ function noopHooks(getToken: TokenProvider) {
  * signals recoverable failures.
  */
 export type McpToolResult = {
-  content: CallToolResult['content'];
+  // Narrow to the single text-content block we actually emit (not the SDK's
+  // full `ContentBlock` union), so internal readers can access `.content[0].text`
+  // directly. A narrow-element array is still assignable to the SDK's
+  // `CallToolResult['content']` (`ContentBlock[]`), so tool handlers type-check.
+  content: { type: 'text'; text: string }[];
   isError?: boolean;
   /** Present when the tool declared an `outputSchema` and the payload fits. */
   structuredContent?: CallToolResult['structuredContent'];
