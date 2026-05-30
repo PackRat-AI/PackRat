@@ -129,8 +129,6 @@ struct WeatherView: View {
                     ForEach(viewModel.searchResults) { location in
                         Button {
                             viewModel.saveLocation(location)
-                            viewModel.searchText = ""
-                            viewModel.searchResults = []
                             isSearchPresented = false
                             Task {
                                 await viewModel.selectLocation(location)
@@ -153,8 +151,10 @@ struct WeatherView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("weather_search_result_\(location.id)")
                         Divider().padding(.leading, 12)
                     }
                 }

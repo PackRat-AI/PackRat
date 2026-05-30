@@ -10,6 +10,11 @@ enum VisualSampleData {
             || ProcessInfo.processInfo.arguments.contains("--visual-sample-data")
     }
 
+    static var isUITestFixturesEnabled: Bool {
+        ProcessInfo.processInfo.environment["PACKRAT_UI_TEST_FIXTURES"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("--ui-test-fixtures")
+    }
+
     static var guides: [Guide] {
         [
             Guide(
@@ -61,6 +66,148 @@ enum VisualSampleData {
 
     static var guideCategories: [String] {
         Array(Set(guides.compactMap(\.category))).sorted()
+    }
+
+    static func catalogItems(matching query: String) -> [CatalogItem] {
+        let allItems = [
+            CatalogItem(
+                id: 7001,
+                name: "Copper Spur HV UL2 Tent",
+                productUrl: "https://example.com/copper-spur",
+                sku: "VISUAL-COPPER-SPUR",
+                weight: 1420,
+                weightUnit: .g,
+                description: "Freestanding two-person backpacking tent.",
+                categories: ["Shelter", "Backpacking"],
+                images: nil,
+                brand: "Big Agnes",
+                model: "HV UL2",
+                ratingValue: 4.7,
+                color: "Orange",
+                size: "2P",
+                price: 549.95,
+                availability: "in_stock",
+                seller: "PackRat Demo",
+                reviewCount: 128
+            ),
+            CatalogItem(
+                id: 7002,
+                name: "Duplex Trekking Pole Shelter",
+                productUrl: "https://example.com/duplex",
+                sku: "VISUAL-DUPLEX",
+                weight: 539,
+                weightUnit: .g,
+                description: "Ultralight two-person shelter for trekking pole setups.",
+                categories: ["Shelter", "Ultralight"],
+                images: nil,
+                brand: "Zpacks",
+                model: "Duplex",
+                ratingValue: 4.6,
+                color: "Olive",
+                size: "2P",
+                price: 699.00,
+                availability: "in_stock",
+                seller: "PackRat Demo",
+                reviewCount: 89
+            ),
+            CatalogItem(
+                id: 7003,
+                name: "Circuit 68L Backpack",
+                productUrl: "https://example.com/circuit",
+                sku: "VISUAL-CIRCUIT",
+                weight: 1162,
+                weightUnit: .g,
+                description: "Frameless-compatible backpack for lightweight trips.",
+                categories: ["Packs", "Backpacking"],
+                images: nil,
+                brand: "ULA",
+                model: "Circuit",
+                ratingValue: 4.8,
+                color: "Green",
+                size: "68L",
+                price: 299.99,
+                availability: "in_stock",
+                seller: "PackRat Demo",
+                reviewCount: 214
+            ),
+        ]
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return allItems }
+        return allItems.filter { item in
+            item.name.localizedCaseInsensitiveContains(trimmed)
+            || item.brand?.localizedCaseInsensitiveContains(trimmed) == true
+            || item.model?.localizedCaseInsensitiveContains(trimmed) == true
+            || item.categories?.contains(where: { $0.localizedCaseInsensitiveContains(trimmed) }) == true
+        }
+    }
+
+    static var weatherLocations: [WeatherLocation] {
+        [
+            WeatherLocation(id: 5419384, name: "Denver", region: "Colorado", country: "United States", lat: 39.74, lon: -104.98),
+            WeatherLocation(id: 5809844, name: "Seattle", region: "Washington", country: "United States", lat: 47.61, lon: -122.33),
+            WeatherLocation(id: 5780993, name: "Salt Lake City", region: "Utah", country: "United States", lat: 40.76, lon: -111.89),
+        ]
+    }
+
+    static func weatherLocations(matching query: String) -> [WeatherLocation] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return weatherLocations }
+        return weatherLocations.filter {
+            $0.name.localizedCaseInsensitiveContains(trimmed)
+            || ($0.region?.localizedCaseInsensitiveContains(trimmed) ?? false)
+            || ($0.country?.localizedCaseInsensitiveContains(trimmed) ?? false)
+        }
+    }
+
+    static func weatherForecast(for location: WeatherLocation) -> WeatherForecastResponse {
+        let now = Date.iso8601Now()
+        return WeatherForecastResponse(
+            location: WeatherResponseLocation(
+                id: location.id,
+                name: location.name,
+                region: location.region,
+                country: location.country,
+                lat: location.lat,
+                lon: location.lon,
+                localtime: "2026-05-26 09:00",
+                localtimeEpoch: nil,
+                tzId: "America/Denver"
+            ),
+            current: WeatherCurrent(
+                tempC: 18,
+                tempF: 64,
+                feelslikeC: 18,
+                feelslikeF: 64,
+                humidity: 42,
+                windMph: 8,
+                windKph: 13,
+                windDir: "W",
+                condition: WeatherCondition(text: "Partly cloudy", icon: nil, code: 1003),
+                uv: 6,
+                visMiles: 10,
+                precipIn: 0,
+                cloud: 35,
+                isDay: 1
+            ),
+            forecast: WeatherForecast(forecastday: [
+                forecastDay(offset: 0, high: 68, low: 47, condition: "Partly cloudy", code: 1003, rain: 10),
+                forecastDay(offset: 1, high: 72, low: 49, condition: "Sunny", code: 1000, rain: 5),
+                forecastDay(offset: 2, high: 61, low: 44, condition: "Light rain", code: 1183, rain: 55),
+            ]),
+            alerts: WeatherAlertsWrapper(alert: [
+                WeatherAlert(
+                    headline: "Afternoon gusts above treeline",
+                    event: "Wind Advisory",
+                    severity: "Moderate",
+                    urgency: "Expected",
+                    areas: "Front Range",
+                    effective: now,
+                    expires: Calendar.current.date(byAdding: .hour, value: 8, to: Date())?.iso8601String(),
+                    desc: "Secure lightweight shelters and keep an extra layer accessible.",
+                    instruction: "Review campsite exposure before dark."
+                ),
+            ])
+        )
     }
 
     @MainActor

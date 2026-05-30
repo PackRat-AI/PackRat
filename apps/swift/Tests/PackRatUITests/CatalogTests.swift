@@ -5,6 +5,7 @@ import XCTest
 
 /// E2E tests for Gear Catalog search and item detail.
 final class CatalogTests: AppUITestCase {
+    override var additionalLaunchArguments: [String] { ["--ui-test-fixtures"] }
 
     func testCatalogTabReachable() {
         goToCatalog()

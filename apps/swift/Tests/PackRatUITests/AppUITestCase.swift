@@ -21,6 +21,7 @@ import XCTest
 /// directly via xcodebuild: `xcodebuild test ... PACKRAT_E2E_EMAIL=... PACKRAT_E2E_PASSWORD=...`.
 class AppUITestCase: XCTestCase {
     var app: XCUIApplication!
+    var additionalLaunchArguments: [String] { [] }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -35,6 +36,7 @@ class AppUITestCase: XCTestCase {
         // bearer token accepted by the worker, avoiding brittle UI sign-in
         // while still exercising authenticated API routes.
         app.launchArguments.append("--reset-auth")
+        app.launchArguments.append(contentsOf: additionalLaunchArguments)
         let bundle = Bundle(for: AppUITestCase.self)
         let seededAuthToken =
             (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)
@@ -343,7 +345,7 @@ class AppUITestCase: XCTestCase {
 
     /// Returns a name guaranteed to be unique across test runs.
     func uniqueName(_ prefix: String) -> String {
-        "\(prefix) \(Int(Date().timeIntervalSince1970))"
+        "\(prefix) \(Int(Date().timeIntervalSince1970 * 1000))-\(UUID().uuidString.prefix(6))"
     }
 }
 
@@ -370,12 +372,14 @@ extension XCUIElement {
                 return
             }
         } else {
-            // Fallback: move to end and backspace.
+            // Fallback: move to the visible end and backspace generously.
+            coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)).tap()
             // XCUIKeyboardKey.delete only exists on iOS; on macOS we use "\u{8}" (backspace).
+            let deleteCount = max(existing.count, 256)
             #if os(iOS)
-            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count)
+            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: deleteCount)
             #else
-            let deleteString = String(repeating: "\u{8}", count: existing.count)
+            let deleteString = String(repeating: "\u{8}", count: deleteCount)
             #endif
             typeText(deleteString)
         }

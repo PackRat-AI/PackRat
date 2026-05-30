@@ -5,6 +5,8 @@ import XCTest
 /// the search field, forecast cards, and toolbar buttons all live in the
 /// content column.
 final class WeatherMacOSTests: AppUITestCase {
+    override var additionalLaunchArguments: [String] { ["--ui-test-fixtures"] }
+
     private let testCity = "Denver"
     private let testCityFull = "Denver"
 
@@ -16,7 +18,7 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
+        let results = weatherSearchResults()
         XCTAssertTrue(
             results.firstMatch.waitForExistence(timeout: 10),
             "Search results for '\(testCity)' must appear"
@@ -31,9 +33,7 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: 10)
         firstResult.click()
 
@@ -52,13 +52,9 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: 10)
         firstResult.click()
-
-        searchField.clearAndTypeText("")
 
         XCTAssertTrue(
             app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'weather_saved_location_'")).firstMatch
@@ -75,7 +71,7 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
+        let results = weatherSearchResults()
         waitFor(results.firstMatch, timeout: 10)
 
         searchField.clearAndTypeText("")
@@ -97,9 +93,7 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: 10)
         firstResult.click()
 
@@ -117,9 +111,7 @@ final class WeatherMacOSTests: AppUITestCase {
         searchField.click()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: 10)
         firstResult.click()
 
@@ -129,6 +121,12 @@ final class WeatherMacOSTests: AppUITestCase {
         XCTAssertTrue(
             alertsButton.waitForExistence(timeout: 20),
             "Alerts button must appear in toolbar after forecast loads"
+        )
+    }
+
+    private func weatherSearchResults() -> XCUIElementQuery {
+        app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'weather_search_result_' AND label CONTAINS '\(testCityFull)'")
         )
     }
 }

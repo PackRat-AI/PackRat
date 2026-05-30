@@ -25,6 +25,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ArgsError } from './lib/args';
+import { normalizeMacOSTestSelectors, parseMacOSArgs } from './lib/macos-args';
 import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
@@ -43,50 +44,6 @@ const LT_RE = /</g;
 const GT_RE = />/g;
 const DQUOTE_RE = /"/g;
 const SQUOTE_RE = /'/g;
-
-const KNOWN_MACOS_PLANS: Record<string, string> = {
-  full: 'macOS-Full',
-  smoke: 'macOS-Smoke',
-  'macos-full': 'macOS-Full',
-  'macos-smoke': 'macOS-Smoke',
-  'macOS-Full': 'macOS-Full',
-  'macOS-Smoke': 'macOS-Smoke',
-};
-
-function parseMacOSArgs(argv: readonly string[]): { plan?: string; passthrough: string[] } {
-  const passthrough: string[] = [];
-  let plan: string | undefined;
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (!a) continue;
-    if (a === '--plan') {
-      const next = argv[i + 1];
-      if (!next || next.startsWith('-')) {
-        throw new ArgsError('--plan requires a value (smoke | full)');
-      }
-      plan = KNOWN_MACOS_PLANS[next];
-      if (!plan) {
-        throw new ArgsError(
-          `Unknown --plan "${next}". Valid plans: macOS-Full, macOS-Smoke (also: smoke, full).`,
-        );
-      }
-      i++;
-      continue;
-    }
-    if (a.startsWith('--plan=')) {
-      const value = a.slice('--plan='.length);
-      plan = KNOWN_MACOS_PLANS[value];
-      if (!plan) {
-        throw new ArgsError(
-          `Unknown --plan "${value}". Valid plans: macOS-Full, macOS-Smoke (also: smoke, full).`,
-        );
-      }
-      continue;
-    }
-    passthrough.push(a);
-  }
-  return { plan, passthrough };
-}
 
 function loadEnvFile(path: string, override = false): void {
   if (!existsSync(path)) return;
@@ -253,6 +210,7 @@ if (parsed.plan) console.log(`→ Test plan: ${parsed.plan}`);
 console.log(`→ Result bundle: ${resultBundle}`);
 
 const planArgs = parsed.plan ? ['-testPlan', parsed.plan] : [];
+const macOSPassthrough = normalizeMacOSTestSelectors(parsed.passthrough);
 
 const args = [
   'test',
@@ -263,7 +221,7 @@ const args = [
   ...planArgs,
   '-resultBundlePath',
   resultBundle,
-  ...withDefaultLocalSigningArgs(parsed.passthrough),
+  ...withDefaultLocalSigningArgs(macOSPassthrough),
   // Same build-setting → Info.plist → Bundle.infoDictionary path as iOS —
   // see apps/swift/scripts/run-e2e.ts for the doc comment.
   `PACKRAT_E2E_EMAIL=${uiTestEmail}`,

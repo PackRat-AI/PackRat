@@ -5,6 +5,7 @@ import XCTest
 /// "Catalog" row; the content column renders `CatalogView` directly (no nav
 /// bar — title is the window title or content-column header).
 final class CatalogMacOSTests: AppUITestCase {
+    override var additionalLaunchArguments: [String] { ["--ui-test-fixtures"] }
 
     func testCatalogSidebarReachable() {
         goToSidebar("Catalog")

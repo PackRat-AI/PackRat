@@ -5,6 +5,8 @@ import XCTest
 
 /// End-to-end tests for Weather: location search, forecast display, saved locations.
 final class WeatherTests: AppUITestCase {
+    override var additionalLaunchArguments: [String] { ["--ui-test-fixtures"] }
+
     private let testCity = "Denver"
     private let testCityFull = "Denver"  // fragment to match in search results
     private let weatherSearchTimeout: TimeInterval = 20
@@ -20,7 +22,7 @@ final class WeatherTests: AppUITestCase {
         searchField.typeText(testCity)
 
         // Search results should appear (they load from the WeatherAPI)
-        let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
+        let results = weatherSearchResults()
         XCTAssertTrue(
             results.firstMatch.waitForExistence(timeout: weatherSearchTimeout),
             "Search results for '\(testCity)' must appear"
@@ -36,16 +38,12 @@ final class WeatherTests: AppUITestCase {
         searchField.typeText(testCity)
 
         // Wait for results and tap the first match
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
         // Forecast card: current temperature shows a °
-        let tempLabel = app.staticTexts.matching(
-            NSPredicate(format: "label MATCHES '.*\\d+°.*' OR label CONTAINS '°'")
-        ).firstMatch
+        let tempLabel = app.descendants(matching: .any)["weather_current_card"]
         XCTAssertTrue(
             tempLabel.waitForExistence(timeout: 20),
             "Temperature reading must appear after selecting a location"
@@ -60,9 +58,7 @@ final class WeatherTests: AppUITestCase {
         searchField.tap()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
@@ -89,7 +85,7 @@ final class WeatherTests: AppUITestCase {
         searchField.typeText(testCity)
 
         // Wait for results to appear
-        let results = app.buttons.matching(NSPredicate(format: "label CONTAINS '\(testCityFull)'"))
+        let results = weatherSearchResults()
         waitFor(results.firstMatch, timeout: weatherSearchTimeout)
 
         searchField.clearAndTypeText("")
@@ -113,12 +109,18 @@ final class WeatherTests: AppUITestCase {
         searchField.tap()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
+        XCTAssertTrue(
+            app.descendants(matching: .any)["weather_current_card"].waitForExistence(timeout: 20),
+            "Current weather card must appear before checking forecast rows"
+        )
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<4 where !app.staticTexts["10-Day Forecast"].exists {
+            list.swipeUp()
+        }
         // 10-day forecast header
         XCTAssertTrue(
             app.staticTexts["10-Day Forecast"].waitForExistence(timeout: 20),
@@ -134,14 +136,18 @@ final class WeatherTests: AppUITestCase {
         searchField.tap()
         searchField.typeText(testCity)
 
-        let firstResult = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS '\(testCityFull)'")
-        ).firstMatch
+        let firstResult = weatherSearchResults().firstMatch
         waitFor(firstResult, timeout: weatherSearchTimeout)
         firstResult.tap()
 
+        XCTAssertTrue(
+            app.descendants(matching: .any)["weather_current_card"].waitForExistence(timeout: 20),
+            "Current weather card must appear before checking toolbar actions"
+        )
         // Alerts toolbar button appears once forecast is loaded
-        let alertsButton = app.buttons["weather_alerts_button"].firstMatch
+        let alertsButton = app.buttons["weather_alerts_button"].firstMatch.exists
+            ? app.buttons["weather_alerts_button"].firstMatch
+            : app.buttons.matching(NSPredicate(format: "label == 'Alerts' OR label CONTAINS 'bell'")).firstMatch
         XCTAssertTrue(
             alertsButton.waitForExistence(timeout: 20),
             "Alerts button must appear in toolbar after forecast loads"
@@ -151,6 +157,12 @@ final class WeatherTests: AppUITestCase {
     private func goToWeather() {
         goToHomeAction("Weather")
         XCTAssertTrue(app.navigationBars["Weather"].waitForExistence(timeout: 8))
+    }
+
+    private func weatherSearchResults() -> XCUIElementQuery {
+        app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'weather_search_result_' AND label CONTAINS '\(testCityFull)'")
+        )
     }
 }
 

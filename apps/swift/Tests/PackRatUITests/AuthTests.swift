@@ -64,10 +64,10 @@ final class AuthTests: AppUITestCase {
         goToHomeAction("Community Feed")
 
         XCTAssertTrue(
-            app.staticTexts["Sign In to View the Feed"].waitForExistence(timeout: 10),
+            app.staticTexts["Community Feed Requires an Account"].waitForExistence(timeout: 10),
             "Guest-only account-backed screens should show a native sign-in state instead of a network error"
         )
-        XCTAssertTrue(app.buttons["Sign In"].exists)
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
     }
@@ -79,21 +79,21 @@ final class AuthTests: AppUITestCase {
         XCTAssertTrue(waitForLoggedIn(timeout: 10), "Guest mode should enter the main app shell")
 
         goToTab("Assistant")
-        XCTAssertTrue(app.staticTexts["Sign In to Use Assistant"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In"].exists)
+        XCTAssertTrue(app.staticTexts["Assistant Requires an Account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
 
         goToHomeAction("Season Suggestions")
-        XCTAssertTrue(app.staticTexts["Sign In for Season Suggestions"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In"].exists)
+        XCTAssertTrue(app.staticTexts["Season Suggestions Require an Account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
         app.buttons["Done"].tapIfExists()
 
         goToHomeAction("Wildlife ID")
-        XCTAssertTrue(app.staticTexts["Sign In to Identify Wildlife"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In"].exists)
+        XCTAssertTrue(app.staticTexts["Wildlife ID Requires an Account"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
         XCTAssertFalse(app.buttons["Try Again"].exists)
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
     }

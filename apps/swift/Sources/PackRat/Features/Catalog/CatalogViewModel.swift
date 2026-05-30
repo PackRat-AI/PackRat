@@ -31,9 +31,11 @@ final class CatalogViewModel {
     }
 
     func search(reset: Bool = false) async {
-        if VisualSampleData.isEnabled && !items.isEmpty {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            if reset { currentPage = 1 }
             isLoading = false
             error = nil
+            items = VisualSampleData.catalogItems(matching: searchText)
             hasSearched = true
             return
         }
