@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 // ─── Error responses ──────────────────────────────────────────────────────────
 
-// z.any() mirrors t.Unsafe<any> — Elysia invariance requires the handler return
-// type to be assignable to the declared response type, and error bodies frequently
-// carry extra fields (e.g. `code`). Using any sidesteps the invariance check the
-// same way t.Unsafe<any> did with TypeBox.
-const Err = z.any();
+// Error-response body. Every admin error handler returns `{ error: string }`,
+// often with an extra `code`. `.passthrough()` keeps Elysia's response-invariance
+// check happy for those extra fields (the reason this used to be `z.any()`) while
+// still giving Eden Treaty a *real* object type to infer from. `z.any()` poisoned
+// the client's `error` union — it collapsed to `unknown`, which the typed `call()`
+// helper (packages/mcp) could not consume.
+const Err = z.object({ error: z.string() }).passthrough();
 export const AdminErrorResponses = {
   400: Err,
   401: Err,

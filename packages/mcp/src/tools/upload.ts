@@ -29,7 +29,7 @@ export function registerUploadTools(agent: AgentContext): void {
     async ({ file_name, content_type, size }) =>
       call({
         promise: agent.api.user.upload.presigned.get({
-          query: { fileName: file_name, contentType: content_type, size },
+          query: { fileName: file_name, contentType: content_type, size: String(size) },
         }),
         action: 'create presigned upload URL',
       }),

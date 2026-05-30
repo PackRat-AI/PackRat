@@ -131,7 +131,10 @@ export function registerCatalogTools(agent: AgentContext): void {
     async ({ item_id, limit, threshold }) =>
       call({
         promise: agent.api.user.catalog({ id: String(item_id) }).similar.get({
-          query: { limit, ...(threshold !== undefined ? { threshold } : {}) },
+          query: {
+            limit: String(limit),
+            ...(threshold !== undefined ? { threshold: String(threshold) } : {}),
+          },
         }),
         action: 'find similar catalog items',
         resourceHint: `catalog item ${item_id}`,

@@ -82,7 +82,7 @@ export function registerWeatherTools(agent: AgentContext): void {
     async ({ latitude, longitude }) =>
       call({
         promise: agent.api.user.weather['search-by-coordinates'].get({
-          query: { lat: latitude, lon: longitude },
+          query: { lat: String(latitude), lon: String(longitude) },
         }),
         action: 'search weather by coordinates',
       }),
