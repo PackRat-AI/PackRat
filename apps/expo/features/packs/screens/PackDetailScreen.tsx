@@ -281,22 +281,6 @@ export function PackDetailScreen() {
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
   const handleAskAI = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify({
-            pathname: '/ai-chat',
-            params: {
-              packId: id,
-              packName: pack.name,
-              contextType: 'pack',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
     router.push({
       pathname: '/ai-chat',
       params: {

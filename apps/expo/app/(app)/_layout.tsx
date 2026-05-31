@@ -164,7 +164,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-stats/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}

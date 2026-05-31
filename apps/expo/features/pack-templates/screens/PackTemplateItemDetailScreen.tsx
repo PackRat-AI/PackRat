@@ -3,7 +3,6 @@ import { Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
@@ -40,23 +39,6 @@ export function PackTemplateItemDetailScreen() {
   const itemNotes = getNotes(item);
 
   const navigateToChat = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify({
-            pathname: '/ai-chat',
-            params: {
-              itemId: item.id,
-              itemName: item.name,
-              contextType: 'templateItem',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
-
     router.push({
       pathname: '/ai-chat',
       params: {
