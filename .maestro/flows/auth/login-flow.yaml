@@ -69,6 +69,21 @@ appId: ${APP_ID}
       - tapOn:
           text: "http://${METRO_HOST}:${METRO_PORT}"
       - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            text: "Runtime version:.*"
+          timeout: 45000
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible:
+              text: "Reload"
+          commands:
+            - tapOn:
+                point: "50%,10%"
+            - waitForAnimationToEnd
 
 # Dev client only: dismiss the Expo "Developer Tools" intro + dev-menu sheet that
 # appears on the first launch after clearState.
@@ -98,9 +113,37 @@ appId: ${APP_ID}
 # lets both cases (needs login / already logged in) reach the Packs assertion.
 - runFlow:
     when:
-      visible:
-        id: "sign-in-email-button"
+      notVisible:
+        text: "Packs"
     commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Continue"
+          commands:
+            - tapOn:
+                text: "Continue"
+            - waitForAnimationToEnd
+            - runFlow:
+                when:
+                  visible:
+                    text: "Reload"
+                commands:
+                  - tapOn:
+                      point: "50%,10%"
+                  - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible:
+              text: "Runtime version:.*"
+          commands:
+            - tapOn:
+                text: "Close"
+            - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            id: "sign-in-email-button"
+          timeout: 30000
       # Tap the "Sign In" (email) button to navigate to the email login screen
       - tapOn:
           id: "sign-in-email-button"

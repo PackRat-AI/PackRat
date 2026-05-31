@@ -50,6 +50,8 @@ else
   DEFAULT_APP_ID="com.packratai.mobile.preview"
 fi
 
+DEFAULT_METRO_HOST="${DEFAULT_METRO_HOST:-localhost}"
+
 CURRENT_YEAR="$(date +"%Y")"
 CURRENT_MONTH="$(date +"%-m")"
 START_TAPS=$(( ($(get_year "$START_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$START_DATE") - CURRENT_MONTH) ))
@@ -58,7 +60,7 @@ END_TAPS=$(( ($(get_year "$END_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$
 maestro test --config "$CONFIG_FILE" "$@" \
   -e TEST_EMAIL="$TEST_EMAIL" \
   -e TEST_PASSWORD="$TEST_PASSWORD" \
-  -e METRO_HOST="${METRO_HOST:-localhost}" \
+  -e METRO_HOST="${METRO_HOST:-$DEFAULT_METRO_HOST}" \
   -e METRO_PORT="${METRO_PORT:-8083}" \
   -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
   -e PACK_NAME="${PACK_NAME:-E2E-Pack-$UNIQUE_ID}" \
