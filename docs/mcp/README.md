@@ -9,6 +9,7 @@ docs live at [packratai.com/mcp](https://packratai.com/mcp) and inside
 - [submission-packet.md](./submission-packet.md) — the artifacts assembled for
   Anthropic's Claude Connector Store submission form (added in U18)
 - [better-auth-oauth-provider-spike-2026-05-25.md](./better-auth-oauth-provider-spike-2026-05-25.md) — empirical verification that backed the consolidation refactor
+- [adr-0001-oauth-provider-vs-mcp-plugin.md](./adr-0001-oauth-provider-vs-mcp-plugin.md) — why we chose `@better-auth/oauth-provider` over the bundled `mcp()` plugin
 
 ## Architecture at a glance
 
