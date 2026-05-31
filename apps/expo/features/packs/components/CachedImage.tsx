@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, Pressable, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
@@ -21,6 +21,34 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const hasClearedCorruptedCache = useRef(false);
+
+  useEffect(() => {
+    hasClearedCorruptedCache.current = false;
+  }, [imageObjectKey]);
+
+  const handleImageError = useCallback(async () => {
+    if (!hasClearedCorruptedCache.current) {
+      hasClearedCorruptedCache.current = true;
+      Sentry.addBreadcrumb({
+        category: 'cachedImage',
+        message: 'Cached image failed to render — clearing corrupted cache entry',
+        level: 'warning',
+        data: { imageObjectKey },
+      });
+      try {
+        await ImageCacheManager.clearImage(imageObjectKey);
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: { feature: 'cachedImage', action: 'clearCorruptedCache' },
+          extra: { imageObjectKey },
+        });
+      }
+      setRetryCount((c) => c + 1);
+    } else {
+      setHasError(true);
+    }
+  }, [imageObjectKey]);
 
   useEffect(() => {
     if (!imageObjectKey || !imageRemoteUrl) return;
@@ -97,5 +125,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     );
   }
 
-  return <Image source={{ uri: imageLocalUri ?? undefined }} {...props} />;
+  return (
+    <Image source={{ uri: imageLocalUri ?? undefined }} onError={handleImageError} {...props} />
+  );
 };
