@@ -85,33 +85,29 @@ after a deploy" further down for the pattern.
 These steps are required before `wrangler deploy --env prod` can succeed.
 They live outside the codebase because they touch Cloudflare account state.
 
-### 1. Deprovision the legacy `OAUTH_KV` namespaces + DCR secret
+### 1. (Optional housekeeping) Remove leftover `OAUTH_KV` namespaces + DCR secret
 
-Post-refactor (2026-05-25), the MCP worker is a pure protected resource —
-no KV state, no DCR pre-shared bearer. The `OAUTH_KV` namespaces and the
-`MCP_INITIAL_ACCESS_TOKEN` secret are no longer read by any code.
+**Not a ship-blocker.** The MCP connector has never gone live in the Claude
+connector store — there are no real users and no production traffic to
+protect. The new `wrangler.jsonc` doesn't bind `OAUTH_KV` and no code reads
+`MCP_INITIAL_ACCESS_TOKEN`, so `wrangler deploy --env prod` succeeds whether
+or not these exist. This is pre-launch tidy-up, not a migration.
 
-**Timing matters.** Per the plan's rollback safety matrix
-(`docs/plans/2026-05-25-001-refactor-mcp-auth-onto-better-auth-plan.md`
-§ "Operational / Rollout Notes"), deprovision AFTER the new code deploys
-and you've verified `mcp.packratai.com` is healthy end-to-end. Reverse
-order (delete the binding first, then deploy) would crash every request
-during the deploy window. Verify-then-cleanup:
+If earlier `workers-oauth-provider` dev iterations created these namespaces /
+secrets in the Cloudflare account, delete them whenever convenient (no
+sequencing or deploy-window care needed — nothing is serving traffic):
 
 ```bash
-# Step 1: confirm the new code is live and healthy
-curl -s https://mcp.packratai.com/health | jq .status   # expect "ok"
-curl -s https://mcp.packratai.com/.well-known/oauth-protected-resource | \
-  jq .authorization_servers                              # expect ["https://api.packrat.world"]
-
-# Step 2: drop the namespaces (prod + dev IDs from the prior wrangler.jsonc)
+# Drop the namespaces if they exist (IDs from the prior wrangler.jsonc)
 wrangler kv namespace delete --namespace-id 0ac2e23bb4f04dc5a39cfd3d7bc900e0   # prod
 wrangler kv namespace delete --namespace-id be554ba7448c4c13a48e85d9a0cdabc8   # dev
 
-# Step 3: delete the DCR pre-shared bearer from both envs
+# Delete the DCR pre-shared bearer if it was ever set
 wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env prod
 wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env dev
 ```
+
+If they were never provisioned, these commands are no-ops — skip the step.
 
 No equivalent provisioning step exists anymore: Better Auth's OAuth
 provider on `api.packrat.world` owns all client / grant / token state in
