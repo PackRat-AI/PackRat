@@ -38,26 +38,16 @@ export function ErrorState({ error, onRetry, onClear }: ErrorStateProps) {
           <Text variant="caption1" className="text-muted-foreground">
             {t('errors.contextOverflow.hint')}
           </Text>
-          <View className="flex-row gap-3 pt-1">
-            {onClear && (
-              <Pressable
-                onPress={onClear}
-                className="flex-1 items-center rounded-lg bg-destructive py-2"
-              >
-                <Text variant="caption1" className="font-medium text-white">
-                  {t('errors.contextOverflow.clearChat')}
-                </Text>
-              </Pressable>
-            )}
+          {onClear && (
             <Pressable
-              onPress={onRetry}
-              className="flex-1 items-center rounded-lg border border-border py-2"
+              onPress={onClear}
+              className="items-center rounded-lg bg-destructive py-2 px-4 self-start"
             >
-              <Text variant="caption1" className="font-medium text-foreground">
-                {t('errors.tryAgain')}
+              <Text variant="caption1" className="font-medium text-white">
+                {t('errors.contextOverflow.clearChat')}
               </Text>
             </Pressable>
-          </View>
+          )}
         </CardContent>
       </Card>
     );
