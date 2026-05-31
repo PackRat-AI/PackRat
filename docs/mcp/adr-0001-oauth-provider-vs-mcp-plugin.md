@@ -19,6 +19,38 @@ Accepted — 2026-05-31. Documents a decision already implemented by the
 so the "why not the `mcp()` plugin" reasoning lives in the repo rather than only
 in review threads.
 
+## Risk status (read this before trusting green CI)
+
+This ADR records **two** things at **different** confidence levels. Don't let a
+green pipeline collapse them:
+
+- **The plugin decision (this ADR's subject) — verified at the unit level.**
+  `withMcpAuth`'s in-process requirement is a fact of the installed type
+  signature; the capability gaps are spike-verified against the package source
+  (2026-05-25); and `oauth-provider.test.ts` asserts issuer-match, PKCE S256, and
+  JWT-only-when-`resource`-is-present. Choosing `@better-auth/oauth-provider` +
+  a standalone RS verifier over `mcp()` is settled.
+
+- **The cross-origin assumption it sits on — NOT yet verified; gated on R11.**
+  The whole local-JWKS design depends on Claude.ai sending the `resource`
+  parameter. If it doesn't, `@better-auth/oauth-provider` issues an **opaque**
+  token (`isJwtAccessToken = audience && !disableJwtPlugin`, spike Q4), the RS
+  can't verify it without introspection, and the architecture breaks. The unit
+  tests prove the AS behaves correctly *given* `resource`; they do **not** prove
+  Claude sends it. That proof is the **R11 / U9 dev-verification gate** — a
+  manual operator install in a real Claude.ai account against the dev deploy —
+  and **as of this ADR it has not been run.** Code-complete + green CI is *not*
+  the finish line; R11 is.
+
+  Related unknown: the closed-as-not-planned Claude cross-origin AS bugs
+  (`claude-ai-mcp` #82, #248, #291, #11814) are "real but unconfirmed-current,"
+  caught only by R11.
+
+  **If R11 fails:** do not pivot off Better Auth or the worker split. The
+  documented fallback is to **reverse-proxy the AS endpoints onto
+  `mcp.packratai.com`** so Claude sees a single origin — a degradation path that
+  preserves this decision, not a rewrite.
+
 ## Context
 
 Better Auth (v1.6.x, installed via `catalog:`) ships **three** overlapping ways
