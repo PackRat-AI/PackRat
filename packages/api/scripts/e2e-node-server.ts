@@ -1,36 +1,22 @@
+import { join } from 'node:path';
+import { Miniflare } from 'miniflare';
 import worker from '../src/e2e-worker';
 
 const port = Number(process.env.PORT ?? 8787);
+const kvPersist =
+  process.env.E2E_KV_PERSIST_DIR ??
+  join(import.meta.dir, '..', '.wrangler', 'state', 'e2e-auth-kv');
 
 const noop = async () => {};
-const kvStore = new Map<string, { value: string; expiresAt?: number }>();
 
-const kv = {
-  get: async (key: string) => {
-    const item = kvStore.get(key);
-    if (!item) return null;
-    if (item.expiresAt && item.expiresAt <= Date.now()) {
-      kvStore.delete(key);
-      return null;
-    }
-    return item.value;
-  },
-  // biome-ignore lint/complexity/useMaxParams: KVNamespace.put receives key, value, and options.
-  put: async (key: string, value: string, options?: { expirationTtl?: number }) => {
-    kvStore.set(key, {
-      value,
-      expiresAt: options?.expirationTtl ? Date.now() + options.expirationTtl * 1000 : undefined,
-    });
-  },
-  delete: async (key: string) => {
-    kvStore.delete(key);
-  },
-  list: async () => ({
-    keys: Array.from(kvStore.keys()).map((name) => ({ name })),
-    list_complete: true,
-    cursor: undefined,
-  }),
-};
+const miniflare = new Miniflare({
+  script: 'export default { fetch() { return new Response("ok") } }',
+  modules: true,
+  kvNamespaces: ['AUTH_KV'],
+  kvPersist,
+  logRequests: false,
+});
+const authKv = await miniflare.getKVNamespace('AUTH_KV');
 
 const bucket = {
   get: async () => null,
@@ -47,7 +33,7 @@ const queue = {
 const env = {
   ...process.env,
   CF_VERSION_METADATA: { id: 'e2e-local' },
-  AUTH_KV: kv,
+  AUTH_KV: authKv,
   AI: undefined,
   PACKRAT_BUCKET: bucket,
   PACKRAT_SCRAPY_BUCKET: bucket,
@@ -79,3 +65,13 @@ Bun.serve({
 });
 
 console.log(`PackRat e2e API listening on http://0.0.0.0:${port}`);
+console.log(`AUTH_KV backed by Miniflare local persistence at ${kvPersist}`);
+
+process.on('SIGINT', async () => {
+  await miniflare.dispose();
+  process.exit(0);
+});
+process.on('SIGTERM', async () => {
+  await miniflare.dispose();
+  process.exit(0);
+});

@@ -3,7 +3,7 @@
 #
 # Prerequisites:
 #   - Docker running
-#   - .dev.vars.e2e generated (run scripts/e2e-local-init.sh if missing)
+#   - .dev.vars.e2e generated (run bun run dev:e2e:init if missing)
 #   - Bun installed
 #
 # The API will be available at http://localhost:${PORT:-8787}.
