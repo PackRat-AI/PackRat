@@ -32,7 +32,7 @@ export default function PackStatsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.packStats')} />
+      <LargeTitleHeader title={pack?.name ?? t('packs.packStats')} />
       {weightHistory || CATEGORY_DISTRIBUTION ? (
         <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
           {/* Weight History Section */}

@@ -260,6 +260,7 @@
     "noCategorizedItems": "Either there are no items in this pack or they aren't categorized yet.",
     "organizeGear": "Organize your gear by functional categories",
     "packStats": "Pack Stats",
+    "selectPack": "Select a Pack",
     "weightHistory": "Weight History",
     "categoryDistribution": "Category Distribution",
     "packWeightOverMonths": "Pack weight over the last 6 months (g)",
