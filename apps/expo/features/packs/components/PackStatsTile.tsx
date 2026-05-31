@@ -7,7 +7,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePacks } from '../hooks';
 import type { PackInStore } from '../types';
 
@@ -96,7 +96,7 @@ export function PackStatsTile() {
         presentationStyle="pageSheet"
         onRequestClose={() => setPickerVisible(false)}
       >
-        <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-background">
           {/* Header */}
           <View className="flex-row items-center gap-3 border-b border-border px-4 py-3">
             <TouchableOpacity onPress={() => setPickerVisible(false)}>
@@ -150,7 +150,7 @@ export function PackStatsTile() {
           </ScrollView>
 
           <View style={{ height: insets.bottom }} />
-        </View>
+        </SafeAreaView>
       </Modal>
     </>
   );
