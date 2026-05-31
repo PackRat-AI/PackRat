@@ -18,18 +18,18 @@ const searchCmd = defineCommand({
     const client = await getUserClient();
     const limit = Number.parseInt(args.limit, 10);
     const page = Number.parseInt(args.page, 10);
-    const data = await runApi(
-      client.catalog.get({
+    const data = await runApi({
+      promise: client.catalog.get({
         query: { q: args.q, category: args.category, limit, page },
       }),
-      { action: 'search catalog' },
-    );
+      action: 'search catalog',
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(toRecord(data).items).map((it) => ({
+    printTable({
+      rows: toRecordArray(toRecord(data).items).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
@@ -37,8 +37,8 @@ const searchCmd = defineCommand({
         price: it.price,
         rating: it.ratingValue,
       })),
-      { title: `Catalog "${args.q}"` },
-    );
+      options: { title: `Catalog "${args.q}"` },
+    });
   },
 });
 
@@ -53,23 +53,23 @@ const semanticCmd = defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const limit = Number.parseInt(args.limit, 10);
-    const data = await runApi(
-      client.catalog['vector-search'].get({ query: { q: args.q, limit, offset: 0 } }),
-      { action: 'semantic catalog search' },
-    );
+    const data = await runApi({
+      promise: client.catalog['vector-search'].get({ query: { q: args.q, limit, offset: 0 } }),
+      action: 'semantic catalog search',
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
-    printTable(
-      toRecordArray(toRecord(data).items).map((it) => ({
+    printTable({
+      rows: toRecordArray(toRecord(data).items).map((it) => ({
         id: it.id,
         name: isString(it.name) ? it.name.slice(0, 60) : it.name,
         brand: it.brand,
         similarity: it.similarity,
       })),
-      { title: `Semantic: "${args.q}"` },
-    );
+      options: { title: `Semantic: "${args.q}"` },
+    });
   },
 });
 
@@ -82,7 +82,8 @@ const getCmd = defineCommand({
   async run({ args }) {
     await requireAuth();
     const client = await getUserClient();
-    const item = await runApi(client.catalog({ id: args.id }).get(), {
+    const item = await runApi({
+      promise: client.catalog({ id: args.id }).get(),
       action: 'get catalog item',
       resourceHint: `item ${args.id}`,
     });
@@ -91,8 +92,8 @@ const getCmd = defineCommand({
       return;
     }
     const r = toRecord(item);
-    printSummary(
-      {
+    printSummary({
+      data: {
         id: r.id,
         name: r.name,
         brand: r.brand,
@@ -102,8 +103,8 @@ const getCmd = defineCommand({
         reviewCount: r.reviewCount,
         productUrl: r.productUrl,
       },
-      `Item ${r.id}`,
-    );
+      title: `Item ${r.id}`,
+    });
   },
 });
 
@@ -112,7 +113,8 @@ const categoriesCmd = defineCommand({
   async run() {
     await requireAuth();
     const client = await getUserClient();
-    const data = await runApi(client.catalog.categories.get({ query: { limit: 50 } }), {
+    const data = await runApi({
+      promise: client.catalog.categories.get({ query: { limit: 50 } }),
       action: 'list catalog categories',
     });
     process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);

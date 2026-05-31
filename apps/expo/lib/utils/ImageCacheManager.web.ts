@@ -12,11 +12,16 @@ class WebImageCacheManager {
     return null;
   }
 
-  public async cacheRemoteImage(_fileName: string, remoteUrl: string): Promise<string> {
+  public async cacheRemoteImage({
+    remoteUrl,
+  }: {
+    fileName: string;
+    remoteUrl: string;
+  }): Promise<string> {
     return remoteUrl;
   }
 
-  public async cacheLocalTempImage(_tempImageUri: string, _fileName: string): Promise<void> {}
+  public async cacheLocalTempImage(_: { tempImageUri: string; fileName: string }): Promise<void> {}
 
   public async clearImage(_fileName: string): Promise<void> {}
 

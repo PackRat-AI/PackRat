@@ -16,31 +16,32 @@ const listCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin['users-list'].get({
+    const data = await runApi({
+      promise: client.admin['users-list'].get({
         query: {
           q: args.q,
           limit: Number.parseInt(args.limit, 10),
           offset: Number.parseInt(args.offset, 10),
         },
       }),
-      { action: 'admin list users', requiresAdmin: true },
-    );
+      action: 'admin list users',
+      requiresAdmin: true,
+    });
     if (args.json) {
       process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
       return;
     }
     // Endpoint returns { data: [...], total, limit, offset }
     const items = toRecordArray(toRecord(data).data);
-    printTable(
-      items.map((u) => ({
+    printTable({
+      rows: items.map((u) => ({
         id: u.id,
         email: u.email,
         name: u.name ?? u.firstName,
         createdAt: u.createdAt,
       })),
-      { title: 'Users' },
-    );
+      options: { title: 'Users' },
+    });
   },
 });
 
@@ -63,7 +64,8 @@ const hardDeleteCmd = defineCommand({
       }
     }
     const client = await getAdminClient();
-    await runApi(client.admin.users({ id: args.id }).hard.delete({ reason: args.reason }), {
+    await runApi({
+      promise: client.admin.users({ id: args.id }).hard.delete({ reason: args.reason }),
       action: 'hard delete user',
       resourceHint: `user ${args.id}`,
       requiresAdmin: true,

@@ -151,6 +151,13 @@
   ],
   "env": {
     "dev": {
+      "kv_namespaces": [
+        {
+          "binding": "AUTH_KV",
+          "id": "0d0dd76cec764c81be58ae7b871b47cb",
+          "preview_id": "f3441ec9f4b044e6b6c6a087251e3f00"
+        }
+      ],
       "rate_limiting": [
         {
           "binding": "TOKEN_RATE_LIMITER",

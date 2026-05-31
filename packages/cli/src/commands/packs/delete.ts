@@ -19,7 +19,8 @@ export default defineCommand({
       }
     }
     const client = await getUserClient();
-    await runApi(client.packs({ packId: args.id }).delete(), {
+    await runApi({
+      promise: client.packs({ packId: args.id }).delete(),
       action: 'delete pack',
       resourceHint: `pack ${args.id}`,
     });

@@ -1,9 +1,10 @@
-name: Release Mobile Apps
+name: Release Mobile Apps (legacy)
+
+# This workflow is superseded by release-cut.yml + release-deploy.yml.
+# The push-tag trigger has been removed to avoid duplicate GitHub releases.
+# Kept as a manual fallback for creating a GitHub release from an existing tag.
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:

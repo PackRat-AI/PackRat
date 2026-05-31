@@ -45,14 +45,14 @@ export default defineCommand({
     const summary = await exporter.export({
       format,
       outputDir: args['output-dir'],
-      sample: parseOptionalNumberArg(args.sample, '--sample'),
+      sample: parseOptionalNumberArg({ value: args.sample, argName: '--sample' }),
       dedup,
       includeQuality: args.quality ?? dedup !== 'none',
       skuFilter: args.sku,
     });
 
-    printSummary(
-      {
+    printSummary({
+      data: {
         File: summary.filepath,
         Records: summary.totalRecords,
         'Unique SKUs': summary.uniqueSkus,
@@ -60,7 +60,7 @@ export default defineCommand({
         Brands: summary.brands,
         Strategy: summary.strategy,
       },
-      'Export Complete',
-    );
+      title: 'Export Complete',
+    });
   },
 });

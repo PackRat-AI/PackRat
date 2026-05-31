@@ -7,10 +7,13 @@
 import { userStore } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
-export const uploadImage = async (
-  fileName: string,
-  blobOrDataUrl: string,
-): Promise<string | undefined> => {
+export const uploadImage = async ({
+  fileName,
+  uri,
+}: {
+  fileName: string;
+  uri: string;
+}): Promise<string | undefined> => {
   if (!fileName || fileName.trim() === '') {
     console.warn('Skipping upload: fileName is empty');
     return;
@@ -21,10 +24,13 @@ export const uploadImage = async (
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
     const remoteFileName = `${userStore.id.peek()}-${fileName}`;
 
-    const { url: presignedUrl } = await getPresignedUrl(remoteFileName, type);
+    const { url: presignedUrl } = await getPresignedUrl({
+      fileName: remoteFileName,
+      contentType: type,
+    });
 
     // Convert data URL / blob URL to a Blob for upload
-    const blob = await urlToBlob(blobOrDataUrl, type);
+    const blob = await urlToBlob({ url: uri, type });
 
     const uploadResponse = await fetch(presignedUrl, {
       method: 'PUT',
@@ -43,10 +49,13 @@ export const uploadImage = async (
   }
 };
 
-const getPresignedUrl = async (
-  fileName: string,
-  contentType: string,
-): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
+const getPresignedUrl = async ({
+  fileName,
+  contentType,
+}: {
+  fileName: string;
+  contentType: string;
+}): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
   const { data, error } = await apiClient.upload.presigned.get({
     query: { fileName, contentType },
   });
@@ -54,7 +63,7 @@ const getPresignedUrl = async (
   return data;
 };
 
-async function urlToBlob(url: string, type: string): Promise<Blob> {
+async function urlToBlob({ url, type }: { url: string; type: string }): Promise<Blob> {
   if (url.startsWith('data:')) {
     const arr = url.split(',');
     const bstr = atob(arr[1] ?? '');

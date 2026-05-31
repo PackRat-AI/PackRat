@@ -1,6 +1,12 @@
 import Cookies from 'js-cookie';
 
-export function setTokens(accessToken: string, refreshToken: string) {
+export function setTokens({
+  accessToken,
+  refreshToken,
+}: {
+  accessToken: string;
+  refreshToken: string;
+}) {
   Cookies.set('access_token', accessToken, { expires: 1, sameSite: 'strict' });
   Cookies.set('refresh_token', refreshToken, { expires: 30, sameSite: 'strict' });
 }

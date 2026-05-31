@@ -13,20 +13,23 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const rows = await cache.findSales({
-      minDiscountPct: parsePercentageArg(args['min-discount'], '--min-discount'),
+      minDiscountPct: parsePercentageArg({
+        value: args['min-discount'],
+        argName: '--min-discount',
+      }),
       category: args.category,
       sites: parseCsvArg(args.sites),
-      limit: parsePositiveIntArg(args.limit, '--limit'),
+      limit: parsePositiveIntArg({ value: args.limit, argName: '--limit' }),
     });
-    printTable(
-      rows.map(({ site, name, price, compare_at_price, discount_pct }) => ({
+    printTable({
+      rows: rows.map(({ site, name, price, compare_at_price, discount_pct }) => ({
         site,
         name: String(name).slice(0, 40),
         price,
         was: compare_at_price,
         'off%': discount_pct,
       })),
-      { title: 'Items on Sale' },
-    );
+      options: { title: 'Items on Sale' },
+    });
   },
 });

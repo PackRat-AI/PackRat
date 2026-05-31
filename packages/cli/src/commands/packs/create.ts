@@ -29,8 +29,8 @@ export default defineCommand({
           .map((t) => t.trim())
           .filter(Boolean)
       : undefined;
-    const pack = await runApi(
-      client.packs.post({
+    const pack = await runApi({
+      promise: client.packs.post({
         id: shortId('p'),
         name: args.name,
         description: args.description,
@@ -40,8 +40,8 @@ export default defineCommand({
         localCreatedAt: now,
         localUpdatedAt: now,
       }),
-      { action: 'create pack' },
-    );
+      action: 'create pack',
+    });
     consola.success(`Created pack ${toRecord(pack).id ?? '(unknown id)'}`);
   },
 });

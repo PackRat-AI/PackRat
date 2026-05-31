@@ -131,7 +131,7 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * Register a tool gated on a feature flag. The tool is hidden unless the
    * flag is present in `MCP_FEATURE_FLAGS` or enabled via `setFeatureFlag`.
    */
-  registerFlaggedTool: AgentContext['registerFlaggedTool'] = (flag, ...args) => {
+  registerFlaggedTool: AgentContext['registerFlaggedTool'] = ({ flag, args }) => {
     // safe-cast: McpServer.registerTool's overloads collapse at the implementation level;
     // forwarding via spread requires a single call signature here.
     const tool = (this.server.registerTool as (...a: unknown[]) => RegisteredTool)(...args);
@@ -142,7 +142,7 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
     return tool;
   };
 
-  setFeatureFlag(flag: string, enabled: boolean): void {
+  setFeatureFlag({ flag, enabled }: { flag: string; enabled: boolean }): void {
     this._flagState.set(flag, enabled);
     for (const tool of this._flaggedTools.get(flag) ?? []) {
       if (enabled && !tool.enabled) tool.enable();

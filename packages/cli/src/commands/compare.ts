@@ -10,9 +10,15 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const rows = await cache.comparePrices(args.keyword, parseCsvArg(args.sites));
-    printTable(rows, {
-      title: `Price Comparison: "${args.keyword}"`,
+    const rows = await cache.comparePrices({
+      keyword: args.keyword,
+      sites: parseCsvArg(args.sites),
+    });
+    printTable({
+      rows,
+      options: {
+        title: `Price Comparison: "${args.keyword}"`,
+      },
     });
   },
 });

@@ -29,7 +29,13 @@ export async function searchLocations(query: string) {
 /**
  * Search for locations by coordinates
  */
-export async function searchLocationsByCoordinates(latitude: number, longitude: number) {
+export async function searchLocationsByCoordinates({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}) {
   const { data, error } = await apiClient.weather['search-by-coordinates'].get({
     query: { lat: latitude.toFixed(6), lon: longitude.toFixed(6) },
   });
@@ -99,7 +105,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
           hour12: true,
         }),
         temp: Math.round(hour.temp_f),
-        icon: getIconNameFromCode(hour.condition.code, hour.is_day) as string,
+        icon: getIconNameFromCode({ code: hour.condition.code, isDay: hour.is_day }) as string,
         weatherCode: hour.condition.code,
         isDay: hour.is_day,
       };
@@ -112,7 +118,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
       high: Math.round(day.day.maxtemp_f),
       low: Math.round(day.day.mintemp_f),
-      icon: getIconNameFromCode(day.day.condition.code, 1) as string, // Always use day icon for daily forecast
+      icon: getIconNameFromCode({ code: day.day.condition.code, isDay: 1 }) as string, // Always use day icon for daily forecast
       weatherCode: day.day.condition.code,
     };
   });
@@ -151,10 +157,13 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
 /**
  * Get background gradient colors based on weather condition
  */
-export function getWeatherBackgroundColors(
-  code: number,
-  isNight: boolean,
-): [string, string, string] {
+export function getWeatherBackgroundColors({
+  code,
+  isNight,
+}: {
+  code: number;
+  isNight: boolean;
+}): [string, string, string] {
   if (isNight) {
     if (code === 1000) return ['#1a2a3a', '#0c1824', '#05101a'];
     if (code >= 1003 && code <= 1009) return ['#2c3e50', '#1a2a3a', '#0c1824'];

@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -107,6 +107,7 @@
     "expo-haptics": "~55.0.14",
     "expo-image": "~55.0.10",
     "expo-image-picker": "~55.0.20",
+    "expo-keep-awake": "~55.0.8",
     "expo-linear-gradient": "~55.0.13",
     "expo-linking": "~55.0.15",
     "expo-localization": "~55.0.13",

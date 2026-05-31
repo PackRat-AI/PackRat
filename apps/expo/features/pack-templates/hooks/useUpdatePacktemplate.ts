@@ -5,7 +5,7 @@ import type { PackTemplate } from '../types';
 
 export function useUpdatePackTemplate() {
   const update = useCallback((template: PackTemplate) => {
-    obs(packTemplatesStore, template.id).set({
+    obs({ store: packTemplatesStore, id: template.id }).set({
       ...template,
       localUpdatedAt: new Date().toISOString(),
     });

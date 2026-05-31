@@ -3,27 +3,44 @@ import type { WeightUnit } from '@packrat/units';
 import { convert, displayWeight, fromGrams, normalize, parseWeightUnit } from '@packrat/units';
 
 export { fromGrams as convertFromGrams, convert as convertWeight };
-export const convertToGrams = (weight: number, unit: string): number =>
-  normalize(weight, parseWeightUnit(unit));
+export const convertToGrams = ({ weight, unit }: { weight: number; unit: string }): number =>
+  normalize({ weight, unit: parseWeightUnit({ value: unit }) });
 
-export const formatWeight = (weight: number, unit: WeightUnit): string => `${weight}${unit}`;
+export const formatWeight = ({ weight, unit }: { weight: number; unit: WeightUnit }): string =>
+  `${weight}${unit}`;
 
-export const calculateBaseWeight = (items: PackItem[], unit: WeightUnit = 'g'): number => {
+export const calculateBaseWeight = ({
+  items,
+  unit = 'g',
+}: {
+  items: PackItem[];
+  unit?: WeightUnit;
+}): number => {
   const grams = items
     .filter((item) => !item.consumable && !item.worn)
     .reduce(
       (total, item) =>
-        total + normalize(item.weight, parseWeightUnit(item.weightUnit)) * item.quantity,
+        total +
+        normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+          item.quantity,
       0,
     );
-  return displayWeight(grams, unit);
+  return displayWeight({ grams, unit });
 };
 
-export const calculateTotalWeight = (items: PackItem[], unit: WeightUnit = 'g'): number => {
+export const calculateTotalWeight = ({
+  items,
+  unit = 'g',
+}: {
+  items: PackItem[];
+  unit?: WeightUnit;
+}): number => {
   const grams = items.reduce(
     (total, item) =>
-      total + normalize(item.weight, parseWeightUnit(item.weightUnit)) * item.quantity,
+      total +
+      normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+        item.quantity,
     0,
   );
-  return displayWeight(grams, unit);
+  return displayWeight({ grams, unit });
 };

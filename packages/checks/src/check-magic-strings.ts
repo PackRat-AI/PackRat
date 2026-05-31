@@ -140,7 +140,7 @@ const literalFiles = new Map<string, Set<string>>();
 
 const allFiles: string[] = [];
 
-function collectFiles(dir: string, relDir: string): void {
+function collectFiles({ dir, relDir }: { dir: string; relDir: string }): void {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -158,7 +158,7 @@ function collectFiles(dir: string, relDir: string): void {
       continue;
     }
     if (isDir) {
-      collectFiles(full, rel);
+      collectFiles({ dir: full, relDir: rel });
     } else if (isTargetFile(rel)) {
       allFiles.push(rel);
     }
@@ -194,7 +194,7 @@ function scanFile(relPath: string): void {
 }
 
 for (const root of SCAN_ROOTS) {
-  collectFiles(join(ROOT, root), root);
+  collectFiles({ dir: join(ROOT, root), relDir: root });
 }
 
 for (const f of allFiles) {

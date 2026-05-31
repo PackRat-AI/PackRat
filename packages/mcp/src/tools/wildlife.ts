@@ -11,7 +11,8 @@ export function registerWildlifeTools(agent: AgentContext): void {
       inputSchema: { image_key: z.string() },
     },
     async ({ image_key }) =>
-      call(agent.api.user.wildlife.identify.post({ image: image_key }), {
+      call({
+        promise: agent.api.user.wildlife.identify.post({ image: image_key }),
         action: 'identify wildlife',
       }),
   );

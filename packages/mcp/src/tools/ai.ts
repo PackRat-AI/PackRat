@@ -13,7 +13,8 @@ export function registerAiTools(agent: AgentContext): void {
       inputSchema: { query: z.string().min(3) },
     },
     async ({ query }) =>
-      call(agent.api.user.ai['web-search'].get({ query: { q: query } }), {
+      call({
+        promise: agent.api.user.ai['web-search'].get({ query: { q: query } }),
         action: 'web search',
       }),
   );
@@ -31,7 +32,8 @@ export function registerAiTools(agent: AgentContext): void {
       },
     },
     async ({ query, limit }) =>
-      call(agent.api.user.ai['execute-sql'].post({ query, limit }), {
+      call({
+        promise: agent.api.user.ai['execute-sql'].post({ query, limit }),
         action: 'execute SQL',
       }),
   );
@@ -44,6 +46,6 @@ export function registerAiTools(agent: AgentContext): void {
       description: 'Get the PackRat DB schema — table names, columns, types.',
       inputSchema: {},
     },
-    async () => call(agent.api.user.ai['db-schema'].get(), { action: 'fetch DB schema' }),
+    async () => call({ promise: agent.api.user.ai['db-schema'].get(), action: 'fetch DB schema' }),
   );
 }

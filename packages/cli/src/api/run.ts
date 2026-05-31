@@ -38,9 +38,9 @@ export type RunOptions = {
  * `process.exit(1)`. Never returns null.
  */
 export async function runApi<R extends TreatyLike>(
-  promise: Promise<R>,
-  opts: RunOptions,
+  args: { promise: Promise<R> } & RunOptions,
 ): Promise<NonNullable<R['data']>> {
+  const { promise, ...opts } = args;
   let result: R;
   try {
     result = await promise;

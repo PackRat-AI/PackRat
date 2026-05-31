@@ -99,7 +99,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       try {
         const { q: searchQuery, limit = 10, offset = 0 } = query;
         const catalogService = new CatalogService();
-        return await catalogService.vectorSearch(searchQuery, { limit, offset });
+        return await catalogService.vectorSearch({ q: searchQuery, opts: { limit, offset } });
       } catch (error) {
         console.error('Vector search error:', error);
         return status(500, { error: 'Failed to search catalog items' });
@@ -174,10 +174,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         });
       }
 
-      const rank = <K extends keyof (typeof items)[number]>(
-        key: K,
-        order: 'asc' | 'desc',
-      ): number | null => {
+      const rank = <K extends keyof (typeof items)[number]>({
+        key,
+        order,
+      }: {
+        key: K;
+        order: 'asc' | 'desc';
+      }): number | null => {
         const ranked = [...items]
           .filter((it) => it[key] != null)
           .sort((a, b) => {
@@ -190,9 +193,9 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
 
       return {
         items,
-        lightestId: rank('weight', 'asc'),
-        cheapestId: rank('price', 'asc'),
-        highestRatedId: rank('ratingValue', 'desc'),
+        lightestId: rank({ key: 'weight', order: 'asc' }),
+        cheapestId: rank({ key: 'price', order: 'asc' }),
+        highestRatedId: rank({ key: 'ratingValue', order: 'desc' }),
       };
     },
     {
@@ -423,7 +426,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new Error('Service unavailable: OpenAI API key not configured');
       }
 
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
@@ -620,8 +623,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
 
       let embedding: number[] | null = null;
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       if (newEmbeddingText !== oldEmbeddingText) {
         embedding = await generateEmbedding({

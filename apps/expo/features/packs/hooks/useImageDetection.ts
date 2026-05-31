@@ -29,7 +29,7 @@ export function useImageDetection() {
     { selectedImage: SelectedImage; matchLimit?: number }
   >({
     mutationFn: async ({ selectedImage, matchLimit = 3 }) => {
-      const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
+      const image = await uploadImage({ fileName: selectedImage.fileName, uri: selectedImage.uri });
       if (!image) {
         throw new Error("Couldn't upload image");
       }

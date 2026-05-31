@@ -1,7 +1,9 @@
+import * as Sentry from '@sentry/react-native';
+import { Icon } from 'expo-app/components/Icon';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
+import { ActivityIndicator, Image, type ImageProps, Pressable, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   imageObjectKey: string;
@@ -9,13 +11,6 @@ interface CachedImageProps extends Omit<ImageProps, 'source'> {
   placeholderColor?: string;
 }
 
-/**
- * CachedImage
- *
- * Responsible for displaying user-owned item images.
- * Loads from local cache if available, otherwise downloads and caches the image
- * before displaying. Shows loading indicator while fetching.
- */
 export const CachedImage: React.FC<CachedImageProps> = ({
   imageObjectKey,
   imageRemoteUrl,
@@ -24,39 +19,81 @@ export const CachedImage: React.FC<CachedImageProps> = ({
 }) => {
   const [imageLocalUri, setImageLocalUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (!imageObjectKey) return;
-    const loadImage = async () => {
-      try {
-        setLoading(true);
+    if (!imageObjectKey || !imageRemoteUrl) return;
+    let cancelled = false;
 
-        const localUri = await ImageCacheManager.getCachedImageUri(imageObjectKey);
-        if (localUri) {
-          setImageLocalUri(localUri);
+    const loadImage = async () => {
+      setLoading(true);
+      setHasError(false);
+      setImageLocalUri(null);
+
+      try {
+        Sentry.addBreadcrumb({
+          category: 'cachedImage',
+          message: 'Loading image',
+          level: 'info',
+          data: { imageObjectKey },
+        });
+
+        const cachedUri = await ImageCacheManager.getCachedImageUri(imageObjectKey);
+        if (cachedUri) {
+          if (!cancelled) setImageLocalUri(cachedUri);
         } else {
-          const localUri = await ImageCacheManager.cacheRemoteImage(imageObjectKey, imageRemoteUrl);
-          setImageLocalUri(localUri);
+          Sentry.addBreadcrumb({
+            category: 'cachedImage',
+            message: 'Cache miss — downloading',
+            level: 'info',
+            data: { imageObjectKey },
+          });
+          const downloadedUri = await ImageCacheManager.cacheRemoteImage({
+            fileName: imageObjectKey,
+            remoteUrl: imageRemoteUrl,
+          });
+          if (!cancelled) setImageLocalUri(downloadedUri);
         }
       } catch (error) {
-        console.error('Error loading image:', error);
-        // TODO: Handle error state if needed
+        Sentry.captureException(error, {
+          tags: { feature: 'cachedImage', action: 'loadImage' },
+          extra: { imageObjectKey },
+        });
+        if (!cancelled) setHasError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadImage();
-  }, [imageObjectKey, imageRemoteUrl]);
+    return () => {
+      cancelled = true;
+    };
+  }, [imageObjectKey, imageRemoteUrl, retryCount]);
+
+  const placeholderClass = `items-center justify-center ${props.className ?? ''}`;
+  const placeholderStyle = [{ backgroundColor: placeholderColor }];
 
   if (loading) {
     return (
-      <View
-        className={`items-center justify-center bg-muted px-2 ${props.className}`}
-        style={[{ backgroundColor: placeholderColor }]}
-      >
+      <View className={placeholderClass} style={placeholderStyle}>
         <ActivityIndicator size="small" color="#999" />
       </View>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Pressable
+        className={placeholderClass}
+        style={placeholderStyle}
+        onPress={() => setRetryCount((c) => c + 1)}
+        accessibilityLabel="Tap to retry loading image"
+        accessibilityRole="button"
+      >
+        <Icon name="refresh" size={20} color="#999" />
+      </Pressable>
     );
   }
 

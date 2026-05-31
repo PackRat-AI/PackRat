@@ -3,10 +3,13 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { etlJobs } from '@packrat/db';
 import { eq, sql } from 'drizzle-orm';
 
-export async function updateEtlJobProgress(
-  env: Env,
-  params: { jobId: string; valid?: number; invalid?: number; processed?: number },
-): Promise<void> {
+export async function updateEtlJobProgress({
+  env,
+  params,
+}: {
+  env: Env;
+  params: { jobId: string; valid?: number; invalid?: number; processed?: number };
+}): Promise<void> {
   const db = createDbClient(env);
 
   const valid = params?.valid ?? 0;

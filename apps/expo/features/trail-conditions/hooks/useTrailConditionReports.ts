@@ -10,18 +10,24 @@ import type { TrailConditionReport } from '../types';
 
 const CACHE_KEY_PREFIX = 'trail_condition_reports_cache';
 
-function cacheKey(userId: string, trailName?: string): string {
+function cacheKey({ userId, trailName }: { userId: string; trailName?: string }): string {
   const base = `${CACHE_KEY_PREFIX}:${userId}`;
   return trailName ? `${base}:${trailName}` : base;
 }
 
 /** Persist fetched reports to AsyncStorage for offline / cold-start access. */
-async function writeCachedReports(
-  reports: TrailConditionReport[],
-  opts: { userId: string; trailName?: string },
-) {
+async function writeCachedReports({
+  reports,
+  opts,
+}: {
+  reports: TrailConditionReport[];
+  opts: { userId: string; trailName?: string };
+}) {
   try {
-    await AsyncStorage.setItem(cacheKey(opts.userId, opts.trailName), JSON.stringify(reports));
+    await AsyncStorage.setItem(
+      cacheKey({ userId: opts.userId, trailName: opts.trailName }),
+      JSON.stringify(reports),
+    );
   } catch {
     // Best-effort — swallow write errors silently
   }
@@ -33,7 +39,9 @@ async function readCachedReports(opts: {
   trailName?: string;
 }): Promise<TrailConditionReport[] | undefined> {
   try {
-    const raw = await AsyncStorage.getItem(cacheKey(opts.userId, opts.trailName));
+    const raw = await AsyncStorage.getItem(
+      cacheKey({ userId: opts.userId, trailName: opts.trailName }),
+    );
     // safe-cast: JSON.parse returns unknown; data was written as TrailConditionReport[] earlier
     if (raw) return JSON.parse(raw) as TrailConditionReport[];
   } catch {
@@ -107,7 +115,7 @@ export function useTrailConditionReports(trailName?: string) {
   useEffect(() => {
     if (query.data && query.data !== prevDataRef.current && query.isFetched) {
       prevDataRef.current = query.data;
-      writeCachedReports(query.data, { userId: currentUserId, trailName });
+      writeCachedReports({ reports: query.data, opts: { userId: currentUserId, trailName } });
     }
   }, [query.data, query.isFetched, currentUserId, trailName]);
 

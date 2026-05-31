@@ -17,7 +17,7 @@ export function useCreatePackTemplate() {
       deleted: false,
     };
 
-    obs(packTemplatesStore, id).set(newTemplate);
+    obs({ store: packTemplatesStore, id: id }).set(newTemplate);
   }, []);
 
   return createPackTemplate;

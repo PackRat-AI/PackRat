@@ -7,7 +7,7 @@ import { computePackTemplateWeights } from '../utils/computePacktemplateWeight';
 // Hook to get a single pack template
 export function usePackTemplateDetails(id: string) {
   const template = use$(() => {
-    const template = obs(packTemplatesStore, id).get();
+    const template = obs({ store: packTemplatesStore, id: id }).get();
     const items = getTemplateItems(id);
     return {
       ...template,
@@ -15,5 +15,5 @@ export function usePackTemplateDetails(id: string) {
     };
   });
 
-  return computePackTemplateWeights(template);
+  return computePackTemplateWeights({ template });
 }

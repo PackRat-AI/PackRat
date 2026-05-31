@@ -16,7 +16,8 @@ export function registerSeasonTools(agent: AgentContext): void {
       },
     },
     async ({ location, date }) =>
-      call(agent.api.user['season-suggestions'].post({ location, date }), {
+      call({
+        promise: agent.api.user['season-suggestions'].post({ location, date }),
         action: 'fetch season suggestions',
       }),
   );

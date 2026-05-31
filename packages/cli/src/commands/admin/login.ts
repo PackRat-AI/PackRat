@@ -21,7 +21,8 @@ export default defineCommand({
     // The user-scope Treaty client is fine here — /admin/login is the
     // credential-exchange route and ignores any Bearer header.
     const client = await getUserClient();
-    const { token, expiresIn } = await runApi(client.admin.login.post({ username, password }), {
+    const { token, expiresIn } = await runApi({
+      promise: client.admin.login.post({ username, password }),
       action: 'admin login',
     });
 

@@ -18,7 +18,7 @@ export function registerTripTools(agent: AgentContext): void {
         "List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack.",
       inputSchema: {},
     },
-    async () => call(agent.api.user.trips.get(), { action: 'list trips' }),
+    async () => call({ promise: agent.api.user.trips.get(), action: 'list trips' }),
   );
 
   // ── Get trip ──────────────────────────────────────────────────────────────
@@ -31,7 +31,8 @@ export function registerTripTools(agent: AgentContext): void {
       inputSchema: { trip_id: z.string().describe('The unique trip ID (e.g. "t_abc123")') },
     },
     async ({ trip_id }) =>
-      call(agent.api.user.trips({ tripId: trip_id }).get(), {
+      call({
+        promise: agent.api.user.trips({ tripId: trip_id }).get(),
         action: 'get trip',
         resourceHint: `trip ${trip_id}`,
       }),
@@ -56,8 +57,8 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ name, description, location, start_date, end_date, notes, pack_id }) => {
       const now = nowIso();
-      return call(
-        agent.api.user.trips.post({
+      return call({
+        promise: agent.api.user.trips.post({
           name,
           description,
           location: location ?? null,
@@ -68,8 +69,8 @@ export function registerTripTools(agent: AgentContext): void {
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
-        { action: 'create trip' },
-      );
+        action: 'create trip',
+      });
     },
   );
 
@@ -99,7 +100,8 @@ export function registerTripTools(agent: AgentContext): void {
       if (end_date !== undefined) body.endDate = end_date;
       if (notes !== undefined) body.notes = notes;
       if (pack_id !== undefined) body.packId = pack_id;
-      return call(agent.api.user.trips({ tripId: trip_id }).put(body), {
+      return call({
+        promise: agent.api.user.trips({ tripId: trip_id }).put(body),
         action: 'update trip',
         resourceHint: `trip ${trip_id}`,
       });
@@ -115,7 +117,8 @@ export function registerTripTools(agent: AgentContext): void {
       inputSchema: { trip_id: z.string() },
     },
     async ({ trip_id }) =>
-      call(agent.api.user.trips({ tripId: trip_id }).delete(), {
+      call({
+        promise: agent.api.user.trips({ tripId: trip_id }).delete(),
         action: 'delete trip',
         resourceHint: `trip ${trip_id}`,
       }),

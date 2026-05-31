@@ -33,11 +33,14 @@ export class CatalogService {
 
   /**
    * - `new CatalogService()` – reads the isolate-level env (Elysia routes).
-   * - `new CatalogService(env, true)` – queue handler path: caller passes the
-   *   raw validated env, and we use the HTTP-only Neon driver (which is
+   * - `new CatalogService({ explicitEnv, useHttpDriver: true })` – queue handler path: caller
+   *   passes the raw validated env, and we use the HTTP-only Neon driver (which is
    *   better suited for short-lived queue workers).
    */
-  constructor(explicitEnv?: Env, useHttpDriver: boolean = false) {
+  constructor({
+    explicitEnv,
+    useHttpDriver = false,
+  }: { explicitEnv?: Env; useHttpDriver?: boolean } = {}) {
     if (explicitEnv && useHttpDriver) {
       this.env = explicitEnv;
       this.db = createDbClient(explicitEnv);
@@ -191,10 +194,13 @@ export class CatalogService {
     };
   }
 
-  async vectorSearch(
-    q: string,
-    opts: { limit?: number; offset?: number } = {},
-  ): Promise<{
+  async vectorSearch({
+    q,
+    opts = {},
+  }: {
+    q: string;
+    opts?: { limit?: number; offset?: number };
+  }): Promise<{
     items: (Omit<CatalogItem, 'embedding'> & { similarity: number })[];
     total: number;
     limit: number;
@@ -266,10 +272,7 @@ export class CatalogService {
     };
   }
 
-  async batchVectorSearch(
-    queries: string[],
-    limit: number = 5,
-  ): Promise<{
+  async batchVectorSearch({ queries, limit = 5 }: { queries: string[]; limit?: number }): Promise<{
     items: (Omit<CatalogItem, 'embedding'> & { similarity: number })[][];
   }> {
     if (!queries || queries.length === 0) {
@@ -385,7 +388,7 @@ export class CatalogService {
 
     if (itemsToUpdate.length > 0) {
       // Regenerate embeddings for updated items
-      const embeddingTexts = itemsToUpdate.map((item) => getEmbeddingText(item));
+      const embeddingTexts = itemsToUpdate.map((item) => getEmbeddingText({ item }));
       const embeddings = await generateManyEmbeddings({
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
@@ -409,7 +412,13 @@ export class CatalogService {
     return upsertedItems;
   }
 
-  async trackEtlJob(itemIds: Pick<CatalogItem, 'id'>[], jobId: string): Promise<void> {
+  async trackEtlJob({
+    itemIds,
+    jobId,
+  }: {
+    itemIds: Pick<CatalogItem, 'id'>[];
+    jobId: string;
+  }): Promise<void> {
     await this.db.insert(catalogItemEtlJobs).values(
       itemIds.map((item) => ({
         catalogItemId: item.id,
@@ -476,7 +485,7 @@ export class CatalogService {
       );
 
     // Prepare texts for batch embedding
-    const embeddingTexts = itemsToEmbed.map((item) => getEmbeddingText(item));
+    const embeddingTexts = itemsToEmbed.map((item) => getEmbeddingText({ item }));
 
     try {
       // Generate embeddings in batch

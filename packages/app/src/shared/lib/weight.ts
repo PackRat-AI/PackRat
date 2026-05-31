@@ -4,7 +4,7 @@ export type WeightUnit = 'g' | 'oz' | 'kg' | 'lb';
 
 export const weightUnitAtom = atom<WeightUnit>('oz');
 
-export function toGrams(weight: number, unit: WeightUnit): number {
+export function toGrams({ weight, unit }: { weight: number; unit: WeightUnit }): number {
   switch (unit) {
     case 'oz':
       return Math.round(weight * 28.3495);
@@ -17,7 +17,7 @@ export function toGrams(weight: number, unit: WeightUnit): number {
   }
 }
 
-export function fromGrams(grams: number, unit: WeightUnit): number {
+export function fromGrams({ grams, unit }: { grams: number; unit: WeightUnit }): number {
   switch (unit) {
     case 'oz':
       return Math.round((grams / 28.3495) * 10) / 10;
@@ -30,8 +30,8 @@ export function fromGrams(grams: number, unit: WeightUnit): number {
   }
 }
 
-export function formatWeight(grams: number, unit: WeightUnit): string {
-  const value = fromGrams(grams, unit);
+export function formatWeight({ grams, unit }: { grams: number; unit: WeightUnit }): string {
+  const value = fromGrams({ grams, unit });
   return `${value}${unit}`;
 }
 

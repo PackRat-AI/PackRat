@@ -12,7 +12,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       description: 'List both user-owned and app-curated pack templates.',
       inputSchema: {},
     },
-    async () => call(agent.api.user['pack-templates'].get(), { action: 'list pack templates' }),
+    async () =>
+      call({ promise: agent.api.user['pack-templates'].get(), action: 'list pack templates' }),
   );
 
   agent.server.registerTool(
@@ -22,7 +23,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       inputSchema: { template_id: z.string() },
     },
     async ({ template_id }) =>
-      call(agent.api.user['pack-templates']({ templateId: template_id }).get(), {
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).get(),
         action: 'get pack template',
         resourceHint: `template ${template_id}`,
       }),
@@ -44,8 +46,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     },
     async ({ name, description, category, image, tags, is_app_template }) => {
       const now = nowIso();
-      return call(
-        agent.api.user['pack-templates'].post({
+      return call({
+        promise: agent.api.user['pack-templates'].post({
           name,
           description,
           category,
@@ -55,8 +57,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           localCreatedAt: now,
           localUpdatedAt: now,
         }),
-        { action: 'create pack template' },
-      );
+        action: 'create pack template',
+      });
     },
   );
 
@@ -80,7 +82,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       if (category !== undefined) body.category = category;
       if (image !== undefined) body.image = image;
       if (tags !== undefined) body.tags = tags;
-      return call(agent.api.user['pack-templates']({ templateId: template_id }).put(body), {
+      return call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).put(body),
         action: 'update pack template',
         resourceHint: `template ${template_id}`,
       });
@@ -94,7 +97,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       inputSchema: { template_id: z.string() },
     },
     async ({ template_id }) =>
-      call(agent.api.user['pack-templates']({ templateId: template_id }).delete(), {
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).delete(),
         action: 'delete pack template',
         resourceHint: `template ${template_id}`,
       }),
@@ -109,7 +113,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       inputSchema: { template_id: z.string() },
     },
     async ({ template_id }) =>
-      call(agent.api.user['pack-templates']({ templateId: template_id }).items.get(), {
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).items.get(),
         action: 'list pack template items',
         resourceHint: `template ${template_id}`,
       }),
@@ -146,8 +151,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       image,
       notes,
     }) =>
-      call(
-        agent.api.user['pack-templates']({ templateId: template_id }).items.post({
+      call({
+        promise: agent.api.user['pack-templates']({ templateId: template_id }).items.post({
           name,
           description,
           weight,
@@ -159,8 +164,9 @@ export function registerPackTemplateTools(agent: AgentContext): void {
           image,
           notes,
         }),
-        { action: 'add template item', resourceHint: `template ${template_id}` },
-      ),
+        action: 'add template item',
+        resourceHint: `template ${template_id}`,
+      }),
   );
 
   agent.server.registerTool(
@@ -190,7 +196,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
         if (v === undefined) continue;
         body[SNAKE_TO_CAMEL[k] ?? k] = v;
       }
-      return call(agent.api.user['pack-templates'].items({ itemId: item_id }).patch(body), {
+      return call({
+        promise: agent.api.user['pack-templates'].items({ itemId: item_id }).patch(body),
         action: 'update template item',
         resourceHint: `item ${item_id}`,
       });
@@ -204,7 +211,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       inputSchema: { item_id: z.string() },
     },
     async ({ item_id }) =>
-      call(agent.api.user['pack-templates'].items({ itemId: item_id }).delete(), {
+      call({
+        promise: agent.api.user['pack-templates'].items({ itemId: item_id }).delete(),
         action: 'delete template item',
         resourceHint: `item ${item_id}`,
       }),
@@ -223,12 +231,12 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       },
     },
     async ({ content_url, is_app_template }) =>
-      call(
-        agent.api.user['pack-templates']['generate-from-online-content'].post({
+      call({
+        promise: agent.api.user['pack-templates']['generate-from-online-content'].post({
           contentUrl: content_url,
           isAppTemplate: is_app_template,
         }),
-        { action: 'generate pack template from URL' },
-      ),
+        action: 'generate pack template from URL',
+      }),
   );
 }

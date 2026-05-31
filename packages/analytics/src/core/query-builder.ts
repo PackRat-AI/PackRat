@@ -35,7 +35,7 @@ export class SQLFragments {
    *            NULLIF(TRIM(TRY_CAST(heading AS VARCHAR)), ''),
    *            'Unknown') as name
    */
-  static safeCoalesce(field: string, defaultValue?: string): string {
+  static safeCoalesce({ field, defaultValue }: { field: string; defaultValue?: string }): string {
     const variations = FIELD_MAPPINGS[field] ?? [field];
     let dflt: string;
     if (defaultValue !== undefined) {
@@ -78,10 +78,13 @@ export class SQLFragments {
   }
 
   /** Safe float extraction from FIELD_MAPPINGS with optional range check. */
-  static safeFloat(
-    field: string,
-    opts: { alias?: string; minVal?: number; maxVal?: number } = {},
-  ): string {
+  static safeFloat({
+    field,
+    opts = {},
+  }: {
+    field: string;
+    opts?: { alias?: string; minVal?: number; maxVal?: number };
+  }): string {
     const { alias, minVal, maxVal } = opts;
     const a = alias ?? field;
     const variations = FIELD_MAPPINGS[field] ?? [field];
@@ -111,7 +114,7 @@ export class SQLFragments {
   }
 
   /** Safe integer extraction from FIELD_MAPPINGS. */
-  static safeInt(field: string, alias?: string): string {
+  static safeInt({ field, alias }: { field: string; alias?: string }): string {
     const a = alias ?? field;
     const variations = FIELD_MAPPINGS[field] ?? [field];
 
@@ -149,7 +152,13 @@ export class SQLFragments {
   }
 
   /** Standard read_csv_auto clause reading from multiple version prefixes. */
-  static readCsvSource(bucketPath: string, globPatterns?: string[]): string {
+  static readCsvSource({
+    bucketPath,
+    globPatterns,
+  }: {
+    bucketPath: string;
+    globPatterns?: string[];
+  }): string {
     const globs = globPatterns ?? R2_CSV_GLOBS;
     const paths = globs.map((g) => `'${bucketPath}/${g}'`);
     const pathList = `[${paths.join(', ')}]`;
@@ -165,26 +174,29 @@ export class SQLFragments {
   static selectFields(): string[] {
     return [
       SQLFragments.siteExtract(),
-      SQLFragments.safeCoalesce('name'),
-      SQLFragments.safeCoalesce('brand'),
-      SQLFragments.safeCoalesce('category'),
+      SQLFragments.safeCoalesce({ field: 'name' }),
+      SQLFragments.safeCoalesce({ field: 'brand' }),
+      SQLFragments.safeCoalesce({ field: 'category' }),
       SQLFragments.safePrice(),
       SQLFragments.safeAvailability(),
-      SQLFragments.safeCoalesce('description'),
-      SQLFragments.safeCoalesce('product_url'),
-      SQLFragments.safeCoalesce('image_url'),
+      SQLFragments.safeCoalesce({ field: 'description' }),
+      SQLFragments.safeCoalesce({ field: 'product_url' }),
+      SQLFragments.safeCoalesce({ field: 'image_url' }),
       // V2 fields
-      SQLFragments.safeFloat('compare_at_price', { minVal: 0, maxVal: DBConfig.MAX_VALID_PRICE }),
-      SQLFragments.safeFloat('rating_value', { minVal: 0, maxVal: 5 }),
-      SQLFragments.safeInt('review_count'),
-      SQLFragments.safeFloat('weight', { minVal: -1 }),
-      SQLFragments.safeCoalesce('weight_unit', "''"),
-      SQLFragments.safeCoalesce('color'),
-      SQLFragments.safeCoalesce('size'),
-      SQLFragments.safeCoalesce('material'),
-      SQLFragments.safeCoalesce('tags'),
-      SQLFragments.safeCoalesce('published_at'),
-      SQLFragments.safeCoalesce('updated_at'),
+      SQLFragments.safeFloat({
+        field: 'compare_at_price',
+        opts: { minVal: 0, maxVal: DBConfig.MAX_VALID_PRICE },
+      }),
+      SQLFragments.safeFloat({ field: 'rating_value', opts: { minVal: 0, maxVal: 5 } }),
+      SQLFragments.safeInt({ field: 'review_count' }),
+      SQLFragments.safeFloat({ field: 'weight', opts: { minVal: -1 } }),
+      SQLFragments.safeCoalesce({ field: 'weight_unit', defaultValue: "''" }),
+      SQLFragments.safeCoalesce({ field: 'color' }),
+      SQLFragments.safeCoalesce({ field: 'size' }),
+      SQLFragments.safeCoalesce({ field: 'material' }),
+      SQLFragments.safeCoalesce({ field: 'tags' }),
+      SQLFragments.safeCoalesce({ field: 'published_at' }),
+      SQLFragments.safeCoalesce({ field: 'updated_at' }),
     ];
   }
 
@@ -226,7 +238,13 @@ export class SQLFragments {
   }
 
   /** WHERE clauses for price range filtering. */
-  static priceRangeFilter(minPrice?: number, maxPrice?: number): string[] {
+  static priceRangeFilter({
+    minPrice,
+    maxPrice,
+  }: {
+    minPrice?: number;
+    maxPrice?: number;
+  }): string[] {
     const conditions: string[] = [];
     if (minPrice !== undefined) {
       conditions.push(`(
@@ -257,19 +275,22 @@ export class QueryBuilder {
     return conditions.filter(Boolean).join(' AND ');
   }
 
-  searchQuery(
-    keyword: string,
-    opts: { sites?: string[]; minPrice?: number; maxPrice?: number; limit?: number } = {},
-  ): string {
+  searchQuery({
+    keyword,
+    opts = {},
+  }: {
+    keyword: string;
+    opts?: { sites?: string[]; minPrice?: number; maxPrice?: number; limit?: number };
+  }): string {
     const { sites, minPrice, maxPrice, limit = DBConfig.DEFAULT_LIMIT } = opts;
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
 
     const conditions: (string | null)[] = [
       ...SQLFragments.baseWhere(),
       SQLFragments.keywordFilter(keyword),
       sites ? SQLFragments.siteFilter(sites) : null,
-      ...SQLFragments.priceRangeFilter(minPrice, maxPrice),
+      ...SQLFragments.priceRangeFilter({ minPrice, maxPrice }),
     ];
 
     return `
@@ -281,9 +302,9 @@ export class QueryBuilder {
         `;
   }
 
-  priceComparisonQuery(keyword: string, sites?: string[]): string {
+  priceComparisonQuery({ keyword, sites }: { keyword: string; sites?: string[] }): string {
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
 
     const conditions: (string | null)[] = [
       ...SQLFragments.baseWhere(),
@@ -310,9 +331,9 @@ export class QueryBuilder {
         `;
   }
 
-  brandAnalysisQuery(brandName: string, sites?: string[]): string {
+  brandAnalysisQuery({ brandName, sites }: { brandName: string; sites?: string[] }): string {
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
 
     const conditions: (string | null)[] = [...SQLFragments.baseWhere()];
     const brandVariations = FIELD_MAPPINGS.brand ?? ['brand'];
@@ -342,9 +363,15 @@ export class QueryBuilder {
         `;
   }
 
-  categoryInsightsQuery(categoryKeyword: string, sites?: string[]): string {
+  categoryInsightsQuery({
+    categoryKeyword,
+    sites,
+  }: {
+    categoryKeyword: string;
+    sites?: string[];
+  }): string {
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
 
     const conditions: (string | null)[] = [...SQLFragments.baseWhere()];
     const catVariations = FIELD_MAPPINGS.category ?? ['category'];
@@ -374,17 +401,20 @@ export class QueryBuilder {
         `;
   }
 
-  dealsQuery(
-    maxPrice: number,
-    opts: { category?: string; sites?: string[]; limit?: number } = {},
-  ): string {
+  dealsQuery({
+    maxPrice,
+    opts = {},
+  }: {
+    maxPrice: number;
+    opts?: { category?: string; sites?: string[]; limit?: number };
+  }): string {
     const { category, sites, limit = DBConfig.DEFAULT_LIMIT } = opts;
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
 
     const conditions: (string | null)[] = [
       ...SQLFragments.baseWhere(),
-      ...SQLFragments.priceRangeFilter(undefined, maxPrice),
+      ...SQLFragments.priceRangeFilter({ maxPrice }),
     ];
     if (category) {
       const escapedCategory = SQLFragments.escapeSql(category.toLowerCase());
@@ -401,9 +431,15 @@ export class QueryBuilder {
         `;
   }
 
-  trendsQuery(keyword: string, opts: { sites?: string[]; days?: number } = {}): string {
+  trendsQuery({
+    keyword,
+    opts = {},
+  }: {
+    keyword: string;
+    opts?: { sites?: string[]; days?: number };
+  }): string {
     const { sites, days = 90 } = opts;
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
 
     const nameVariations = FIELD_MAPPINGS.name ?? ['name'];
@@ -454,7 +490,7 @@ export class QueryBuilder {
   /** Build a SELECT query for normalized gear data (no CREATE TABLE). */
   normalizedSelectQuery(): string {
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
     const conditions = SQLFragments.baseWhere();
 
     return `
@@ -474,7 +510,7 @@ export class QueryBuilder {
 
   /** Build CREATE TABLE AS SELECT for price history cache. */
   createPriceHistoryTable(tableName = 'price_history'): string {
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource({ bucketPath: this.bucketPath });
     const maxP = DBConfig.MAX_VALID_PRICE;
 
     const nameVariations = FIELD_MAPPINGS.name ?? ['name'];

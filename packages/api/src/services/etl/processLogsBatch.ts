@@ -17,10 +17,13 @@ export async function processLogsBatch({
 
   try {
     await db.insert(invalidItemLogs).values(logs);
-    await updateEtlJobProgress(env, {
-      jobId,
-      invalid: logs.length,
-      processed: logs.length,
+    await updateEtlJobProgress({
+      env,
+      params: {
+        jobId,
+        invalid: logs.length,
+        processed: logs.length,
+      },
     });
 
     logger.info('etl.invalid_logs.persisted', { jobId, count: logs.length });

@@ -15,15 +15,16 @@ const growthCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.platform.growth.get({
+    const data = await runApi({
+      promise: client.admin.analytics.platform.growth.get({
         query: {
           period: args.period as 'day' | 'week' | 'month' | undefined,
           range: args.range ? Number.parseInt(args.range, 10) : undefined,
         },
       }),
-      { action: 'admin growth analytics', requiresAdmin: true },
-    );
+      action: 'admin growth analytics',
+      requiresAdmin: true,
+    });
     dump(data);
   },
 });
@@ -37,15 +38,16 @@ const activityCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.platform.activity.get({
+    const data = await runApi({
+      promise: client.admin.analytics.platform.activity.get({
         query: {
           period: args.period as 'day' | 'week' | 'month' | undefined,
           range: args.range ? Number.parseInt(args.range, 10) : undefined,
         },
       }),
-      { action: 'admin activity analytics', requiresAdmin: true },
-    );
+      action: 'admin activity analytics',
+      requiresAdmin: true,
+    });
     dump(data);
   },
 });
@@ -55,7 +57,8 @@ const activeUsersCmd = defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.analytics.platform['active-users'].get(), {
+    const data = await runApi({
+      promise: client.admin.analytics.platform['active-users'].get(),
       action: 'admin active users',
       requiresAdmin: true,
     });
@@ -68,7 +71,8 @@ const breakdownCmd = defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.analytics.platform.breakdown.get(), {
+    const data = await runApi({
+      promise: client.admin.analytics.platform.breakdown.get(),
       action: 'admin breakdown',
       requiresAdmin: true,
     });
@@ -81,7 +85,8 @@ const catalogOverviewCmd = defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.analytics.catalog.overview.get(), {
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.overview.get(),
       action: 'admin catalog overview',
       requiresAdmin: true,
     });
@@ -95,12 +100,13 @@ const brandsCmd = defineCommand({
   async run({ args }) {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(
-      client.admin.analytics.catalog.brands.get({
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.brands.get({
         query: { limit: Number.parseInt(args.limit, 10) },
       }),
-      { action: 'admin top brands', requiresAdmin: true },
-    );
+      action: 'admin top brands',
+      requiresAdmin: true,
+    });
     dump(data);
   },
 });
@@ -110,7 +116,8 @@ const pricesCmd = defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.analytics.catalog.prices.get(), {
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.prices.get(),
       action: 'admin price distribution',
       requiresAdmin: true,
     });
@@ -123,7 +130,8 @@ const embeddingsCmd = defineCommand({
   async run() {
     await requireAdmin();
     const client = await getAdminClient();
-    const data = await runApi(client.admin.analytics.catalog.embeddings.get(), {
+    const data = await runApi({
+      promise: client.admin.analytics.catalog.embeddings.get(),
       action: 'admin embedding stats',
       requiresAdmin: true,
     });

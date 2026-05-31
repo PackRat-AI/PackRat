@@ -19,11 +19,11 @@ export function registerUploadTools(agent: AgentContext): void {
       },
     },
     async ({ file_name, content_type, size }) =>
-      call(
-        agent.api.user.upload.presigned.get({
+      call({
+        promise: agent.api.user.upload.presigned.get({
           query: { fileName: file_name, contentType: content_type, size },
         }),
-        { action: 'create presigned upload URL' },
-      ),
+        action: 'create presigned upload URL',
+      }),
   );
 }

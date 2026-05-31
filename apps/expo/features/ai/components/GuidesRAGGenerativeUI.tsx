@@ -80,7 +80,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
       .join(' ');
   };
 
-  const truncateText = (text: string, maxLength = 120) => {
+  const truncateText = ({ text, maxLength = 120 }: { text: string; maxLength?: number }) => {
     if (text.length <= maxLength) return text;
     return `${text.substring(0, maxLength).trim()}...`;
   };
@@ -214,7 +214,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
                       className="mb-4 text-sm leading-5 text-gray-700 dark:text-gray-300"
                       numberOfLines={4}
                     >
-                      {truncateText(guide.content[0].text.trim())}
+                      {truncateText({ text: guide.content[0].text.trim() })}
                     </Text>
                   )}
 

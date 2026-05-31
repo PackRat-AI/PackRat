@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "type": "module",
   "exports": {
@@ -25,6 +25,10 @@
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "dev": "wrangler dev -e=dev",
+    "dev:e2e": "bash scripts/e2e-local-start.sh",
+    "dev:e2e:init": "bash scripts/e2e-local-init.sh",
+    "dev:e2e:reset": "bash scripts/e2e-local-stop.sh --volumes && bash scripts/e2e-local-start.sh",
+    "dev:e2e:stop": "bash scripts/e2e-local-stop.sh",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage",
