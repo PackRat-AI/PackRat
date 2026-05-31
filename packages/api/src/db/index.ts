@@ -30,6 +30,13 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
+const pgPools = new Map<string, Pool>();
+
+const getPgPoolMax = () => {
+  const parsed = Number(process.env.PACKRAT_PG_POOL_MAX);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
+};
+
 const shouldUseNeonWsProxy = (url: string) => {
   if (process.env.PACKRAT_USE_NEON_WSPROXY === 'true') return true;
 
@@ -40,8 +47,6 @@ const shouldUseNeonWsProxy = (url: string) => {
     return false;
   }
 };
-
-const pgPools = new Map<string, Pool>();
 
 export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
@@ -59,7 +64,7 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
     if (!pool) {
       const newPool = new Pool({
         connectionString: url,
-        max: 5,
+        max: getPgPoolMax(),
         // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
         // which is not supported in the Cloudflare Workers runtime (miniflare).
         idleTimeoutMillis: 0,

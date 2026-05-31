@@ -7,37 +7,18 @@
  */
 
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
-import { cors } from '@elysiajs/cors';
 import { neonConfig } from '@neondatabase/serverless';
-import { getAuth } from '@packrat/api/auth';
+import { type App, app } from '@packrat/api/app';
 import { AppContainer } from '@packrat/api/containers';
-import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
-import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
-import { packratOpenApi } from '@packrat/api/utils/openapi';
+import { setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
-import { Elysia } from 'elysia';
-import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
-
-// Origins allowed to make cross-origin (credentialed) requests to the API.
-const ALLOWED_ORIGIN_PATTERNS = [
-  /^https:\/\/(www\.)?packrat\.world$/,
-  /^https:\/\/[\w-]+\.packrat\.world$/,
-  /^https:\/\/[\w-]+\.packratai\.com$/,
-  /^https?:\/\/[\w-]+\.workers\.dev$/,
-  /^http:\/\/localhost:\d+$/,
-  /^exp:\/\//,
-];
-
-function isAllowedOrigin(origin: string | null): origin is string {
-  return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
-}
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
@@ -53,73 +34,7 @@ function sentryOptions(env: Env) {
   };
 }
 
-export const app = new Elysia({ adapter: CloudflareAdapter })
-  .use(
-    cors({
-      // Better Auth uses cookies — credentials must be true and origins must
-      // be explicit (not wildcard) so the browser sends cookies cross-origin.
-      credentials: true,
-      origin: (request) => isAllowedOrigin(request.headers.get('Origin')),
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    }),
-  )
-  .use(packratOpenApi)
-  .onError(({ error, code, request }) => {
-    // Only report unexpected server errors — not user-input or routing errors.
-    if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
-      captureApiException({
-        error: error,
-        operation: 'elysia.onError',
-        tags: {
-          error_code: String(code),
-          method: request?.method ?? 'UNKNOWN',
-          path: request ? new URL(request.url).pathname : 'UNKNOWN',
-        },
-        extra: { errorCode: String(code), httpStatus: 500 },
-      });
-    }
-
-    if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(JSON.stringify({ error: 'Validation failed' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    if (code === 'NOT_FOUND') {
-      return new Response(JSON.stringify({ error: 'Not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  })
-  .get('/', () => 'PackRat API is running!', {
-    detail: { summary: 'Health check', tags: ['Meta'] },
-  })
-  .get('/health', () => ({ status: 'ok' as const }), {
-    detail: { summary: 'Health status', tags: ['Meta'] },
-  })
-  // Better Auth handles all /api/auth/** requests. Routing it through Elysia
-  // (rather than dispatching before Elysia) means the `cors` plugin above
-  // applies its credentialed-CORS policy and OPTIONS preflight to auth routes
-  // too. `auth` is resolved per-request because it depends on the Cloudflare
-  // env bindings, which are only available at request time.
-  .all(
-    '/api/auth/*',
-    async ({ request }) => {
-      const auth = await getAuth(getEnv());
-      return auth.handler(request);
-    },
-    { parse: 'none', detail: { hide: true } },
-  )
-  .use(routes)
-  .compile();
-
-export type App = typeof app;
+export { app, type App };
 
 export { AppContainer };
 

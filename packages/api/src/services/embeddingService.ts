@@ -29,6 +29,10 @@ export const generateEmbedding = async (
     return null;
   }
 
+  if (process.env.NODE_ENV === 'test') {
+    return null;
+  }
+
   const aiProvider = createAIProvider(providerConfig);
 
   // OpenAI recommends replacing newlines with spaces for best results
@@ -55,6 +59,10 @@ export const generateManyEmbeddings = async (
   const cleanValues = values.map((v) => v?.replace(NEWLINE, ' ').trim()).filter(Boolean);
   if (cleanValues.length === 0) {
     return [];
+  }
+
+  if (process.env.NODE_ENV === 'test') {
+    return cleanValues.map(() => null);
   }
 
   const aiProvider = createAIProvider(providerConfig);

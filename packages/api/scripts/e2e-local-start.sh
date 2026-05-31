@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# e2e-local-start.sh — spin up local Postgres + wrangler dev for Maestro e2e.
+# e2e-local-start.sh — spin up local Postgres + Bun API for Maestro e2e.
 #
 # Prerequisites:
 #   - Docker running
 #   - .dev.vars.e2e generated (run scripts/e2e-local-init.sh if missing)
 #   - Bun installed
 #
-# The API will be available at http://localhost:8787
-# iOS Simulator can reach it at http://localhost:8787 (shared loopback on macOS).
-# For a real device on the same Wi-Fi, use your Mac's LAN IP instead:
-#   EXPO_PUBLIC_API_URL=http://<your-mac-ip>:8787
+# The API will be available at http://localhost:${PORT:-8787}.
+# Android physical devices can reach it via:
+#   adb reverse tcp:${PORT:-8787} tcp:${PORT:-8787}
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,6 +16,7 @@ API_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${API_DIR}/docker-compose.e2e.yml"
 E2E_VARS="${API_DIR}/.dev.vars.e2e"
 E2E_DB_URL="postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e"
+API_PORT="${PORT:-8787}"
 
 # ── Preflight ───────────────────────────────────────────────────────────────
 if ! command -v docker &>/dev/null; then
@@ -70,16 +70,24 @@ echo "▶ Seeding E2E test user (${E2E_EMAIL})..."
   bun run db:seed:e2e-user
 )
 
-# ── Wrangler dev ─────────────────────────────────────────────────────────────
+# ── Local API ────────────────────────────────────────────────────────────────
 echo ""
-echo "▶ Starting wrangler dev on http://localhost:8787 ..."
+echo "▶ Starting local E2E API on http://localhost:${API_PORT} ..."
 echo "  Using env file: ${E2E_VARS}"
 echo "  Press Ctrl+C to stop."
 echo ""
 
 cd "$API_DIR"
-# --env-file layers e2e vars on top of any existing .dev.vars;
-# --ip 0.0.0.0 also exposes the API on the LAN (useful for real device testing).
-exec wrangler dev -e dev \
-  --env-file "$E2E_VARS" \
-  --ip 0.0.0.0
+set -a
+# shellcheck disable=SC1090
+source "$E2E_VARS"
+set +a
+
+exec env \
+  PORT="$API_PORT" \
+  NODE_ENV=test \
+  NEON_DATABASE_URL="$E2E_DB_URL" \
+  NEON_DATABASE_URL_READONLY="$E2E_DB_URL" \
+  BETTER_AUTH_URL="http://127.0.0.1:${API_PORT}" \
+  PACKRAT_PG_POOL_MAX="${PACKRAT_PG_POOL_MAX:-50}" \
+  bun run dev:e2e:node
