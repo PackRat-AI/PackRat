@@ -16,7 +16,7 @@ import * as path from 'node:path';
 import { neon } from '@neondatabase/serverless';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:8787';
-const DB_URL = process.env.NEON_DATABASE_URL ?? '***REDACTED_DB_URL***';
+const DB_URL = process.env.NEON_DATABASE_URL;
 
 export const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
 
@@ -77,6 +77,11 @@ async function setup() {
   console.log(`[globalSetup] Registered ${email}`);
 
   // 2. Fetch OTP directly from the database
+  if (!DB_URL) {
+    throw new Error(
+      'NEON_DATABASE_URL must be set for Playwright global setup (direct OTP lookup)',
+    );
+  }
   const sql = neon(DB_URL);
   const rows = await sql`
     SELECT otp.code
