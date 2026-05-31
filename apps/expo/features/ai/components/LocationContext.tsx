@@ -19,7 +19,7 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
 
   if (!location) {
     return (
-      <View className="px-4 py-2">
+      <View className="px-4 pb-2 pt-4">
         <TouchableOpacity
           onPress={() => router.push('/weather')}
           className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
@@ -34,7 +34,7 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
 
   return (
     <>
-      <View className="px-4 py-2">
+      <View className="px-4 pb-2 pt-4">
         <TouchableOpacity
           onPress={() => setShowLocationPicker(true)}
           className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
