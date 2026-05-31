@@ -1,15 +1,5 @@
 import XCTest
 
-enum UITestFeatureFlags {
-    // Keep aligned with `packages/config/src/config.ts` and Swift `AppFeatureFlags`.
-    static let enableTrips = true
-    static let enablePackTemplates = true
-    static let enableTrailConditions = true
-    static let enableFeed = false
-    static let enableWildlifeIdentification = false
-    static let enableShoppingList = false
-}
-
 // MARK: - Base class
 
 /// Base class for all PackRat UI tests.

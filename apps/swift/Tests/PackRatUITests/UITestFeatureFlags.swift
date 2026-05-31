@@ -3,7 +3,7 @@
 
 import Foundation
 
-enum AppFeatureFlags {
+enum UITestFeatureFlags {
     static let enableFeed = false
     static let enableLocalAI = true
     static let enableOAuth = true

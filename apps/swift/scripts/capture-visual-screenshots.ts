@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { APP_CONFIG } from '@packrat/config/config';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
@@ -75,11 +76,7 @@ const CHROME_CANDIDATES = [
   '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
 ];
-const FEATURE_FLAGS = {
-  enableFeed: false,
-  enableShoppingList: false,
-  enableWildlifeIdentification: false,
-} as const;
+const FEATURE_FLAGS = APP_CONFIG.featureFlags;
 const IOS_SURFACES = [
   'packs',
   'trips',
