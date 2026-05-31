@@ -85,29 +85,24 @@ after a deploy" further down for the pattern.
 These steps are required before `wrangler deploy --env prod` can succeed.
 They live outside the codebase because they touch Cloudflare account state.
 
-### 1. (Optional housekeeping) Remove leftover `OAUTH_KV` namespaces + DCR secret
+### 1. ~~Remove leftover `OAUTH_KV` namespaces + DCR secret~~ — nothing to do (verified)
 
-**Not a ship-blocker.** The MCP connector has never gone live in the Claude
-connector store — there are no real users and no production traffic to
-protect. The new `wrangler.jsonc` doesn't bind `OAUTH_KV` and no code reads
-`MCP_INITIAL_ACCESS_TOKEN`, so `wrangler deploy --env prod` succeeds whether
-or not these exist. This is pre-launch tidy-up, not a migration.
+**Verified 2026-05-31 against the `packratai.com` Cloudflare account — there is
+nothing to clean up.** The MCP connector has never been deployed to any
+environment:
 
-If earlier `workers-oauth-provider` dev iterations created these namespaces /
-secrets in the Cloudflare account, delete them whenever convenient (no
-sequencing or deploy-window care needed — nothing is serving traffic):
+- KV namespaces `0ac2e23b…` (prod) / `be554ba7…` (dev) **do not exist** — they
+  were never created (the `development` `wrangler.jsonc` still carries
+  `__TODO_OAUTH_KV_*_ID__` placeholders). The only KV in the account is
+  `AUTH_KV` / `AUTH_KV_preview` — the **current** Better Auth namespaces used by
+  the API worker. **Do not delete those.**
+- Workers `packrat-mcp` / `packrat-mcp-dev` **do not exist** (`wrangler` →
+  "Worker not found"), so no `MCP_INITIAL_ACCESS_TOKEN` secret exists either.
 
-```bash
-# Drop the namespaces if they exist (IDs from the prior wrangler.jsonc)
-wrangler kv namespace delete --namespace-id 0ac2e23bb4f04dc5a39cfd3d7bc900e0   # prod
-wrangler kv namespace delete --namespace-id be554ba7448c4c13a48e85d9a0cdabc8   # dev
-
-# Delete the DCR pre-shared bearer if it was ever set
-wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env prod
-wrangler secret delete MCP_INITIAL_ACCESS_TOKEN --env dev
-```
-
-If they were never provisioned, these commands are no-ops — skip the step.
+The IDs that appear elsewhere in the plan/runbook are notional — recorded in the
+plan, never provisioned. The first MCP deploy will be a **net-new first deploy**
+(the U17 workflow creates the workers on first tag), not a migration off
+anything. No pre-deploy cleanup step is required.
 
 No equivalent provisioning step exists anymore: Better Auth's OAuth
 provider on `api.packrat.world` owns all client / grant / token state in
