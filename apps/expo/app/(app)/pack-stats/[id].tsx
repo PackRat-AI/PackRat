@@ -81,7 +81,7 @@ export default function PackStatsScreen() {
               <Button
                 variant="secondary"
                 size="sm"
-                onPress={() => router.push({ pathname: '/pack/[id]', params: { id: packId } })}
+                onPress={() => router.dismissTo({ pathname: '/pack/[id]', params: { id: packId } })}
               >
                 <Text>Open Pack</Text>
               </Button>
@@ -134,7 +134,7 @@ export default function PackStatsScreen() {
               <Button
                 variant="secondary"
                 size="sm"
-                onPress={() => router.push({ pathname: '/pack/[id]', params: { id: packId } })}
+                onPress={() => router.dismissTo({ pathname: '/pack/[id]', params: { id: packId } })}
               >
                 <Text>Open Pack</Text>
               </Button>
