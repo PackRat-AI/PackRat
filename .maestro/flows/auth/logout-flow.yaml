@@ -9,14 +9,23 @@ appId: ${APP_ID}
         text: "Sync in progress"
     commands:
       - tapOn:
-          text: "LOG OUT"
+          text: "LOG OUT|PROCEED"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "You're now logged out!"
+    commands:
+      - tapOn:
+          text: "SIGN-IN AGAIN|Sign-in again"
       - waitForAnimationToEnd
 
 # Navigate to the Profile tab
 - runFlow:
     when:
-      notVisible:
-        id: "sign-in-email-button"
+      visible:
+        text: "Profile"
     commands:
       - tapOn:
           text: "Profile"
@@ -26,8 +35,8 @@ appId: ${APP_ID}
 # Scroll down to find the log out button if needed
 - runFlow:
     when:
-      notVisible:
-        id: "sign-in-email-button"
+      visible:
+        text: "Profile"
     commands:
       - scrollUntilVisible:
           element:
@@ -37,8 +46,8 @@ appId: ${APP_ID}
 # Tap Log Out
 - runFlow:
     when:
-      notVisible:
-        id: "sign-in-email-button"
+      visible:
+        text: "Log Out"
     commands:
       - tapOn:
           text: "Log Out"
@@ -51,7 +60,7 @@ appId: ${APP_ID}
         text: "Sync in progress"
     commands:
       - tapOn:
-          text: "LOG OUT"
+          text: "LOG OUT|PROCEED"
 
 - waitForAnimationToEnd
 
@@ -59,10 +68,10 @@ appId: ${APP_ID}
 - runFlow:
     when:
       visible:
-        text: "Sign-in again"
+        text: "You're now logged out!"
     commands:
       - tapOn:
-          text: "Sign-in again"
+          text: "SIGN-IN AGAIN|Sign-in again"
 
 - waitForAnimationToEnd
 

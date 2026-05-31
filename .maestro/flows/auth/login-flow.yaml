@@ -58,21 +58,17 @@ appId: ${APP_ID}
           text: "OK"
       - waitForAnimationToEnd
 
-# Dev client only: if the dev server picker appears on iOS (saved Metro URL was
+# Dev client only: if the dev server picker appears (saved Metro URL was
 # cleared or is stale), tap the discovered server row identified by METRO_HOST:METRO_PORT.
 - runFlow:
     when:
-      platform: iOS
+      visible:
+        text: "DEVELOPMENT SERVERS"
     commands:
-      - runFlow:
-          when:
-            visible:
-              text: "DEVELOPMENT SERVERS"
-          commands:
-            - waitForAnimationToEnd
-            - tapOn:
-                text: "http://${METRO_HOST}:${METRO_PORT}"
-            - waitForAnimationToEnd
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "http://${METRO_HOST}:${METRO_PORT}"
+      - waitForAnimationToEnd
 
 # Dev client only: dismiss the Expo "Developer Tools" intro + dev-menu sheet that
 # appears on the first launch after clearState.

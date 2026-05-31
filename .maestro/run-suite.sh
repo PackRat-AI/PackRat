@@ -58,6 +58,8 @@ END_TAPS=$(( ($(get_year "$END_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$
 maestro test --config "$CONFIG_FILE" "$@" \
   -e TEST_EMAIL="$TEST_EMAIL" \
   -e TEST_PASSWORD="$TEST_PASSWORD" \
+  -e METRO_HOST="${METRO_HOST:-localhost}" \
+  -e METRO_PORT="${METRO_PORT:-8083}" \
   -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
   -e PACK_NAME="${PACK_NAME:-E2E-Pack-$UNIQUE_ID}" \
   -e APP_ID="${APP_ID:-$DEFAULT_APP_ID}" \

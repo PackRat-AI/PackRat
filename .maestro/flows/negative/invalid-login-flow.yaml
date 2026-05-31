@@ -73,7 +73,7 @@ appId: ${APP_ID}
     timeout: 10000
 
 - assertVisible:
-    text: "Invalid email or password"
+    text: "Invalid email or password\\.?"
 
 # Dismiss the error dialog
 - tapOn:

@@ -57,14 +57,19 @@ appId: ${APP_ID}
       - assertVisible:
           text: "ADDING"
 
-      # Select the pack created earlier in this run
-      - scrollUntilVisible:
-          element:
+      # Filter the picker to the pack created earlier in this run. The picker
+      # list can contain stale E2E packs from prior runs, and nested scrolling is
+      # unreliable on Android physical devices.
+      - tapOn:
+          text: "Search.*"
+      - inputText: "${PACK_NAME}"
+      - hideKeyboard
+      - extendedWaitUntil:
+          visible:
             id: "catalog:pack-option-${PACK_NAME}"
-          direction: DOWN
-          timeout: 60000
-          speed: 40
-          visibilityPercentage: 50
+          timeout: 30000
+
+      # Select the pack created earlier in this run
       - tapOn:
           id: "catalog:pack-option-${PACK_NAME}"
       - waitForAnimationToEnd

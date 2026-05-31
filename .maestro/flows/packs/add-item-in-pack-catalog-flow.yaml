@@ -54,8 +54,14 @@ appId: ${APP_ID}
     timeout: 10000
 
 # Verify catalog items are shown
-- assertVisible:
-    text: "All"
+- extendedWaitUntil:
+    visible:
+      text: "All"
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: "catalog-item-card-.*"
+    timeout: 30000
 
 # Tap a catalog item to toggle it
 - scrollUntilVisible:
