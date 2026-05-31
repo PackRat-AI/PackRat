@@ -96,16 +96,20 @@ final class NavigationMacOSTests: AppUITestCase {
         // Items reachable only via the sidebar's lower entries (not present as
         // primary tabs on iOS). These are the ones that lived behind "More" on
         // iOS but are first-class on the macOS sidebar.
-        let secondary = [
+        var secondary = [
             "Assistant",
             "Catalog",
             "Templates",
             "Trail Conditions",
-            "Feed",
             "Guides",
             "Gear Inventory",
-            "Wildlife",
         ]
+        if UITestFeatureFlags.enableFeed {
+            secondary.append("Feed")
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            secondary.append("Wildlife")
+        }
         for label in secondary {
             goToSidebar(label)
             XCTAssertTrue(

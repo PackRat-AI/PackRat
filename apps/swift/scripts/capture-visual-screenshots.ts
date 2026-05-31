@@ -75,6 +75,11 @@ const CHROME_CANDIDATES = [
   '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
   '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
 ];
+const FEATURE_FLAGS = {
+  enableFeed: false,
+  enableShoppingList: false,
+  enableWildlifeIdentification: false,
+} as const;
 const IOS_SURFACES = [
   'packs',
   'trips',
@@ -85,11 +90,11 @@ const IOS_SURFACES = [
   'pack-templates',
   'guides',
   'catalog',
-  'feed',
   'trail-conditions',
   'weather',
-  'shopping-list',
-  'wildlife',
+  ...(FEATURE_FLAGS.enableFeed ? ['feed'] : []),
+  ...(FEATURE_FLAGS.enableShoppingList ? ['shopping-list'] : []),
+  ...(FEATURE_FLAGS.enableWildlifeIdentification ? ['wildlife'] : []),
 ] as const;
 const MAC_SURFACES = [
   'home',
@@ -100,12 +105,12 @@ const MAC_SURFACES = [
   'catalog',
   'pack-templates',
   'trail-conditions',
-  'feed',
   'guides',
   'gear-inventory',
-  'wildlife',
   'ai-packs',
   'season-suggestions',
+  ...(FEATURE_FLAGS.enableFeed ? ['feed'] : []),
+  ...(FEATURE_FLAGS.enableWildlifeIdentification ? ['wildlife'] : []),
 ] as const;
 const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
   {
@@ -510,11 +515,16 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
       area: 'modal',
       flow: 'Weather alert preferences controls',
     }),
-    requirement('94-data-feed-comments-sheet', {
-      area: 'crud',
-      flow: 'Feed comments sheet',
-    }),
   ];
+
+  if (FEATURE_FLAGS.enableFeed) {
+    common.push(
+      requirement('94-data-feed-comments-sheet', {
+        area: 'crud',
+        flow: 'Feed comments sheet',
+      }),
+    );
+  }
 
   if (platform === 'macos' || platform === 'ios' || platform === 'ipad') {
     common.push(
@@ -551,15 +561,20 @@ function expandedStateRequirements(platform: Platform): ScreenshotRequirement[] 
         area: 'data',
         flow: 'Catalog item detail before adding to pack',
       }),
-      requirement('96-data-shopping-list', {
-        area: 'offline-local',
-        flow: 'Shopping list with seeded data',
-      }),
-      requirement('97-data-shopping-add-item-sheet', {
-        area: 'offline-local',
-        flow: 'Shopping list item create sheet',
-      }),
     );
+
+    if (FEATURE_FLAGS.enableShoppingList) {
+      common.push(
+        requirement('96-data-shopping-list', {
+          area: 'offline-local',
+          flow: 'Shopping list with seeded data',
+        }),
+        requirement('97-data-shopping-add-item-sheet', {
+          area: 'offline-local',
+          flow: 'Shopping list item create sheet',
+        }),
+      );
+    }
   }
 
   return common;
@@ -604,8 +619,13 @@ function modalSet(prefix: string, includesAccountBackedCompose: boolean): Screen
         area: 'crud',
         flow: 'Trail report create form',
       }),
-      requirement(`${prefix}-feed-compose-sheet`, { area: 'crud', flow: 'Feed compose form' }),
     );
+
+    if (FEATURE_FLAGS.enableFeed) {
+      requirements.push(
+        requirement(`${prefix}-feed-compose-sheet`, { area: 'crud', flow: 'Feed compose form' }),
+      );
+    }
   } else {
     requirements.push(
       requirement('50-guest-limit-new-template', {

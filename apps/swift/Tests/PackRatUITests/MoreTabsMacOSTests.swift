@@ -71,11 +71,10 @@ final class MoreTabsMacOSTests: AppUITestCase {
 
     // MARK: - Wildlife
 
-    func testWildlifeSidebarReachable() {
-        goToSidebar("Wildlife")
-        XCTAssertTrue(
-            app.staticTexts["Wildlife ID"].waitForExistence(timeout: 8),
-            "Wildlife ID header must appear"
+    func testDisabledWildlifeSidebarEntryIsHidden() {
+        XCTAssertFalse(
+            app.buttons["nav_wildlife"].waitForExistence(timeout: 2),
+            "Wildlife ID should stay hidden while enableWildlifeIdentification is false"
         )
     }
 }

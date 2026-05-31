@@ -61,10 +61,10 @@ final class AuthTests: AppUITestCase {
         continueButton.tap()
         XCTAssertTrue(waitForLoggedIn(timeout: 10), "Guest mode should enter the main app shell")
 
-        goToHomeAction("Community Feed")
+        goToHomeAction("Pack Templates")
 
         XCTAssertTrue(
-            app.staticTexts["Community Feed Requires an Account"].waitForExistence(timeout: 10),
+            app.staticTexts["Templates Require an Account"].waitForExistence(timeout: 10),
             "Guest-only account-backed screens should show a native sign-in state instead of a network error"
         )
         XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
@@ -91,11 +91,16 @@ final class AuthTests: AppUITestCase {
         XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
         app.buttons["Done"].tapIfExists()
 
-        goToHomeAction("Wildlife ID")
-        XCTAssertTrue(app.staticTexts["Wildlife ID Requires an Account"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
-        XCTAssertFalse(app.buttons["Try Again"].exists)
-        XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            goToHomeAction("Wildlife ID")
+            XCTAssertTrue(app.staticTexts["Wildlife ID Requires an Account"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons["Sign In or Create Account"].exists)
+            XCTAssertFalse(app.buttons["Try Again"].exists)
+            XCTAssertFalse(app.staticTexts["Connection Needed"].exists)
+        } else {
+            goToTab("Home")
+            XCTAssertFalse(app.buttons["home_action_wildlifeid"].waitForExistence(timeout: 2))
+        }
     }
     #endif
 

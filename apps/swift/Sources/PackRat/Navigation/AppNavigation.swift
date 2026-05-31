@@ -48,6 +48,17 @@ enum NavItem: String, CaseIterable, Identifiable {
         default: return false
         }
     }
+
+    var isFeatureEnabled: Bool {
+        switch self {
+        case .trips: return AppFeatureFlags.enableTrips
+        case .templates: return AppFeatureFlags.enablePackTemplates
+        case .trailConditions: return AppFeatureFlags.enableTrailConditions
+        case .feed: return AppFeatureFlags.enableFeed
+        case .wildlife: return AppFeatureFlags.enableWildlifeIdentification
+        default: return true
+        }
+    }
 }
 
 #if os(iOS)
@@ -152,7 +163,7 @@ struct AppNavigation: View {
 
     private var sidebar: some View {
         @Bindable var state = appState
-        return List(NavItem.allCases) { item in
+        return List(NavItem.allCases.filter(\.isFeatureEnabled)) { item in
             Button {
                 state.navItem = item
             } label: {
@@ -330,7 +341,7 @@ struct AppNavigation: View {
     }
 
     private var phonePrimaryItems: [NavItem] {
-        [.home, .packs, .trips, .chat]
+        [.home, .packs, .trips, .chat].filter(\.isFeatureEnabled)
     }
 
     @ViewBuilder

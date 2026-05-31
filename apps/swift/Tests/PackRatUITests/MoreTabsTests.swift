@@ -100,11 +100,11 @@ final class MoreTabsTests: AppUITestCase {
 
     // MARK: - Wildlife
 
-    func testWildlifeTabReachable() {
-        goToHomeAction("Wildlife ID")
-        XCTAssertTrue(
-            app.navigationBars["Wildlife ID"].waitForExistence(timeout: 8),
-            "Wildlife ID navigation must appear from Home"
+    func testDisabledWildlifeActionIsHidden() {
+        goToTab("Home")
+        XCTAssertFalse(
+            app.buttons["home_action_wildlifeid"].waitForExistence(timeout: 2),
+            "Wildlife ID should stay hidden while enableWildlifeIdentification is false"
         )
     }
 

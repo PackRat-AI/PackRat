@@ -297,7 +297,7 @@ struct HomeView: View {
     }
 
     private var homeActions: [HomeAction] {
-        [
+        var actions = [
             HomeAction(
                 title: "My Packs",
                 subtitle: appState.packsVM.packs.isEmpty ? "No packs yet" : "\(appState.packsVM.packs.count) pack\(appState.packsVM.packs.count == 1 ? "" : "s")",
@@ -318,13 +318,27 @@ struct HomeView: View {
             ) { appState.navItem = .templates },
             HomeAction(title: "Guides", subtitle: "Gear & packing articles", symbol: "book.fill", color: .brown) { appState.navItem = .guides },
             HomeAction(title: "Catalog", subtitle: "Browse gear database", symbol: "magnifyingglass", color: .gray) { appState.navItem = .catalog },
-            HomeAction(title: "Community Feed", subtitle: "Posts & trip reports", symbol: "newspaper.fill", color: .teal) { appState.navItem = .feed },
-            HomeAction(title: "Trail Conditions", subtitle: "Community reports", symbol: "figure.hiking", color: .red) { appState.navItem = .trailConditions },
-            HomeAction(title: "Shopping List", subtitle: "Gear wishlist", symbol: "cart.fill", color: .pink) { showingShoppingList = true },
-            HomeAction(title: "Wildlife ID", subtitle: "Identify animals & plants", symbol: "pawprint.fill", color: Color(red: 0.5, green: 0.3, blue: 0.1)) {
-                appState.navItem = .wildlife
-            },
         ]
+
+        if AppFeatureFlags.enableFeed {
+            actions.append(HomeAction(title: "Community Feed", subtitle: "Posts & trip reports", symbol: "newspaper.fill", color: .teal) { appState.navItem = .feed })
+        }
+
+        if AppFeatureFlags.enableTrailConditions {
+            actions.append(HomeAction(title: "Trail Conditions", subtitle: "Community reports", symbol: "figure.hiking", color: .red) { appState.navItem = .trailConditions })
+        }
+
+        if AppFeatureFlags.enableShoppingList {
+            actions.append(HomeAction(title: "Shopping List", subtitle: "Gear wishlist", symbol: "cart.fill", color: .pink) { showingShoppingList = true })
+        }
+
+        if AppFeatureFlags.enableWildlifeIdentification {
+            actions.append(HomeAction(title: "Wildlife ID", subtitle: "Identify animals & plants", symbol: "pawprint.fill", color: Color(red: 0.5, green: 0.3, blue: 0.1)) {
+                appState.navItem = .wildlife
+            })
+        }
+
+        return actions
     }
 
     private var upcomingTripsSubtitle: String {

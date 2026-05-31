@@ -379,19 +379,22 @@ final class VisualScreenshotTests: XCTestCase {
     }
 
     private var explorePhoneHomeActions: [PhoneHomeActionScreenshot] {
-        [
+        var actions: [PhoneHomeActionScreenshot] = [
             ("Catalog", "catalog"),
-            ("Community Feed", "feed"),
             ("Trail Conditions", "trail-conditions"),
             ("Weather", "weather"),
-            ("Shopping List", "shopping-list"),
         ]
+        if UITestFeatureFlags.enableFeed {
+            actions.append(("Community Feed", "feed"))
+        }
+        if UITestFeatureFlags.enableShoppingList {
+            actions.append(("Shopping List", "shopping-list"))
+        }
+        return actions
     }
 
     private var deepPhoneHomeActions: [PhoneHomeActionScreenshot] {
-        [
-            ("Wildlife ID", "wildlife"),
-        ]
+        UITestFeatureFlags.enableWildlifeIdentification ? [("Wildlife ID", "wildlife")] : []
     }
 
     private func capturePhoneHomeActionSurface(
@@ -458,7 +461,7 @@ final class VisualScreenshotTests: XCTestCase {
         resetPhoneModalState(mode)
         captureHomeAction("Weather", name: "\(prefix)-weather-before-alerts", dismissAfterCapture: false)
 
-        if mode != .guest {
+        if mode != .guest && UITestFeatureFlags.enableFeed {
             resetPhoneModalState(mode)
             captureHomeAction(
                 "Community Feed",
@@ -534,13 +537,15 @@ final class VisualScreenshotTests: XCTestCase {
         tapAndCapture(identifier: "weather_alerts_button", fallbackButton: "Alerts", name: "92-data-weather-alerts-sheet")
         tapAndCapture(identifier: "weather_alert_preferences_button", fallbackButton: "Alert Preferences", name: "93-data-weather-alert-preferences")
 
-        captureHomeAction(
-            "Community Feed",
-            name: "home-before-94-data-feed-expanded",
-            dismissAfterCapture: false,
-            destinationIdentifier: "feed_comments_button_9001"
-        )
-        tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+        if UITestFeatureFlags.enableFeed {
+            captureHomeAction(
+                "Community Feed",
+                name: "home-before-94-data-feed-expanded",
+                dismissAfterCapture: false,
+                destinationIdentifier: "feed_comments_button_9001"
+            )
+            tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+        }
 
         captureHomeAction(
             "AI Packs",
@@ -709,15 +714,19 @@ final class VisualScreenshotTests: XCTestCase {
             ("Assistant", "\(prefix)-assistant\(suffix)"),
             ("Catalog", "\(prefix)-catalog\(suffix)"),
         ]
-        let secondaryEntries = [
+        var secondaryEntries = [
             ("Templates", "\(prefix)-pack-templates\(suffix)"),
             ("Trail Conditions", "\(prefix)-trail-conditions\(suffix)"),
-            ("Feed", "\(prefix)-feed\(suffix)"),
             ("Guides", "\(prefix)-guides\(suffix)"),
             ("Gear Inventory", "\(prefix)-gear-inventory\(suffix)"),
-            ("Wildlife", "\(prefix)-wildlife\(suffix)"),
             ("AI Packs", "\(prefix)-ai-packs\(suffix)"),
         ]
+        if UITestFeatureFlags.enableFeed {
+            secondaryEntries.append(("Feed", "\(prefix)-feed\(suffix)"))
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            secondaryEntries.append(("Wildlife", "\(prefix)-wildlife\(suffix)"))
+        }
         let entries: [(String, String)]
         switch scope {
         case .all:
@@ -785,7 +794,7 @@ final class VisualScreenshotTests: XCTestCase {
         selectSidebar("Weather")
         capture("\(prefix)-weather-before-alerts")
 
-        if mode != .guest {
+        if mode != .guest && UITestFeatureFlags.enableFeed {
             selectSidebar("Feed")
             tapAndCapture(identifier: "feed_new_post_button", fallbackButton: "New Post", name: "\(prefix)-feed-compose-sheet")
         }
@@ -843,15 +852,19 @@ final class VisualScreenshotTests: XCTestCase {
         resetMacSampleDataSidebar("Weather")
         tapElementAndCapture(identifier: "weather_alert_preferences_button", name: "93-data-weather-alert-preferences", dismissAfterCapture: false)
 
-        resetMacSampleDataSidebar("Feed")
-        tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+        if UITestFeatureFlags.enableFeed {
+            resetMacSampleDataSidebar("Feed")
+            tapElementAndCapture(identifier: "feed_comments_button_9001", name: "94-data-feed-comments-sheet")
+        }
 
         resetMacSampleDataSidebar("AI Packs")
         scrollToElement(identifier: "ai_packs_view_results_button", maxSwipes: 3)
         tapAndCapture(identifier: "ai_packs_view_results_button", fallbackButton: "View", name: "95-data-ai-packs-results-sheet")
 
-        captureMacHomeAction("Shopping List", name: "96-data-shopping-list", dismissAfterCapture: false)
-        tapAndCapture(identifier: "shopping_add_item_button", fallbackButton: "Add Item", name: "97-data-shopping-add-item-sheet")
+        if UITestFeatureFlags.enableShoppingList {
+            captureMacHomeAction("Shopping List", name: "96-data-shopping-list", dismissAfterCapture: false)
+            tapAndCapture(identifier: "shopping_add_item_button", fallbackButton: "Add Item", name: "97-data-shopping-add-item-sheet")
+        }
     }
 
     private func resetMacSampleDataSidebar(_ label: String) {

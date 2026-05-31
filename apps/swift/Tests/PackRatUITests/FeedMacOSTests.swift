@@ -4,6 +4,12 @@ import XCTest
 /// macOS variant of `FeedTests`. Feed lives behind the sidebar's "Feed" row;
 /// the composer opens as a sheet from the content column toolbar.
 final class FeedMacOSTests: AppUITestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        guard UITestFeatureFlags.enableFeed else {
+            throw XCTSkip("Community Feed is hidden while enableFeed is false.")
+        }
+    }
 
     func testFeedSidebarReachable() {
         goToSidebar("Feed")
