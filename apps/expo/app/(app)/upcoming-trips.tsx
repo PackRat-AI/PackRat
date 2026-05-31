@@ -186,7 +186,7 @@ function UpcomingTripsScreenInner() {
               {...info}
               // leftView={<TripImage uri={trip.imageUrl} />}
               rightView={
-                <View className="flex-row items-center">
+                <View className="flex-row items-center pr-4">
                   <PackStatus status={status} completion={completion} />
                 </View>
               }
