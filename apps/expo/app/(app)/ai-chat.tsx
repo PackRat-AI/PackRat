@@ -449,7 +449,9 @@ export default function AIChat() {
               className="self-start ml-4 mb-8"
             />
           )}
-          {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+          {status === 'error' && (
+            <ErrorState error={error} onRetry={() => handleRetry()} onClear={handleClear} />
+          )}
           {messages.length < 2 && (
             <View className="pl-4 pr-16">
               <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
