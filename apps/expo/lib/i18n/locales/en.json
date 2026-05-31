@@ -53,7 +53,13 @@
     "tryAgain": "Try again",
     "tryAgainButton": "Try Again",
     "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen.",
-    "error": "Error"
+    "error": "Error",
+    "contextOverflow": {
+      "title": "Conversation too long",
+      "description": "The on-device model ran out of context window. Local AI can only hold a limited amount of conversation history at once.",
+      "hint": "Clear the chat to start a fresh conversation, or switch to cloud mode for longer sessions.",
+      "clearChat": "Clear chat"
+    }
   },
   "auth": {
     "signIn": "Sign In",
