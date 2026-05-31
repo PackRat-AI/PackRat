@@ -233,7 +233,7 @@
     "createPack": "Create Pack",
     "editPack": "Edit Pack",
     "noPacks": "No packs available",
-    "packName": "Pack Name",
+    "packName": "Choose a Pack",
     "packDescription": "Pack Description",
     "packWeight": "Pack Weight",
     "packItems": "Pack Items",
