@@ -1,3 +1,4 @@
+import { toBigInt } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { createReadOnlyDb } from '../db';
 
@@ -17,8 +18,10 @@ const BYTE_BUDGET_BYTES = 1_048_576; // 1 MB
 
 // JSON.stringify throws on BigInt. Neon's HTTP driver returns Postgres
 // `int8` / `bigint` / `COUNT(*)` results as JS BigInt by default.
-const bigintSafeReplacer = (_key: string, value: unknown) =>
-  typeof value === 'bigint' ? value.toString() : value;
+const bigintSafeReplacer = (_key: string, value: unknown) => {
+  const big = toBigInt(value);
+  return big !== undefined ? big.toString() : value;
+};
 
 interface Params {
   query: string;
