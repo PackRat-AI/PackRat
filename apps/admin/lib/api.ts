@@ -51,16 +51,14 @@ const adminFetcher = async ({
 };
 
 // Pre-drilled into .api.admin so call sites write `adminClient.stats.get()`.
-// Eden Treaty only invokes the callable form of fetch; lib.dom's `fetch` also
-// exposes a `preconnect` method our wrapper doesn't implement. Compose our
-// callable with `fetch`'s static properties via `Object.assign` so the result
-// satisfies `typeof fetch` structurally — no cast.
-const adminTreatyFetcher: typeof fetch = Object.assign(
-  (input: RequestInfo | URL, init?: RequestInit) => adminFetcher({ input, init }),
-  fetch,
-);
 const adminClient = treaty<App>(API_BASE, {
-  fetcher: adminTreatyFetcher,
+  // Eden Treaty types `fetcher` as the full `typeof fetch` (incl. `preconnect`),
+  // which Treaty never calls — satisfy the shape with a typed no-op instead of
+  // casting through `unknown`.
+  fetcher: Object.assign(
+    (input: RequestInfo | URL, init?: RequestInit) => adminFetcher({ input, init }),
+    { preconnect: (..._args: Parameters<typeof fetch.preconnect>): void => {} },
+  ),
   parseDate: false,
 }).api.admin;
 

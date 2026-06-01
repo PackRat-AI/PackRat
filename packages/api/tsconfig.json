@@ -1,26 +1,12 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "strict": true,
-    "types": ["@cloudflare/workers-types", "@types/bun"],
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
-    "lib": ["ESNext"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "baseUrl": ".",
+    "types": ["@cloudflare/workers-types/2022-10-31", "bun"],
     "paths": {
       "@packrat/api": ["./src/index.ts"],
       "@packrat/api/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "scripts/**/*.ts",
-    "migrate.ts",
-    "vitest.config.ts",
-    "vitest.unit.config.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "container_src", "test", "coverage"]
 }
