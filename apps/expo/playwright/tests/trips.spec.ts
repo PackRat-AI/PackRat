@@ -194,8 +194,9 @@ test.describe('Trip CRUD', () => {
     // Accept window.confirm dialogs before triggering delete
     page.on('dialog', (dialog) => dialog.accept());
 
-    // Register DELETE listener scoped to this trip's ID before clicking.
-    // useDeleteTrip calls DELETE /api/trips/:id directly and awaits it before router.back().
+    // useDeleteTrip flips `deleted` locally for an optimistic UI update and
+    // fires DELETE /api/trips/:id so the soft-delete actually lands server-side
+    // (the PUT path strips `deleted`).
     const deletePromise = page.waitForResponse(
       (r) => r.url().includes(`/api/trips/${tripId}`) && r.request().method() === 'DELETE',
       { timeout: 20_000 },
@@ -206,17 +207,13 @@ test.describe('Trip CRUD', () => {
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // Wait for the server to confirm the hard-delete.
-    // useDeleteTrip awaits this before calling router.back(), so the URL change
-    // happens after this resolves — but we still confirm ok() for diagnostics.
     const deleteResponse = await deletePromise;
     expect(deleteResponse.ok()).toBeTruthy();
 
-    // router.back() SPA-navigates away from the trip detail to /trips.
-    // Do NOT use page.goto here — the persist plugin would reload with the old
-    // deleted:false state and mode:'merge' wouldn't clean it up.
-    // Instead, stay in the SPA context where the store already has deleted:true.
-    await page.waitForURL((url) => !url.pathname.startsWith('/trip/'), { timeout: 15_000 });
+    // router.back() may not work after page.goto-seeded history; navigate
+    // explicitly like pack-delete does. With `deleted=true` now persisted
+    // server-side, GET /api/trips will exclude this trip on the list reload.
+    await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
     await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
   });
