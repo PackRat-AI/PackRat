@@ -1,5 +1,5 @@
-import { WeightUnitSchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useState } from 'react';
@@ -9,10 +9,13 @@ export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackTemplateItem();
 
-  const addItemsToPackTemplate = async (
-    packTemplateId: string,
-    catalogItems: CatalogItemWithPackItemFields[],
-  ) => {
+  const addItemsToPackTemplate = async ({
+    packTemplateId,
+    catalogItems,
+  }: {
+    packTemplateId: string;
+    catalogItems: CatalogItemWithPackItemFields[];
+  }) => {
     if (catalogItems.length === 0) return;
 
     setIsLoading(true);

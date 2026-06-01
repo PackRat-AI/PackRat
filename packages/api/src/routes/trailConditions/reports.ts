@@ -1,7 +1,12 @@
 import { createDb } from '@packrat/api/db';
-import type { NewTrailConditionReport } from '@packrat/api/db/schema';
-import { trailConditionReports } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { captureApiException } from '@packrat/api/utils/sentry';
+import type { NewTrailConditionReport } from '@packrat/db';
+import { trailConditionReports } from '@packrat/db';
+import {
+  CreateTrailConditionReportRequestSchema,
+  UpdateTrailConditionReportRequestSchema,
+} from '@packrat/schemas/trailConditions';
 import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
@@ -10,27 +15,6 @@ import { z } from 'zod';
 const LIKE_ESCAPE_BACKSLASH = /\\/g;
 const LIKE_ESCAPE_PERCENT = /%/g;
 const LIKE_ESCAPE_UNDERSCORE = /_/g;
-
-const CreateReportRequestSchema = z.object({
-  id: z.string().describe('Client-generated report ID'),
-  trailName: z.string().min(1),
-  trailRegion: z.string().optional().nullable(),
-  surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),
-  overallCondition: z.enum(['excellent', 'good', 'fair', 'poor']),
-  hazards: z.array(z.string()).optional().default([]),
-  waterCrossings: z.number().int().min(0).max(20).optional().default(0),
-  waterCrossingDifficulty: z.enum(['easy', 'moderate', 'difficult']).optional().nullable(),
-  notes: z.string().optional().nullable(),
-  photos: z.array(z.string()).optional().default([]),
-  tripId: z.string().optional().nullable(),
-  localCreatedAt: z.string().datetime(),
-  localUpdatedAt: z.string().datetime(),
-});
-
-const UpdateReportRequestSchema = CreateReportRequestSchema.omit({
-  id: true,
-  localCreatedAt: true,
-}).partial();
 
 function toReportResponse(row: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -78,14 +62,20 @@ export const trailConditionRoutes = new Elysia()
 
         return reports.map(toReportResponse);
       } catch (error) {
-        console.error('Error listing trail condition reports:', error);
+        captureApiException({
+          error: error,
+          operation: 'trailConditions.list',
+          tags: { feature: 'trailConditions' },
+          extra: { trailName, limit, httpStatus: 500, errorCode: 'TRAIL_CONDITIONS_LIST_ERROR' },
+        });
         return status(500, { error: 'Failed to list trail condition reports' });
       }
     },
     {
       query: z.object({
         trailName: z.string().optional(),
-        limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+        // Handler defaults to 50 via `?? 50`; keep schema truly optional.
+        limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       isAuthenticated: true,
       detail: {
@@ -138,12 +128,22 @@ export const trailConditionRoutes = new Elysia()
           if (existing) return toReportResponse(existing);
           return status(409, { error: 'Report ID already in use by another user' });
         }
-        console.error('Error creating trail condition report:', error);
+        captureApiException({
+          error: error,
+          operation: 'trailConditions.create',
+          tags: { feature: 'trailConditions' },
+          extra: {
+            reportId: data.id,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_CREATE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to submit trail condition report' });
       }
     },
     {
-      body: CreateReportRequestSchema,
+      body: CreateTrailConditionReportRequestSchema,
       isAuthenticated: true,
       detail: {
         tags: ['Trail Conditions'],
@@ -175,7 +175,17 @@ export const trailConditionRoutes = new Elysia()
 
         return reports.map(toReportResponse);
       } catch (error) {
-        console.error('Error listing user trail condition reports:', error);
+        captureApiException({
+          error: error,
+          operation: 'trailConditions.listMine',
+          tags: { feature: 'trailConditions' },
+          extra: {
+            userId: user.userId,
+            updatedAt,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_LIST_MINE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to list trail condition reports' });
       }
     },
@@ -230,13 +240,23 @@ export const trailConditionRoutes = new Elysia()
 
         return toReportResponse(updated);
       } catch (error) {
-        console.error('Error updating trail condition report:', error);
+        captureApiException({
+          error: error,
+          operation: 'trailConditions.update',
+          tags: { feature: 'trailConditions' },
+          extra: {
+            reportId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_UPDATE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to update trail condition report' });
       }
     },
     {
       params: z.object({ reportId: z.string() }),
-      body: UpdateReportRequestSchema,
+      body: UpdateTrailConditionReportRequestSchema,
       isAuthenticated: true,
       detail: {
         tags: ['Trail Conditions'],
@@ -267,7 +287,17 @@ export const trailConditionRoutes = new Elysia()
 
         return { success: true };
       } catch (error) {
-        console.error('Error deleting trail condition report:', error);
+        captureApiException({
+          error: error,
+          operation: 'trailConditions.delete',
+          tags: { feature: 'trailConditions' },
+          extra: {
+            reportId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'TRAIL_CONDITIONS_DELETE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to delete trail condition report' });
       }
     },

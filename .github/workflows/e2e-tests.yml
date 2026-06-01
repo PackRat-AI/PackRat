@@ -5,15 +5,20 @@ on:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
-  # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
-  # CI feedback on their own code.  Secrets are unavailable for forks, so
-  # the job is skipped via the `if` condition on the job below.
   pull_request:
     branches: [main, development]
     paths:
       - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
   workflow_dispatch:
@@ -27,39 +32,47 @@ permissions:
 
 env:
   MAESTRO_VERSION: 2.3.0
-  # Suppress the per-invocation "Anonymous analytics enabled" banner and
-  # the network round-trip it implies on every CI run.
   MAESTRO_CLI_NO_ANALYTICS: "true"
+  # Local Postgres used by both jobs — no cloud DB dependency.
+  # Use 127.0.0.1 explicitly: on some runners `localhost` resolves to ::1 (IPv6)
+  # while Postgres only listens on 127.0.0.1 (IPv4), causing connection failures.
+  E2E_DB_URL: postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+  E2E_API_URL: http://localhost:8787
 
 jobs:
+  e2e-gate:
+    name: Check E2E prerequisites
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        name: Verify E2E secrets are available
+        env:
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
+        run: |
+          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$E2E_TEST_PASSWORD" ] && [ -n "$E2E_BETTER_AUTH_SECRET" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::E2E secrets not configured — skipping E2E tests (need E2E_TEST_EMAIL + E2E_TEST_PASSWORD + E2E_BETTER_AUTH_SECRET)"
+          fi
+
   ios-e2e:
     name: iOS E2E Tests
+    needs: e2e-gate
+    if: needs.e2e-gate.outputs.ready == 'true'
     runs-on: macos-15
     timeout-minutes: 120
-    # Skip on forked PRs — secrets are not available in forks
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
-      # The E2E user is upserted into the dev DB by the seed step below,
-      # so both email and password are driven entirely by repo secrets.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
-      - name: Verify E2E secrets are configured
-        run: |
-          missing=()
-          [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
-          [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Required E2E secrets missing: ${missing[*]}"
-            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
-            exit 1
-          fi
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
-
       - name: Checkout repository
         uses: actions/checkout@v6
 
@@ -85,6 +98,145 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
+
+      - name: Add node_modules bin to PATH
+        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
+
+      # ── Local API stack ────────────────────────────────────────────────────
+
+      - name: Start local Postgres with pgvector
+        run: |
+          PG_VER=16
+          BREW_PREFIX="$(brew --prefix)"
+          PG_BIN="${BREW_PREFIX}/opt/postgresql@${PG_VER}/bin"
+          PG_DATA="$HOME/pgdata-e2e"
+
+          # Stop any running Homebrew Postgres service regardless of version to free port 5432.
+          brew services list | awk '/postgresql/{print $1}' \
+            | xargs -I{} brew services stop {} 2>/dev/null || true
+
+          brew install "postgresql@${PG_VER}"
+
+          # Build pgvector from source against postgresql@16's pg_config.
+          # Brew's pgvector formula targets whichever PG version its formula
+          # depends on (may not be @16), so we compile directly to be certain.
+          git clone --depth 1 https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+          make -C /tmp/pgvector-build PG_CONFIG="$PG_BIN/pg_config"
+          make -C /tmp/pgvector-build install PG_CONFIG="$PG_BIN/pg_config"
+
+          "$PG_BIN/initdb" -D "$PG_DATA" --encoding=UTF8 --auth=trust
+          printf '\nport = 5432\nlisten_addresses = '"'"'127.0.0.1'"'"'\n' \
+            >> "$PG_DATA/postgresql.conf"
+          "$PG_BIN/pg_ctl" -D "$PG_DATA" -l "$HOME/pg.log" start
+
+          READY=false
+          for i in $(seq 1 30); do
+            if "$PG_BIN/pg_isready" -h 127.0.0.1 -p 5432 > /dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$READY" != "true" ]; then
+            echo "::error::PostgreSQL did not become ready"
+            cat "$HOME/pg.log"
+            exit 1
+          fi
+
+          "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
+            -c "CREATE USER e2e_user WITH PASSWORD 'e2e_pass' SUPERUSER;"
+          "$PG_BIN/psql" -h 127.0.0.1 -p 5432 -U "$(whoami)" postgres \
+            -c "CREATE DATABASE packrat_e2e OWNER e2e_user;"
+
+      - name: Write wrangler .dev.vars
+        env:
+          E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
+          # Optional: real weather keys improve trip-detail test fidelity.
+          # Fall back to schema-valid stubs — weather errors are non-fatal.
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
+        run: |
+          # Write static (non-secret) vars first via heredoc.
+          # Schema-valid stubs are used for APIs not exercised by the master flow
+          # (AI, email, R2, social OAuth) so env-validation does not throw.
+          cat > packages/api/.dev.vars << 'DEVVARS'
+          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          BETTER_AUTH_URL=http://localhost:8787
+          EXPO_PUBLIC_API_URL=http://localhost:8787
+          ADMIN_USERNAME=admin
+          ADMIN_PASSWORD=gobuffs
+          PACKRAT_API_KEY=secret
+          EMAIL_PROVIDER=resend
+          RESEND_API_KEY=re_e2e_stub_not_used_in_maestro_flows
+          EMAIL_FROM=no-reply@e2e.packrattest.local
+          AI_PROVIDER=openai
+          OPENAI_API_KEY=sk-e2e-stub-not-used-in-maestro-master-flow
+          GOOGLE_GENERATIVE_AI_API_KEY=e2e-stub-not-used
+          PERPLEXITY_API_KEY=pplx-e2e-stub-not-used-in-maestro-master-flow
+          GOOGLE_CLIENT_ID=e2e-google-client-id
+          GOOGLE_CLIENT_SECRET=e2e-google-client-secret
+          APPLE_CLIENT_ID=com.packratai.e2e
+          APPLE_PRIVATE_KEY=e2e-apple-private-key-stub
+          APPLE_KEY_ID=E2EAPLKEY1
+          APPLE_TEAM_ID=E2ETEAMID1
+          CLOUDFLARE_ACCOUNT_ID=e2eaccountid
+          CLOUDFLARE_AI_GATEWAY_ID=ai-chat-gateway
+          R2_ACCESS_KEY_ID=e2er2accesskey
+          R2_SECRET_ACCESS_KEY=e2er2secretkey1234567890abcdefghij
+          PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-e2e
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides-e2e
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-e2e
+          R2_PUBLIC_URL=https://pub-e2estub.r2.dev
+          PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
+          PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
+          DEVVARS
+
+          # Inject secrets separately (printf avoids shell expansion on special chars).
+          printf 'BETTER_AUTH_SECRET=%s\n' "${E2E_BETTER_AUTH_SECRET}" \
+            >> packages/api/.dev.vars
+          printf 'WEATHER_API_KEY=%s\n' \
+            "${WEATHER_API_KEY:-e2e-fake-weather-key}" \
+            >> packages/api/.dev.vars
+          printf 'OPENWEATHER_KEY=%s\n' \
+            "${OPENWEATHER_KEY:-e2e-fake-weather-key}" \
+            >> packages/api/.dev.vars
+
+      - name: Run DB migrations
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+        run: bun run --filter @packrat/api db:migrate
+
+      - name: Seed E2E test user
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+        run: bun run --filter @packrat/api db:seed:e2e-user
+
+      - name: Start wrangler dev (background)
+        working-directory: packages/api
+        run: |
+          WRANGLER_LOG=warn \
+          WRANGLER_SEND_METRICS=false \
+            wrangler dev -e dev --ip 0.0.0.0 --local --enable-containers=false \
+              > /tmp/wrangler-dev.log 2>&1 &
+          echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
+
+          echo "Waiting for API to be ready on ${{ env.E2E_API_URL }}/health ..."
+          RETRIES=30
+          until curl -sf "${{ env.E2E_API_URL }}/health" > /dev/null; do
+            RETRIES=$((RETRIES - 1))
+            if [ "$RETRIES" -le 0 ]; then
+              echo "::error::wrangler dev did not become ready in time"
+              cat /tmp/wrangler-dev.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "API ready."
+
+      # ── iOS build ──────────────────────────────────────────────────────────
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -113,7 +265,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: apps/expo/build/PackRat-sim.tar.gz
-          key: ios-sim-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+          # 'local-api' suffix keeps this cache slot separate from any builds
+          # that embedded the deployed API URL.
+          key: ios-sim-${{ runner.os }}-local-api-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+          restore-keys: |
+            ios-sim-${{ runner.os }}-local-api-
+
+      - name: Pin API URL to local wrangler dev
+        if: steps.ios-build-cache.outputs.cache-hit != 'true'
+        run: |
+          # .env.local has highest priority in Expo's env hierarchy and
+          # overrides whatever EXPO_PUBLIC_API_URL the EAS 'preview' environment
+          # injects during the local build.
+          echo "EXPO_PUBLIC_API_URL=${{ env.E2E_API_URL }}" > apps/expo/.env.local
 
       - name: Build iOS app for simulator
         if: steps.ios-build-cache.outputs.cache-hit != 'true'
@@ -129,6 +293,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+
+      # ── Maestro ────────────────────────────────────────────────────────────
 
       - name: Cache Maestro CLI
         id: maestro-cache
@@ -159,9 +325,6 @@ jobs:
 
       - name: Boot iOS Simulator
         run: |
-          # Pick the newest available iOS runtime on this runner. GitHub's
-          # macOS images ship different iOS runtimes over time; hard-coding a
-          # specific major version breaks CI every time Apple ships a new one.
           IOS_RUNTIME=$(xcrun simctl list runtimes --json \
             | python3 -c "
           import sys, json, re
@@ -180,9 +343,6 @@ jobs:
           print(picked['identifier'])
           ")
 
-          # Prefer a plain iPhone (no Pro/Plus/Max) from a recent generation.
-          # Fall back through 17 -> 16 -> 15 -> any available plain iPhone so
-          # the workflow survives device-type churn on the runner images.
           DEVICE_TYPE=$(xcrun simctl list devicetypes --json \
             | python3 -c "
           import sys, json, re
@@ -201,8 +361,6 @@ jobs:
           def gen(d):
               m = re.search(r'iPhone\s+(\d+)', d.get('name',''))
               return int(m.group(1)) if m else 0
-          # Prefer generations 15/16/17 (current sweet spot), then fall back
-          # to whatever plain iPhone is newest.
           preferred = [d for d in plain if gen(d) in (17, 16, 15)]
           pool = preferred if preferred else plain
           pool.sort(key=gen, reverse=True)
@@ -222,28 +380,19 @@ jobs:
         run: |
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
-      - name: Seed E2E test user in dev DB
-        run: bun run --filter @packrat/api db:seed:e2e-user
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
       - name: Run Maestro E2E tests
         run: |
           mkdir -p test-results
           bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          # EAS e2e profile builds the preview variant, whose bundle id is
-          # suffixed with ".preview" via app.config.ts.
           APP_ID: com.andrewbierman.packrat.preview
-          # xcuitest driver boot on cold GH runners can exceed the 180s
-          # default. Give it 10 minutes before declaring a timeout.
           MAESTRO_DRIVER_STARTUP_TIMEOUT: "600000"
+
+      # ── Artifacts & cleanup ────────────────────────────────────────────────
 
       - name: Upload test results
         if: always()
@@ -261,6 +410,19 @@ jobs:
           path: ~/.maestro/tests/
           retention-days: 7
 
+      - name: Upload wrangler dev log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-wrangler-dev-log
+          path: /tmp/wrangler-dev.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop wrangler dev
+        if: always()
+        run: kill "${WRANGLER_PID:-}" 2>/dev/null || true
+
       - name: Shutdown simulator
         if: always()
         run: |
@@ -269,36 +431,32 @@ jobs:
 
   android-e2e:
     name: Android E2E Tests
+    needs: e2e-gate
+    if: needs.e2e-gate.outputs.ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    # Skip on forked PRs — secrets are not available in forks
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
-      # The E2E user is upserted into the dev DB by the seed step below,
-      # so both email and password are driven entirely by repo secrets.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
-    steps:
-      - name: Verify E2E secrets are configured
-        run: |
-          missing=()
-          [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
-          [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Required E2E secrets missing: ${missing[*]}"
-            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
-            exit 1
-          fi
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
         env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          POSTGRES_USER: e2e_user
+          POSTGRES_PASSWORD: e2e_pass
+          POSTGRES_DB: packrat_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
+    steps:
       - name: Free disk space on runner
-        # Gradle builds of this RN app fail with OOM / no-space on stock
-        # ubuntu-latest. Prune large preinstalled toolchains we don't use.
-        # Keep the Android SDK/NDK — the Gradle build links against them.
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL \
             "$AGENT_TOOLSDIRECTORY/Ruby" "$AGENT_TOOLSDIRECTORY/PyPy" || true
@@ -311,10 +469,6 @@ jobs:
           df -h
 
       - name: Configure swap for Gradle
-        # R8/ProGuard during :app:packageRelease regularly OOMs on 16GB
-        # runners without swap. Add a generous swap file. ubuntu-latest
-        # ships with /swapfile already active, so use a distinct path
-        # and dd (fallocate errors "Text file busy" on the live one).
         run: |
           sudo swapoff -a || true
           sudo rm -f /mnt/swapfile-ci
@@ -326,6 +480,11 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -344,6 +503,99 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
+
+      - name: Add node_modules bin to PATH
+        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> $GITHUB_PATH
+
+      # ── Local API stack ────────────────────────────────────────────────────
+      # Postgres with pgvector runs as a job-level service container (see services: above).
+
+      - name: Write wrangler .dev.vars
+        env:
+          E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
+        run: |
+          cat > packages/api/.dev.vars << 'DEVVARS'
+          NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@127.0.0.1:5432/packrat_e2e
+          BETTER_AUTH_URL=http://localhost:8787
+          EXPO_PUBLIC_API_URL=http://localhost:8787
+          ADMIN_USERNAME=admin
+          ADMIN_PASSWORD=gobuffs
+          PACKRAT_API_KEY=secret
+          EMAIL_PROVIDER=resend
+          RESEND_API_KEY=re_e2e_stub_not_used_in_maestro_flows
+          EMAIL_FROM=no-reply@e2e.packrattest.local
+          AI_PROVIDER=openai
+          OPENAI_API_KEY=sk-e2e-stub-not-used-in-maestro-master-flow
+          GOOGLE_GENERATIVE_AI_API_KEY=e2e-stub-not-used
+          PERPLEXITY_API_KEY=pplx-e2e-stub-not-used-in-maestro-master-flow
+          GOOGLE_CLIENT_ID=e2e-google-client-id
+          GOOGLE_CLIENT_SECRET=e2e-google-client-secret
+          APPLE_CLIENT_ID=com.packratai.e2e
+          APPLE_PRIVATE_KEY=e2e-apple-private-key-stub
+          APPLE_KEY_ID=E2EAPLKEY1
+          APPLE_TEAM_ID=E2ETEAMID1
+          CLOUDFLARE_ACCOUNT_ID=e2eaccountid
+          CLOUDFLARE_AI_GATEWAY_ID=ai-chat-gateway
+          R2_ACCESS_KEY_ID=e2er2accesskey
+          R2_SECRET_ACCESS_KEY=e2er2secretkey1234567890abcdefghij
+          PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-e2e
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides-e2e
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-e2e
+          R2_PUBLIC_URL=https://pub-e2estub.r2.dev
+          PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
+          PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
+          DEVVARS
+
+          printf 'BETTER_AUTH_SECRET=%s\n' "${E2E_BETTER_AUTH_SECRET}" \
+            >> packages/api/.dev.vars
+          printf 'WEATHER_API_KEY=%s\n' \
+            "${WEATHER_API_KEY:-e2e-fake-weather-key}" \
+            >> packages/api/.dev.vars
+          printf 'OPENWEATHER_KEY=%s\n' \
+            "${OPENWEATHER_KEY:-e2e-fake-weather-key}" \
+            >> packages/api/.dev.vars
+
+      - name: Run DB migrations
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+        run: bun run --filter @packrat/api db:migrate
+
+      - name: Seed E2E test user
+        env:
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+        run: bun run --filter @packrat/api db:seed:e2e-user
+
+      - name: Start wrangler dev (background)
+        working-directory: packages/api
+        run: |
+          # --ip 0.0.0.0 is required: Android emulator reaches the host via
+          # 10.0.2.2; wrangler must listen on all interfaces to accept it.
+          # getApiUrl() in apps/expo swaps 'localhost' -> '10.0.2.2' at runtime.
+          WRANGLER_LOG=warn \
+          WRANGLER_SEND_METRICS=false \
+            wrangler dev -e dev --ip 0.0.0.0 --local --enable-containers=false \
+              > /tmp/wrangler-dev.log 2>&1 &
+          echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
+
+          echo "Waiting for API to be ready on ${{ env.E2E_API_URL }}/health ..."
+          RETRIES=30
+          until curl -sf "${{ env.E2E_API_URL }}/health" > /dev/null; do
+            RETRIES=$((RETRIES - 1))
+            if [ "$RETRIES" -le 0 ]; then
+              echo "::error::wrangler dev did not become ready in time"
+              cat /tmp/wrangler-dev.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "API ready."
+
+      # ── Android build ──────────────────────────────────────────────────────
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -367,28 +619,21 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Cache Maestro CLI
-        id: maestro-cache-android
-        uses: actions/cache@v4
-        with:
-          path: ~/.maestro
-          key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
-
-      - name: Install Maestro CLI
-        if: steps.maestro-cache-android.outputs.cache-hit != 'true'
-        run: |
-          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-
-      - name: Add Maestro to PATH
-        run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
-
       - name: Cache Android APK build
         id: android-build-cache
         uses: actions/cache@v4
         with:
           path: apps/expo/build/PackRat.apk
-          key: android-apk-${{ runner.os }}-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+          # Separate cache slot from non-local-api builds.
+          key: android-apk-${{ runner.os }}-local-api-${{ hashFiles('apps/expo/**', 'packages/**', 'bun.lock') }}
+          restore-keys: |
+            android-apk-${{ runner.os }}-local-api-
+
+      - name: Pin API URL to local wrangler dev
+        if: steps.android-build-cache.outputs.cache-hit != 'true'
+        run: |
+          # getApiUrl() replaces 'localhost' with '10.0.2.2' at runtime on Android.
+          echo "EXPO_PUBLIC_API_URL=${{ env.E2E_API_URL }}" > apps/expo/.env.local
 
       - name: Build Android APK for emulator
         if: steps.android-build-cache.outputs.cache-hit != 'true'
@@ -404,6 +649,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+
+      # ── Maestro ────────────────────────────────────────────────────────────
 
       - name: Enable KVM for hardware acceleration
         run: |
@@ -435,12 +682,21 @@ jobs:
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
-      - name: Seed E2E test user in dev DB
-        run: bun run --filter @packrat/api db:seed:e2e-user
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      - name: Cache Maestro CLI
+        id: maestro-cache-android
+        uses: actions/cache@v4
+        with:
+          path: ~/.maestro
+          key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
+
+      - name: Install Maestro CLI
+        if: steps.maestro-cache-android.outputs.cache-hit != 'true'
+        run: |
+          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
       - name: Run Maestro E2E tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2.37.0
@@ -460,21 +716,18 @@ jobs:
             adb shell pm disable-user com.android.launcher3 || true
             adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
-            # Give System UI time to fully initialize before launching tests.
-            # The emulator's System UI can raise an ANR dialog ("System UI isn't
-            # responding") in the seconds after boot. Without this wait, Maestro
-            # starts while that dialog is still blocking the screen.
             sleep 10
-            # Dismiss any lingering ANR / crash dialogs left over from emulator boot
             adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
             adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
             bash .github/scripts/e2e.sh android --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
           APP_ID: com.packratai.mobile.preview
+
+      # ── Artifacts & cleanup ────────────────────────────────────────────────
 
       - name: Upload test results
         if: always()
@@ -491,3 +744,16 @@ jobs:
           name: android-e2e-failure-artifacts
           path: ~/.maestro/tests/
           retention-days: 7
+
+      - name: Upload wrangler dev log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-wrangler-dev-log
+          path: /tmp/wrangler-dev.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop wrangler dev
+        if: always()
+        run: kill "${WRANGLER_PID:-}" 2>/dev/null || true

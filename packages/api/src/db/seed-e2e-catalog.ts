@@ -14,12 +14,12 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import WebSocket from 'ws';
-import * as schema from './schema';
 
 neonConfig.webSocketConstructor = WebSocket;
 

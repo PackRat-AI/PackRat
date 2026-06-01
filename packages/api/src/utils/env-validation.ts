@@ -3,10 +3,11 @@ import { isObject } from '@packrat/guards';
 import { z } from 'zod';
 
 // Define the Zod schema for all environment variables
-export const apiEnvSchema = z.object({
+export const apiEnvObjectSchema = z.object({
   // Environment & Deployment
   ENVIRONMENT: z.enum(['development', 'production']).default('production'),
-  SENTRY_DSN: z.string().url(),
+  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_RELEASE: z.string().optional(),
 
   // Database
   NEON_DATABASE_URL: z.string().url(),
@@ -57,7 +58,8 @@ export const apiEnvSchema = z.object({
 
   // Cloudflare R2 Storage (config values)
   CLOUDFLARE_ACCOUNT_ID: z.string(),
-  CLOUDFLARE_AI_GATEWAY_ID: z.string(),
+  CLOUDFLARE_AI_GATEWAY_ID: z.string().optional(),
+  CLOUDFLARE_API_TOKEN: z.string().min(1).optional(),
   R2_ACCESS_KEY_ID: z.string(),
   R2_SECRET_ACCESS_KEY: z.string(),
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),
@@ -92,8 +94,10 @@ export const apiEnvSchema = z.object({
   AUTH_KV: z.unknown(),
 });
 
+export const apiEnvSchema = apiEnvObjectSchema;
+
 // Relaxed schema for test environments
-const testEnvSchema = apiEnvSchema.partial().extend({
+const testEnvSchema = apiEnvObjectSchema.partial().extend({
   ENVIRONMENT: z.enum(['development', 'production']).default('development'),
   SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
   NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
@@ -143,6 +147,8 @@ export type ValidatedEnv = Omit<
   OSM_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
 };
+
+export type Env = ValidatedEnv;
 
 // Cache for validated envs keyed by the raw env reference.
 const envCache = new WeakMap<object, ValidatedEnv>();

@@ -24,10 +24,13 @@ interface CFAccessOptions {
   aud: string;
 }
 
-export async function verifyCFAccessRequest(
-  request: Request,
-  opts: CFAccessOptions,
-): Promise<CFAccessIdentity | null> {
+export async function verifyCFAccessRequest({
+  request,
+  opts,
+}: {
+  request: Request;
+  opts: CFAccessOptions;
+}): Promise<CFAccessIdentity | null> {
   const { teamDomain, aud } = opts;
   const token = request.headers.get('cf-access-jwt-assertion');
   if (!token) return null;

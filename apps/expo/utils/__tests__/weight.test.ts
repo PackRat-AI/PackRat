@@ -1,4 +1,4 @@
-import type { PackItem } from 'expo-app/types';
+import type { PackItem } from '@packrat/types';
 import { describe, expect, it } from 'vitest';
 import { calculateBaseWeight, calculateTotalWeight, convertWeight, formatWeight } from '../weight';
 
@@ -11,16 +11,24 @@ function makeItem(
   return {
     id: 'item-1',
     name: 'Test Item',
+    description: null,
     quantity: overrides.quantity ?? 1,
+    category: null,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
+    image: null,
+    notes: null,
     packId: 'pack-1',
+    catalogItemId: null,
     userId: 'user-1',
-    category: 'tools',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    deleted: false,
+    isAIGenerated: false,
+    templateItemId: null,
+    embedding: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
-  };
+  } as PackItem;
 }
 
 // ---------------------------------------------------------------------------
@@ -28,34 +36,37 @@ function makeItem(
 // ---------------------------------------------------------------------------
 describe('convertWeight', () => {
   it('returns the same value when from === to', () => {
-    expect(convertWeight(100, 'g', 'g')).toBe(100);
-    expect(convertWeight(5, 'oz', 'oz')).toBe(5);
-    expect(convertWeight(2, 'kg', 'kg')).toBe(2);
-    expect(convertWeight(1, 'lb', 'lb')).toBe(1);
+    expect(convertWeight({ weight: 100, units: { from: 'g', to: 'g' } })).toBe(100);
+    expect(convertWeight({ weight: 5, units: { from: 'oz', to: 'oz' } })).toBe(5);
+    expect(convertWeight({ weight: 2, units: { from: 'kg', to: 'kg' } })).toBe(2);
+    expect(convertWeight({ weight: 1, units: { from: 'lb', to: 'lb' } })).toBe(1);
   });
 
   it('converts grams to ounces', () => {
-    expect(convertWeight(100, 'g', 'oz')).toBeCloseTo(3.53, 1);
+    expect(convertWeight({ weight: 100, units: { from: 'g', to: 'oz' } })).toBeCloseTo(3.53, 1);
   });
 
   it('converts ounces to grams', () => {
-    expect(convertWeight(1, 'oz', 'g')).toBeCloseTo(28.349523125, 8);
+    expect(convertWeight({ weight: 1, units: { from: 'oz', to: 'g' } })).toBeCloseTo(
+      28.349523125,
+      8,
+    );
   });
 
   it('converts grams to kilograms', () => {
-    expect(convertWeight(1000, 'g', 'kg')).toBe(1);
+    expect(convertWeight({ weight: 1000, units: { from: 'g', to: 'kg' } })).toBe(1);
   });
 
   it('converts kilograms to grams', () => {
-    expect(convertWeight(1, 'kg', 'g')).toBe(1000);
+    expect(convertWeight({ weight: 1, units: { from: 'kg', to: 'g' } })).toBe(1000);
   });
 
   it('converts grams to pounds', () => {
-    expect(convertWeight(453.59, 'g', 'lb')).toBeCloseTo(1, 1);
+    expect(convertWeight({ weight: 453.59, units: { from: 'g', to: 'lb' } })).toBeCloseTo(1, 1);
   });
 
   it('converts pounds to grams', () => {
-    expect(convertWeight(1, 'lb', 'g')).toBeCloseTo(453.59237, 4);
+    expect(convertWeight({ weight: 1, units: { from: 'lb', to: 'g' } })).toBeCloseTo(453.59237, 4);
   });
 });
 
@@ -64,9 +75,9 @@ describe('convertWeight', () => {
 // ---------------------------------------------------------------------------
 describe('formatWeight', () => {
   it('formats weight with unit suffix', () => {
-    expect(formatWeight(100, 'g')).toBe('100g');
-    expect(formatWeight(3.5, 'oz')).toBe('3.5oz');
-    expect(formatWeight(0, 'kg')).toBe('0kg');
+    expect(formatWeight({ weight: 100, unit: 'g' })).toBe('100g');
+    expect(formatWeight({ weight: 3.5, unit: 'oz' })).toBe('3.5oz');
+    expect(formatWeight({ weight: 0, unit: 'kg' })).toBe('0kg');
   });
 });
 
@@ -75,12 +86,12 @@ describe('formatWeight', () => {
 // ---------------------------------------------------------------------------
 describe('calculateBaseWeight', () => {
   it('returns 0 for an empty item list', () => {
-    expect(calculateBaseWeight([])).toBe(0);
+    expect(calculateBaseWeight({ items: [] })).toBe(0);
   });
 
   it('sums non-consumable, non-worn items', () => {
     const items = [makeItem({ weight: 200, weightUnit: 'g' })];
-    expect(calculateBaseWeight(items, 'g')).toBe(200);
+    expect(calculateBaseWeight({ items, unit: 'g' })).toBe(200);
   });
 
   it('excludes consumable items from base weight', () => {
@@ -88,7 +99,7 @@ describe('calculateBaseWeight', () => {
       makeItem({ weight: 200, weightUnit: 'g', consumable: true }),
       makeItem({ weight: 100, weightUnit: 'g' }),
     ];
-    expect(calculateBaseWeight(items, 'g')).toBe(100);
+    expect(calculateBaseWeight({ items, unit: 'g' })).toBe(100);
   });
 
   it('excludes worn items from base weight', () => {
@@ -96,12 +107,12 @@ describe('calculateBaseWeight', () => {
       makeItem({ weight: 200, weightUnit: 'g', worn: true }),
       makeItem({ weight: 100, weightUnit: 'g' }),
     ];
-    expect(calculateBaseWeight(items, 'g')).toBe(100);
+    expect(calculateBaseWeight({ items, unit: 'g' })).toBe(100);
   });
 
   it('accounts for item quantity', () => {
     const items = [makeItem({ weight: 100, weightUnit: 'g', quantity: 3 })];
-    expect(calculateBaseWeight(items, 'g')).toBe(300);
+    expect(calculateBaseWeight({ items, unit: 'g' })).toBe(300);
   });
 
   it('returns 0 when all items are consumable or worn', () => {
@@ -109,7 +120,7 @@ describe('calculateBaseWeight', () => {
       makeItem({ weight: 200, weightUnit: 'g', consumable: true }),
       makeItem({ weight: 100, weightUnit: 'g', worn: true }),
     ];
-    expect(calculateBaseWeight(items, 'g')).toBe(0);
+    expect(calculateBaseWeight({ items, unit: 'g' })).toBe(0);
   });
 });
 
@@ -118,7 +129,7 @@ describe('calculateBaseWeight', () => {
 // ---------------------------------------------------------------------------
 describe('calculateTotalWeight', () => {
   it('returns 0 for an empty item list', () => {
-    expect(calculateTotalWeight([])).toBe(0);
+    expect(calculateTotalWeight({ items: [] })).toBe(0);
   });
 
   it('includes consumable items in total weight', () => {
@@ -126,7 +137,7 @@ describe('calculateTotalWeight', () => {
       makeItem({ weight: 200, weightUnit: 'g', consumable: true }),
       makeItem({ weight: 100, weightUnit: 'g' }),
     ];
-    expect(calculateTotalWeight(items, 'g')).toBe(300);
+    expect(calculateTotalWeight({ items, unit: 'g' })).toBe(300);
   });
 
   it('includes worn items in total weight', () => {
@@ -134,7 +145,7 @@ describe('calculateTotalWeight', () => {
       makeItem({ weight: 200, weightUnit: 'g', worn: true }),
       makeItem({ weight: 100, weightUnit: 'g' }),
     ];
-    expect(calculateTotalWeight(items, 'g')).toBe(300);
+    expect(calculateTotalWeight({ items, unit: 'g' })).toBe(300);
   });
 
   it('converts mixed weight units correctly', () => {
@@ -142,11 +153,11 @@ describe('calculateTotalWeight', () => {
       makeItem({ id: 'i1', weight: 1000, weightUnit: 'g' }),
       makeItem({ id: 'i2', weight: 1, weightUnit: 'kg' }),
     ];
-    expect(calculateTotalWeight(items, 'g')).toBe(2000);
+    expect(calculateTotalWeight({ items, unit: 'g' })).toBe(2000);
   });
 
   it('accounts for item quantity', () => {
     const items = [makeItem({ weight: 100, weightUnit: 'g', quantity: 5 })];
-    expect(calculateTotalWeight(items, 'g')).toBe(500);
+    expect(calculateTotalWeight({ items, unit: 'g' })).toBe(500);
   });
 });

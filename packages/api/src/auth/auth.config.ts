@@ -12,7 +12,7 @@
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { neon } from '@neondatabase/serverless';
-import * as schema from '@packrat/api/db/schema';
+import * as schema from '@packrat/db';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -69,7 +69,7 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [bearer(), jwt(), admin()],
+  plugins: [bearer(), jwt({ jwks: { disablePrivateKeyEncryption: true } }), admin()],
 
   trustedOrigins: ['http://localhost:8787', 'packrat://'],
 });

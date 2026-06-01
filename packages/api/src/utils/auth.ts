@@ -5,7 +5,13 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword({
+  password,
+  hash,
+}: {
+  password: string;
+  hash: string;
+}): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
@@ -14,7 +20,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * length-equalizing the two inputs so neither the match result nor the
  * length difference can be inferred from response timing.
  */
-export function timingSafeEqual(a: string, b: string): boolean {
+export function timingSafeEqual({ a, b }: { a: string; b: string }): boolean {
   const ab = new TextEncoder().encode(a);
   const bb = new TextEncoder().encode(b);
   const len = Math.max(ab.byteLength, bb.byteLength);
@@ -35,5 +41,5 @@ export function isValidApiKey(headers: Headers | Record<string, string | undefin
   if (!apiKeyHeader) return false;
   const { PACKRAT_API_KEY } = getEnv();
   if (!PACKRAT_API_KEY) return false;
-  return timingSafeEqual(apiKeyHeader, PACKRAT_API_KEY);
+  return timingSafeEqual({ a: apiKeyHeader, b: PACKRAT_API_KEY });
 }

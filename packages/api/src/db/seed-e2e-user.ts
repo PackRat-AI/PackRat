@@ -10,14 +10,14 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import WebSocket from 'ws';
 import { hashPassword } from '../utils/auth';
-import * as schema from './schema';
 
 neonConfig.webSocketConstructor = WebSocket;
 
@@ -74,10 +74,11 @@ async function seedE2EUser() {
         .where(eq(schema.users.id, userId));
       console.log(`E2E user refreshed: ${normalizedEmail} (id=${userId})`);
     } else {
+      userId = crypto.randomUUID();
       const [inserted] = await db
         .insert(schema.users)
         .values({
-          id: crypto.randomUUID(),
+          id: userId,
           name: 'E2E Automation',
           email: normalizedEmail,
           passwordHash,
@@ -87,38 +88,28 @@ async function seedE2EUser() {
           role: 'USER',
         })
         .returning();
-      if (!inserted) throw new Error('users insert returned no row');
-      userId = inserted.id;
+      userId = inserted?.id ?? userId;
       console.log(`E2E user created: ${normalizedEmail} (id=${userId})`);
     }
 
-    // Better Auth's email/password sign-in reads the password from the
-    // `account` table (providerId='credential'), not `users.password_hash`.
-    // The 0042 data-migration only copies users → account at migrate time, so
-    // any user created after that migration (this seed, fresh dev DBs) needs
-    // an explicit credential row to be sign-in-able.
-    const existingAccount = await db
-      .select({ id: schema.account.id })
-      .from(schema.account)
-      .where(and(eq(schema.account.userId, userId), eq(schema.account.providerId, 'credential')))
-      .limit(1);
-
-    if (existingAccount[0]) {
-      await db
-        .update(schema.account)
-        .set({ password: passwordHash, updatedAt: new Date() })
-        .where(eq(schema.account.id, existingAccount[0].id));
-      console.log(`Credential account refreshed for ${normalizedEmail}`);
-    } else {
-      await db.insert(schema.account).values({
+    // Upsert the credential account row that better-auth looks up during sign-in.
+    // better-auth sets accountId = email for the 'credential' provider.
+    await db
+      .insert(schema.account)
+      .values({
         id: crypto.randomUUID(),
-        accountId: userId,
+        accountId: normalizedEmail,
         providerId: 'credential',
         userId,
         password: passwordHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [schema.account.providerId, schema.account.accountId],
+        set: { userId, password: passwordHash, updatedAt: new Date() },
       });
-      console.log(`Credential account created for ${normalizedEmail}`);
-    }
+    console.log(`E2E credential account upserted for: ${normalizedEmail}`);
   } finally {
     await pgClient?.end();
   }

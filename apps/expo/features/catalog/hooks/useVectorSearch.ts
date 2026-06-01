@@ -1,9 +1,9 @@
-import { VectorSearchResponseSchema } from '@packrat/api/schemas/catalog';
+import { VectorSearchResponseSchema } from '@packrat/schemas/catalog';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
-const vectorSearchApi = async (query: string, limit?: number) => {
+const vectorSearchApi = async ({ query, limit }: { query: string; limit?: number }) => {
   const { data, error } = await apiClient.catalog['vector-search'].get({
     query: {
       q: query,
@@ -23,6 +23,6 @@ export const useVectorSearch = ({ query, limit }: { query: string; limit?: numbe
   return useQuery({
     queryKey: ['vectorSearch', query],
     enabled: isQueryEnabledWithAccessToken && !!query && query.length > 0,
-    queryFn: () => vectorSearchApi(query, limit),
+    queryFn: () => vectorSearchApi({ query, limit }),
   });
 };

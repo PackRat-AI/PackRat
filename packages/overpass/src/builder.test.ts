@@ -14,7 +14,11 @@ describe('TrailQueryBuilder', () => {
     });
 
     it('ignores sport/name/spatial filters when id is set', () => {
-      const ql = new TrailQueryBuilder().sport('hiking').around(37.7, -122.4, 50000).id(42).build();
+      const ql = new TrailQueryBuilder()
+        .sport('hiking')
+        .around({ lat: 37.7, lon: -122.4, radiusM: 50000 })
+        .id(42)
+        .build();
       expect(ql).toBe('[out:json][timeout:25];\nrelation(42);\nout geom;');
     });
   });
@@ -60,19 +64,23 @@ describe('TrailQueryBuilder', () => {
 
   describe('around()', () => {
     it('adds around spatial filter', () => {
-      const ql = new TrailQueryBuilder().around(37.7749, -122.4194, 50000).build();
+      const ql = new TrailQueryBuilder()
+        .around({ lat: 37.7749, lon: -122.4194, radiusM: 50000 })
+        .build();
       expect(ql).toContain('(around:50000,37.7749,-122.4194)');
     });
 
     it('rounds radius to nearest integer', () => {
-      const ql = new TrailQueryBuilder().around(0, 0, 12345.6).build();
+      const ql = new TrailQueryBuilder().around({ lat: 0, lon: 0, radiusM: 12345.6 }).build();
       expect(ql).toContain('(around:12346,0,0)');
     });
   });
 
   describe('bbox()', () => {
     it('adds bbox spatial filter', () => {
-      const ql = new TrailQueryBuilder().bbox(37.5, -122.5, 37.9, -122.1).build();
+      const ql = new TrailQueryBuilder()
+        .bbox({ south: 37.5, west: -122.5, north: 37.9, east: -122.1 })
+        .build();
       expect(ql).toContain('(37.5,-122.5,37.9,-122.1)');
     });
   });
@@ -104,7 +112,7 @@ describe('TrailQueryBuilder', () => {
       const ql = new TrailQueryBuilder()
         .sport('hiking')
         .name('JMT')
-        .around(36.5, -118.5, 100000)
+        .around({ lat: 36.5, lon: -118.5, radiusM: 100000 })
         .build();
       expect(ql).toContain(
         'relation["type"="route"]["route"="hiking"]["name"~"JMT",i](around:100000,36.5,-118.5)',

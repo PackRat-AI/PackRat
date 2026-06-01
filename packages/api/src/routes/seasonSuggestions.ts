@@ -1,9 +1,9 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import { type PackItem, packItems } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { SeasonSuggestionsRequestSchema } from '@packrat/api/schemas/seasonSuggestions';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { type PackItem, packItems } from '@packrat/db';
+import { SeasonSuggestionsRequestSchema } from '@packrat/schemas/seasonSuggestions';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -53,10 +53,24 @@ Date: ${date}
 Available Inventory Items:
 ${inventoryFormatted}`;
 
-      const { OPENAI_API_KEY } = getEnv();
-      const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
+      const aiProvider = createAIProvider({
+        openAiApiKey: OPENAI_API_KEY,
+        provider: AI_PROVIDER,
+        cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+        cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+        cloudflareAiBinding: AI,
+      });
       const { object } = await generateObject({
-        model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+        model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
         schema: z.object({
           season: z.string(),
           suggestions: z.array(

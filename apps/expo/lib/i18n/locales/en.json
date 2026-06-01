@@ -53,7 +53,13 @@
     "tryAgain": "Try again",
     "tryAgainButton": "Try Again",
     "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen.",
-    "error": "Error"
+    "error": "Error",
+    "contextOverflow": {
+      "title": "Conversation too long",
+      "description": "The on-device model ran out of context window. Local AI can only hold a limited amount of conversation history at once.",
+      "hint": "Clear the chat to start a fresh conversation, or switch to cloud mode for longer sessions.",
+      "clearChat": "Clear chat"
+    }
   },
   "auth": {
     "signIn": "Sign In",
@@ -227,7 +233,7 @@
     "createPack": "Create Pack",
     "editPack": "Edit Pack",
     "noPacks": "No packs available",
-    "packName": "Pack Name",
+    "packName": "Choose a Pack",
     "packDescription": "Pack Description",
     "packWeight": "Pack Weight",
     "packItems": "Pack Items",
@@ -260,6 +266,7 @@
     "noCategorizedItems": "Either there are no items in this pack or they aren't categorized yet.",
     "organizeGear": "Organize your gear by functional categories",
     "packStats": "Pack Stats",
+    "selectPack": "Select a Pack",
     "weightHistory": "Weight History",
     "categoryDistribution": "Category Distribution",
     "packWeightOverMonths": "Pack weight over the last 6 months (g)",
@@ -676,7 +683,9 @@
     "downloadModel": "Download Model",
     "downloadingModel": "Downloading...",
     "modelReady": "Ready",
-    "modelNotReady": "Model not ready. Download the local model first.",
+    "modelNotReady": "Download the local model first.",
+    "modelStillLoading": "Model is still loading, please wait.",
+    "modelStillDownloading": "Model is still downloading, please wait.",
     "modelPreparing": "Loading model...",
     "modelError": "Model error",
     "deleteModel": "Delete Model",
@@ -684,7 +693,8 @@
     "downloadedModels": "Downloaded Models",
     "noDownloadedModels": "No models downloaded",
     "appleFoundationModel": "Apple Foundation Model",
-    "llamaModel": "SmolLM3 3B",
+    "llamaModel": "Qwen2.5 3B",
+    "localInferenceSlowNote": "Local AI performance may vary by device.",
     "generateNewPacks": "Generate New Packs",
     "enterCount": "Enter count",
     "numberOfPacksToGenerate": "Number of packs to generate",

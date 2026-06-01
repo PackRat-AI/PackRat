@@ -109,7 +109,7 @@ export function FeaturedPacksSection({ onTemplatePress }: FeaturedPacksSectionPr
   // Single pass over the items store computes item count + base weight for all
   // featured templates at once, instead of each card subscribing to the full
   // details hook and iterating every item in the store on its own.
-  const summaries = usePackTemplateSummaries(featuredIds);
+  const summaries = usePackTemplateSummaries({ templateIds: featuredIds });
 
   if (featuredTemplates.length === 0) return null;
 

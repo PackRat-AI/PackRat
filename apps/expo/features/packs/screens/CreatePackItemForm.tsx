@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
@@ -7,7 +8,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
@@ -326,7 +326,7 @@ export const CreatePackItemForm = ({
                   <Text className="text-foreground/70 mb-2 text-sm">{t('packs.unit')}</Text>
                   <SegmentedControl
                     values={WEIGHT_UNITS}
-                    selectedIndex={safeIndexOf(WEIGHT_UNITS, field.state.value)}
+                    selectedIndex={safeIndexOf({ array: WEIGHT_UNITS, value: field.state.value })}
                     onIndexChange={(index) => {
                       const selectedUnit = WEIGHT_UNITS[index];
                       if (selectedUnit) {

@@ -1,5 +1,18 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { ImageDetectionService, PackService } from '@packrat/api/services';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import {
+  computePackBreakdown,
+  computePacksWeights,
+  computePackWeights,
+} from '@packrat/api/utils/compute-pack';
+import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import {
   catalogItems,
   type NewPack,
@@ -8,23 +21,19 @@ import {
   packItems,
   packs,
   packWeightHistory,
-} from '@packrat/api/db/schema';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import { AnalyzeImageRequestSchema } from '@packrat/api/schemas/imageDetection';
+} from '@packrat/db';
+import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
-  CreatePackItemRequestSchema,
-  CreatePackRequestSchema,
+  AddPackItemBodySchema,
+  CreatePackBodySchema,
+  CreatePackWeightHistoryBodySchema,
   GapAnalysisRequestSchema,
+  PackItemSchema,
+  PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
-} from '@packrat/api/schemas/packs';
-import { ImageDetectionService, PackService } from '@packrat/api/services';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
-import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+} from '@packrat/schemas/packs';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
@@ -37,18 +46,8 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
-  localCreatedAt: z.string(),
-  localUpdatedAt: z.string(),
-});
-
-const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
-});
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -72,12 +71,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      return computePacksWeights(result);
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
-        includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+        // Handler defaults this to 0; keep schema truly optional for clients.
+        includePublic: z.coerce.number().int().min(0).max(1).optional(),
       }),
+      response: { 200: z.array(PackWithWeightsSchema) },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },
     },
@@ -90,20 +91,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
-      const packId = data.id as string;
-      if (!packId) return status(400, { error: 'Pack ID is required' });
-
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
       const [newPack] = await db
         .insert(packs)
         .values({
-          id: packId,
+          id: data.id,
           userId: user.userId,
           name: data.name,
           description: data.description,
           category: data.category,
-          isPublic: data.isPublic,
+          isPublic: data.isPublic ?? false,
           image: data.image,
           tags: data.tags,
           localCreatedAt: new Date(data.localCreatedAt as string),
@@ -111,13 +109,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         } as typeof packs.$inferInsert)
         .returning();
 
-      if (!newPack) return status(400, { error: 'Failed to create pack' });
+      if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return computePacksWeights([packWithItems])[0];
+      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
       body: CreatePackBodySchema,
+      response: { 200: PackWithWeightsSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -191,13 +190,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         const imageDetectionService = new ImageDetectionService();
-        const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
+        const result = await imageDetectionService.detectAndMatchItems({ imageUrl, matchLimit });
 
         await PACKRAT_BUCKET.delete(image);
 
         return result;
       } catch (error) {
-        console.error('Error analyzing image:', error);
         if (error instanceof Error) {
           if (
             error.message.includes('Invalid image') ||
@@ -206,8 +204,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           ) {
             return status(400, { error: error.message });
           }
-          return status(500, { error: `Failed to analyze image: ${error.message}` });
         }
+        captureApiException({
+          error: error,
+          operation: 'packs.analyzeImage',
+          tags: { feature: 'packs' },
+          extra: { httpStatus: 500, errorCode: 'PACKS_ANALYZE_IMAGE_ERROR' },
+        });
         return status(500, { error: 'Failed to analyze image' });
       }
     },
@@ -227,23 +230,61 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/:packId',
     async ({ params }) => {
       const db = createDb();
+      const pack = await db.query.packs.findFirst({
+        where: eq(packs.id, params.packId),
+        with: { items: { where: eq(packItems.deleted, false) } },
+      });
+
+      if (!pack) throw new NotFoundError('Pack not found');
+      return PackWithWeightsSchema.parse(computePackWeights({ pack }));
+    },
+    {
+      params: z.object({ packId: z.string() }),
+      response: { 200: PackWithWeightsSchema },
+      isAuthenticated: true,
+      detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Weight breakdown — total/base/worn/consumable + per-category aggregation.
+  // Edge apps were computing this by walking pack.items locally; centralising
+  // here keeps MCP/CLI tools as one-line passthroughs. Matches the
+  // owner-or-public access pattern used by GET /:packId/items.
+  .get(
+    '/:packId/weight-breakdown',
+    async ({ params, user }) => {
+      const db = createDb();
       try {
         const pack = await db.query.packs.findFirst({
           where: eq(packs.id, params.packId),
           with: { items: { where: eq(packItems.deleted, false) } },
         });
-
         if (!pack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(pack);
+        const canAccess = pack.isPublic || pack.userId === user.userId;
+        if (!canAccess) return status(403, { error: 'Unauthorized' });
+        return computePackBreakdown(pack);
       } catch (error) {
-        console.error('Error fetching pack:', error);
-        return status(500, { error: 'Failed to fetch pack' });
+        captureApiException({
+          error: error,
+          operation: 'packs.weightBreakdown',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_BREAKDOWN_ERROR',
+          },
+        });
+        return status(500, { error: 'Failed to compute breakdown' });
       }
     },
     {
       params: z.object({ packId: z.string() }),
       isAuthenticated: true,
-      detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
+      detail: {
+        tags: ['Packs'],
+        summary: 'Per-category weight breakdown',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
@@ -279,9 +320,19 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return computePackWeights({ pack: updatedPack });
       } catch (error) {
-        console.error('Error updating pack:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.update',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_UPDATE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to update pack' });
       }
     },
@@ -402,17 +453,23 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           updatedAt: entry.createdAt,
         }));
       } catch (error) {
-        console.error('Pack weight history API error:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.createWeightHistory',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_HISTORY_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to create weight history entry' });
       }
     },
     {
       params: z.object({ packId: z.string() }),
-      body: z.object({
-        id: z.string(),
-        weight: z.number(),
-        localCreatedAt: z.string().datetime(),
-      }),
+      body: CreatePackWeightHistoryBodySchema,
       isAuthenticated: true,
       detail: {
         tags: ['Packs'],
@@ -435,7 +492,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packDetails = await getPackDetails({ packId: params.packId });
         if (!packDetails) return status(404, { error: 'Pack not found' });
 
-        const pack = computePackWeights(packDetails);
+        const pack = computePackWeights({ pack: packDetails });
 
         if (pack.userId !== user.userId) {
           return status(403, { error: 'Forbidden' });
@@ -506,14 +563,21 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         const { generateObject } = await import('ai');
         const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
 
-        const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-          getEnv();
+        const {
+          AI_PROVIDER,
+          OPENAI_API_KEY,
+          CLOUDFLARE_ACCOUNT_ID,
+          CLOUDFLARE_AI_GATEWAY_ID,
+          CLOUDFLARE_API_TOKEN,
+          AI,
+        } = getEnv();
 
         const aiProvider = createAIProvider({
           openAiApiKey: OPENAI_API_KEY,
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
 
@@ -604,26 +668,31 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const packId = params.packId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
+      const itemId = data.id;
 
-      if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
-      if (!data.id) return status(400, { error: 'Item ID is required' });
-
-      const embeddingText = getEmbeddingText(data);
+      const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
         openAiApiKey: OPENAI_API_KEY,
         value: embeddingText,
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
       const [newItem] = await db
         .insert(packItems)
         .values({
-          id: data.id,
+          id: itemId,
           packId,
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
@@ -671,17 +740,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const item = await db.query.packItems.findFirst({
         where: eq(packItems.id, params.itemId),
-        with: { catalogItem: true, pack: true },
+        with: { pack: true },
       });
 
-      if (!item) return status(404, { error: 'Item not found' });
+      if (!item) throw new NotFoundError('Item not found');
 
       const isOwner = item.userId === user.userId;
       const isPublic = item.pack.isPublic;
 
-      if (!isOwner && !isPublic) return status(403, { error: 'Unauthorized' });
+      if (!isOwner && !isPublic) return status(403, { error: 'Forbidden' });
 
-      return item;
+      return PackItemSchema.parse(item);
     },
     {
       params: z.object({ itemId: z.string() }),
@@ -701,19 +770,23 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
-      if (!existingItem) return status(404, { error: 'Pack item not found' });
+      if (!existingItem) throw new NotFoundError('Pack item not found');
 
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       const updateData: Partial<typeof packItems.$inferInsert> = {};
       if ('name' in data) updateData.name = data.name;
@@ -735,6 +808,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
       }
@@ -763,16 +837,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         .where(and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)))
         .returning();
 
-      if (!updatedItem) return status(404, { error: 'Pack item not found' });
+      if (!updatedItem) throw new NotFoundError('Pack item not found');
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
       updatedItem.embedding = null;
-      return updatedItem;
+      return PackItemSchema.parse(updatedItem);
     },
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
+      response: { 200: PackItemSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],

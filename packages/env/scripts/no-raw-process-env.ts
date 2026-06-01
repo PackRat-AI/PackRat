@@ -49,6 +49,18 @@ const ALLOWED: string[] = [
   'packages/api/scripts/validate-cloudflare-api-env.ts',
   // One-off sync script, not app code
   'apps/guides/scripts/sync-to-r2.ts',
+  // Test-only gate flag: reads RUN_OG_PIPELINE_TEST to opt into the heavy
+  // OG-image pipeline test from `bun run --cwd apps/guides test:og`.
+  'apps/guides/__tests__/og-images.test.ts',
+  // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
+  // validation against a deployed guides URL.
+  'apps/guides/__tests__/og-meta.test.ts',
+  // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
+  // validation against a deployed landing URL.
+  'apps/landing/__tests__/og-meta.test.ts',
+  // Test-only gate flag: reads OG_LIVE_CHECK_URL to opt into live OG meta
+  // validation against a deployed trails URL.
+  'apps/trails/__tests__/og-meta.test.ts',
   // Test files that mutate process.env to exercise env-validation logic
   'packages/api/src/utils/__tests__/',
   // Admin env shim — parses process.env once at module load
@@ -88,7 +100,7 @@ interface Violation {
 
 const violations: Violation[] = [];
 
-function walkDir(dir: string, relPath: string): void {
+function walkDir({ dir, relPath }: { dir: string; relPath: string }): void {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -110,7 +122,7 @@ function walkDir(dir: string, relPath: string): void {
     }
 
     if (isDir) {
-      walkDir(entryFull, entryRel);
+      walkDir({ dir: entryFull, relPath: entryRel });
     } else if (isTargetFile(entry)) {
       if (isAllowed(entryRel)) continue;
 
@@ -135,7 +147,7 @@ for (const root of SCAN_ROOTS) {
   const absRoot = join(ROOT, root);
   // For .github/scripts we use the relative path directly
   const relRoot = relative(ROOT, absRoot);
-  walkDir(absRoot, relRoot);
+  walkDir({ dir: absRoot, relPath: relRoot });
 }
 
 if (violations.length > 0) {

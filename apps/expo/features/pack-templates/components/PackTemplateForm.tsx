@@ -1,5 +1,5 @@
-import { PackCategorySchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
+import { PackCategorySchema } from '@packrat/schemas/constants';
 import {
   Button,
   createDropdownItem,

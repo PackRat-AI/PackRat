@@ -39,12 +39,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: 'PackRat Guides',
       publishedTime: post.date,
       tags: post.categories,
+      images: [{ url: `/og/${slug}.png`, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.description,
       creator: '@packratai',
+      images: [`/og/${slug}.png`],
     },
   };
 }
@@ -62,7 +64,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
   const content = getMdxContent(slug);
 
   // Get related posts
-  const relatedPosts = getRelatedPosts(post, 3);
+  const relatedPosts = getRelatedPosts({ post, count: 3 });
 
   return (
     <div>

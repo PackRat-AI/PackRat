@@ -5,7 +5,7 @@ export const safeLocalStorage = {
     if (!isBrowser()) return null;
     return localStorage.getItem(key);
   },
-  setItem(key: string, value: string): void {
+  setItem({ key, value }: { key: string; value: string }): void {
     if (!isBrowser()) return;
     localStorage.setItem(key, value);
   },
@@ -20,7 +20,7 @@ export const safeSessionStorage = {
     if (!isBrowser()) return null;
     return sessionStorage.getItem(key);
   },
-  setItem(key: string, value: string): void {
+  setItem({ key, value }: { key: string; value: string }): void {
     if (!isBrowser()) return;
     sessionStorage.setItem(key, value);
   },

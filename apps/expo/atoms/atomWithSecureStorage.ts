@@ -2,7 +2,13 @@ import { isFunction } from '@packrat/guards';
 import * as SecureStore from 'expo-secure-store';
 import { atom } from 'jotai';
 
-export const atomWithSecureStorage = <T>(key: string, initialValue: T) => {
+export const atomWithSecureStorage = <T>({
+  key,
+  initialValue,
+}: {
+  key: string;
+  initialValue: T;
+}) => {
   const baseAtom = atom(initialValue);
 
   baseAtom.onMount = (setValue) => {

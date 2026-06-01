@@ -5,7 +5,7 @@ export type AIMode = 'cloud' | 'local';
 export type ModelStatus = 'idle' | 'checking' | 'downloading' | 'preparing' | 'ready' | 'error';
 
 /** Persisted user preference for cloud vs local inference */
-export const aiModeAtom = atomWithAsyncStorage<AIMode>('ai:mode', 'cloud');
+export const aiModeAtom = atomWithAsyncStorage<AIMode>({ key: 'ai:mode', initialValue: 'cloud' });
 
 /** Current status of the local model */
 export const localModelStatusAtom = atom<ModelStatus>('idle');

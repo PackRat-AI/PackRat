@@ -10,7 +10,7 @@ describe('OfflineAI - MockLLMProvider', () => {
 
   describe('generate()', () => {
     it('should return a basic response for simple prompts', async () => {
-      const response = await provider.generate('Hello');
+      const response = await provider.generate({ _prompt: 'Hello' });
       expect(response).toBeDefined();
       expect(typeof response).toBe('string');
       expect(response.length).toBeGreaterThan(0);
@@ -26,7 +26,10 @@ describe('OfflineAI - MockLLMProvider', () => {
         activity: 'hiking',
       };
 
-      const response = await provider.generate('What gear do I need for this trail?', { context });
+      const response = await provider.generate({
+        _prompt: 'What gear do I need for this trail?',
+        options: { context },
+      });
 
       expect(response).toContain('Test Trail');
     });
@@ -44,7 +47,10 @@ describe('OfflineAI - MockLLMProvider', () => {
         activity: 'backpacking',
       };
 
-      const response = await provider.generate('What should I pack?', { context });
+      const response = await provider.generate({
+        _prompt: 'What should I pack?',
+        options: { context },
+      });
 
       expect(response).toBeDefined();
       // Should mention weather-relevant items
@@ -52,7 +58,10 @@ describe('OfflineAI - MockLLMProvider', () => {
     });
 
     it('should handle empty context gracefully', async () => {
-      const response = await provider.generate('Hello', { context: undefined });
+      const response = await provider.generate({
+        _prompt: 'Hello',
+        options: { context: undefined },
+      });
       expect(response).toBeDefined();
       expect(typeof response).toBe('string');
     });
@@ -60,8 +69,11 @@ describe('OfflineAI - MockLLMProvider', () => {
     it('should accept system prompt without error (not applied in mock)', async () => {
       // systemPrompt is part of the GenerateOptions interface for real providers;
       // the MockLLMProvider accepts it but does not use it in response generation.
-      const response = await provider.generate('Hello', {
-        systemPrompt: 'You are a helpful hiking assistant.',
+      const response = await provider.generate({
+        _prompt: 'Hello',
+        options: {
+          systemPrompt: 'You are a helpful hiking assistant.',
+        },
       });
 
       expect(response).toBeDefined();
@@ -75,7 +87,10 @@ describe('OfflineAI - MockLLMProvider', () => {
         },
       };
 
-      const response = await provider.generate('What do I need?', { context });
+      const response = await provider.generate({
+        _prompt: 'What do I need?',
+        options: { context },
+      });
 
       expect(response).toContain('Lakeside Camp');
     });
@@ -89,7 +104,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         },
       };
 
-      const response = await provider.generate('Compare trails', { context });
+      const response = await provider.generate({ _prompt: 'Compare trails', options: { context } });
 
       expect(response).toContain('Test Trail');
     });
@@ -104,7 +119,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         // weather is optional
       };
 
-      const response = await provider.generate('Hello', { context });
+      const response = await provider.generate({ _prompt: 'Hello', options: { context } });
 
       expect(response).toContain('Simple Trail');
     });

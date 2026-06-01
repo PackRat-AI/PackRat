@@ -1,9 +1,9 @@
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { RagSearchQuerySchema, WebSearchQuerySchema } from '@packrat/api/schemas/ai';
 import { AIService } from '@packrat/api/services/aiService';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { getSchemaInfo } from '@packrat/api/utils/DbUtils';
 import { isString } from '@packrat/guards';
+import { RagSearchQuerySchema, WebSearchQuerySchema } from '@packrat/schemas/ai';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
@@ -17,7 +17,7 @@ export const aiRoutes = new Elysia({ prefix: '/ai' })
       try {
         const { q, limit } = query;
         const aiService = new AIService();
-        const result = await aiService.searchPackratOutdoorGuidesRAG(q, limit);
+        const result = await aiService.searchPackratOutdoorGuidesRAG({ query: q, limit });
         return result;
       } catch (error) {
         console.error('RAG search error:', error);

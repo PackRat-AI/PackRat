@@ -164,7 +164,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-stats/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -199,7 +198,7 @@ export default function AppLayout() {
           options={{
             headerShown: false,
             presentation: 'card',
-            animation: 'slide_from_bottom',
+            animation: 'default',
           }}
         />
         <Stack.Screen
@@ -222,7 +221,7 @@ export default function AppLayout() {
           name="gear-inventory"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
           }}
         />

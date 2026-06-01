@@ -62,7 +62,7 @@ export function CatalogItemDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
       <ScrollView>
         <CatalogItemImage
           imageUrl={item.images?.[0]}

@@ -1,15 +1,9 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import {
-  type NewPack,
-  type NewPackItem,
-  type PackWithItems,
-  packItems,
-  packs,
-} from '@packrat/api/db/schema';
-import { PACK_CATEGORIES } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { PACK_CATEGORIES } from '@packrat/constants';
+import { type NewPack, type NewPackItem, type PackWithItems, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -61,7 +55,7 @@ export class PackService {
     });
 
     if (!pack) return null;
-    return computePackWeights(pack);
+    return computePackWeights({ pack });
   }
 
   async generatePacks(count: number) {
@@ -116,11 +110,25 @@ export class PackService {
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
-    const { OPENAI_API_KEY } = getEnv();
-    const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_AI_GATEWAY_ID,
+      CLOUDFLARE_API_TOKEN,
+      AI,
+    } = getEnv();
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: AI,
+    });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
@@ -135,10 +143,10 @@ export class PackService {
     packItemConcepts: PackItemConceptSchema[],
   ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
     const catalogService = new CatalogService();
-    const searchResults = await catalogService.batchVectorSearch(
-      packItemConcepts.map((item) => item.item),
-      1,
-    );
+    const searchResults = await catalogService.batchVectorSearch({
+      queries: packItemConcepts.map((item) => item.item),
+      limit: 1,
+    });
 
     return packItemConcepts
       .map((item, idx) => {
@@ -150,8 +158,8 @@ export class PackService {
           catalogItemId: catalogItem.id,
           name: catalogItem.name,
           description: catalogItem.description,
-          weight: catalogItem.weight,
-          weightUnit: catalogItem.weightUnit,
+          weight: catalogItem.weight ?? 0,
+          weightUnit: catalogItem.weightUnit ?? 'g',
           image: catalogItem.images?.[0],
         };
       })

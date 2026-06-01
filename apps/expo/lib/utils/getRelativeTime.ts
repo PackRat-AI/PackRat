@@ -16,10 +16,13 @@ function toDate(value: Date | string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export function getRelativeTime(
-  dateValue: Date | string | null | undefined,
-  t?: TranslationFunction,
-): string {
+export function getRelativeTime({
+  dateValue,
+  t,
+}: {
+  dateValue: Date | string | null | undefined;
+  t?: TranslationFunction;
+}): string {
   // i18next resolves pluralization via _one/_other suffixes at runtime.
   // The base keys (e.g. 'common.timeAgo.months') are not in en.json as literals,
   // so a loose cast is needed for dynamic key construction.

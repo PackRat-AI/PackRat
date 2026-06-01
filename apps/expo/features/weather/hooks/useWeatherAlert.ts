@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { getWeatherData } from 'expo-app/features/weather/lib/weatherService';
 import { useAtomValue } from 'jotai';
 import { useEffect, useState } from 'react';
@@ -52,10 +53,13 @@ export type WeatherApiData = {
 
 type ActiveLocation = { name?: string } | null;
 
-export function generateAlerts(
-  data: WeatherApiData | undefined,
-  activeLocation: ActiveLocation,
-): WeatherAlert[] {
+export function generateAlerts({
+  data,
+  activeLocation,
+}: {
+  data: WeatherApiData | undefined;
+  activeLocation: ActiveLocation;
+}): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
 
@@ -229,38 +233,64 @@ export function generateAlerts(
 export function useWeatherAlerts() {
   const activeLocation = useAtomValue(activeLocationAtom);
 
+  // Use primitive values as effect dependencies to avoid re-running on new
+  // object references emitted by the derived Jotai atom's .find() call.
+  const locationId = activeLocation?.id;
+  const locationName = activeLocation?.name;
+
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeLocation?.id) {
+    if (!locationId) {
       setLoading(false);
       return;
     }
 
-    const locationId = activeLocation.id;
+    const id = locationId;
+    let cancelled = false;
 
     async function fetchAlerts() {
       setLoading(true);
       setError(null);
 
+      Sentry.addBreadcrumb({
+        category: 'weather',
+        message: 'Fetching weather alerts',
+        level: 'info',
+        data: { locationId, locationName },
+      });
+
       try {
-        const data = await getWeatherData(locationId);
-        // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a
-        // structural subset of that type used only by this alert generator.
-        const formatted = generateAlerts(data as unknown as WeatherApiData, activeLocation);
+        const data = await getWeatherData(id);
+        if (cancelled) return;
+
+        const formatted = generateAlerts({
+          // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a structural subset used only by this alert generator.
+          data: data as unknown as WeatherApiData,
+          activeLocation: { name: locationName },
+        });
         setAlerts(formatted);
       } catch (err) {
+        if (cancelled) return;
         console.error('Weather alerts error:', err);
         setError('Failed to fetch weather alerts');
+        Sentry.captureException(err, {
+          tags: { feature: 'weatherAlerts', action: 'fetchAlerts' },
+          extra: { locationId, locationName },
+        });
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     fetchAlerts();
-  }, [activeLocation]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locationId, locationName]);
 
   return {
     alerts,

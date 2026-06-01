@@ -1,4 +1,4 @@
-import type { CatalogItem, PackItem } from '@packrat/api/types';
+import type { CatalogItem, PackItem } from '@packrat/types';
 import { describe, expect, it } from 'vitest';
 import {
   calculateTotalWeight,
@@ -21,17 +21,25 @@ function makePackItem(overrides: Partial<PackItem> = {}): PackItem {
     id: 'pack-item-1',
     packId: 'pack-1',
     name: 'Test Pack Item',
+    description: null,
     weight: 100,
     weightUnit: 'g',
     quantity: 1,
+    category: null,
     consumable: false,
     worn: false,
-    userId: 1,
-    category: 'tools',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    image: null,
+    notes: null,
+    catalogItemId: null,
+    userId: 'user-1',
+    deleted: false,
+    isAIGenerated: false,
+    templateItemId: null,
+    embedding: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
-  };
+  } as PackItem;
 }
 
 function makeCatalogItem(overrides: Partial<CatalogItem> = {}): CatalogItem {
@@ -48,24 +56,27 @@ function makeCatalogItem(overrides: Partial<CatalogItem> = {}): CatalogItem {
     brand: 'TestBrand',
     model: 'TestModel',
     ratingValue: 4.5,
-    color: undefined,
-    size: undefined,
+    color: null,
+    size: null,
     price: 99.99,
     availability: 'in_stock',
-    seller: undefined,
-    productSku: undefined,
-    material: undefined,
+    seller: null,
+    productSku: null,
+    material: null,
     currency: 'USD',
-    condition: undefined,
+    condition: null,
     reviewCount: 0,
-    variants: undefined,
-    techs: undefined,
-    links: undefined,
-    reviews: undefined,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    variants: null,
+    techs: null,
+    links: null,
+    reviews: null,
+    qas: null,
+    faqs: null,
+    embedding: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
-  };
+  } as CatalogItem;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,9 +157,9 @@ describe('itemCalculations', () => {
       expect(getNotes(item)).toBe('Important notes');
     });
 
-    it('returns undefined for pack items without notes', () => {
+    it('returns null/undefined for pack items without notes', () => {
       const item = makePackItem();
-      expect(getNotes(item)).toBeUndefined();
+      expect(getNotes(item)).toBeFalsy();
     });
 
     it('returns undefined for catalog items', () => {

@@ -1,6 +1,6 @@
+import * as schema from '@packrat/db/schema';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
-import * as schema from '../src/db/schema';
 
 // Create a PostgreSQL client for testing
 export const createTestDbConnection = () => {

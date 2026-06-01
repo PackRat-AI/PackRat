@@ -44,7 +44,13 @@ export function loadMetadata(cacheDir: string): CacheMetadataFile | null {
   return result.success ? result.data : null;
 }
 
-export function saveMetadata(cacheDir: string, data: CacheMetadataFile): void {
+export function saveMetadata({
+  cacheDir,
+  data,
+}: {
+  cacheDir: string;
+  data: CacheMetadataFile;
+}): void {
   const validated = MetadataSchema.parse(data);
   writeFileSync(metadataPath(cacheDir), JSON.stringify(validated, null, 2));
 }

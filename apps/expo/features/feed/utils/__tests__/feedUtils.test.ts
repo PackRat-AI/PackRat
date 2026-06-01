@@ -11,7 +11,8 @@ vi.mock('@packrat/env/expo-client', () => ({
 // Also mock getRelativeTime so that formatRelativeDate has a predictable
 // alias target that does not depend on the current clock.
 vi.mock('expo-app/lib/utils/getRelativeTime', () => ({
-  getRelativeTime: (input: string | Date) => `relative(${String(input)})`,
+  getRelativeTime: ({ dateValue }: { dateValue: string | Date }) =>
+    `relative(${String(dateValue)})`,
 }));
 
 import type { Comment, Post } from '../../types';
@@ -116,7 +117,7 @@ describe('feed/utils', () => {
   // ---------------------------------------------------------------------------
   describe('formatRelativeDate', () => {
     it('delegates to getRelativeTime', () => {
-      expect(formatRelativeDate('2024-01-01T00:00:00.000Z')).toBe(
+      expect(formatRelativeDate({ dateValue: '2024-01-01T00:00:00.000Z' })).toBe(
         'relative(2024-01-01T00:00:00.000Z)',
       );
     });

@@ -3,7 +3,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { testIds } from 'expo-app/lib/testIds';
 import { TouchableWithoutFeedback, View } from 'react-native';
 
 type HorizontalCatalogItemCardProps = {
@@ -18,12 +17,12 @@ type HorizontalCatalogItemCardProps = {
     }
 );
 
-const formatPrice = (price?: number | null, currency?: string | null) => {
+const formatPrice = ({ price, currency }: { price?: number | null; currency?: string | null }) => {
   if (!price) return '';
   return `${currency || '$'}${price.toFixed(2)}`;
 };
 
-const formatWeight = (weight?: number | null, unit?: string | null) => {
+const formatWeight = ({ weight, unit }: { weight?: number | null; unit?: string | null }) => {
   if (!weight) return '';
   return `${weight}${unit || 'g'}`;
 };
@@ -37,7 +36,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
       onPress={isSelectable ? () => restProps.onSelect(item) : restProps.onPress}
     >
       <View
-        testID={testIds.items.catalogCard(item.id)}
+        testID={`catalog-item-card-${item.id}`}
         className={`rounded-lg flex-row gap-3 border p-4 bg-red
            ${
              isSelectable && restProps.selected
@@ -63,13 +62,13 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
             <Text>
               {item.price && (
                 <Text className="text-sm font-medium text-foreground">
-                  {formatPrice(item.price, item.currency)}
+                  {formatPrice({ price: item.price, currency: item.currency })}
                 </Text>
               )}
             </Text>
             {item.weight && (
               <Text className="text-sm text-muted-foreground">
-                {formatWeight(item.weight, item.weightUnit)}
+                {formatWeight({ weight: item.weight, unit: item.weightUnit })}
               </Text>
             )}
             {item.ratingValue && (

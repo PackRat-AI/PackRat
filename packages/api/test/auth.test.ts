@@ -22,8 +22,8 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { getAuth } from '@packrat/api/auth';
 import { createDb } from '@packrat/api/db';
-import * as schema from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import * as schema from '@packrat/db/schema';
 import { betterAuth } from 'better-auth';
 import { bearer, jwt } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';

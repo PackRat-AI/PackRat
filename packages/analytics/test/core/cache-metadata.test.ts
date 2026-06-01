@@ -35,7 +35,7 @@ describe('cache metadata', () => {
       sites: ['rei', 'backcountry'],
     };
 
-    saveMetadata(TEST_DIR, data);
+    saveMetadata({ cacheDir: TEST_DIR, data });
     expect(loadMetadata(TEST_DIR)).toEqual(data);
   });
 

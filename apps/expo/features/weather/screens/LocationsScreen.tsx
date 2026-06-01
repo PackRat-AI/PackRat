@@ -251,4 +251,4 @@ function LocationsScreen() {
   );
 }
 
-export default withAuthWall(LocationsScreen, WeatherAuthWall);
+export default withAuthWall({ Component: LocationsScreen, AuthWall: WeatherAuthWall });

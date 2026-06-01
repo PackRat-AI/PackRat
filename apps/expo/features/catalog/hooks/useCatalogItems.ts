@@ -1,4 +1,4 @@
-import { CatalogItemsResponseSchema } from '@packrat/api/schemas/catalog';
+import { CatalogItemsResponseSchema } from '@packrat/schemas/catalog';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 

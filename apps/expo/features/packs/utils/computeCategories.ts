@@ -11,14 +11,19 @@ export type CategorySummary = {
 };
 
 export function computeCategorySummaries(pack: Pack): CategorySummary[] {
-  const preferredUnit = parseWeightUnit(userStore.preferredWeightUnit.peek(), 'g');
+  const preferredUnit = parseWeightUnit({
+    value: userStore.preferredWeightUnit.peek(),
+    fallback: 'g',
+  });
   const categoryMap: Record<string, { weightInGrams: number; items: number }> = {};
 
   let totalWeightGrams = 0;
 
   for (const item of pack.items) {
     const category = item.category?.trim() || 'Other';
-    const itemGrams = normalize(item.weight, parseWeightUnit(item.weightUnit)) * item.quantity;
+    const itemGrams =
+      normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+      item.quantity;
 
     totalWeightGrams += itemGrams;
 
@@ -34,7 +39,7 @@ export function computeCategorySummaries(pack: Pack): CategorySummary[] {
   return Object.entries(categoryMap).map(([name, data]) => ({
     name,
     items: data.items,
-    weight: displayWeight(data.weightInGrams, preferredUnit),
+    weight: displayWeight({ grams: data.weightInGrams, unit: preferredUnit }),
     percentage: Number(
       (totalWeightGrams > 0 ? (data.weightInGrams / totalWeightGrams) * 100 : 0).toFixed(1),
     ),
