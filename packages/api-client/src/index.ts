@@ -166,7 +166,7 @@ export function createApiClient(config: ApiClientConfig) {
     // `unknown` — keeps the wrapper fully type-checked.
     fetcher: Object.assign(
       (input: RequestInfo | URL, init?: RequestInit) => authFetcher({ input, init }),
-      { preconnect: (() => {}) as typeof fetch.preconnect },
+      { preconnect: (..._args: Parameters<typeof fetch.preconnect>): void => {} },
     ),
     parseDate: false,
   }).api;

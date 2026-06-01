@@ -57,7 +57,7 @@ const adminClient = treaty<App>(API_BASE, {
   // casting through `unknown`.
   fetcher: Object.assign(
     (input: RequestInfo | URL, init?: RequestInit) => adminFetcher({ input, init }),
-    { preconnect: (() => {}) as typeof fetch.preconnect },
+    { preconnect: (..._args: Parameters<typeof fetch.preconnect>): void => {} },
   ),
   parseDate: false,
 }).api.admin;
