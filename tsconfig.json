@@ -71,31 +71,20 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
-    // wrangler-generated CF types (`cf-typegen`). It contains an
-    // `import("./src/index")` referencing the worker entry, which would pull the
-    // excluded @kitajs/html consent route + page (and their global JSX namespace)
-    // back into this React/React-Native root program. CF binding types reach the
-    // API via src/global.d.ts's `/// <reference types="@cloudflare/workers-types" />`.
+    // wrangler-generated CF binding types (cf-typegen) — a large generated file.
+    // CF types already reach the API via src/global.d.ts's
+    // `/// <reference types="@cloudflare/workers-types" />`, so it needn't enter
+    // the root program.
     "**/worker-configuration.d.ts",
-    // The API's @kitajs/html server-rendered HTML files declare a GLOBAL JSX
-    // namespace that collides with the React/React-Native apps compiled in this
-    // root program. Exclude just those files + the worker entry that imports them
-    // (api/src/index.ts) so they don't enter the program; the rest of packages/api
-    // (incl. src/global.d.ts, which provides the Cloudflare Workers types) stays
-    // in. These three are type-checked under packages/api's own @kitajs/html
-    // tsconfig (IDE + xss-scan). Anything else that imports them goes through the
-    // JSX-free `@packrat/api/app` contract instead.
-    "packages/api/src/index.ts",
-    "packages/api/src/auth/consent-page.tsx",
-    "packages/api/src/auth/consent-route.tsx",
-    // This test imports the @kitajs/html consent files above, which would pull
-    // their global JSX back into this program. It's exercised by vitest, not the
-    // root tsc.
-    "packages/api/src/auth/__tests__/consent-page.test.ts",
-    // The API's integration tests import the worker entry (../src/index), which
-    // pulls the @kitajs/html consent route back into this program. They run under
-    // vitest, not the root tsc.
+    // The API's integration tests run under vitest (Cloudflare workers pool),
+    // not the root tsc.
     "packages/api/test",
+    // Server-rendered HTML package: owns ALL the @kitajs/html JSX in isolation
+    // and is consumed by the API only through its BUILT, JSX-free dist `.d.ts`
+    // (`renderConsentPage(data): string`). Its JSX source declares a global JSX
+    // namespace, so — like packages/mcp — it must not enter this
+    // React/React-Native root program.
+    "packages/consent-ui",
     "packages/mcp",
     "packages/osm-db",
     "packages/osm-import",

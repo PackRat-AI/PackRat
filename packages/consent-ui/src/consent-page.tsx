@@ -334,7 +334,9 @@ function ClientLinks({
   // prove that statically across an array boundary, so we mark the value as
   // already-safe per the documented escape hatch:
   // https://html.kitajs.org/packages/ts-html-plugin#k601
-  return <p class="client-links">{withSeparators as 'safe'}</p>;
+  // safe-cast: kitajs K601 escape — the array elements are pre-escaped JSX; the
+  // `unknown` hop is required because Element[] doesn't overlap the 'safe' literal.
+  return <p class="client-links">{withSeparators as unknown as 'safe'}</p>;
 }
 
 function SignedInIdent({ user }: { user: ConsentPageData['user'] }): JSX.Element {

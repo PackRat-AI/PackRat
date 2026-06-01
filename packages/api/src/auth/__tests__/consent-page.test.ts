@@ -10,9 +10,9 @@
  *   - rendered HTML carries the expected anti-clickjacking + content-type headers
  */
 
+import { type ConsentPageData, renderConsentPage } from '@packrat/consent-ui';
 import { Elysia } from 'elysia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ConsentPageData, renderConsentPage } from '../consent-page';
 
 // ── Route-level test setup ────────────────────────────────────────────────
 //
@@ -44,13 +44,19 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
   getEnv: vi.fn(() => ({ NEON_DATABASE_URL: 'postgres://stub' })),
 }));
 
-// Cached after first import to avoid re-mounting the route per test.
-let testApp: Elysia | undefined;
+async function buildTestApp() {
+  const { consentRoute } = await import('../consent-route');
+  return new Elysia().use(consentRoute);
+}
 
-async function getTestApp(): Promise<Elysia> {
+// Cached after first import to avoid re-mounting the route per test. Typed as
+// the precise mounted-app type (Elysia's generics are invariant, so the bare
+// `Elysia` type can't hold it).
+let testApp: Awaited<ReturnType<typeof buildTestApp>> | undefined;
+
+async function getTestApp(): Promise<Awaited<ReturnType<typeof buildTestApp>>> {
   if (!testApp) {
-    const { consentRoute } = await import('../consent-route');
-    testApp = new Elysia().use(consentRoute);
+    testApp = await buildTestApp();
   }
   return testApp;
 }

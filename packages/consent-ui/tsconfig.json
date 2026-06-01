@@ -1,0 +1,33 @@
+{
+  // Server-rendered HTML package. Owns ALL @kitajs/html JSX in isolation and
+  // emits a BUILT dist/ whose .d.ts surface is plain (`renderConsentPage(data):
+  // string`) — no @kitajs/html global JSX namespace. Consumers (the API) import
+  // the built dist via package.json `exports`, so the global JSX never enters
+  // their type program. This is what lets the API stay JSX-free; see
+  // docs / the API's lack of root-tsconfig excludes.
+  //
+  // Classic JSX runtime (Html.createElement / Html.Fragment) is required by
+  // @kitajs/ts-html-plugin for compile-time XSS detection (K601 / xss-scan).
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    // No "DOM" lib: it pulls the DOM `Element` type, which shadows
+    // @kitajs/html's JSX Element and breaks the server-render types.
+    "lib": ["ESNext"],
+    "jsx": "react",
+    "jsxFactory": "Html.createElement",
+    "jsxFragmentFactory": "Html.Fragment",
+    "plugins": [{ "name": "@kitajs/ts-html-plugin" }],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "verbatimModuleSyntax": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,41 +1,17 @@
 {
-  // Package-scoped tsconfig. The root tsconfig sets `"jsx": "react-native"`
-  // for the Expo app; the API uses @kitajs/html's string-rendering JSX runtime
-  // for server-side HTML (e.g. the OAuth consent page in
-  // src/auth/consent-page.tsx). Package-local override keeps the two
-  // contexts from colliding.
-  //
-  // JSX runtime config follows @elysiajs/html's recommended pattern:
-  // classic runtime with Html.createElement + Html.Fragment as the JSX
-  // factory. This is the form @kitajs/ts-html-plugin assumes; switching
-  // to the automatic runtime (jsxImportSource) breaks the plugin's
-  // compile-time XSS detection (error K601 for missing `safe` attribute).
-  //
-  // Deliberately standalone (no `extends`, no `types` allowlist): the
-  // @kitajs/html global JSX namespace must load uncontested. A `types: [...]`
-  // restriction lets React's JSX collide with @kitajs/html's (both declare the
-  // same global JSX namespace), so the consent page fails to type-check. CF
-  // Workers types come via src/global.d.ts's
+  // Package-scoped tsconfig, extending the shared base. The API is now entirely
+  // JSX-free — all server-rendered HTML moved to the built `@packrat/consent-ui`
+  // package, which the API consumes as plain `renderConsentPage(data): string`.
+  // No more @kitajs/html JSX config / ts-html-plugin / root-tsconfig excludes.
+  // CF Workers types come via src/global.d.ts's
   // `/// <reference types="@cloudflare/workers-types" />`.
-  //
-  // The @kitajs/html JSX files (auth/consent-*.tsx) + the worker entry that
-  // imports them (src/index.ts) are excluded from the ROOT tsconfig so their
-  // global JSX namespace can't pollute the React apps — see the root tsconfig
-  // `exclude`.
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "jsx": "react",
-    "jsxFactory": "Html.createElement",
-    "jsxFragmentFactory": "Html.Fragment",
-    "plugins": [{ "name": "@kitajs/ts-html-plugin" }],
     "paths": {
       "@packrat/api": ["./src/index.ts"],
       "@packrat/api/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "container_src", "test", "coverage"]
 }
