@@ -18,6 +18,7 @@
     "check:circular": "bun scripts/lint/no-circular-deps.ts",
     "check:deps": "manypkg check",
     "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
+    "check:overrides": "bun scripts/lint/no-undocumented-overrides.ts",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
     "check-types": "bun scripts/check-types.ts",
@@ -48,15 +49,12 @@
     "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts",
     "test:guides": "vitest run --config apps/guides/vitest.config.ts",
     "test:landing": "vitest run --config apps/landing/vitest.config.ts",
+    "test:lint": "bun test scripts/lint/",
     "test:mcp": "bun run --cwd packages/mcp test",
     "trails": "bun run --cwd apps/trails dev",
     "web": "bun run --cwd apps/web dev"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.0.3-2",
-    "@sinclair/typebox": "^0.34.15",
-    "elysia": "^1.4.0",
-    "expo-sqlite": "~55.0.15",
     "react": "19.2.6"
   },
   "devDependencies": {
