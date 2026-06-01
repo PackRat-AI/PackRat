@@ -34,6 +34,7 @@ import {
   UpdatePackRequestSchema,
 } from '@packrat/schemas/packs';
 import { ErrorResponseSchema } from '@packrat/schemas/shared';
+import { safeJsonStringify } from '@packrat/utils';
 import {
   and,
   cosineDistance,
@@ -506,7 +507,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (destination) {
           try {
             const weatherResult = await weatherService.getWeatherForLocation(destination);
-            weatherContext = `Current weather in ${destination}: ${JSON.stringify(weatherResult)}`;
+            weatherContext = `Current weather in ${destination}: ${safeJsonStringify(weatherResult)}`;
           } catch (error) {
             console.warn('Weather lookup failed:', error);
           }

@@ -1,0 +1,68 @@
+id: no-raw-typeof
+snapshots:
+  const n = typeof y === 'number':
+    labels:
+    - source: typeof y === 'number'
+      style: primary
+      start: 10
+      end: 31
+  if (typeof b === 'boolean') {}:
+    labels:
+    - source: typeof b === 'boolean'
+      style: primary
+      start: 4
+      end: 26
+  if (typeof big === 'bigint') {}:
+    labels:
+    - source: typeof big === 'bigint'
+      style: primary
+      start: 4
+      end: 27
+  if (typeof entry[0] === 'string') {}:
+    labels:
+    - source: typeof entry[0] === 'string'
+      style: primary
+      start: 4
+      end: 32
+  if (typeof f === 'function') {}:
+    labels:
+    - source: typeof f === 'function'
+      style: primary
+      start: 4
+      end: 27
+  if (typeof options?.md5 === 'string') {}:
+    labels:
+    - source: typeof options?.md5 === 'string'
+      style: primary
+      start: 4
+      end: 36
+  if (typeof s === 'symbol') {}:
+    labels:
+    - source: typeof s === 'symbol'
+      style: primary
+      start: 4
+      end: 25
+  if (typeof u === 'undefined') {}:
+    labels:
+    - source: typeof u === 'undefined'
+      style: primary
+      start: 4
+      end: 28
+  if (typeof x !== 'string') {}:
+    labels:
+    - source: typeof x !== 'string'
+      style: primary
+      start: 4
+      end: 25
+  if (typeof x === 'string') {}:
+    labels:
+    - source: typeof x === 'string'
+      style: primary
+      start: 4
+      end: 25
+  if (typeof z === 'object') {}:
+    labels:
+    - source: typeof z === 'object'
+      style: primary
+      start: 4
+      end: 25

@@ -14,6 +14,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { nodeEnv } from '@packrat/env/node';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { z } from 'zod';
 
 const DEFAULT_BASE_URL = 'https://packrat.world';
@@ -51,7 +52,7 @@ async function loadPersisted(): Promise<CliConfig> {
   if (persisted) return persisted;
   try {
     const raw = await readFile(CONFIG_PATH, 'utf8');
-    const parsed = CliConfigSchema.safeParse(JSON.parse(raw));
+    const parsed = CliConfigSchema.safeParse(safeJsonParse(raw, { strict: true }));
     persisted = parsed.success ? parsed.data : emptyConfig;
   } catch (e) {
     if (isNotFound(e)) persisted = { ...emptyConfig };
@@ -83,7 +84,7 @@ export async function saveConfig(patch: Partial<CliConfig>): Promise<CliConfig> 
   const next: CliConfig = { ...current, ...patch };
   await mkdir(dirname(CONFIG_PATH), { recursive: true });
   const tmp = `${CONFIG_PATH}.tmp`;
-  await writeFile(tmp, JSON.stringify(next, null, 2), { mode: 0o600 });
+  await writeFile(tmp, safeJsonStringify(next, null, 2), { mode: 0o600 });
   const { rename } = await import('node:fs/promises');
   await rename(tmp, CONFIG_PATH);
   persisted = next;

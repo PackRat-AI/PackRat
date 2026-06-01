@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -65,6 +65,7 @@
     "@packrat/types": "workspace:*",
     "@packrat/ui": "workspace:*",
     "@packrat/units": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@react-native-ai/apple": "~0.10.0",
     "@react-native-ai/llama": "~0.10.0",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -135,7 +136,6 @@
     "llama.rn": "0.10.1",
     "nanoid": "^5.1.9",
     "nativewind": "^4.2.3",
-    "radash": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "^17.0.4",

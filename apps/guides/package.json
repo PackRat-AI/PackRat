@@ -1,6 +1,6 @@
 {
   "name": "packrat-guides-app",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "scripts": {
     "build": "bun run build-content && bun run generate-og-images && next build",
@@ -31,6 +31,7 @@
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",

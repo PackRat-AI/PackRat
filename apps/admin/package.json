@@ -1,6 +1,6 @@
 {
   "name": "packrat-admin-app",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -17,6 +17,7 @@
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-avatar": "catalog:",

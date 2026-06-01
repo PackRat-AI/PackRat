@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   mapCsvRowToItem,
   normalizeJsonString,
+  parseCatalogJson,
   parseFaqs,
   parsePrice,
   parseWeight,
-  safeJsonParse,
 } from '../csv-utils';
 
 // ---------------------------------------------------------------------------
@@ -291,6 +291,15 @@ describe('csv-utils', () => {
       expect(result?.categories).toBeUndefined();
     });
 
+    it('handles blank categories gracefully', () => {
+      const values = ['   '];
+      const fieldMap = { categories: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.categories).toBeUndefined();
+    });
+
     it('handles empty images gracefully', () => {
       const values = [''];
       const fieldMap = { images: 0 };
@@ -307,6 +316,42 @@ describe('csv-utils', () => {
       const result = mapCsvRowToItem({ values, fieldMap });
 
       expect(result?.categories).toEqual(['invalid json']);
+    });
+
+    it('wraps malformed JSON array categories in an array', () => {
+      const values = ['["Electronics",'];
+      const fieldMap = { categories: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.categories).toEqual(['["Electronics",']);
+    });
+
+    it('ignores malformed JSON array images', () => {
+      const values = ['["img1.jpg",'];
+      const fieldMap = { images: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.images).toBeUndefined();
+    });
+
+    it('maps array-shaped techs to an empty object', () => {
+      const values = ['["unexpected"]'];
+      const fieldMap = { techs: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.techs).toEqual({});
+    });
+
+    it('ignores invalid availability values', () => {
+      const values = ['not_available'];
+      const fieldMap = { availability: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.availability).toBeUndefined();
     });
 
     it('processes description with newlines correctly', () => {
@@ -523,35 +568,35 @@ describe('csv-utils', () => {
     });
   });
 
-  describe('safeJsonParse', () => {
+  describe('parseCatalogJson', () => {
     it('parses valid JSON', () => {
-      const result = safeJsonParse('{"key": "value"}');
+      const result = parseCatalogJson('{"key": "value"}');
       expect(result).toEqual({ key: 'value' });
     });
 
     it('returns empty array for invalid JSON', () => {
-      const result = safeJsonParse('invalid json');
+      const result = parseCatalogJson('invalid json');
       expect(result).toEqual([]);
     });
 
     it('returns empty array for empty string', () => {
-      expect(safeJsonParse('')).toEqual([]);
-      expect(safeJsonParse('undefined')).toEqual([]);
-      expect(safeJsonParse('null')).toEqual([]);
+      expect(parseCatalogJson('')).toEqual([]);
+      expect(parseCatalogJson('undefined')).toEqual([]);
+      expect(parseCatalogJson('null')).toEqual([]);
     });
 
     it('normalizes and parses Python-style JSON', () => {
-      const result = safeJsonParse("{'key': True, 'other': None}");
+      const result = parseCatalogJson("{'key': True, 'other': None}");
       expect(result).toEqual({ key: true, other: null });
     });
 
     it('handles arrays', () => {
-      const result = safeJsonParse('["a", "b", "c"]');
+      const result = parseCatalogJson('["a", "b", "c"]');
       expect(result).toEqual(['a', 'b', 'c']);
     });
 
     it('returns empty array on parse error', () => {
-      const result = safeJsonParse('{invalid: json}');
+      const result = parseCatalogJson('{invalid: json}');
       expect(result).toEqual([]);
     });
   });

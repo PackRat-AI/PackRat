@@ -1,5 +1,6 @@
 import { createApiClient } from '@packrat/api-client';
 import { fromZod } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
@@ -17,7 +18,7 @@ const CookieStoreSchema = z.record(z.object({ value: z.string() }));
 // HTTPS servers (remote dev/prod) prefix the cookie name with __Secure-; HTTP (local) does not.
 function parseSessionToken(cookieJson: string | null): string | null {
   if (!cookieJson) return null;
-  const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
+  const cookies = fromZod(CookieStoreSchema)(safeJsonParse(cookieJson));
   if (!cookies) return null;
   return (
     cookies['better-auth.session_token']?.value ??

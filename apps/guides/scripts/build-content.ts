@@ -2,6 +2,7 @@
 // It processes your MDX files and outputs JSON that can be imported
 // in your static site
 
+import { safeJsonStringify } from '@packrat/utils';
 import fs from 'fs';
 import matter from 'gray-matter';
 import type { Post } from 'guides-app/lib/types';
@@ -61,11 +62,11 @@ async function buildContent() {
   const contentFile = `// This file is auto-generated. Do not edit manually.
 import type { Post } from './types';
 
-export const posts: Post[] = ${JSON.stringify(posts, null, 2)};
+export const posts: Post[] = ${safeJsonStringify(posts, null, 2)};
 
-export const postContent: Record<string, string> = ${JSON.stringify(postContent, null, 2)};
+export const postContent: Record<string, string> = ${safeJsonStringify(postContent, null, 2)};
 
-export const categories: string[] = ${JSON.stringify(categories, null, 2)};
+export const categories: string[] = ${safeJsonStringify(categories, null, 2)};
 `;
 
   fs.writeFileSync(outputFile, contentFile);

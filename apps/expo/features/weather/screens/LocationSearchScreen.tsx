@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
@@ -54,7 +55,7 @@ export default function LocationSearchScreen() {
       try {
         const storedSearches = await AsyncStorage.getItem(RECENT_SEARCHES_KEY);
         if (storedSearches) {
-          setRecentSearches(JSON.parse(storedSearches));
+          setRecentSearches(safeJsonParse<string[]>(storedSearches, { strict: true }));
         }
       } catch (err) {
         console.error('Error loading recent searches:', err);
@@ -76,14 +77,14 @@ export default function LocationSearchScreen() {
         ].slice(0, 5); // Keep only 5 most recent
 
         setRecentSearches(updatedSearches);
-        await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
+        await AsyncStorage.setItem(RECENT_SEARCHES_KEY, safeJsonStringify(updatedSearches));
         return;
       }
 
       // Add new search term to the beginning and limit to 5
       const updatedSearches = [searchTerm, ...recentSearches].slice(0, 5);
       setRecentSearches(updatedSearches);
-      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
+      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, safeJsonStringify(updatedSearches));
     } catch (err) {
       console.error('Error saving recent search:', err);
     }

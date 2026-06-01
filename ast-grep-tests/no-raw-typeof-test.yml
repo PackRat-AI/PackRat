@@ -1,0 +1,27 @@
+id: no-raw-typeof
+valid:
+  # Global availability checks are exempt (accessing undeclared globals throws).
+  - "if (typeof window !== 'undefined') {}"
+  - "if (typeof document === 'undefined') {}"
+  - "const g = typeof globalThis === 'object'"
+  - "if (typeof Bun !== 'undefined') {}"
+  - "if (typeof navigator === 'object') {}"
+  - "if (typeof process !== 'undefined') {}"
+  # typeof against a non-primitive-literal RHS is not a primitive narrowing.
+  - "if (typeof a === b) {}"
+  - "if (typeof a === SOME_CONST) {}"
+  # Already migrated to a guard predicate.
+  - "if (isString(x)) {}"
+invalid:
+  - "if (typeof x === 'string') {}"
+  - "if (typeof x !== 'string') {}"
+  - "const n = typeof y === 'number'"
+  - "if (typeof z === 'object') {}"
+  - "if (typeof f === 'function') {}"
+  - "if (typeof b === 'boolean') {}"
+  - "if (typeof u === 'undefined') {}"
+  - "if (typeof s === 'symbol') {}"
+  - "if (typeof big === 'bigint') {}"
+  # Patterns the old line-regex MISSED but ast-grep catches:
+  - "if (typeof options?.md5 === 'string') {}"
+  - "if (typeof entry[0] === 'string') {}"

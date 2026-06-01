@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getUserClient } from '../../api/client';
@@ -43,6 +44,6 @@ export default defineCommand({
       action: 'analyze pack gaps',
       resourceHint: `pack ${args.id}`,
     });
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(result, null, 2)}\n`);
   },
 });

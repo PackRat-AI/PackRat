@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "type": "module",
   "exports": {
@@ -61,7 +61,8 @@
     "@packrat/schemas": "workspace:*",
     "@packrat/types": "workspace:*",
     "@packrat/units": "workspace:*",
-    "@sentry/cloudflare": "^10.0.0",
+    "@packrat/utils": "workspace:*",
+    "@sentry/cloudflare": "^10.37.0",
     "@sinclair/typebox": "^0.34.15",
     "@types/nodemailer": "^6.4.17",
     "ai": "catalog:",
@@ -77,7 +78,6 @@
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
     "pg": "catalog:",
-    "radash": "catalog:",
     "resend": "^6.10.0",
     "workers-ai-provider": "^0.7.2",
     "ws": "catalog:",

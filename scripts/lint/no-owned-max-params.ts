@@ -31,6 +31,9 @@ const EXCLUDED_DIRS = new Set([
 const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
 const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
+  // safeJsonParse(value, options) is a deliberate drop-in for the native
+  // JSON.parse(text, reviver) / destr(value, options) signature.
+  'packages/utils/src/json.ts',
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
   // These build scripts override globalThis.fetch with a shim that must

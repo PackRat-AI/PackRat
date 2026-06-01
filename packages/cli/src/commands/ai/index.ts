@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -17,7 +18,7 @@ const ragCmd = defineCommand({
       }),
       action: 'rag search',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -31,7 +32,7 @@ const webCmd = defineCommand({
       promise: client.ai['web-search'].get({ query: { q: args.q } }),
       action: 'web search',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -51,7 +52,7 @@ const sqlCmd = defineCommand({
       }),
       action: 'execute sql',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 
@@ -61,7 +62,7 @@ const schemaCmd = defineCommand({
     await requireAuth();
     const client = await getUserClient();
     const data = await runApi({ promise: client.ai['db-schema'].get(), action: 'fetch db schema' });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

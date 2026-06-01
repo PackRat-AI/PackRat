@@ -16,6 +16,7 @@
 
 import { type ApiClient, createApiClient } from '@packrat/api-client';
 import { isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 
 export type TokenProvider = () => string | null | undefined;
 
@@ -66,7 +67,7 @@ export type McpToolResult = {
 };
 
 export function ok(data: unknown): McpToolResult {
-  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  return { content: [{ type: 'text', text: safeJsonStringify(data, null, 2) }] };
 }
 
 export function errMessage(message: string): McpToolResult {
@@ -166,7 +167,7 @@ function extractErrorMessage(body: unknown): string | null {
     if (isString(obj.message)) return obj.message;
     if (isString(obj.error)) return obj.error;
     try {
-      return JSON.stringify(body);
+      return safeJsonStringify(body);
     } catch {
       return null;
     }

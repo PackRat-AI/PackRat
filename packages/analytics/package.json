@@ -1,6 +1,6 @@
 {
   "name": "@packrat/analytics",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,9 +12,9 @@
     "@duckdb/node-api": "catalog:",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "consola": "catalog:",
     "magic-regexp": "catalog:",
-    "radash": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

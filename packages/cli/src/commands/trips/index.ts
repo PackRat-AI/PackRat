@@ -1,4 +1,5 @@
 import { toRecord, toRecordArray } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { nowIso, shortId } from '../../api/ids';
@@ -13,7 +14,7 @@ const listCmd = defineCommand({
     const client = await getUserClient();
     const trips = await runApi({ promise: client.trips.get(), action: 'list trips' });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(trips, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(trips, null, 2)}\n`);
       return;
     }
     printTable({
@@ -44,7 +45,7 @@ const getCmd = defineCommand({
       resourceHint: `trip ${args.id}`,
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(trip, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(trip, null, 2)}\n`);
       return;
     }
     const t = toRecord(trip);
@@ -101,7 +102,7 @@ const createCmd = defineCommand({
       }),
       action: 'create trip',
     });
-    process.stdout.write(`${JSON.stringify(trip, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(trip, null, 2)}\n`);
   },
 });
 

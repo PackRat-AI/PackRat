@@ -4,6 +4,7 @@
 
 import { safeLocalStorage } from '@packrat/app/browser';
 import { fromZod, isString } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import z from 'zod';
 
 const ACCESS_KEY = 'access_token';
@@ -12,7 +13,7 @@ const REFRESH_KEY = 'refresh_token';
 function parseToken(raw: string | null): string | null {
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = safeJsonParse(raw, { strict: true });
     return isString(parsed) ? parsed : null;
   } catch {
     // Not JSON-encoded — return as-is (raw JWT)
@@ -54,13 +55,13 @@ export const UserInfoSchema = z.object({
 export type UserInfo = z.infer<typeof UserInfoSchema>;
 
 export function setUser(user: UserInfo): void {
-  safeLocalStorage.setItem({ key: 'user', value: JSON.stringify(user) });
+  safeLocalStorage.setItem({ key: 'user', value: safeJsonStringify(user) });
 }
 
 export function getUser(): UserInfo | null {
   try {
     const raw = safeLocalStorage.getItem('user');
-    return raw ? (fromZod(UserInfoSchema)(JSON.parse(raw)) ?? null) : null;
+    return raw ? (fromZod(UserInfoSchema)(safeJsonParse(raw, { strict: true })) ?? null) : null;
   } catch {
     return null;
   }

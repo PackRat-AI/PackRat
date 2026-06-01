@@ -1,0 +1,24 @@
+id: no-primitive-cast-tsx
+# TSX variant of no-primitive-cast. The `typescript` language parser does NOT
+# match .tsx files, so .tsx app code (apps/expo, apps/trails, apps/guides,
+# apps/landing) needs this `tsx`-language twin. Same rule/ignores as
+# no-primitive-cast.yml.
+language: tsx
+severity: warning
+message: "Don't assert with `as string` / `as number` / `as boolean` — assertions lie to the type-checker at boundaries. Use a `@packrat/guards` narrow (`toString`/`toNumber`/`toBoolean`, or the `asString`/`asNumber`/`asBoolean` aliases) and handle the `undefined` case, or coerce explicitly (e.g. `String(x)`, `Number(x)`, `toFloat`/`toInt` from @packrat/utils). `as const` / `as unknown` are fine and not flagged. Annotate a genuinely unavoidable cast with `// safe-cast:`."
+ignores:
+  - "**/packages/guards/**"
+  - "**/packages/utils/**"
+  - "scripts/**"
+  - ".github/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  any:
+    - pattern: $X as string
+    - pattern: $X as number
+    - pattern: $X as boolean

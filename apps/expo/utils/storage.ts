@@ -2,16 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { createJSONStorage } from 'jotai/utils';
 
-// Create a storage adapter for Jotai that uses AsyncStorage
-export const asyncStorage = createJSONStorage<WeatherLocation[]>(() => ({
-  getItem: async (key: string) => {
-    const value = await AsyncStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
-  },
-  setItem: async (key: string, value: unknown) => {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  },
-  removeItem: async (key: string) => {
-    await AsyncStorage.removeItem(key);
-  },
-}));
+// Jotai storage adapter backed by AsyncStorage. `createJSONStorage` owns the
+// JSON (de)serialization, so the backing storage must be a *string* storage —
+// AsyncStorage already is one. (The previous hand-rolled adapter parsed inside
+// the string-storage layer, which only type-checked because JSON.parse returns
+// `any`; it was the wrong shape for createJSONStorage.)
+export const asyncStorage = createJSONStorage<WeatherLocation[]>(() => AsyncStorage);

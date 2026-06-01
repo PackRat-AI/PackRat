@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api-client",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@elysiajs/eden": "catalog:",
-    "@packrat/guards": "workspace:*"
+    "@packrat/guards": "workspace:*",
+    "@packrat/utils": "workspace:*"
   },
   "devDependencies": {
     "@packrat/api": "workspace:*",

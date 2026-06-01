@@ -1,5 +1,6 @@
 'use client';
 import { webEnv } from '@packrat/env/web';
+import { safeJsonStringify } from '@packrat/utils';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
@@ -14,7 +15,7 @@ function useLoginMutation() {
       const res = await fetch(`${API_BASE}/api/auth/sign-in/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: safeJsonStringify(body),
       });
       if (!res.ok) throw new Error('Login failed');
       return res.json() as Promise<{ token?: string; user?: unknown }>;
@@ -34,7 +35,7 @@ function useRegisterMutation() {
       const res = await fetch(`${API_BASE}/api/auth/sign-up/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: body.email, password: body.password, name }),
+        body: safeJsonStringify({ email: body.email, password: body.password, name }),
       });
       if (!res.ok) throw new Error('Registration failed');
       return res.json();
