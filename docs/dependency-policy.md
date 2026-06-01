@@ -26,7 +26,8 @@ How PackRat decides where a shared dependency version lives. Three primitives, t
 Each surviving root override and why it's load-bearing:
 
 - **`react`** — React must resolve to a single copy across React Native, the web apps, and admin. `react-dom`, `react-native`, and essentially every UI library pull `react` transitively; two copies produce "invalid hook call" failures. The override forces one version across all those transitive requirers — a job `catalog:` (direct declarations only) cannot do. Removable once a single transitive `react` is guaranteed without forcing.
-- **`@packrat-ai/nativewindui`** — pins the fork prerelease `2.0.3-2` over whatever upstream resolution would otherwise pick. Forcing our fork build across the tree is a legitimate escape-hatch use. Removable when the fork merges upstream or we move off the fork.
+
+`@packrat-ai/nativewindui` previously needed an override to force its fork prerelease (`2.0.3-2`); once upstream published `2.0.6`, `packages/ui` pinned that directly and the override was removed.
 
 The block below is the **authoritative, machine-checked** form of the registry. The `check:overrides` lint parses the single fenced ```json block that follows this heading. Contract: keys are the exact package names that appear in root `overrides`; each value has non-empty `reason` and `removeWhen` string fields. Keep this block in sync with the root `overrides` block — adding an override without a matching entry here (or vice versa) fails the lint.
 
@@ -35,10 +36,6 @@ The block below is the **authoritative, machine-checked** form of the registry. 
   "react": {
     "reason": "Unifies the many transitive react copies (react-dom, react-native, every UI library) into one version; two copies cause invalid-hook-call failures. catalog: governs direct declarations only, so it cannot force the transitive requirers.",
     "removeWhen": "A single transitive react version is guaranteed across RN + web + admin without forcing."
-  },
-  "@packrat-ai/nativewindui": {
-    "reason": "Pins the fork prerelease 2.0.3-2 over upstream resolution; forcing our fork build across the tree is a legitimate override use.",
-    "removeWhen": "The fork merges upstream or we migrate off the fork."
   }
 }
 ```
