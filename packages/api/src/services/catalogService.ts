@@ -511,8 +511,30 @@ export class CatalogService {
     const batchSize = batch.messages.length;
     console.log(`Processing batch: ${batchSize} items`);
 
+    // Project only the fields getEmbeddingText reads. Drops embedding (null
+    // here anyway — these are items being backfilled), plus every scalar the
+    // helper doesn't touch (price, ratingValue, availability, seller,
+    // productSku, currency, condition, reviewCount, images, links, weight,
+    // weightUnit, productUrl, sku, timestamps). The fat JSONB cols (reviews,
+    // qas, faqs, variants, techs) ARE pulled because getEmbeddingText uses
+    // them — that's unavoidable for embedding regen.
     const itemsToEmbed = await this.db
-      .select()
+      .select({
+        id: catalogItems.id,
+        name: catalogItems.name,
+        description: catalogItems.description,
+        brand: catalogItems.brand,
+        model: catalogItems.model,
+        categories: catalogItems.categories,
+        variants: catalogItems.variants,
+        techs: catalogItems.techs,
+        color: catalogItems.color,
+        size: catalogItems.size,
+        material: catalogItems.material,
+        reviews: catalogItems.reviews,
+        qas: catalogItems.qas,
+        faqs: catalogItems.faqs,
+      })
       .from(catalogItems)
       .where(
         inArray(
