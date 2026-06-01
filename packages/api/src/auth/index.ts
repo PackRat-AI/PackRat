@@ -204,7 +204,12 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     trustedOrigins: [
       env.BETTER_AUTH_URL,
       'packrat://',
-      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
+      // Only trust localhost in development — never in production. The *.localhost
+      // patterns cover the portless dev proxy's per-worktree hosts
+      // (https://<worktree>.<app>.localhost, with or without a :port).
+      ...(env.ENVIRONMENT === 'development'
+        ? ['http://localhost:*', 'https://*.localhost', 'https://*.localhost:*']
+        : []),
     ],
   });
 
