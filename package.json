@@ -22,7 +22,7 @@
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
     "check-types": "bun scripts/check-types.ts",
-    "check-types:packages": "turbo run check-types",
+    "check-types:packages": "turbo run check-types --filter='./apps/*' --filter='./packages/*'",
     "check-types:tsgo": "bun scripts/check-types.ts --tsgo",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",

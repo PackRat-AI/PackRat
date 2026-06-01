@@ -2,7 +2,13 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalEnv": ["NODE_ENV", "CI", "NEXT_PUBLIC_*", "EXPO_PUBLIC_*", "APP_VARIANT"],
-  "globalDependencies": ["tsconfig.json", "biome.json", "bunfig.toml", ".npmrc"],
+  "globalDependencies": [
+    "tsconfig.json",
+    "biome.json",
+    "bunfig.toml",
+    ".npmrc",
+    "packages/typescript-config/**"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -10,8 +16,7 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "out/**"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"],
-      "inputs": ["$TURBO_DEFAULT$", "../../tsconfig.json", "../../packages/typescript-config/**"]
+      "dependsOn": ["^check-types"]
     },
     "test": {
       "dependsOn": ["^build"],
