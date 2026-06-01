@@ -41,16 +41,11 @@ cd apps/landing && bun dev  # Landing dev server
 bun lint              # Biome check --write (auto-fix)
 bun format            # Biome format --write
 bun check             # Biome check (no auto-fix, CI mode)
-bun check-types       # tsc --noEmit at root (single pass over whole graph)
-bun check-types:packages  # turbo run check-types (per-package, parallel)
+bun check-types       # tsc --noEmit
 
 # Testing
-bun test              # turbo run test — all unit tests in parallel
-bun test:api:unit     # API unit tests only (Vitest + Cloudflare pool)
-bun test:expo         # Expo tests only (Vitest)
-
-# Build
-bun build             # turbo run build — all Next.js apps in dep order
+bun test:api:unit     # API unit tests (Vitest + Cloudflare pool)
+bun test:expo         # Expo tests (Vitest)
 
 # Dependencies
 bun install           # Install all workspaces (takes 120s+, never cancel)
@@ -61,72 +56,6 @@ bun fix:deps          # manypkg auto-fix dependency issues
 bun bump              # Bump monorepo version
 ```
 
-## Turborepo
-
-Task orchestration via `turbo.json`. Handles parallel execution and local caching — no remote cache configured.
-
-**Defined tasks:** `build`, `check-types`, `test`, `test:unit:coverage`, `test:coverage`, `lint`, `dev`, `deploy`
-
-**Dependency ordering** (`dependsOn: ["^<task>"]`): turbo runs a dependency's task before the dependent app's task, but only when both workspaces define that task. e.g. `turbo run check-types` orders `@packrat/web-ui` before the Next.js apps because both define `check-types`; `turbo run build` orders builds by dependency but skips packages without a `build` script.
-
-**Type checking — two paths, both should pass:**
-- `bun check-types` — root `tsc --noEmit` over the whole graph using the root `tsconfig.json`. Single pass, comprehensive, picks up every file matched by the root include globs.
-- `bun check-types:packages` (alias for `turbo run check-types`) — runs each workspace's own `check-types` script in parallel. Each workspace uses its own `tsconfig.json` (which should extend `../../tsconfig.json`) so per-package strictness matches root. If one passes and the other doesn't, the per-package tsconfig has drifted — fix the tsconfig, not the code.
-
-**Filtering** — run tasks for a subset of packages:
-```bash
-bun turbo run test --filter=@packrat/api          # one package
-bun turbo run test --filter=@packrat/api...       # package + its dependents
-bun turbo run check-types --filter=@packrat/api   # one package only
-```
-
-We intentionally do not use `--affected`. In this monorepo many things are tied together via shared types and runtime imports that turbo's dependency graph can't always see; running the full check is cheap with turbo's local cache and gives us a guarantee that affected analysis can't.
-
-**What runs through turbo vs direct:**
-- `expo start`, `eas build`, EAS submit — run directly (EAS handles its own orchestration)
-- `wrangler dev` / `wrangler deploy` — run directly or via `turbo run deploy --filter=@packrat/api`
-- Biome (`lint`, `format`, `check`) — root-level, run directly (single config, no per-package scripts)
-
-### Known limitation: `@packrat/mcp` skipped by per-package check
-
-`packages/mcp`'s check-types is renamed to `disabled-check-types` in its
-`package.json` — turbo skips it but the script stays visible (and runnable
-manually). Strict `tsc --noEmit` over mcp's source OOMs (>12 GB heap) because
-the combination of ~50 `McpServer.registerTool` calls with zod input schemas
-× Eden Treaty's full `App` type chained through `agent.api.X.Y.Z()` ×
-`--strict` null analysis is exponential.
-
-Other api-client consumers (admin, expo, guides, cli) compile fine — they each
-have well under 10 Treaty calls and no `registerTool` wrapper. mcp is the only
-workspace that crosses the threshold.
-
-Follow-up paths (in order of preference):
-1. **Split `App` into domain apps** (`UserApp`, `AdminApp`, `CatalogApp`, …)
-   so each mcp tool file consumes only its domain's Treaty client. Cleanest
-   architecturally; requires changing api's route mounting to expose typed
-   sub-apps. Side benefit: api-client consumers can opt into smaller surfaces.
-2. **TypeScript project references** — mcp loads pre-built `.d.ts` from
-   `@packrat/api-client` instead of source. Requires `composite: true` across
-   workspaces and `tsc --build`. Touches every workspace's tsconfig and the
-   turbo build pipeline.
-3. **Narrow client opt-in** — export a `NarrowApiClient` variant of the api-
-   client that exposes the same traversal/verb shape but with `unknown` data
-   per response. mcp opts in via `createNarrowApiClient(...)`. Loses per-
-   endpoint request/response inference; tool handlers must compensate with
-   zod schemas at the call site (which they already declare for MCP input).
-
-Things that DID NOT work (don't try these again):
-- Adding `Promise<unknown>` to `call()` instead of generic `Promise<TreatyResponse<T>>`.
-- Replacing `McpClients` typing with a narrow interface at the McpClients level —
-  doesn't help because the actual deep type computation happens at each
-  `agent.api.X.Y.Z()` call site in source files.
-- Extracting tool handlers into separate functions (kept the same
-  AgentContext-typed api param) — the per-call-site Treaty inference still
-  happens inside each handler body.
-
-mcp continues to be type-checked at deploy time by `wrangler deploy` (and at
-test time by `bun test:mcp`). The skip only affects the per-package CI gate.
-
 ## Code Style
 
 Enforced by **Biome 2.0** via lefthook pre-commit hook:
@@ -135,44 +64,6 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - Alphabetical imports (Biome auto-sorts)
 - No `any` — use proper TypeScript types or `unknown`
 - Strict null checks enabled, no unchecked indexed access
-
-## Commit Conventions
-
-Use **[gitmoji](https://gitmoji.dev/)** for commit messages. Format: `<emoji> <type>(<scope>): <description>` — the gitmoji replaces or augments the conventional-commit type prefix. Pick the emoji whose meaning best matches the change.
-
-```
-✨ feat(api): add weather forecast endpoint
-🐛 fix(expo): correct pack template sort order
-♻️  refactor(api): extract validation into shared module
-📝 docs: document turborepo pipeline
-🚀 chore(ci): cache turbo locally per workspace
-✅ test(api): cover queue batching edge cases
-🔧 chore(config): bump biome to 2.1
-🎨 style: format with biome
-⚡️ perf(expo): memoize pack template list
-🔥 chore: remove deprecated weather util
-🚨 fix(api): resolve biome warnings
-🔒 fix(api): patch SSRF in external fetch
-⬆️  chore(deps): bump next to 16.2.4
-🚧 wip(expo): trail conditions submission
-```
-
-Common ones used in this repo:
-- ✨ `:sparkles:` — new feature
-- 🐛 `:bug:` — bug fix
-- ♻️ `:recycle:` — refactor with no behavior change
-- 📝 `:memo:` — docs
-- 🚀 `:rocket:` — deploy / CI / build infra
-- ✅ `:white_check_mark:` — tests
-- 🔧 `:wrench:` — config files
-- ⚡️ `:zap:` — perf
-- 🔥 `:fire:` — remove code or files
-- 🚨 `:rotating_light:` — fix linter/compiler warnings
-- 🔒 `:lock:` — fix security issue
-- ⬆️ `:arrow_up:` — upgrade dependency
-- 🚧 `:construction:` — work in progress
-
-Full reference at <https://gitmoji.dev/>. The Biome pre-commit hook does not enforce gitmoji — convention is honor-system, applied on every commit including dependabot and Claude-generated.
 
 ## Conventions
 

@@ -52,6 +52,4 @@ apps/guides/public/og/
 
 # Git worktrees
 .worktrees/
-
-# Turborepo cache
-.turbo/
+.worktrees

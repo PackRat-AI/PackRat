@@ -10,9 +10,5 @@
     "check:route-schemas": "bun ./src/check-route-schemas.ts",
     "check:route-schemas:strict": "bun ./src/check-route-schemas.ts --strict",
     "check-types": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
   }
 }

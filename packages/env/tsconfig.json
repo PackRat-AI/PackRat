@@ -1,11 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@packrat/env": ["src/index.ts"],
-      "@packrat/env/*": ["src/*"]
-    }
-  },
-  "include": ["src/**/*.ts", "scripts/**/*.ts"]
+  "extends": "@packrat/typescript-config/base.json",
+  "include": ["src"]
 }

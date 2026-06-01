@@ -339,8 +339,8 @@ export class R2BucketService {
         blob: async () => {
           assertStreamNotConsumed();
           const data = await consumeStream();
-          // Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer).
-          return new Blob([data.buffer as ArrayBuffer]);
+          // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
+          return new Blob([data.buffer as ArrayBuffer]); // safe-cast: Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer)
         },
       };
 

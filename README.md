@@ -296,10 +296,6 @@ For GitHub Actions and other CI platforms:
 
 > **Note**: The default `GITHUB_TOKEN` provided by GitHub Actions does not have access to packages in other repositories, even within the same organization. A custom PAT is required.
 
-> **Tip**: Type checking runs two ways — root `bun check-types` (single tsc pass over the whole
-> graph) and `bun check-types:packages` (per-workspace tsc via Turborepo, run in parallel). Both
-> should pass; if they disagree, the per-package tsconfig has drifted from the root.
-
 ### Environment Setup
 
 1. Clone the repository:
@@ -455,19 +451,14 @@ bun install
 PackRat uses modern tools for code quality and consistency:
 
 ```bash
-# Build/test across workspaces with Turborepo (local cache makes reruns fast)
-bun build
-bun test
-
 # Format all code
 bun format
 
 # Lint and fix issues
 bun lint
 
-# Type checking — two paths, both should pass
-bun check-types           # root tsc, single pass over the whole graph
-bun check-types:packages  # per-workspace tsc via turbo (parallel)
+# Type checking
+bun check-types
 
 # Check dependency consistency
 bun check:deps
