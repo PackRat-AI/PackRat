@@ -136,7 +136,8 @@ const ITEMS: SeedItem[] = [
   },
 ];
 
-async function embedAll(values: string[], openAiKey: string): Promise<number[][]> {
+async function embedAll(opts: { values: string[]; openAiKey: string }): Promise<number[][]> {
+  const { values, openAiKey } = opts;
   const res = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
@@ -181,10 +182,10 @@ async function seedCatalog() {
     }
 
     console.log(`Generating ${newItems.length} embeddings via OpenAI...`);
-    const embeddings = await embedAll(
-      newItems.map((i) => `${i.name}. ${i.description}`),
+    const embeddings = await embedAll({
+      values: newItems.map((i) => `${i.name}. ${i.description}`),
       openAiKey,
-    );
+    });
 
     for (let i = 0; i < newItems.length; i++) {
       const item = newItems[i];
