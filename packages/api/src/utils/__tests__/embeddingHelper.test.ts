@@ -285,7 +285,7 @@ describe('embeddingHelper', () => {
         name: 'Pants',
         variants: [{ attribute: 'Color', values: 'Black' as unknown as string[] }],
       };
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
       expect(result).toContain('Color: Black');
     });
 
@@ -294,7 +294,7 @@ describe('embeddingHelper', () => {
       const existingItem = {
         variants: [{ attribute: 'Size', values: 'Large' as unknown as string[] }],
       };
-      const result = getEmbeddingText(item, existingItem);
+      const result = getEmbeddingText({ item, existingItem });
       expect(result).toContain('Size: Large');
     });
   });
