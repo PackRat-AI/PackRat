@@ -127,7 +127,7 @@ export function TripDetailScreen() {
             <Button
               variant="plain"
               size="icon"
-              testID={testIds.trips.editBtn}
+              testID={testIds.trips.inlineEditBtn}
               onPress={() => router.push(`/trip/${id}/edit`)}
             >
               <Icon
@@ -140,7 +140,7 @@ export function TripDetailScreen() {
             <Button
               variant="plain"
               size="icon"
-              testID={testIds.trips.deleteBtn}
+              testID={testIds.trips.inlineDeleteBtn}
               onPress={handleDeleteTrip}
             >
               <Icon

@@ -118,7 +118,7 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
 test('trips tab loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/trips`);
-  await expect(page.getByText('Create New Trip')).toBeVisible();
+  await expect(page.getByTestId(testIds.trips.createBtn)).toBeVisible();
 });
 
 test('create a trip with dates', async ({ authedPage: page }) => {

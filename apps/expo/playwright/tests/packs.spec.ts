@@ -117,16 +117,7 @@ test.describe('Pack CRUD', () => {
     // Wait for the store to load and the owner check to resolve so header buttons appear
     await page.waitForLoadState('networkidle');
 
-    // Accept any browser-native confirm/alert dialogs before triggering delete.
-    // Web uses the NativeWindUI DOM modal below.
     page.on('dialog', (dialog) => dialog.accept());
-
-    const deleteButton = page.getByTestId(testIds.packs.deleteBtn);
-    await deleteButton.waitFor({ timeout: 15_000 });
-    await deleteButton.click();
-
-    const deleteConfirmBtn = page.getByText('Delete', { exact: true });
-    await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 10_000 });
 
     const deleteSyncPromise = page.waitForResponse(
       (r) =>
@@ -135,7 +126,10 @@ test.describe('Pack CRUD', () => {
       { timeout: 20_000 },
     );
 
-    await deleteConfirmBtn.click();
+    const deleteButton = page.getByTestId(testIds.packs.deleteBtn);
+    await deleteButton.waitFor({ timeout: 15_000 });
+    await deleteButton.click();
+
     const response = await deleteSyncPromise;
     expect(response.ok()).toBeTruthy();
 

@@ -42,6 +42,7 @@ export const testIds = Object.freeze({
     descriptionInputContainer: 'packs:description-input-container',
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
+    deleteConfirmBtn: 'packs:delete-confirm',
     editBtn: 'packs:edit',
     addItemBtn: 'add-item-button', // keep Maestro value
     askAIBtn: 'ask-ai-button', // keep Maestro value
@@ -84,7 +85,10 @@ export const testIds = Object.freeze({
     descriptionInputContainer: 'trips:description-input-container',
     submitBtn: 'submit-trip-button', // keep Maestro value
     deleteBtn: 'trips:delete',
+    deleteConfirmBtn: 'trips:delete-confirm',
     editBtn: 'trips:edit',
+    inlineDeleteBtn: 'trips:inline-delete',
+    inlineEditBtn: 'trips:inline-edit',
     datesSection: 'trips:dates-section',
     startDateBtn: 'trips:start-date-btn',
     endDateBtn: 'trips:end-date-btn',
