@@ -33,7 +33,7 @@ const queue = {
 
 const env = {
   ...Bun.env,
-  NODE_ENV: nodeEnv.NODE_ENV === 'development' ? 'test' : nodeEnv.NODE_ENV,
+  NODE_ENV: 'test',
   BETTER_AUTH_URL: nodeEnv.BETTER_AUTH_URL ?? `http://localhost:${port}`,
   BETTER_AUTH_SECRET: nodeEnv.BETTER_AUTH_SECRET ?? 'e2e-better-auth-secret-at-least-32-chars',
   CF_VERSION_METADATA: { id: 'e2e-local' },

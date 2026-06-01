@@ -111,7 +111,7 @@ jobs:
           AI_PROVIDER=openai
           OPENAI_API_KEY=sk-e2e-stub-not-used-in-web-e2e
           GOOGLE_GENERATIVE_AI_API_KEY=e2e-stub-not-used
-          PERPLEXITY_API_KEY=e2e-perplexity-stub-not-used-in-web-e2e
+          PERPLEXITY_API_KEY=pplx-e2e-stub-not-used-in-web-e2e
           GOOGLE_CLIENT_ID=e2e-google-client-id
           GOOGLE_CLIENT_SECRET=e2e-google-client-secret
           APPLE_CLIENT_ID=com.packratai.e2e
