@@ -64,9 +64,14 @@ export function PackSelectionScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={['bottom']}
+      testID={testIds.catalog.packSelectionScreen}
+    >
       <View className="border-b border-border bg-background px-4 pb-2 pt-3">
         <SearchInput
+          testID={testIds.catalog.packSelectionSearch}
           textContentType="none"
           autoComplete="off"
           value={searchQuery}

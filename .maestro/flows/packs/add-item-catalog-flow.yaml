@@ -55,13 +55,13 @@ appId: ${APP_ID}
 
       # Assert pack picker shows packs
       - assertVisible:
-          text: "ADDING"
+          id: "catalog:pack-selection-screen"
 
       # Filter the picker to the pack created earlier in this run. The picker
       # list can contain stale E2E packs from prior runs, and nested scrolling is
       # unreliable on Android physical devices.
       - tapOn:
-          text: "Search.*"
+          id: "catalog:pack-selection-search"
       - inputText: "${PACK_NAME}"
       - hideKeyboard
       - extendedWaitUntil:

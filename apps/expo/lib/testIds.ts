@@ -90,6 +90,8 @@ export const testIds = Object.freeze({
     searchInput: 'catalog:search-input',
     totalItemsCount: 'catalog:total-items-count',
     addToPackBtn: 'add-to-pack-button', // keep Maestro value
+    packSelectionScreen: 'catalog:pack-selection-screen',
+    packSelectionSearch: 'catalog:pack-selection-search',
     viewRetailerBtn: 'view-retailer-button', // keep Maestro value
     packOption: (id: string | number) => `catalog:pack-option-${id}`,
     item: (id: string | number) => `catalog:item-${id}`,
