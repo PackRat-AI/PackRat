@@ -1,0 +1,32 @@
+id: no-index-zero-tsx
+snapshots:
+  const C = () => <A v={locations[0]} />:
+    labels:
+    - source: locations[0]
+      style: primary
+      start: 22
+      end: 34
+    - source: locations
+      style: secondary
+      start: 22
+      end: 31
+  const D = () => <A v={results[0]} />:
+    labels:
+    - source: results[0]
+      style: primary
+      start: 22
+      end: 32
+    - source: results
+      style: secondary
+      start: 22
+      end: 29
+  const E = () => <A v={items[2]} />:
+    labels:
+    - source: items[2]
+      style: primary
+      start: 22
+      end: 30
+    - source: items
+      style: secondary
+      start: 22
+      end: 27

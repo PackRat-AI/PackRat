@@ -43,8 +43,18 @@ const EXCLUDED_FILES = new Set([
   'apps/trails/scripts/generate-og-images.ts',
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
+  // Cloudflare-runtime stub: its abstract surface (WorkflowEntrypoint
+  // constructor, run) deliberately mirrors the `cloudflare:workers` module's
+  // positional (ctx, env) / (event, step) signatures — not ours to redesign.
+  'packages/api/src/__test-stubs__/cloudflare-workers.ts',
+  // Periodic retention sweep whose entry takes the Cloudflare `env` binding
+  // positionally (as every Worker/cron/workflow handler does) plus an options
+  // bag; the env-first shape is imposed by the runtime invocation contract.
+  'packages/api/src/services/retention/invalidLogRetention.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
+// `run` is the Cloudflare Workflows entrypoint method — its (event, step)
+// signature is mandated by WorkflowEntrypoint, not ours to redesign.
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'run']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'keyExtractor',
