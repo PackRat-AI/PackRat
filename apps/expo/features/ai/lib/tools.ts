@@ -11,6 +11,7 @@
  */
 
 import { isString } from '@packrat/guards';
+import { first } from '@packrat/utils';
 import * as Sentry from '@sentry/react-native';
 import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
@@ -133,11 +134,11 @@ export function createLocalTools() {
           if (!results.length) {
             return { success: false, error: `No location found for "${location}"` };
           }
-          const first = results[0];
-          if (!first) {
+          const firstResult = first(results);
+          if (!firstResult) {
             return { success: false, error: `No location found for "${location}"` };
           }
-          const weatherData = await getWeatherData(first.id);
+          const weatherData = await getWeatherData(firstResult.id);
           return { success: true, data: formatWeatherData(weatherData) };
         } catch (error) {
           return {

@@ -54,3 +54,35 @@ are not primitive single-type assertions and are naturally excluded by the patte
 `ignores` scope as the typeof rules (guards/utils/tooling/test files). `severity: warning`
 because ~63 primitive casts already exist (mostly `apps/expo`); burn the backlog down, then
 promote to `error`.
+
+## no-index-zero (new) → `no-index-zero*.yml` (+ `-tsx` twin)
+
+Not part of parity (no old script). `@packrat/utils` now re-exports radashi's
+`first(array, default?)` / `last(array, default?)`; this rule nudges authors away
+from raw `arr[0]` toward `first(arr)` for clearer intent.
+
+**This is a STYLE nudge, not a safety fix.** Under the repo's `noUncheckedIndexedAccess`,
+`arr[0]` is already typed `T | undefined`, so it is type-safe — `first(arr)` is the same
+type, just more legible. Hence `severity: warning` (burn-down, never CI-blocking), matching
+`no-primitive-cast`'s posture.
+
+Rule shape: `pattern: $ARR[0]` with `has: {field: object, kind: identifier}`. The
+`kind: identifier` constraint on the `object` field of the `subscript_expression` keeps the
+rule deliberately NARROW — it flags only a bare identifier indexed at `0`:
+
+| Shape | Flagged? | Why |
+|---|---|---|
+| `arr[0]` | yes | object is an `identifier` |
+| `getThing()[0]` | no | object is a `call_expression` |
+| `a.b.c[0]` | no | object is a `member_expression` |
+| `re.match(s)[0]` | no | object is a `call_expression` |
+| `Object.entries(x)[0]` | no | object is a `call_expression` |
+| `arr[1]` / `arr[2]` / `arr[i]` | no | literal index `0` only |
+
+Tuple-typed identifiers (e.g. a `[lat, lng]` or `useState`-style tuple) can't be detected
+statically, so some noise on those is accepted — the `message` notes that genuine
+tuple/fixed-index access is fine and can be annotated with `// allow-index:`. Same `ignores`
+scope as the typeof rules; `packages/utils` (the home of `first`/`last`) is exempt. No autofix
+(`first` requires an import the rule can't insert). The `.tsx` twin covers `.tsx` app code
+(`apps/expo`, `apps/trails`, `apps/guides`, `apps/landing`), which the `typescript` parser
+does not match.

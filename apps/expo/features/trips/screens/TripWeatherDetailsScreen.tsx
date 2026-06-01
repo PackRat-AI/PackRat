@@ -1,4 +1,5 @@
 import type { WeatherAPIForecastResponse } from '@packrat/schemas/weather';
+import { first } from '@packrat/utils';
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import {
@@ -44,9 +45,9 @@ export default function TripWeatherDetailsScreen() {
       setError(null);
 
       const locations = await searchLocationsByCoordinates({ latitude, longitude });
-      const first = locations[0];
-      if (!first) throw new Error('No location found for these coordinates');
-      const weather = await getWeatherData(first.id);
+      const firstLocation = first(locations);
+      if (!firstLocation) throw new Error('No location found for these coordinates');
+      const weather = await getWeatherData(firstLocation.id);
 
       setWeather(weather);
       const weatherCode = weather.current?.condition?.code || 1000;
