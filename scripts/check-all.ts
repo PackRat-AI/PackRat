@@ -79,6 +79,19 @@ const ALL_CHECKS: CheckDef[] = [
     script: join(ROOT, 'scripts', 'lint', 'no-duplicate-guards.ts'),
   },
   {
+    name: 'no-duplicate-utils',
+    script: join(ROOT, 'scripts', 'lint', 'no-duplicate-utils.ts'),
+  },
+  {
+    name: 'check-utils-provenance',
+    script: join(ROOT, 'packages', 'checks', 'src', 'check-utils-provenance.ts'),
+    args: ['--strict'],
+  },
+  {
+    name: 'duplication',
+    script: join(ROOT, 'scripts', 'lint', 'check-duplication.ts'),
+  },
+  {
     name: 'no-unauth-routes',
     script: join(ROOT, 'scripts', 'lint', 'no-unauth-routes.ts'),
   },

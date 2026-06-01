@@ -5,9 +5,12 @@ language: typescript
 # safeJsonStringify($X)). Multi-arg calls (replacer / space) are handled by
 # no-raw-json-stringify-multi.yml, which has no autofix. Import insertion is out
 # of scope here (the orchestrator's codemod handles it).
-severity: warning
-message: "Prefer safeJsonStringify from @packrat/utils over raw JSON.stringify. (Migration tracked separately — this is a warning.)"
+severity: error
+message: "Prefer safeJsonStringify from @packrat/utils over raw JSON.stringify."
 ignores:
+  - "**/test/**"
+  - "**/playwright/**"
+  - "**/e2e/**"
   - "scripts/**"
   - ".github/**"
   - "**/packages/utils/**"

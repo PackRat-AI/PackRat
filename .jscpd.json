@@ -1,0 +1,26 @@
+{
+  "threshold": 7,
+  "minTokens": 50,
+  "absolute": false,
+  "gitignore": true,
+  "reporters": ["console"],
+  "format": ["typescript", "tsx"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/.expo/**",
+    "**/.wrangler/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.gen.ts",
+    "**/src/codegen/**",
+    "**/drizzle/**",
+    "**/coverage/**",
+    "**/ios/**",
+    "**/android/**"
+  ]
+}
