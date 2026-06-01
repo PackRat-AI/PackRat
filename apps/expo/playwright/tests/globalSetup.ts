@@ -39,7 +39,7 @@ async function setup() {
     // Retry transient 5xx — a local wrangler dev worker talking to a raw
     // Postgres (no Hyperdrive) occasionally drops a pooled connection.
     let result = { status: 0, body: '' };
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 8; attempt++) {
       result = await page.evaluate(
         async ({ api, email, password }) => {
           try {
@@ -59,22 +59,23 @@ async function setup() {
         { api: API_URL, email: EMAIL, password: PASSWORD },
       );
       if (result.status === 200) break;
-      if (result.status >= 400 && result.status < 500) break; // real auth failure
-      await page.waitForTimeout(1000);
+      // 429 (rate limit) and 5xx/0 (transient DB/proxy blips on a local stack)
+      // are retryable; other 4xx are real auth failures.
+      const retryable = result.status === 429 || result.status === 0 || result.status >= 500;
+      if (!retryable) break;
+      await page.waitForTimeout(result.status === 429 ? 4000 : 2000);
     }
     if (result.status !== 200) {
       throw new Error(`Better Auth sign-in failed ${result.status}: ${result.body}`);
     }
 
-    // The session lives in the better-auth.session_token cookie set by the
-    // sign-in response. That's all the app needs — on load it calls get-session
-    // with the cookie and hydrates its user store itself (showing a loading
-    // state rather than redirecting). Capture it into the saved storage state.
     const cookies = await context.cookies();
     if (!cookies.some((c) => c.name === 'better-auth.session_token')) {
       throw new Error('Sign-in succeeded but no better-auth.session_token cookie was set');
     }
 
+    // The session cookie is all the app needs — on load it calls get-session
+    // with the cookie and hydrates its user store / isAuthed itself. Save it.
     await context.storageState({ path: STORAGE_STATE });
     console.log(`[globalSetup] Signed in as ${EMAIL}; storage state saved`);
   } finally {

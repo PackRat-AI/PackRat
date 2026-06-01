@@ -1,36 +1,22 @@
 import { expoClient } from '@better-auth/expo/client';
 import { createAuthClient } from 'better-auth/react';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-
-// expo-secure-store ships an empty stub on web (ExpoSecureStore.web.js = {}).
-// Calling setItem/getItem there throws because the underlying sync native
-// methods don't exist. Fall back to localStorage so the auth client works in
-// the browser without crashing before the sign-in HTTP request is made.
-const authStorage =
-  Platform.OS === 'web'
-    ? {
-        setItem: (key: string, value: string) => {
-          if (typeof window !== 'undefined') window.localStorage.setItem(key, value);
-        },
-        getItem: (key: string): string | null => {
-          if (typeof window !== 'undefined') return window.localStorage.getItem(key);
-          return null;
-        },
-      }
-    : {
-        setItem: (key: string, value: string) => SecureStore.setItem(key, value),
-        getItem: (key: string) => SecureStore.getItem(key),
-      };
+import * as SecureStore from 'expo-app/lib/secureStore';
 
 export const authClient = createAuthClient({
   baseURL: getApiBaseUrl(),
+  // Send the Better Auth session cookie on cross-origin requests (the web app is
+  // served from a different origin than the API in dev/e2e). Without this,
+  // getSession() omits the cookie, returns null, and the app never becomes
+  // authenticated on web. Harmless on native (bearer token via expoClient).
+  fetchOptions: { credentials: 'include' },
   plugins: [
     expoClient({
       scheme: 'packrat',
       storagePrefix: 'packrat',
-      storage: authStorage,
+      // secureStore wraps expo-secure-store; its web variant backs to
+      // localStorage so the auth client works in the browser.
+      storage: { setItem: SecureStore.setItem, getItem: SecureStore.getItem },
     }),
   ],
 });

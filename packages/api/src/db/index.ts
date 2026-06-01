@@ -27,13 +27,22 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
   if (isStandardPostgresUrl(url)) {
     let pool = pgPools.get(url);
     if (!pool) {
+      // Local dev (`wrangler dev` against a raw Postgres, no Hyperdrive) runs in
+      // miniflare/workerd, which silently drops pooled TCP sockets between
+      // requests — reusing one then fails with "proxy request failed, cannot
+      // connect". Recycle the connection after every use so each request opens a
+      // fresh socket. Production fronts Postgres with Hyperdrive (stable pooling)
+      // and Neon uses the serverless driver, so this only affects local dev.
+      const isLocalPostgres = url.includes('localhost') || url.includes('127.0.0.1');
       const newPool = new Pool({
         connectionString: url,
-        max: 5,
+        max: isLocalPostgres ? 1 : 5,
         // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
         // which is not supported in the Cloudflare Workers runtime (miniflare).
         idleTimeoutMillis: 0,
         connectionTimeoutMillis: 10000,
+        keepAlive: true,
+        ...(isLocalPostgres ? { maxUses: 1 } : {}),
       });
       newPool.on('error', () => {
         pgPools.delete(url);
