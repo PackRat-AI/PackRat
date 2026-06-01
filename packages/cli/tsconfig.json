@@ -16,6 +16,10 @@
       "@packrat/guards/*": ["../guards/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "../../packages/typescript-config/cloudflare-types.d.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

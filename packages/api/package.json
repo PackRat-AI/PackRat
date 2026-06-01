@@ -9,8 +9,14 @@
       "default": "./src/index.ts"
     },
     "./*": {
-      "types": "./src/*.ts",
-      "default": "./src/*.ts"
+      "types": [
+        "./src/*.ts",
+        "./src/*/index.ts"
+      ],
+      "default": [
+        "./src/*.ts",
+        "./src/*/index.ts"
+      ]
     }
   },
   "main": "./src/index.ts",
