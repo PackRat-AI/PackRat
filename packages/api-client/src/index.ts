@@ -105,7 +105,10 @@ export function createApiClient(config: ApiClientConfig) {
       token: string | null;
       base: RequestInfo | URL;
     }): [RequestInfo | URL, RequestInit | undefined] => {
-      if (!token) return [base, init];
+      // credentials:'include' lets the browser send the Better Auth session
+      // cookie on the web build, where the bearer token lives in an HttpOnly
+      // cookie that JS can't read. Harmless on native (bearer header is used).
+      if (!token) return [base, { ...init, credentials: 'include' }];
       const headers = new Headers();
       const existing = init?.headers;
       if (existing instanceof Headers) {

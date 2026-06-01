@@ -22,26 +22,27 @@ import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
 
+// Origins allowed to make cross-origin (credentialed) requests to the API.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/(www\.)?packrat\.world$/,
+  /^https:\/\/[\w-]+\.packrat\.world$/,
+  /^https:\/\/[\w-]+\.packratai\.com$/,
+  /^https?:\/\/[\w-]+\.workers\.dev$/,
+  /^http:\/\/localhost:\d+$/,
+  /^exp:\/\//,
+];
+
+function isAllowedOrigin(origin: string | null): origin is string {
+  return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+
 export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(
     cors({
       // Better Auth uses cookies — credentials must be true and origins must
       // be explicit (not wildcard) so the browser sends cookies cross-origin.
       credentials: true,
-      origin: (request) => {
-        const origin = request.headers.get('Origin');
-        if (!origin) return false;
-        // Allow the API base URL and any subdomain of packrat.world
-        const allowed = [
-          /^https:\/\/(www\.)?packrat\.world$/,
-          /^https:\/\/[\w-]+\.packrat\.world$/,
-          /^https:\/\/[\w-]+\.packratai\.com$/,
-          /^https?:\/\/[\w-]+\.workers\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-          /^exp:\/\//,
-        ];
-        return allowed.some((re) => re.test(origin));
-      },
+      origin: (request) => isAllowedOrigin(request.headers.get('Origin')),
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
@@ -85,6 +86,19 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .get('/health', () => ({ status: 'ok' as const }), {
     detail: { summary: 'Health status', tags: ['Meta'] },
   })
+  // Better Auth handles all /api/auth/** requests. Routing it through Elysia
+  // (rather than dispatching before Elysia) means the `cors` plugin above
+  // applies its credentialed-CORS policy and OPTIONS preflight to auth routes
+  // too. `auth` is resolved per-request because it depends on the Cloudflare
+  // env bindings, which are only available at request time.
+  .all(
+    '/api/auth/*',
+    async ({ request }) => {
+      const auth = await getAuth(getEnv());
+      return auth.handler(request);
+    },
+    { parse: 'none', detail: { hide: true } },
+  )
   .use(routes)
   .compile();
 
@@ -109,14 +123,6 @@ const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
-
-    // Route /api/auth/** to Better Auth before Elysia sees it.
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/auth')) {
-      const validatedEnv = getEnv();
-      const auth = await getAuth(validatedEnv);
-      return auth.handler(request);
-    }
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
   },
