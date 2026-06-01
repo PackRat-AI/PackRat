@@ -1,7 +1,7 @@
 ---
 title: "refactor: @packrat/utils facade + two-tier guards + layered duplication enforcement"
 type: refactor
-status: active
+status: completed
 created: 2026-05-31
 origin: in-session brainstorm (not persisted to docs/brainstorms/) — decisions carried forward in Problem Frame + Key Technical Decisions
 depth: deep
