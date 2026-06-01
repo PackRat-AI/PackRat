@@ -1,3 +1,4 @@
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { PortalHost } from '@rn-primitives/portal';
 import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
@@ -12,12 +13,16 @@ import { TanstackProvider } from './TanstackProvider';
  * Web version of Providers.
  * Removes native-only providers:
  *   - KeyboardProvider (react-native-keyboard-controller — no web support)
- *   - ActionSheetProvider (@expo/react-native-action-sheet uses React.Children.only which breaks on web)
  * Keeps:
  *   - BottomSheetModalProvider — @gorhom/bottom-sheet 5.x runs on web via
  *     Reanimated + gesture-handler. Screens like PackDetailScreen render
  *     BottomSheetView inline, which subscribes to BottomSheetModalInternalContext
  *     and throws on web without this provider.
+ *   - ActionSheetProvider — feature code calls useActionSheet() to show item
+ *     more-actions menus. Without the provider the hook returns a no-op
+ *     showActionSheetWithOptions and the menu never appears. The provider's
+ *     CustomActionSheet renders React.Children.only(children), so the
+ *     direct child here MUST be a single element.
  * Metro automatically picks this file over providers/index.tsx for web builds.
  */
 export function Providers({ children }: { children: ReactNode }) {
@@ -27,8 +32,14 @@ export function Providers({ children }: { children: ReactNode }) {
         <TanstackProvider>
           <SafeAreaProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
-              <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
-              <PortalHost />
+              <ActionSheetProvider useCustomActionSheet>
+                <BottomSheetModalProvider>
+                  <>
+                    {children}
+                    <PortalHost />
+                  </>
+                </BottomSheetModalProvider>
+              </ActionSheetProvider>
             </GestureHandlerRootView>
           </SafeAreaProvider>
         </TanstackProvider>
