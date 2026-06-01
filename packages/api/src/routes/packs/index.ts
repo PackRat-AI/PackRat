@@ -49,6 +49,33 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
+type PackItemEmbeddingParams = {
+  value: string;
+  env: ReturnType<typeof getEnv>;
+};
+
+async function generatePackItemEmbedding({
+  value,
+  env,
+}: PackItemEmbeddingParams): Promise<number[] | null> {
+  try {
+    return await generateEmbedding({
+      openAiApiKey: env.OPENAI_API_KEY,
+      value,
+      provider: env.AI_PROVIDER,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: env.CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: env.AI,
+    });
+  } catch (error) {
+    console.warn('pack_items.embedding.fallback', {
+      error: error instanceof Error ? error.message : 'Unknown embedding error',
+    });
+    return null;
+  }
+}
+
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
   .use(adminAuthPlugin)
@@ -668,26 +695,11 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const packId = params.packId;
       const data = body;
-      const {
-        OPENAI_API_KEY,
-        AI_PROVIDER,
-        CLOUDFLARE_ACCOUNT_ID,
-        CLOUDFLARE_AI_GATEWAY_ID,
-        CLOUDFLARE_API_TOKEN,
-        AI,
-      } = getEnv();
+      const env = getEnv();
       const itemId = data.id;
 
       const embeddingText = getEmbeddingText({ item: data });
-      const embedding = await generateEmbedding({
-        openAiApiKey: OPENAI_API_KEY,
-        value: embeddingText,
-        provider: AI_PROVIDER,
-        cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
-        cloudflareAiBinding: AI,
-      });
+      const embedding = await generatePackItemEmbedding({ value: embeddingText, env });
 
       const [newItem] = await db
         .insert(packItems)
@@ -770,14 +782,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
       const data = body;
-      const {
-        OPENAI_API_KEY,
-        AI_PROVIDER,
-        CLOUDFLARE_ACCOUNT_ID,
-        CLOUDFLARE_AI_GATEWAY_ID,
-        CLOUDFLARE_API_TOKEN,
-        AI,
-      } = getEnv();
+      const env = getEnv();
 
       const existingItem = await db.query.packItems.findFirst({
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
@@ -802,15 +807,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if ('deleted' in data) updateData.deleted = data.deleted;
 
       if (newEmbeddingText !== oldEmbeddingText) {
-        updateData.embedding = await generateEmbedding({
-          openAiApiKey: OPENAI_API_KEY,
-          value: newEmbeddingText,
-          provider: AI_PROVIDER,
-          cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-          cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
-          cloudflareAiBinding: AI,
-        });
+        updateData.embedding = await generatePackItemEmbedding({ value: newEmbeddingText, env });
       }
 
       updateData.updatedAt = new Date();
