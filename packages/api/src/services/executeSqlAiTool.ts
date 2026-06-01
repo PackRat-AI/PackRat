@@ -17,8 +17,11 @@ const SQL_JOIN_KEYWORD = /\bjoin\b/g;
 const BYTE_BUDGET_BYTES = 1_048_576; // 1 MB
 
 // JSON.stringify throws on BigInt. Neon's HTTP driver returns Postgres
-// `int8` / `bigint` / `COUNT(*)` results as JS BigInt by default.
-const bigintSafeReplacer = (_key: string, value: unknown) => {
+// `int8` / `bigint` / `COUNT(*)` results as JS BigInt by default. The
+// replacer is inlined at every JSON.stringify call (rather than named) to
+// keep no-owned-max-params happy — the 2-param shape is JSON.stringify's
+// callback contract, not an owned API.
+const serializeBigInt = (value: unknown): string | unknown => {
   const big = toBigInt(value);
   return big !== undefined ? big.toString() : value;
 };
@@ -71,7 +74,7 @@ export async function executeSqlAiTool(params: Params) {
   // Byte-budget check: measure serialized result size and reject when over
   // the cap with an actionable error so the AI agent can re-issue a
   // narrower query.
-  const byteCount = JSON.stringify(rows, bigintSafeReplacer).length;
+  const byteCount = JSON.stringify(rows, (_key, value) => serializeBigInt(value)).length;
   if (byteCount > BYTE_BUDGET_BYTES) {
     return {
       error: `Result exceeds ${BYTE_BUDGET_BYTES.toLocaleString()} byte budget (got ${byteCount.toLocaleString()}). Project specific columns or reduce limit.`,
