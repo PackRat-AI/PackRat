@@ -41,7 +41,8 @@ cd apps/landing && bun dev  # Landing dev server
 bun lint              # Biome check --write (auto-fix)
 bun format            # Biome format --write
 bun check             # Biome check (no auto-fix, CI mode)
-bun check-types       # tsc --noEmit (root — comprehensive, single pass)
+bun check-types       # tsc --noEmit at root (single pass over whole graph)
+bun check-types:packages  # turbo run check-types (per-package, parallel)
 
 # Testing
 bun test              # turbo run test — all unit tests in parallel
@@ -68,13 +69,18 @@ Task orchestration via `turbo.json`. Handles parallel execution and local cachin
 
 **Dependency ordering** (`dependsOn: ["^<task>"]`): turbo runs a dependency's task before the dependent app's task, but only when both workspaces define that task. e.g. `turbo run check-types` orders `@packrat/web-ui` before the Next.js apps because both define `check-types`; `turbo run build` orders builds by dependency but skips packages without a `build` script.
 
+**Type checking — two paths, both should pass:**
+- `bun check-types` — root `tsc --noEmit` over the whole graph using the root `tsconfig.json`. Single pass, comprehensive, picks up every file matched by the root include globs.
+- `bun check-types:packages` (alias for `turbo run check-types`) — runs each workspace's own `check-types` script in parallel. Each workspace uses its own `tsconfig.json` (which should extend `../../tsconfig.json`) so per-package strictness matches root. If one passes and the other doesn't, the per-package tsconfig has drifted — fix the tsconfig, not the code.
+
 **Filtering** — run tasks for a subset of packages:
 ```bash
 bun turbo run test --filter=@packrat/api          # one package
 bun turbo run test --filter=@packrat/api...       # package + its dependents
-bun turbo run check-types --filter=...[HEAD^]     # packages changed in last commit
-bun turbo run check-types --filter=...[origin/development...HEAD]  # PR-affected only
+bun turbo run check-types --filter=@packrat/api   # one package only
 ```
+
+We intentionally do not use `--affected`. In this monorepo many things are tied together via shared types and runtime imports that turbo's dependency graph can't always see; running the full check is cheap with turbo's local cache and gives us a guarantee that affected analysis can't.
 
 **What runs through turbo vs direct:**
 - `expo start`, `eas build`, EAS submit — run directly (EAS handles its own orchestration)
@@ -89,6 +95,44 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - Alphabetical imports (Biome auto-sorts)
 - No `any` — use proper TypeScript types or `unknown`
 - Strict null checks enabled, no unchecked indexed access
+
+## Commit Conventions
+
+Use **[gitmoji](https://gitmoji.dev/)** for commit messages. Format: `<emoji> <type>(<scope>): <description>` — the gitmoji replaces or augments the conventional-commit type prefix. Pick the emoji whose meaning best matches the change.
+
+```
+✨ feat(api): add weather forecast endpoint
+🐛 fix(expo): correct pack template sort order
+♻️  refactor(api): extract validation into shared module
+📝 docs: document turborepo pipeline
+🚀 chore(ci): cache turbo locally per workspace
+✅ test(api): cover queue batching edge cases
+🔧 chore(config): bump biome to 2.1
+🎨 style: format with biome
+⚡️ perf(expo): memoize pack template list
+🔥 chore: remove deprecated weather util
+🚨 fix(api): resolve biome warnings
+🔒 fix(api): patch SSRF in external fetch
+⬆️  chore(deps): bump next to 16.2.4
+🚧 wip(expo): trail conditions submission
+```
+
+Common ones used in this repo:
+- ✨ `:sparkles:` — new feature
+- 🐛 `:bug:` — bug fix
+- ♻️ `:recycle:` — refactor with no behavior change
+- 📝 `:memo:` — docs
+- 🚀 `:rocket:` — deploy / CI / build infra
+- ✅ `:white_check_mark:` — tests
+- 🔧 `:wrench:` — config files
+- ⚡️ `:zap:` — perf
+- 🔥 `:fire:` — remove code or files
+- 🚨 `:rotating_light:` — fix linter/compiler warnings
+- 🔒 `:lock:` — fix security issue
+- ⬆️ `:arrow_up:` — upgrade dependency
+- 🚧 `:construction:` — work in progress
+
+Full reference at <https://gitmoji.dev/>. The Biome pre-commit hook does not enforce gitmoji — convention is honor-system, applied on every commit including dependabot and Claude-generated.
 
 ## Conventions
 

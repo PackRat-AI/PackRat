@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@packrat/guards": ["src/index.ts"],
+      "@packrat/guards/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

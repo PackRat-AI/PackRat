@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+/// <reference types="@cloudflare/workers-types" />
 
 import fs from 'fs';
 import path from 'path';

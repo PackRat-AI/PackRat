@@ -12,7 +12,13 @@
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
   }
 }

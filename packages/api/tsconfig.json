@@ -1,20 +1,24 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ESNext"],
-    "types": ["@cloudflare/workers-types"],
     "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
+    "types": ["@cloudflare/workers-types", "@types/bun"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "esModuleInterop": true,
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
       "@packrat/api/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "scripts/**/*.ts",
+    "migrate.ts",
+    "vitest.config.ts",
+    "vitest.unit.config.ts"
+  ]
 }

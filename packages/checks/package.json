@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check:magic-strings": "bun ./src/check-magic-strings.ts"
+    "check:magic-strings": "bun ./src/check-magic-strings.ts",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "catalog:"
   }
 }

@@ -263,7 +263,7 @@ export class R2BucketService {
         // Check if it's a Node.js stream (like in a local Node environment)
         if ('on' in body && typeof body.on === 'function') {
           const nodeStream = body as Readable;
-          webStream = new globalThis.ReadableStream({
+          webStream = new ReadableStream({
             start(controller) {
               nodeStream.on('data', (chunk) => controller.enqueue(chunk));
               nodeStream.on('end', () => controller.close());
@@ -334,7 +334,7 @@ export class R2BucketService {
         blob: async () => {
           assertStreamNotConsumed();
           const data = await consumeStream();
-          return new globalThis.Blob([data.buffer as ArrayBuffer]);
+          return new Blob([data.buffer as ArrayBuffer]);
         },
       };
 
@@ -557,7 +557,7 @@ export class R2BucketService {
   private async convertBodyToUploadable(
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
   ): Promise<Buffer | Uint8Array | string> {
-    if (value instanceof globalThis.ReadableStream) {
+    if (value instanceof ReadableStream) {
       const reader = value.getReader();
       const chunks: Uint8Array[] = [];
       while (true) {
@@ -576,7 +576,7 @@ export class R2BucketService {
     if (typeof value === 'string') {
       return value;
     }
-    if (value instanceof globalThis.Blob) {
+    if (value instanceof Blob) {
       return new Uint8Array(await value.arrayBuffer());
     }
     throw new Error('Unsupported value type');

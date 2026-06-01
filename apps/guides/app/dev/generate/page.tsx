@@ -158,13 +158,18 @@ export default function GeneratePage() {
         throw new Error('Failed to generate post');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        success: boolean;
+        content?: string;
+        filePath?: string;
+        error?: string;
+      };
 
       if (data.success) {
-        setGeneratedContent(data.content);
+        setGeneratedContent(data.content ?? '');
         toast({
           title: 'Post Generated',
-          description: `Successfully created: ${data.filePath}`,
+          description: `Successfully created: ${data.filePath ?? ''}`,
         });
       } else {
         throw new Error(data.error || 'Unknown error');
@@ -202,9 +207,13 @@ export default function GeneratePage() {
         throw new Error('Failed to generate posts');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        success: boolean;
+        filePaths?: string[];
+        error?: string;
+      };
 
-      if (data.success) {
+      if (data.success && data.filePaths) {
         setGeneratedFiles(data.filePaths);
         toast({
           title: 'Batch Generation Complete',

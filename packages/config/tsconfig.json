@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@packrat/config": ["src/index.ts"],
+      "@packrat/config/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

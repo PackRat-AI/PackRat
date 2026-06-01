@@ -6,9 +6,12 @@ on:
     paths:
       - "package.json"
       - "bun.lock"
+      - "turbo.json"
       - "packages/api/src/**"
       - "packages/api/package.json"
       - "packages/api/vitest.unit.config.ts"
+      - "packages/guards/**"
+      - "packages/env/**"
       - "apps/expo/package.json"
       - "apps/expo/vitest.config.ts"
       - "apps/expo/utils/**"
@@ -20,9 +23,12 @@ on:
     paths:
       - "package.json"
       - "bun.lock"
+      - "turbo.json"
       - "packages/api/src/**"
       - "packages/api/package.json"
       - "packages/api/vitest.unit.config.ts"
+      - "packages/guards/**"
+      - "packages/env/**"
       - "apps/expo/package.json"
       - "apps/expo/vitest.config.ts"
       - "apps/expo/utils/**"
@@ -56,8 +62,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .turbo
-          key: ${{ runner.os }}-turbo-api-${{ github.sha }}
+          key: ${{ runner.os }}-turbo-api-${{ hashFiles('bun.lock', 'turbo.json') }}-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-turbo-api-${{ hashFiles('bun.lock', 'turbo.json') }}-
             ${{ runner.os }}-turbo-api-
 
       - name: Install dependencies
@@ -94,8 +101,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .turbo
-          key: ${{ runner.os }}-turbo-expo-${{ github.sha }}
+          key: ${{ runner.os }}-turbo-expo-${{ hashFiles('bun.lock', 'turbo.json') }}-${{ github.sha }}
           restore-keys: |
+            ${{ runner.os }}-turbo-expo-${{ hashFiles('bun.lock', 'turbo.json') }}-
             ${{ runner.os }}-turbo-expo-
 
       - name: Install dependencies

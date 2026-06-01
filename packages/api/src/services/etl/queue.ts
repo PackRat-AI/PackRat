@@ -12,7 +12,7 @@ export async function queueCatalogETL({
   objectKeys: string[];
   jobId: string;
 }): Promise<string> {
-  const promises: Promise<unknown>[] = [];
+  const promises: ReturnType<typeof queue.sendBatch>[] = [];
 
   const batchSize = 100; // maximum batch size Cloudflare allows
   let batch: { body: CatalogETLMessage }[] = [];
