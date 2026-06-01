@@ -6,6 +6,9 @@ import { embed, embedMany } from 'ai';
 // ── Embedding text normalization ──────────────────────────────────────
 const NEWLINE = /\n/g;
 
+const runtimeNodeEnv = () =>
+  (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
+
 type GenerateEmbeddingBaseParams = {
   openAiApiKey?: string;
   provider: AIProvider;
@@ -29,7 +32,7 @@ export const generateEmbedding = async (
     return null;
   }
 
-  if (process.env.NODE_ENV === 'test') {
+  if (runtimeNodeEnv() === 'test') {
     return null;
   }
 
@@ -61,7 +64,7 @@ export const generateManyEmbeddings = async (
     return [];
   }
 
-  if (process.env.NODE_ENV === 'test') {
+  if (runtimeNodeEnv() === 'test') {
     return cleanValues.map(() => null);
   }
 

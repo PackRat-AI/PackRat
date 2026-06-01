@@ -1,15 +1,15 @@
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { nodeEnv } from '@packrat/env/node';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const apiDir = resolve(scriptDir, '..');
 const repoRoot = resolve(apiDir, '../..');
 
-const e2eDbUrl =
-  process.env.E2E_DB_URL ?? 'postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e';
-const e2eApiUrl = process.env.E2E_API_URL ?? `http://localhost:${process.env.PORT ?? '8787'}`;
-const e2eExpoPublicApiUrl = process.env.E2E_EXPO_PUBLIC_API_URL ?? e2eApiUrl;
-const disableLogBox = process.env.EXPO_PUBLIC_DISABLE_LOGBOX ?? 'true';
+const e2eDbUrl = nodeEnv.E2E_DB_URL ?? 'postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e';
+const e2eApiUrl = nodeEnv.E2E_API_URL ?? `http://localhost:${nodeEnv.PORT ?? '8787'}`;
+const e2eExpoPublicApiUrl = nodeEnv.E2E_EXPO_PUBLIC_API_URL ?? e2eApiUrl;
+const disableLogBox = nodeEnv.EXPO_PUBLIC_DISABLE_LOGBOX ?? 'true';
 const out = join(apiDir, '.dev.vars.e2e');
 
 const candidates = [
@@ -45,10 +45,10 @@ const outputLines = lines.map((line) => {
 });
 
 if (!outputLines.some((line) => line.startsWith('E2E_TEST_EMAIL='))) {
-  outputLines.push('', `E2E_TEST_EMAIL=${process.env.E2E_TEST_EMAIL ?? 'e2e@packrattest.local'}`);
+  outputLines.push('', `E2E_TEST_EMAIL=${nodeEnv.E2E_TEST_EMAIL ?? 'e2e@packrattest.local'}`);
 }
 if (!outputLines.some((line) => line.startsWith('E2E_TEST_PASSWORD='))) {
-  outputLines.push(`E2E_TEST_PASSWORD=${process.env.E2E_TEST_PASSWORD ?? 'E2eTestPass123!'}`);
+  outputLines.push(`E2E_TEST_PASSWORD=${nodeEnv.E2E_TEST_PASSWORD ?? 'E2eTestPass123!'}`);
 }
 if (!outputLines.some((line) => line.startsWith('BETTER_AUTH_URL='))) {
   outputLines.push(`BETTER_AUTH_URL=${e2eApiUrl}`);

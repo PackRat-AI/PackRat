@@ -16,7 +16,7 @@ import { NAV_THEME } from 'expo-app/theme';
 import { useEffect, useRef } from 'react';
 import { LogBox } from 'react-native';
 
-if (__DEV__ && process.env.EXPO_PUBLIC_DISABLE_LOGBOX === 'true') {
+if (__DEV__ && clientEnvs.EXPO_PUBLIC_DISABLE_LOGBOX === 'true') {
   LogBox.ignoreAllLogs(true);
 }
 

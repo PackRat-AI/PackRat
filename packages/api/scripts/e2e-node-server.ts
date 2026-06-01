@@ -1,15 +1,12 @@
 import { join } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
 import { Miniflare } from 'miniflare';
 import worker from '../src/e2e-worker';
 
-const port = Number(process.env.PORT ?? 8787);
-process.env.NODE_ENV ??= 'test';
-process.env.BETTER_AUTH_URL ??= `http://localhost:${port}`;
-process.env.BETTER_AUTH_SECRET ??= 'e2e-better-auth-secret-at-least-32-chars';
+const port = Number(nodeEnv.PORT ?? 8787);
 
 const kvPersist =
-  process.env.E2E_KV_PERSIST_DIR ??
-  join(import.meta.dir, '..', '.wrangler', 'state', 'e2e-auth-kv');
+  nodeEnv.E2E_KV_PERSIST_DIR ?? join(import.meta.dir, '..', '.wrangler', 'state', 'e2e-auth-kv');
 
 const noop = async () => {};
 
@@ -35,7 +32,10 @@ const queue = {
 };
 
 const env = {
-  ...process.env,
+  ...Bun.env,
+  NODE_ENV: nodeEnv.NODE_ENV === 'development' ? 'test' : nodeEnv.NODE_ENV,
+  BETTER_AUTH_URL: nodeEnv.BETTER_AUTH_URL ?? `http://localhost:${port}`,
+  BETTER_AUTH_SECRET: nodeEnv.BETTER_AUTH_SECRET ?? 'e2e-better-auth-secret-at-least-32-chars',
   CF_VERSION_METADATA: { id: 'e2e-local' },
   AUTH_KV: authKv,
   AI: undefined,

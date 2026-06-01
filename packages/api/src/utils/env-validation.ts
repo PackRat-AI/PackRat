@@ -153,8 +153,10 @@ export type Env = ValidatedEnv;
 // Cache for validated envs keyed by the raw env reference.
 const envCache = new WeakMap<object, ValidatedEnv>();
 
-function isTestEnvironment(): boolean {
+function isTestEnvironment(rawEnv?: Record<string, unknown>): boolean {
   return (
+    rawEnv?.NODE_ENV === 'test' ||
+    rawEnv?.VITEST === 'true' ||
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
     (typeof globalThis !== 'undefined' &&
@@ -163,7 +165,7 @@ function isTestEnvironment(): boolean {
 }
 
 function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
-  const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
+  const schema = isTestEnvironment(rawEnv) ? testEnvSchema : apiEnvSchema;
   const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);

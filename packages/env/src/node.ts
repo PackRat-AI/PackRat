@@ -36,6 +36,9 @@ export const nodeEnvSchema = z.object({
   // ── Neon / Postgres (packages/api/migrate.ts, seed.ts) ────────────
   NEON_DATABASE_URL: z.string().url().optional(),
   NEON_DATABASE_URL_READONLY: z.string().url().optional(),
+  NEON_WS_PROXY: z.string().optional(),
+  PACKRAT_PG_POOL_MAX: z.string().regex(/^\d+$/).optional(),
+  PACKRAT_USE_NEON_WSPROXY: z.enum(['true', 'false']).optional(),
 
   // ── OSM trail database (packages/osm-import) ──────────────────────
   // Managed production PostGIS (mirrors OSM_DATABASE_URL in the Worker via Hyperdrive).
@@ -75,6 +78,13 @@ export const nodeEnvSchema = z.object({
   // ── E2E test credentials ──────────────────────────────────────────
   E2E_TEST_EMAIL: z.string().email().optional(),
   E2E_TEST_PASSWORD: z.string().min(1).optional(),
+  E2E_API_URL: z.string().url().optional(),
+  E2E_DB_URL: z.string().url().optional(),
+  E2E_EXPO_PUBLIC_API_URL: z.string().url().optional(),
+  E2E_KV_PERSIST_DIR: z.string().min(1).optional(),
+  EXPO_PUBLIC_DISABLE_LOGBOX: z.enum(['true', 'false']).optional(),
+  BETTER_AUTH_URL: z.string().url().optional(),
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
 });
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
@@ -90,6 +100,9 @@ export const nodeEnv = nodeEnvSchema.parse({
   PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN,
   NEON_DATABASE_URL: process.env.NEON_DATABASE_URL,
   NEON_DATABASE_URL_READONLY: process.env.NEON_DATABASE_URL_READONLY,
+  NEON_WS_PROXY: process.env.NEON_WS_PROXY,
+  PACKRAT_PG_POOL_MAX: process.env.PACKRAT_PG_POOL_MAX,
+  PACKRAT_USE_NEON_WSPROXY: process.env.PACKRAT_USE_NEON_WSPROXY,
   OSM_DATABASE_URL: process.env.OSM_DATABASE_URL,
   OSM_DATABASE_URL_LOCAL: process.env.OSM_DATABASE_URL_LOCAL,
   OSM_CACHE_MB: process.env.OSM_CACHE_MB,
@@ -111,4 +124,11 @@ export const nodeEnv = nodeEnvSchema.parse({
   DEBUG: process.env.DEBUG,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
+  E2E_API_URL: process.env.E2E_API_URL,
+  E2E_DB_URL: process.env.E2E_DB_URL,
+  E2E_EXPO_PUBLIC_API_URL: process.env.E2E_EXPO_PUBLIC_API_URL,
+  E2E_KV_PERSIST_DIR: process.env.E2E_KV_PERSIST_DIR,
+  EXPO_PUBLIC_DISABLE_LOGBOX: process.env.EXPO_PUBLIC_DISABLE_LOGBOX,
+  BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+  BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
 });

@@ -7,6 +7,9 @@ import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
+const runtimeEnv = () =>
+  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+
 const isStandardPostgresUrl = (url: string) => {
   try {
     const u = new URL(url);
@@ -33,12 +36,12 @@ const isStandardPostgresUrl = (url: string) => {
 const pgPools = new Map<string, Pool>();
 
 const getPgPoolMax = () => {
-  const parsed = Number(process.env.PACKRAT_PG_POOL_MAX);
+  const parsed = Number(runtimeEnv().PACKRAT_PG_POOL_MAX);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
 };
 
 const shouldUseNeonWsProxy = (url: string) => {
-  if (process.env.PACKRAT_USE_NEON_WSPROXY === 'true') return true;
+  if (runtimeEnv().PACKRAT_USE_NEON_WSPROXY === 'true') return true;
 
   try {
     const u = new URL(url);
@@ -52,7 +55,7 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
   if (isStandardPostgresUrl(url)) {
     if (shouldUseNeonWsProxy(url)) {
       neonConfig.wsProxy = () =>
-        process.env.NEON_WS_PROXY ?? 'localhost:5434/v1?address=postgres-test:5432';
+        runtimeEnv().NEON_WS_PROXY ?? 'localhost:5434/v1?address=postgres-test:5432';
       neonConfig.useSecureWebSocket = false;
       neonConfig.pipelineConnect = false;
       neonConfig.pipelineTLS = false;
