@@ -170,10 +170,15 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: ${{ env.E2E_API_URL }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
           EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
-        run: bunx expo export -p web --output-dir dist
+        run: |
+          export EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID="${EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:-e2e-google-web-client-id}"
+          export EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID="${EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID:-e2e-google-ios-client-id}"
+          export EXPO_PUBLIC_R2_PUBLIC_URL="${EXPO_PUBLIC_R2_PUBLIC_URL:-https://pub-e2estub.r2.dev}"
+          bunx expo export -p web --output-dir dist
 
       - name: Serve web app (SPA mode, port 8081)
         working-directory: apps/expo
