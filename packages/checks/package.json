@@ -7,7 +7,10 @@
     "check:casts": "bun ./src/check-type-casts.ts",
     "check:casts:strict": "bun ./src/check-type-casts.ts --strict",
     "check:magic-strings": "bun ./src/check-magic-strings.ts",
+    "check:provenance": "bun ./src/check-utils-provenance.ts",
+    "check:provenance:strict": "bun ./src/check-utils-provenance.ts --strict",
     "check:route-schemas": "bun ./src/check-route-schemas.ts",
-    "check:route-schemas:strict": "bun ./src/check-route-schemas.ts --strict"
+    "check:route-schemas:strict": "bun ./src/check-route-schemas.ts --strict",
+    "test": "vitest run"
   }
 }
