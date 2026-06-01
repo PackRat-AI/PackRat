@@ -194,7 +194,12 @@ function isWorkflowEntrypointRun(node: ts.FunctionLikeDeclaration): boolean {
   return cls.heritageClauses.some(
     (clause) =>
       clause.token === ts.SyntaxKind.ExtendsKeyword &&
-      clause.types.some((type) => type.expression.getText().includes('WorkflowEntrypoint')),
+      clause.types.some((type) => {
+        // Exact match (allowing a namespace qualifier like `cf.WorkflowEntrypoint`)
+        // so we don't accidentally exempt `NotWorkflowEntrypoint` / `WorkflowEntrypointStub`.
+        const name = type.expression.getText();
+        return name === 'WorkflowEntrypoint' || name.endsWith('.WorkflowEntrypoint');
+      }),
   );
 }
 
