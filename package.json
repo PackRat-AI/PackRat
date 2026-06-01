@@ -56,7 +56,7 @@
     "web": "bun run --cwd apps/web dev"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.0.3-2",
+    "@packrat-ai/nativewindui": "2.0.6",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-sqlite": "~55.0.15",
