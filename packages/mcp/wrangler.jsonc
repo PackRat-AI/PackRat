@@ -1,6 +1,9 @@
 {
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
   "name": "packrat-mcp",
+  // Pinned so `wrangler dev` (remote mode, forced by Durable Object bindings) selects
+  // the right account in non-interactive agent shells. Account IDs are not secrets.
+  "account_id": "a0e238a64b4bb8d9ca35c30149c26893",
   "main": "src/index.ts",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
