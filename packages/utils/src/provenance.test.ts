@@ -20,26 +20,30 @@ describe('provenance manifest', () => {
   });
 
   it('sources every export from a known lib', () => {
-    const known = new Set([...LIB_PRIORITY, 'destr', 'safe-stable-stringify']);
-    const unknown = manifestNames.filter((name) => !known.has(provenance[name].source));
+    const known = new Set<string>([...LIB_PRIORITY, 'destr', 'safe-stable-stringify']);
+    const unknown = Object.entries(provenance)
+      .filter(([, entry]) => !known.has(entry.source))
+      .map(([name]) => name);
     expect(unknown).toEqual([]);
   });
 
   it('requires a reason when a lower-priority lib is chosen over a higher-priority one', () => {
-    const unjustified = manifestNames.filter((name) => {
-      const entry = provenance[name];
-      if (!isRanked(entry.source) || !entry.alsoIn) return false;
-      const outranked = entry.alsoIn.some(
-        (alt) => isRanked(alt) && rankOf(alt) < rankOf(entry.source),
-      );
-      return outranked && !entry.reason?.trim();
-    });
+    const unjustified = Object.entries(provenance)
+      .filter(([, entry]) => {
+        if (!isRanked(entry.source) || !entry.alsoIn) return false;
+        const outranked = entry.alsoIn.some(
+          (alt) => isRanked(alt) && rankOf(alt) < rankOf(entry.source),
+        );
+        return outranked && !entry.reason?.trim();
+      })
+      .map(([name]) => name);
     expect(unjustified).toEqual([]);
   });
 
   it('documents round as a justified lower-priority (es-toolkit over radashi) pick', () => {
-    expect(provenance.round.source).toBe('es-toolkit');
-    expect(provenance.round.alsoIn).toContain('radashi');
-    expect(provenance.round.reason?.length ?? 0).toBeGreaterThan(0);
+    const round = provenance.round;
+    expect(round?.source).toBe('es-toolkit');
+    expect(round?.alsoIn).toContain('radashi');
+    expect(round?.reason?.length ?? 0).toBeGreaterThan(0);
   });
 });

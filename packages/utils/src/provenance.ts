@@ -88,4 +88,19 @@ export const provenance: Record<string, ProvenanceEntry> = {
   // --- string ---
   capitalize: { source: 'radashi' },
   title: { source: 'radashi' },
+
+  // --- predicates (technical source for @packrat/guards) ---
+  isArray: { source: 'radashi' },
+  isDate: { source: 'radashi' },
+  isEmpty: { source: 'radashi' },
+  isEqual: { source: 'radashi' },
+  isFloat: { source: 'radashi' },
+  isFunction: { source: 'radashi' },
+  isInt: { source: 'radashi' },
+  isNumber: { source: 'radashi' },
+  isObject: { source: 'radashi' },
+  isPrimitive: { source: 'radashi' },
+  isPromise: { source: 'radashi' },
+  isString: { source: 'radashi' },
+  isSymbol: { source: 'radashi' },
 };

@@ -12,6 +12,7 @@
     "./fn": "./src/fn.ts",
     "./json": "./src/json.ts",
     "./math": "./src/math.ts",
+    "./predicates": "./src/predicates.ts",
     "./provenance": "./src/provenance.ts"
   },
   "main": "./src/index.ts",

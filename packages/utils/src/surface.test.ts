@@ -4,6 +4,7 @@ import * as asyncUtils from './async';
 import * as fn from './fn';
 import * as math from './math';
 import * as object from './object';
+import * as predicates from './predicates';
 import * as string from './string';
 
 // Re-export files carry no logic of their own — these tests confirm the
@@ -66,6 +67,21 @@ describe('fn surface', () => {
         (n: number) => n * 3,
       ),
     ).toBe(9);
+  });
+});
+
+describe('predicates surface (technical source for @packrat/guards)', () => {
+  it('isString narrows strings', () => {
+    expect(predicates.isString('x')).toBe(true);
+    expect(predicates.isString(1)).toBe(false);
+  });
+  it('isArray narrows arrays', () => {
+    expect(predicates.isArray([1])).toBe(true);
+    expect(predicates.isArray('no')).toBe(false);
+  });
+  it('isEmpty detects empties', () => {
+    expect(predicates.isEmpty([])).toBe(true);
+    expect(predicates.isEmpty([1])).toBe(false);
   });
 });
 

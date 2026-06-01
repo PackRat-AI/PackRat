@@ -9,7 +9,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "radash": "catalog:",
+    "@packrat/utils": "workspace:*",
     "ts-extras": "catalog:",
     "zod": "catalog:"
   }

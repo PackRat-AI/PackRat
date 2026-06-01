@@ -619,7 +619,7 @@
       "name": "@packrat/guards",
       "version": "2.0.27",
       "dependencies": {
-        "radash": "catalog:",
+        "@packrat/utils": "workspace:*",
         "ts-extras": "catalog:",
         "zod": "catalog:",
       },

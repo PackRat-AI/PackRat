@@ -17,4 +17,5 @@ export * from './fn';
 export * from './json';
 export * from './math';
 export * from './object';
+export * from './predicates';
 export * from './string';
