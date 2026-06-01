@@ -46,7 +46,7 @@ describe('logger', () => {
 
   describe('info', () => {
     it('emits a JSON line with level=INFO and event', () => {
-      logger.info('etl.test');
+      logger.info({ event: 'etl.test' });
       expect(logSpy).toHaveBeenCalledOnce();
       const line = parseLastLine(logSpy);
       expect(line.level).toBe('INFO');
@@ -55,7 +55,7 @@ describe('logger', () => {
     });
 
     it('merges ctx fields into the emitted line', () => {
-      logger.info('etl.test', { jobId: 'j1', count: 42 });
+      logger.info({ event: 'etl.test', ctx: { jobId: 'j1', count: 42 } });
       const line = parseLastLine(logSpy);
       expect(line.jobId).toBe('j1');
       expect(line.count).toBe(42);
@@ -65,7 +65,7 @@ describe('logger', () => {
       const ctx: Record<string, unknown> = {};
       ctx.self = ctx;
 
-      logger.info('etl.circular', ctx);
+      logger.info({ event: 'etl.circular', ctx: ctx });
 
       const line = parseLastLine(logSpy);
       expect(line).toMatchObject({
@@ -78,7 +78,7 @@ describe('logger', () => {
 
   describe('warn', () => {
     it('emits to console.warn with level=WARN', () => {
-      logger.warn('etl.fallback', { jobId: 'j2' });
+      logger.warn({ event: 'etl.fallback', ctx: { jobId: 'j2' } });
       expect(warnSpy).toHaveBeenCalledOnce();
       const line = parseLastLine(warnSpy);
       expect(line.level).toBe('WARN');
@@ -89,7 +89,7 @@ describe('logger', () => {
 
   describe('error', () => {
     it('emits to console.error with level=ERROR', () => {
-      logger.error('etl.failed', { jobId: 'j3' });
+      logger.error({ event: 'etl.failed', ctx: { jobId: 'j3' } });
       expect(errorSpy).toHaveBeenCalledOnce();
       const line = parseLastLine(errorSpy);
       expect(line.level).toBe('ERROR');
@@ -100,7 +100,7 @@ describe('logger', () => {
     it('unpacks an Error attached as ctx.err into errorName / errorMessage / errorStack', () => {
       const err = new Error('boom');
       err.name = 'BoomError';
-      logger.error('etl.failed', { jobId: 'j4', err });
+      logger.error({ event: 'etl.failed', ctx: { jobId: 'j4', err } });
       const line = parseLastLine(errorSpy);
       expect(line.errorName).toBe('BoomError');
       expect(line.errorMessage).toBe('boom');
@@ -110,14 +110,14 @@ describe('logger', () => {
     });
 
     it('coerces a non-Error err to a string errorMessage', () => {
-      logger.error('etl.failed', { err: 'plain string' });
+      logger.error({ event: 'etl.failed', ctx: { err: 'plain string' } });
       const line = parseLastLine(errorSpy);
       expect(line.errorMessage).toBe('plain string');
       expect(line.errorName).toBeUndefined();
     });
 
     it('omits err-related fields when no err is provided', () => {
-      logger.error('etl.failed', { jobId: 'j5' });
+      logger.error({ event: 'etl.failed', ctx: { jobId: 'j5' } });
       const line = parseLastLine(errorSpy);
       expect(line.errorName).toBeUndefined();
       expect(line.errorMessage).toBeUndefined();
@@ -129,11 +129,14 @@ describe('logger', () => {
     it('adds info breadcrumbs with primitive tags and complex extras', () => {
       sentry.isInitialized.mockReturnValue(true);
 
-      logger.info('etl.started', {
-        jobId: 'j1',
-        count: 42,
-        dryRun: true,
-        metadata: { source: 'test' },
+      logger.info({
+        event: 'etl.started',
+        ctx: {
+          jobId: 'j1',
+          count: 42,
+          dryRun: true,
+          metadata: { source: 'test' },
+        },
       });
 
       expect(sentry.addBreadcrumb).toHaveBeenCalledWith({
@@ -152,7 +155,7 @@ describe('logger', () => {
     it('adds warn breadcrumbs at warning level', () => {
       sentry.isInitialized.mockReturnValue(true);
 
-      logger.warn('etl.retry', { jobId: 'j2' });
+      logger.warn({ event: 'etl.retry', ctx: { jobId: 'j2' } });
 
       expect(sentry.addBreadcrumb).toHaveBeenCalledWith({
         category: 'etl.retry',
@@ -168,10 +171,13 @@ describe('logger', () => {
       sentry.isInitialized.mockReturnValue(true);
       const err = new Error('boom');
 
-      logger.error('etl.failed', {
-        err,
-        jobId: 'j3',
-        metadata: { source: 'test' },
+      logger.error({
+        event: 'etl.failed',
+        ctx: {
+          err,
+          jobId: 'j3',
+          metadata: { source: 'test' },
+        },
       });
 
       expect(sentry.captureException).toHaveBeenCalledWith(err, {
@@ -189,7 +195,7 @@ describe('logger', () => {
     it('captures error events without error objects as messages', () => {
       sentry.isInitialized.mockReturnValue(true);
 
-      logger.error('etl.failed', { jobId: 'j4' });
+      logger.error({ event: 'etl.failed', ctx: { jobId: 'j4' } });
 
       expect(sentry.captureMessage).toHaveBeenCalledWith('etl.failed', {
         level: 'error',
@@ -208,7 +214,7 @@ describe('logger', () => {
         throw new Error('sentry unavailable');
       });
 
-      expect(() => logger.info('etl.best-effort')).not.toThrow();
+      expect(() => logger.info({ event: 'etl.best-effort' })).not.toThrow();
       expect(logSpy).toHaveBeenCalledOnce();
     });
   });
