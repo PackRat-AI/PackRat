@@ -1,0 +1,12 @@
+{
+  "$schema": "https://portless.sh/schema.json",
+  "apps": {
+    "apps/web": { "name": "web" },
+    "apps/admin": { "name": "admin" },
+    "apps/guides": { "name": "guides" },
+    "apps/landing": { "name": "landing" },
+    "apps/trails": { "name": "trails" },
+    "packages/api": { "name": "api" },
+    "packages/mcp": { "name": "mcp" }
+  }
+}

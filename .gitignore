@@ -54,3 +54,6 @@ apps/guides/public/og/
 .worktrees/
 .worktrees
 .turbo/
+
+# portless (local-dev proxy; state lives in ~/.portless, this is defensive)
+.portless/
