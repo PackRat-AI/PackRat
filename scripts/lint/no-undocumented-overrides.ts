@@ -58,7 +58,7 @@ export function extractRegistryBlock(markdown: string): string | null {
   if (headingIdx === -1) return null;
   const after = markdown.slice(headingIdx);
   const match = after.match(/```json\s*\r?\n([\s\S]*?)\r?\n```/);
-  return match ? match[1] : null;
+  return match?.[1] ?? null;
 }
 
 export function parseRegistry(markdown: string): Registry | null {

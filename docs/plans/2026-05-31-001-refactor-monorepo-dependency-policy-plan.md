@@ -9,6 +9,8 @@ depth: standard
 
 # refactor: Monorepo Dependency Policy + Root Overrides Audit
 
+> **Final outcome (post-execution):** the audit reached **5 → 1** root overrides — only `react` remains. The sections below describe the originally-planned **5 → 2** end-state (`react` + `@packrat-ai/nativewindui`). During execution, the `@packrat-ai/nativewindui` override was *also* dropped: its blocker (an over-tight `react-native-keyboard-controller` peer floor in `2.0.6`) was fixed upstream in `@packrat-ai/nativewindui@2.1.0` (permissive peer ranges), so `packages/ui` pins `2.1.0` directly and the override is gone. The authoritative end-state lives in `docs/dependency-policy.md` (registry: `react` only) and root `package.json` overrides.
+
 ## Problem Frame
 
 The repo runs two coexisting "shared-version" primitives — `catalog:` (used heavily) and root `overrides` (5 entries) — with no written rule for which to use when. The `overrides` block is opaque: each entry forces a version across the entire dependency tree, is invisible at the consumer site, and carries no rationale or removal condition. No one can confidently say which entries are load-bearing and which are dead weight.
