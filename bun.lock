@@ -725,11 +725,13 @@
       "name": "@packrat/utils",
       "version": "2.0.27",
       "dependencies": {
+        "destr": "^2.0.5",
         "es-toolkit": "^1.47.0",
         "lodash": "^4.18.1",
         "radash": "catalog:",
         "radashi": "^12.9.1",
         "remeda": "^2.37.0",
+        "safe-stable-stringify": "^2.5.0",
       },
       "devDependencies": {
         "@types/lodash": "^4.17.24",
@@ -2776,6 +2778,8 @@
     "depd": ["depd@2.0.0", "", {}, "sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw=="],
 
     "dequal": ["dequal@2.0.3", "", {}, "sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA=="],
+
+    "destr": ["destr@2.0.5", "", {}, "sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA=="],
 
     "destroy": ["destroy@1.2.0", "", {}, "sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg=="],
 

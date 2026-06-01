@@ -1,5 +1,6 @@
 /**
- * Object utilities — curated re-exports (+ wrappers where they earn it).
- * Populated in U3; see docs/utils-policy.md and ./provenance.
+ * Object utilities — curated re-exports. See ./provenance for source mapping.
  */
-export {};
+
+// radashi — pick/omit/map/merge/clean
+export { assign, mapEntries, mapValues, omit, pick, shake } from 'radashi';

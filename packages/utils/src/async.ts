@@ -1,5 +1,6 @@
 /**
- * Async / concurrency utilities — curated re-exports (+ wrappers where they earn it).
- * Populated in U3; see docs/utils-policy.md and ./provenance.
+ * Async / concurrency utilities — curated re-exports. See ./provenance for source mapping.
  */
-export {};
+
+// radashi — sleep, error-tuple wrappers, retry, bounded concurrency
+export { all, guard, parallel, retry, sleep, tryit } from 'radashi';

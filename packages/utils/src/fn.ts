@@ -1,6 +1,8 @@
 /**
- * Function utilities (compose, debounce, throttle, memoize, …) — curated
- * re-exports (+ wrappers where they earn it).
- * Populated in U3; see docs/utils-policy.md and ./provenance.
+ * Function utilities — curated re-exports. See ./provenance for source mapping.
  */
-export {};
+
+// radashi — memoize, once, rate-limiters
+export { debounce, memo, once, throttle } from 'radashi';
+// remeda — typed dataLast `pipe` for composition (composability primitive)
+export { pipe } from 'remeda';

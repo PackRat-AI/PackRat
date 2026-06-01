@@ -14,6 +14,7 @@
 export * from './array';
 export * from './async';
 export * from './fn';
+export * from './json';
 export * from './math';
 export * from './object';
 export * from './string';

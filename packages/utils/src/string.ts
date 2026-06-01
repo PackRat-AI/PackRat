@@ -1,5 +1,6 @@
 /**
- * String utilities — curated re-exports (+ wrappers where they earn it).
- * Populated in U3; see docs/utils-policy.md and ./provenance.
+ * String utilities — curated re-exports. See ./provenance for source mapping.
  */
-export {};
+
+// radashi — capitalize (first letter) + title (Title Case)
+export { capitalize, title } from 'radashi';

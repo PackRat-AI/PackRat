@@ -1,5 +1,9 @@
 /**
- * Array utilities — curated re-exports (+ wrappers where they earn it).
- * Populated in U3; see docs/utils-policy.md and ./provenance.
+ * Array utilities — curated re-exports. See ./provenance for source mapping.
  */
-export {};
+
+// es-toolkit — chunk (radashi's equivalent is `cluster`; `chunk` is the
+// ecosystem-standard name, so we source it here)
+export { chunk } from 'es-toolkit';
+// radashi — dedupe, group, sort, build
+export { group, list, sort, unique } from 'radashi';
