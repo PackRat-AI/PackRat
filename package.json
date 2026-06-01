@@ -12,6 +12,7 @@
     "bump": "bun .github/scripts/bump.ts",
     "check": "biome check --no-errors-on-unmatched",
     "check:all": "bun scripts/check-all.ts",
+    "check:ast-grep": "bun scripts/lint/no-raw-ast-grep.ts",
     "check:casts": "bun run --cwd packages/checks check:casts",
     "check:casts:strict": "bun run --cwd packages/checks check:casts:strict",
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
@@ -36,7 +37,7 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run scripts/lint/no-owned-max-params.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts",
+    "lint:custom": "bun run scripts/lint/no-raw-ast-grep.ts && bun run scripts/lint/no-owned-max-params.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint:weak-assertions": "bun run scripts/lint/no-weak-assertions.ts",
     "lint-unsafe": "biome check --write --unsafe",
@@ -62,6 +63,7 @@
     "react": "19.2.6"
   },
   "devDependencies": {
+    "@ast-grep/cli": "^0.43.0",
     "@biomejs/biome": "2.4.6",
     "@manypkg/cli": "^0.24.0",
     "@playwright/test": "^1.59.1",

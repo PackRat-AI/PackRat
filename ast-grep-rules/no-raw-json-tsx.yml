@@ -1,0 +1,18 @@
+id: no-raw-json-tsx
+# TSX variant of no-raw-json (the `typescript` parser does not match .tsx).
+language: tsx
+severity: warning
+message: "Prefer safeParse from @packrat/utils over raw JSON.parse. Raw JSON.parse throws on malformed input and returns `any`; safeParse returns a typed result. (Migration tracked separately — this is a warning.)"
+ignores:
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  pattern: JSON.parse($X)
+fix: safeParse($X)

@@ -436,9 +436,9 @@ export class R2BucketService {
         CacheControl: httpMetadata?.cacheControl,
         Expires: httpMetadata?.cacheExpiry,
         Metadata: options?.customMetadata,
-        ContentMD5: typeof options?.md5 === 'string' ? options.md5 : undefined,
-        ChecksumSHA1: typeof options?.sha1 === 'string' ? options.sha1 : undefined,
-        ChecksumSHA256: typeof options?.sha256 === 'string' ? options.sha256 : undefined,
+        ContentMD5: isString(options?.md5) ? options.md5 : undefined,
+        ChecksumSHA1: isString(options?.sha1) ? options.sha1 : undefined,
+        ChecksumSHA256: isString(options?.sha256) ? options.sha256 : undefined,
       });
 
       const response = await this.s3Client.send(command);

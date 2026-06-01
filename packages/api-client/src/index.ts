@@ -114,11 +114,7 @@ export function createApiClient(config: ApiClientConfig) {
         });
       } else if (Array.isArray(existing)) {
         for (const entry of existing) {
-          if (
-            Array.isArray(entry) &&
-            typeof entry[0] === 'string' &&
-            typeof entry[1] === 'string'
-          ) {
+          if (Array.isArray(entry) && isString(entry[0]) && isString(entry[1])) {
             headers.set(entry[0], entry[1]);
           }
         }

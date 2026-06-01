@@ -1,0 +1,20 @@
+id: no-raw-json-stringify-multi-tsx
+# TSX variant of no-raw-json-stringify-multi (multi-arg, no autofix).
+language: tsx
+severity: warning
+message: "Prefer safeStringify from @packrat/utils over raw JSON.stringify (multi-arg: replacer/space need manual migration). (Migration tracked separately — this is a warning.)"
+ignores:
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  all:
+    - pattern: JSON.stringify($$$ARGS)
+    - not:
+        pattern: JSON.stringify($X)

@@ -1,0 +1,8 @@
+id: no-raw-typeof-tsx
+valid:
+  - "const C = () => (typeof window !== 'undefined' ? <A /> : <B />)"
+  - "const v = isString(x) ? <A /> : null"
+invalid:
+  # Proves .tsx code (JSX present) is covered by the tsx-language twin.
+  - "const C = () => (typeof x === 'string' ? <A /> : <B />)"
+  - "const D = () => (typeof n !== 'number' ? <A /> : <B />)"

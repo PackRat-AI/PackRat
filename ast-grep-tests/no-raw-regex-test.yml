@@ -1,0 +1,23 @@
+id: no-raw-regex
+valid:
+  # String methods called with NON-regex args are fine.
+  - "const a = s.split(',')"
+  - "const b = s.replace('a', 'b')"
+  - "const c = s.split(sep)"
+  - "const d = s.match(myRegexVar)"
+  # Regex nested inside a non-first/non-top-level arg is not the `.method(/` shape.
+  - "const e = foo.bar(x, baz(/z/))"
+  # magic-regexp builder usage.
+  - "const r = createRegExp(word)"
+invalid:
+  # new RegExp(...) in any form.
+  - "const a = new RegExp('x')"
+  - "const b = new RegExp(pattern, 'g')"
+  # Raw regex literal passed to a string method (the old script's `.method(/` cases).
+  - "const c = s.replace(/a/, 'b')"
+  - "const d = s.replaceAll(/a/g, 'b')"
+  - "const e = s.match(/x/)"
+  - "const f = s.matchAll(/x/g)"
+  - "const g = s.test(/y/)"
+  - "const h = s.split(/,/)"
+  - "const i = s.search(/z/)"

@@ -1,0 +1,38 @@
+id: no-raw-regex
+language: typescript
+severity: error
+message: "Prefer magic-regexp over a raw regex literal or `new RegExp(...)`. Raw regex is error-prone (missing escapes, unintended capture groups, poor readability); magic-regexp gives a typed, composable builder. See packages/analytics/src/core/enrichment.ts for a reference. Biome's performance/useTopLevelRegex covers the stricter top-level check."
+ignores:
+  # Mirror the old scripts/lint/no-raw-regex.ts scope: apps/ + packages/ only,
+  # non-test. Tooling dirs were never scanned; guards/utils are exempt homes.
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/guards/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  # File-level allowlist carried over from the old script:
+  # enrichment.ts is the magic-regexp reference; alltrails.ts builds a regex
+  # from a dynamic `property` arg and cannot be a static magic-regexp constant.
+  - "**/packages/analytics/src/core/enrichment.ts"
+  - "**/packages/api/src/routes/alltrails.ts"
+rule:
+  any:
+    - pattern: new RegExp($$$ARGS)
+    - all:
+        - any:
+            - { pattern: $OBJ.replace($$$) }
+            - { pattern: $OBJ.replaceAll($$$) }
+            - { pattern: $OBJ.match($$$) }
+            - { pattern: $OBJ.matchAll($$$) }
+            - { pattern: $OBJ.test($$$) }
+            - { pattern: $OBJ.split($$$) }
+            - { pattern: $OBJ.search($$$) }
+        - has:
+            field: arguments
+            has:
+              kind: regex

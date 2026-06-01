@@ -3,9 +3,8 @@
 // check-all.ts — master orchestrator for all custom PackRat check scripts.
 //
 // Runs the following checks in parallel and prints a unified summary table:
-//   - scripts/lint/no-raw-regex.ts
+//   - scripts/lint/no-raw-ast-grep.ts  (ast-grep: no-raw-typeof + no-raw-regex)
 //   - scripts/lint/no-owned-max-params.ts
-//   - scripts/lint/no-raw-typeof.ts
 //   - packages/env/scripts/no-raw-process-env.ts
 //   - scripts/lint/no-circular-deps.ts
 //   - scripts/lint/no-duplicate-deps.ts  (skipped if file doesn't exist)
@@ -56,16 +55,12 @@ interface CheckDef {
 
 const ALL_CHECKS: CheckDef[] = [
   {
-    name: 'no-raw-regex',
-    script: join(ROOT, 'scripts', 'lint', 'no-raw-regex.ts'),
+    name: 'ast-grep',
+    script: join(ROOT, 'scripts', 'lint', 'no-raw-ast-grep.ts'),
   },
   {
     name: 'no-owned-max-params',
     script: join(ROOT, 'scripts', 'lint', 'no-owned-max-params.ts'),
-  },
-  {
-    name: 'no-raw-typeof',
-    script: join(ROOT, 'scripts', 'lint', 'no-raw-typeof.ts'),
   },
   {
     name: 'no-raw-process-env',

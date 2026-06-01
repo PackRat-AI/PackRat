@@ -15,8 +15,7 @@ pre-push:
     # All custom checks are now clean — no continue-on-error backlog remaining.
     clean-checks:
       run: >
-        bun scripts/lint/no-raw-typeof.ts &&
-        bun scripts/lint/no-raw-regex.ts &&
+        bun scripts/lint/no-raw-ast-grep.ts &&
         bun packages/env/scripts/no-raw-process-env.ts &&
         bun scripts/lint/no-circular-deps.ts &&
         bun scripts/lint/no-duplicate-deps.ts &&

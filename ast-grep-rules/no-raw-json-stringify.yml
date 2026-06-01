@@ -1,0 +1,22 @@
+id: no-raw-json-stringify
+language: typescript
+# WARNING (not error): see no-raw-json.yml. Covers the single-argument form of
+# JSON.stringify, which has a clean 1:1 autofix (JSON.stringify($X) ->
+# safeStringify($X)). Multi-arg calls (replacer / space) are handled by
+# no-raw-json-stringify-multi.yml, which has no autofix. Import insertion is out
+# of scope here (the orchestrator's codemod handles it).
+severity: warning
+message: "Prefer safeStringify from @packrat/utils over raw JSON.stringify. (Migration tracked separately — this is a warning.)"
+ignores:
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  pattern: JSON.stringify($X)
+fix: safeStringify($X)

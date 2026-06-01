@@ -1,0 +1,18 @@
+id: no-raw-json-stringify-tsx
+# TSX variant of no-raw-json-stringify (single-arg, autofixable).
+language: tsx
+severity: warning
+message: "Prefer safeStringify from @packrat/utils over raw JSON.stringify. (Migration tracked separately — this is a warning.)"
+ignores:
+  - "scripts/**"
+  - ".github/**"
+  - "**/packages/utils/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  pattern: JSON.stringify($X)
+fix: safeStringify($X)
