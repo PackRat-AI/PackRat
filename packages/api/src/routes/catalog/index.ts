@@ -9,7 +9,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, packItems } from '@packrat/db';
-import { isString } from '@packrat/guards';
+import { isNumber, isObject, isString } from '@packrat/guards';
 import {
   CatalogCategoriesResponseSchema,
   CatalogCompareRequestSchema,
@@ -614,18 +614,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .put(
     '/:id',
     async ({ params, body }) => {
-      if (!body || (typeof body === 'object' && Object.keys(body).length === 0)) {
+      if (!body || (isObject(body) && Object.keys(body).length === 0)) {
         return status(400, { error: 'Validation failed' });
       }
-      if (body && typeof body === 'object' && 'issues' in body && Array.isArray(body.issues)) {
+      if (isObject(body) && 'issues' in body && Array.isArray(body.issues)) {
         return status(400, { error: 'Validation failed' });
       }
-      if (
-        body &&
-        typeof body === 'object' &&
-        'weight' in body &&
-        (typeof body.weight !== 'number' || body.weight <= 0)
-      ) {
+      if (isObject(body) && 'weight' in body && (!isNumber(body.weight) || body.weight <= 0)) {
         return status(400, { error: 'Validation failed' });
       }
       const parsed = UpdateCatalogItemRequestSchema.safeParse(body);

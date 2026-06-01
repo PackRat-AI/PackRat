@@ -1,4 +1,5 @@
 import type { CatalogItem, PackItem } from '@packrat/db';
+import { isObject, isString } from '@packrat/guards';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
 
@@ -23,9 +24,9 @@ export function getEmbeddingText(
     if (!Array.isArray(variants)) return undefined;
     return variants
       .map((variant) => {
-        if (!variant || typeof variant !== 'object') return undefined;
+        if (!isObject(variant)) return undefined;
         const { attribute, values } = variant as { attribute?: unknown; values?: unknown };
-        if (typeof attribute !== 'string' || !attribute) return undefined;
+        if (!isString(attribute) || !attribute) return undefined;
         const vals = Array.isArray(values) ? values : [values].filter(Boolean);
         if (vals.length === 0) return undefined;
         return `${attribute}: ${vals.join(', ')}`;
