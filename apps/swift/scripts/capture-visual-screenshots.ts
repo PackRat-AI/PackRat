@@ -13,6 +13,7 @@ import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
 import { nodeEnv } from '@packrat/env/node';
+import { fromZod } from '@packrat/guards';
 import {
   anyOf,
   caseInsensitive,
@@ -23,6 +24,7 @@ import {
   global as globalFlag,
   oneOrMore,
 } from 'magic-regexp';
+import { z } from 'zod';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
@@ -1210,7 +1212,11 @@ function exportScreenshotsFromResultBundle(resultBundle: string, toDir: string):
   const manifestPath = resolve(exportDir, 'manifest.json');
   if (!existsSync(manifestPath)) return;
 
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as AttachmentManifestEntry[];
+  const manifest = parseAttachmentManifest(JSON.parse(readFileSync(manifestPath, 'utf8')));
+  if (!manifest) {
+    console.warn(`Warning: ${manifestPath} had an invalid attachment manifest shape.`);
+    return;
+  }
   mkdirSync(toDir, { recursive: true });
   for (const entry of manifest) {
     for (const attachment of entry.attachments ?? []) {
@@ -1229,14 +1235,18 @@ function stableAttachmentName(suggestedName: string | undefined): string | null 
   return startsWithDigit(stable) ? stable : null;
 }
 
-type AttachmentManifestEntry = {
-  attachments?: AttachmentManifestAttachment[];
-};
-
-type AttachmentManifestAttachment = {
-  exportedFileName: string;
-  suggestedHumanReadableName?: string;
-};
+const AttachmentManifestAttachmentSchema = z
+  .object({
+    exportedFileName: z.string(),
+    suggestedHumanReadableName: z.string().optional(),
+  })
+  .passthrough();
+const AttachmentManifestEntrySchema = z
+  .object({
+    attachments: z.array(AttachmentManifestAttachmentSchema).optional(),
+  })
+  .passthrough();
+const parseAttachmentManifest = fromZod(z.array(AttachmentManifestEntrySchema));
 
 function e2eBuildSettings(): string[] {
   const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL;

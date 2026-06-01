@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { fromZod } from '@packrat/guards';
+import { z } from 'zod';
 
 export type ImageInfo = {
   width: number;
@@ -13,17 +15,23 @@ export type AppIconIssue = {
   message: string;
 };
 
-type AppIconImage = {
-  filename?: string;
-  idiom?: string;
-  platform?: string;
-  scale?: string;
-  size?: string;
-};
+const AppIconImageSchema = z
+  .object({
+    filename: z.string().optional(),
+    idiom: z.string().optional(),
+    platform: z.string().optional(),
+    scale: z.string().optional(),
+    size: z.string().optional(),
+  })
+  .passthrough();
 
-type AppIconContents = {
-  images?: AppIconImage[];
-};
+const AppIconContentsSchema = z
+  .object({
+    images: z.array(AppIconImageSchema).optional(),
+  })
+  .passthrough();
+
+const parseAppIconContents = fromZod(AppIconContentsSchema);
 
 export type ImageInspector = (path: string) => ImageInfo;
 
@@ -69,7 +77,10 @@ export function validateAppIconSet(
     return [{ file: contentsPath, message: 'App icon set is missing Contents.json.' }];
   }
 
-  const contents = JSON.parse(readFileSync(contentsPath, 'utf8')) as AppIconContents;
+  const contents = parseAppIconContents(JSON.parse(readFileSync(contentsPath, 'utf8')));
+  if (!contents) {
+    return [{ file: contentsPath, message: 'App icon Contents.json has an invalid shape.' }];
+  }
   const images = contents.images ?? [];
 
   if (images.length === 0) {
