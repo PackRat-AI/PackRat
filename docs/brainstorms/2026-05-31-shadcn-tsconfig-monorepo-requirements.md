@@ -55,14 +55,15 @@ packages/typescript-config/
 Remove the root `paths` map and the per-app cross-package path rewrites; rely on workspace symlinks + each package's `exports` for `@packrat/*` resolution. Intra-package aliases (e.g. `web-app/*`, `expo-app/*`) stay.
 
 - **What changes:** remove ~40-entry root `paths` map; strip the cross-package `@packrat/*` aliases from the ~7 app/package configs that re-declare them (~57 alias-line declarations total across app/pkg tsconfigs).
-- **Risk — LOWER than it appears (verified).** Runtime resolution already bypasses tsconfig `paths`:
-  - `apps/expo/metro.config.js` explicitly enables package.json `exports` resolution for workspace packages (in-code comment confirms).
-  - Next apps (`web`, `admin`, `landing`, `guides`, `trails`) resolve `@packrat/*` by name via `transpilePackages` + node resolution, not tsconfig paths.
-  - No `vite-tsconfig-paths` / `tsconfigPaths` plugin in any vitest config.
-  - `biome.json` does not use path aliases.
-  - ⇒ The ~57 alias declarations exist almost entirely for `tsc` and editor resolution. Dropping them is a **type-resolution** concern, verifiable by a single repo-wide `check-types`, not a runtime-breakage risk.
-- **Effort:** ~0.5–1 day, dominated by verification (run typecheck + each app's build/dev + vitest suites once to confirm nothing silently depended on a path alias).
-- **Open risk to confirm during work:** subpath imports (e.g. `@packrat/schemas/constants`) must have matching `exports` subpaths; spot-check the few packages with `./*` exports.
+
+> **⚠️ Empirical finding (2026-05-31 spike) — this layer is NOT a clean swap; original "lower risk" assessment was wrong.**
+> A spike that slimmed the root `paths` map and relied on `exports` surfaced **193 errors** (tsgo). Root cause: **TS path mapping applies full module resolution — including directory→`index.ts` — to the mapped target, but package.json `exports` does not.** The codebase deep-imports *directories* across packages (`@packrat/api/db`, `/services`, `/auth`, `/routes`, `/containers`, `/workflows/...`, `@packrat/analytics/core/*`, `@packrat/app/browser`). Path aliases resolved these to `index.ts`; `exports` wildcards (`"./*": "./src/*"` or `"./src/*.ts"`) **cannot** — `./src/db` does not resolve to `./src/db/index.ts` under `exports`, and `analytics`/`cli`/`mcp`/`ui` have no `exports` at all. Dropping the aliases would require **enumerating explicit subpath exports for every imported directory in every package** (dozens of entries, ongoing maintenance as new dirs are added) *and* would change Metro/Next/bun runtime resolution (needs mobile + Next build verification).
+>
+> **Revised risk: HIGH / not worth it as a pure swap.** Recommended posture: **keep the cross-package path aliases** (they are the idiomatic way to expose source directories in a bundler-resolved monorepo) and skip L2's paths-removal. The shadcn "elegance" is delivered by L1 (shared config package) + L3 (references/turbo); exports-over-paths is the one shadcn trait that does not fit PackRat's deep-import style without disproportionate cost.
+>
+> If pursued anyway, scope it as its own PR: add explicit `exports` subpaths to `api` (~15), `analytics`, `app`; add `exports` to `analytics`/`cli`/`mcp`/`ui`; then verify a clean `check-types` **and** an `expo` Metro bundle + each Next build.
+
+- **Original (pre-spike) risk note, now superseded:** runtime resolution already bypasses tsconfig `paths` (Metro `exports`, Next `transpilePackages`), so it *looked* like a type-only change. True for the root-level package imports; false for the directory deep-imports above.
 
 ### L3 — TS project references / `composite` per package
 
@@ -94,17 +95,16 @@ These are complementary, not competing. Turbo's `check-types: { dependsOn: ["^ch
 - **L1 + L2** are independent of turbo and can land before or alongside it with no coupling.
 - **L3** is where the two efforts meet: the TS reference graph and turbo's task graph should be built together to avoid double work and divergence.
 
-## Recommendation
+## Recommendation (revised after the 2026-05-31 spike)
 
-Stage it; treat **L3 as the target** but land value early and de-risk before the expensive layer:
+1. **L1 — DONE** (commit `c919e06ac`). Shared config package + tsgo. This is the bulk of the visible elegance, low risk, gate unchanged.
+2. **Hardening — DONE** (commit `997a2502e`). Fixed the clean per-package errors L1 surfaced (osm-db, overpass, api-client/admin fetchers).
+3. **L2 — DESCOPE as a pure swap.** The spike proved `exports` can't replace the directory deep-import aliases without disproportionate per-package `exports` enumeration + runtime build verification. **Keep the cross-package path aliases.** Pursue only as a separate, explicitly-scoped exports-discipline PR if ever desired.
+4. **L3 — the real remaining target.** Per-package `composite` + `references`, co-designed with turbo's `check-types` graph. Works fine *with* the path aliases retained. Pairs with the larger per-app strict-hardening backlog (`admin` ~44, `app` ~44, `api` `r2-bucket` worker-globals).
 
-1. **L1 first** (low risk, most visible elegance, unblocks consistency). Independent of turbo.
-2. **L2 next** (verified low runtime risk; one `check-types` + build/test pass confirms it). Removes the alias duplication permanently.
-3. **L3 last, co-designed with the turbo `check-types` graph** — do not build the TS reference graph and the turbo task graph separately.
+Net: the "elegant config" win the request asked for is delivered by **L1 (done)** + **L3**. L2's exports-over-paths is the one shadcn trait that does not fit PackRat's deep-import style at acceptable cost.
 
-If forced to stop early, **L1+L2 captures most of the "elegant config" win** the request is about, at ~1–2 days and low risk. L3 is the build-performance/correctness investment and carries the real effort and surprise-error budget.
-
-Rough total LOE if fully adopted: **~3–6 engineer-days**, front-loaded with cheap/safe wins and back-loaded with the L3 graph work.
+Revised LOE: **L1 + hardening done (~1 day actual).** L3 ~2–4 days. L2 (if ever) is its own larger effort, not recommended.
 
 ## Scope boundaries
 
