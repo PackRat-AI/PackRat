@@ -11,8 +11,6 @@ const OUT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots');
 const WEB_DIR = resolve(OUT_DIR, 'web-playwright');
 const CONTACT_SHEET_HTML = resolve(OUT_DIR, 'web-contact-sheet.html');
 const CONTACT_SHEET_PNG = resolve(OUT_DIR, 'web-contact-sheet.png');
-const SORT_PREFIX_RE = /^\d+-/;
-const WORD_START_RE = /\b\w/g;
 
 rmSync(WEB_DIR, { recursive: true, force: true });
 mkdirSync(WEB_DIR, { recursive: true });
@@ -53,10 +51,11 @@ async function renderContactSheet() {
   const cards = screenshots
     .map((file) => {
       const src = pathToFileURL(file).href;
-      const label = basename(file, '.png')
-        .replace(SORT_PREFIX_RE, '')
+      const label = stripSortPrefix(basename(file, '.png'))
         .replaceAll('-', ' ')
-        .replace(WORD_START_RE, (char) => char.toUpperCase());
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
       return `<figure><img src="${src}" /><figcaption>${escapeHtml(label)}</figcaption></figure>`;
     })
     .join('\n');
@@ -98,18 +97,22 @@ function estimateHeight(screenshots: string[]): number {
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (char) => {
-    switch (char) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      default:
-        return '&#39;';
-    }
-  });
+  return Array.from(value, (char) => {
+    if (char === '&') return '&amp;';
+    if (char === '<') return '&lt;';
+    if (char === '>') return '&gt;';
+    if (char === '"') return '&quot;';
+    if (char === "'") return '&#39;';
+    return char;
+  }).join('');
+}
+
+function stripSortPrefix(value: string): string {
+  let index = 0;
+  while (index < value.length) {
+    const code = value.charCodeAt(index);
+    if (code < 48 || code > 57) break;
+    index += 1;
+  }
+  return value.charAt(index) === '-' ? value.slice(index + 1) : value;
 }

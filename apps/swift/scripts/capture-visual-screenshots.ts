@@ -12,6 +12,16 @@ import {
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
+import {
+  anyOf,
+  caseInsensitive,
+  charIn,
+  charNotIn,
+  createRegExp,
+  exactly,
+  global as globalFlag,
+  oneOrMore,
+} from 'magic-regexp';
 import { formatSummaryLine, readSummary, type TestSummary, XcResultError } from './lib/xcresult';
 
 type Platform = 'ios' | 'ipad' | 'macos' | 'watch';
@@ -53,14 +63,21 @@ const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
 const DEFAULT_OUT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots');
-const HTML_ESCAPE_RE = /[&<>"']/g;
-const QUOTE_RE = /^["']|["']$/g;
-const LEADING_DIGIT_RE = /^\d/;
-const SCREENSHOT_PREFIX_RE = /^\d+[a-z]?-/i;
-const XCT_ATTACHMENT_SUFFIX_RE = /_\d+_[0-9A-F-]+\.png$/i;
-const DATA_DETAIL_SCREENSHOT_RE = /^7[1-9]-data-/;
-const SIPS_PIXEL_WIDTH_RE = /pixelWidth:\s*(\d+)/;
-const SIPS_PIXEL_HEIGHT_RE = /pixelHeight:\s*(\d+)/;
+const EMAIL_RE = createRegExp(
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  '@',
+  oneOrMore(charIn('A-Z0-9.-')),
+  '.',
+  oneOrMore(charIn('A-Z')),
+  [globalFlag, caseInsensitive],
+);
+const SECRET_BUILD_SETTING_RE = createRegExp(
+  'PACKRAT_E2E_',
+  anyOf('EMAIL', 'PASSWORD', 'SESSION_TOKEN', 'USER_ID'),
+  '=',
+  oneOrMore(charNotIn(' \t\n\r')),
+  [globalFlag],
+);
 const XCODEBUILD_TIMEOUT_MS = durationFromEnv('PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS', 30 * 60_000);
 const XCRESULT_EXPORT_TIMEOUT_MS = durationFromEnv('PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS', 90_000);
 const AUTOMATION_MODE_TIMEOUT_MS = 10_000;
@@ -155,9 +172,7 @@ const CONTACT_SHEET_GROUPS: ContactSheetGroup[] = [
     suffix: 'detail',
     title: 'Authenticated Detail Screens',
     matches: (fileName) =>
-      DATA_DETAIL_SCREENSHOT_RE.test(fileName) ||
-      fileName.startsWith('8') ||
-      fileName.startsWith('9'),
+      isDataDetailScreenshot(fileName) || fileName.startsWith('8') || fileName.startsWith('9'),
   },
   {
     suffix: 'expanded',
@@ -290,10 +305,6 @@ function durationFromEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function redactSecrets(output: string): string {
   let redacted = output;
   for (const secret of [
@@ -307,13 +318,13 @@ function redactSecrets(output: string): string {
     process.env.PACKRAT_E2E_USER_ID,
   ]) {
     if (!secret) continue;
-    redacted = redacted.replace(new RegExp(escapeRegExp(secret), 'g'), '[REDACTED]');
+    redacted = redacted.split(secret).join('[REDACTED]');
   }
-  redacted = redacted.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]');
-  redacted = redacted.replace(
-    /PACKRAT_E2E_(?:EMAIL|PASSWORD|SESSION_TOKEN|USER_ID)=\S+/g,
-    (match) => `${match.slice(0, match.indexOf('=') + 1)}[REDACTED]`,
-  );
+  redacted = redacted.replace(EMAIL_RE, '[REDACTED_EMAIL]');
+  redacted = redacted.replace(SECRET_BUILD_SETTING_RE, (match) => {
+    const equalsIndex = match.indexOf('=');
+    return `${match.slice(0, equalsIndex + 1)}[REDACTED]`;
+  });
   return redacted;
 }
 
@@ -708,7 +719,7 @@ function loadEnvFile(envFile: string): void {
     const value = trimmed
       .slice(eq + 1)
       .trim()
-      .replace(QUOTE_RE, '');
+      .replace(createRegExp(anyOf(exactly('"'), exactly("'")), [globalFlag]), '');
     if (process.env[key] === undefined) process.env[key] = value;
   }
 }
@@ -1203,8 +1214,8 @@ function exportScreenshotsFromResultBundle(resultBundle: string, toDir: string):
 
 function stableAttachmentName(suggestedName: string | undefined): string | null {
   if (!suggestedName?.toLowerCase().endsWith('.png')) return null;
-  const stable = suggestedName.replace(XCT_ATTACHMENT_SUFFIX_RE, '.png');
-  return LEADING_DIGIT_RE.test(stable) ? stable : null;
+  const stable = stripXctAttachmentSuffix(suggestedName);
+  return startsWithDigit(stable) ? stable : null;
 }
 
 type AttachmentManifestEntry = {
@@ -1292,36 +1303,27 @@ function listScreenshots(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((file) => file.toLowerCase().endsWith('.png'))
-    .filter((file) => LEADING_DIGIT_RE.test(file))
+    .filter(startsWithDigit)
     .sort((a, b) => a.localeCompare(b))
     .map((file) => resolve(dir, file));
 }
 
 function humanize(filePath: string): string {
-  return basename(filePath, '.png')
-    .replace(SCREENSHOT_PREFIX_RE, '')
+  return stripScreenshotPrefix(basename(filePath, '.png'))
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(HTML_ESCAPE_RE, (char) => {
-    switch (char) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      case "'":
-        return '&#39;';
-      default:
-        return char;
-    }
-  });
+  return Array.from(value, (char) => {
+    if (char === '&') return '&amp;';
+    if (char === '<') return '&lt;';
+    if (char === '>') return '&gt;';
+    if (char === '"') return '&quot;';
+    if (char === "'") return '&#39;';
+    return char;
+  }).join('');
 }
 
 function buildHtml({
@@ -1562,10 +1564,68 @@ function readImageSize(image: string): { width: number; height: number } | null 
     timeout: IMAGE_SIZE_TIMEOUT_MS,
   });
   if (result.status !== 0) return null;
-  const width = result.stdout.match(SIPS_PIXEL_WIDTH_RE)?.[1];
-  const height = result.stdout.match(SIPS_PIXEL_HEIGHT_RE)?.[1];
+  const width = readSipsDimension(result.stdout, 'pixelWidth');
+  const height = readSipsDimension(result.stdout, 'pixelHeight');
   if (!width || !height) return null;
   return { width: Number(width), height: Number(height) };
+}
+
+function startsWithDigit(value: string): boolean {
+  const first = value.charCodeAt(0);
+  return first >= 48 && first <= 57;
+}
+
+function stripScreenshotPrefix(value: string): string {
+  let index = 0;
+  while (index < value.length && isDigit(value.charCodeAt(index))) index += 1;
+  if (index < value.length && isAsciiLetter(value.charCodeAt(index))) index += 1;
+  return value.charAt(index) === '-' ? value.slice(index + 1) : value;
+}
+
+function stripXctAttachmentSuffix(value: string): string {
+  if (!value.toLowerCase().endsWith('.png')) return value;
+  const withoutExtension = value.slice(0, -4);
+  const secondUnderscore = withoutExtension.lastIndexOf('_');
+  if (secondUnderscore === -1) return value;
+  const firstUnderscore = withoutExtension.lastIndexOf('_', secondUnderscore - 1);
+  if (firstUnderscore === -1) return value;
+  const ordinal = withoutExtension.slice(firstUnderscore + 1, secondUnderscore);
+  const identifier = withoutExtension.slice(secondUnderscore + 1);
+  if (!ordinal || !Array.from(ordinal).every((char) => isDigit(char.charCodeAt(0)))) return value;
+  if (!identifier || !Array.from(identifier).every(isHexOrDash)) return value;
+  return `${withoutExtension.slice(0, firstUnderscore)}.png`;
+}
+
+function isDataDetailScreenshot(fileName: string): boolean {
+  return (
+    fileName.length > 8 &&
+    fileName.charAt(0) === '7' &&
+    fileName.charCodeAt(1) >= 49 &&
+    fileName.charCodeAt(1) <= 57 &&
+    fileName.startsWith('-data-', 2)
+  );
+}
+
+function readSipsDimension(stdout: string, key: 'pixelWidth' | 'pixelHeight'): string | undefined {
+  const prefix = `${key}:`;
+  const line = stdout
+    .split('\n')
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(prefix));
+  return line?.slice(prefix.length).trim();
+}
+
+function isDigit(code: number): boolean {
+  return code >= 48 && code <= 57;
+}
+
+function isAsciiLetter(code: number): boolean {
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function isHexOrDash(char: string): boolean {
+  const code = char.charCodeAt(0);
+  return char === '-' || isDigit(code) || (code >= 65 && code <= 70) || (code >= 97 && code <= 102);
 }
 
 function formatError(err: unknown): string {

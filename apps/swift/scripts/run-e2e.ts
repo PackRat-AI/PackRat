@@ -22,6 +22,15 @@ import { createHash } from 'node:crypto';
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  anyOf,
+  caseInsensitive,
+  charIn,
+  createRegExp,
+  global as globalFlag,
+  maybe,
+  oneOrMore,
+} from 'magic-regexp';
 import { ArgsError, parseArgs } from './lib/args';
 import { listBootedIOS } from './lib/simctl';
 import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
@@ -33,15 +42,22 @@ const SCHEME_PATH = resolve(
   'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-iOS.xcscheme',
 );
 const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
-
-const QUOTE_RE = /^["']|["']$/g;
-const ENV_BLOCK_RE = /\s*<EnvironmentVariables>[\s\S]*?<\/EnvironmentVariables>/g;
-const TEST_ACTION_INHERIT_RE = /(<TestAction[^>]*?)shouldUseLaunchSchemeArgsEnv\s*=\s*"YES"/;
-const AMP_RE = /&/g;
-const LT_RE = /</g;
-const GT_RE = />/g;
-const DQUOTE_RE = /"/g;
-const SQUOTE_RE = /'/g;
+const EMAIL_RE = createRegExp(
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  '@',
+  oneOrMore(charIn('A-Z0-9.-')),
+  '.',
+  oneOrMore(charIn('A-Z')),
+  [globalFlag, caseInsensitive],
+);
+const LOOSE_EMAIL_RE = createRegExp(
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  '@',
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  maybe(anyOf('...', oneOrMore(charIn('A-Z0-9.-')))),
+  [globalFlag, caseInsensitive],
+);
+const QUOTE_RE = createRegExp(anyOf('"', "'"), [globalFlag]);
 
 // ── Load .env.local ───────────────────────────────────────────────────────────
 
@@ -83,12 +99,14 @@ if (!existsSync(SCHEME_PATH)) {
 // ── Inject credentials into scheme ───────────────────────────────────────────
 
 function escapeXml(s: string): string {
-  return s
-    .replace(AMP_RE, '&amp;')
-    .replace(LT_RE, '&lt;')
-    .replace(GT_RE, '&gt;')
-    .replace(DQUOTE_RE, '&quot;')
-    .replace(SQUOTE_RE, '&apos;');
+  return Array.from(s, (char) => {
+    if (char === '&') return '&amp;';
+    if (char === '<') return '&lt;';
+    if (char === '>') return '&gt;';
+    if (char === '"') return '&quot;';
+    if (char === "'") return '&apos;';
+    return char;
+  }).join('');
 }
 
 function deriveLocalE2ESessionToken(): string | undefined {
@@ -123,10 +141,13 @@ function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): voi
   let content = readFileSync(SCHEME_PATH, 'utf8');
 
   // Strip any prior EnvironmentVariables block (idempotent re-runs).
-  content = content.replace(ENV_BLOCK_RE, '');
+  content = removeEnvironmentVariablesBlock(content);
 
   // Force TestAction to use its own env vars rather than inheriting from Run.
-  content = content.replace(TEST_ACTION_INHERIT_RE, '$1shouldUseLaunchSchemeArgsEnv = "NO"');
+  content = content.replace(
+    'shouldUseLaunchSchemeArgsEnv = "YES"',
+    'shouldUseLaunchSchemeArgsEnv = "NO"',
+  );
 
   const variables = [
     environmentVariableXml('E2E_EMAIL', email),
@@ -149,6 +170,19 @@ function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): voi
   content = content.replace('   </TestAction>', `${block}   </TestAction>`);
 
   writeFileSync(SCHEME_PATH, content);
+}
+
+function removeEnvironmentVariablesBlock(content: string): string {
+  let output = content;
+  while (true) {
+    const start = output.indexOf('<EnvironmentVariables>');
+    if (start === -1) return output;
+    const end = output.indexOf('</EnvironmentVariables>', start);
+    if (end === -1) return output;
+    const removalStart = output.lastIndexOf('\n', start);
+    const removalEnd = end + '</EnvironmentVariables>'.length;
+    output = `${output.slice(0, removalStart === -1 ? start : removalStart)}${output.slice(removalEnd)}`;
+  }
 }
 
 // ── Pick destination ─────────────────────────────────────────────────────────
@@ -225,10 +259,6 @@ const args = [
   `PACKRAT_ENV=${PACKRAT_ENV}`,
 ];
 
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function redactSecrets(output: string): string {
   let redacted = output;
   for (const secret of [
@@ -240,14 +270,11 @@ function redactSecrets(output: string): string {
     localE2ESessionToken,
   ]) {
     if (secret) {
-      redacted = redacted.replace(new RegExp(escapeRegExp(secret), 'g'), '[REDACTED]');
+      redacted = redacted.split(secret).join('[REDACTED]');
     }
   }
-  redacted = redacted.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]');
-  redacted = redacted.replace(
-    /[A-Z0-9._%+-]+@[A-Z0-9._%+-]+(?:\.\.\.|[A-Z0-9.-]*)?/gi,
-    '[REDACTED_EMAIL]',
-  );
+  redacted = redacted.replace(EMAIL_RE, '[REDACTED_EMAIL]');
+  redacted = redacted.replace(LOOSE_EMAIL_RE, '[REDACTED_EMAIL]');
   return redacted;
 }
 
