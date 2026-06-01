@@ -134,6 +134,14 @@ export const testIds = Object.freeze({
     deleteAccountBtn: 'settings:delete-account',
   }),
 
+  // ── AI Chat ───────────────────────────────────────────────────────────────
+  aiChat: Object.freeze({
+    input: 'ai-chat:input',
+    sendBtn: 'ai-chat:send',
+    stopBtn: 'ai-chat:stop',
+    assistantMessage: (id: string | number) => `ai-chat:assistant-message-${id}`,
+  }),
+
   // ── Weather ───────────────────────────────────────────────────────────────
   weather: Object.freeze({
     searchInput: 'weather:search-input',

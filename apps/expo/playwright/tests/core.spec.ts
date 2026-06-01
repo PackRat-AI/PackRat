@@ -5,6 +5,7 @@
  * TestIds match the constants in lib/testIds.ts and the Maestro iOS flows.
  */
 import type { Page } from '@playwright/test';
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 const visibleCreatePackButton = (page: Page) =>
@@ -212,7 +213,6 @@ test('settings screen loads', async ({ authedPage: page }) => {
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
 
 test('AI chat sends message and gets response', async ({ authedPage: page }) => {
-  test.setTimeout(60_000); // AI streaming responses can take 20-30s
   // Create a pack to chat about first
   const packName = `E2E-AI-${Date.now()}`;
 
@@ -226,13 +226,19 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   // Greet message should be visible
   await expect(page.getByText(/working with your/i).first()).toBeVisible();
 
-  // Send a message
-  await page.getByRole('textbox', { name: /Ask about this pack/i }).fill('List 3 essential items.');
-  // Send button is icon-only with no accessible name; use the arrow-up icon character
-  await page.getByText('󰁝').click();
+  await page.getByTestId(testIds.aiChat.input).fill('List 3 essential items.');
+  const chatResponsePromise = page.waitForResponse(
+    (r) => r.url().includes('/api/chat') && r.request().method() === 'POST',
+    { timeout: 10_000 },
+  );
+  await page.getByTestId(testIds.aiChat.sendBtn).click();
+  const chatResponse = await chatResponsePromise;
+  expect(chatResponse.ok()).toBeTruthy();
 
-  // Wait for AI response (streaming may take a while)
-  await expect(page.getByText(/item/i).nth(1)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId(/^ai-chat:assistant-message-/).last()).toContainText(
+    /shelter.*sleep system.*water treatment/i,
+    { timeout: 15_000 },
+  );
 });
 
 // ─── Weather ──────────────────────────────────────────────────────────────────
