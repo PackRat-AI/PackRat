@@ -40,3 +40,17 @@ Not part of parity (no old script). `severity: warning` so CI is not gated.
 `JSON.parse($X)`→`safeJsonParse($X)` and single-arg `JSON.stringify($X)`→
 `safeJsonStringify($X)` carry autofix `fix:`. Multi-arg stringify is flagged without
 autofix (no clean 1:1 rewrite). Import insertion is out of scope.
+
+## no-primitive-cast (new) → `no-primitive-cast*.yml` (+ `-tsx` twin)
+
+Not part of parity (no old script). Complements `packages/checks/check-type-casts.ts`,
+which deliberately exempts single-word lowercase types (`if (LOWERCASE_TYPE.test(castType)) continue;`)
+and so never flags `as string` / `as number` / `as boolean`. This rule fills that gap:
+it matches an as-expression to a primitive type (`$X as string|number|boolean`) and steers
+authors to a `@packrat/guards` narrow (`toString`/`toNumber`/`toBoolean`, `as*` aliases) or an
+explicit coercion (`String`/`Number`/`toFloat`/`toInt`). No double-reporting — the two checks
+cover disjoint cast shapes (named types vs. primitives). `as const` / `as unknown` / `as T[]`
+are not primitive single-type assertions and are naturally excluded by the pattern. Same
+`ignores` scope as the typeof rules (guards/utils/tooling/test files). `severity: warning`
+because ~63 primitive casts already exist (mostly `apps/expo`); burn the backlog down, then
+promote to `error`.

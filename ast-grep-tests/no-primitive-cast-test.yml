@@ -1,0 +1,20 @@
+id: no-primitive-cast
+valid:
+  # `as const` and `as unknown` are required, safe casts — not flagged.
+  - "const a = [1, 2, 3] as const;"
+  - "const b = x as unknown;"
+  # Array-type casts are not the primitive single-type assertion we target.
+  - "const c = x as string[];"
+  # Non-primitive named-type casts are check-type-casts.ts's job, not this rule's.
+  - "const d = x as MyType;"
+  # The narrowing API itself — the recommended replacement, never a cast.
+  - "const e = toString(x);"
+invalid:
+  - "const a = x as string;"
+  - "const b = y as number;"
+  - "const c = z as boolean;"
+  # Double-assertion to a primitive: the outer `as string` is still flagged.
+  - "const d = (s as unknown) as string;"
+  # Works on any expression, not just identifiers.
+  - "const e = params.lat as string;"
+  - "const f = Number.parseFloat(params.lon as string);"

@@ -1,0 +1,24 @@
+id: no-primitive-cast
+language: typescript
+# warning, not error: the repo already has ~63 primitive casts (mostly apps/expo),
+# so gating CI would break the build. Burn the backlog down, then promote to error.
+severity: warning
+message: "Don't assert with `as string` / `as number` / `as boolean` — assertions lie to the type-checker at boundaries. Use a `@packrat/guards` narrow (`toString`/`toNumber`/`toBoolean`, or the `asString`/`asNumber`/`asBoolean` aliases) and handle the `undefined` case, or coerce explicitly (e.g. `String(x)`, `Number(x)`, `toFloat`/`toInt` from @packrat/utils). `as const` / `as unknown` are fine and not flagged. Annotate a genuinely unavoidable cast with `// safe-cast:`."
+ignores:
+  # Mirrors no-raw-typeof scope: guards/utils are the canonical narrow homes,
+  # tooling dirs and non-production files are out of scope.
+  - "**/packages/guards/**"
+  - "**/packages/utils/**"
+  - "scripts/**"
+  - ".github/**"
+  - "**/mocks/**"
+  - "**/__mocks__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+rule:
+  any:
+    - pattern: $X as string
+    - pattern: $X as number
+    - pattern: $X as boolean
