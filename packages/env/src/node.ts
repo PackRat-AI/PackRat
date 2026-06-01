@@ -73,8 +73,20 @@ export const nodeEnvSchema = z.object({
   DEBUG: z.string().optional(),
 
   // ── E2E test credentials ──────────────────────────────────────────
+  E2E_EMAIL: z.string().email().optional(),
+  E2E_PASSWORD: z.string().min(1).optional(),
   E2E_TEST_EMAIL: z.string().email().optional(),
   E2E_TEST_PASSWORD: z.string().min(1).optional(),
+  PACKRAT_E2E_EMAIL: z.string().email().optional(),
+  PACKRAT_E2E_PASSWORD: z.string().min(1).optional(),
+  PACKRAT_E2E_SESSION_TOKEN: z.string().min(1).optional(),
+  PACKRAT_E2E_USER_ID: z.string().min(1).optional(),
+  PACKRAT_ENV: z.string().min(1).optional(),
+  PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS: z.string().regex(/^\d+$/).optional(),
+  PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS: z.string().regex(/^\d+$/).optional(),
+  PACKRAT_WATCH_SYNC_WAIT_MS: z.string().regex(/^\d+$/).optional(),
+  PACKRAT_WATCH_SYNC_PHONE_ID: z.string().min(1).optional(),
+  PACKRAT_WATCH_SYNC_WATCH_ID: z.string().min(1).optional(),
 });
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
@@ -109,6 +121,18 @@ export const nodeEnv = nodeEnvSchema.parse({
   VITEST: process.env.VITEST,
   PACKRAT_API_URL: process.env.PACKRAT_API_URL,
   DEBUG: process.env.DEBUG,
+  E2E_EMAIL: process.env.E2E_EMAIL,
+  E2E_PASSWORD: process.env.E2E_PASSWORD,
   E2E_TEST_EMAIL: process.env.E2E_TEST_EMAIL,
   E2E_TEST_PASSWORD: process.env.E2E_TEST_PASSWORD,
+  PACKRAT_E2E_EMAIL: process.env.PACKRAT_E2E_EMAIL,
+  PACKRAT_E2E_PASSWORD: process.env.PACKRAT_E2E_PASSWORD,
+  PACKRAT_E2E_SESSION_TOKEN: process.env.PACKRAT_E2E_SESSION_TOKEN,
+  PACKRAT_E2E_USER_ID: process.env.PACKRAT_E2E_USER_ID,
+  PACKRAT_ENV: process.env.PACKRAT_ENV,
+  PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS: process.env.PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS,
+  PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS: process.env.PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS,
+  PACKRAT_WATCH_SYNC_WAIT_MS: process.env.PACKRAT_WATCH_SYNC_WAIT_MS,
+  PACKRAT_WATCH_SYNC_PHONE_ID: process.env.PACKRAT_WATCH_SYNC_PHONE_ID,
+  PACKRAT_WATCH_SYNC_WATCH_ID: process.env.PACKRAT_WATCH_SYNC_WATCH_ID,
 });

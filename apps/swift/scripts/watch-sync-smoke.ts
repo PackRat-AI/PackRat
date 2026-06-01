@@ -2,6 +2,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { nodeEnv } from '@packrat/env/node';
 
 type PairDevice = {
   name: string;
@@ -20,7 +21,7 @@ const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
 const ARTIFACT_DIR = resolve(REPO_ROOT, 'artifacts/screenshots-latest');
 const IOS_BUNDLE_ID = 'com.andrewbierman.packrat';
 const WATCH_BUNDLE_ID = 'com.andrewbierman.packrat.watchkitapp';
-const WAIT_MS = Number(process.env.PACKRAT_WATCH_SYNC_WAIT_MS ?? 45_000);
+const WAIT_MS = Number(nodeEnv.PACKRAT_WATCH_SYNC_WAIT_MS ?? 45_000);
 
 // biome-ignore lint/complexity/useMaxParams: command wrappers read like shell invocations.
 function run(
@@ -30,7 +31,7 @@ function run(
 ) {
   const result = spawnSync(command, args, {
     cwd: SWIFT_DIR,
-    env: { ...process.env, ...options.env },
+    env: { ...Bun.env, ...options.env },
     encoding: 'utf8',
     stdio: options.allowFailure || options.quiet ? 'pipe' : 'inherit',
   });
@@ -46,7 +47,7 @@ function output(command: string, args: string[]): string {
   return execFileSync(command, args, {
     cwd: SWIFT_DIR,
     encoding: 'utf8',
-    env: process.env,
+    env: Bun.env,
   }).trim();
 }
 
@@ -230,8 +231,8 @@ async function waitForWatchSnapshot(watchId: string, timeoutMs: number): Promise
 async function main() {
   mkdirSync(ARTIFACT_DIR, { recursive: true });
   const pair = activePair();
-  const phoneId = process.env.PACKRAT_WATCH_SYNC_PHONE_ID ?? pair.phone.udid;
-  const watchId = process.env.PACKRAT_WATCH_SYNC_WATCH_ID ?? pair.watch.udid;
+  const phoneId = nodeEnv.PACKRAT_WATCH_SYNC_PHONE_ID ?? pair.phone.udid;
+  const watchId = nodeEnv.PACKRAT_WATCH_SYNC_WATCH_ID ?? pair.watch.udid;
   const phoneDestination = `platform=iOS Simulator,id=${phoneId}`;
   const watchDestination = `platform=watchOS Simulator,id=${watchId}`;
 

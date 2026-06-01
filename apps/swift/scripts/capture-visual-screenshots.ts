@@ -12,6 +12,7 @@ import {
 import { basename, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_CONFIG } from '@packrat/config/config';
+import { nodeEnv } from '@packrat/env/node';
 import {
   anyOf,
   caseInsensitive,
@@ -299,23 +300,33 @@ function requirement(
 }
 
 function durationFromEnv(name: string, fallback: number): number {
-  const raw = process.env[name];
+  const raw = nodeScriptEnv(name) ?? Bun.env[name];
   if (!raw) return fallback;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function nodeScriptEnv(name: string): string | undefined {
+  if (name === 'PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS') {
+    return nodeEnv.PACKRAT_VISUAL_XCODEBUILD_TIMEOUT_MS;
+  }
+  if (name === 'PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS') {
+    return nodeEnv.PACKRAT_XCRESULT_EXPORT_TIMEOUT_MS;
+  }
+  return undefined;
+}
+
 function redactSecrets(output: string): string {
   let redacted = output;
   for (const secret of [
-    process.env.E2E_EMAIL,
-    process.env.E2E_PASSWORD,
-    process.env.E2E_TEST_EMAIL,
-    process.env.E2E_TEST_PASSWORD,
-    process.env.PACKRAT_E2E_EMAIL,
-    process.env.PACKRAT_E2E_PASSWORD,
-    process.env.PACKRAT_E2E_SESSION_TOKEN,
-    process.env.PACKRAT_E2E_USER_ID,
+    Bun.env.E2E_EMAIL,
+    Bun.env.E2E_PASSWORD,
+    Bun.env.E2E_TEST_EMAIL,
+    Bun.env.E2E_TEST_PASSWORD,
+    Bun.env.PACKRAT_E2E_EMAIL,
+    Bun.env.PACKRAT_E2E_PASSWORD,
+    Bun.env.PACKRAT_E2E_SESSION_TOKEN,
+    Bun.env.PACKRAT_E2E_USER_ID,
   ]) {
     if (!secret) continue;
     redacted = redacted.split(secret).join('[REDACTED]');
@@ -720,7 +731,7 @@ function loadEnvFile(envFile: string): void {
       .slice(eq + 1)
       .trim()
       .replace(createRegExp(anyOf(exactly('"'), exactly("'")), [globalFlag]), '');
-    if (process.env[key] === undefined) process.env[key] = value;
+    if (Bun.env[key] === undefined) Bun.env[key] = value;
   }
 }
 
@@ -837,8 +848,8 @@ function runXcodeVisualTest(platform: Platform, screenshotDir: string): Promise<
     const child = spawn('xcodebuild', args, {
       cwd: SWIFT_DIR,
       env: {
-        ...process.env,
-        PACKRAT_ENV: process.env.PACKRAT_ENV ?? 'local',
+        ...Bun.env,
+        PACKRAT_ENV: Bun.env.PACKRAT_ENV ?? nodeEnv.PACKRAT_ENV ?? 'local',
         PACKRAT_SCREENSHOT_DIR: writableScreenshotDir,
         PACKRAT_VISUAL_PLATFORM: platform,
       },
@@ -1105,7 +1116,7 @@ function runChecked(options: {
 }): void {
   const result = spawnSync(options.command, options.args, {
     cwd: options.cwd,
-    env: { ...process.env, ...options.env },
+    env: { ...Bun.env, ...options.env },
     encoding: 'utf8',
     timeout: options.timeout,
     maxBuffer: 20 * 1024 * 1024,
@@ -1144,7 +1155,7 @@ async function launchWatchRouteWithRetry(options: {
       ],
       {
         cwd: SWIFT_DIR,
-        env: { ...process.env, ...env },
+        env: { ...Bun.env, ...env },
         encoding: 'utf8',
         timeout: 30_000,
         maxBuffer: 20 * 1024 * 1024,
@@ -1228,8 +1239,8 @@ type AttachmentManifestAttachment = {
 };
 
 function e2eBuildSettings(): string[] {
-  const email = process.env.E2E_TEST_EMAIL ?? process.env.E2E_EMAIL;
-  const password = process.env.E2E_TEST_PASSWORD ?? process.env.E2E_PASSWORD;
+  const email = Bun.env.E2E_TEST_EMAIL ?? Bun.env.E2E_EMAIL;
+  const password = Bun.env.E2E_TEST_PASSWORD ?? Bun.env.E2E_PASSWORD;
   if (!email || !password) {
     console.warn(
       'Warning: E2E_EMAIL/E2E_PASSWORD are not set; authenticated screenshot test will be skipped.',
