@@ -3,6 +3,7 @@ import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import {
   isLoadingAtom,
+  isSignOutRedirectingAtom,
   needsReauthAtom,
   suppressSignOutNavAtom,
 } from 'expo-app/features/auth/atoms/authAtoms';
@@ -35,6 +36,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
   const isLoadingGlobal = useAtomValue(isLoadingAtom);
+  const isSignOutRedirecting = useAtomValue(isSignOutRedirectingAtom);
   const suppressSignOutNav = useAtomValue(suppressSignOutNavAtom);
   const insets = useSafeAreaInsets();
   // Latches true once we dispatch router.replace('/auth') on sign-out.
@@ -49,12 +51,12 @@ export default function AppLayout() {
   useEffect(() => {
     // suppressSignOutNav is true while profile/handleSignOut is showing the
     // post-sign-out prompt; skip auto-navigation until the user picks an option.
-    if (isLoadingGlobal && !isAuthedValue && !suppressSignOutNav) {
+    if (isSignOutRedirecting && isLoadingGlobal && !isAuthedValue && !suppressSignOutNav) {
       hasNavigatedToAuthRef.current = true;
       // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
       router.replace('/auth' as Href);
     }
-  }, [isLoadingGlobal, isAuthedValue, suppressSignOutNav]);
+  }, [isSignOutRedirecting, isLoadingGlobal, isAuthedValue, suppressSignOutNav]);
 
   // If the user has re-authenticated while AppLayout stayed mounted (Expo Router
   // keeps the (app) screen in the stack during the auth transition), clear the
@@ -64,13 +66,17 @@ export default function AppLayout() {
   }
 
   // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
-  // is in progress (isLoadingAtom=true) AND the user is no longer authenticated.
-  // The spinner unmounts NativeTabs so the useEffect above can dispatch to the
-  // root Stack. The !isAuthedValue guard keeps the Stack visible during re-auth
-  // sign-in, where isLoadingAtom is also true but the user is still authed.
+  // redirect is in progress and the user is no longer authenticated.
+  // Generic isLoadingAtom also covers sign-in/profile updates; do not use it to
+  // unmount this Stack or React Navigation's linking container can resolve after
+  // unmount and warn about state updates on unmounted components.
   // hasNavigatedToAuthRef keeps the spinner until AppLayout actually unmounts
   // after the router.replace('/auth') transition completes.
-  if (isLoading || (isLoadingGlobal && !isAuthedValue) || hasNavigatedToAuthRef.current) {
+  if (
+    isLoading ||
+    (isSignOutRedirecting && isLoadingGlobal && !isAuthedValue) ||
+    hasNavigatedToAuthRef.current
+  ) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
