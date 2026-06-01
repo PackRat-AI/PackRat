@@ -14,8 +14,8 @@ export const authClient = createAuthClient({
       scheme: 'packrat',
       storagePrefix: 'packrat',
       storage: {
-        setItem: SecureStore.setItem,
-        getItem: SecureStore.getItem,
+        setItem: (key: string, value: string) => SecureStore.setItem(key, value),
+        getItem: (key: string) => SecureStore.getItem(key),
       },
     }),
   ],
