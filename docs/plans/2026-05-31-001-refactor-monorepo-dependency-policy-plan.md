@@ -106,7 +106,7 @@ The three are redundant per Verified Findings, but an override *also* forces tra
 
 **Test scenarios:**
 - Happy path: after removal + install, exactly one `elysia` version node exists across the workspace, at the same version captured before removal (the catalog `^1.4.0` resolution, `1.4.28` at audit time).
-- Happy path: exactly one `@sinclair/typebox` node, at a version satisfying both `packages/api`'s `^0.34.15` and elysia's `>= 0.34.0 < 1` (`0.34.49` at audit time).
+- Happy path: one `@sinclair/typebox` node for the API/Elysia runtime, at a version satisfying both `packages/api`'s `^0.34.15` and elysia's `>= 0.34.0 < 1` (`0.34.49` at audit time). Note: removing the override also lets RN's bundled jest tooling (`@jest/schemas`) resolve its own isolated `@sinclair/typebox@0.27.10` — an expected, correct second copy in a separate subtree, not a runtime duplicate.
 - Happy path: exactly one `expo-sqlite` node, at the same version `apps/expo` got before removal.
 - Edge / failure: if any of the three resolves to 2+ versions post-removal, that entry is restored and documented (the plan's branch in D2) — confirm the restored override + new registry row keep the U3 lint green.
 - Integration: workspace type-check passes after removal (no new type errors from a shifted elysia/typebox version) — `bun check-types`.
