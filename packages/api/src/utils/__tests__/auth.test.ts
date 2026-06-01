@@ -66,7 +66,7 @@ describe('auth utilities', () => {
 
   describe('timingSafeEqual', () => {
     it('rejects when the first value is longer than the second', () => {
-      expect(timingSafeEqual('test-api-key-extra', 'test-api-key')).toBe(false);
+      expect(timingSafeEqual({ a: 'test-api-key-extra', b: 'test-api-key' })).toBe(false);
     });
   });
 });
