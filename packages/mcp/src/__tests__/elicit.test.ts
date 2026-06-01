@@ -33,6 +33,7 @@ import {
   type ElicitCapable,
   type ElicitInputResult,
 } from '../elicit';
+import { nth } from './_access';
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -223,7 +224,7 @@ describe('confirmAction', () => {
       },
     });
     expect(spy).toHaveBeenCalledTimes(1);
-    const [params, options] = spy.mock.calls[0]!;
+    const [params, options] = nth(spy.mock.calls, 0);
     expect(options).toEqual({ relatedRequestId: 'req-abc-123' });
     // Sanity: the schema is well-formed and the message is preserved.
     expect(params).toMatchObject({
@@ -245,7 +246,7 @@ describe('confirmAction', () => {
         expectedConfirmation: 'X',
       },
     });
-    expect(spy.mock.calls[0]![1]).toEqual({ relatedRequestId: 42 });
+    expect(nth(nth(spy.mock.calls, 0), 1)).toEqual({ relatedRequestId: 42 });
   });
 
   it('uses a custom fieldLabel in the requested schema', async () => {
@@ -262,7 +263,7 @@ describe('confirmAction', () => {
         fieldLabel: 'User ID',
       },
     });
-    const [params] = spy.mock.calls[0]!;
+    const [params] = nth(spy.mock.calls, 0);
     const properties = (
       params.requestedSchema as { properties: { confirmation: { title: string } } }
     ).properties;
@@ -361,7 +362,7 @@ describe('chooseFromList', () => {
         choices: ['A', 'B', 'C'],
       },
     });
-    const [params, options] = spy.mock.calls[0]!;
+    const [params, options] = nth(spy.mock.calls, 0);
     expect(options).toEqual({ relatedRequestId: 'req-xyz' });
     const properties = (params.requestedSchema as { properties: { choice: { enum: string[] } } })
       .properties;

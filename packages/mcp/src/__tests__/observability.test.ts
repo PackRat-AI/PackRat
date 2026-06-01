@@ -34,6 +34,7 @@ import {
 } from '../observability';
 import { registerAdminTools } from '../tools/admin';
 import type { AgentContext } from '../types';
+import { nth } from './_access';
 
 // ── Shared log-spy helpers ───────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ describe('createLogger', () => {
     const log = createLogger({ correlationId: 'cf-ray-abc' });
     log.info({ msg: 'hello', fields: { statusCode: 200 } });
     expect(capture.lines).toHaveLength(1);
-    const { json, level } = capture.lines[0]!;
+    const { json, level } = nth(capture.lines, 0);
     expect(level).toBe('log');
     expect(json.level).toBe('info');
     expect(json.msg).toBe('hello');
@@ -97,7 +98,7 @@ describe('createLogger', () => {
   it('uses the user-supplied service name when provided', () => {
     const log = createLogger({ correlationId: 'c1', service: 'mcp-test' });
     log.info({ msg: 'x' });
-    expect(capture.lines[0]!.json.service).toBe('mcp-test');
+    expect(nth(capture.lines, 0).json.service).toBe('mcp-test');
   });
 
   it('routes warn to console.warn and error to console.error', () => {
@@ -120,7 +121,7 @@ describe('createLogger', () => {
     // `actor`), so it should also be redacted. This is the intended
     // strict behavior: every direct top-level field must be explicitly
     // approved.
-    const { json } = capture.lines[0]!;
+    const { json } = nth(capture.lines, 0);
     expect(json.token).toBe('[redacted]');
     expect(json.userId).toBe('[redacted]');
     // The original safe `correlationId` survives because it's set by the
@@ -138,7 +139,7 @@ describe('createLogger', () => {
         error: { code: 'e', message: 'm', retryable: false, secret: 'nope' },
       },
     });
-    const { json } = capture.lines[0]!;
+    const { json } = nth(capture.lines, 0);
     expect(json.actor).toEqual({ userId: 'u1', scopes: ['mcp:admin'], secret: '[redacted]' });
     expect(json.target).toEqual({ type: 'user', id: 'u-42', secret: '[redacted]' });
     expect(json.error).toMatchObject({
@@ -245,7 +246,7 @@ describe('audit', () => {
       },
     });
     expect(capture.lines).toHaveLength(1);
-    const { json } = capture.lines[0]!;
+    const { json } = nth(capture.lines, 0);
     expect(json.msg).toBe('mcp.audit.admin_hard_delete_user');
     expect(json.action).toBe('admin_hard_delete_user');
     expect(json.actor).toEqual({ userId: 'u1', scopes: ['mcp:admin'] });
@@ -368,7 +369,7 @@ describe('admin tool audit log — packrat_admin_hard_delete_user', () => {
       String(l.json.msg).startsWith('mcp.audit.admin_hard_delete_user'),
     );
     expect(audits).toHaveLength(1);
-    const line = audits[0]!;
+    const line = nth(audits, 0);
     expect(line.json.action).toBe('admin_hard_delete_user');
     expect(line.json.outcome).toBe('success');
     expect(line.json.actor).toEqual({
@@ -396,7 +397,7 @@ describe('admin tool audit log — packrat_admin_hard_delete_user', () => {
       String(l.json.msg).startsWith('mcp.audit.admin_hard_delete_user'),
     );
     expect(audits).toHaveLength(1);
-    expect(audits[0]!.json.outcome).toBe('declined');
-    expect(audits[0]!.json.error).toMatchObject({ code: 'user_cancelled' });
+    expect(nth(audits, 0).json.outcome).toBe('declined');
+    expect(nth(audits, 0).json.error).toMatchObject({ code: 'user_cancelled' });
   });
 });

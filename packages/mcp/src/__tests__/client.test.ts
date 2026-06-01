@@ -12,6 +12,7 @@ import {
   shortId,
   withNextOffset,
 } from '../client';
+import { nth } from './_access';
 
 vi.mock('@packrat/api-client', () => ({
   createApiClient: vi.fn((opts: unknown) => ({ _opts: opts })),
@@ -21,19 +22,19 @@ describe('ok()', () => {
   it('wraps data as pretty-printed JSON in MCP text content', () => {
     const result = ok({ data: { id: 'pack-1', name: 'My Pack' } });
     expect(result.content).toHaveLength(1);
-    expect(result.content[0]!.type).toBe('text');
-    expect(result.content[0]!.text).toContain('"id": "pack-1"');
+    expect(nth(result.content, 0).type).toBe('text');
+    expect(nth(result.content, 0).text).toContain('"id": "pack-1"');
     expect(result.isError).toBeUndefined();
   });
 
   it('handles null data', () => {
     const result = ok({ data: null });
-    expect(result.content[0]!.text).toBe('null');
+    expect(nth(result.content, 0).text).toBe('null');
   });
 
   it('handles array data', () => {
     const result = ok({ data: [1, 2, 3] });
-    expect(result.content[0]!.text).toContain('1');
+    expect(nth(result.content, 0).text).toContain('1');
   });
 });
 
@@ -41,13 +42,13 @@ describe('errMessage()', () => {
   it('returns an error result with isError: true', () => {
     const result = errMessage('something went wrong');
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.type).toBe('text');
-    expect(result.content[0]!.text).toContain('Error: something went wrong');
+    expect(nth(result.content, 0).type).toBe('text');
+    expect(nth(result.content, 0).text).toContain('Error: something went wrong');
   });
 
   it('prefixes the message with "Error:"', () => {
     const result = errMessage('not found');
-    expect(result.content[0]!.text).toMatch(/^Error:/);
+    expect(nth(result.content, 0).text).toMatch(/^Error:/);
   });
 });
 
@@ -94,7 +95,7 @@ describe('call()', () => {
     const mockPromise = Promise.resolve({ data: { id: 'pack-1' }, error: null, status: 200 });
     const result = await call({ promise: mockPromise });
     expect(result.isError).toBeUndefined();
-    expect(result.content[0]!.text).toContain('"id": "pack-1"');
+    expect(nth(result.content, 0).text).toContain('"id": "pack-1"');
   });
 
   it('returns error result when promise resolves with error', async () => {
@@ -105,7 +106,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain('404');
+    expect(nth(result.content, 0).text).toContain('404');
   });
 
   it('returns error result when data is null', async () => {
@@ -118,13 +119,13 @@ describe('call()', () => {
     const mockPromise = Promise.reject(new Error('network failure'));
     const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain('network failure');
+    expect(nth(result.content, 0).text).toContain('network failure');
   });
 
   it('uses action from options in error messages', async () => {
     const mockPromise = Promise.reject(new Error('timeout'));
     const result = await call({ promise: mockPromise, action: 'fetch pack' });
-    expect(result.content[0]!.text).toContain('fetch pack');
+    expect(nth(result.content, 0).text).toContain('fetch pack');
   });
 
   it('formats 401 error with auth guidance', async () => {
@@ -135,7 +136,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'list packs' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('authentication');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('authentication');
   });
 
   it('formats 401 admin error with admin guidance when requiresAdmin is set', async () => {
@@ -146,7 +147,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'list packs', requiresAdmin: true });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('admin');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('admin');
   });
 
   it('formats 403 error', async () => {
@@ -157,7 +158,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'delete pack' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('forbidden');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('forbidden');
   });
 
   it('formats 404 error', async () => {
@@ -172,7 +173,7 @@ describe('call()', () => {
       resourceHint: 'pack p_123',
     });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain('404');
+    expect(nth(result.content, 0).text).toContain('404');
   });
 
   it('formats 409 conflict error', async () => {
@@ -183,7 +184,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'create pack' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('conflict');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('conflict');
   });
 
   it('formats 422 validation error', async () => {
@@ -194,7 +195,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'update pack' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('validation');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('validation');
   });
 
   it('formats 429 rate limit error', async () => {
@@ -205,7 +206,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'search' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('rate limit');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('rate limit');
   });
 
   it('formats generic HTTP error for unknown status codes', async () => {
@@ -216,7 +217,7 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'fetch data' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain('503');
+    expect(nth(result.content, 0).text).toContain('503');
   });
 
   it('includes error body message when available', async () => {
@@ -226,14 +227,14 @@ describe('call()', () => {
       status: 400,
     });
     const result = await call({ promise: mockPromise });
-    expect(result.content[0]!.text).toContain('invalid input');
+    expect(nth(result.content, 0).text).toContain('invalid input');
   });
 
   it('handles non-Error thrown exceptions', async () => {
     const mockPromise = Promise.reject('string error');
     const result = await call({ promise: mockPromise });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain('string error');
+    expect(nth(result.content, 0).text).toContain('string error');
   });
 
   it('formats 403 admin error when requiresAdmin is set', async () => {
@@ -244,8 +245,8 @@ describe('call()', () => {
     });
     const result = await call({ promise: mockPromise, action: 'delete user', requiresAdmin: true });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text.toLowerCase()).toContain('admin');
-    expect(result.content[0]!.text.toLowerCase()).toContain('forbidden');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('admin');
+    expect(nth(result.content, 0).text.toLowerCase()).toContain('forbidden');
   });
 
   it('extracts error body from obj.error field when obj.message is absent', async () => {
@@ -255,7 +256,7 @@ describe('call()', () => {
       status: 400,
     });
     const result = await call({ promise: mockPromise });
-    expect(result.content[0]!.text).toContain('bad request detail');
+    expect(nth(result.content, 0).text).toContain('bad request detail');
   });
 
   it('JSON-stringifies error body object when no message/error field present', async () => {
@@ -265,7 +266,7 @@ describe('call()', () => {
       status: 400,
     });
     const result = await call({ promise: mockPromise });
-    expect(result.content[0]!.text).toContain('42');
+    expect(nth(result.content, 0).text).toContain('42');
   });
 
   it('converts numeric error body to string', async () => {
@@ -275,7 +276,7 @@ describe('call()', () => {
       status: 500,
     });
     const result = await call({ promise: mockPromise });
-    expect(result.content[0]!.text).toContain('12345');
+    expect(nth(result.content, 0).text).toContain('12345');
   });
 });
 
@@ -385,8 +386,8 @@ describe('U8 ok() with structured: true', () => {
     const data = { id: 'pack-1', name: 'My Pack' };
     const result = ok({ data, structured: true });
     expect(result.content).toHaveLength(1);
-    expect(result.content[0]!.type).toBe('text');
-    expect(result.content[0]!.text).toContain('"id": "pack-1"');
+    expect(nth(result.content, 0).type).toBe('text');
+    expect(nth(result.content, 0).text).toContain('"id": "pack-1"');
     expect(result.structuredContent).toEqual(data);
   });
 
@@ -408,18 +409,18 @@ describe('U8 ok() truncation', () => {
 
   it('passes through a small payload unchanged', () => {
     const result = ok({ data: { small: true } });
-    expect(result.content[0]!.text).toContain('"small": true');
+    expect(nth(result.content, 0).text).toContain('"small": true');
   });
 
   it('truncates payloads exceeding RESPONSE_SIZE_LIMIT_CHARS with a marker', () => {
     const result = ok({ data: buildLarge() });
-    expect(result.content[0]!.text.length).toBeLessThanOrEqual(RESPONSE_SIZE_LIMIT_CHARS);
-    expect(result.content[0]!.text).toContain('[truncated: response exceeded 150k chars]');
+    expect(nth(result.content, 0).text.length).toBeLessThanOrEqual(RESPONSE_SIZE_LIMIT_CHARS);
+    expect(nth(result.content, 0).text).toContain('[truncated: response exceeded 150k chars]');
   });
 
   it('drops structuredContent on truncation (would be unparseable)', () => {
     const result = ok({ data: buildLarge(), structured: true });
-    expect(result.content[0]!.text).toContain('[truncated:');
+    expect(nth(result.content, 0).text).toContain('[truncated:');
     expect(result.structuredContent).toBeUndefined();
   });
 
@@ -433,8 +434,8 @@ describe('U8 errResponse()', () => {
   it('returns the canonical envelope with code, message, retryable defaulting to false', () => {
     const result = errResponse({ code: 'api_error', message: 'boom' });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.type).toBe('text');
-    expect(result.content[0]!.text).toBe('boom');
+    expect(nth(result.content, 0).type).toBe('text');
+    expect(nth(result.content, 0).text).toBe('boom');
     expect(result.structuredContent).toEqual({
       error: { code: 'api_error', message: 'boom', retryable: false },
     });
@@ -449,7 +450,7 @@ describe('U8 errResponse()', () => {
 
   it('emits the message verbatim in content[0].text (no Error: prefix)', () => {
     const result = errResponse({ code: 'forbidden', message: 'No access' });
-    expect(result.content[0]!.text).toBe('No access');
+    expect(nth(result.content, 0).text).toBe('No access');
   });
 });
 
@@ -528,7 +529,7 @@ describe('U8 call() maps errors to structured envelopes', () => {
     expect(result.structuredContent).toMatchObject({
       error: { code: 'network_error', retryable: true },
     });
-    expect(result.content[0]!.text).toContain('socket hang up');
+    expect(nth(result.content, 0).text).toContain('socket hang up');
   });
 
   it('does not let thrown errors escape (protocol vs. recoverable separation)', async () => {

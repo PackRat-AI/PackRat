@@ -110,11 +110,7 @@
             "useTopLevelRegex": "off"
           },
           "complexity": {
-            "noForEach": "off",
-            "useLiteralKeys": "off"
-          },
-          "style": {
-            "noNonNullAssertion": "off"
+            "noForEach": "off"
           }
         }
       }

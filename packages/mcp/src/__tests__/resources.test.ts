@@ -26,6 +26,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { GLOSSARY_MARKDOWN } from '../glossary';
 import { CATALOG_LIST_CAP, registerResources } from '../resources';
 import type { AgentContext } from '../types';
+import { nth, prop } from './_access';
 
 // ── Test scaffolding ─────────────────────────────────────────────────────────
 
@@ -154,14 +155,14 @@ describe('U9 glossary resource', () => {
   it('returns the glossary markdown with mimeType text/markdown', async () => {
     const { agent, server } = makeAgent();
     registerResources(agent);
-    const resource = getResources(server).fixed['packrat://glossary']!;
+    const resource = prop(getResources(server).fixed, 'packrat://glossary');
     const result = (await resource.readCallback(new URL('packrat://glossary'))) as {
       contents: Array<{ uri: string; mimeType: string; text: string }>;
     };
     expect(result.contents).toHaveLength(1);
-    expect(result.contents[0]!.mimeType).toBe('text/markdown');
-    expect(result.contents[0]!.text.length).toBeGreaterThan(0);
-    expect(result.contents[0]!.text).toBe(GLOSSARY_MARKDOWN);
+    expect(nth(result.contents, 0).mimeType).toBe('text/markdown');
+    expect(nth(result.contents, 0).text.length).toBeGreaterThan(0);
+    expect(nth(result.contents, 0).text).toBe(GLOSSARY_MARKDOWN);
   });
 
   it('mentions canary terms reviewers will check for', () => {
@@ -201,9 +202,9 @@ describe('U9 pack list provider', () => {
       }>
     )();
     expect(result.resources).toHaveLength(3);
-    expect(result.resources[0]!.uri).toBe('packrat://packs/p_one');
-    expect(result.resources[0]!.name).toBe('Weekend Pack');
-    expect(result.resources[2]!.uri).toBe('packrat://packs/p_three');
+    expect(nth(result.resources, 0).uri).toBe('packrat://packs/p_one');
+    expect(nth(result.resources, 0).name).toBe('Weekend Pack');
+    expect(nth(result.resources, 2).uri).toBe('packrat://packs/p_three');
     expect(result.resources.every((r) => r.mimeType === 'application/json')).toBe(true);
   });
 
@@ -223,7 +224,7 @@ describe('U9 pack list provider', () => {
         resources: Array<{ uri: string; name: string }>;
       }>
     )();
-    expect(result.resources[0]!.name).toBe('Pack p_no_name');
+    expect(nth(result.resources, 0).name).toBe('Pack p_no_name');
   });
 
   it('skips entries without a string id', async () => {
@@ -243,7 +244,7 @@ describe('U9 pack list provider', () => {
       }>
     )();
     expect(result.resources).toHaveLength(1);
-    expect(result.resources[0]!.uri).toBe('packrat://packs/p_one');
+    expect(nth(result.resources, 0).uri).toBe('packrat://packs/p_one');
   });
 
   it('returns empty array when the API errors (graceful degradation)', async () => {
@@ -304,9 +305,9 @@ describe('U9 trip list provider', () => {
       }>
     )();
     expect(result.resources).toHaveLength(3);
-    expect(result.resources[0]!.name).toBe('JMT 2026');
-    expect(result.resources[1]!.name).toBe('Wind River Range');
-    expect(result.resources[2]!.name).toBe('Trip t_three');
+    expect(nth(result.resources, 0).name).toBe('JMT 2026');
+    expect(nth(result.resources, 1).name).toBe('Wind River Range');
+    expect(nth(result.resources, 2).name).toBe('Trip t_three');
   });
 
   it('returns empty array on API error (no propagation)', async () => {
@@ -358,8 +359,8 @@ describe('U9 catalog list provider', () => {
       }>
     )();
     expect(result.resources.length).toBeLessThanOrEqual(CATALOG_LIST_CAP);
-    expect(result.resources[0]!.uri).toBe('packrat://catalog/1');
-    expect(result.resources[0]!.name).toBe('TestBrand Item 1');
+    expect(nth(result.resources, 0).uri).toBe('packrat://catalog/1');
+    expect(nth(result.resources, 0).name).toBe('TestBrand Item 1');
     // The provider should have requested a limit of CATALOG_LIST_CAP from the API
     expect((calls[0] as { query?: { limit?: number } })?.query?.limit).toBe(CATALOG_LIST_CAP);
   });
@@ -381,7 +382,7 @@ describe('U9 catalog list provider', () => {
       }>
     )();
     expect(result.resources).toHaveLength(1);
-    expect(result.resources[0]!.uri).toBe('packrat://catalog/5');
+    expect(nth(result.resources, 0).uri).toBe('packrat://catalog/5');
   });
 
   it('returns empty array on API error', async () => {
@@ -437,8 +438,8 @@ describe('U9 search resource template', () => {
       query: 'tent',
     })) as { contents: Array<{ uri: string; mimeType: string; text: string }> };
     expect(result.contents).toHaveLength(1);
-    expect(result.contents[0]!.mimeType).toBe('application/json');
-    expect(result.contents[0]!.text).toContain('Tent');
+    expect(nth(result.contents, 0).mimeType).toBe('application/json');
+    expect(nth(result.contents, 0).text).toContain('Tent');
     const callArgs = calls[0] as { query?: { q?: string; limit?: number } };
     expect(callArgs?.query?.q).toBe('tent');
     expect(typeof callArgs?.query?.limit).toBe('number');
@@ -509,9 +510,9 @@ describe('U9 resource error handling', () => {
     const result = (await template.readCallback(new URL('packrat://packs/p_ok'), {
       packId: 'p_ok',
     })) as { contents: Array<{ uri: string; mimeType: string; text: string }> };
-    expect(result.contents[0]!.mimeType).toBe('application/json');
-    expect(result.contents[0]!.text).toContain('p_ok');
-    expect(result.contents[0]!.text).toContain('My Pack');
+    expect(nth(result.contents, 0).mimeType).toBe('application/json');
+    expect(nth(result.contents, 0).text).toContain('p_ok');
+    expect(nth(result.contents, 0).text).toContain('My Pack');
   });
 });
 
@@ -535,12 +536,12 @@ describe('U9 static catalog/categories resource', () => {
         }),
     });
     registerResources(agent);
-    const resource = getResources(server).fixed['packrat://catalog/categories']!;
+    const resource = prop(getResources(server).fixed, 'packrat://catalog/categories');
     const result = (await resource.readCallback(new URL('packrat://catalog/categories'))) as {
       contents: Array<{ uri: string; mimeType: string; text: string }>;
     };
-    expect(result.contents[0]!.mimeType).toBe('application/json');
-    expect(result.contents[0]!.text).toContain('tents');
+    expect(nth(result.contents, 0).mimeType).toBe('application/json');
+    expect(nth(result.contents, 0).text).toContain('tents');
   });
 
   it('throws McpError on categories endpoint failure', async () => {
@@ -549,7 +550,7 @@ describe('U9 static catalog/categories resource', () => {
         Promise.resolve({ data: null, error: { status: 502, value: null }, status: 502 }),
     });
     registerResources(agent);
-    const resource = getResources(server).fixed['packrat://catalog/categories']!;
+    const resource = prop(getResources(server).fixed, 'packrat://catalog/categories');
     await expect(
       resource.readCallback(new URL('packrat://catalog/categories')),
     ).rejects.toBeInstanceOf(McpError);
@@ -575,9 +576,9 @@ describe('U9 registered resource catalog', () => {
     );
 
     // Each non-search template has a list provider; search does not.
-    expect(templates.pack!.resourceTemplate.listCallback).toBeDefined();
-    expect(templates.trip!.resourceTemplate.listCallback).toBeDefined();
-    expect(templates.catalog_item!.resourceTemplate.listCallback).toBeDefined();
-    expect(templates.search!.resourceTemplate.listCallback).toBeUndefined();
+    expect(prop(templates, 'pack').resourceTemplate.listCallback).toBeDefined();
+    expect(prop(templates, 'trip').resourceTemplate.listCallback).toBeDefined();
+    expect(prop(templates, 'catalog_item').resourceTemplate.listCallback).toBeDefined();
+    expect(prop(templates, 'search').resourceTemplate.listCallback).toBeUndefined();
   });
 });

@@ -39,6 +39,7 @@ import { registerPackTools } from '../tools/packs';
 import { registerTripTools } from '../tools/trips';
 import { registerWeatherTools } from '../tools/weather';
 import type { AgentContext } from '../types';
+import { prop } from './_access';
 
 describe('U8 paginatedWithNextOffset helper', () => {
   const schema = paginatedWithNextOffset(z.object({ id: z.string() }));
@@ -347,7 +348,7 @@ describe('U8 tier-1 tools register an outputSchema', () => {
   it.each(tier1)('%s declares an outputSchema', (name) => {
     const tool = tools[name];
     expect(tool, `expected ${name} to be registered`).toBeDefined();
-    expect(tool!.outputSchema, `${name}: outputSchema not registered`).toBeDefined();
+    expect(prop(tools, name).outputSchema, `${name}: outputSchema not registered`).toBeDefined();
   });
 });
 

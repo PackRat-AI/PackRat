@@ -22,6 +22,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { errResponse, type McpToolResult } from '../client';
 import { checkRateLimit, toolRateLimitKey } from '../rate-limit';
 import type { Env } from '../types';
+import { nth } from './_access';
 
 /** Build a minimal Env with an optional MCP_TOOLS_RL binding. */
 function makeEnv(overrides: Partial<Env> = {}): Env {
@@ -191,7 +192,7 @@ describe('rate-limited tool dispatch — envelope', () => {
         retryable: true,
       },
     });
-    expect(result.content[0]!.text).toMatch(/rate limit exceeded/i);
+    expect(nth(result.content, 0).text).toMatch(/rate limit exceeded/i);
   });
 
   it('passes through to the handler when the binding allows', async () => {
@@ -213,7 +214,7 @@ describe('rate-limited tool dispatch — envelope', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(result.isError).toBeUndefined();
-    expect(result.content[0]!.text).toBe('ok');
+    expect(nth(result.content, 0).text).toBe('ok');
     expect(binding.limit).toHaveBeenCalledWith({ key: 'u_1:packrat_get_pack' });
   });
 });

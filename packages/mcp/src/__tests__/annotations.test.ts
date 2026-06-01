@@ -65,6 +65,7 @@ import { registerUserTools } from '../tools/user';
 import { registerWeatherTools } from '../tools/weather';
 import { registerWildlifeTools } from '../tools/wildlife';
 import type { AgentContext } from '../types';
+import { prop } from './_access';
 
 // ── Stub agent + tool registry ────────────────────────────────────────────────
 
@@ -184,11 +185,11 @@ describe('U7 tool annotation catalog', () => {
   it.each(toolNames)('tool %s has an annotations object', (name) => {
     const tool = tools[name];
     expect(tool, `${name}: tool record missing`).toBeDefined();
-    expect(tool!.annotations, `${name}: annotations missing`).toBeDefined();
+    expect(prop(tools, name).annotations, `${name}: annotations missing`).toBeDefined();
   });
 
   it.each(toolNames)('tool %s has a non-empty title ≤ 64 chars', (name) => {
-    const ann = tools[name]!.annotations;
+    const ann = prop(tools, name).annotations;
     expect(ann?.title, `${name}: annotation title missing`).toBeDefined();
     const title = ann?.title ?? '';
     expect(title.length).toBeGreaterThan(0);
@@ -196,24 +197,24 @@ describe('U7 tool annotation catalog', () => {
   });
 
   it.each(toolNames)('tool %s has readOnlyHint set explicitly as a boolean', (name) => {
-    const ann = tools[name]!.annotations;
+    const ann = prop(tools, name).annotations;
     expect(typeof ann?.readOnlyHint, `${name}: readOnlyHint not boolean`).toBe('boolean');
   });
 
   it.each(toolNames)('tool %s has idempotentHint set explicitly as a boolean', (name) => {
-    const ann = tools[name]!.annotations;
+    const ann = prop(tools, name).annotations;
     expect(typeof ann?.idempotentHint, `${name}: idempotentHint not boolean`).toBe('boolean');
   });
 
   it.each(toolNames)('tool %s has openWorldHint set explicitly as a boolean', (name) => {
-    const ann = tools[name]!.annotations;
+    const ann = prop(tools, name).annotations;
     expect(typeof ann?.openWorldHint, `${name}: openWorldHint not boolean`).toBe('boolean');
   });
 
   it.each(
     toolNames,
   )('tool %s sets destructiveHint when readOnlyHint=false (avoids SDK default of true)', (name) => {
-    const ann = tools[name]!.annotations;
+    const ann = prop(tools, name).annotations;
     if (ann?.readOnlyHint === false) {
       expect(typeof ann?.destructiveHint, `${name}: destructiveHint not boolean`).toBe('boolean');
     }
@@ -246,31 +247,31 @@ describe('U7 named-tool coverage (spot-check)', () => {
   });
 
   it('packrat_admin_hard_delete_user is annotated as destructive', () => {
-    const ann = tools['packrat_admin_hard_delete_user']?.annotations;
+    const ann = tools.packrat_admin_hard_delete_user?.annotations;
     expect(ann?.readOnlyHint).toBe(false);
     expect(ann?.destructiveHint).toBe(true);
   });
 
   it('packrat_get_pack is annotated as read-only and closed-world', () => {
-    const ann = tools['packrat_get_pack']?.annotations;
+    const ann = tools.packrat_get_pack?.annotations;
     expect(ann?.readOnlyHint).toBe(true);
     expect(ann?.openWorldHint).toBe(false);
   });
 
   it('packrat_web_search is annotated as read-only and open-world', () => {
-    const ann = tools['packrat_web_search']?.annotations;
+    const ann = tools.packrat_web_search?.annotations;
     expect(ann?.readOnlyHint).toBe(true);
     expect(ann?.openWorldHint).toBe(true);
   });
 
   it('packrat_get_weather is annotated as read-only and open-world (live data)', () => {
-    const ann = tools['packrat_get_weather']?.annotations;
+    const ann = tools.packrat_get_weather?.annotations;
     expect(ann?.readOnlyHint).toBe(true);
     expect(ann?.openWorldHint).toBe(true);
   });
 
   it('packrat_preview_alltrails_url is annotated as read-only and open-world', () => {
-    const ann = tools['packrat_preview_alltrails_url']?.annotations;
+    const ann = tools.packrat_preview_alltrails_url?.annotations;
     expect(ann?.readOnlyHint).toBe(true);
     expect(ann?.openWorldHint).toBe(true);
   });
@@ -280,7 +281,7 @@ describe('U7 named-tool coverage (spot-check)', () => {
     // hardcoded to false in the handler). The admin variant lives at
     // packrat_create_app_pack_template. We assert by inspecting the
     // recorded inputSchema's keys.
-    const tool = tools['packrat_create_pack_template'] as unknown as {
+    const tool = tools.packrat_create_pack_template as unknown as {
       inputSchema?: { _def?: { shape?: () => Record<string, unknown> } };
     };
     const shape = tool.inputSchema?._def?.shape?.() ?? {};
