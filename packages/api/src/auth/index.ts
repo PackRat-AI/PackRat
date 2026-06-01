@@ -191,7 +191,12 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     ],
 
     rateLimit: {
-      enabled: true,
+      // Local web dev hits /api/auth/get-session aggressively (better-auth's
+      // useSession() hook plus apiClient's per-request token lookup), which
+      // trips the prod 100/min limit within seconds. Disable rate limiting
+      // when running against a localhost API; prod keeps the original
+      // throttle.
+      enabled: !env.BETTER_AUTH_URL.startsWith('http://localhost'),
       window: 60,
       max: 100,
       storage: 'secondary-storage',
