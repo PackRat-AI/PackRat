@@ -580,22 +580,13 @@ final class VisualScreenshotTests: XCTestCase {
         destinationIdentifier: String? = nil
     ) {
         let baselineName = name.hasPrefix("home-before-") ? name : "home-before-\(name)"
-        captureTab("Home", name: baselineName)
+        openHomeForActionBaseline(name: baselineName)
 
         let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
         let action = app.buttons[identifier]
         var visibleCandidate: XCUIElement?
 
-        if title == "Wildlife ID" {
-            openHomeActionUsingSearch(title: title, identifier: identifier)
-            capture(name)
-            if dismissAfterCapture {
-                dismissPhoneDestination()
-            }
-            return
-        }
-
-        for _ in 0..<12 {
+        for _ in 0..<30 {
             if action.exists {
                 visibleCandidate = action
             }
@@ -620,7 +611,7 @@ final class VisualScreenshotTests: XCTestCase {
                 smallScrollUp()
             }
         }
-        if let visibleCandidate, visibleCandidate.exists, actionIsClearOfBottomBar(visibleCandidate) {
+        if let visibleCandidate, visibleCandidate.exists, visibleCandidate.isHittable {
             activate(visibleCandidate)
             if let destinationIdentifier {
                 let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
@@ -635,19 +626,37 @@ final class VisualScreenshotTests: XCTestCase {
             }
             return
         }
-        XCTFail("Expected Home action '\(title)' for screenshot \(name)")
+
+        openHomeActionUsingSearch(title: title, identifier: identifier)
+        if let destinationIdentifier {
+            let destination = app.descendants(matching: .any).matching(identifier: destinationIdentifier).firstMatch
+            XCTAssertTrue(
+                destination.waitForExistence(timeout: 5),
+                "Expected Home action '\(title)' to open '\(destinationIdentifier)' for screenshot \(name)"
+            )
+        }
+        capture(name)
+        if dismissAfterCapture {
+            dismissPhoneDestination()
+        }
     }
 
     private func openHomeActionUsingSearch(title: String, identifier: String) {
+        resetActiveHomeSearchPresentation()
+
         let searchField = app.searchFields.firstMatch
+        for _ in 0..<4 where !searchField.exists {
+            smallScrollDown()
+        }
         XCTAssertTrue(searchField.waitForExistence(timeout: 3), "Expected Home search field before opening '\(title)'")
         activate(searchField)
-        searchField.typeText(title)
-        if app.keyboards.buttons["Search"].exists {
+        replaceHomeSearchText(title, in: searchField)
+
+        let action = app.buttons[identifier]
+        if !action.waitForExistence(timeout: 2), app.keyboards.buttons["Search"].exists {
             app.keyboards.buttons["Search"].tap()
         }
 
-        let action = app.buttons[identifier]
         XCTAssertTrue(action.waitForExistence(timeout: 5), "Expected filtered Home action '\(title)'")
         activate(action)
 
@@ -657,6 +666,69 @@ final class VisualScreenshotTests: XCTestCase {
                 "Expected Home action '\(title)' to open Wildlife ID"
             )
         }
+    }
+
+    private func openHomeForActionBaseline(name: String) {
+        let tab = app.tabBars.buttons["Home"]
+        XCTAssertTrue(tab.waitForExistence(timeout: 5), "Expected tab 'Home' for screenshot \(name)")
+        tab.tap()
+        resetActiveHomeSearchPresentation()
+        capture(name)
+    }
+
+    private func replaceHomeSearchText(_ text: String, in searchField: XCUIElement) {
+        clearHomeSearchText(in: searchField)
+        searchField.typeText(text)
+
+        guard let value = searchField.value as? String, value != text else { return }
+
+        clearHomeSearchText(in: searchField)
+        searchField.typeText(text)
+    }
+
+    private func clearHomeSearchText(in searchField: XCUIElement) {
+        activate(searchField)
+
+        let clearButton = app.buttons.matching(
+            NSPredicate(format: "label == 'Clear text' OR label == 'Clear Text'")
+        ).firstMatch
+        if clearButton.waitForExistence(timeout: 0.5), clearButton.isHittable {
+            clearButton.tap()
+            return
+        }
+
+        #if os(iOS)
+        app.typeKey("a", modifierFlags: .command)
+        app.typeKey(XCUIKeyboardKey.delete.rawValue, modifierFlags: [])
+        #else
+        app.typeKey("a", modifierFlags: .command)
+        app.typeKey(XCUIKeyboardKey.delete.rawValue, modifierFlags: [])
+        #endif
+
+        if let value = searchField.value as? String, value.isEmpty || value == "Search PackRat" {
+            return
+        }
+
+        searchField.clearAndTypeText("")
+    }
+
+    private func resetActiveHomeSearchPresentation() {
+        #if os(iOS)
+        let searchField = app.searchFields.firstMatch
+        let isSearchOverlayActive = app.keyboards.firstMatch.exists
+            || (searchField.exists && searchField.frame.minY < 140)
+        guard isSearchOverlayActive else { return }
+
+        for label in ["Cancel", "Close"] {
+            let button = app.buttons[label]
+            if button.exists && button.isHittable {
+                button.tap()
+                return
+            }
+        }
+
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.91, dy: 0.105)).tap()
+        #endif
     }
 
     private func actionIsClearOfBottomBar(_ element: XCUIElement) -> Bool {

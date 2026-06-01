@@ -88,7 +88,14 @@ final class TripsViewModel {
                 writeCacheTrips(fresh, context: context)
             }
         } catch {
-            if trips.isEmpty { self.error = error.localizedDescription }
+            if trips.isEmpty {
+                // Keep the personal store local-first: an unavailable refresh
+                // should not replace an otherwise usable empty local library
+                // with a blocking connection error.
+                isCacheLoaded = true
+            } else {
+                self.error = error.localizedDescription
+            }
         }
     }
 
