@@ -64,14 +64,49 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         ? and(or(eq(packs.userId, user.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
         : eq(packs.userId, user.userId);
 
+      // Drop packItems.embedding (1536-dim) from list payload. Mobile hot
+      // path — 5 packs × 20 items × ~6KB embedding = 600KB minimum DB→Worker
+      // bytes per call. Wire-shape was already clean (PackItemSchema doesn't
+      // declare embedding so Zod strips downstream), but the bytes were still
+      // crossing the wire from Neon.
+      const PACK_ITEM_LIST_COLUMNS = Object.freeze({
+        id: true,
+        name: true,
+        description: true,
+        weight: true,
+        weightUnit: true,
+        quantity: true,
+        category: true,
+        consumable: true,
+        worn: true,
+        image: true,
+        notes: true,
+        packId: true,
+        catalogItemId: true,
+        userId: true,
+        deleted: true,
+        isAIGenerated: true,
+        templateItemId: true,
+        createdAt: true,
+        updatedAt: true,
+      } as const);
+
       const result = await db.query.packs.findMany({
         where,
         with: {
-          items: includePublic ? { where: eq(packItems.deleted, false) } : true,
+          items: includePublic
+            ? { columns: PACK_ITEM_LIST_COLUMNS, where: eq(packItems.deleted, false) }
+            : { columns: PACK_ITEM_LIST_COLUMNS },
         },
       });
 
-      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
+      // computePacksWeights' type signature still asks for full PackItem (it
+      // reads weight/quantity/worn/consumable — all in the projection above).
+      // Cast through PackWithItems to satisfy TS without widening the runtime
+      // shape. Wire-shape Zod parse below ensures the response contract holds.
+      return z
+        .array(PackWithWeightsSchema)
+        .parse(computePacksWeights({ packs: result as unknown as PackWithItems[] }));
     },
     {
       query: z.object({
@@ -255,14 +290,35 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     async ({ params, user }) => {
       const db = createDb();
       try {
+        // Minimal projection: only what computePackBreakdown reads.
+        // `name` is required — `byCategory[].items[]` formats each item as
+        // `<name> (<weight><unit> × <quantity>)`; without it, every entry
+        // renders as `undefined (1200g × 1)`.
         const pack = await db.query.packs.findFirst({
           where: eq(packs.id, params.packId),
-          with: { items: { where: eq(packItems.deleted, false) } },
+          with: {
+            items: {
+              columns: {
+                name: true,
+                weight: true,
+                weightUnit: true,
+                category: true,
+                quantity: true,
+                worn: true,
+                consumable: true,
+              },
+              where: eq(packItems.deleted, false),
+            },
+          },
         });
         if (!pack) return status(404, { error: 'Pack not found' });
         const canAccess = pack.isPublic || pack.userId === user.userId;
         if (!canAccess) return status(403, { error: 'Unauthorized' });
-        return computePackBreakdown(pack);
+        // computePackBreakdown reads name/weight/weightUnit/category/quantity/
+        // worn/consumable — all in the minimal projection above. Cast through
+        // PackWithItems to satisfy the wider type signature without widening
+        // the runtime shape.
+        return computePackBreakdown(pack as unknown as PackWithItems);
       } catch (error) {
         captureApiException({
           error: error,
@@ -640,9 +696,52 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         conditions.push(eq(packItems.deleted, false));
       }
 
+      // Worst single endpoint pre-projection — packItems with embedding +
+      // FULL catalogItem (embedding + fat JSONB) for each item. Pack with 20
+      // items = 2 MB+ per call. No response Zod schema on this route (spreads
+      // `...item` below at .map), so any column missing from these whitelists
+      // leaks to mobile as undefined — enumerate every packItems column
+      // explicitly except embedding, and a list-friendly catalogItem subset.
       const items = await db.query.packItems.findMany({
         where: and(...conditions),
-        with: { catalogItem: true },
+        columns: {
+          id: true,
+          name: true,
+          description: true,
+          weight: true,
+          weightUnit: true,
+          quantity: true,
+          category: true,
+          consumable: true,
+          worn: true,
+          image: true,
+          notes: true,
+          packId: true,
+          catalogItemId: true,
+          userId: true,
+          deleted: true,
+          isAIGenerated: true,
+          templateItemId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        with: {
+          catalogItem: {
+            columns: {
+              id: true,
+              name: true,
+              brand: true,
+              weight: true,
+              weightUnit: true,
+              images: true,
+              categories: true,
+              productUrl: true,
+              sku: true,
+              price: true,
+              ratingValue: true,
+            },
+          },
+        },
       });
 
       return items.map((item) => ({

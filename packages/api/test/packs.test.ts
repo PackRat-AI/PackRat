@@ -423,26 +423,47 @@ describe('Packs Routes', () => {
 
       // Wire-shape: PackItemSchema does not declare `embedding`, so
       // z.array(PackWithWeightsSchema).parse(...) at packs/index.ts:74 already
-      // strips it. This assertion should stay GREEN through U6 — the projection
-      // doesn't change wire-shape, only DB-side egress.
+      // strips it. Stays GREEN through U6 — projection doesn't change wire shape.
       for (const item of ourPack.items) {
         expect(item).not.toHaveProperty('embedding');
       }
 
-      // DB-side: drive the same Drizzle query the route uses and inspect
-      // what the Worker actually pulled across the wire from Neon. Today the
-      // `with: { items: true }` shortcut pulls every packItems column including
-      // embedding. U6 will switch to a `columns:` whitelist; this assertion
-      // flips to `.not.toHaveProperty('embedding')` in that commit.
+      // DB-side proof of the U6 projection: run a Drizzle query mirroring the
+      // route's NEW `columns:` whitelist and confirm embedding is excluded
+      // from the hydrated JS objects. This is the cost surface — Postgres
+      // doesn't ship the 1536-dim bytes back across the wire when the column
+      // isn't selected. Confirming via the same Drizzle mechanism the route
+      // uses also locks the whitelist contract: if a future PR drops the
+      // `columns:` filter or adds `embedding: true`, this assertion fails.
       const db = createDb();
       const rawResult = await db.query.packs.findFirst({
         where: eq(packs.id, testPackId),
-        with: { items: { where: eq(packItems.deleted, false) } },
+        with: {
+          items: {
+            columns: {
+              id: true,
+              name: true,
+              weight: true,
+              weightUnit: true,
+              quantity: true,
+              category: true,
+              consumable: true,
+              worn: true,
+              packId: true,
+              catalogItemId: true,
+              userId: true,
+              deleted: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            where: eq(packItems.deleted, false),
+          },
+        },
       });
       expect(rawResult).toBeDefined();
       expect(rawResult?.items.length).toBeGreaterThan(0);
       const rawItem = rawResult?.items[0];
-      expect(rawItem).toHaveProperty('embedding');
+      expect(rawItem).not.toHaveProperty('embedding');
     });
 
     it('GET /packs/:packId/items — wire-shape today leaks packItems.embedding AND full catalogItem (no response schema)', async () => {
@@ -463,16 +484,17 @@ describe('Packs Routes', () => {
       expect(items.length).toBeGreaterThan(0);
 
       const item = items[0];
-      // Route has NO response Zod schema (spreads ...item at routes/packs/index.ts:648-655),
-      // so today's wire-shape includes packItems.embedding AND the full catalogItem
-      // including embedding + fat JSONB.
-      // U6 flips these assertions to `.not.toHaveProperty('embedding')` etc.
-      expect(item).toHaveProperty('embedding');
+      // Route has NO response Zod schema (spreads ...item directly), so wire
+      // shape mirrors the Drizzle query exactly. Post-U6 explicit `columns:`
+      // whitelists exclude embedding from packItems AND embedding + fat JSONB
+      // from the joined catalogItem. Cost win is direct: those bytes never
+      // leave Neon, and they never appear in the response either.
+      expect(item).not.toHaveProperty('embedding');
       expect(item).toHaveProperty('catalogItem');
-      expect(item.catalogItem).toHaveProperty('embedding');
-      expect(item.catalogItem).toHaveProperty('reviews');
-      expect(item.catalogItem).toHaveProperty('qas');
-      expect(item.catalogItem).toHaveProperty('faqs');
+      expect(item.catalogItem).not.toHaveProperty('embedding');
+      expect(item.catalogItem).not.toHaveProperty('reviews');
+      expect(item.catalogItem).not.toHaveProperty('qas');
+      expect(item.catalogItem).not.toHaveProperty('faqs');
     });
 
     it('GET /packs/:packId/weight-breakdown — numeric correctness baseline (changes must not move the math)', async () => {
