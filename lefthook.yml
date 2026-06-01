@@ -20,6 +20,7 @@ pre-push:
         bun packages/env/scripts/no-raw-process-env.ts &&
         bun scripts/lint/no-circular-deps.ts &&
         bun scripts/lint/no-duplicate-deps.ts &&
+        bun scripts/lint/no-undocumented-overrides.ts &&
         bun scripts/lint/no-duplicate-guards.ts &&
         bun scripts/lint/no-unauth-routes.ts &&
         bun scripts/format/sort-package-json.ts --check &&
