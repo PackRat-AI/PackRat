@@ -14,8 +14,8 @@ applies without archaeology.
    `radashi`, `radash`, `es-toolkit`, `lodash`, and `remeda` are banned
    everywhere else by Biome's `noRestrictedImports`. `@packrat/utils` is the
    only package allowed to reach them.
-3. **Never raw `JSON.parse` / `JSON.stringify`.** Use `safeParse` /
-   `safeStringify` (or `stableStringify`) from `@packrat/utils/json`. Enforced by
+3. **Never raw `JSON.parse` / `JSON.stringify`.** Use `safeJsonParse` /
+   `safeJsonStringify` (or `stableJsonStringify`) from `@packrat/utils/json`. Enforced by
    the `no-raw-json` ast-grep rule.
 
 ## Source priority (soft)

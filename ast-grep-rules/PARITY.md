@@ -37,6 +37,6 @@ expression, catching all of these. The `.tsx` twin also catches
 ## no-raw-json (new) → `no-raw-json*.yml`
 
 Not part of parity (no old script). `severity: warning` so CI is not gated.
-`JSON.parse($X)`→`safeParse($X)` and single-arg `JSON.stringify($X)`→
-`safeStringify($X)` carry autofix `fix:`. Multi-arg stringify is flagged without
+`JSON.parse($X)`→`safeJsonParse($X)` and single-arg `JSON.stringify($X)`→
+`safeJsonStringify($X)` carry autofix `fix:`. Multi-arg stringify is flagged without
 autofix (no clean 1:1 rewrite). Import insertion is out of scope.

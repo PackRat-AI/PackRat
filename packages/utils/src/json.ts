@@ -3,7 +3,8 @@
  * `JSON.parse` outside this package; route everything through here (enforced
  * by the `no-raw-json` ast-grep rule).
  *
- * Sources: `safe-stable-stringify` (stringify) + `destr` (parse).
+ * Names are `*Json*` (not bare `safeParse`/`safeStringify`) to avoid confusion
+ * with zod's `.safeParse`. Sources: `safe-stable-stringify` + `destr`.
  */
 import { destr } from 'destr';
 import { configure } from 'safe-stable-stringify';
@@ -15,20 +16,20 @@ import { configure } from 'safe-stable-stringify';
  * circular references or BigInt. Use this everywhere you'd reach for
  * `JSON.stringify`.
  */
-export const safeStringify = configure({ deterministic: false, bigint: true });
+export const safeJsonStringify = configure({ deterministic: false, bigint: true });
 
 /**
  * Deterministic stringify: keys are sorted, circular- and BigInt-safe. Use for
  * cache keys, hashing, and structural equality — NOT where output key order
  * must mirror input order.
  */
-export const stableStringify = configure({ deterministic: true, bigint: true });
+export const stableJsonStringify = configure({ deterministic: true, bigint: true });
 
 /**
  * Escape hatch to build a custom stringifier (`maximumDepth`, `circularValue`,
  * `maximumBreadth`, `strict`, …). See the safe-stable-stringify docs.
  */
-export { configure as configureStringify } from 'safe-stable-stringify';
+export { configure as configureJsonStringify } from 'safe-stable-stringify';
 
 /**
  * Safe drop-in for `JSON.parse`: guards against prototype pollution
@@ -39,5 +40,5 @@ export { configure as configureStringify } from 'safe-stable-stringify';
  * surrounding try/catch drives control flow), pass `{ strict: true }` to
  * preserve that behavior exactly.
  */
-export const safeParse = <T = unknown>(value: string, options?: { strict?: boolean }): T =>
+export const safeJsonParse = <T = unknown>(value: string, options?: { strict?: boolean }): T =>
   destr<T>(value, options);

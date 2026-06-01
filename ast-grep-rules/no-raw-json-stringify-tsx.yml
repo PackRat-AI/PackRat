@@ -2,7 +2,7 @@ id: no-raw-json-stringify-tsx
 # TSX variant of no-raw-json-stringify (single-arg, autofixable).
 language: tsx
 severity: warning
-message: "Prefer safeStringify from @packrat/utils over raw JSON.stringify. (Migration tracked separately — this is a warning.)"
+message: "Prefer safeJsonStringify from @packrat/utils over raw JSON.stringify. (Migration tracked separately — this is a warning.)"
 ignores:
   - "scripts/**"
   - ".github/**"
@@ -15,4 +15,4 @@ ignores:
   - "**/*.spec.tsx"
 rule:
   pattern: JSON.stringify($X)
-fix: safeStringify($X)
+fix: safeJsonStringify($X)

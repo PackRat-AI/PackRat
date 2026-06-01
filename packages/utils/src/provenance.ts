@@ -55,10 +55,10 @@ export const provenance: Record<string, ProvenanceEntry> = {
   pipe: { source: 'remeda' }, // typed dataLast composition primitive
 
   // --- json ---
-  safeStringify: { source: 'safe-stable-stringify' },
-  stableStringify: { source: 'safe-stable-stringify' },
-  configureStringify: { source: 'safe-stable-stringify' },
-  safeParse: { source: 'destr' },
+  safeJsonStringify: { source: 'safe-stable-stringify' },
+  stableJsonStringify: { source: 'safe-stable-stringify' },
+  configureJsonStringify: { source: 'safe-stable-stringify' },
+  safeJsonParse: { source: 'destr' },
 
   // --- math ---
   clamp: { source: 'radashi' },

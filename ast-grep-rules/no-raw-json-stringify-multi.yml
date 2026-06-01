@@ -6,7 +6,7 @@ language: typescript
 # The single-arg form is covered (with autofix) by no-raw-json-stringify.yml;
 # the `not` constraint below keeps the two rules from double-reporting.
 severity: warning
-message: "Prefer safeStringify from @packrat/utils over raw JSON.stringify (multi-arg: replacer/space need manual migration). (Migration tracked separately — this is a warning.)"
+message: "Prefer safeJsonStringify from @packrat/utils over raw JSON.stringify (multi-arg: replacer/space need manual migration). (Migration tracked separately — this is a warning.)"
 ignores:
   - "scripts/**"
   - ".github/**"
