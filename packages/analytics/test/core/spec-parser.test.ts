@@ -7,8 +7,9 @@ import {
   parseTempRatingF,
   parseWaterproofRating,
   parseWeightGrams,
+  SpecParser,
 } from '@packrat/analytics/core/spec-parser';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('parseWeightGrams', () => {
   it('parses compound lbs + oz', () => {
@@ -184,5 +185,103 @@ describe('extractSpecsFromRow', () => {
     expect(specs.weight_grams).toBeNull();
     expect(specs.fill_power).toBeNull();
     expect(specs.seasons).toBeNull();
+  });
+});
+
+describe('SpecParser', () => {
+  function makeResult(columns: string[], rows: unknown[][]) {
+    return {
+      columnNames: () => columns,
+      getRows: () => rows,
+    };
+  }
+
+  it('builds parsed specs with a mocked DuckDB connection', async () => {
+    const run = vi.fn();
+    const runAndReadAll = vi.fn().mockResolvedValue(
+      makeResult(
+        ['site', 'name', 'brand', 'category', 'price', 'product_url', 'description', 'tags'],
+        [
+          [
+            'rei',
+            'Women 30F Sleeping Bag',
+            'REI',
+            'sleeping bags',
+            199,
+            'https://example.com/bag',
+            '1 lb 2 oz and 650 fill',
+            '3-season women',
+          ],
+          [
+            'rei',
+            'Camp Chair',
+            'REI',
+            'furniture',
+            49,
+            'https://example.com/chair',
+            'folding chair',
+            '',
+          ],
+        ],
+      ),
+    );
+
+    const parser = new SpecParser({
+      conn: { run, runAndReadAll } as never,
+      sourceTable: 'gear_source',
+    });
+
+    await expect(parser.build(1)).resolves.toEqual({ total: 2, parsed: 1 });
+    expect(runAndReadAll).toHaveBeenCalledWith(
+      'SELECT site, name, brand, category, price, product_url, description, tags FROM gear_source',
+    );
+    expect(run).toHaveBeenCalledWith('DROP TABLE IF EXISTS parsed_specs');
+    expect(run).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE parsed_specs'));
+    expect(run).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO parsed_specs VALUES'));
+    expect(run).toHaveBeenCalledWith(
+      'CREATE INDEX IF NOT EXISTS idx_specs_name ON parsed_specs(name)',
+    );
+  });
+
+  it('searches product specs with escaped queries and custom limits', async () => {
+    const runAndReadAll = vi
+      .fn()
+      .mockResolvedValue(makeResult(['site', 'name', 'brand'], [['rei', 'Arc Bag', "Arc'teryx"]]));
+    const parser = new SpecParser({ conn: { runAndReadAll } as never });
+
+    const specs = await parser.getProductSpecs({ query: "Arc'teryx", limit: 3 });
+
+    expect(specs).toEqual([{ site: 'rei', name: 'Arc Bag', brand: "Arc'teryx" }]);
+    expect(runAndReadAll).toHaveBeenCalledWith(expect.stringContaining("arc''teryx"));
+    expect(runAndReadAll).toHaveBeenCalledWith(expect.stringContaining('LIMIT 3'));
+  });
+
+  it('filters products with all optional predicates', async () => {
+    const runAndReadAll = vi.fn().mockResolvedValue(makeResult(['name'], [['Tent']]));
+    const parser = new SpecParser({ conn: { runAndReadAll } as never });
+
+    const specs = await parser.filterProducts({
+      category: "men's tents",
+      maxWeightG: 1500,
+      maxTempF: 20,
+      maxPrice: 400,
+      minPrice: 100,
+      gender: "men's",
+      seasons: '3-season',
+      sortBy: 'price',
+      limit: 5,
+    });
+
+    expect(specs).toEqual([{ name: 'Tent' }]);
+    const sql = String(runAndReadAll.mock.calls[0]?.[0]);
+    expect(sql).toContain("men''s tents");
+    expect(sql).toContain('weight_grams IS NOT NULL AND weight_grams <= 1500');
+    expect(sql).toContain('temp_rating_f IS NOT NULL AND temp_rating_f <= 20');
+    expect(sql).toContain('price <= 400');
+    expect(sql).toContain('price >= 100');
+    expect(sql).toContain("gender = 'men''s'");
+    expect(sql).toContain("seasons = '3-season'");
+    expect(sql).toContain('ORDER BY price ASC NULLS LAST');
+    expect(sql).toContain('LIMIT 5');
   });
 });

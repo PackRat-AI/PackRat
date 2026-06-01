@@ -299,5 +299,25 @@ describe('embeddingHelper', () => {
       const result = getEmbeddingText(item, existingItem);
       expect(result).toContain('Size: Large');
     });
+
+    it('ignores non-array variants', () => {
+      const item = {
+        name: 'Jacket',
+        variants: 'not-an-array' as never,
+      };
+      expect(getEmbeddingText({ item })).toBe('Jacket');
+    });
+
+    it('ignores malformed variant entries', () => {
+      const item = {
+        name: 'Jacket',
+        variants: [
+          'invalid',
+          { attribute: '', values: ['M'] },
+          { attribute: 'Size', values: undefined },
+        ] as never,
+      };
+      expect(getEmbeddingText({ item })).toBe('Jacket');
+    });
   });
 });

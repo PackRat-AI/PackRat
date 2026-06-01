@@ -56,6 +56,8 @@ export default defineConfig({
         // not unit-testable without the full CF runtime. Pure helpers live in
         // auth.helpers.ts and are covered by their own unit tests.
         'src/auth/index.ts',
+        // Local-only e2e auth shim is exercised by Swift integration tests.
+        'src/auth/local-e2e.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
         // CatalogEtlWorkflow needs the CF Workflows runtime for end-to-end
@@ -86,6 +88,8 @@ export default defineConfig({
         'src/services/wildlifeIdentificationService.ts',
         'src/middleware/**',
         'src/utils/openapi.ts',
+        // Sentry SDK boundary; behavior is covered by integration/runtime smoke.
+        'src/utils/sentry.ts',
       ],
       thresholds: {
         statements: 95,
