@@ -3,6 +3,10 @@ import { Miniflare } from 'miniflare';
 import worker from '../src/e2e-worker';
 
 const port = Number(process.env.PORT ?? 8787);
+process.env.NODE_ENV ??= 'test';
+process.env.BETTER_AUTH_URL ??= `http://localhost:${port}`;
+process.env.BETTER_AUTH_SECRET ??= 'e2e-better-auth-secret-at-least-32-chars';
+
 const kvPersist =
   process.env.E2E_KV_PERSIST_DIR ??
   join(import.meta.dir, '..', '.wrangler', 'state', 'e2e-auth-kv');

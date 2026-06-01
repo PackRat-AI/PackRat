@@ -72,7 +72,6 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
       });
       newPool.on('error', () => {
         pgPools.delete(url);
-        newPool.end().catch(() => {});
       });
       pgPools.set(url, newPool);
       pool = newPool;
