@@ -713,10 +713,28 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p test-results
-            adb shell pm disable-user com.android.launcher3 || true
-            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
-            adb install apps/expo/build/PackRat.apk
-            sleep 10
+
+            wait_for_ready_device() {
+              adb wait-for-device
+              for _ in {1..30}; do
+                state="$(adb get-state 2>/dev/null || true)"
+                boot="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+                if [ "$state" = "device" ] && [ "$boot" = "1" ]; then
+                  return 0
+                fi
+                sleep 1
+              done
+              echo "Android device did not become ready. adb devices:" >&2
+              adb devices -l >&2 || true
+              return 1
+            }
+
+            wait_for_ready_device
+            adb install -r -d apps/expo/build/PackRat.apk
+            wait_for_ready_device
+            adb shell pm path "$APP_ID"
+            adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
+            wait_for_ready_device
             adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
             adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
             bash .github/scripts/e2e.sh android --format junit --output test-results/maestro-results.xml
@@ -726,6 +744,7 @@ jobs:
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
           APP_ID: com.packratai.mobile.preview
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "60000"
 
       # ── Artifacts & cleanup ────────────────────────────────────────────────
 

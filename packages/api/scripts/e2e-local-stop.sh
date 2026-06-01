@@ -9,6 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${API_DIR}/docker-compose.e2e.yml"
 E2E_KV_DIR="${E2E_KV_PERSIST_DIR:-${API_DIR}/.wrangler/state/e2e-auth-kv}"
+E2E_DB_PORT="${E2E_DB_PORT:-5435}"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-packrat_e2e_${E2E_DB_PORT}}"
+export E2E_DB_PORT
 
 EXTRA_FLAGS=()
 if [[ "${1:-}" == "--volumes" || "${1:-}" == "-v" ]]; then

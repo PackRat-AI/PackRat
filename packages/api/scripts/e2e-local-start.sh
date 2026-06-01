@@ -14,9 +14,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${API_DIR}/docker-compose.e2e.yml"
-E2E_VARS="${API_DIR}/.dev.vars.e2e"
-E2E_DB_URL="postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e"
+E2E_VARS="${E2E_VARS:-${API_DIR}/.dev.vars.e2e}"
+E2E_DB_PORT="${E2E_DB_PORT:-5435}"
+E2E_DB_URL="${E2E_DB_URL:-postgres://e2e_user:e2e_pass@localhost:${E2E_DB_PORT}/packrat_e2e}"
 API_PORT="${PORT:-8787}"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-packrat_e2e_${E2E_DB_PORT}}"
+export E2E_DB_PORT
 
 # ── Preflight ───────────────────────────────────────────────────────────────
 if ! command -v docker &>/dev/null; then
@@ -31,7 +34,7 @@ if [[ ! -f "$E2E_VARS" ]]; then
 fi
 
 # ── Start Postgres ───────────────────────────────────────────────────────────
-echo "▶ Starting local Postgres (packrat_e2e on port 5435)..."
+echo "▶ Starting local Postgres (packrat_e2e on port ${E2E_DB_PORT})..."
 docker compose -f "$COMPOSE_FILE" up -d
 
 echo "▶ Waiting for Postgres to be ready..."

@@ -6,7 +6,9 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const apiDir = resolve(scriptDir, '..');
 const repoRoot = resolve(apiDir, '../..');
 
-const e2eDbUrl = nodeEnv.E2E_DB_URL ?? 'postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e';
+const e2eDbPort = nodeEnv.E2E_DB_PORT ?? '5435';
+const e2eDbUrl =
+  nodeEnv.E2E_DB_URL ?? `postgres://e2e_user:e2e_pass@localhost:${e2eDbPort}/packrat_e2e`;
 const e2eApiUrl = nodeEnv.E2E_API_URL ?? `http://localhost:${nodeEnv.PORT ?? '8787'}`;
 const e2eExpoPublicApiUrl = nodeEnv.E2E_EXPO_PUBLIC_API_URL ?? e2eApiUrl;
 const disableLogBox = nodeEnv.EXPO_PUBLIC_DISABLE_LOGBOX ?? 'true';
