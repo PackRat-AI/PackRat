@@ -15,8 +15,5 @@
     "radash": "catalog:",
     "ts-extras": "catalog:",
     "zod": "catalog:"
-  },
-  "devDependencies": {
-    "typescript": "catalog:"
   }
 }

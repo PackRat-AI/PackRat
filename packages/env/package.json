@@ -19,8 +19,5 @@
   },
   "dependencies": {
     "zod": "catalog:"
-  },
-  "devDependencies": {
-    "typescript": "catalog:"
   }
 }
