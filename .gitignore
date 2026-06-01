@@ -5,13 +5,16 @@ node_modules
 out
 dist
 *.tgz
+
 # code coverage
 coverage
 *.lcov
+
 # logs
 logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
 # dotenv environment variable files
 .env
 .env.development.local
@@ -19,27 +22,34 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.production.local
 .env.local
 .envrc
+
 # caches
 .eslintcache
 .cache
 *.tsbuildinfo
 .next
+
 # IntelliJ based IDEs
 .idea
+
 # Finder (MacOS) folder config
 .DS_Store
+
 # Claude Code
 .claude/settings.json
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scheduled_tasks.lock
 .dev.vars
+
 # Generated OG images (produced at build time by scripts/generate-og-images.ts)
 apps/landing/public/og-image.png
 apps/guides/public/og-image.png
 apps/guides/public/og/
+
 # Lighthouse CI output (produced by `lhci autorun`)
 .lighthouseci/
+
 # Git worktrees
 .worktrees/
 .worktrees
