@@ -32,7 +32,7 @@ if (!source) {
 console.log(`Using base vars from: ${source}`);
 
 const sourceText = await Bun.file(source).text();
-const lines = sourceText.split(/\r?\n/);
+const lines = sourceText.replaceAll('\r\n', '\n').split('\n');
 const trailingNewline = sourceText.endsWith('\n');
 
 const outputLines = lines.map((line) => {
