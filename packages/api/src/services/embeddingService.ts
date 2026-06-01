@@ -6,9 +6,6 @@ import { embed, embedMany } from 'ai';
 // ── Embedding text normalization ──────────────────────────────────────
 const NEWLINE = /\n/g;
 
-const runtimeNodeEnv = () =>
-  (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV;
-
 type GenerateEmbeddingBaseParams = {
   openAiApiKey?: string;
   provider: AIProvider;
@@ -29,10 +26,6 @@ export const generateEmbedding = async (
 
   // Guard: skip if no text or only whitespace
   if (!value?.trim()) {
-    return null;
-  }
-
-  if (runtimeNodeEnv() === 'test') {
     return null;
   }
 
@@ -62,10 +55,6 @@ export const generateManyEmbeddings = async (
   const cleanValues = values.map((v) => v?.replace(NEWLINE, ' ').trim()).filter(Boolean);
   if (cleanValues.length === 0) {
     return [];
-  }
-
-  if (runtimeNodeEnv() === 'test') {
-    return cleanValues.map(() => null);
   }
 
   const aiProvider = createAIProvider(providerConfig);
