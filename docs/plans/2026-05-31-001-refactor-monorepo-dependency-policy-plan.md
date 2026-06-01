@@ -1,7 +1,7 @@
 ---
 title: "refactor: Monorepo dependency policy + root overrides audit"
 type: refactor
-status: active
+status: completed
 created: 2026-05-31
 origin: docs/brainstorms/2026-05-31-monorepo-dependency-policy-requirements.md
 depth: standard
