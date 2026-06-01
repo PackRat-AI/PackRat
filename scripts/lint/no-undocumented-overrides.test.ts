@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { extractRegistryBlock, findViolations, parseRegistry } from './no-undocumented-overrides';
+import {
+  extractRegistryBlock,
+  findViolations,
+  parseRegistry,
+  REGISTRY_HEADING,
+} from './no-undocumented-overrides';
 
 const ROOT = join(import.meta.dir, '..', '..');
 
@@ -52,7 +57,12 @@ describe('findViolations', () => {
 
 describe('registry parsing', () => {
   test('extractRegistryBlock pulls the json fence under the heading', () => {
-    const md = '# Doc\n\n## Override registry\n\nintro\n\n```json\n{"react": {}}\n```\n\ntail';
+    const md = `# Doc\n\n${REGISTRY_HEADING}\n\nintro\n\n\`\`\`json\n{"react": {}}\n\`\`\`\n\ntail`;
+    expect(extractRegistryBlock(md)).toBe('{"react": {}}');
+  });
+
+  test('extractRegistryBlock ignores a json fence that precedes the heading', () => {
+    const md = `# Doc\n\n\`\`\`json\n{"decoy": {}}\n\`\`\`\n\n${REGISTRY_HEADING}\n\n\`\`\`json\n{"react": {}}\n\`\`\``;
     expect(extractRegistryBlock(md)).toBe('{"react": {}}');
   });
 
@@ -61,19 +71,38 @@ describe('registry parsing', () => {
     expect(extractRegistryBlock(md)).toBeNull();
   });
 
+  test('extractRegistryBlock returns null when the heading has no following fence', () => {
+    const md = `${REGISTRY_HEADING}\n\nsome prose but no fenced block`;
+    expect(extractRegistryBlock(md)).toBeNull();
+  });
+
+  test('extractRegistryBlock tolerates CRLF line endings', () => {
+    const md = `${REGISTRY_HEADING}\r\n\r\n\`\`\`json\r\n{"react": {}}\r\n\`\`\`\r\n`;
+    expect(extractRegistryBlock(md)).toBe('{"react": {}}');
+  });
+
   test('parseRegistry returns null on invalid JSON', () => {
-    const md = '## Override registry\n\n```json\n{not valid}\n```';
+    const md = `${REGISTRY_HEADING}\n\n\`\`\`json\n{not valid}\n\`\`\``;
     expect(parseRegistry(md)).toBeNull();
   });
 
   test('parseRegistry returns null when the block is a JSON array, not an object', () => {
-    const md = '## Override registry\n\n```json\n["react"]\n```';
+    const md = `${REGISTRY_HEADING}\n\n\`\`\`json\n["react"]\n\`\`\``;
     expect(parseRegistry(md)).toBeNull();
   });
 
+  test('parseRegistry returns null when an entry value is not an object', () => {
+    const md = `${REGISTRY_HEADING}\n\n\`\`\`json\n{"react": 42}\n\`\`\``;
+    expect(parseRegistry(md)).toBeNull();
+  });
+
+  test('parseRegistry normalizes non-string fields to undefined (flagged as incomplete downstream)', () => {
+    const md = `${REGISTRY_HEADING}\n\n\`\`\`json\n{"react": {"reason": 1, "removeWhen": "b"}}\n\`\`\``;
+    expect(parseRegistry(md)).toEqual({ react: { reason: undefined, removeWhen: 'b' } });
+  });
+
   test('parseRegistry returns the object on a valid block', () => {
-    const md =
-      '## Override registry\n\n```json\n{"react": {"reason": "a", "removeWhen": "b"}}\n```';
+    const md = `${REGISTRY_HEADING}\n\n\`\`\`json\n{"react": {"reason": "a", "removeWhen": "b"}}\n\`\`\``;
     expect(parseRegistry(md)).toEqual({ react: { reason: 'a', removeWhen: 'b' } });
   });
 });

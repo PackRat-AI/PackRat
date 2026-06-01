@@ -23,13 +23,25 @@ import { join } from 'node:path';
 
 const ROOT = join(import.meta.dir, '..', '..');
 const POLICY_DOC = join(ROOT, 'docs', 'dependency-policy.md');
-const REGISTRY_HEADING = '## Override registry';
+export const REGISTRY_HEADING = '## Override registry';
 
 export interface RegistryEntry {
-  reason?: unknown;
-  removeWhen?: unknown;
+  reason?: string;
+  removeWhen?: string;
 }
 export type Registry = Record<string, RegistryEntry>;
+
+function readJson(filePath: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
 
 export interface OverrideViolation {
   kind: 'missing-entry' | 'incomplete-entry' | 'stale-entry';
@@ -40,26 +52,36 @@ export interface OverrideViolation {
 // ── registry extraction ────────────────────────────────────────────────────
 
 // Extract the first ```json fenced block that follows the registry heading.
+// Tolerates LF and CRLF line endings around the fence.
 export function extractRegistryBlock(markdown: string): string | null {
   const headingIdx = markdown.indexOf(REGISTRY_HEADING);
   if (headingIdx === -1) return null;
   const after = markdown.slice(headingIdx);
-  const match = after.match(/```json\s*\n([\s\S]*?)\n```/);
+  const match = after.match(/```json\s*\r?\n([\s\S]*?)\r?\n```/);
   return match ? match[1] : null;
 }
 
 export function parseRegistry(markdown: string): Registry | null {
   const block = extractRegistryBlock(markdown);
   if (block === null) return null;
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(block);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Registry;
-    }
-    return null;
+    parsed = JSON.parse(block);
   } catch {
     return null;
   }
+  if (!isObject(parsed)) return null;
+  // Validate each entry is an object so the Registry shape is honest rather
+  // than asserted — a value like `{"react": 42}` is a malformed registry.
+  const registry: Registry = {};
+  for (const [pkg, value] of Object.entries(parsed)) {
+    if (!isObject(value)) return null;
+    registry[pkg] = {
+      reason: typeof value.reason === 'string' ? value.reason : undefined,
+      removeWhen: typeof value.removeWhen === 'string' ? value.removeWhen : undefined,
+    };
+  }
+  return registry;
 }
 
 // ── analysis (pure) ─────────────────────────────────────────────────────────
@@ -107,11 +129,12 @@ export function findViolations(
 // ── CLI ───────────────────────────────────────────────────────────────────
 
 function main(): void {
-  const rootPkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')) as {
-    overrides?: Record<string, unknown>;
-  };
-  const overrides =
-    rootPkg.overrides && typeof rootPkg.overrides === 'object' ? rootPkg.overrides : {};
+  const rootPkg = readJson(join(ROOT, 'package.json'));
+  if (rootPkg === null) {
+    console.error('check:overrides — root package.json could not be read or parsed.');
+    process.exit(1);
+  }
+  const overrides = isObject(rootPkg.overrides) ? rootPkg.overrides : {};
 
   let markdown: string;
   try {
