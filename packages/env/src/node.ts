@@ -85,6 +85,7 @@ export const nodeEnvSchema = z.object({
   EXPO_PUBLIC_DISABLE_LOGBOX: z.enum(['true', 'false']).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
 });
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
@@ -131,4 +132,5 @@ export const nodeEnv = nodeEnvSchema.parse({
   EXPO_PUBLIC_DISABLE_LOGBOX: process.env.EXPO_PUBLIC_DISABLE_LOGBOX,
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+  BETTER_AUTH_TRUSTED_ORIGINS: process.env.BETTER_AUTH_TRUSTED_ORIGINS,
 });

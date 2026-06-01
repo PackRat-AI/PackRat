@@ -133,6 +133,8 @@ jobs:
           printf 'BETTER_AUTH_SECRET=%s\n' \
             "${E2E_BETTER_AUTH_SECRET:-e2e-better-auth-secret-at-least-32-chars}" \
             >> packages/api/.dev.vars.e2e
+          printf 'BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:8081\n' \
+            >> packages/api/.dev.vars.e2e
           printf 'WEATHER_API_KEY=%s\n' \
             "${WEATHER_API_KEY:-e2e-fake-weather-key}" \
             >> packages/api/.dev.vars.e2e
