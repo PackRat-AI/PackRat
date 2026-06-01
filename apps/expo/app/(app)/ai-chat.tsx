@@ -32,7 +32,7 @@ import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/pack
 import { packsStore } from 'expo-app/features/packs/store/packs';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
-import { authClient } from 'expo-app/lib/auth-client';
+import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
@@ -199,8 +199,14 @@ export default function AIChat() {
       transport: new DefaultChatTransport({
         fetch: expoFetch as unknown as typeof globalThis.fetch,
         api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-        headers: {
-          Authorization: `Bearer ${token}`,
+        prepareSendMessagesRequest: async ({ body, headers, api, credentials }) => {
+          const authToken = token ?? (await getStoredSessionToken());
+          return {
+            api,
+            credentials,
+            headers: authToken ? { ...headers, Authorization: `Bearer ${authToken}` } : headers,
+            body: body ?? {},
+          };
         },
         body: () => ({
           contextType: contextRef.current.contextType,
