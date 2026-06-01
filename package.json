@@ -54,7 +54,6 @@
     "web": "bun run --cwd apps/web dev"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.0.3-2",
     "react": "19.2.6"
   },
   "devDependencies": {
