@@ -239,6 +239,7 @@ The tree is a scope declaration, not a constraint — per-unit `**Files:**` are 
 
 - Remote Turbo cache configuration (orthogonal to portless).
 - Migrating Turbo itself onto `development` (separate effort; this plan rides the `feat/turbo-l4` base).
+- **Portless API-origin parity for `apps/admin`, `apps/trails`, `apps/guides`** (surfaced in U6 code review). U6 wired `apps/web` only. These need their own care, not a regression from U6: `apps/admin` requires `NEXT_PUBLIC_API_URL` (`z.string().url()`, no default) so it can't self-derive without an env-schema change; `apps/trails` defaults to **prod** (`https://api.packratai.com`) so changing its resolution risks prod behavior. The right shape is a shared `resolveApiBaseUrl(explicit, fallback)` (the U6 derivation is generic — `<app>.localhost` → `api.localhost`) extracted to `@packrat/api-client` and adopted per-app with verification. `apps/landing` needs nothing (no API calls); `apps/guides` API refs are build-time CLI scripts, not a portless runtime client.
 
 ### Out of scope (origin)
 
