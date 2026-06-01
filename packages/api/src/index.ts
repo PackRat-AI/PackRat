@@ -177,7 +177,7 @@ const handler: ExportedHandler<Env> = {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
     if (controller.cron === '0 9 * * *') {
-      const result = await sweepInvalidItemLogs(env);
+      const result = await sweepInvalidItemLogs({ env });
       console.log(
         `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
           `iterations=${result.iterations} capped=${result.capped} ` +

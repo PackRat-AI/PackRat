@@ -26,13 +26,16 @@ export async function processLogsBatch({
       },
     });
 
-    logger.info('etl.invalid_logs.persisted', { jobId, count: logs.length });
+    logger.info({ event: 'etl.invalid_logs.persisted', ctx: { jobId, count: logs.length } });
   } catch (error) {
     // Rethrow — invalid_item_logs is the forensic record of what failed
     // validation. Silently swallowing a DB write loss here means an
     // operator chasing a data-quality complaint has no trail. Closes
     // audit P2 #2.
-    logger.error('etl.invalid_logs.persist_failed', { jobId, count: logs.length, err: error });
+    logger.error({
+      event: 'etl.invalid_logs.persist_failed',
+      ctx: { jobId, count: logs.length, err: error },
+    });
     throw error;
   }
 }

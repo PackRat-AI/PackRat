@@ -28,7 +28,13 @@ const EXCLUDED_DIRS = new Set([
   'coverage',
 ]);
 
-const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
+const EXCLUDED_PATH_PARTS = [
+  '/test/',
+  '/__tests__/',
+  '/__test-stubs__/',
+  '/mocks/',
+  '/playwright/',
+];
 const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
@@ -39,7 +45,7 @@ const EXCLUDED_FILES = new Set([
   'apps/guides/scripts/generate-og-images.ts',
   'apps/trails/scripts/generate-og-images.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'keyExtractor',
@@ -178,6 +184,20 @@ function isFrameworkObjectMethod(node: ts.FunctionLikeDeclaration): boolean {
   return FRAMEWORK_METHOD_NAMES.has(name);
 }
 
+// Cloudflare WorkflowEntrypoint.run(event, step) is a framework-mandated
+// signature — exempt it, but narrowly: only `run` methods on a class that
+// extends WorkflowEntrypoint, never every method named `run`.
+function isWorkflowEntrypointRun(node: ts.FunctionLikeDeclaration): boolean {
+  if (!ts.isMethodDeclaration(node) || functionName(node) !== 'run') return false;
+  const cls = node.parent;
+  if (!ts.isClassLike(cls) || !cls.heritageClauses) return false;
+  return cls.heritageClauses.some(
+    (clause) =>
+      clause.token === ts.SyntaxKind.ExtendsKeyword &&
+      clause.types.some((type) => type.expression.getText().includes('WorkflowEntrypoint')),
+  );
+}
+
 function isExternalCallback(node: ts.FunctionLikeDeclaration): boolean {
   if (EXTERNAL_CALLBACK_NAMES.has(functionName(node).replace(/^['"]|['"]$/g, ''))) return true;
 
@@ -206,6 +226,7 @@ function shouldCheck(node: ts.FunctionLikeDeclaration): boolean {
   if (isExternalCallback(node)) return false;
   if (isAssertionPredicate(node)) return false;
   if (isFrameworkObjectMethod(node)) return false;
+  if (isWorkflowEntrypointRun(node)) return false;
   if (ts.isGetAccessor(node) || ts.isSetAccessor(node)) return false;
   return true;
 }
