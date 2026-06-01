@@ -1,10 +1,8 @@
 import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { safeJsonStringify } from '@packrat/utils';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
@@ -16,7 +14,7 @@ import {
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PackItemImage } from '../components/PackItemImage';
 import { SimilarItemsForPackItem } from '../components/SimilarItemsForPackItem';
@@ -108,22 +106,6 @@ export function ItemDetailScreen() {
   const itemNotes = getNotes(item);
 
   const navigateToChat = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: safeJsonStringify({
-            pathname: '/ai-chat',
-            params: {
-              itemId: item.id,
-              itemName: item.name,
-              contextType: 'item',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
     router.push({
       pathname: '/ai-chat',
       params: {
@@ -137,7 +119,12 @@ export function ItemDetailScreen() {
   return (
     <SafeAreaView edges={['bottom']} className="flex-1">
       <ScrollView>
-        <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
+        <PackItemImage
+          item={item}
+          className="h-64 w-full"
+          resizeMode="contain"
+          style={Platform.select({ web: { width: '100%', height: 256 } })}
+        />
 
         <View className="p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>

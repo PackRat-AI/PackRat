@@ -41,6 +41,8 @@ const EXCLUDED_FILES = new Set([
   'apps/landing/scripts/generate-og-images.ts',
   'apps/guides/scripts/generate-og-images.ts',
   'apps/trails/scripts/generate-og-images.ts',
+  // Web shim that must mirror expo-secure-store's positional (key, value) API.
+  'apps/expo/lib/secureStore.web.ts',
 ]);
 const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
 const EXTERNAL_CALLBACK_NAMES = new Set([

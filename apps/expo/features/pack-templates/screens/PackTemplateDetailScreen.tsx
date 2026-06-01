@@ -6,7 +6,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddPackTemplateItemActions from '../components/AddPackTemplateItemActions';
 import { AppTemplateBadge } from '../components/AppTemplateBadge';
@@ -79,7 +79,12 @@ export function PackTemplateDetailScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView stickyHeaderIndices={[2]}>
         {packTemplate.image && (
-          <Image source={{ uri: packTemplate.image }} className="h-48 w-full" resizeMode="cover" />
+          <Image
+            source={{ uri: packTemplate.image }}
+            className="h-48 w-full"
+            resizeMode="cover"
+            style={Platform.select({ web: { width: '100%', height: 192 } })}
+          />
         )}
 
         {/* Header */}

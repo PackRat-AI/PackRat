@@ -5,6 +5,7 @@
   "description": "osm2pgsql flex config and import tooling for PackRat outdoor routes",
   "type": "module",
   "scripts": {
+    "check-types": "tsc --noEmit",
     "import": "bun run import.ts",
     "sync": "bun run sync.ts"
   },

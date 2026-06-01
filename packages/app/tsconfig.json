@@ -1,17 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "@packrat/typescript-config/react-native.json",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "target": "ES2020",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "resolveJsonModule": true,
     "paths": {
       "@packrat/api/*": ["../../packages/api/src/*"],
       "@packrat/api-client": ["../../packages/api-client/src/index.ts"]

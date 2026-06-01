@@ -72,6 +72,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         OPENAI_API_KEY,
         CLOUDFLARE_ACCOUNT_ID,
         CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
         AI,
         TOKEN_RATE_LIMITER,
       } = getEnv();
@@ -90,6 +91,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 

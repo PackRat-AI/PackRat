@@ -20,6 +20,7 @@
       "!**/.next",
       "!**/.wrangler",
       "!**/*.gen.ts",
+      "!**/worker-configuration.d.ts",
       "!**/vite.config.ts.timestamp-*.mjs",
       "!**/src/codegen",
       "!**/.claude",

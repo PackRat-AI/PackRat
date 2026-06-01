@@ -1,6 +1,6 @@
 import { isFunction } from '@packrat/guards';
 import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-app/lib/secureStore';
 import { atom } from 'jotai';
 
 export const atomWithSecureStorage = <T>({

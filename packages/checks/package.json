@@ -11,6 +11,7 @@
     "check:provenance:strict": "bun ./src/check-utils-provenance.ts --strict",
     "check:route-schemas": "bun ./src/check-route-schemas.ts",
     "check:route-schemas:strict": "bun ./src/check-route-schemas.ts --strict",
+    "check-types": "tsc --noEmit",
     "test": "vitest run"
   }
 }

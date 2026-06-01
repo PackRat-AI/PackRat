@@ -1,12 +1,6 @@
 {
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "strict": true,
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "noEmit": true,
     "baseUrl": ".",
     "paths": {
       "@packrat/analytics": ["src/index.ts"],

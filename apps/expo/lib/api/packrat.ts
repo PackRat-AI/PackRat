@@ -1,11 +1,11 @@
 import { createApiClient } from '@packrat/api-client';
-import { clientEnvs } from '@packrat/env/expo-client';
 import { fromZod } from '@packrat/guards';
 import { safeJsonParse } from '@packrat/utils';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
 import { authClient } from 'expo-app/lib/auth-client';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-app/lib/secureStore';
 import { z } from 'zod';
 
 // The expoClient plugin serialises all cookies into SecureStore under this key.
@@ -28,9 +28,11 @@ function parseSessionToken(cookieJson: string | null): string | null {
 }
 
 export const apiClient = createApiClient({
-  baseUrl: clientEnvs.EXPO_PUBLIC_API_URL,
+  baseUrl: getApiBaseUrl(),
   auth: {
-    // Read the token from SecureStore — no network call on every API request.
+    // Read the token from secure storage — no network call on every API request.
+    // On web there is no bearer token (the session is an HttpOnly cookie sent via
+    // credentials:'include'); the secureStore web shim returns null here.
     getAccessToken: async () => {
       const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
       return parseSessionToken(cookieStr);
