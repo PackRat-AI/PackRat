@@ -1,9 +1,9 @@
 import { createApiClient } from '@packrat/api-client';
-import { webEnv } from '@packrat/env/web';
 import { authClient } from 'web-app/lib/auth-client';
+import { getApiBaseUrl } from 'web-app/lib/getApiBaseUrl';
 
 export const apiClient = createApiClient({
-  baseUrl: webEnv.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787',
+  baseUrl: getApiBaseUrl(),
   auth: {
     getAccessToken: async () => {
       const { data } = await authClient.getSession();
