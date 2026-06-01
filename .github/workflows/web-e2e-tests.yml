@@ -217,3 +217,11 @@ jobs:
           name: playwright-traces
           path: apps/expo/test-results/
           retention-days: 7
+
+      - name: Upload local API log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-e2e-api-log
+          path: /tmp/packrat-web-e2e-api.log
+          retention-days: 7

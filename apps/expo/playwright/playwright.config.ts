@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
+const CHROMIUM_EXECUTABLE_PATH = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: './tests',
@@ -24,10 +25,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      // PW_CHANNEL=chrome uses the system browser where no Playwright-bundled
-      // Chromium is available (e.g. Ubuntu 26.04 dev boxes). Unset in CI, which
-      // installs Chromium via `playwright install`.
-      use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL || undefined },
+      use: {
+        ...devices['Desktop Chrome'],
+        ...(CHROMIUM_EXECUTABLE_PATH
+          ? { launchOptions: { executablePath: CHROMIUM_EXECUTABLE_PATH } }
+          : { channel: process.env.PW_CHANNEL || undefined }),
+      },
     },
   ],
 });

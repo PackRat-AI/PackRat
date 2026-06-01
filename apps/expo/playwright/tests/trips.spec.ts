@@ -79,7 +79,6 @@ async function createTrip(
 
 test.describe('Trip CRUD', () => {
   test('create a trip with dates → appears in list', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const tripName = `E2E-Trip-${Date.now()}`;
 
     await createTrip(page, {
@@ -96,7 +95,6 @@ test.describe('Trip CRUD', () => {
   test('create a trip with a description → description visible on detail', async ({
     authedPage: page,
   }) => {
-    test.setTimeout(60_000);
     const tripName = `E2E-TripDesc-${Date.now()}`;
     const description = 'A scenic Pacific Crest Trail section.';
 
@@ -299,7 +297,6 @@ test.describe('Trips list', () => {
   });
 
   test('trip list item links to correct trip detail', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const tripName = `E2E-ListItem-${Date.now()}`;
 
     const tripId = await createTrip(page, {

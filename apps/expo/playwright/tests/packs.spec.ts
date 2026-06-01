@@ -73,7 +73,6 @@ test.describe('Pack CRUD', () => {
   });
 
   test('edit pack name → updated name appears in detail', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const originalName = `E2E-Edit-${Date.now()}`;
     const updatedName = `${originalName}-UPDATED`;
 
@@ -109,7 +108,6 @@ test.describe('Pack CRUD', () => {
   });
 
   test('delete pack → disappears from packs list', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const packName = `E2E-Delete-${Date.now()}`;
     const packId = await createPackViaForm(page, packName);
 
@@ -143,7 +141,6 @@ test.describe('Item CRUD within a pack', () => {
   });
 
   test('add item manually → appears in pack detail', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const itemName = `E2E-Item-${Date.now()}`;
 
     await addItemViaForm(page, { packId: sharedPackId, itemName, weight: '850' });

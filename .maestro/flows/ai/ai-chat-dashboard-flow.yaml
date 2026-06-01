@@ -29,7 +29,7 @@ appId: ${APP_ID}
 - extendedWaitUntil:
     visible:
       text: "Dashboard"
-    timeout: 60000
+    timeout: 15000
 
 # Navigate to Dashboard
 - tapOn:

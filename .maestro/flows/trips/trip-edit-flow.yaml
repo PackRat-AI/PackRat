@@ -20,7 +20,7 @@ appId: ${APP_ID}
     element:
       id: "trips:list-item-${TRIP_NAME}"
     direction: DOWN
-    timeout: 60000
+    timeout: 15000
     speed: 40
     visibilityPercentage: 50
     waitToSettleTimeoutMs: 500

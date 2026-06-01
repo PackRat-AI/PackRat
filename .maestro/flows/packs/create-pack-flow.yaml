@@ -120,7 +120,7 @@ appId: ${APP_ID}
     element:
       id: "packs:list-item-${PACK_NAME}"
     direction: DOWN
-    timeout: 30000
+    timeout: 15000
     speed: 40
     visibilityPercentage: 50
     waitToSettleTimeoutMs: 500

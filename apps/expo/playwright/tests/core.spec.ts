@@ -116,7 +116,6 @@ test('trips tab loads', async ({ authedPage: page }) => {
 });
 
 test('create a trip with dates', async ({ authedPage: page }) => {
-  test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
 
   const postPromise = page.waitForResponse(
