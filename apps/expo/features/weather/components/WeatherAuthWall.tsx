@@ -2,7 +2,7 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { Image, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
@@ -18,7 +18,12 @@ export function WeatherAuthWall() {
       <View className="flex-1 px-6 py-8">
         <View className="mb-8 items-center justify-center">
           <View className="bg-primary/10 mb-4 rounded-full p-6">
-            <Image source={LOGO_SOURCE} className="h-12 w-12 rounded-md" resizeMode="contain" />
+            <Image
+              source={LOGO_SOURCE}
+              className="h-12 w-12 rounded-md"
+              resizeMode="contain"
+              style={Platform.select({ web: { width: 48, height: 48 } })}
+            />
           </View>
           <Text variant="title1" className="text-center">
             {t('weather.featuresRequireSignIn')}

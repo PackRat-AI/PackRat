@@ -17,7 +17,7 @@ import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetai
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { testIds } from 'expo-app/lib/testIds';
-import 'expo-dev-client';
+import 'expo-app/lib/devClient';
 import { type Href, router, Stack, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';

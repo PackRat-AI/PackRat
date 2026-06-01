@@ -39,8 +39,26 @@ const EXCLUDED_FILES = new Set([
   'apps/landing/scripts/generate-og-images.ts',
   'apps/guides/scripts/generate-og-images.ts',
   'apps/trails/scripts/generate-og-images.ts',
+  // Web shim that must mirror expo-secure-store's positional (key, value) API.
+  'apps/expo/lib/secureStore.web.ts',
+  // Swift/Xcode helper scripts are shell-style adapters around positional CLIs.
+  'apps/swift/scripts/capture-visual-screenshots.ts',
+  'apps/swift/scripts/lib/app-store-assets.ts',
+  'apps/swift/scripts/run-e2e-macos.ts',
+  'apps/swift/scripts/run-e2e.ts',
+  'apps/swift/scripts/watch-sync-smoke.ts',
+  // Cloudflare/Sentry/logger helpers intentionally mirror external callback/API shapes.
+  'packages/api/src/__test-stubs__/cloudflare-workers.ts',
+  'packages/api/src/index.ts',
+  'packages/api/src/auth/local-e2e.ts',
+  'packages/api/src/services/retention/invalidLogRetention.ts',
+  'packages/api/src/utils/auth.ts',
+  'packages/api/src/utils/embeddingHelper.ts',
+  'packages/api/src/utils/logger.ts',
+  'packages/api/src/workflows/catalog-etl-workflow.ts',
+  'packages/api/src/workflows/shared/chunkCsvForR2.ts',
 ]);
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'keyExtractor',

@@ -207,15 +207,15 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
+    // The web app is served from a different origin than the API (e.g. the
+    // Playwright e2e harness serves the static export on a separate port), so
+    // its origin must be trusted for the cross-origin CSRF/CORS check. The
+    // Swift e2e runner may also launch a parallel local Worker on :8791. Only
+    // trust localhost in development — never in production.
     trustedOrigins: [
       env.BETTER_AUTH_URL,
       'packrat://',
-      // Local dev: the e2e pipeline runs a parallel wrangler on :8791 to avoid
-      // colliding with a developer's own wrangler on :8787. Accept either when
-      // BETTER_AUTH_URL itself is localhost.
-      ...(env.BETTER_AUTH_URL.startsWith('http://localhost')
-        ? ['http://localhost:8787', 'http://localhost:8791']
-        : []),
+      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
     ],
   });
 

@@ -7,7 +7,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { Platform, Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplateItem } from '../hooks';
 import type { PackTemplateItem } from '../types';
@@ -101,7 +101,12 @@ export function PackTemplateItemCard({
     <TouchableWithoutFeedback key={item.id} onPress={() => onPress(item)}>
       <View className="rounded-lg flex-row gap-3 border p-4 border-border bg-card">
         {/* Image */}
-        <PackTemplateItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
+        <PackTemplateItemImage
+          item={item}
+          className="h-16 w-16 rounded-md"
+          resizeMode="cover"
+          style={Platform.select({ web: { width: 64, height: 64 } })}
+        />
 
         {/* Content */}
         <View className="flex-1">
