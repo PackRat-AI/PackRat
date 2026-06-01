@@ -27,16 +27,11 @@
  */
 
 import * as barrel from '@packrat/utils';
-import {
-  LIB_PRIORITY,
-  type ProvenanceEntry,
-  provenance,
-  type RankedLib,
-} from '@packrat/utils/provenance';
+import { LIB_PRIORITY, type ProvenanceEntry, provenance } from '@packrat/utils/provenance';
 
 const KNOWN_SOURCES = new Set<string>([...LIB_PRIORITY, 'destr', 'safe-stable-stringify']);
 
-const rankOf = (lib: string): number => LIB_PRIORITY.indexOf(lib as RankedLib);
+const rankOf = (lib: string): number => (LIB_PRIORITY as readonly string[]).indexOf(lib);
 const isRanked = (lib: string): boolean => rankOf(lib) !== -1;
 
 export interface ProvenanceViolation {
