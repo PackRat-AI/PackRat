@@ -53,9 +53,6 @@
   },
   "overrides": {
     "@packrat-ai/nativewindui": "2.0.3-2",
-    "@sinclair/typebox": "^0.34.15",
-    "elysia": "^1.4.0",
-    "expo-sqlite": "~55.0.15",
     "react": "19.2.6"
   },
   "devDependencies": {
