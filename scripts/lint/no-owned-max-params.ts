@@ -51,6 +51,12 @@ const EXCLUDED_FILES = new Set([
   // (signature fixed by the language) and an inline `AgentContext.registerFlaggedTool`
   // implementation (signature fixed by that interface) — neither is an owned API.
   'packages/mcp/scripts/dump-catalog.ts',
+  // The `tool()` / `prompt()` wrappers deliberately mirror the MCP SDK's
+  // positional `registerTool(name, config, handler)` / `registerPrompt(...)`
+  // signatures 1:1 (the `server` receiver is the only added positional), so
+  // the ~100 call sites read like the SDK call they replace. An object param
+  // would force every site to diverge from the SDK shape for no real gain.
+  'packages/mcp/src/registerTool.ts',
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
 ]);
