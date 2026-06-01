@@ -385,7 +385,7 @@ describe('Catalog Routes', () => {
   // catalog routes regardless of query projection.
   // ───────────────────────────────────────────────────────────────────────────
   describe('shape contract (U1 characterization)', () => {
-    it('GET /catalog list — wire-shape today contains every CatalogItemSchema field (Zod strips embedding)', async () => {
+    it('GET /catalog list — wire-shape excludes embedding AND fat JSONB (post-U4 projection)', async () => {
       await seedFatCatalogItem({ name: 'U1 Fat Item — catalog list' });
 
       const res = await apiWithAuth('/catalog?limit=5');
@@ -399,23 +399,24 @@ describe('Catalog Routes', () => {
       );
       expect(seededItem).toBeDefined();
 
-      // Today: response items include every CatalogItemSchema field including the fat JSONB.
-      // U4 will drop variants/techs/links/reviews/qas/faqs from the DB-side projection;
-      // wire-shape will then show these fields as undefined (Zod permits — they are nullable+optional).
       expect(seededItem).toHaveProperty('id');
       expect(seededItem).toHaveProperty('name');
       expect(seededItem).toHaveProperty('sku');
       expect(seededItem).toHaveProperty('brand');
       expect(seededItem).toHaveProperty('weight');
-      // Embedding is already absent from wire (Zod schema doesn't include it).
+      // Embedding already absent from wire (Zod schema doesn't include it);
+      // post-U4 also absent at the DB-side projection.
       expect(seededItem).not.toHaveProperty('embedding');
-      // Fat JSONB IS present today on the wire — U4 will drop these from the projection.
-      expect(seededItem).toHaveProperty('reviews');
-      expect(seededItem).toHaveProperty('qas');
-      expect(seededItem).toHaveProperty('faqs');
+      // Fat JSONB dropped from list projection per U4 — detail endpoint still has them.
+      expect(seededItem).not.toHaveProperty('reviews');
+      expect(seededItem).not.toHaveProperty('qas');
+      expect(seededItem).not.toHaveProperty('faqs');
+      expect(seededItem).not.toHaveProperty('variants');
+      expect(seededItem).not.toHaveProperty('techs');
+      expect(seededItem).not.toHaveProperty('links');
     });
 
-    it('CatalogService.getCatalogItems — DB-side projection today includes embedding (U4 will drop it)', async () => {
+    it('CatalogService.getCatalogItems — DB-side projection excludes embedding + fat JSONB (post-U4)', async () => {
       await seedFatCatalogItem({ name: 'U1 Fat Item — service projection' });
 
       const service = new CatalogService();
@@ -424,17 +425,16 @@ describe('Catalog Routes', () => {
       const seededItem = result.items.find((it) => it.name?.includes('U1 Fat Item'));
       expect(seededItem).toBeDefined();
 
-      // This is the cost-bearing assertion — the service today selects every column via
-      // getTableColumns(catalogItems), so embedding + fat JSONB are hydrated into JS even though
-      // the route's Zod parse strips embedding from the wire. U4 flips this assertion to
-      // `.not.toHaveProperty('embedding')` and similar for the fat JSONB.
-      expect(seededItem).toHaveProperty('embedding');
-      expect(seededItem).toHaveProperty('reviews');
-      expect(seededItem).toHaveProperty('qas');
-      expect(seededItem).toHaveProperty('faqs');
-      expect(seededItem).toHaveProperty('techs');
-      expect(seededItem).toHaveProperty('links');
-      expect(seededItem).toHaveProperty('variants');
+      // Cost-bearing assertion: post-U4 the service projects scalars only.
+      // Bytes don't leave Postgres for these fields, which is the actual cost win
+      // (wire-shape Zod strip happens downstream of the egress).
+      expect(seededItem).not.toHaveProperty('embedding');
+      expect(seededItem).not.toHaveProperty('reviews');
+      expect(seededItem).not.toHaveProperty('qas');
+      expect(seededItem).not.toHaveProperty('faqs');
+      expect(seededItem).not.toHaveProperty('techs');
+      expect(seededItem).not.toHaveProperty('links');
+      expect(seededItem).not.toHaveProperty('variants');
     });
 
     it('GET /catalog/:id — baseline shape (not changing in this PR; locked ahead of pivot migration)', async () => {

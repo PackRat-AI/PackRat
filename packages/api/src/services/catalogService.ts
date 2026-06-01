@@ -70,7 +70,13 @@ export class CatalogService {
       order: 'asc' | 'desc';
     };
   }): Promise<{
-    items: CatalogItem[];
+    // List-context items: every CatalogItem field EXCEPT the heavy ones the
+    // service stops selecting per U4 (embedding + variants/techs/links/reviews/
+    // qas/faqs). Detail endpoints (/catalog/:id) still return full rows.
+    items: Omit<
+      CatalogItem,
+      'embedding' | 'variants' | 'techs' | 'links' | 'reviews' | 'qas' | 'faqs'
+    >[];
     total: number;
     limit: number;
     offset: number;
@@ -133,7 +139,36 @@ export class CatalogService {
     if (!limit) {
       const items = await this.db
         .select({
-          ...getTableColumns(catalogItems),
+          // List-context projection: scalar fields callers actually need for
+          // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
+          // per row) AND the fat JSONB (variants/techs/links/reviews/qas/faqs,
+          // 10s of KB each). Keep these for /catalog/:id detail.
+          // The win lands at the DB→Worker boundary, not just response Zod —
+          // see plan Summary "Cost-mechanism note".
+          id: catalogItems.id,
+          name: catalogItems.name,
+          productUrl: catalogItems.productUrl,
+          sku: catalogItems.sku,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          description: catalogItems.description,
+          categories: catalogItems.categories,
+          images: catalogItems.images,
+          brand: catalogItems.brand,
+          model: catalogItems.model,
+          ratingValue: catalogItems.ratingValue,
+          color: catalogItems.color,
+          size: catalogItems.size,
+          price: catalogItems.price,
+          availability: catalogItems.availability,
+          seller: catalogItems.seller,
+          productSku: catalogItems.productSku,
+          material: catalogItems.material,
+          currency: catalogItems.currency,
+          condition: catalogItems.condition,
+          reviewCount: catalogItems.reviewCount,
+          createdAt: catalogItems.createdAt,
+          updatedAt: catalogItems.updatedAt,
           pack_item_count: sql<number>`COALESCE(pack_item_counts.count, 0)`,
         })
         .from(catalogItems)
@@ -161,7 +196,36 @@ export class CatalogService {
     const [itemsWithCounts, totalCountResult] = await Promise.all([
       this.db
         .select({
-          ...getTableColumns(catalogItems),
+          // List-context projection: scalar fields callers actually need for
+          // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
+          // per row) AND the fat JSONB (variants/techs/links/reviews/qas/faqs,
+          // 10s of KB each). Keep these for /catalog/:id detail.
+          // The win lands at the DB→Worker boundary, not just response Zod —
+          // see plan Summary "Cost-mechanism note".
+          id: catalogItems.id,
+          name: catalogItems.name,
+          productUrl: catalogItems.productUrl,
+          sku: catalogItems.sku,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          description: catalogItems.description,
+          categories: catalogItems.categories,
+          images: catalogItems.images,
+          brand: catalogItems.brand,
+          model: catalogItems.model,
+          ratingValue: catalogItems.ratingValue,
+          color: catalogItems.color,
+          size: catalogItems.size,
+          price: catalogItems.price,
+          availability: catalogItems.availability,
+          seller: catalogItems.seller,
+          productSku: catalogItems.productSku,
+          material: catalogItems.material,
+          currency: catalogItems.currency,
+          condition: catalogItems.condition,
+          reviewCount: catalogItems.reviewCount,
+          createdAt: catalogItems.createdAt,
+          updatedAt: catalogItems.updatedAt,
           pack_item_count: sql<number>`COALESCE(pack_item_counts.count, 0)`,
         })
         .from(catalogItems)
