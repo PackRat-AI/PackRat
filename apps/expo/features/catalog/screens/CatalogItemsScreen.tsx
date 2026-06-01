@@ -1,9 +1,10 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -33,6 +34,8 @@ function CatalogItemsScreen() {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
@@ -49,7 +52,6 @@ function CatalogItemsScreen() {
   const {
     data: paginatedData,
     isLoading: isPaginatedLoading,
-    isRefetching,
     refetch,
     fetchNextPage,
     hasNextPage,
@@ -66,11 +68,11 @@ function CatalogItemsScreen() {
     isLoading: isVectorLoading,
     error: vectorError,
   } = useVectorSearch({ query: trimmedQuery, limit: 10 });
-  const searchResults: CatalogItem[] = vectorResult?.items ?? [];
+  const searchResults = vectorResult?.items ?? [];
 
-  const paginatedItems: CatalogItem[] = (
-    paginatedData?.pages.flatMap((page) => page.items) ?? []
-  ).filter((item) => Boolean(item?.id));
+  const paginatedItems = (paginatedData?.pages.flatMap((page) => page.items) ?? []).filter((item) =>
+    Boolean(item?.id),
+  );
 
   const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
 
@@ -85,6 +87,11 @@ function CatalogItemsScreen() {
   const handleItemPress = (item: CatalogItem) => {
     router.push({ pathname: '/catalog/[id]', params: { id: item.id } });
   };
+  const handleRefresh = async () => {
+    setIsManualRefresh(true);
+    await refetch();
+    setIsManualRefresh(false);
+  };
 
   const loadMore = () => {
     if (!isSearching && hasNextPage && !isFetchingNextPage) {
@@ -98,7 +105,8 @@ function CatalogItemsScreen() {
     if (isSearching) return null;
 
     return (
-      <TabScreen useLegacySafeAreaView>
+      <>
+        <LargeTitleHeaderOverlapFixIOS />
         <CategoriesFilter
           data={categories}
           onFilter={setActiveFilter}
@@ -117,7 +125,7 @@ function CatalogItemsScreen() {
             <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
           )}
         </View>
-      </TabScreen>
+      </>
     );
   }, [
     isSearching,
@@ -206,7 +214,6 @@ function CatalogItemsScreen() {
       />
 
       <FlatList
-        key={activeFilter}
         data={paginatedItems}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
@@ -214,24 +221,28 @@ function CatalogItemsScreen() {
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}
         ListHeaderComponent={listHeader}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={handleRefresh} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+        contentInsetAdjustmentBehavior="automatic"
         ListFooterComponent={
-          <View className="py-4">
-            {isFetchingNextPage ? (
-              <ActivityIndicator className="text-primary" />
-            ) : hasNextPage ? (
-              <Text className="text-center text-xs text-muted-foreground">
-                {t('catalog.scrollToLoadMore')}
-              </Text>
-            ) : paginatedItems.length > 0 ? (
-              <Text className="text-center text-xs text-muted-foreground">
-                {t('catalog.endOfCatalog')}
-              </Text>
-            ) : null}
-          </View>
+          <>
+            <View className="py-4">
+              {isFetchingNextPage ? (
+                <ActivityIndicator className="text-primary" />
+              ) : hasNextPage ? (
+                <Text className="text-center text-xs text-muted-foreground">
+                  {t('catalog.scrollToLoadMore')}
+                </Text>
+              ) : paginatedItems.length > 0 ? (
+                <Text className="text-center text-xs text-muted-foreground">
+                  {t('catalog.endOfCatalog')}
+                </Text>
+              ) : null}
+            </View>
+            <AndroidTabBarInsetFix />
+          </>
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
@@ -276,4 +287,4 @@ function CatalogItemsScreen() {
   );
 }
 
-export default withAuthWall(CatalogItemsScreen, CatalogItemsAuthWall);
+export default withAuthWall({ Component: CatalogItemsScreen, AuthWall: CatalogItemsAuthWall });

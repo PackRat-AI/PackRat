@@ -1,4 +1,5 @@
-import { assertDefined } from '@packrat/guards';
+import { assertDefined, fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
@@ -8,7 +9,6 @@ import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/pa
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
-import type { WeightUnit } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -22,6 +22,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 import type { CatalogItem } from '../types';
@@ -82,7 +83,7 @@ export function AddCatalogItemDetailsScreen() {
         name: catalogItem.name,
         description: catalogItem.description ?? undefined,
         weight: catalogItem.weight || 0,
-        weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
+        weightUnit: fromZod(WeightUnitSchema)(catalogItem.weightUnit) ?? 'g',
         quantity: Number.parseInt(quantity, 10) || 1,
         category,
         consumable: isConsumable,
@@ -140,53 +141,48 @@ export function AddCatalogItemDetailsScreen() {
     >
       <SafeAreaView className="flex-1">
         <ScrollView className="flex-1">
-          <View className="mb-6 rounded-lg bg-card p-4 shadow-sm">
-            <Text className="mb-2 text-xl font-semibold text-foreground">{catalogItem.name}</Text>
-            <Text className="mb-4 text-muted-foreground">{catalogItem.description}</Text>
-            <View className="flex-row gap-4">
-              <View className="flex-row items-center">
-                <Icon name="dumbbell" size={16} color={colors.grey} />
-                <Text className="ml-1 text-muted-foreground">
-                  {catalogItem.weight} {catalogItem.weightUnit}
+          <View className="border-b border-border bg-card px-4 py-3">
+            <View className="flex-row items-center">
+              <CatalogItemImage
+                imageUrl={catalogItem.images?.[0]}
+                className="h-24 w-24 rounded-md"
+                resizeMode="cover"
+              />
+              <View className="ml-3 flex-1">
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.adding')}
                 </Text>
-              </View>
-              {catalogItem.brand && (
-                <View className="flex-row items-center flex-nowrap">
-                  <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                  <Text className="text-xs text-muted-foreground">{catalogItem.brand}</Text>
+                <Text variant="title3" color="primary">
+                  {catalogItem.name}
+                </Text>
+                <View className="mt-1 flex-row items-center">
+                  <Icon name="dumbbell" size={14} color={colors.grey2} />
+                  <Text variant="caption2" className="ml-1">
+                    {catalogItem.weight} {catalogItem.weightUnit}
+                  </Text>
+                  {catalogItem.brand && (
+                    <>
+                      <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                      <Text variant="caption2">{catalogItem.brand}</Text>
+                    </>
+                  )}
                 </View>
-              )}
+              </View>
             </View>
           </View>
 
           {/* Selected Pack */}
           <View className="mt-6 border-b border-border bg-card px-4 py-3">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-sm text-muted-foreground">{t('catalog.selectedPack')}</Text>
-                <Text className="text-base font-medium text-foreground">{pack.name}</Text>
-                <View className="mt-1 flex-row items-center">
-                  <Icon name="basket-outline" size={14} color={colors.grey} />
-                  <Text className="ml-1 text-xs text-muted-foreground">
-                    {pack.items.length}{' '}
-                    {pack.items.length === 1 ? t('catalog.item') : t('catalog.items')}
-                  </Text>
-                  <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                  <Text className="text-xs capitalize text-muted-foreground">{pack.category}</Text>
-                </View>
-              </View>
-              <Button
-                variant="secondary"
-                onPress={() =>
-                  router.push({
-                    pathname: '/catalog/add-to-pack',
-                    params: { catalogItemId },
-                  })
-                }
-                disabled={isAdding}
-              >
-                <Text className="font-normal">{t('catalog.change')}</Text>
-              </Button>
+            <Text className="text-sm text-muted-foreground">{t('catalog.selectedPack')}</Text>
+            <Text className="text-base font-medium text-foreground">{pack.name}</Text>
+            <View className="mt-1 flex-row items-center">
+              <Icon name="basket-outline" size={14} color={colors.grey} />
+              <Text className="ml-1 text-xs text-muted-foreground">
+                {pack.items.length}{' '}
+                {pack.items.length === 1 ? t('catalog.item') : t('catalog.items')}
+              </Text>
+              <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+              <Text className="text-xs capitalize text-muted-foreground">{pack.category}</Text>
             </View>
           </View>
 

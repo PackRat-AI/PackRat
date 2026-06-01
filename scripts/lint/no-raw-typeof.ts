@@ -23,11 +23,25 @@ const ROOT = join(import.meta.dir, '..', '..');
 const ROOTS = ['apps', 'packages'];
 
 // Matches: typeof x === 'string' (and !== counterpart, all primitive types).
-// Uses a backreference (\2) to ensure the opening and closing quotes match.
+// Uses a backreference (\3) to ensure the opening and closing quotes match.
+// Group 1 captures the identifier being checked.
 const TYPEOF_PATTERN =
-  /typeof\s+[A-Za-z_][A-Za-z0-9_.]*\s*(===|!==)\s*(['"])(string|number|boolean|object|function|undefined|symbol|bigint)\2/;
+  /typeof\s+([A-Za-z_][A-Za-z0-9_.]*)\s*(===|!==)\s*(['"])(string|number|boolean|object|function|undefined|symbol|bigint)\3/;
 
-const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build']);
+// Globally-available identifiers used for SSR/environment availability checks.
+// `typeof window !== 'undefined'` cannot be replaced with `isDefined(window)`
+// because accessing an undeclared global throws a ReferenceError. These are
+// intentionally exempted from the no-raw-typeof rule.
+const GLOBAL_IDENTIFIERS = new Set([
+  'window',
+  'document',
+  'globalThis',
+  'Bun',
+  'navigator',
+  'process',
+]);
+
+const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.wrangler']);
 
 function isExcludedPath(relPath: string): boolean {
   return relPath === 'packages/guards' || relPath.startsWith('packages/guards/');
@@ -78,8 +92,12 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
 
       const lines = content.split('\n');
       for (let i = 0; i < lines.length; i++) {
-        if (TYPEOF_PATTERN.test(lines[i] ?? '')) {
-          violations.push({ file: entryRel, line: i + 1, content: lines[i]?.trimEnd() ?? '' });
+        const line = lines[i] ?? '';
+        const match = TYPEOF_PATTERN.exec(line);
+        if (match) {
+          const identifier = match[1] ?? '';
+          if (GLOBAL_IDENTIFIERS.has(identifier)) continue;
+          violations.push({ file: entryRel, line: i + 1, content: line.trimEnd() });
         }
       }
     }

@@ -1,4 +1,5 @@
 import { openai } from '@ai-sdk/openai';
+import { arrayIncludes, objectEntries } from '@packrat/guards';
 import { generateText } from 'ai';
 import chalk from 'chalk';
 import { format } from 'date-fns';
@@ -9,8 +10,8 @@ import path from 'path';
 import slugify from 'slugify';
 import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
-const JSON_CODE_BLOCK_RE = /```json\s*([\s\S]*?)\s*```/;
-const JSON_ARRAY_RE = /\[\s*\{[\s\S]*\}\s*\]/;
+const JSON_CODE_BLOCK_PATTERN = /```json\s*([\s\S]*?)\s*```/;
+const JSON_ARRAY_PATTERN = /\[\s*\{[\s\S]*\}\s*\]/;
 
 // Types
 type ContentCategory =
@@ -31,6 +32,12 @@ type ContentCategory =
   | 'beginner-resources';
 
 type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
+const DIFFICULTY_LEVELS = [
+  'Beginner',
+  'Intermediate',
+  'Advanced',
+  'All Levels',
+] as const satisfies readonly DifficultyLevel[];
 
 interface ContentRequest {
   title: string;
@@ -82,6 +89,9 @@ const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
   'beginner-resources': 'Beginner Resources',
 };
 
+// Valid category keys derived from CATEGORY_DISPLAY_NAMES (stays in sync with ContentCategory).
+const VALID_CONTENT_CATEGORIES = Object.keys(CATEGORY_DISPLAY_NAMES) as readonly ContentCategory[];
+
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -113,13 +123,13 @@ function getRandomAuthor(): string {
 // Extract JSON from text that might contain markdown code blocks
 function extractJsonFromText(text: string): string {
   // Look for JSON content between code blocks
-  const jsonMatch = text.match(JSON_CODE_BLOCK_RE);
+  const jsonMatch = text.match(JSON_CODE_BLOCK_PATTERN);
   if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 
   // If no code blocks, try to find JSON array directly
-  const arrayMatch = text.match(JSON_ARRAY_RE);
+  const arrayMatch = text.match(JSON_ARRAY_PATTERN);
   if (arrayMatch) {
     return arrayMatch[0];
   }
@@ -166,10 +176,13 @@ function getExistingContent(): ContentMetadata[] {
 }
 
 // Generate topic ideas based on categories and existing content
-async function generateTopicIdeas(
-  count: number,
-  opts: { categories?: ContentCategory[]; existingContent?: ContentMetadata[] } = {},
-): Promise<ContentMetadata[]> {
+async function generateTopicIdeas({
+  count,
+  opts = {},
+}: {
+  count: number;
+  opts?: { categories?: ContentCategory[]; existingContent?: ContentMetadata[] };
+}): Promise<ContentMetadata[]> {
   const { categories, existingContent = [] } = opts;
   console.log(chalk.blue(`Generating ${count} topic ideas...`));
 
@@ -203,10 +216,7 @@ async function generateTopicIdeas(
     `;
 
     // Add category distribution analysis
-    const categoryDistribution: Record<ContentCategory, number> = {} as Record<
-      ContentCategory,
-      number
-    >;
+    const categoryDistribution: Partial<Record<ContentCategory, number>> = {};
     for (const content of existingContent) {
       for (const category of content.categories) {
         categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
@@ -214,9 +224,9 @@ async function generateTopicIdeas(
     }
 
     // Find underrepresented categories
-    const sortedCategories = Object.entries(categoryDistribution)
-      .sort(([, countA], [, countB]) => countA - countB)
-      .map(([category]) => category as ContentCategory);
+    const sortedCategories = objectEntries(categoryDistribution)
+      .sort(([, countA], [, countB]) => (countA ?? 0) - (countB ?? 0))
+      .map(([category]) => category);
 
     if (sortedCategories.length > 0 && !categories) {
       const underrepresentedCategories = sortedCategories.slice(0, 3);
@@ -264,10 +274,10 @@ async function generateTopicIdeas(
       (idea: { title: string; description: string; categories: string[]; difficulty: string }) => {
         // Map display category names back to our internal keys
         const categoryKeys = idea.categories.map((displayName: string) => {
-          const entry = Object.entries(CATEGORY_DISPLAY_NAMES).find(
-            ([_, value]) => value.toLowerCase() === displayName.toLowerCase(),
+          const entry = objectEntries(CATEGORY_DISPLAY_NAMES).find(
+            ([, value]) => value.toLowerCase() === displayName.toLowerCase(),
           );
-          return entry ? (entry[0] as ContentCategory) : 'gear-essentials';
+          return entry ? entry[0] : ('gear-essentials' as const);
         });
 
         return {
@@ -277,7 +287,9 @@ async function generateTopicIdeas(
           categories: categoryKeys,
           author: getRandomAuthor(),
           readingTime: generateReadingTime(),
-          difficulty: idea.difficulty as DifficultyLevel,
+          difficulty: (arrayIncludes(DIFFICULTY_LEVELS, idea.difficulty)
+            ? idea.difficulty
+            : 'All Levels') satisfies DifficultyLevel,
           coverImage: '/placeholder.svg?height=400&width=800',
           slug: createSlug(idea.title),
         };
@@ -291,10 +303,13 @@ async function generateTopicIdeas(
 }
 
 // Generate full MDX content for a topic with awareness of existing content
-async function generateMdxContent(
-  metadata: ContentMetadata,
-  existingContent: ContentMetadata[] = [],
-): Promise<string> {
+async function generateMdxContent({
+  metadata,
+  existingContent = [],
+}: {
+  metadata: ContentMetadata;
+  existingContent?: ContentMetadata[];
+}): Promise<string> {
   console.log(chalk.blue(`Generating content for: ${metadata.title}`));
 
   const categoryNames = metadata.categories.map((c) => CATEGORY_DISPLAY_NAMES[c]);
@@ -358,10 +373,13 @@ async function generateMdxContent(
 }
 
 // Generate a single post
-async function generatePost(
-  request: ContentRequest,
-  existingContent: ContentMetadata[] = [],
-): Promise<string> {
+async function generatePost({
+  request,
+  existingContent = [],
+}: {
+  request: ContentRequest;
+  existingContent?: ContentMetadata[];
+}): Promise<string> {
   try {
     // Set defaults for missing fields
     const metadata: ContentMetadata = {
@@ -379,11 +397,11 @@ async function generatePost(
     // Generate content if requested
     let content = '';
     if (request.generateFullContent) {
-      content = await generateMdxContent(metadata, existingContent);
+      content = await generateMdxContent({ metadata, existingContent });
 
       try {
         console.log(chalk.blue(`🔗 Enhancing ${metadata.title} with catalog items...`));
-        const enhancementResult = await enhanceGuideContent(content);
+        const enhancementResult = await enhanceGuideContent({ content });
         content = enhancementResult.content;
 
         if (enhancementResult.productsUsed.length > 0) {
@@ -417,14 +435,20 @@ async function generatePost(
 }
 
 // Generate multiple posts
-async function generatePosts(count: number, categories?: ContentCategory[]): Promise<string[]> {
+async function generatePosts({
+  count,
+  categories,
+}: {
+  count: number;
+  categories?: ContentCategory[];
+}): Promise<string[]> {
   try {
     // Get existing content first
     const existingContent = getExistingContent();
     console.log(chalk.blue(`Found ${existingContent.length} existing articles`));
 
     // Generate topic ideas with awareness of existing content
-    const topics = await generateTopicIdeas(count, { categories, existingContent });
+    const topics = await generateTopicIdeas({ count, opts: { categories, existingContent } });
     console.log(chalk.green(`✓ Generated ${topics.length} topic ideas`));
 
     // Generate content for each topic
@@ -444,7 +468,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
       };
 
       // Pass existing content to generatePost for context
-      const filePath = await generatePost(request, existingContent);
+      const filePath = await generatePost({ request, existingContent });
       if (filePath) {
         filePaths.push(filePath);
 
@@ -528,15 +552,15 @@ function generateContentReport(): void {
 // Export functions for use in the frontend
 export {
   CATEGORY_DISPLAY_NAMES,
+  type ContentCategory,
+  type ContentMetadata,
+  type ContentRequest,
+  type DifficultyLevel,
   generateContentReport,
   generatePost,
   generatePosts,
   generateTopicIdeas,
   getExistingContent,
-  type ContentCategory,
-  type ContentMetadata,
-  type ContentRequest,
-  type DifficultyLevel,
 };
 
 // Command line interface
@@ -551,7 +575,9 @@ if (require.main === module) {
   }
 
   const count = (args[0] && Number.parseInt(args[0], 10)) || 5;
-  const categoryArgs = args.slice(1) as ContentCategory[];
+  const categoryArgs = args
+    .slice(1)
+    .filter((a): a is ContentCategory => arrayIncludes(VALID_CONTENT_CATEGORIES, a));
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));
   if (categoryArgs.length > 0) {
@@ -562,7 +588,7 @@ if (require.main === module) {
     );
   }
 
-  generatePosts(count, categoryArgs.length > 0 ? categoryArgs : undefined)
+  generatePosts({ count, categories: categoryArgs.length > 0 ? categoryArgs : undefined })
     .then(() => console.log(chalk.green('Generation complete!')))
     .catch((err) => console.error(chalk.red('Generation failed:'), err));
 }

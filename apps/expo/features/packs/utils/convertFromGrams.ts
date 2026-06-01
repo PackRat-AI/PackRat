@@ -1,16 +1,5 @@
-import type { WeightUnit } from '../types';
+import type { WeightUnit } from '@packrat/units';
+import { fromGrams } from '@packrat/units';
 
-export const convertFromGrams = (grams: number, unit: WeightUnit): number => {
-  switch (unit) {
-    case 'g':
-      return grams;
-    case 'oz':
-      return grams / 28.35;
-    case 'kg':
-      return grams / 1000;
-    case 'lb':
-      return grams / 453.59;
-    default:
-      return grams;
-  }
-};
+export const convertFromGrams = ({ grams, unit }: { grams: number; unit: WeightUnit }): number =>
+  fromGrams({ grams, unit });

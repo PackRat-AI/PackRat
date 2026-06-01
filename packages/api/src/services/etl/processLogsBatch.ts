@@ -1,6 +1,6 @@
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { invalidItemLogs, type NewInvalidItemLog } from '@packrat/db';
 import { createDbClient } from '../../db';
-import { invalidItemLogs, type NewInvalidItemLog } from '../../db/schema';
 import { updateEtlJobProgress } from './updateEtlJobProgress';
 
 export async function processLogsBatch({
@@ -15,9 +15,13 @@ export async function processLogsBatch({
   const db = createDbClient(env);
   try {
     await db.insert(invalidItemLogs).values(logs);
-    await updateEtlJobProgress(env, {
-      jobId,
-      invalid: logs.length,
+    await updateEtlJobProgress({
+      env,
+      params: {
+        jobId,
+        invalid: logs.length,
+        processed: logs.length,
+      },
     });
 
     console.log(`📝 Processed and wrote ${logs.length} invalid items for job ${jobId}`);

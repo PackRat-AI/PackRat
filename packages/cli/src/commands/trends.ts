@@ -10,14 +10,20 @@ export default defineCommand({
     site: { type: 'string', alias: 's', description: 'Filter to specific site' },
   },
   async run({ args }) {
-    const days = parsePositiveIntArg(args.days, '--days');
+    const days = parsePositiveIntArg({ value: args.days, argName: '--days' });
     const cache = await ensureCache();
-    const rows = await cache.searchTrends(args.keyword, {
-      site: args.site,
-      days,
+    const rows = await cache.searchTrends({
+      keyword: args.keyword,
+      options: {
+        site: args.site,
+        days,
+      },
     });
-    printTable(rows as unknown as Record<string, unknown>[], {
-      title: `Price Trends: "${args.keyword}"`,
+    printTable({
+      rows,
+      options: {
+        title: `Price Trends: "${args.keyword}"`,
+      },
     });
   },
 });

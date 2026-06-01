@@ -12,8 +12,9 @@ import {
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AdminCatalogItem } from 'admin-app/lib/api';
+import type { AdminCatalogItem, UpdateCatalogItemInput } from 'admin-app/lib/api';
 import { updateCatalogItem } from 'admin-app/lib/api';
+import { queryKeys } from 'admin-app/lib/queryKeys';
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 
@@ -26,9 +27,9 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: Parameters<typeof updateCatalogItem>[1]) => updateCatalogItem(item.id, data),
+    mutationFn: (data: UpdateCatalogItemInput) => updateCatalogItem({ id: item.id, body: data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.catalog.all() });
       setOpen(false);
     },
   });
@@ -47,8 +48,8 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
           .filter(Boolean)
       : null;
     const weightRaw = fd.get('weight')?.toString().trim();
-    const weight = weightRaw ? Number(weightRaw) : null;
-    const weightUnit = fd.get('weightUnit')?.toString().trim() || item.weightUnit;
+    const weight = weightRaw ? Number(weightRaw) : undefined;
+    const weightUnit = fd.get('weightUnit')?.toString().trim() || item.weightUnit || undefined;
     const priceRaw = fd.get('price')?.toString().trim();
     const price = priceRaw ? Number(priceRaw) : null;
 
@@ -107,7 +108,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
               <Input
                 id="weightUnit"
                 name="weightUnit"
-                defaultValue={item.weightUnit}
+                defaultValue={item.weightUnit ?? ''}
                 placeholder="g"
               />
             </div>

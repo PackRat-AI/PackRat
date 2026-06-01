@@ -28,13 +28,14 @@ import { TextInput } from 'react-native'; // FORBIDDEN
 ```typescript
 // For any new input-related components, always include the hook
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
+import { TextInput } from 'react-native';
 
 export const CustomInput = forwardRef<InputRef, InputProps>((props, ref) => {
-  const inputRef = useRef<any>(null);
-  
+  const inputRef = useRef<TextInput | null>(null);
+
   // REQUIRED: Apply keyboard hide blur fix
   useKeyboardHideBlur(inputRef);
-  
+
   useImperativeHandle(ref, () => inputRef.current);
   return <SomeInputComponent ref={inputRef} {...props} />;
 });
@@ -58,7 +59,7 @@ export const WrappedThirdPartyInput = forwardRef((props, ref) => {
 #### 2.1 Code Review Checklist
 **Mandatory checks for any PR containing input elements:**
 
-- [ ] Does the component use the enhanced `TextInput`/`SearchInput` from `expo-app/components/?
+- [ ] Does the component use the enhanced `TextInput`/`SearchInput` from `expo-app/components/`?
 - [ ] Is there any direct import from `react-native` for TextInput?
 - [ ] If creating a new input component, does it use `useKeyboardHideBlur`?
 - [ ] Are there any third-party input components that need wrapping?
@@ -70,10 +71,7 @@ Add to ESLint config:
 ```json
 {
   "rules": {
-    "no-direct-textinput-import": {
-      "rule": "error",
-      "message": "Use enhanced TextInput component instead of direct react-native import"
-    }
+    "no-direct-textinput-import": "error"
   }
 }
 ```
@@ -133,12 +131,10 @@ interface EnhancedTextInputProps extends TextInputProps {
 export const EnhancedTextInput = forwardRef<TextInput, EnhancedTextInputProps>(
   ({ autoKeyboardDismiss = true, ...props }, ref) => {
     const inputRef = useRef<TextInput>(null);
-    
-    // Conditional application for rare edge cases
-    if (autoKeyboardDismiss) {
-      useKeyboardHideBlur(inputRef);
-    }
-    
+
+    // Always call hook unconditionally, use enabled flag to control behavior
+    useKeyboardHideBlur(inputRef, { enabled: autoKeyboardDismiss });
+
     useImperativeHandle(ref, () => inputRef.current!);
     return <RNTextInput ref={inputRef} {...props} />;
   }

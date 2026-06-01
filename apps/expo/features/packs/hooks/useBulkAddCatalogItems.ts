@@ -1,4 +1,5 @@
-import type { WeightUnit } from 'expo-app/types';
+import { fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
 import { useState } from 'react';
 import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
 import type { CatalogItemWithPackItemFields } from '../../catalog/types';
@@ -8,7 +9,13 @@ export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  const addItemsToPack = async (packId: string, catalogItems: CatalogItemWithPackItemFields[]) => {
+  const addItemsToPack = async ({
+    packId,
+    catalogItems,
+  }: {
+    packId: string;
+    catalogItems: CatalogItemWithPackItemFields[];
+  }) => {
     if (catalogItems.length === 0) return;
 
     setIsLoading(true);
@@ -26,7 +33,7 @@ export function useBulkAddCatalogItems() {
             name: catalogItem.name,
             description: catalogItem.description ?? undefined,
             weight: catalogItem.weight || 0,
-            weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
+            weightUnit: fromZod(WeightUnitSchema)(catalogItem.weightUnit) ?? 'g',
             quantity: catalogItem.quantity || 1,
             category: catalogItem.category || '',
             consumable: catalogItem.consumable || false,

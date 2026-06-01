@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
 
@@ -44,6 +44,7 @@ export default function LocationSearchScreen() {
         )}&key=${GOOGLE_MAPS_API_KEY}`,
       );
 
+      if (!response.ok) throw new Error(`Geocode request failed: ${response.status}`);
       const data = await response.json();
 
       if (data.status === 'OK' && data.results.length > 0) {
@@ -106,7 +107,6 @@ export default function LocationSearchScreen() {
       <View className="flex-1">
         <MapView
           ref={mapRef}
-          provider={PROVIDER_GOOGLE}
           style={{ flex: 1 }}
           initialRegion={{
             latitude: 20.5937,

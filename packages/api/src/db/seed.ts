@@ -17,13 +17,13 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
 import { and, eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import WebSocket from 'ws';
-import * as schema from './schema';
 
 neonConfig.webSocketConstructor = WebSocket;
 
@@ -1831,14 +1831,8 @@ async function seed() {
   const dbUrl = nodeEnv.NEON_DATABASE_URL;
   if (!dbUrl) throw new Error('NEON_DATABASE_URL is required');
 
-  // Get optional admin user ID from CLI args
-  const argUserIdRaw = process.argv[2] ? Number.parseInt(process.argv[2], 10) : undefined;
-  if (argUserIdRaw !== undefined && Number.isNaN(argUserIdRaw)) {
-    throw new Error(
-      'Invalid user ID provided. Please provide a valid numeric user ID, e.g.: bun run seed.ts 1',
-    );
-  }
-  const argUserId = argUserIdRaw;
+  // Get optional admin user ID from CLI args (now a UUID string)
+  const argUserId = process.argv[2] ?? undefined;
 
   type SeedDatabase = NodePgDatabase<typeof schema> | NeonHttpDatabase<typeof schema>;
 
@@ -1860,7 +1854,7 @@ async function seed() {
     const seedDb = db;
 
     // Resolve admin user ID
-    let adminUserId: number;
+    let adminUserId: string;
     if (argUserId) {
       adminUserId = argUserId;
       console.log(`Using provided user ID: ${adminUserId}`);

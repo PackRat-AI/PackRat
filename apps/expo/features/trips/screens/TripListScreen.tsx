@@ -1,14 +1,15 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
+import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
-import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
 import type { Trip } from '../types';
@@ -41,7 +42,11 @@ function CreateTripIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable testID={TestIds.CreateTripButton} accessibilityLabel={t('trips.createNewTrip')}>
+      <Pressable
+        testID={testIds.trips.createBtn}
+        accessibilityLabel={t('trips.createNewTrip')}
+        className="mx-2"
+      >
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
@@ -144,7 +149,7 @@ export function TripsListScreen() {
   };
 
   return (
-    <TabScreen>
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
@@ -159,25 +164,23 @@ export function TripsListScreen() {
             </LargeTitleHeaderSearchContentContainer>
           ),
         }}
-        rightView={() => (
-          <View className="flex-row items-center mr-2 ml-2">
-            <CreateTripIconButton />
-          </View>
-        )}
+        rightView={() => <CreateTripIconButton />}
       />
 
       <FlatList
         data={filteredTrips}
         keyExtractor={(trip) => trip.id}
         ListHeaderComponent={<TrailConditionsBanner />}
+        contentInsetAdjustmentBehavior="automatic"
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
             <TripCard trip={trip} onPress={handleTripPress} />
           </View>
         )}
         ListEmptyComponent={renderEmptyState()}
+        ListFooterComponent={<AndroidTabBarInsetFix />}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </TabScreen>
+    </SafeAreaView>
   );
 }

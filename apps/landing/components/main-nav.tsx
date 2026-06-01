@@ -40,7 +40,13 @@ export default function MainNav() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const scrollToSection = ({
+    e,
+    href,
+  }: {
+    e: React.MouseEvent<HTMLAnchorElement>;
+    href: string;
+  }) => {
     if (href.startsWith('http')) {
       e.preventDefault();
       window.open(href, '_blank', 'noopener,noreferrer');
@@ -83,7 +89,7 @@ export default function MainNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={(e) => scrollToSection(e, item.href)}
+                onClick={(e) => scrollToSection({ e, href: item.href })}
                 className={cn(
                   'px-3 py-2 text-sm font-medium rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
                   activeSection === item.href
@@ -103,7 +109,7 @@ export default function MainNav() {
 
           <Link
             href={siteConfig.cta.primary.href}
-            onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
+            onClick={(e) => scrollToSection({ e, href: siteConfig.cta.primary.href })}
             className="hidden md:inline-flex items-center gap-1.5 ml-2 px-4 py-1.5 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-apple-blue/90 transition-colors"
           >
             {siteConfig.cta.primary.text}
@@ -142,7 +148,7 @@ export default function MainNav() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={(e) => scrollToSection(e, item.href)}
+                      onClick={(e) => scrollToSection({ e, href: item.href })}
                       className={cn(
                         'px-3 py-2 text-base font-medium rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
                         activeSection === item.href ? 'text-apple-blue font-semibold' : '',
@@ -156,7 +162,7 @@ export default function MainNav() {
                 <div className="mt-auto mb-6">
                   <Link
                     href={siteConfig.cta.primary.href}
-                    onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
+                    onClick={(e) => scrollToSection({ e, href: siteConfig.cta.primary.href })}
                     className="flex items-center justify-center w-full px-4 py-2.5 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-apple-blue/90 transition-colors"
                   >
                     {siteConfig.cta.primary.text}

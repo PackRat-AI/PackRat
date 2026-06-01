@@ -236,7 +236,7 @@ describe('imageUtils', () => {
 
   describe('getImageExtension', () => {
     it('should return inferred extension immediately if available', async () => {
-      const result = await getImageExtension('https://example.com/image.jpg');
+      const result = await getImageExtension({ url: 'https://example.com/image.jpg' });
       expect(result).toBe('jpg');
       expect(global.fetch).not.toHaveBeenCalled();
     });
@@ -255,7 +255,7 @@ describe('imageUtils', () => {
         },
       } as unknown as Response);
 
-      const result = await getImageExtension('https://example.com/image');
+      const result = await getImageExtension({ url: 'https://example.com/image' });
       expect(result).toBe('jpg');
       expect(mockFetch).toHaveBeenCalled();
     });
@@ -269,7 +269,10 @@ describe('imageUtils', () => {
       const mockFetch = global.fetch as MockedFunction<typeof fetch>;
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const result = await getImageExtension('https://example.com/image', 'png');
+      const result = await getImageExtension({
+        url: 'https://example.com/image',
+        defaultExt: 'png',
+      });
       expect(result).toBe('png');
     });
 
@@ -282,7 +285,10 @@ describe('imageUtils', () => {
       const mockFetch = global.fetch as MockedFunction<typeof fetch>;
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const result = await getImageExtension('https://example.com/image', 'webp');
+      const result = await getImageExtension({
+        url: 'https://example.com/image',
+        defaultExt: 'webp',
+      });
       expect(result).toBe('webp');
     });
 
@@ -300,7 +306,10 @@ describe('imageUtils', () => {
         });
       });
 
-      const result = await getImageExtension('https://example.com/image', 'gif');
+      const result = await getImageExtension({
+        url: 'https://example.com/image',
+        defaultExt: 'gif',
+      });
       expect(result).toBe('gif');
     }, 10000);
 
@@ -318,7 +327,10 @@ describe('imageUtils', () => {
         },
       } as unknown as Response);
 
-      const result = await getImageExtension('https://example.com/image', 'jpg');
+      const result = await getImageExtension({
+        url: 'https://example.com/image',
+        defaultExt: 'jpg',
+      });
       expect(result).toBe('webp'); // Should return fetched, not default
     });
   });

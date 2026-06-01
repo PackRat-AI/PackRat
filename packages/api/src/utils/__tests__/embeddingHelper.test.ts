@@ -14,7 +14,7 @@ describe('embeddingHelper', () => {
         model: 'Pro 2000',
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('Test Tent');
       expect(result).toContain('A great tent for camping');
@@ -28,7 +28,7 @@ describe('embeddingHelper', () => {
         categories: ['camping', 'backpacking', 'cold-weather'],
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('camping, backpacking, cold-weather');
     });
@@ -39,7 +39,7 @@ describe('embeddingHelper', () => {
         category: 'water-treatment',
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('water-treatment');
     });
@@ -53,7 +53,7 @@ describe('embeddingHelper', () => {
         ],
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('Size: S, M, L');
       expect(result).toContain('Color: Red, Blue');
@@ -69,7 +69,7 @@ describe('embeddingHelper', () => {
         },
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('Battery Life: 20 hours');
       expect(result).toContain('Waterproof: IPX7');
@@ -84,7 +84,7 @@ describe('embeddingHelper', () => {
         material: 'Ripstop Nylon',
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('Green');
       expect(result).toContain('50L');
@@ -100,7 +100,7 @@ describe('embeddingHelper', () => {
         ],
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('Great boots Very comfortable and durable');
       expect(result).toContain('Perfect fit Excellent traction on trails');
@@ -117,7 +117,7 @@ describe('embeddingHelper', () => {
         ],
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('What fuel does it use?');
       expect(result).toContain('Propane or butane');
@@ -133,7 +133,7 @@ describe('embeddingHelper', () => {
         ],
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toContain('Is it dishwasher safe? Yes, top rack only');
       expect(result).toContain('What is the capacity? 1 liter');
@@ -147,7 +147,7 @@ describe('embeddingHelper', () => {
         model: '',
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
 
       expect(result).toBe('Item');
     });
@@ -164,7 +164,7 @@ describe('embeddingHelper', () => {
         categories: ['outdoor', 'gear'],
       };
 
-      const result = getEmbeddingText(item, existingItem);
+      const result = getEmbeddingText({ item, existingItem });
 
       expect(result).toContain('Updated Name');
       expect(result).toContain('ExistingBrand');
@@ -183,7 +183,7 @@ describe('embeddingHelper', () => {
         brand: 'OldBrand',
       };
 
-      const result = getEmbeddingText(item, existingItem);
+      const result = getEmbeddingText({ item, existingItem });
 
       expect(result).toContain('New Name');
       expect(result).toContain('NewBrand');
@@ -192,7 +192,7 @@ describe('embeddingHelper', () => {
     });
 
     it('returns empty string for completely empty item', () => {
-      const result = getEmbeddingText({});
+      const result = getEmbeddingText({ item: {} });
       expect(result).toBe('');
     });
 
@@ -203,13 +203,81 @@ describe('embeddingHelper', () => {
         brand: 'Brand',
       };
 
-      const result = getEmbeddingText(item);
+      const result = getEmbeddingText({ item });
       const lines = result.split('\n');
 
       expect(lines).toHaveLength(3);
       expect(lines[0]).toBe('Test');
       expect(lines[1]).toBe('Description');
       expect(lines[2]).toBe('Brand');
+    });
+
+    it('falls back to existingItem for techs when item has none', () => {
+      const item = { name: 'Gadget' };
+      const existingItem = {
+        techs: { Waterproof: 'IPX8', Weight: '150g' },
+      };
+      const result = getEmbeddingText({ item, existingItem });
+      expect(result).toContain('Waterproof: IPX8');
+      expect(result).toContain('Weight: 150g');
+    });
+
+    it('falls back to existingItem for reviews when item has none', () => {
+      const item = { name: 'Boots' };
+      const existingItem = {
+        reviews: [{ title: 'Solid boot', text: 'Great grip on wet rock' }],
+      };
+      const result = getEmbeddingText({ item, existingItem: existingItem as never });
+      expect(result).toContain('Solid boot Great grip on wet rock');
+    });
+
+    it('falls back to existingItem for qas when item has none', () => {
+      const item = { name: 'Stove' };
+      const existingItem = {
+        qas: [
+          {
+            question: 'Does it work at altitude?',
+            answers: [{ a: 'Yes, up to 5000m' }],
+          },
+        ],
+      };
+      const result = getEmbeddingText({ item, existingItem: existingItem as never });
+      expect(result).toContain('Does it work at altitude?');
+      expect(result).toContain('Yes, up to 5000m');
+    });
+
+    it('falls back to existingItem for faqs when item has none', () => {
+      const item = { name: 'Bottle' };
+      const existingItem = {
+        faqs: [{ question: 'BPA free?', answer: 'Yes, completely BPA-free' }],
+      };
+      const result = getEmbeddingText({ item, existingItem });
+      expect(result).toContain('BPA free? Yes, completely BPA-free');
+    });
+
+    it('falls back to existingItem for variants when item has none', () => {
+      const item = { name: 'Jacket' };
+      const existingItem = {
+        variants: [{ attribute: 'Color', values: ['Navy', 'Olive'] }],
+      };
+      const result = getEmbeddingText({ item, existingItem: existingItem as never });
+      expect(result).toContain('Color: Navy, Olive');
+    });
+
+    it('falls back to existingItem for color, size, and material', () => {
+      const item = { name: 'Glove' };
+      const existingItem = { color: 'Black', size: 'L', material: 'Fleece' };
+      const result = getEmbeddingText({ item, existingItem });
+      expect(result).toContain('Black');
+      expect(result).toContain('L');
+      expect(result).toContain('Fleece');
+    });
+
+    it('falls back to existingItem category when item has none', () => {
+      const item = { name: 'Hat' };
+      const existingItem = { category: 'Headwear' };
+      const result = getEmbeddingText({ item, existingItem });
+      expect(result).toContain('Headwear');
     });
   });
 });

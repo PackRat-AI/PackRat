@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const requestData = parsed.data;
 
     // Generate the post
-    const filePath = await generatePost(requestData);
+    const filePath = await generatePost({ request: requestData });
 
     if (!filePath) {
       throw new Error('Failed to generate post');

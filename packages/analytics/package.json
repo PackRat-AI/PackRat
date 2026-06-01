@@ -1,6 +1,6 @@
 {
   "name": "@packrat/analytics",
-  "version": "2.0.22",
+  "version": "2.0.26",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,16 +9,17 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@duckdb/node-api": "1.5.0-r.1",
+    "@duckdb/node-api": "catalog:",
     "@packrat/env": "workspace:*",
-    "consola": "^3.4.2",
-    "magic-regexp": "^0.11.0",
+    "@packrat/guards": "workspace:*",
+    "consola": "catalog:",
+    "magic-regexp": "catalog:",
     "radash": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "catalog:",
     "typescript": "catalog:",
-    "vitest": "~3.1.4"
+    "vitest": "catalog:"
   }
 }

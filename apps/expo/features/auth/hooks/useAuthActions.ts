@@ -1,15 +1,18 @@
-import { clientEnvs } from '@packrat/env/expo-client';
+import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import type { AxiosError } from 'axios';
+import * as Sentry from '@sentry/react-native';
+import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance from 'expo-app/lib/api/client';
+import type { User } from 'expo-app/features/profile/types';
+import { authClient } from 'expo-app/lib/auth-client';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { queryClient } from 'expo-app/providers/TanstackProvider';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
@@ -19,8 +22,7 @@ import {
   isLoadingAtom,
   needsReauthAtom,
   redirectToAtom,
-  refreshTokenAtom,
-  tokenAtom,
+  suppressSignOutNavAtom,
 } from '../atoms/authAtoms';
 
 function redirect(route: string) {
@@ -28,55 +30,78 @@ function redirect(route: string) {
     const parsedRoute: Href = JSON.parse(route);
     return router.dismissTo(parsedRoute);
   } catch {
-    router.dismissTo(route as Href);
+    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
+function mapToUser(raw: Record<string, unknown>): User {
+  const name = asString(raw.name) ?? '';
+  const spaceIdx = name.indexOf(' ');
+  return {
+    id: asString(raw.id) ?? '',
+    email: asString(raw.email) ?? '',
+    firstName: spaceIdx >= 0 ? name.slice(0, spaceIdx) : name,
+    lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
+    role: asString(raw.role) ?? 'USER',
+    emailVerified: asBoolean(raw.emailVerified) ?? null,
+    avatarUrl: asString(raw.image) ?? null,
+    createdAt: asString(raw.createdAt) ?? null,
+    updatedAt: asString(raw.updatedAt) ?? null,
+    preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',
+  };
+}
+
 export function useAuthActions() {
-  const setToken = useSetAtom(tokenAtom);
-  const setRefreshToken = useSetAtom(refreshTokenAtom);
-  const refreshToken = useAtomValue(refreshTokenAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
+  const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
   const clearLocalData = async () => {
+    queryClient.clear();
     const allKeys = await Storage.getAllKeys();
     await Promise.all(allKeys.map((key) => Storage.removeItem(key)));
-
     await AsyncStorage.clear();
-
     await ImageCacheManager.clearCache();
   };
 
-  const signIn = async (email: string, password: string) => {
+  const applySession = (user: Record<string, unknown>) => {
+    const mappedUser = mapToUser(user);
+    userStore.set(mappedUser);
+
+    // Identify the user in Sentry so all subsequent events are tagged.
+    Sentry.setUser({
+      id: mappedUser.id,
+      email: mappedUser.email,
+      username: `${mappedUser.firstName} ${mappedUser.lastName}`.trim(),
+    });
+
+    setNeedsReauth(false);
+    redirect(redirectTo);
+  };
+
+  const signIn = async ({ email, password }: { email: string; password: string }) => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Email sign in attempt',
+      level: 'info',
+      data: { emailDomain: email.split('@')[1] },
+    });
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignIn'));
-      }
-
-      console.log(data.accessToken, data.refreshToken);
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
-      setNeedsReauth(false);
-
-      redirect(redirectTo);
+      const { data, error } = await authClient.signIn.email({ email, password });
+      if (error) throw toAuthError({ source: error, fallback: 'Sign in failed' });
+      applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+      Sentry.addBreadcrumb({ category: 'auth', message: 'Email sign in succeeded', level: 'info' });
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_method: 'email', auth_action: 'sign_in' },
+        extra: {
+          ...(error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {}),
+        },
+      });
       console.error('Sign in error:', error);
       throw error;
     } finally {
@@ -85,70 +110,70 @@ export function useAuthActions() {
   };
 
   const signInWithGoogle = async () => {
+    setIsLoading(true);
+    Sentry.addBreadcrumb({ category: 'auth', message: 'Google sign in attempt', level: 'info' });
     try {
-      setIsLoading(true);
-
-      // Check if user is already signed in to Google
       await GoogleSignin.hasPlayServices();
-
-      // Sign in with Google
-      const _userInfo = await GoogleSignin.signIn();
-
-      // Get the ID token
+      await GoogleSignin.signIn();
       const { idToken } = await GoogleSignin.getTokens();
 
-      if (!idToken) {
-        throw new Error(t('auth.noIdTokenFromGoogle'));
-      }
+      if (!idToken) throw new Error(t('auth.noIdTokenFromGoogle'));
 
-      // Send the token to backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
+      const { data, error } = await authClient.signIn.social({
+        provider: 'google',
+        idToken: { token: idToken },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignInWithGoogle'));
+      if (error) throw toAuthError({ source: error, fallback: t('auth.failedToSignInWithGoogle') });
+      if (data && 'user' in data && data.user) {
+        applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Google sign in succeeded',
+          level: 'info',
+        });
       }
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
-      setNeedsReauth(false);
-
-      redirect(redirectTo);
     } catch (error) {
-      setIsLoading(false);
-
       if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Google sign in cancelled by user',
+          level: 'info',
+        });
         console.log(t('auth.userCancelledLogin'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Google sign in already in progress',
+          level: 'warning',
+        });
         console.log(t('auth.signInInProgress'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Sentry.captureException(error, {
+          tags: { auth_method: 'google', auth_action: 'sign_in', error_type: 'play_services' },
+        });
         console.log(t('auth.playServicesNotAvailable'));
       } else {
+        Sentry.captureException(error, {
+          tags: { auth_method: 'google', auth_action: 'sign_in' },
+          extra:
+            error instanceof AuthClientError
+              ? { httpStatus: error.status, errorCode: error.code }
+              : {},
+        });
         console.error('Google sign in error:', error);
       }
-
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signInWithApple = async () => {
+    setIsLoading(true);
+    Sentry.addBreadcrumb({ category: 'auth', message: 'Apple sign in attempt', level: 'info' });
     try {
-      setIsLoading(true);
-
       const isAvailable = await AppleAuthentication.isAvailableAsync();
-      if (!isAvailable) {
-        throw new Error(t('auth.appleSignInNotAvailable'));
-      }
+      if (!isAvailable) throw new Error(t('auth.appleSignInNotAvailable'));
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -157,33 +182,27 @@ export function useAuthActions() {
         ],
       });
 
-      // Send the identity token to your backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/apple`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          identityToken: credential.identityToken,
-          authorizationCode: credential.authorizationCode,
-        }),
+      const { data, error } = await authClient.signIn.social({
+        provider: 'apple',
+        idToken: { token: credential.identityToken ?? '' },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToSignInWithApple'));
+      if (error) throw toAuthError({ source: error, fallback: 'Apple sign in failed' });
+      if (data && 'user' in data && data.user) {
+        applySession(data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Apple sign in succeeded',
+          level: 'info',
+        });
       }
-
-      await setToken(data.accessToken);
-      await setRefreshToken(data.refreshToken);
-      userStore.set(data.user);
-
-      // Reset re-authentication state
-      setNeedsReauth(false);
-
-      redirect(redirectTo);
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_method: 'apple', auth_action: 'sign_in' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Apple sign in error:', error);
       throw error;
     } finally {
@@ -203,22 +222,35 @@ export function useAuthActions() {
     lastName?: string;
   }) => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Email sign up attempt',
+      level: 'info',
+      data: {
+        emailDomain: email.split('@')[1],
+        hasFirstName: !!firstName,
+        hasLastName: !!lastName,
+      },
+    });
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+      const name = [firstName, lastName].filter(Boolean).join(' ') || email;
+      const { error } = await authClient.signUp.email({ email, password, name });
+      if (error) throw toAuthError({ source: error, fallback: 'Sign up failed' });
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Email sign up succeeded',
+        level: 'info',
       });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || t('auth.registrationFailed'));
-      }
     } catch (error) {
-      console.error('Registration error:', (error as AxiosError).message);
+      Sentry.captureException(error, {
+        tags: { auth_method: 'email', auth_action: 'sign_up' },
+        extra: {
+          ...(error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {}),
+        },
+      });
+      console.error('Registration error:', error instanceof Error ? error.message : String(error));
       throw error;
     } finally {
       setIsLoading(false);
@@ -226,159 +258,149 @@ export function useAuthActions() {
   };
 
   const signOut = async () => {
+    // Suppress AppLayout's auto-navigation to /auth so the profile screen can
+    // show a post-sign-out prompt and handle navigation itself.
+    setSuppressSignOutNav(true);
     setIsLoading(true);
+    Sentry.addBreadcrumb({ category: 'auth', message: 'Sign out initiated', level: 'info' });
     try {
-      // Sign out from Google if signed in
       const isSignedIn = await GoogleSignin.hasPreviousSignIn();
-      if (isSignedIn) {
-        await GoogleSignin.signOut();
-      }
-
-      // Get the refresh token
-      if (refreshToken) {
-        // Call the logout endpoint to revoke the refresh token
-        await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-      }
+      if (isSignedIn) await GoogleSignin.signOut();
+      await authClient.signOut();
+      // Clear user identity from Sentry on sign-out.
+      Sentry.setUser(null);
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_action: 'sign_out' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Sign out error:', error);
     } finally {
-      // Clear tokens and user data
-      setToken(null);
-      setRefreshToken(null);
+      userStore.set(null);
       await clearLocalData();
       setNeedsReauth(false);
-      setIsLoading(false);
+      // isLoadingAtom intentionally left true — the caller (profile/handleSignOut)
+      // shows a post-sign-out Alert and is responsible for clearing it and
+      // navigating (either to '/' for guest mode or to /auth via releasing
+      // suppressSignOutNav while isLoadingAtom is still true).
     }
   };
 
   const forgotPassword = async (email: string) => {
-    try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Password reset requested',
+      level: 'info',
+      data: { emailDomain: email.split('@')[1] },
+    });
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: 'packrat://reset-password',
+    });
+    if (error) {
+      const err = toAuthError({ source: error, fallback: 'Forgot password failed' });
+      Sentry.captureException(err, {
+        tags: { auth_action: 'forgot_password' },
+        extra: { httpStatus: error.status, errorCode: error.code },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToProcessRequest'));
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      throw error;
+      throw err;
     }
   };
 
-  const resetPassword = async (email: string, opts: { code: string; newPassword: string }) => {
-    const { code, newPassword } = opts;
-    try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code, newPassword }),
+  const resetPassword = async ({
+    opts,
+  }: {
+    email?: string;
+    opts: { token: string; newPassword: string };
+  }) => {
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Password reset submitted',
+      level: 'info',
+    });
+    const { error } = await authClient.resetPassword({
+      token: opts.token,
+      newPassword: opts.newPassword,
+    });
+    if (error) {
+      const err = toAuthError({ source: error, fallback: 'Reset password failed' });
+      Sentry.captureException(err, {
+        tags: { auth_action: 'reset_password' },
+        extra: { httpStatus: error.status, errorCode: error.code },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.resetPasswordFailed'));
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Reset password error:', error);
-      throw error;
+      throw err;
     }
   };
 
-  const verifyEmail = async (email: string, code: string) => {
-    try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code }),
+  const verifyEmail = async ({ token }: { _email?: string; token: string }) => {
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Email verification submitted',
+      level: 'info',
+    });
+    const { data, error } = await authClient.verifyEmail({ query: { token } });
+    if (error) {
+      const err = toAuthError({ source: error, fallback: 'Email verification failed' });
+      Sentry.captureException(err, {
+        tags: { auth_action: 'verify_email' },
+        extra: { httpStatus: error.status, errorCode: error.code },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToVerifyEmail'));
-      }
-
-      // If verification is successful, set the user and tokens
-      if (data.accessToken && data.refreshToken && data.user) {
-        await Storage.setItem('access_token', data.accessToken);
-        await Storage.setItem('refresh_token', data.refreshToken);
-
-        await setToken(data.accessToken);
-        await setRefreshToken(data.refreshToken);
-        userStore.set(data.user);
-        redirect(redirectTo);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Email verification error:', error);
-      throw error;
+      throw err;
     }
+
+    const session = await authClient.getSession();
+    if (session.data?.user) {
+      applySession(session.data.user as Record<string, unknown>); // safe-cast: Better Auth user type omits additionalFields; role/preferredWeightUnit present at runtime
+    }
+    return data;
   };
 
   const resendVerificationEmail = async (email: string) => {
-    try {
-      const response = await fetch(
-        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/resend-verification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('auth.failedToResendVerificationEmail'));
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Resend verification email error:', error);
-      throw error;
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Verification email resend requested',
+      level: 'info',
+      data: { emailDomain: email.split('@')[1] },
+    });
+    const { error } = await authClient.sendVerificationEmail({
+      email,
+      callbackURL: 'packrat://verify-email',
+    });
+    if (error) {
+      const err = toAuthError({ source: error, fallback: 'Failed to resend verification email' });
+      Sentry.captureException(err, {
+        tags: { auth_action: 'resend_verification' },
+        extra: { httpStatus: error.status, errorCode: error.code },
+      });
+      throw err;
     }
   };
 
   const deleteAccount = async () => {
     setIsLoading(true);
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Account deletion initiated',
+      level: 'warning',
+    });
     try {
-      const response = await axiosInstance.delete('/api/auth');
-
-      if (response.status !== 200) {
-        throw new Error(response.data?.error || t('auth.failedToDeleteAccount'));
-      }
-
-      // Clear tokens and user data
-      setToken(null);
-      setRefreshToken(null);
+      const { error } = await authClient.deleteUser();
+      if (error) throw toAuthError({ source: error, fallback: 'Delete account failed' });
+      Sentry.setUser(null);
+      userStore.set(null);
       await clearLocalData();
       await Updates.reloadAsync();
     } catch (error) {
+      Sentry.captureException(error, {
+        tags: { auth_action: 'delete_account' },
+        extra:
+          error instanceof AuthClientError
+            ? { httpStatus: error.status, errorCode: error.code }
+            : {},
+      });
       console.error('Delete account error:', error);
       throw error;
     } finally {

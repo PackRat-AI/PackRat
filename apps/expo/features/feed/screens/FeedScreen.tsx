@@ -14,7 +14,7 @@ export const FeedScreen = () => {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const router = useRouter();
-  const currentUserId = userStore.id.peek() as number | undefined;
+  const currentUserId = userStore.id.peek() as string | undefined;
 
   const { data, isLoading, isRefetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useFeed();
@@ -106,6 +106,7 @@ export const FeedScreen = () => {
           renderItem={renderItem}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 }}
+          contentInsetAdjustmentBehavior="automatic"
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}

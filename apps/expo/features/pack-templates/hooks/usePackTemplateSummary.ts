@@ -17,10 +17,13 @@ export type PackTemplateSummary = {
  * allocations that `usePackTemplateDetails` incurs (which spreads the
  * template and its items on every change).
  */
-export function usePackTemplateSummary(
-  templateId: string,
-  preferredUnit: WeightUnit = 'g',
-): PackTemplateSummary {
+export function usePackTemplateSummary({
+  templateId,
+  preferredUnit = 'g',
+}: {
+  templateId: string;
+  preferredUnit?: WeightUnit;
+}): PackTemplateSummary {
   return use$(() => {
     let itemCount = 0;
     let baseWeightGrams = 0;
@@ -31,7 +34,7 @@ export function usePackTemplateSummary(
       if (item.packTemplateId !== templateId || item.deleted) continue;
       itemCount++;
       const itemWeightInGrams =
-        convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
+        convertToGrams({ weight: item.weight, unit: item.weightUnit }) * item.quantity;
       totalWeightGrams += itemWeightInGrams;
       if (!item.consumable && !item.worn) {
         baseWeightGrams += itemWeightInGrams;
@@ -40,8 +43,12 @@ export function usePackTemplateSummary(
 
     return {
       itemCount,
-      baseWeight: Number(convertFromGrams(baseWeightGrams, preferredUnit).toFixed(2)),
-      totalWeight: Number(convertFromGrams(totalWeightGrams, preferredUnit).toFixed(2)),
+      baseWeight: Number(
+        convertFromGrams({ grams: baseWeightGrams, unit: preferredUnit }).toFixed(2),
+      ),
+      totalWeight: Number(
+        convertFromGrams({ grams: totalWeightGrams, unit: preferredUnit }).toFixed(2),
+      ),
     };
   });
 }
@@ -53,10 +60,13 @@ export function usePackTemplateSummary(
  * renderers) — it avoids a `store.get()` per id and scales linearly with the
  * total number of items rather than multiplicatively.
  */
-export function usePackTemplateSummaries(
-  templateIds: string[],
-  preferredUnit: WeightUnit = 'g',
-): Record<string, PackTemplateSummary> {
+export function usePackTemplateSummaries({
+  templateIds,
+  preferredUnit = 'g',
+}: {
+  templateIds: string[];
+  preferredUnit?: WeightUnit;
+}): Record<string, PackTemplateSummary> {
   return use$(() => {
     if (templateIds.length === 0) return {};
 
@@ -74,7 +84,7 @@ export function usePackTemplateSummaries(
       if (!bucket) continue;
       bucket.count++;
       const itemWeightInGrams =
-        convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
+        convertToGrams({ weight: item.weight, unit: item.weightUnit }) * item.quantity;
       bucket.total += itemWeightInGrams;
       if (!item.consumable && !item.worn) {
         bucket.base += itemWeightInGrams;
@@ -86,8 +96,12 @@ export function usePackTemplateSummaries(
       const bucket = grams[id] ?? { base: 0, total: 0, count: 0 };
       result[id] = {
         itemCount: bucket.count,
-        baseWeight: Number(convertFromGrams(bucket.base, preferredUnit).toFixed(2)),
-        totalWeight: Number(convertFromGrams(bucket.total, preferredUnit).toFixed(2)),
+        baseWeight: Number(
+          convertFromGrams({ grams: bucket.base, unit: preferredUnit }).toFixed(2),
+        ),
+        totalWeight: Number(
+          convertFromGrams({ grams: bucket.total, unit: preferredUnit }).toFixed(2),
+        ),
       };
     }
     return result;

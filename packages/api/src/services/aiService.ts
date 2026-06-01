@@ -1,9 +1,9 @@
-import { createPerplexity } from '@ai-sdk/perplexity';
-import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createPerplexityAIProvider } from '@packrat/api/utils/ai/provider';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isFunction } from '@packrat/guards';
 import { generateText } from 'ai';
-import type { Context } from 'hono';
 
 interface SearchResult {
   answer: string;
@@ -13,23 +13,25 @@ interface SearchResult {
 const WEB_SEARCH_SYSTEM_PROMPT =
   'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
-const MDX_EXTENSION_RE = /\.mdx$/;
-
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG | null = null;
 
-  constructor(c: Context) {
-    this.env = getEnv(c);
+  constructor() {
+    this.env = getEnv();
     // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
-    if (this.env.AI && typeof this.env.AI.autorag === 'function') {
+    if (this.env.AI && isFunction(this.env.AI.autorag)) {
       this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
     }
   }
 
   async perplexitySearch(query: string): Promise<SearchResult> {
-    const perplexity = createPerplexity({
-      apiKey: this.env.PERPLEXITY_API_KEY,
+    const perplexity = createPerplexityAIProvider({
+      perplexityApiKey: this.env.PERPLEXITY_API_KEY,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: this.env.AI,
     });
 
     try {
@@ -39,18 +41,20 @@ export class AIService {
         prompt: query,
       });
 
-      const { text, sources } = resp;
-      return { answer: text, sources };
+      return { answer: resp.text, sources: resp.sources ?? [] };
     } catch (error) {
       console.error('Search error:', error);
       throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  async searchPackratOutdoorGuidesRAG(
-    query: string,
-    limit: number = 5,
-  ): Promise<
+  async searchPackratOutdoorGuidesRAG({
+    query,
+    limit = 5,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<
     Omit<AutoRagSearchResponse, 'data'> & {
       data: (AutoRagSearchResponse['data'][0] & { url: string })[];
     }
@@ -89,8 +93,10 @@ export class AIService {
    * @param filename
    * @returns
    */
+  private static readonly MDX_EXT_RE = /\.mdx$/;
+
   private filenameToUrl(filename: string): string {
-    const slug = filename.replace(MDX_EXTENSION_RE, '').trim();
+    const slug = filename.replace(AIService.MDX_EXT_RE, '').trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
     return new URL(`guide/${slug}`, baseUrl).toString();
   }

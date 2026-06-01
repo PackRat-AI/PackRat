@@ -1,9 +1,8 @@
 import { env } from 'cloudflare:workers';
 import { Container } from '@cloudflare/containers';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 
-// Type the module-level env binding with our known env shape
-const typedEnv = env as unknown as Env;
+const typedEnv = env as unknown as Env; // safe-cast: Cloudflare Durable Object constructor — module-level env from 'cloudflare:workers' is injected by the runtime with the correct Env shape
 
 /**
  * App Container class that runs the Node.js TikTok service.

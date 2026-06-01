@@ -4,7 +4,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisResponse } from '../hooks/usePackGapAnalysis';
-import type { Pack } from '../types';
+import type { Pack, PackCategory } from '../types';
 import { GapSuggestion } from './GapSuggestion';
 
 interface GapAnalysisModalProps {
@@ -12,6 +12,7 @@ interface GapAnalysisModalProps {
   onClose: () => void;
   pack: Pack;
   location?: string;
+  activity?: PackCategory; // The actual activity being used for analysis
   analysis: GapAnalysisResponse | null;
   isLoading: boolean;
   onRetry: () => void;
@@ -23,6 +24,7 @@ export function GapAnalysisModal({
   pack,
   analysis,
   location,
+  activity,
   isLoading,
   onRetry,
 }: GapAnalysisModalProps) {
@@ -46,7 +48,7 @@ export function GapAnalysisModal({
                   size={16}
                   color={colors.grey}
                 />
-                <Text className="text-sm text-muted-foreground">{pack.category}</Text>
+                <Text className="text-sm text-muted-foreground">{activity || pack.category}</Text>
               </View>
               {location && (
                 <>

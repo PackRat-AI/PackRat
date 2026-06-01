@@ -1,4 +1,4 @@
-import type { Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -12,8 +12,11 @@ import {
   S3Client,
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import type { Env } from '@packrat/api/types/env';
-import { isDate, isNumber, isObject, isString } from '@packrat/guards';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { isDate, isFunction, isNumber, isObject, isString } from '@packrat/guards';
+
+// ── ETag normalization ────────────────────────────────────────────────
+const STRIP_DOUBLE_QUOTES = /"/g;
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -26,7 +29,7 @@ interface R2HTTPMetadata {
 }
 
 function isR2HTTPMetadata(obj: unknown): obj is R2HTTPMetadata {
-  if (typeof obj !== 'object' || obj === null) {
+  if (!isObject(obj)) {
     return false;
   }
 
@@ -35,11 +38,11 @@ function isR2HTTPMetadata(obj: unknown): obj is R2HTTPMetadata {
 
   // Check that all properties, if present, are the correct type
   return (
-    (record.contentType === undefined || typeof record.contentType === 'string') &&
-    (record.contentLanguage === undefined || typeof record.contentLanguage === 'string') &&
-    (record.contentDisposition === undefined || typeof record.contentDisposition === 'string') &&
-    (record.contentEncoding === undefined || typeof record.contentEncoding === 'string') &&
-    (record.cacheControl === undefined || typeof record.cacheControl === 'string') &&
+    (record.contentType === undefined || isString(record.contentType)) &&
+    (record.contentLanguage === undefined || isString(record.contentLanguage)) &&
+    (record.contentDisposition === undefined || isString(record.contentDisposition)) &&
+    (record.contentEncoding === undefined || isString(record.contentEncoding)) &&
+    (record.cacheControl === undefined || isString(record.cacheControl)) &&
     (record.cacheExpiry === undefined || record.cacheExpiry instanceof Date)
   );
 }
@@ -217,7 +220,7 @@ export class R2BucketService {
 
       return this.createR2Object(key, { ...response });
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'name' in error) {
+      if (isObject(error) && 'name' in error) {
         const errorObj = error as {
           name: string;
           $metadata?: { httpStatusCode?: number };
@@ -253,7 +256,7 @@ export class R2BucketService {
       const r2Object = this.createR2Object(key, { ...response });
 
       let streamConsumed = false;
-      let webStream: ReadableStream<Uint8Array>;
+      let webStream: ReadableStream<Uint8Array> | undefined;
 
       const getStream = () => {
         if (webStream) {
@@ -261,21 +264,22 @@ export class R2BucketService {
         }
 
         // Check if it's a Node.js stream (like in a local Node environment)
-        if ('on' in body && typeof body.on === 'function') {
-          const nodeStream = body as Readable;
+        if (body instanceof Readable) {
           webStream = new ReadableStream({
             start(controller) {
-              nodeStream.on('data', (chunk) => controller.enqueue(chunk));
-              nodeStream.on('end', () => controller.close());
-              nodeStream.on('error', (err) => controller.error(err));
+              body.on('data', (chunk) => controller.enqueue(chunk));
+              body.on('end', () => controller.close());
+              body.on('error', (err) => controller.error(err));
             },
             cancel() {
-              nodeStream.destroy();
+              body.destroy();
             },
           });
+        } else if (body instanceof ReadableStream) {
+          // Web stream (Cloudflare Workers environment)
+          webStream = body as ReadableStream<Uint8Array>; // safe-cast: body is confirmed to be a Web ReadableStream in the Cloudflare Workers environment
         } else {
-          // Assume it's a web stream (like in Cloudflare Workers)
-          webStream = body as ReadableStream<Uint8Array>;
+          throw new Error('Unsupported stream type');
         }
         return webStream;
       };
@@ -317,7 +321,8 @@ export class R2BucketService {
         },
         arrayBuffer: async () => {
           assertStreamNotConsumed();
-          return (await consumeStream()).buffer as ArrayBuffer;
+          // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
+          return (await consumeStream()).buffer as ArrayBuffer; // safe-cast: Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer)
         },
         bytes: async () => {
           assertStreamNotConsumed();
@@ -329,18 +334,19 @@ export class R2BucketService {
         },
         json: async <T>() => {
           assertStreamNotConsumed();
-          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T;
+          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T; // safe-cast: caller-provided generic boundary — R2ObjectBody.json<T>() mirrors the R2 platform API
         },
         blob: async () => {
           assertStreamNotConsumed();
           const data = await consumeStream();
+          // Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer).
           return new Blob([data.buffer as ArrayBuffer]);
         },
       };
 
       return objectBody;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'name' in error) {
+      if (isObject(error) && 'name' in error) {
         const errorObj = error as {
           name: string;
           $metadata?: { httpStatusCode?: number };
@@ -573,7 +579,7 @@ export class R2BucketService {
     if (ArrayBuffer.isView(value)) {
       return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
     }
-    if (typeof value === 'string') {
+    if (isString(value)) {
       return value;
     }
     if (value instanceof Blob) {
@@ -596,6 +602,8 @@ export class R2BucketService {
     const toStringRecord = (v: unknown): Record<string, string> => {
       if (!isObject(v)) return {};
       const out: Record<string, string> = {};
+      // isObject(v) confirms v is a non-null object; cast is safe for entry iteration
+      // safe-cast: isObject(v) guard confirms v is a non-null object; safe for entry iteration
       for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
         if (isString(val)) out[k] = val;
       }
@@ -609,7 +617,7 @@ export class R2BucketService {
       key,
       version: isString(response.VersionId) ? response.VersionId : '',
       size: isNumber(response.ContentLength) ? response.ContentLength : 0,
-      etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
+      etag: isString(response.ETag) ? response.ETag.replace(STRIP_DOUBLE_QUOTES, '') : '',
       httpEtag: isString(response.ETag) ? response.ETag : '',
       checksums: this.createChecksums(response),
       uploaded: toUploaded(response.LastModified),
@@ -665,7 +673,7 @@ export class R2BucketService {
   }
 
   private formatRange(range: R2Range | Headers): string | undefined {
-    if (typeof range === 'object' && range && 'get' in range && typeof range.get === 'function') {
+    if (isObject(range) && 'get' in range && isFunction(range.get)) {
       // It's a Headers object
       return range.get('range') || undefined;
     }
@@ -685,12 +693,7 @@ export class R2BucketService {
   private extractHttpMetadata(metadata?: R2HTTPMetadata | Headers): R2HTTPMetadata | undefined {
     if (!metadata) return undefined;
 
-    if (
-      typeof metadata === 'object' &&
-      metadata &&
-      'get' in metadata &&
-      typeof metadata.get === 'function'
-    ) {
+    if (isObject(metadata) && 'get' in metadata && isFunction(metadata.get)) {
       // It's a Headers object
       return {
         contentType: metadata.get('content-type') || undefined,

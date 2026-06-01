@@ -28,7 +28,20 @@
     "username": "Username",
     "default": "Default",
     "high": "High",
-    "submit": "Submit"
+    "submit": "Submit",
+    "timeAgo": {
+      "justNow": "Just now",
+      "minutes_one": "{{count}} minute ago",
+      "minutes_other": "{{count}} minutes ago",
+      "hours_one": "{{count}} hour ago",
+      "hours_other": "{{count}} hours ago",
+      "days_one": "{{count}} day ago",
+      "days_other": "{{count}} days ago",
+      "weeks_one": "{{count}} week ago",
+      "weeks_other": "{{count}} weeks ago",
+      "months_one": "{{count}} month ago",
+      "months_other": "{{count}} months ago"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -40,7 +53,13 @@
     "tryAgain": "Try again",
     "tryAgainButton": "Try Again",
     "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen.",
-    "error": "Error"
+    "error": "Error",
+    "contextOverflow": {
+      "title": "Conversation too long",
+      "description": "The on-device model ran out of context window. Local AI can only hold a limited amount of conversation history at once.",
+      "hint": "Clear the chat to start a fresh conversation, or switch to cloud mode for longer sessions.",
+      "clearChat": "Clear chat"
+    }
   },
   "auth": {
     "signIn": "Sign In",
@@ -49,6 +68,7 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "logOut": "Log Out",
+    "proceedLogOut": "Proceed",
     "loggedOut": "You're now logged out!",
     "loggedOutMessage": "What would you like to do?",
     "stayLoggedOut": "Stay logged out",
@@ -140,7 +160,7 @@
     "loginFailed": "Login Failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "resumeSync": "Resume Sync",
-    "syncPaused": "Sync paused — please sign in again."
+    "syncPaused": "Sync paused \u2014 please sign in again."
   },
   "profile": {
     "profile": "Profile",
@@ -208,10 +228,12 @@
     "visibility": "Visibility",
     "deletePack": "Delete pack?",
     "packDeleted": "Pack deleted successfully",
+    "packCreatedSuccess": "Pack created successfully",
+    "packUpdatedSuccess": "Pack updated successfully",
     "createPack": "Create Pack",
     "editPack": "Edit Pack",
     "noPacks": "No packs available",
-    "packName": "Pack Name",
+    "packName": "Choose a Pack",
     "packDescription": "Pack Description",
     "packWeight": "Pack Weight",
     "packItems": "Pack Items",
@@ -227,10 +249,10 @@
     "lastUpdatedShort": "Last updated",
     "itemsCount": "{{count}} items",
     "sharingBenefits": "Sharing Benefits",
-    "distributeGroupGear": "• Distribute group gear among members to reduce individual pack weight",
-    "sharingBenefit1": "• Coordinate who brings shared items like tent, stove, and water filter",
-    "sharingBenefit2": "• See real-time updates when members modify the pack",
-    "sharingBenefit3": "• Plan together and ensure nothing essential is forgotten",
+    "distributeGroupGear": "\u2022 Distribute group gear among members to reduce individual pack weight",
+    "sharingBenefit1": "\u2022 Coordinate who brings shared items like tent, stove, and water filter",
+    "sharingBenefit2": "\u2022 See real-time updates when members modify the pack",
+    "sharingBenefit3": "\u2022 Plan together and ensure nothing essential is forgotten",
     "itemsInInventory": "{{count}} items in your inventory",
     "all": "All",
     "byCategory": "By Category",
@@ -244,6 +266,7 @@
     "noCategorizedItems": "Either there are no items in this pack or they aren't categorized yet.",
     "organizeGear": "Organize your gear by functional categories",
     "packStats": "Pack Stats",
+    "selectPack": "Select a Pack",
     "weightHistory": "Weight History",
     "categoryDistribution": "Category Distribution",
     "packWeightOverMonths": "Pack weight over the last 6 months (g)",
@@ -660,7 +683,9 @@
     "downloadModel": "Download Model",
     "downloadingModel": "Downloading...",
     "modelReady": "Ready",
-    "modelNotReady": "Model not ready. Download the local model first.",
+    "modelNotReady": "Download the local model first.",
+    "modelStillLoading": "Model is still loading, please wait.",
+    "modelStillDownloading": "Model is still downloading, please wait.",
     "modelPreparing": "Loading model...",
     "modelError": "Model error",
     "deleteModel": "Delete Model",
@@ -668,7 +693,8 @@
     "downloadedModels": "Downloaded Models",
     "noDownloadedModels": "No models downloaded",
     "appleFoundationModel": "Apple Foundation Model",
-    "llamaModel": "SmolLM3 3B",
+    "llamaModel": "Qwen2.5 3B",
+    "localInferenceSlowNote": "Local AI performance may vary by device.",
     "generateNewPacks": "Generate New Packs",
     "enterCount": "Enter count",
     "numberOfPacksToGenerate": "Number of packs to generate",

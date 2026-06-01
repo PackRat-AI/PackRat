@@ -1,5 +1,6 @@
+import { isObject } from '@packrat/guards';
 import { useMutation } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
 import { isWeightUnit } from 'expo-app/lib/utils/itemCalculations';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
@@ -44,48 +45,41 @@ export interface ImportError extends Error {
 export function useGenerateTemplateFromOnlineContent() {
   return useMutation<GeneratedTemplate, ImportError, GenerateFromOnlineContentInput>({
     mutationFn: async (input) => {
-      try {
-        const response = await axiosInstance.post(
-          '/api/pack-templates/generate-from-online-content',
-          input,
-          { timeout: 0 },
-        );
-        return response.data;
-      } catch (error) {
-        const { message, status } = handleApiError(error);
-
-        // Extract error code and additional data from API response
-        let errorCode: string | undefined;
-        let existingTemplateId: string | undefined;
-
-        if (error && typeof error === 'object' && 'response' in error) {
-          const errorData = (
-            error as {
-              response?: {
-                data?: {
-                  code?: string;
-                  existingTemplateId?: string;
-                };
-              };
-            }
-          ).response?.data;
-          if (errorData) {
-            errorCode = errorData.code;
-            existingTemplateId = errorData.existingTemplateId;
-          }
+      const { data, error } = await apiClient['pack-templates'][
+        'generate-from-online-content'
+      ].post({
+        contentUrl: input.contentUrl,
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.category !== undefined ? { category: input.category } : {}),
+        isAppTemplate: input.isAppTemplate ?? false,
+      });
+      if (error) {
+        // Treaty surfaces the parsed error body via `error.value`. When the
+        // server returns a structured object (e.g. { code, existingTemplateId })
+        // we extract it onto the thrown ImportError so callers can branch on
+        // the duplicate-detection path.
+        // safe-cast: treaty surfaces error.value as unknown; we probe its shape before use
+        const value = error.value as
+          | { error?: string; code?: string; existingTemplateId?: string }
+          | string
+          | null
+          | undefined;
+        const message = isObject(value) && value?.error ? value.error : (value ?? 'Import failed');
+        // safe-cast: augmenting the base Error with ImportError fields assigned immediately below
+        const importError = new Error(String(message)) as ImportError;
+        importError.status = error.status;
+        if (isObject(value)) {
+          importError.code = value.code;
+          importError.existingTemplateId = value.existingTemplateId;
         }
-
-        const importError = new Error(message) as ImportError;
-        importError.status = status;
-        importError.code = errorCode;
-        importError.existingTemplateId = existingTemplateId;
-
         throw importError;
       }
+      // safe-cast: treaty response shape matches GeneratedTemplate as validated by the API schema
+      return data as unknown as GeneratedTemplate;
     },
     onSuccess: (data) => {
       const { items, ...template } = data;
-      obs(packTemplatesStore, template.id).set(template);
+      obs({ store: packTemplatesStore, id: template.id }).set(template);
       for (const item of items) {
         if (!isWeightUnit(item.weightUnit)) {
           throw new Error(`Unsupported weightUnit "${item.weightUnit}" for item ${item.id}`);
@@ -109,7 +103,7 @@ export function useGenerateTemplateFromOnlineContent() {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         };
-        obs(packTemplateItemsStore, item.id).set(storeItem);
+        obs({ store: packTemplateItemsStore, id: item.id }).set(storeItem);
       }
     },
   });

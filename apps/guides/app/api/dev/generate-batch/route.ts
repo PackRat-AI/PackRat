@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const { count, categories } = parsed.data;
 
     // Generate the posts
-    const filePaths = await generatePosts(count, categories);
+    const filePaths = await generatePosts({ count, categories });
 
     if (!filePaths.length) {
       throw new Error('Failed to generate posts');

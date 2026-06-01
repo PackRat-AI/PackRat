@@ -6,6 +6,12 @@ export default defineWorkersConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@packrat/api': resolve(__dirname, 'src'),
+      // Redirect Elysia's internal env module to a stub that forces
+      // ELYSIA_AOT=false.  This prevents new Function() / eval from being
+      // called at module-init time inside the workerd/QuickJS sandbox, which
+      // disallows code-generation outside a request handler.  See
+      // src/__test-stubs__/elysia-env.ts for the full rationale.
+      'elysia/universal/env': resolve(__dirname, 'src/__test-stubs__/elysia-env.ts'),
     },
   },
   test: {

@@ -1,5 +1,5 @@
 import {
-  type CatalogCacheManager,
+  CatalogCacheManager,
   configureS3,
   createCatalogConnection,
   dbPath,
@@ -52,32 +52,36 @@ async function showStatus(): Promise<void> {
   const mode = env().ANALYTICS_MODE;
 
   if (mode === 'catalog') {
-    const cache = (await getCache()) as CatalogCacheManager;
+    const cache = await getCache();
+    if (!(cache instanceof CatalogCacheManager)) {
+      consola.error('Expected CatalogCacheManager in catalog mode.');
+      return;
+    }
     consola.start('Fetching catalog stats...');
     const stats = await cache.getLiveStats();
-    printSummary(
-      {
+    printSummary({
+      data: {
         Mode: 'catalog (R2 Data Catalog / Iceberg)',
         Records: stats.recordCount.toLocaleString(),
         Sites: stats.sites.join(', ') || '(none)',
       },
-      'Cache Status',
-    );
+      title: 'Cache Status',
+    });
   } else {
     const cache = await getCache();
     const stats = cache.getCacheStats();
     if (stats.recordCount === 0) {
       consola.info('Cache is empty. Run with --refresh to populate.');
     } else {
-      printSummary(
-        {
+      printSummary({
+        data: {
           Mode: 'local (DuckDB file)',
           Records: stats.recordCount.toLocaleString(),
           Sites: stats.sites.join(', '),
           'Last Updated': stats.updatedAt ?? 'Never',
         },
-        'Cache Status',
-      );
+        title: 'Cache Status',
+      });
     }
   }
 }

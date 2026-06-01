@@ -1,9 +1,11 @@
 import type { UIMessage } from '@ai-sdk/react';
+import { isString } from '@packrat/guards';
 import {
   type ChatRequestOptions,
   type ChatTransport,
   convertToModelMessages,
   type LanguageModel,
+  stepCountIs,
   streamText,
   type ToolSet,
   type UIMessageChunk,
@@ -12,10 +14,16 @@ import {
 export class CustomChatTransport implements ChatTransport<UIMessage> {
   private model: LanguageModel | undefined;
   private tools: ToolSet | undefined;
+  private systemPrompt: string | undefined;
 
-  constructor(model?: LanguageModel, tools?: ToolSet) {
+  constructor({
+    model,
+    tools,
+    systemPrompt,
+  }: { model?: LanguageModel; tools?: ToolSet; systemPrompt?: string } = {}) {
     this.model = model;
     this.tools = tools;
+    this.systemPrompt = systemPrompt;
   }
 
   setModel(model: LanguageModel) {
@@ -38,8 +46,10 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
 
     const result = streamText({
       model: this.model,
-      messages: convertToModelMessages(options.messages),
+      messages: await convertToModelMessages(options.messages),
       abortSignal: options.abortSignal,
+      stopWhen: stepCountIs(5),
+      ...(this.systemPrompt ? { system: this.systemPrompt } : {}),
       ...(this.tools ? { tools: this.tools, toolChoice: 'auto' } : {}),
     });
 
@@ -48,7 +58,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
         if (error == null) {
           return 'Unknown error';
         }
-        if (typeof error === 'string') {
+        if (isString(error)) {
           return error;
         }
         if (error instanceof Error) {

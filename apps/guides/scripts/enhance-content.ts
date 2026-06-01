@@ -4,6 +4,9 @@ import matter from 'gray-matter';
 import path from 'path';
 import { type ContentEnhancementOptions, enhanceGuideContent } from '../lib/enhanceGuideContent';
 
+// ── Script regex constants ──
+const TIMESTAMP_UNSAFE_CHARS = /[:.]/g;
+
 // Configuration
 const CONTENT_DIR = path.join(process.cwd(), 'content/posts');
 const BACKUP_DIR = path.join(process.cwd(), 'content/backups');
@@ -41,7 +44,7 @@ function ensureBackupDir(): void {
  */
 function createBackup(filePath: string): string {
   const fileName = path.basename(filePath);
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const timestamp = new Date().toISOString().replace(TIMESTAMP_UNSAFE_CHARS, '-');
   const backupPath = path.join(BACKUP_DIR, `${timestamp}-${fileName}`);
 
   fs.copyFileSync(filePath, backupPath);
@@ -107,10 +110,8 @@ function getContentFiles(pattern?: string): string[] {
     .map((file) => path.join(CONTENT_DIR, file));
 
   if (pattern) {
-    // Escape special regex characters to prevent regex injection
-    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escapedPattern, 'i');
-    return files.filter((file) => regex.test(path.basename(file)));
+    const lowerPattern = pattern.toLowerCase();
+    return files.filter((file) => path.basename(file).toLowerCase().includes(lowerPattern));
   }
 
   return files;
@@ -138,10 +139,13 @@ function parseContentFile(filePath: string): {
  * Write enhanced content back to file
  */
 
-function writeEnhancedContent(
-  filePath: string,
-  opts: { metadata: Record<string, unknown>; enhancedContent: string },
-): void {
+function writeEnhancedContent({
+  filePath,
+  opts,
+}: {
+  filePath: string;
+  opts: { metadata: Record<string, unknown>; enhancedContent: string };
+}): void {
   const { metadata, enhancedContent } = opts;
   const newFileContent = matter.stringify(enhancedContent, metadata);
   fs.writeFileSync(filePath, newFileContent, 'utf8');
@@ -151,10 +155,13 @@ function writeEnhancedContent(
  * Enhance a single content file
  */
 
-async function enhanceFile(
-  filePath: string,
-  opts: { cliOptions: CliOptions; enhancementOptions: ContentEnhancementOptions },
-): Promise<{
+async function enhanceFile({
+  filePath,
+  opts,
+}: {
+  filePath: string;
+  opts: { cliOptions: CliOptions; enhancementOptions: ContentEnhancementOptions };
+}): Promise<{
   enhanced: boolean;
   productsAdded: number;
   error?: string;
@@ -181,7 +188,7 @@ async function enhanceFile(
     console.log(chalk.blue(`🔄 Enhancing: ${fileName}`));
 
     // Enhance the content
-    const result = await enhanceGuideContent(content, enhancementOptions);
+    const result = await enhanceGuideContent({ content, options: enhancementOptions });
 
     // Check if enhancement actually added value
     if (result.productsUsed.length === 0) {
@@ -212,7 +219,7 @@ async function enhanceFile(
     }
 
     // Write enhanced content
-    writeEnhancedContent(filePath, { metadata, enhancedContent: result.content });
+    writeEnhancedContent({ filePath, opts: { metadata, enhancedContent: result.content } });
 
     console.log(
       chalk.green(`  ✅ Enhanced ${fileName} with ${result.productsUsed.length} product links`),
@@ -282,7 +289,7 @@ async function enhanceContent(cliOptions: CliOptions): Promise<void> {
   for (const filePath of filesToProcess) {
     stats.processed++;
 
-    const result = await enhanceFile(filePath, { cliOptions, enhancementOptions });
+    const result = await enhanceFile({ filePath, opts: { cliOptions, enhancementOptions } });
 
     if (result.error) {
       stats.errors++;

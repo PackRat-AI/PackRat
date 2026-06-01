@@ -1,4 +1,4 @@
-import { Button, cn, Text, useColorScheme } from '@packrat-ai/nativewindui';
+import { Button, cn, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { View } from 'react-native';

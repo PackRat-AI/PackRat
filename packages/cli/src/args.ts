@@ -1,7 +1,8 @@
+import { isString } from '@packrat/guards';
 import { z } from 'zod';
 
 const preprocessRequiredNumber = (value: unknown) =>
-  typeof value === 'string' && value.trim() === '' ? Number.NaN : value;
+  isString(value) && value.trim() === '' ? Number.NaN : value;
 
 function parseWithMessage<T>(options: {
   schema: z.ZodType<T, z.ZodTypeDef, unknown>;
@@ -32,11 +33,17 @@ const percentage = z.preprocess(
 );
 const confidence = z.preprocess(preprocessRequiredNumber, z.coerce.number().finite().min(0).max(1));
 const optionalNumber = z.preprocess(
-  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  (value) => (isString(value) && value.trim() === '' ? undefined : value),
   z.coerce.number().finite().optional(),
 );
 
-export function parsePositiveIntArg(value: unknown, argName: string): number {
+export function parsePositiveIntArg({
+  value,
+  argName,
+}: {
+  value: unknown;
+  argName: string;
+}): number {
   return parseWithMessage({
     schema: positiveInteger,
     value,
@@ -45,7 +52,13 @@ export function parsePositiveIntArg(value: unknown, argName: string): number {
   });
 }
 
-export function parseNonNegativeNumberArg(value: unknown, argName: string): number {
+export function parseNonNegativeNumberArg({
+  value,
+  argName,
+}: {
+  value: unknown;
+  argName: string;
+}): number {
   return parseWithMessage({
     schema: nonNegativeNumber,
     value,
@@ -54,7 +67,13 @@ export function parseNonNegativeNumberArg(value: unknown, argName: string): numb
   });
 }
 
-export function parseOptionalNumberArg(value: unknown, argName: string): number | undefined {
+export function parseOptionalNumberArg({
+  value,
+  argName,
+}: {
+  value: unknown;
+  argName: string;
+}): number | undefined {
   return parseWithMessage({
     schema: optionalNumber,
     value,
@@ -63,7 +82,13 @@ export function parseOptionalNumberArg(value: unknown, argName: string): number 
   });
 }
 
-export function parsePercentageArg(value: unknown, argName: string): number {
+export function parsePercentageArg({
+  value,
+  argName,
+}: {
+  value: unknown;
+  argName: string;
+}): number {
   return parseWithMessage({
     schema: percentage,
     value,
@@ -72,7 +97,13 @@ export function parsePercentageArg(value: unknown, argName: string): number {
   });
 }
 
-export function parseConfidenceArg(value: unknown, argName: string): number {
+export function parseConfidenceArg({
+  value,
+  argName,
+}: {
+  value: unknown;
+  argName: string;
+}): number {
   return parseWithMessage({
     schema: confidence,
     value,

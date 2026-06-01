@@ -2,6 +2,7 @@ import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import { format } from 'date-fns';
 import GuideCard from 'guides-app/components/guide-card';
+import { siteConfig } from 'guides-app/lib/config';
 import {
   getAllPosts,
   getMdxContent,
@@ -21,18 +22,32 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-
   const post = getPostBySlug(slug);
 
   if (!post) {
-    return {
-      title: 'Guide Not Found',
-    };
+    return { title: 'Guide Not Found' };
   }
 
   return {
-    title: `${post.title} | PackRat Guides`,
+    title: post.title,
     description: post.description,
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.description,
+      url: `${siteConfig.url}/guide/${slug}`,
+      siteName: 'PackRat Guides',
+      publishedTime: post.date,
+      tags: post.categories,
+      images: [{ url: `/og/${slug}.png`, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      creator: '@packratai',
+      images: [`/og/${slug}.png`],
+    },
   };
 }
 
@@ -49,7 +64,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
   const content = getMdxContent(slug);
 
   // Get related posts
-  const relatedPosts = getRelatedPosts(post, 3);
+  const relatedPosts = getRelatedPosts({ post, count: 3 });
 
   return (
     <div>

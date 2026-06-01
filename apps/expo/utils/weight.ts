@@ -1,43 +1,44 @@
-import type { PackItem, WeightUnit } from 'expo-app/types';
+import type { PackItem } from '@packrat/types';
+import type { WeightUnit } from '@packrat/units';
+import { convert, displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 
-// Convert weight between units
-export const convertWeight = (weight: number, from: WeightUnit, to: WeightUnit): number => {
-  if (from === to) return weight;
+export { convert as convertWeight };
 
-  // Convert to grams first
-  let grams = weight;
-  if (from === 'oz') grams = weight * 28.35;
-  if (from === 'lb') grams = weight * 453.59;
-  if (from === 'kg') grams = weight * 1000;
+export const formatWeight = ({ weight, unit }: { weight: number; unit: WeightUnit }): string =>
+  `${weight}${unit}`;
 
-  // Convert from grams to target unit
-  if (to === 'g') return Math.round(grams);
-  if (to === 'oz') return Math.round((grams / 28.35) * 100) / 100;
-  if (to === 'lb') return Math.round((grams / 453.59) * 100) / 100;
-  if (to === 'kg') return Math.round((grams / 1000) * 100) / 100;
-
-  return weight;
-};
-
-// Format weight with unit
-export const formatWeight = (weight: number, unit: WeightUnit): string => {
-  return `${weight}${unit}`;
-};
-
-// Calculate base weight (non-consumable, non-worn items)
-export const calculateBaseWeight = (items: PackItem[], unit: WeightUnit = 'g'): number => {
-  return items
+export const calculateBaseWeight = ({
+  items,
+  unit = 'g',
+}: {
+  items: PackItem[];
+  unit?: WeightUnit;
+}): number => {
+  const grams = items
     .filter((item) => !item.consumable && !item.worn)
-    .reduce((total, item) => {
-      const weightInTargetUnit = convertWeight(item.weight * item.quantity, item.weightUnit, unit);
-      return total + weightInTargetUnit;
-    }, 0);
+    .reduce(
+      (total, item) =>
+        total +
+        normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+          item.quantity,
+      0,
+    );
+  return displayWeight({ grams, unit });
 };
 
-// Calculate total weight
-export const calculateTotalWeight = (items: PackItem[], unit: WeightUnit = 'g'): number => {
-  return items.reduce((total, item) => {
-    const weightInTargetUnit = convertWeight(item.weight * item.quantity, item.weightUnit, unit);
-    return total + weightInTargetUnit;
-  }, 0);
+export const calculateTotalWeight = ({
+  items,
+  unit = 'g',
+}: {
+  items: PackItem[];
+  unit?: WeightUnit;
+}): number => {
+  const grams = items.reduce(
+    (total, item) =>
+      total +
+      normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+        item.quantity,
+    0,
+  );
+  return displayWeight({ grams, unit });
 };

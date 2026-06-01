@@ -1,18 +1,23 @@
+import { fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
 import * as Burnt from 'burnt';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useState } from 'react';
-import type { PackItem, WeightUnit } from '../types';
+import type { PackItem } from '../types';
 import { useCreatePackItem } from './useCreatePackItem';
 
 export function useAddCatalogItem() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  const addItemToPack = async (
-    packId: string,
-    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> },
-  ) => {
+  const addItemToPack = async ({
+    packId,
+    opts,
+  }: {
+    packId: string;
+    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> };
+  }) => {
     const { catalogItem, data } = opts;
     setIsLoading(true);
     const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
@@ -24,7 +29,7 @@ export function useAddCatalogItem() {
         name: catalogItem.name,
         description: catalogItem.description ?? undefined,
         weight: catalogItem.weight || 0,
-        weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
+        weightUnit: fromZod(WeightUnitSchema)(catalogItem.weightUnit) ?? 'g',
         quantity: 1, // Default quantity
         category: '', // Let user categorize later if needed
         consumable: false, // Default to non-consumable

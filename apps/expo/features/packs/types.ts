@@ -1,6 +1,6 @@
+import type { PackCategory, WeightUnit } from '@packrat/constants';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
-import type { PackCategory, WeightUnit } from 'expo-app/types';
 
 export type { PackCategory, WeightUnit };
 
@@ -25,8 +25,8 @@ export interface PackItem {
   userId?: number;
   deleted: boolean;
   isAIGenerated: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export type { PackItemInput } from './input';
@@ -60,15 +60,15 @@ export interface Pack {
   deleted: boolean;
   localCreatedAt?: string;
   localUpdatedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export type PackWeightHistoryEntry = {
   id: string;
   packId: string;
   weight: number;
-  createdAt?: string;
+  createdAt?: Date | string;
   localCreatedAt?: string;
 };
 

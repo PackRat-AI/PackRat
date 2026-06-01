@@ -1,9 +1,13 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
+import { isFunction, isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
-import * as schema from '../src/db/schema';
 import { clearCurrentTestUsers } from './utils/test-helpers';
+
+// ── Setup regex constants ──
+const MARKDOWN_EXT_PATTERN = /\.(mdx?|md)$/;
 
 // Route @neondatabase/serverless through the local wsproxy (docker-compose.test.yml),
 // so tests use the same driver as production against Docker Postgres.
@@ -22,9 +26,12 @@ const testEnv = {
   NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/packrat_test',
   NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5432/packrat_test',
 
-  JWT_SECRET: 'secret',
-  PASSWORD_RESET_SECRET: 'secret',
+  // Better Auth (replaces JWT_SECRET)
+  BETTER_AUTH_SECRET: 'test-better-auth-secret-32-chars-long!!',
+  BETTER_AUTH_URL: 'http://localhost:8787',
   GOOGLE_CLIENT_ID: 'test-client-id',
+  GOOGLE_CLIENT_SECRET: 'test-client-secret',
+
   ADMIN_USERNAME: 'admin',
   ADMIN_PASSWORD: 'admin-password',
   PACKRAT_API_KEY: 'test-api-key',
@@ -43,11 +50,13 @@ const testEnv = {
 
   CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
   CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway-id',
+  CLOUDFLARE_API_TOKEN: 'test-cloudflare-token',
   R2_ACCESS_KEY_ID: 'test-access-key',
   R2_SECRET_ACCESS_KEY: 'test-secret-key',
   PACKRAT_BUCKET_R2_BUCKET_NAME: 'test-bucket',
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: 'test-guides-bucket',
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: 'test-scrapy-bucket',
+  R2_PUBLIC_URL: 'https://r2.test.example.com',
 
   PACKRAT_GUIDES_RAG_NAME: 'test-rag',
   PACKRAT_GUIDES_BASE_URL: 'https://guides.test.com',
@@ -56,6 +65,96 @@ const testEnv = {
 let testPool: Pool;
 let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
+
+// Prevent Elysia's AOT compilation from using new Function() inside the
+// workerd/QuickJS sandbox, which disallows code-generation outside a request
+// handler.  We wrap the Elysia constructor with a Proxy so every instance gets
+// aot:false immediately after construction, and stub
+// CloudflareAdapter.beforeCompile (which also calls composeErrorHandler via
+// new Function()) to a no-op.
+vi.mock('elysia', async (importOriginal) => {
+  const original = await importOriginal<typeof import('elysia')>();
+  const OriginalElysia = original.Elysia as new (...args: unknown[]) => unknown;
+
+  const PatchedElysia = new Proxy(OriginalElysia, {
+    construct(target, args, newTarget) {
+      const instance = Reflect.construct(target, args, newTarget) as {
+        config: { aot: boolean };
+        onBeforeHandle: (fn: (ctx: Record<string, unknown>) => void) => unknown;
+      };
+      // Force dynamic (no-eval) handler path for all instances in workerd.
+      instance.config.aot = false;
+      // Fix: in non-AOT mode Elysia wraps Decode output in { value: … } for
+      // query and params but never unwraps them before calling the handler
+      // (unlike body, which does `decoded?.value ?? decoded`).
+      // Unwrap both here before every handler fires.
+      instance.onBeforeHandle((ctx) => {
+        const unwrap = (val: unknown): unknown => {
+          if (isObject(val) && 'value' in val && Object.keys(val).length === 1)
+            return (val as { value: unknown }).value;
+          return val;
+        };
+        ctx.query = unwrap(ctx.query);
+        ctx.params = unwrap(ctx.params);
+      });
+      return instance;
+    },
+  });
+
+  return { ...original, Elysia: PatchedElysia };
+});
+
+// CloudflareAdapter.beforeCompile unconditionally calls composeErrorHandler
+// (which also uses new Function()) regardless of the aot flag.  Replace it
+// with a no-op since aot is already forced to false via the Elysia proxy above.
+vi.mock('elysia/adapter/cloudflare-worker', async (importOriginal) => {
+  const original = await importOriginal<typeof import('elysia/adapter/cloudflare-worker')>();
+  return {
+    ...original,
+    CloudflareAdapter: {
+      ...original.CloudflareAdapter,
+      beforeCompile: () => {},
+    },
+  };
+});
+
+// Mock Better Auth's getAuth so integration tests don't need a real Better Auth
+// instance. The mock validates the HS256 JWTs that test-helpers issues, mapping
+// the JWT payload to a Better Auth-shaped session object.
+vi.mock('@packrat/api/auth', async () => {
+  const { jwtVerify } = await import('jose');
+  const testJwtSecret = new TextEncoder().encode('secret');
+
+  return {
+    getAuth: vi.fn(async () => ({
+      api: {
+        getSession: vi.fn(async ({ headers }: { headers: Headers }) => {
+          const authHeader = isFunction(headers.get)
+            ? headers.get('authorization')
+            : (headers as unknown as Record<string, string>)?.authorization;
+          if (!authHeader?.startsWith('Bearer ')) return null;
+          const token = authHeader.slice(7).trim();
+          if (!token) return null;
+          try {
+            const { payload } = await jwtVerify(token, testJwtSecret, { algorithms: ['HS256'] });
+            const userId = String(payload.userId ?? '');
+            if (!userId) return null;
+            return {
+              user: {
+                id: userId,
+                email: 'test@example.com',
+                name: 'Test User',
+                role: (payload.role as string) ?? 'USER',
+              },
+            };
+          } catch {
+            return null;
+          }
+        }),
+      },
+    })),
+  };
+});
 
 // Mock AWS SDK S3Client to prevent actual network calls
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
@@ -244,10 +343,13 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      async batchVectorSearch(
-        queries: string[],
-        _limit?: number,
-      ): Promise<BatchVectorSearchResult> {
+      async batchVectorSearch({
+        queries,
+        limit: _limit,
+      }: {
+        queries: string[];
+        limit?: number;
+      }): Promise<BatchVectorSearchResult> {
         return {
           items: queries.map(() => [
             {
@@ -401,7 +503,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
         put: vi.fn(async (key: string, _value: unknown, _options?: unknown) => {
           return createMockR2Object({
             key,
-            title: key.replace(/\.(mdx?|md)$/, ''),
+            title: key.replace(MARKDOWN_EXT_PATTERN, ''),
             category: 'general',
             categories: ['general'],
             description: 'Mock guide',
@@ -418,11 +520,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
   };
 });
 
-vi.mock('hono/adapter', async () => {
-  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
-  return { ...actual, env: () => testEnv };
-});
-
+// Mock google-auth-library to avoid node:child_process issues in Workers environment
 vi.mock('google-auth-library', () => ({
   OAuth2Client: class MockOAuth2Client {
     async verifyIdToken() {
@@ -481,10 +579,21 @@ vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
+  createOsmDb: vi.fn(() => testDb),
 }));
 
 vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
+}));
+
+// Global cfAccess mock — verifyCFAccessRequest defaults to returning null
+// (no CF access JWT present). Tests that need CF Access to succeed call
+// vi.mocked(verifyCFAccessRequest).mockResolvedValueOnce({ email: '...' }).
+// Must be global because singleWorker: true shares the module cache across
+// test files, so admin/index.ts (which imports verifyCFAccessRequest) would
+// capture the real function before any per-file mock could replace it.
+vi.mock('@packrat/api/middleware/cfAccess', () => ({
+  verifyCFAccessRequest: vi.fn(async () => null),
 }));
 
 // Global @cloudflare/containers mock — the real getContainer calls
@@ -552,6 +661,34 @@ beforeAll(async () => {
     console.error('❌ Failed to connect to test database:', error);
     throw error;
   }
+
+  // Create OSM tables in the test DB so trails tests can seed them.
+  // createOsmDb() is mocked to return testDb, so both table families live here.
+  await testPool.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
+  await testPool.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+  await testPool.query(`
+    CREATE TABLE IF NOT EXISTS osm_ways (
+      osm_id   bigint PRIMARY KEY,
+      name     text,
+      sport    text,
+      surface  text,
+      difficulty text,
+      geometry geometry(LineString,4326)
+    )
+  `);
+  await testPool.query(`
+    CREATE TABLE IF NOT EXISTS osm_routes (
+      osm_id      bigint PRIMARY KEY,
+      name        text,
+      sport       text,
+      network     text,
+      distance    text,
+      difficulty  text,
+      description text,
+      members     jsonb,
+      geometry    geometry(MultiLineString,4326)
+    )
+  `);
 });
 
 beforeEach(async () => {
@@ -563,9 +700,9 @@ beforeEach(async () => {
   // testPool.query, so cleanup and tests share one path. Surface errors rather
   // than swallowing them.
   const tablesToClean = [
-    'one_time_passwords',
-    'refresh_tokens',
-    'auth_providers',
+    'session',
+    'account',
+    'verification',
     'weight_history',
     'pack_items',
     'pack_template_items',
@@ -583,6 +720,8 @@ beforeEach(async () => {
     'posts',
     'trips',
     'users',
+    'osm_ways',
+    'osm_routes',
   ];
 
   const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');

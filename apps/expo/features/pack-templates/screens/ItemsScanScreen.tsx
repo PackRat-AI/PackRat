@@ -23,6 +23,7 @@ export function ItemsScanScreen() {
   const { t } = useTranslation();
   const { packTemplateId, ...fileInfo } = useLocalSearchParams();
   const [hasRunInitialScanOnMount, setHasRunInitialScanOnMount] = useState(false);
+  // safe-cast: expo-router query params are untyped strings; fileInfo carries uri/fileName/type
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
@@ -157,7 +158,10 @@ export function ItemsScanScreen() {
   const handleCatalogItemsSelected = async () => {
     router.back();
     try {
-      await addItemsToPackTemplate(packTemplateId as string, selectedCatalogItemsList);
+      await addItemsToPackTemplate({
+        packTemplateId: packTemplateId as string,
+        catalogItems: selectedCatalogItemsList,
+      });
       const itemWord =
         selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Burnt.toast({
@@ -184,7 +188,7 @@ export function ItemsScanScreen() {
 
       <View className="flex-row items-center justify-between bg-card px-4 py-2 border border-border rounded-md">
         <Image
-          source={{ uri: (selectedImage as SelectedImage).uri }}
+          source={{ uri: selectedImage?.uri }}
           className="h-24 w-24 rounded-lg"
           resizeMode="cover"
         />

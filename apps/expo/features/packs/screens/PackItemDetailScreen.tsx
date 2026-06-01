@@ -1,8 +1,8 @@
+import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
@@ -23,7 +23,6 @@ import {
   usePackItemDetailsFromStore,
   usePackItemOwnershipCheck,
 } from '../hooks';
-import type { PackItem } from '../types';
 
 export function ItemDetailScreen() {
   const { t } = useTranslation();
@@ -44,12 +43,12 @@ export function ItemDetailScreen() {
 
   const { colors } = useColorScheme();
 
-  const item = (isOwnedByUser ? itemFromStore : itemFromApi) as PackItem;
+  const item = isOwnedByUser ? itemFromStore : itemFromApi;
 
   // Loading state for non-owned items
   if (!isOwnedByUser && isLoading) {
     return (
-      <SafeAreaView className="flex-1">
+      <SafeAreaView edges={['bottom']} className="flex-1">
         <View className="flex-1 items-center justify-center p-4">
           <ActivityIndicator />
         </View>
@@ -60,7 +59,7 @@ export function ItemDetailScreen() {
   // Error state for non-owned packs
   if (!isOwnedByUser && isError) {
     return (
-      <SafeAreaView className="flex-1">
+      <SafeAreaView edges={['bottom']} className="flex-1">
         <View className="flex-1 items-center justify-center p-8">
           <View className="mb-4 rounded-full bg-destructive/10 p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
@@ -84,8 +83,18 @@ export function ItemDetailScreen() {
     );
   }
 
+  if (!isDefined(item)) {
+    return (
+      <SafeAreaView edges={['bottom']} className="flex-1">
+        <View className="flex-1 items-center justify-center p-4">
+          <ActivityIndicator />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Get weight unit
-  const weightUnit = item?.weightUnit;
+  const weightUnit = item.weightUnit;
 
   // Use the utility functions
   const totalWeight = calculateTotalWeight(item);
@@ -97,22 +106,6 @@ export function ItemDetailScreen() {
   const itemNotes = getNotes(item);
 
   const navigateToChat = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify({
-            pathname: '/ai-chat',
-            params: {
-              itemId: item.id,
-              itemName: item.name,
-              contextType: 'item',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
     router.push({
       pathname: '/ai-chat',
       params: {
@@ -124,7 +117,7 @@ export function ItemDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView edges={['bottom']} className="flex-1">
       <ScrollView>
         <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 

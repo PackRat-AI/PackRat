@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { getWeatherData } from 'expo-app/features/weather/lib/weatherService';
 import { useAtomValue } from 'jotai';
 import { useEffect, useState } from 'react';
@@ -12,12 +13,9 @@ export type WeatherAlert = {
   details: string;
 };
 
-type WeatherApiHour = {
-  condition?: { text?: string };
-  wind_kph?: number;
-};
-
-type WeatherApiAlert = {
+// Minimal shape of the weather API response used by this alert generator.
+// The upstream API payload is much richer; we only type the fields we read.
+type ApiAlert = {
   event?: string;
   effective?: string;
   expires?: string;
@@ -27,37 +25,48 @@ type WeatherApiAlert = {
   instruction?: string;
 };
 
-type WeatherApiData = {
-  location?: { name?: string };
-  alerts?: { alert?: WeatherApiAlert[] };
-  current?: {
-    temp_c?: number;
-    wind_kph?: number;
-    uv?: number;
-    air_quality?: { 'us-epa-index'?: number };
-    condition?: { text?: string };
-  };
-  forecast?: {
-    forecastday?: Array<{
-      date?: string;
-      hour?: WeatherApiHour[];
-      day?: { maxtemp_c?: number };
-    }>;
-  };
+type ForecastHour = {
+  condition?: { text?: string };
+  wind_kph?: number;
 };
 
-export function generateAlerts(
-  data: WeatherApiData,
-  activeLocation: { name?: string } | null,
-): WeatherAlert[] {
+type ForecastDay = {
+  hour?: ForecastHour[];
+  day?: { maxtemp_c?: number };
+  date?: string;
+};
+
+type WeatherCurrent = {
+  temp_c?: number;
+  wind_kph?: number;
+  uv?: number;
+  air_quality?: Record<string, number | undefined>;
+  condition?: { text?: string };
+};
+
+export type WeatherApiData = {
+  location?: { name?: string };
+  alerts?: { alert?: ApiAlert[] };
+  current?: WeatherCurrent;
+  forecast?: { forecastday?: ForecastDay[] };
+};
+
+type ActiveLocation = { name?: string } | null;
+
+export function generateAlerts({
+  data,
+  activeLocation,
+}: {
+  data: WeatherApiData | undefined;
+  activeLocation: ActiveLocation;
+}): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
 
   const alerts: WeatherAlert[] = [];
 
-  // If API provides alerts
   if (apiAlerts && apiAlerts.length > 0) {
-    return apiAlerts.map((a, index: number) => ({
+    return apiAlerts.map((a: ApiAlert, index: number) => ({
       id: `${a.event}-${a.effective}-${index}`,
       type: a.event || 'Weather Alert',
       location: a.areas || locationName,
@@ -163,7 +172,9 @@ export function generateAlerts(
   const todayHours = forecastDays[0]?.hour || [];
 
   // 🌧 Rain coming soon
-  const willRain = todayHours.some((h) => h.condition?.text?.toLowerCase().includes('rain'));
+  const willRain = todayHours.some((h: ForecastHour) =>
+    h.condition?.text?.toLowerCase().includes('rain'),
+  );
   if (willRain) {
     alerts.push({
       id: 'rain-soon',
@@ -176,7 +187,7 @@ export function generateAlerts(
   }
 
   // 💨 Wind coming
-  const highWindComing = todayHours.some((h) => (h.wind_kph ?? 0) >= 30);
+  const highWindComing = todayHours.some((h: ForecastHour) => (h.wind_kph ?? 0) >= 30);
   if (highWindComing) {
     alerts.push({
       id: 'wind-soon',
@@ -190,7 +201,8 @@ export function generateAlerts(
 
   // 🌡 Tomorrow heat
   const tomorrow = forecastDays[1];
-  if (tomorrow && (tomorrow.day?.maxtemp_c ?? 0) >= 35) {
+  const tomorrowMax = tomorrow?.day?.maxtemp_c;
+  if (tomorrow && tomorrowMax !== undefined && tomorrowMax >= 35) {
     alerts.push({
       id: 'heat-tomorrow',
       type: 'Heat Alert (Tomorrow)',
@@ -221,36 +233,64 @@ export function generateAlerts(
 export function useWeatherAlerts() {
   const activeLocation = useAtomValue(activeLocationAtom);
 
+  // Use primitive values as effect dependencies to avoid re-running on new
+  // object references emitted by the derived Jotai atom's .find() call.
+  const locationId = activeLocation?.id;
+  const locationName = activeLocation?.name;
+
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeLocation?.id) {
+    if (!locationId) {
       setLoading(false);
       return;
     }
 
-    const locationId = activeLocation.id;
+    const id = locationId;
+    let cancelled = false;
 
     async function fetchAlerts() {
       setLoading(true);
       setError(null);
 
+      Sentry.addBreadcrumb({
+        category: 'weather',
+        message: 'Fetching weather alerts',
+        level: 'info',
+        data: { locationId, locationName },
+      });
+
       try {
-        const data = await getWeatherData(locationId);
-        const formatted = generateAlerts(data, activeLocation);
+        const data = await getWeatherData(id);
+        if (cancelled) return;
+
+        const formatted = generateAlerts({
+          // safe-cast: getWeatherData returns WeatherApiForecastResponse; WeatherApiData is a structural subset used only by this alert generator.
+          data: data as unknown as WeatherApiData,
+          activeLocation: { name: locationName },
+        });
         setAlerts(formatted);
       } catch (err) {
+        if (cancelled) return;
         console.error('Weather alerts error:', err);
         setError('Failed to fetch weather alerts');
+        Sentry.captureException(err, {
+          tags: { feature: 'weatherAlerts', action: 'fetchAlerts' },
+          extra: { locationId, locationName },
+        });
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     fetchAlerts();
-  }, [activeLocation]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locationId, locationName]);
 
   return {
     alerts,

@@ -1,3 +1,5 @@
+import { isObject } from '@packrat/guards';
+
 const GAP_PREFIX = 'gap ';
 
 const FeatureFlag = Object.freeze({
@@ -11,6 +13,7 @@ const FeatureFlag = Object.freeze({
   EnableFeed: 'enableFeed',
   EnableWildlifeIdentification: 'enableWildlifeIdentification',
   EnableLocalAI: 'enableLocalAI',
+  EnableTrails: 'enableTrails',
 });
 
 const DashboardTileId = Object.freeze({
@@ -46,11 +49,11 @@ const DashboardLayoutId = Object.freeze({
 });
 
 function deepFreeze<T>(value: T): Readonly<T> {
-  if (value === null || typeof value !== 'object') return value;
+  if (!isObject(value)) return value;
   if (Object.isFrozen(value)) return value;
 
-  const record = value as Record<string, unknown>;
-  for (const nestedValue of Object.values(record)) {
+  // safe-cast: value is narrowed to non-null object by isObject() guard above
+  for (const nestedValue of Object.values(value as Record<string, unknown>)) {
     deepFreeze(nestedValue);
   }
 
@@ -65,10 +68,11 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableShoppingList]: false,
     [FeatureFlag.EnableSharedPacks]: false,
     [FeatureFlag.EnablePackTemplates]: true,
-    [FeatureFlag.EnableTrailConditions]: false,
+    [FeatureFlag.EnableTrailConditions]: true,
     [FeatureFlag.EnableFeed]: false,
     [FeatureFlag.EnableWildlifeIdentification]: false,
-    [FeatureFlag.EnableLocalAI]: false,
+    [FeatureFlag.EnableLocalAI]: true,
+    [FeatureFlag.EnableTrails]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

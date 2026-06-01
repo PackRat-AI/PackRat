@@ -37,16 +37,18 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.22',
+      version: '2.0.26',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
-        output: 'static',
+        output: 'single',
         favicon: './assets/favicon.png',
       },
       plugins: [
         'expo-router',
         'expo-sqlite',
+        'expo-font',
+        'expo-image',
         [
           '@react-native-google-signin/google-signin',
           {
@@ -61,11 +63,12 @@ export default (): ExpoConfig =>
         [
           'llama.rn',
           {
-            enableEntitlements: false,
+            enableEntitlements: true,
             forceCxx20: true,
             enableOpenCLAndHexagon: false,
           },
         ],
+        ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
       ],
@@ -143,6 +146,10 @@ export default (): ExpoConfig =>
             },
           ],
         },
+        entitlements: {
+          'com.apple.developer.kernel.extended-virtual-addressing': true,
+          'com.apple.developer.kernel.increased-memory-limit': true,
+        },
       },
       android: {
         adaptiveIcon: {
@@ -160,6 +167,7 @@ export default (): ExpoConfig =>
         eas: {
           projectId: '267945b1-d9ac-4621-8541-826a2c70576d',
         },
+        appVariant: IS_DEV ? 'development' : IS_PREVIEW ? 'preview' : 'production',
       },
       updates: {
         url: 'https://u.expo.dev/267945b1-d9ac-4621-8541-826a2c70576d',

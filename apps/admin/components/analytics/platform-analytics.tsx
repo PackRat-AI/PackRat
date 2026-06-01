@@ -1,5 +1,6 @@
 'use client';
 
+import { arrayIncludes } from '@packrat/guards';
 import {
   Card,
   CardContent,
@@ -57,8 +58,9 @@ const BREAKDOWN_COLORS = [
 ];
 
 type Period = 'day' | 'week' | 'month';
+const PERIODS = ['day', 'week', 'month'] as const satisfies readonly Period[];
 
-function formatPeriodLabel(v: string, period: Period) {
+function formatPeriodLabel({ v, period }: { v: string; period: Period }) {
   const d = new Date(v);
   if (period === 'day') return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   if (period === 'week') return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -87,7 +89,12 @@ export function PlatformAnalytics() {
       {/* Period selector */}
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">Period:</span>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
+        <Tabs
+          value={period}
+          onValueChange={(v) => {
+            if (arrayIncludes(PERIODS, v)) setPeriod(v);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="day">Daily</TabsTrigger>
             <TabsTrigger value="week">Weekly</TabsTrigger>
@@ -115,7 +122,7 @@ export function PlatformAnalytics() {
                   dataKey="period"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: string) => formatPeriodLabel(v, period)}
+                  tickFormatter={(v: string) => formatPeriodLabel({ v, period })}
                 />
                 <YAxis tickLine={false} axisLine={false} width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -170,7 +177,7 @@ export function PlatformAnalytics() {
                   dataKey="period"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v: string) => formatPeriodLabel(v, period)}
+                  tickFormatter={(v: string) => formatPeriodLabel({ v, period })}
                 />
                 <YAxis tickLine={false} axisLine={false} width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />

@@ -1,5 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { isFunction } from '@packrat/guards';
 import { Sheet, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
@@ -20,6 +21,7 @@ import {
   cancelLocalModelDownload,
   downloadLocalModel,
   isAppleIntelligenceAvailable,
+  isSlowInferenceDevice,
 } from '../lib/localModelManager';
 import { CircularDownloadButton } from './CircularDownloadButton';
 
@@ -36,6 +38,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     const isModelFileAvailable = useAtomValue(localModelFileAvailableAtom);
 
     const isApple = isAppleIntelligenceAvailable();
+    const showSlowDeviceWarning = mode === 'local' && !isApple && isSlowInferenceDevice();
     const isModelReady = modelStatus === 'ready';
     const isDownloading = modelStatus === 'downloading';
     const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
@@ -55,7 +58,9 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
         return;
       }
       setMode(selected);
-      if (ref && typeof ref !== 'function') ref.current?.close();
+      // For cloud mode close immediately; for local mode keep the sheet open
+      // so the user can see the performance warning before dismissing.
+      if (selected === 'cloud' && ref && !isFunction(ref)) ref.current?.close();
     };
 
     const handleDownload = () => {
@@ -178,6 +183,15 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
               />
             ) : null}
           </TouchableOpacity>
+          {/* Performance note for llama (non-Apple) devices */}
+          {showSlowDeviceWarning && (
+            <View className="mt-3 flex-row items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
+              <Icon name="alert-outline" size={16} color="#d97706" />
+              <Text variant="footnote" className="flex-1 text-amber-700 dark:text-amber-300">
+                {t('ai.localInferenceSlowNote')}
+              </Text>
+            </View>
+          )}
         </BottomSheetView>
       </Sheet>
     );

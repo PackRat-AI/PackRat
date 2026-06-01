@@ -34,12 +34,18 @@ export function useLocationSearch() {
     }
   };
 
-  const searchByCoordinates = async (latitude: number, longitude: number) => {
+  const searchByCoordinates = async ({
+    latitude,
+    longitude,
+  }: {
+    latitude: number;
+    longitude: number;
+  }) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const searchResults = await searchLocationsByCoordinates(latitude, longitude);
+      const searchResults = await searchLocationsByCoordinates({ latitude, longitude });
 
       if (searchResults.length === 0) {
         setError('No locations found near your current position. Please try searching manually.');
@@ -65,21 +71,8 @@ export function useLocationSearch() {
         const formattedData = formatWeatherData(weatherData);
 
         // Create new location with weather data
-        const newLocation: WeatherLocation = {
-          id: formattedData.id,
-          name: formattedData.name,
-          temperature: formattedData.temperature,
-          condition: formattedData.condition,
-          time: formattedData.time,
-          highTemp: formattedData.highTemp,
-          lowTemp: formattedData.lowTemp,
-          alerts: formattedData.alerts,
-          lat: formattedData.lat,
-          lon: formattedData.lon,
-          details: formattedData.details,
-          hourlyForecast: formattedData.hourlyForecast,
-          dailyForecast: formattedData.dailyForecast,
-        };
+        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
+        const newLocation = formattedData as unknown as WeatherLocation;
 
         addLocation(newLocation);
         return true;

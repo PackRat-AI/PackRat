@@ -1,73 +1,47 @@
-import type { Pack, WeightUnit } from 'expo-app/types';
+import type { PackWithItems } from '@packrat/types';
+import type { WeightUnit } from '@packrat/units';
+import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 
-// Convert weights to a standard unit (grams) for calculations
-const convertToGrams = (weight: number, unit: WeightUnit): number => {
-  switch (unit) {
-    case 'g':
-      return weight;
-    case 'oz':
-      return weight * 28.35;
-    case 'kg':
-      return weight * 1000;
-    case 'lb':
-      return weight * 453.59;
-    default:
-      return weight;
-  }
+export type ComputedPack = PackWithItems & {
+  baseWeight: number;
+  totalWeight: number;
 };
 
-// Convert from grams back to the desired unit
-const convertFromGrams = (grams: number, unit: WeightUnit): number => {
-  switch (unit) {
-    case 'g':
-      return grams;
-    case 'oz':
-      return grams / 28.35;
-    case 'kg':
-      return grams / 1000;
-    case 'lb':
-      return grams / 453.59;
-    default:
-      return grams;
-  }
-};
-
-export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = 'g'): Pack => {
+export const computePackWeights = ({
+  pack,
+  preferredUnit = 'g',
+}: {
+  pack: PackWithItems;
+  preferredUnit?: WeightUnit;
+}): ComputedPack => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }
 
-  // Initialize weights
   let baseWeightGrams = 0;
   let totalWeightGrams = 0;
 
-  // Calculate weights based on items
   for (const item of pack.items) {
-    // Convert item weight to grams for calculation
-    const itemWeightInGrams = convertToGrams(item.weight, item.weightUnit) * item.quantity;
-
-    // Add to total weight
+    const itemWeightInGrams =
+      normalize({ weight: item.weight, unit: parseWeightUnit({ value: item.weightUnit }) }) *
+      item.quantity;
     totalWeightGrams += itemWeightInGrams;
-
-    // Add to base weight only if not consumable and not worn
     if (!item.consumable && !item.worn) {
       baseWeightGrams += itemWeightInGrams;
     }
   }
 
-  // Convert back to preferred unit
-  const baseWeight = convertFromGrams(baseWeightGrams, preferredUnit);
-  const totalWeight = convertFromGrams(totalWeightGrams, preferredUnit);
-
-  // Return updated pack with computed weights
   return {
     ...pack,
-    baseWeight: Number(baseWeight.toFixed(2)),
-    totalWeight: Number(totalWeight.toFixed(2)),
+    baseWeight: displayWeight({ grams: baseWeightGrams, unit: preferredUnit }),
+    totalWeight: displayWeight({ grams: totalWeightGrams, unit: preferredUnit }),
   };
 };
 
-// Helper function to compute weights for a list of packs
-export const computePacksWeights = (packs: Pack[], preferredUnit: WeightUnit = 'g'): Pack[] => {
-  return packs.map((pack) => computePackWeights(pack, preferredUnit));
-};
+export const computePacksWeights = ({
+  packs,
+  preferredUnit = 'g',
+}: {
+  packs: PackWithItems[];
+  preferredUnit?: WeightUnit;
+}): ComputedPack[] => packs.map((pack) => computePackWeights({ pack, preferredUnit }));

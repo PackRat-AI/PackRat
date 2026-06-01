@@ -1,10 +1,9 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import type { CatalogItem } from '@packrat/db';
 import { generateObject } from 'ai';
-import type { Context } from 'hono';
 import { z } from 'zod';
-import type { CatalogItem } from '../db/schema';
 import { CatalogService } from './catalogService';
 
 const ITEM_DETECTION_SYSTEM_PROMPT = `You are an expert gear identification assistant specializing in outdoor and adventure equipment. 
@@ -46,23 +45,29 @@ export interface DetectedItemWithMatches {
 }
 
 export class ImageDetectionService {
-  private readonly c: Context;
-
-  constructor(c: Context) {
-    this.c = c;
-  }
-
   /**
    * Analyze an image to detect outdoor gear items
    */
   async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-    const { OPENAI_API_KEY } = getEnv(this.c);
-    const openai = createOpenAI({
-      apiKey: OPENAI_API_KEY,
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_AI_GATEWAY_ID,
+      CLOUDFLARE_API_TOKEN,
+      AI,
+    } = getEnv();
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: AI,
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       schema: imageAnalysisSchema,
       system: ITEM_DETECTION_SYSTEM_PROMPT,
       prompt: [
@@ -90,10 +95,13 @@ export class ImageDetectionService {
    * Detect items in an image and find matching catalog items
    */
 
-  async detectAndMatchItems(
-    imageUrl: string,
-    matchLimit: number = 3,
-  ): Promise<DetectedItemWithMatches[]> {
+  async detectAndMatchItems({
+    imageUrl,
+    matchLimit = 3,
+  }: {
+    imageUrl: string;
+    matchLimit?: number;
+  }): Promise<DetectedItemWithMatches[]> {
     try {
       // First, detect items in the image
       const analysis = await this.analyzeImage(imageUrl);
@@ -107,12 +115,15 @@ export class ImageDetectionService {
       const highConfidenceItems = analysis.items.filter((item) => item.confidence >= 0.5);
 
       // Find catalog matches for each detected item
-      const catalogService = new CatalogService(this.c);
+      const catalogService = new CatalogService();
 
       const searchQueries = highConfidenceItems.map((detected) =>
         `${detected.name} ${detected.description}`.trim(),
       );
-      const result = await catalogService.batchVectorSearch(searchQueries, matchLimit);
+      const result = await catalogService.batchVectorSearch({
+        queries: searchQueries,
+        limit: matchLimit,
+      });
 
       // Combine detected items with their catalog matches
       const itemsWithMatches: DetectedItemWithMatches[] = highConfidenceItems

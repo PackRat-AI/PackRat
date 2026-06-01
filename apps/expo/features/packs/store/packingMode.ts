@@ -1,15 +1,12 @@
 import { observable } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
-import Storage from 'expo-sqlite/kv-store';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 
 export const packingModeStore = observable<Record<string, Record<string, boolean>>>({});
 
 syncObservable(packingModeStore, {
   persist: {
-    plugin: observablePersistSqlite(
-      Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-    ),
+    plugin: persistPlugin,
     retrySync: true,
     name: 'packingMode',
   },

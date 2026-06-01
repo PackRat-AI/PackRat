@@ -17,7 +17,7 @@ export interface Trip {
 
   startDate?: string;
   endDate?: string;
-  userId?: number;
+  userId?: string;
   packId?: Pack['id'];
   deleted: boolean;
   createdAt?: string;

@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import type { ToolUIPart } from 'ai';
 import type { CatalogItemsTool } from './CatalogItemsGenerativeUI';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
@@ -16,31 +17,37 @@ interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
-type Tool =
-  | WebSearchTool
-  | WeatherTool
-  | CatalogItemsTool
-  | GuidesRAGTool
-  | PackDetailsTool
-  | PackItemTool;
-
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
-  const tool = toolInvocation as Tool;
+  // On-device AI models may serialize tool output as a JSON string instead of a parsed object.
+  // Normalize it here once so all GenUI components receive a plain object.
+  const normalizedInvocation =
+    toolInvocation.state === 'output-available' && isString(toolInvocation.output)
+      ? { ...toolInvocation, output: JSON.parse(toolInvocation.output) }
+      : toolInvocation;
 
-  switch (tool.type) {
+  // safe-cast: each case branch narrows toolInvocation.type to the discriminant literal; the
+  // local tool types (WebSearchTool, etc.) extend ToolUIPart with that exact `type` field, so
+  // the cast is verified by the switch guard above each arm.
+  switch (normalizedInvocation.type) {
     case 'tool-webSearchTool':
-      return <WebSearchGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant; local tool types extend ToolUIPart with that exact `type` field
+      return <WebSearchGenerativeUI toolInvocation={normalizedInvocation as WebSearchTool} />;
     case 'tool-getWeatherForLocation':
-      return <WeatherGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <WeatherGenerativeUI toolInvocation={normalizedInvocation as WeatherTool} />;
     case 'tool-getCatalogItems':
     case 'tool-catalogVectorSearch':
-      return <CatalogItemsGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <CatalogItemsGenerativeUI toolInvocation={normalizedInvocation as CatalogItemsTool} />;
     case 'tool-searchPackratOutdoorGuidesRAG':
-      return <GuidesRAGGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <GuidesRAGGenerativeUI toolInvocation={normalizedInvocation as GuidesRAGTool} />;
     case 'tool-getPackDetails':
-      return <PackDetailsGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <PackDetailsGenerativeUI toolInvocation={normalizedInvocation as PackDetailsTool} />;
     case 'tool-getPackItemDetails':
-      return <PackItemDetailsGenerativeUI toolInvocation={tool} />;
+      // safe-cast: case guard narrows type to discriminant literal
+      return <PackItemDetailsGenerativeUI toolInvocation={normalizedInvocation as PackItemTool} />;
     default:
       return null;
   }

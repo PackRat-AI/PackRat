@@ -1,3 +1,4 @@
+import { isString } from '@packrat/guards';
 import {
   Avatar,
   AvatarFallback,
@@ -99,17 +100,19 @@ export default function ChatAndroid() {
           }}
           data={messages}
           renderItem={({ item, index }) => {
-            if (typeof item === 'string') {
+            if (isString(item)) {
               return <DateSeparator date={item} />;
             }
 
             const nextMessage = messages[index - 1];
-            const isSameNextSender =
-              typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
+            const isSameNextSender = !isString(nextMessage)
+              ? nextMessage?.sender === item.sender
+              : false;
 
             const previousMessage = messages[index + 1];
-            const isSamePreviousSender =
-              typeof previousMessage !== 'string' ? previousMessage?.sender === item.sender : false;
+            const isSamePreviousSender = !isString(previousMessage)
+              ? previousMessage?.sender === item.sender
+              : false;
 
             return (
               <ChatBubble

@@ -1,56 +1,46 @@
-import { $, OpenAPIHono } from '@hono/zod-openapi';
-import { authMiddleware } from '@packrat/api/middleware';
-import type { Env } from '@packrat/api/types/env';
-import type { Variables } from '@packrat/api/types/variables';
+import { Elysia } from 'elysia';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
-import { authRoutes } from './auth';
+import { alltrailsRoutes } from './alltrails';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
+import { knowledgeBaseRoutes } from './knowledgeBase';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
+import { passwordResetRoutes } from './passwordReset';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
+import { trailsRoutes } from './trails';
 import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
 import { wildlifeRoutes } from './wildlife';
 
-const publicRoutes = $(
-  new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
-    .route('/auth', authRoutes)
-    .route('/admin', adminRoutes),
-);
-
-const protectedRoutes = $(
-  new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
-    .use(authMiddleware)
-    .route('/catalog', catalogRoutes)
-    .route('/guides', guidesRoutes)
-    .route('/feed', feedRoutes)
-    .route('/packs', packsRoutes)
-    .route('/trips', tripsRoutes)
-    .route('/ai', aiRoutes)
-    .route('/chat', chatRoutes)
-    .route('/weather', weatherRoutes)
-    .route('/pack-templates', packTemplatesRoutes)
-    .route('/season-suggestions', seasonSuggestionsRoutes)
-    .route('/user', userRoutes)
-    .route('/upload', uploadRoutes)
-    .route('/trail-conditions', trailConditionsRoutes)
-    .route('/wildlife', wildlifeRoutes),
-);
-
-const routes = $(
-  new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
-    .route('/', publicRoutes)
-    .route('/', protectedRoutes),
-);
-
-export { routes };
-
-/** Full type of the PackRat Hono app — used by `hc<AppRoutes>()` in api-client. */
-export type AppRoutes = typeof routes;
+/**
+ * Aggregated `/api` routes – a single Elysia instance that composes every
+ * route group. The exported instance carries the full type graph used by the
+ * Eden Treaty client for end-to-end type safety.
+ */
+export const routes = new Elysia({ prefix: '/api' })
+  .use(adminRoutes)
+  .use(catalogRoutes)
+  .use(guidesRoutes)
+  .use(feedRoutes)
+  .use(packsRoutes)
+  .use(tripsRoutes)
+  .use(aiRoutes)
+  .use(chatRoutes)
+  .use(weatherRoutes)
+  .use(packTemplatesRoutes)
+  .use(seasonSuggestionsRoutes)
+  .use(passwordResetRoutes)
+  .use(userRoutes)
+  .use(uploadRoutes)
+  .use(trailConditionsRoutes)
+  .use(trailsRoutes)
+  .use(wildlifeRoutes)
+  .use(knowledgeBaseRoutes)
+  .use(alltrailsRoutes);

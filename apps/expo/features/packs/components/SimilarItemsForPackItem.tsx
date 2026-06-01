@@ -81,9 +81,9 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data, isLoading, isError } = useSimilarPackItems(packId, {
-    itemId,
-    params: { limit, threshold },
+  const { data, isLoading, isError } = useSimilarPackItems({
+    packId,
+    opts: { itemId, params: { limit, threshold } },
   });
 
   const handleItemPress = (catalogItemId: string) => {
@@ -123,7 +123,8 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={data.items}
+        // safe-cast: treaty response shape matches SimilarItem[]; items field is untyped by treaty
+        data={data.items as unknown as SimilarItem[]}
         renderItem={({ item }) => <SimilarItemCard item={item} onPress={handleItemPress} />}
         keyExtractor={(item) => item.id.toString()}
       />

@@ -1,226 +1,348 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, err, ok, PackRatApiClient } from '../client';
+import { describe, expect, it, vi } from 'vitest';
+import { call, createMcpClients, errMessage, nowIso, ok, shortId } from '../client';
 
-// ── ok() / err() helpers ──────────────────────────────────────────────────────
+vi.mock('@packrat/api-client', () => ({
+  createApiClient: vi.fn((opts: unknown) => ({ _opts: opts })),
+}));
 
 describe('ok()', () => {
-  it('wraps data as JSON text content', () => {
-    const result = ok({ id: 1, name: 'My Pack' });
+  it('wraps data as pretty-printed JSON in MCP text content', () => {
+    const result = ok({ id: 'pack-1', name: 'My Pack' });
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
-    expect(JSON.parse(result.content[0].text)).toEqual({ id: 1, name: 'My Pack' });
+    expect(result.content[0].text).toContain('"id": "pack-1"');
+    expect(result.isError).toBeUndefined();
   });
 
-  it('handles arrays', () => {
-    const result = ok([1, 2, 3]);
-    expect(JSON.parse(result.content[0].text)).toEqual([1, 2, 3]);
-  });
-
-  it('handles null', () => {
+  it('handles null data', () => {
     const result = ok(null);
     expect(result.content[0].text).toBe('null');
   });
-});
 
-describe('err()', () => {
-  it('formats an ApiError with status code', () => {
-    const result = err(new ApiError('Not Found', { status: 404, body: { error: 'Not Found' } }));
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toBe('Error: API Error (404): Not Found');
-  });
-
-  it('formats a generic Error', () => {
-    const result = err(new Error('Something broke'));
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toBe('Error: Something broke');
-  });
-
-  it('formats a string error', () => {
-    const result = err('raw string error');
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toBe('Error: raw string error');
+  it('handles array data', () => {
+    const result = ok([1, 2, 3]);
+    expect(result.content[0].text).toContain('1');
   });
 });
 
-// ── ApiError ──────────────────────────────────────────────────────────────────
+describe('errMessage()', () => {
+  it('returns an error result with isError: true', () => {
+    const result = errMessage('something went wrong');
+    expect(result.isError).toBe(true);
+    expect(result.content[0].type).toBe('text');
+    expect(result.content[0].text).toContain('Error: something went wrong');
+  });
 
-describe('ApiError', () => {
-  it('sets name, status, and body', () => {
-    const body = { error: 'Unauthorized' };
-    const e = new ApiError('Unauthorized', { status: 401, body });
-    expect(e.name).toBe('ApiError');
-    expect(e.message).toBe('Unauthorized');
-    expect(e.status).toBe(401);
-    expect(e.body).toBe(body);
-    expect(e instanceof Error).toBe(true);
+  it('prefixes the message with "Error:"', () => {
+    const result = errMessage('not found');
+    expect(result.content[0].text).toMatch(/^Error:/);
   });
 });
 
-// ── PackRatApiClient ──────────────────────────────────────────────────────────
-
-describe('PackRatApiClient', () => {
-  const BASE = 'https://api.example.com';
-  let token = 'test-jwt-token';
-  let client: PackRatApiClient;
-  let fetchMock: ReturnType<typeof vi.fn>;
-
-  beforeEach(() => {
-    token = 'test-jwt-token'; // reset between tests to avoid mutation leaking
-    fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-    client = new PackRatApiClient(BASE, () => token);
+describe('shortId()', () => {
+  it('returns a string prefixed with the provided prefix', () => {
+    const id = shortId('pack');
+    expect(id.startsWith('pack_')).toBe(true);
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it('returns a unique id on each call', () => {
+    const id1 = shortId('item');
+    const id2 = shortId('item');
+    expect(id1).not.toBe(id2);
   });
 
-  function mockResponse(body: unknown, status = 200): Response {
-    return {
-      ok: status >= 200 && status < 300,
-      status,
-      statusText: status === 200 ? 'OK' : 'Error',
-      text: async () => JSON.stringify(body),
-    } as unknown as Response;
-  }
+  it('strips hyphens from the UUID portion', () => {
+    const id = shortId('trip');
+    // The suffix after the prefix should not contain hyphens
+    const suffix = id.slice('trip_'.length);
+    expect(suffix).not.toContain('-');
+  });
 
-  describe('GET', () => {
-    it('sends a GET request with auth header', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ items: [] }));
+  it('produces a 12-character suffix', () => {
+    const id = shortId('x');
+    const suffix = id.slice('x_'.length);
+    expect(suffix).toHaveLength(12);
+  });
+});
 
-      await client.get('/packs');
+describe('nowIso()', () => {
+  it('returns a valid ISO 8601 timestamp', () => {
+    const iso = nowIso();
+    expect(() => new Date(iso)).not.toThrow();
+    expect(new Date(iso).toISOString()).toBe(iso);
+  });
 
-      expect(fetchMock).toHaveBeenCalledOnce();
-      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe(`${BASE}/packs`);
-      expect(init.method).toBe('GET');
-      expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${token}`);
+  it('returns a string ending in Z (UTC)', () => {
+    expect(nowIso().endsWith('Z')).toBe(true);
+  });
+});
+
+describe('call()', () => {
+  it('returns ok result when promise resolves with data', async () => {
+    const mockPromise = Promise.resolve({ data: { id: 'pack-1' }, error: null, status: 200 });
+    const result = await call(mockPromise);
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toContain('"id": "pack-1"');
+  });
+
+  it('returns error result when promise resolves with error', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 404, value: 'Not Found' },
+      status: 404,
     });
+    const result = await call(mockPromise);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('404');
+  });
 
-    it('appends query params', async () => {
-      fetchMock.mockResolvedValue(mockResponse([]));
+  it('returns error result when data is null', async () => {
+    const mockPromise = Promise.resolve({ data: null, error: null, status: 200 });
+    const result = await call(mockPromise);
+    expect(result.isError).toBe(true);
+  });
 
-      await client.get('/packs', { limit: 10, offset: 0, category: 'backpacking' });
+  it('returns error result when promise rejects', async () => {
+    const mockPromise = Promise.reject(new Error('network failure'));
+    const result = await call(mockPromise);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('network failure');
+  });
 
-      const [url] = fetchMock.mock.calls[0] as [string];
-      const parsed = new URL(url);
-      expect(parsed.searchParams.get('limit')).toBe('10');
-      expect(parsed.searchParams.get('offset')).toBe('0');
-      expect(parsed.searchParams.get('category')).toBe('backpacking');
+  it('uses action from options in error messages', async () => {
+    const mockPromise = Promise.reject(new Error('timeout'));
+    const result = await call(mockPromise, { action: 'fetch pack' });
+    expect(result.content[0].text).toContain('fetch pack');
+  });
+
+  it('formats 401 error with auth guidance', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 401, value: null },
+      status: 401,
     });
+    const result = await call(mockPromise, { action: 'list packs' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('authentication');
+  });
 
-    it('skips undefined params', async () => {
-      fetchMock.mockResolvedValue(mockResponse([]));
-
-      await client.get('/packs', { limit: 10, category: undefined });
-
-      const [url] = fetchMock.mock.calls[0] as [string];
-      const parsed = new URL(url);
-      expect(parsed.searchParams.has('category')).toBe(false);
-      expect(parsed.searchParams.get('limit')).toBe('10');
+  it('formats 401 admin error with admin guidance when requiresAdmin is set', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 401, value: null },
+      status: 401,
     });
+    const result = await call(mockPromise, { action: 'list packs', requiresAdmin: true });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('admin');
+  });
 
-    it('omits Authorization header when token is empty', async () => {
-      token = '';
-      fetchMock.mockResolvedValue(mockResponse({}));
-
-      await client.get('/public');
-
-      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
+  it('formats 403 error', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 403, value: null },
+      status: 403,
     });
+    const result = await call(mockPromise, { action: 'delete pack' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('forbidden');
+  });
 
-    it('throws ApiError on non-ok response with JSON error body', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ error: 'Not found' }, 404));
+  it('formats 404 error', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 404, value: null },
+      status: 404,
+    });
+    const result = await call(mockPromise, { action: 'get pack', resourceHint: 'pack p_123' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('404');
+  });
 
-      await expect(client.get('/packs/nope')).rejects.toThrow(ApiError);
+  it('formats 409 conflict error', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 409, value: null },
+      status: 409,
+    });
+    const result = await call(mockPromise, { action: 'create pack' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('conflict');
+  });
 
-      try {
-        await client.get('/packs/nope');
-      } catch (e) {
-        expect(e instanceof ApiError).toBe(true);
-        expect((e as ApiError).status).toBe(404);
-        expect((e as ApiError).message).toBe('Not found');
+  it('formats 422 validation error', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 422, value: null },
+      status: 422,
+    });
+    const result = await call(mockPromise, { action: 'update pack' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('validation');
+  });
+
+  it('formats 429 rate limit error', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 429, value: null },
+      status: 429,
+    });
+    const result = await call(mockPromise, { action: 'search' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('rate limit');
+  });
+
+  it('formats generic HTTP error for unknown status codes', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 503, value: null },
+      status: 503,
+    });
+    const result = await call(mockPromise, { action: 'fetch data' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('503');
+  });
+
+  it('includes error body message when available', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 400, value: { message: 'invalid input' } },
+      status: 400,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('invalid input');
+  });
+
+  it('handles non-Error thrown exceptions', async () => {
+    const mockPromise = Promise.reject('string error');
+    const result = await call(mockPromise);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('string error');
+  });
+
+  it('formats 403 admin error when requiresAdmin is set', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 403, value: null },
+      status: 403,
+    });
+    const result = await call(mockPromise, { action: 'delete user', requiresAdmin: true });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text.toLowerCase()).toContain('admin');
+    expect(result.content[0].text.toLowerCase()).toContain('forbidden');
+  });
+
+  it('extracts error body from obj.error field when obj.message is absent', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 400, value: { error: 'bad request detail' } },
+      status: 400,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('bad request detail');
+  });
+
+  it('JSON-stringifies error body object when no message/error field present', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 400, value: { code: 42, detail: 'some info' } },
+      status: 400,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('42');
+  });
+
+  it('converts numeric error body to string', async () => {
+    const mockPromise = Promise.resolve({
+      data: null,
+      error: { status: 500, value: 12345 },
+      status: 500,
+    });
+    const result = await call(mockPromise);
+    expect(result.content[0].text).toContain('12345');
+  });
+});
+
+describe('createMcpClients()', () => {
+  it('returns user and admin clients', () => {
+    const clients = createMcpClients({
+      baseUrl: 'https://api.example.com',
+      getUserToken: () => 'user-token',
+      getAdminToken: () => 'admin-token',
+    });
+    expect(clients).toHaveProperty('user');
+    expect(clients).toHaveProperty('admin');
+  });
+
+  it('passes the base URL to each client', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => null,
+      getAdminToken: () => null,
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+    for (const c of spy.mock.calls) {
+      expect((c[0] as { baseUrl: string }).baseUrl).toBe('https://api.test.com');
+    }
+  });
+
+  it('noopHooks getAccessToken returns null when token provider returns null', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => null,
+      getAdminToken: () => null,
+    });
+    const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
+    expect(auth.getAccessToken()).toBeNull();
+  });
+
+  it('noopHooks getAccessToken returns the token when provider returns one', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => 'my-token',
+      getAdminToken: () => null,
+    });
+    const auth = (spy.mock.calls[0]?.[0] as { auth: { getAccessToken: () => string | null } }).auth;
+    expect(auth.getAccessToken()).toBe('my-token');
+  });
+
+  it('noopHooks getRefreshToken always returns null', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => 'tok',
+      getAdminToken: () => null,
+    });
+    const auth = (spy.mock.calls[0]?.[0] as { auth: { getRefreshToken: () => null } }).auth;
+    expect(auth.getRefreshToken()).toBeNull();
+  });
+
+  it('noopHooks lifecycle callbacks are no-ops', async () => {
+    const mod = await import('@packrat/api-client');
+    const spy = vi.mocked(mod.createApiClient);
+    spy.mockClear();
+    createMcpClients({
+      baseUrl: 'https://api.test.com',
+      getUserToken: () => null,
+      getAdminToken: () => null,
+    });
+    const auth = (
+      spy.mock.calls[0]?.[0] as {
+        auth: { onAccessTokenRefreshed: () => void; onNeedsReauth: () => void };
       }
-    });
-
-    it('throws ApiError with HTTP status message when body has no error field', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ message: 'gone' }, 410));
-
-      await expect(client.get('/gone')).rejects.toThrow('HTTP 410:');
-    });
-
-    it('returns parsed JSON on success', async () => {
-      const pack = { id: 'p_1', name: 'Test Pack' };
-      fetchMock.mockResolvedValue(mockResponse(pack));
-
-      const result = await client.get('/packs/p_1');
-      expect(result).toEqual(pack);
-    });
-  });
-
-  describe('POST', () => {
-    it('sends POST with JSON body', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ id: 'p_new' }));
-
-      await client.post('/packs', { name: 'New Pack', category: 'backpacking' });
-
-      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe(`${BASE}/packs`);
-      expect(init.method).toBe('POST');
-      expect(JSON.parse(init.body as string)).toEqual({
-        name: 'New Pack',
-        category: 'backpacking',
-      });
-    });
-
-    it('sends POST with no body when omitted', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ ok: true }));
-
-      await client.post('/action');
-
-      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(init.body).toBeUndefined();
-    });
-  });
-
-  describe('PATCH', () => {
-    it('sends PATCH with JSON body', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ id: 'p_1' }));
-
-      await client.patch('/packs/p_1', { name: 'Updated' });
-
-      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe(`${BASE}/packs/p_1`);
-      expect(init.method).toBe('PATCH');
-      expect(JSON.parse(init.body as string)).toEqual({ name: 'Updated' });
-    });
-  });
-
-  describe('DELETE', () => {
-    it('sends DELETE request', async () => {
-      fetchMock.mockResolvedValue(mockResponse({ deleted: true }));
-
-      await client.delete('/packs/p_1');
-
-      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe(`${BASE}/packs/p_1`);
-      expect(init.method).toBe('DELETE');
-    });
-  });
-
-  describe('non-JSON response', () => {
-    it('returns raw string when response is not JSON', async () => {
-      const raw = {
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        text: async () => 'plain text response',
-      } as unknown as Response;
-      fetchMock.mockResolvedValue(raw);
-
-      const result = await client.get('/text-endpoint');
-      expect(result).toBe('plain text response');
-    });
+    ).auth;
+    expect(() => auth.onAccessTokenRefreshed()).not.toThrow();
+    expect(() => auth.onNeedsReauth()).not.toThrow();
   });
 });

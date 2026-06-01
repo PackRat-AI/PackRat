@@ -21,6 +21,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.test.local
 .env.production.local
 .env.local
+.envrc
 
 # caches
 .eslintcache
@@ -38,8 +39,19 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .claude/settings.json
 .claude/settings.local.json
 .claude/worktrees/
+.claude/scheduled_tasks.lock
 .dev.vars
+
+# Generated OG images (produced at build time by scripts/generate-og-images.ts)
+apps/landing/public/og-image.png
+apps/guides/public/og-image.png
+apps/guides/public/og/
+
+# Lighthouse CI output (produced by `lhci autorun`)
+.lighthouseci/
 
 # Git worktrees
 .worktrees/
+
+# Turborepo cache
 .turbo/

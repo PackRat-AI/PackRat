@@ -1,13 +1,17 @@
-import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { embed, embedMany } from 'ai';
 
+// ── Embedding text normalization ──────────────────────────────────────
+const NEWLINE = /\n/g;
+
 type GenerateEmbeddingBaseParams = {
-  openAiApiKey: string;
+  openAiApiKey?: string;
   provider: AIProvider;
-  cloudflareAccountId: string;
-  cloudflareGatewayId: string;
+  cloudflareAccountId?: string;
+  cloudflareGatewayId?: string;
+  cloudflareApiToken?: string;
   cloudflareAiBinding: Env['AI'];
 };
 
@@ -21,14 +25,14 @@ export const generateEmbedding = async (
   const { value, ...providerConfig } = params;
 
   // Guard: skip if no text or only whitespace
-  if (!value || !value.trim()) {
+  if (!value?.trim()) {
     return null;
   }
 
   const aiProvider = createAIProvider(providerConfig);
 
   // OpenAI recommends replacing newlines with spaces for best results
-  const input = value.replace(/\n/g, ' ');
+  const input = value.replace(NEWLINE, ' ');
 
   const { embedding } = await embed({
     model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
@@ -48,7 +52,7 @@ export const generateManyEmbeddings = async (
   const { values, ...providerConfig } = params;
 
   // Filter out empty/whitespace-only strings
-  const cleanValues = values.map((v) => v?.replace(/\n/g, ' ').trim()).filter(Boolean);
+  const cleanValues = values.map((v) => v?.replace(NEWLINE, ' ').trim()).filter(Boolean);
   if (cleanValues.length === 0) {
     return [];
   }

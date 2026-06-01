@@ -329,6 +329,12 @@ cd PackRat
 
    Run bun install to regenerate .dev.vars whenever environment variables are changed.
 
+   Optional: if you use direnv, copy `.envrc.example` to `.envrc` to auto-load `.env.local` in your shell. `.envrc` is ignored because it is local machine behavior.
+
+   AI-backed API features prefer Cloudflare AI Gateway when `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_GATEWAY_ID`, and `CLOUDFLARE_API_TOKEN` are all present. Direct provider keys such as `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, and `PERPLEXITY_API_KEY` are still required for fallback and rollback.
+
+   See `docs/runbooks/ai-gateway-unified-billing.md` for production setup, fallback behavior, and provider coverage.
+
    Only variables prefixed with PUBLIC\_ will be bundled into the Expo app (e.g., PUBLIC_API_URL). These are safe to expose in the client environment.
 
    ⚠️ Do not include secrets (e.g., private API keys) in PUBLIC\_ variables — they may be exposed in the bundled app.

@@ -9,7 +9,7 @@ PackRat is a modern full-stack application for outdoor enthusiasts to plan and o
 - **Package Manager**: Bun (primary) with workspaces monorepo
 - **Mobile**: React Native with Expo (apps/expo)
 - **Web**: Next.js 15+ with React 19 (apps/landing, apps/guides)
-- **API**: Hono.js on Cloudflare Workers with Wrangler CLI (packages/api)
+- **API**: Elysia on Cloudflare Workers with Wrangler CLI (packages/api)
 - **Database**: PostgreSQL via Neon with Drizzle ORM
 - **Styling**: Tailwind CSS / NativeWind with custom `@packrat-ai/nativewindui` components
 - **Code Quality**: Biome for formatting and linting
@@ -57,7 +57,7 @@ PackRat is a modern full-stack application for outdoor enthusiasts to plan and o
 #### **Development Servers**
 Run each application independently. NEVER CANCEL these commands:
 
-**API Server (Hono + Cloudflare Workers)**:
+**API Server (Elysia + Cloudflare Workers)**:
 ```bash
 bun api
 ```
@@ -125,38 +125,33 @@ bun bump         # Bump monorepo version
 
 ### API Routes (packages/api)
 
-New routes use `OpenAPIHono` with `createRoute` for type-safe, OpenAPI-documented endpoints:
+New routes are Elysia plugins composed with `.use()`. Routes use Zod schemas for request/response validation and `@elysiajs/openapi` for OpenAPI docs. Eden Treaty (`@elysiajs/eden`) provides end-to-end type safety to clients.
 
 ```typescript
-// packages/api/src/routes/{feature}/{routeName}.ts
-import { createRoute, z } from '@hono/zod-openapi';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
+// packages/api/src/routes/{feature}/index.ts
+import { authPlugin } from '@packrat/api/middleware/auth';
+import { MyRequestSchema, MyResponseSchema } from '@packrat/api/schemas/myFeature';
+import { Elysia } from 'elysia';
 
-export const routeDefinition = createRoute({
-  method: 'get',
-  path: '/{id}',
-  tags: ['FeatureName'],
-  summary: 'Brief description',
-  security: [{ bearerAuth: [] }],
-  request: {
-    params: z.object({ id: z.string() }),
-  },
-  responses: {
-    200: {
-      description: 'Success response',
-      content: { 'application/json': { schema: ResponseSchema } },
+export const myFeatureRoutes = new Elysia({ prefix: '/my-feature' })
+  .use(authPlugin)
+  .get(
+    '/:id',
+    async ({ params, user }) => {
+      // handler logic — business logic goes in src/services/
     },
-  },
-});
-
-export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // handler logic
-};
+    {
+      isAuthenticated: true,
+      params: MyRequestSchema,
+      response: MyResponseSchema,
+      detail: { tags: ['MyFeature'], summary: 'Get a resource by ID' },
+    },
+  );
 ```
 
-- New feature routes go in `packages/api/src/routes/{feature}/` with an `index.ts` aggregator
-- Register new route groups in `packages/api/src/routes/index.ts` under `protectedRoutes`
-- Use `authMiddleware` for protected routes; it supports both JWT bearer tokens and API keys
+- New feature route files go in `packages/api/src/routes/{feature}/` with an `index.ts` aggregator
+- Register new route groups in `packages/api/src/routes/index.ts` via `.use(myFeatureRoutes)`
+- Use `authPlugin` macro (`isAuthenticated: true`) for protected routes; it validates Bearer-JWT tokens
 
 ### Database (packages/api)
 
@@ -217,6 +212,54 @@ Always add new features behind a flag and default to `false` until the feature i
 - Tailwind CSS for all styling — no inline styles
 - Radix UI for accessible components
 
+### Monitoring (Sentry)
+
+All new code that performs async operations or calls external services must include Sentry instrumentation. Sentry is already initialised per-platform — you only need to import and call the helpers.
+
+**Expo / React Native** — import from `@sentry/react-native`:
+
+```ts
+import * as Sentry from '@sentry/react-native';
+
+// Breadcrumb before async operations
+Sentry.addBreadcrumb({ category: 'feature', message: 'Action started', level: 'info', data: { ... } });
+
+// Every catch block must capture the original error
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { feature: 'myFeature', action: 'doThing' },
+    extra: { userId, relevantId },
+  });
+  throw error;
+}
+```
+
+Rules:
+- **Never wrap the root error** in `new Error(...)` before passing to `captureException` — wrapping loses the original stack trace and drops properties like HTTP status and error codes.
+- **Better Auth client errors** are plain objects `{ message, status, code }`, not JS Errors. Use `toAuthError` from `expo-app/features/auth/lib/authErrors` to convert them into an `AuthClientError` carrying `.status` and `.code`. Capture that single error — do not create two separate `new Error()` objects (one to capture, one to throw).
+- Include `httpStatus` and `errorCode` in `extra` for any HTTP error.
+
+**API / Cloudflare Workers** — use helpers from `@packrat/api/utils/sentry`:
+
+```ts
+import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+
+apiAddBreadcrumb({ category: 'feature', message: 'Calling external service', level: 'info' });
+
+} catch (error) {
+  captureApiException(error, {
+    operation: 'featureName.action',
+    userId,
+    tags: { feature: 'myFeature' },
+    extra: { relevantId },
+  });
+  throw error;
+}
+```
+
+- Use `captureApiException` (not the raw `captureException`) — it adds structured operation context and also logs to console for `wrangler dev` output.
+- Every route `catch` block and service method touching the DB or an external API needs a `captureApiException` call.
+
 ## Repository Structure
 
 ```
@@ -225,7 +268,7 @@ apps/
   landing/        Marketing site (Next.js 15)
   guides/         Outdoor guides content site (Next.js 15, MDX)
 packages/
-  api/            Cloudflare Workers API (Hono, Drizzle, OpenAPI)
+  api/            Cloudflare Workers API (Elysia, Drizzle, OpenAPI)
   ui/             Shared UI components (requires GitHub auth)
 .github/
   workflows/      CI/CD pipelines (incl. copilot-setup-steps.yml)

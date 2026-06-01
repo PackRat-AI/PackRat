@@ -150,6 +150,7 @@ export default function LocationSearchScreen() {
     router.push({
       pathname: '/weather/preview',
       params: {
+        id: location.id.toString(),
         lat: location.lat.toString(),
         lon: location.lon.toString(),
         name: location.name,
@@ -211,7 +212,10 @@ export default function LocationSearchScreen() {
       ])) as Location.LocationObject;
 
       // Search for locations near coordinates
-      await searchByCoordinates(location.coords.latitude, location.coords.longitude);
+      await searchByCoordinates({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
 
       // Clear search query since we're showing results based on coordinates
       setQuery('');

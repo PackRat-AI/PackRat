@@ -5,16 +5,15 @@
 import * as Sentry from '@sentry/react-native';
 import { getDomainSpecificExtension } from './domain-specific-extensions';
 
+const URL_EXTENSION_PATTERN = /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i;
+
 /**
  * Attempts to infer the image extension from a URL
  * @param url The image URL
  * @returns The inferred extension or null if it couldn't be determined
  */
-const IMAGE_EXTENSION_RE = /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i;
-
 export const inferImageExtension = (url: string): string | null => {
-  // Check if URL already has an extension
-  const extensionMatch = url.match(IMAGE_EXTENSION_RE);
+  const extensionMatch = url.match(URL_EXTENSION_PATTERN);
   if (extensionMatch && extensionMatch[1] !== undefined) {
     return extensionMatch[1].toLowerCase();
   }
@@ -127,7 +126,13 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
  * @returns A promise resolving to the extension
  */
 
-export const getImageExtension = async (url: string, defaultExt = 'jpg'): Promise<string> => {
+export const getImageExtension = async ({
+  url,
+  defaultExt = 'jpg',
+}: {
+  url: string;
+  defaultExt?: string;
+}): Promise<string> => {
   // First check if URL already has an extension
   const inferredExt = inferImageExtension(url);
   if (inferredExt) return inferredExt;

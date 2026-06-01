@@ -1,0 +1,147 @@
+name: Web E2E Tests (Playwright)
+
+on:
+  push:
+    branches: [main, development]
+    paths:
+      - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
+      - ".github/workflows/web-e2e-tests.yml"
+  # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
+  # CI feedback on their own code.  Secrets are unavailable for forks, so
+  # the job is skipped via the `if` condition on the job below.
+  pull_request:
+    branches: [main, development]
+    paths:
+      - "apps/expo/**"
+      - "!apps/expo/**/__tests__/**"
+      - "!apps/expo/**/*.test.ts"
+      - "!apps/expo/**/*.test.tsx"
+      - "!apps/expo/vitest.config.ts"
+      - ".github/workflows/web-e2e-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-gate:
+    name: Check E2E prerequisites
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        name: Verify E2E secrets are available
+        env:
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+        run: |
+          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$NEON_DATABASE_URL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::E2E secrets not configured — skipping Web E2E tests"
+          fi
+
+  web-e2e:
+    name: Web E2E Tests
+    needs: e2e-gate
+    if: needs.e2e-gate.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # The E2E user is upserted into the dev DB by the seed step below,
+      # so both email and password are driven entirely by repo secrets.
+      TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium --with-deps
+
+      - name: Build Expo web app
+        working-directory: apps/expo
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
+          EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
+          EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
+        run: bunx expo export -p web --output-dir dist
+
+      - name: Seed E2E test user in dev DB
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+      - name: Serve web app (SPA mode, port 8081)
+        working-directory: apps/expo
+        # -s routes all 404s to index.html for client-side routing
+        run: npx serve -s dist -l 8081 &
+
+      - name: Wait for web server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8081 && echo "Server ready" && break
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run Playwright E2E tests
+        working-directory: apps/expo
+        env:
+          BASE_URL: http://localhost:8081
+          API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          CI: "true"
+        run: bun test:web
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: apps/expo/playwright-report/
+          retention-days: 7
+
+      - name: Upload Playwright traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: apps/expo/test-results/
+          retention-days: 7

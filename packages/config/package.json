@@ -1,6 +1,6 @@
 {
   "name": "@packrat/config",
-  "version": "2.0.22",
+  "version": "2.0.26",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,6 +11,9 @@
   "types": "./src/index.ts",
   "scripts": {
     "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@packrat/guards": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:"

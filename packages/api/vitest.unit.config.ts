@@ -15,6 +15,9 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@packrat/api': resolve(__dirname, 'src'),
+      // Stub out the Cloudflare Workers runtime module — it only exists inside
+      // the CF Workers runtime and would crash in a Node.js test environment.
+      'cloudflare:workers': resolve(__dirname, 'src/__test-stubs__/cloudflare-workers.ts'),
     },
   },
   test: {
@@ -35,6 +38,8 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/index.ts',
         'src/db/migrations/**',
+        // Test infrastructure stubs (not production code)
+        'src/__test-stubs__/**',
         // Pure type/schema definitions (no runtime logic to test)
         'src/schemas/**',
         'src/types/**',
@@ -45,6 +50,12 @@ export default defineConfig({
         'src/containers/**',
         // Index files (just exports, no business logic)
         'src/**/index.ts',
+        // CLI stub for `bunx auth generate` — not production logic
+        'src/auth/auth.config.ts',
+        // getAuth() factory requires live Neon DB, CF KV, and OAuth credentials;
+        // not unit-testable without the full CF runtime. Pure helpers live in
+        // auth.helpers.ts and are covered by their own unit tests.
+        'src/auth/index.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
         'src/utils/ai/**',
@@ -55,6 +66,10 @@ export default defineConfig({
         'src/services/catalogService.ts',
         'src/services/packService.ts',
         'src/services/imageDetectionService.ts',
+        // PostGIS-dependent service (requires live DB with PostGIS extension)
+        'src/services/trails.ts',
+        // Intentionally thin pass-through (no business logic to unit-test)
+        'src/services/refreshTokenService.ts',
         // Database utilities (require complex mocking, covered by integration tests)
         'src/utils/DbUtils.ts',
         // External service utilities (better tested via integration tests)
@@ -63,9 +78,16 @@ export default defineConfig({
         'src/utils/env-validation.ts',
         'src/services/r2-bucket.ts',
         'src/services/packItemService.ts',
+        'src/services/weatherService.ts',
+        'src/services/wildlifeIdentificationService.ts',
+        'src/middleware/**',
+        'src/utils/openapi.ts',
       ],
       thresholds: {
-        statements: 80,
+        statements: 95,
+        branches: 92,
+        functions: 97,
+        lines: 95,
       },
     },
   },

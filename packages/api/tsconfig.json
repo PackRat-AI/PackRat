@@ -10,7 +10,8 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@packrat/api/*": ["src/*"]
+      "@packrat/api": ["./src/index.ts"],
+      "@packrat/api/*": ["./src/*"]
     }
   },
   "include": [
@@ -20,5 +21,6 @@
     "migrate.ts",
     "vitest.config.ts",
     "vitest.unit.config.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "container_src", "test", "coverage"]
 }

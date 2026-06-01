@@ -1,6 +1,5 @@
-import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import type { Context } from 'hono';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { z } from 'zod';
 
 const WeatherApiResponse = z.object({
@@ -18,10 +17,10 @@ type WeatherData = {
 };
 
 export class WeatherService {
-  private env: Env;
+  private env: ReturnType<typeof getEnv>;
 
-  constructor(c: Context) {
-    this.env = getEnv(c);
+  constructor() {
+    this.env = getEnv();
   }
 
   async getWeatherForLocation(location: string): Promise<WeatherData> {
@@ -32,7 +31,28 @@ export class WeatherService {
     );
 
     if (!response.ok) {
-      throw new Error('Weather API request failed');
+      let apiMessage = response.statusText;
+      try {
+        const body = (await response.json()) as { message?: string };
+        if (body.message) apiMessage = body.message;
+      } catch {
+        // response body not parseable — fall back to statusText
+      }
+      const error = new Error(
+        `Weather API error ${response.status}: ${apiMessage} (location: "${location}")`,
+      );
+      captureApiException({
+        error: error,
+        operation: 'weatherService.getWeatherForLocation',
+        tags: { weather_api: 'openweathermap' },
+        extra: {
+          location,
+          apiMessage,
+          httpStatus: response.status,
+          errorCode: 'OPENWEATHERMAP_HTTP_ERROR',
+        },
+      });
+      throw error;
     }
 
     const data = WeatherApiResponse.parse(await response.json());
@@ -40,7 +60,7 @@ export class WeatherService {
     return {
       location,
       temperature: Math.round(data.main.temp),
-      conditions: data.weather[0]?.main ?? 'Unknown',
+      conditions: data.weather[0]?.main ?? '',
       humidity: data.main.humidity,
       windSpeed: Math.round(data.wind.speed),
     };

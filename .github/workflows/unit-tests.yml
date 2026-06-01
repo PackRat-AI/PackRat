@@ -56,7 +56,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Cache turbo
         uses: actions/cache@v4
@@ -95,7 +94,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          cache: true
 
       - name: Cache turbo
         uses: actions/cache@v4

@@ -56,13 +56,14 @@ export default function LocationPreviewScreen() {
       const data = await getWeatherData(locationId);
       if (data) {
         const formattedData = formatWeatherData(data);
-        setWeatherData(formattedData);
+        // safe-cast: formattedData is shaped by weatherService which guarantees WeatherLocation structure
+        setWeatherData(formattedData as unknown as WeatherLocation);
 
         // Update gradient colors based on weather condition
         if (formattedData.details) {
           const weatherCode = formattedData.details.weatherCode || 1000;
           const isNight = formattedData.details.isDay === 0;
-          setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
+          setGradientColors(getWeatherBackgroundColors({ code: weatherCode, isNight }));
         }
       } else {
         setError(t('weather.failedToLoadWeather'));

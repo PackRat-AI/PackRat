@@ -1,4 +1,5 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -6,6 +7,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { ActivityPicker } from 'expo-app/features/packs/components/ActivityPicker';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -15,7 +17,7 @@ import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, Share, TouchableOpacity, View } from 'react-native';
@@ -24,26 +26,29 @@ import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import { packingModeStore } from '../store/packingMode';
-import type { Pack, PackItem } from '../types';
+import type { Pack, PackCategory, PackItem } from '../types';
 
 export function PackDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const id = (Array.isArray(params.id) ? params.id[0] : params.id) as string;
 
-  const isOwnedByUser = usePackOwnershipCheck(id as string);
+  const isOwnedByUser = usePackOwnershipCheck(id);
 
   const DEFAULT_TAB = 'all';
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    obs(packingModeStore, id as string).get() || {},
+    obs({ store: packingModeStore, id: id }).get() || {},
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isActivityPickerOpen, setIsActivityPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
 
   const [location, setLocation] = useState<WeatherLocation>();
+  const [selectedActivity, setSelectedActivity] = useState<PackCategory>();
 
   const {
     mutate: analyzeGaps,
@@ -52,7 +57,7 @@ export function PackDetailScreen() {
     reset: resetAnalysis,
   } = usePackGapAnalysis();
 
-  const packFromStore = usePackDetailsFromStore(id as string);
+  const packFromStore = usePackDetailsFromStore(id);
   const {
     pack: packFromApi,
     isLoading,
@@ -60,10 +65,12 @@ export function PackDetailScreen() {
     error,
     refetch,
   } = usePackDetailsFromApi({
-    id: id as string,
+    id,
     enabled: !isOwnedByUser,
   });
 
+  // safe-cast: pack is guaranteed non-undefined by the early-return guard below;
+  // TypeScript cannot track narrowing across the closure boundary.
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
@@ -96,7 +103,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    obs(packingModeStore, id as string).set({ ...packedItems });
+    obs({ store: packingModeStore, id: id }).set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
     Burnt.toast({
@@ -109,10 +116,10 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      setPackedItems(obs(packingModeStore, id as string).get() || {});
+      setPackedItems(obs({ store: packingModeStore, id: id }).get() || {});
     };
 
-    const packingState = obs(packingModeStore, id as string).get() || {};
+    const packingState = obs({ store: packingModeStore, id: id }).get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>
@@ -181,19 +188,43 @@ export function PackDetailScreen() {
       });
     }
 
+    // Start with activity selection
+    setSelectedActivity(undefined);
+    setLocation(undefined);
+    setIsActivityPickerOpen(true);
+  };
+
+  const handleActivitySelect = (activity: PackCategory) => {
+    setSelectedActivity(activity);
+    setIsActivityPickerOpen(false);
+    // After activity selection, show location picker
+    setIsLocationPickerOpen(true);
+  };
+
+  const handleActivitySkip = () => {
+    setSelectedActivity(undefined);
+    setIsActivityPickerOpen(false);
+    // If skipping activity, still show location picker (but location becomes required)
     setIsLocationPickerOpen(true);
   };
 
   const handleLocationSelect = (location?: WeatherLocation) => {
     setLocation(location);
     setIsLocationPickerOpen(false);
+
+    // Validation: either activity or location must be selected
+    if (!selectedActivity && !location) {
+      // This shouldn't happen due to UI constraints, but handle gracefully
+      return;
+    }
+
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
     analyzeGaps({
-      packId: id as string,
+      packId: id,
       context: {
         destination: location?.name,
-        tripType: pack.category,
+        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -202,10 +233,10 @@ export function PackDetailScreen() {
   const handleRetryAnalysis = () => {
     resetAnalysis();
     analyzeGaps({
-      packId: id as string,
+      packId: id,
       context: {
         destination: location?.name,
-        tripType: pack.category,
+        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -250,22 +281,6 @@ export function PackDetailScreen() {
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
   const handleAskAI = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify({
-            pathname: '/ai-chat',
-            params: {
-              packId: id,
-              packName: pack.name,
-              contextType: 'pack',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
     router.push({
       pathname: '/ai-chat',
       params: {
@@ -411,8 +426,18 @@ export function PackDetailScreen() {
     );
   }
 
+  if (!isDefined(pack)) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 items-center justify-center p-4">
+          <ActivityIndicator />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" edges={['bottom']}>
       <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
@@ -512,13 +537,13 @@ export function PackDetailScreen() {
               variant="secondary"
               onPress={handleAskAI}
               className="flex-1"
-              testID={TestIds.AskAIButton}
+              testID={testIds.packs.askAIBtn}
             >
               <Text>Ask AI</Text>
             </Button>
 
             {isOwnedByUser && (
-              <Button variant="secondary" onPress={handleAddItem} testID={TestIds.AddItemButton}>
+              <Button variant="secondary" onPress={handleAddItem} testID={testIds.packs.addItemBtn}>
                 <Text>Add Item</Text>
               </Button>
             )}
@@ -528,7 +553,7 @@ export function PackDetailScreen() {
                 variant="secondary"
                 size="icon"
                 onPress={handleMoreActionsPress}
-                testID={TestIds.PackMoreActions}
+                testID={testIds.packs.moreActionsBtn}
               >
                 <Icon name="dots-horizontal" size={20} color={colors.grey2} />
               </Button>
@@ -679,13 +704,24 @@ export function PackDetailScreen() {
       <AddPackItemActions ref={addItemActionsRef} packId={pack.id} />
 
       {/* Gap Analysis Flow*/}
+      <ActivityPicker
+        title="Select Activity"
+        subtitle="Choose the activity type for more accurate gear recommendations."
+        open={isActivityPickerOpen}
+        onClose={() => setIsActivityPickerOpen(false)}
+        skipText="Skip"
+        onSkip={handleActivitySkip}
+        selectText="Continue"
+        onSelect={handleActivitySelect}
+        defaultActivity={pack.category}
+      />
       <LocationPicker
         subtitle="Get enhanced analysis with weather and terrain data."
         title="Select Location"
         open={isLocationPickerOpen}
         onClose={() => setIsLocationPickerOpen(false)}
-        skipText="Skip"
-        onSkip={handleLocationSelect}
+        skipText={selectedActivity ? 'Skip' : undefined} // Only allow skip if activity was selected
+        onSkip={selectedActivity ? handleLocationSelect : undefined} // Only allow skip if activity was selected
         selectText="Continue"
         onSelect={handleLocationSelect}
       />
@@ -694,6 +730,7 @@ export function PackDetailScreen() {
         onClose={() => setIsGapAnalysisModalVisible(false)}
         pack={pack}
         location={location?.name}
+        activity={selectedActivity}
         analysis={gapAnalysis || null}
         isLoading={isAnalyzing}
         onRetry={handleRetryAnalysis}

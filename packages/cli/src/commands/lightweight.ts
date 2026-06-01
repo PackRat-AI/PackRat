@@ -17,15 +17,18 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const maxWeight = parseNonNegativeNumberArg(args['max-weight'], '--max-weight');
+    const maxWeight = parseNonNegativeNumberArg({
+      value: args['max-weight'],
+      argName: '--max-weight',
+    });
     const rows = await cache.findLightweight({
       category: args.category,
       maxWeightG: maxWeight,
       sites: parseCsvArg(args.sites),
-      limit: parsePositiveIntArg(args.limit, '--limit'),
+      limit: parsePositiveIntArg({ value: args.limit, argName: '--limit' }),
     });
-    printTable(
-      rows.map(({ site, name, brand, weight_g, price, weight_per_dollar }) => ({
+    printTable({
+      rows: rows.map(({ site, name, brand, weight_g, price, weight_per_dollar }) => ({
         site,
         name: String(name).slice(0, 40),
         brand,
@@ -33,7 +36,7 @@ export default defineCommand({
         price,
         'g/$': weight_per_dollar,
       })),
-      { title: `Lightweight Gear (≤${maxWeight}g)` },
-    );
+      options: { title: `Lightweight Gear (≤${maxWeight}g)` },
+    });
   },
 });

@@ -1,18 +1,11 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import {
-  type NewPack,
-  type NewPackItem,
-  type PackWithItems,
-  packItems,
-  packs,
-} from '@packrat/api/db/schema';
-import { PACK_CATEGORIES } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { PACK_CATEGORIES } from '@packrat/constants';
+import { type NewPack, type NewPackItem, type PackWithItems, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
 import { CatalogService } from './catalogService';
@@ -41,13 +34,11 @@ type PackItemConceptSchema = z.infer<typeof packItemConceptSchema>;
 
 export class PackService {
   private db;
-  private userId: number;
-  private readonly c: Context;
+  private userId: string;
 
-  constructor(c: Context, userId: number) {
-    this.db = createDb(c);
+  constructor(userId: string) {
     this.userId = userId;
-    this.c = c;
+    this.db = createDb();
   }
 
   async getPackDetails(packId: string): Promise<PackWithItems | null> {
@@ -63,40 +54,27 @@ export class PackService {
       },
     });
 
-    if (!pack) {
-      return null;
-    }
-
-    return computePackWeights(pack);
+    if (!pack) return null;
+    return computePackWeights({ pack });
   }
 
   async generatePacks(count: number) {
-    if (count < 1) {
-      throw new Error('Count must be a positive integer');
-    }
+    if (count < 1) throw new Error('Count must be a positive integer');
 
-    // 1. Generate pack concepts
     const concepts = await this.generatePackConcepts(count);
 
-    // 2. Search catalog for items
     const packsResult = await Promise.allSettled(
       concepts.map(async (concept) => {
         const packItems = await this.getItems(concept.items);
-        return {
-          ...concept,
-          items: packItems,
-        };
+        return { ...concept, items: packItems };
       }),
     );
 
-    // 3. Save the packs to db
     const createdPacks = await this.db.transaction(async (tx) => {
       const packsToInsert: NewPack[] = [];
       const itemsToInsert: NewPackItem[] = [];
       for (const packResult of packsResult) {
-        if (packResult.status === 'rejected') {
-          continue;
-        }
+        if (packResult.status === 'rejected') continue;
         const pack = packResult.value;
         const packId = crypto.randomUUID();
         packsToInsert.push({
@@ -124,9 +102,7 @@ export class PackService {
       }
 
       const createdPacks = await tx.insert(packs).values(packsToInsert).returning();
-
       await tx.insert(packItems).values(itemsToInsert);
-
       return createdPacks;
     });
 
@@ -134,13 +110,25 @@ export class PackService {
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
-    const { OPENAI_API_KEY } = getEnv(this.c);
-    const openai = createOpenAI({
-      apiKey: OPENAI_API_KEY,
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_AI_GATEWAY_ID,
+      CLOUDFLARE_API_TOKEN,
+      AI,
+    } = getEnv();
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: AI,
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
@@ -154,26 +142,24 @@ export class PackService {
   private async getItems(
     packItemConcepts: PackItemConceptSchema[],
   ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
-    const catalogService = new CatalogService(this.c);
-    const searchResults = await catalogService.batchVectorSearch(
-      packItemConcepts.map((item) => item.item),
-      1,
-    );
+    const catalogService = new CatalogService();
+    const searchResults = await catalogService.batchVectorSearch({
+      queries: packItemConcepts.map((item) => item.item),
+      limit: 1,
+    });
 
     return packItemConcepts
       .map((item, idx) => {
         const catalogItem = searchResults.items[idx]?.[0];
-        if (!catalogItem) {
-          return null;
-        }
+        if (!catalogItem) return null;
 
         return {
           ...item,
           catalogItemId: catalogItem.id,
           name: catalogItem.name,
           description: catalogItem.description,
-          weight: catalogItem.weight,
-          weightUnit: catalogItem.weightUnit,
+          weight: catalogItem.weight ?? 0,
+          weightUnit: catalogItem.weightUnit ?? 'g',
           image: catalogItem.images?.[0],
         };
       })

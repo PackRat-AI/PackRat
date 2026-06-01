@@ -1,11 +1,7 @@
+import type { UserSchema } from '@packrat/schemas/users';
+import type { z } from 'zod';
 import type { WeightUnit } from '../packs/types';
 
-export interface User {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string | null;
-  role: 'USER' | 'ADMIN';
-  preferredWeightUnit: WeightUnit;
-}
+export type User = z.infer<typeof UserSchema> & {
+  preferredWeightUnit?: WeightUnit;
+};

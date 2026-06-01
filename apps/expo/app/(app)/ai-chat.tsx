@@ -1,7 +1,11 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { DefaultChatTransport, type TextUIPart } from 'ai';
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithToolCalls,
+  type TextUIPart,
+} from 'ai';
 import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
@@ -18,11 +22,17 @@ import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
 import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
-import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
+import {
+  getLocalModel,
+  initLocalModel,
+  releaseLocalModel,
+} from 'expo-app/features/ai/lib/localModelManager';
 import { createLocalTools } from 'expo-app/features/ai/lib/tools';
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
+import { packsStore } from 'expo-app/features/packs/store/packs';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { authClient } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
@@ -31,6 +41,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import {
+  AppState,
   Dimensions,
   type NativeSyntheticEvent,
   Platform,
@@ -90,7 +101,9 @@ export default function AIChat() {
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
-  const token = useAtomValue(tokenAtom);
+  const { data: _authSession } = authClient.useSession();
+  const token = _authSession?.session?.token ?? null;
+  const userId = _authSession?.user?.id ?? '';
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -103,14 +116,38 @@ export default function AIChat() {
         id: '1',
         role: 'assistant',
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
+      } satisfies UIMessage,
     ],
     [context],
   );
 
-  // Kick off model init check on mount (prepares already-downloaded models)
+  // Kick off model init check on mount (prepares already-downloaded models).
+  // Release the model when the app backgrounds so the llama TurboModule can be
+  // properly invalidated — prevents "Timed out waiting for modules to be
+  // invalidated" crashes on hot reload and app restart.
   React.useEffect(() => {
-    if (featureFlags.enableLocalAI) initLocalModel();
+    if (!featureFlags.enableLocalAI) return;
+
+    initLocalModel();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        releaseLocalModel();
+      } else if (nextState === 'active') {
+        // Re-prepare the model when the app comes back to the foreground.
+        initLocalModel();
+      }
+    });
+
+    // In development, release before fast-refresh tears down native modules.
+    if (__DEV__) {
+      const devModule = module as unknown as { hot?: { dispose: (cb: () => void) => void } };
+      devModule.hot?.dispose(() => releaseLocalModel());
+    }
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   // Keep a ref for context body values so the transport closure stays fresh
@@ -122,34 +159,112 @@ export default function AIChat() {
   const isLocalReady = modelStatus === 'ready';
   const tools = React.useMemo(() => createLocalTools(), []);
 
-  const transport = React.useMemo(() => {
+  const { transport, transportKey } = React.useMemo(() => {
     if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
-        return new CustomChatTransport(model, tools);
-      }
-    }
-    return new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
-      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: () => ({
-        contextType: contextRef.current.contextType,
-        itemId: contextRef.current.itemId,
-        packId: contextRef.current.packId,
-        location: locationRef.current,
-        date: new Date().toLocaleString(),
-      }),
-    });
-  }, [aiMode, isLocalReady, token, tools]);
+        let systemPrompt = `You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
+      You help users manage their hiking packs and gear efficiently using ultralight principles.
 
-  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
+      Guidelines:
+      - Focus on ultralight hiking principles when appropriate
+      - For beginners, emphasize safety and comfort over weight savings
+      - Always consider weather conditions in your recommendations
+      - Suggest multi-purpose items to reduce pack weight
+      - Be concise but helpful in your responses
+      - Use tools proactively to provide accurate, up-to-date information
+
+      Context:
+      - User id is ${userId}
+      - Current date is ${new Date().toLocaleString()}`;
+
+        if (contextRef.current.contextType === 'pack' && contextRef.current.packId) {
+          systemPrompt += `\n- You are currently helping with a pack with ID: ${contextRef.current.packId}.`;
+        } else if (contextRef.current.contextType === 'item' && contextRef.current.itemId) {
+          systemPrompt += `\n- You are currently helping with an item with ID: ${contextRef.current.itemId}.`;
+        }
+
+        if (contextRef.current.location) {
+          systemPrompt += `\n- The current location of the user is: ${contextRef.current.location}.`;
+        }
+
+        return {
+          transport: new CustomChatTransport({ model, tools, systemPrompt }),
+          transportKey: 'local',
+        };
+      }
+    } else {
+    }
+    return {
+      transport: new DefaultChatTransport({
+        fetch: expoFetch as unknown as typeof globalThis.fetch,
+        api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: () => ({
+          contextType: contextRef.current.contextType,
+          itemId: contextRef.current.itemId,
+          packId: contextRef.current.packId,
+          location: locationRef.current,
+          date: new Date().toLocaleString(),
+        }),
+      }),
+      transportKey: 'remote',
+    };
+  }, [aiMode, isLocalReady, modelStatus, token, tools, userId]);
+
+  // transportKey forces useChat to remount when the transport type switches,
+  // since useChat captures the transport reference on mount and won't update it.
+  const { messages, setMessages, error, sendMessage, stop, status, addToolOutput } = useChat({
+    id: transportKey,
     transport,
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200,
     messages: initialMessages,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    onToolCall: ({ toolCall }) => {
+      if (toolCall.dynamic) return;
+
+      if (toolCall.toolName === 'getPackDetails') {
+        const { packId } = toolCall.input as { packId: string };
+        const pack = packsStore.get()[packId];
+        if (!pack || pack.deleted) {
+          addToolOutput({
+            tool: 'getPackDetails',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Pack not found' },
+          });
+          return;
+        }
+        const items = getPackItems(packId);
+        const categories = Array.from(new Set(items.map((i) => i.category || 'Uncategorized')));
+        addToolOutput({
+          tool: 'getPackDetails',
+          toolCallId: toolCall.toolCallId,
+          output: { success: true, data: { ...pack, items, categories } },
+        });
+        return;
+      }
+
+      if (toolCall.toolName === 'getPackItemDetails') {
+        const { itemId } = toolCall.input as { itemId: string };
+        const item = packItemsStore.get()[itemId];
+        if (!item || item.deleted) {
+          addToolOutput({
+            tool: 'getPackItemDetails',
+            toolCallId: toolCall.toolCallId,
+            output: { success: false, error: 'Item not found' },
+          });
+          return;
+        }
+        addToolOutput({
+          tool: 'getPackItemDetails',
+          toolCallId: toolCall.toolCallId,
+          output: { success: true, data: item },
+        });
+      }
+    },
   });
 
   // Load persisted messages on mount and when context changes
@@ -184,7 +299,7 @@ export default function AIChat() {
     }
 
     const timeoutId = setTimeout(() => {
-      saveChatMessages(context, messages);
+      saveChatMessages({ context, messages });
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -203,10 +318,13 @@ export default function AIChat() {
 
     // Guard: local mode but model not ready
     if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
-      Burnt.toast({
-        title: t('ai.modelNotReady'),
-        preset: 'error',
-      });
+      const toastTitle =
+        modelStatus === 'downloading'
+          ? t('ai.modelStillDownloading')
+          : modelStatus === 'preparing' || modelStatus === 'checking'
+            ? t('ai.modelStillLoading')
+            : t('ai.modelNotReady');
+      Burnt.toast({ title: toastTitle, preset: 'error' });
       return;
     }
 
@@ -290,7 +408,11 @@ export default function AIChat() {
           }}
         >
           <View>
-            <View style={{ height: HEADER_HEIGHT + insets.top }} />
+            <View
+              style={{
+                height: Platform.OS === 'ios' ? insets.top + 52 : HEADER_HEIGHT + insets.top,
+              }}
+            />
             <LocationContext location={location} onSetLocation={setLocation} />
             <DateSeparator
               date={new Date().toLocaleDateString('en-US', {
@@ -327,7 +449,9 @@ export default function AIChat() {
               className="self-start ml-4 mb-8"
             />
           )}
-          {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+          {status === 'error' && (
+            <ErrorState error={error} onRetry={() => handleRetry()} onClear={handleClear} />
+          )}
           {messages.length < 2 && (
             <View className="pl-4 pr-16">
               <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>

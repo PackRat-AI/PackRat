@@ -1,0 +1,427 @@
+name: Release Cut
+
+# Manually triggered. Accepts a version, runs pre-flight checks, cuts a
+# release branch from development, bumps the version, generates a changelog,
+# creates a GitHub release, opens a PR to main, and — if the API hasn't
+# changed since the last release — immediately queues EAS production builds
+# with auto-submit for both stores.
+#
+# If the API has changed, the EAS build is deferred to release-deploy.yml
+# which triggers automatically when the release PR merges to main.
+#
+# DRY-RUN MODE (dry_run: true)
+# All local operations run — pre-flight, branch creation, version bump,
+# lockfile refresh, changelog generation, API-change detection — so you
+# see exactly what a real run would do. Remote writes are skipped:
+#   • git push (branch + tag)
+#   • GitHub Release creation
+#   • PR creation
+#   • EAS builds + store submissions
+#   • Sentry release creation
+# A step summary is written at the end of every run (dry or live) listing
+# all computed values and the actions that were (or would have been) taken.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version — semver without leading v (e.g. 2.0.27)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run — validate and preview without pushing, creating releases, or building'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-cut
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# ── Pre-flight ───────────────────────────────────────────────────────────────
+# All three jobs run in parallel regardless of dry_run — the whole point of
+# dry-run is to verify these pass before you commit to a real release.
+
+jobs:
+  preflight-typecheck:
+    name: Pre-flight · Type check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bun check-types
+
+  preflight-lint:
+    name: Pre-flight · Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun biome check
+
+  preflight-tests:
+    name: Pre-flight · Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: API unit tests
+        run: bun test:api:unit
+
+      - name: Expo unit tests
+        run: bun test:expo
+
+  # ── Cut release branch ──────────────────────────────────────────────────
+  cut:
+    name: Cut release branch${{ inputs.dry_run && ' (dry run)' || '' }}
+    needs: [preflight-typecheck, preflight-lint, preflight-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.norm.outputs.version }}
+      tag: ${{ steps.norm.outputs.tag }}
+      branch: ${{ steps.norm.outputs.branch }}
+      api_changed: ${{ steps.api_check.outputs.changed }}
+    steps:
+      - name: Normalize version input
+        id: norm
+        run: |
+          V="${{ inputs.version }}"
+          V="${V#v}"
+          echo "version=$V"         >> "$GITHUB_OUTPUT"
+          echo "tag=v$V"            >> "$GITHUB_OUTPUT"
+          echo "branch=release/v$V" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: development
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch (local)
+        run: git checkout -b ${{ steps.norm.outputs.branch }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (frozen)
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Bump version
+        # bump.ts bumps all package.json files + app.config.ts, commits
+        # "chore: bump version to vX.Y.Z", and creates the local git tag.
+        # Runs in dry-run mode too — the local commit/tag confirm the bump
+        # script works; neither is pushed without the push step below.
+        run: bun bump ${{ steps.norm.outputs.version }}
+
+      - name: Validate bump output
+        run: |
+          git tag --list '${{ steps.norm.outputs.tag }}' | grep -q . || \
+            { echo "ERROR: bun bump did not create tag ${{ steps.norm.outputs.tag }}"; exit 1; }
+
+      - name: Refresh lockfile after version bump
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: |
+          bun install
+          if ! git diff --quiet bun.lock; then
+            git add bun.lock
+            git commit -m "chore: update lockfile for ${{ steps.norm.outputs.tag }}"
+          fi
+
+      - name: Retag HEAD after lockfile refresh
+        # If the lockfile refresh created a new commit, the tag from bun bump
+        # points at the pre-lockfile commit. Force-move it to HEAD so the tag
+        # and the release branch tip always refer to the same SHA.
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse ${{ steps.norm.outputs.tag }})" ]; then
+            git tag -f ${{ steps.norm.outputs.tag }} HEAD
+          fi
+
+      - name: Push release branch and tag
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git push origin ${{ steps.norm.outputs.branch }}
+          git push origin ${{ steps.norm.outputs.tag }}
+
+      - name: '[dry-run] Would push branch and tag'
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "DRY RUN — skipping remote push."
+          echo "  Would push branch: ${{ steps.norm.outputs.branch }}"
+          echo "  Would push tag:    ${{ steps.norm.outputs.tag }}"
+          git log --oneline -3
+
+      - name: Detect API changes since last release
+        id: api_check
+        run: |
+          # New tag is first in the sorted list; previous release is second.
+          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p' || true)
+          echo "Previous release tag: ${PREV_TAG:-<none>}"
+          if [ -z "$PREV_TAG" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          elif git diff "$PREV_TAG" HEAD -- packages/api/ | grep -q .; then
+            echo "API changes detected since $PREV_TAG"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No API changes since $PREV_TAG"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p' || true)
+          RANGE="${PREV_TAG:+${PREV_TAG}..HEAD}"
+
+          FEATS=$(git log ${RANGE} --pretty=format:"%s (%h)" --no-merges \
+            | grep -E "^feat(\(.+\))?: " | sed 's/^/- /' || true)
+          FIXES=$(git log ${RANGE} --pretty=format:"%s (%h)" --no-merges \
+            | grep -E "^fix(\(.+\))?: "  | sed 's/^/- /' || true)
+          PERF=$(git log ${RANGE}  --pretty=format:"%s (%h)" --no-merges \
+            | grep -E "^perf(\(.+\))?: " | sed 's/^/- /' || true)
+          OTHER=$(git log ${RANGE} --pretty=format:"%s (%h)" --no-merges \
+            | grep -vE "^(feat|fix|perf|chore|ci|docs|test|build|style|refactor)(\(.+\))?: " \
+            | sed 's/^/- /' | head -20 || true)
+
+          BODY=""
+          [ -n "$FEATS" ] && BODY+="### Features"$'\n'"$FEATS"$'\n\n'
+          [ -n "$FIXES" ] && BODY+="### Bug Fixes"$'\n'"$FIXES"$'\n\n'
+          [ -n "$PERF"  ] && BODY+="### Performance"$'\n'"$PERF"$'\n\n'
+          [ -n "$OTHER" ] && BODY+="### Other Changes"$'\n'"$OTHER"$'\n\n'
+          [ -z "$BODY"  ] && BODY="No notable changes."
+
+          {
+            echo "body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.norm.outputs.tag }}
+          name: PackRat ${{ steps.norm.outputs.tag }}
+          body: |
+            ## What's New
+
+            ${{ steps.changelog.outputs.body }}
+            ---
+            Download on the [App Store](https://apps.apple.com/app/id6499243187) · [Google Play](https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1)
+
+      - name: Open PR to main
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ steps.api_check.outputs.changed }}" = "true" ]; then
+            API_NOTE="Yes — EAS build and store submission will trigger automatically after this PR merges."
+          else
+            API_NOTE="No — EAS build and store submission have already been queued."
+          fi
+
+          gh pr create \
+            --base  main \
+            --head  "${{ steps.norm.outputs.branch }}" \
+            --title "Release ${{ steps.norm.outputs.tag }}" \
+            --body "## Release ${{ steps.norm.outputs.tag }}
+
+          Automated release PR cut from \`development\`.
+
+          **API changed since last release:** ${API_NOTE}
+
+          ### Checklist
+          - [ ] Changelog reviewed
+          - [ ] Version numbers verified
+          - [ ] QA sign-off"
+
+      # Always written — gives a clear record of what happened (or would have).
+      - name: Write step summary
+        if: always()
+        run: |
+          DRY="${{ inputs.dry_run }}"
+          API_CHANGED="${{ steps.api_check.outputs.changed }}"
+          PREV_TAG=$(git tag --sort=-version:refname | grep '^v' | sed -n '2p' || echo '<none>')
+
+          if [ "$DRY" = "true" ]; then
+            MODE="**DRY RUN** — no remote changes made"
+          else
+            MODE="**Live run**"
+          fi
+
+          if [ "$API_CHANGED" = "true" ]; then
+            EAS_NOTE="Deferred — API changed. EAS build will trigger when the release PR merges to main via \`release-deploy.yml\`."
+          else
+            if [ "$DRY" = "true" ]; then
+              EAS_NOTE="Would queue immediately (API unchanged). Skipped in dry-run."
+            else
+              EAS_NOTE="Queued immediately (API unchanged)."
+            fi
+          fi
+
+          {
+            echo "## Release Cut Summary"
+            echo ""
+            echo "> ${MODE}"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`${{ steps.norm.outputs.version }}\` |"
+            echo "| Tag | \`${{ steps.norm.outputs.tag }}\` |"
+            echo "| Release branch | \`${{ steps.norm.outputs.branch }}\` |"
+            echo "| Previous release | \`${PREV_TAG}\` |"
+            echo "| API changed | ${API_CHANGED} |"
+            echo ""
+            echo "### Changelog preview"
+            echo ""
+            echo "${{ steps.changelog.outputs.body }}"
+            echo ""
+            echo "### Remote actions"
+            echo ""
+            if [ "$DRY" = "true" ]; then
+              echo "- [ ] Branch pushed to origin (skipped)"
+              echo "- [ ] Tag pushed to origin (skipped)"
+              echo "- [ ] GitHub Release created (skipped)"
+              echo "- [ ] PR opened to main (skipped)"
+              echo "- [ ] EAS build: ${EAS_NOTE}"
+            else
+              echo "- [x] Branch pushed to origin"
+              echo "- [x] Tag pushed to origin"
+              echo "- [x] GitHub Release created"
+              echo "- [x] PR opened to main"
+              echo "- [ ] EAS build: ${EAS_NOTE}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ── EAS build — immediate path (API unchanged, live run) ────────────────
+  eas-build:
+    name: EAS Production Build + Submit
+    needs: [cut]
+    if: needs.cut.outputs.api_changed == 'false' && !inputs.dry_run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.cut.outputs.branch }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install --frozen-lockfile
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build + Submit · iOS
+        working-directory: apps/expo
+        run: eas build --platform ios --profile production --non-interactive --auto-submit
+
+      - name: EAS Build + Submit · Android
+        working-directory: apps/expo
+        run: eas build --platform android --profile production --non-interactive --auto-submit
+
+      - name: Create Sentry release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          bunx @sentry/cli releases new "${{ needs.cut.outputs.version }}"
+          bunx @sentry/cli releases set-commits "${{ needs.cut.outputs.version }}" --auto
+          bunx @sentry/cli releases finalize "${{ needs.cut.outputs.version }}"
+
+  # ── EAS build — dry-run preview (API unchanged, dry-run) ────────────────
+  eas-build-dryrun:
+    name: '[dry-run] EAS Production Build + Submit preview'
+    needs: [cut]
+    if: needs.cut.outputs.api_changed == 'false' && inputs.dry_run
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Show what would run
+        run: |
+          echo "DRY RUN — EAS production build and store submission skipped."
+          echo ""
+          echo "Commands that would execute against version ${{ needs.cut.outputs.version }}:"
+          echo ""
+          echo "  eas build --platform ios     --profile production --non-interactive --auto-submit"
+          echo "  eas build --platform android --profile production --non-interactive --auto-submit"
+          echo ""
+          echo "  sentry-cli releases new       ${{ needs.cut.outputs.version }}"
+          echo "  sentry-cli releases set-commits ${{ needs.cut.outputs.version }} --auto"
+          echo "  sentry-cli releases finalize  ${{ needs.cut.outputs.version }}"
+          echo ""
+          echo "EAS submit profile (from apps/expo/eas.json):"
+          echo "  iOS:     ASC App ID 6499243187"
+          echo "  Android: track=production"
+
+      - name: Write EAS dry-run summary
+        run: |
+          {
+            echo "## EAS Build Dry-run"
+            echo ""
+            echo "| Platform | Profile | Auto-submit |"
+            echo "|---|---|---|"
+            echo "| iOS | production | App Store (ASC 6499243187) |"
+            echo "| Android | production | Play Store (track: production) |"
+            echo ""
+            echo "Sentry release \`${{ needs.cut.outputs.version }}\` would be created and finalized."
+          } >> "$GITHUB_STEP_SUMMARY"

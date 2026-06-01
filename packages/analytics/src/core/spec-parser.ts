@@ -7,6 +7,7 @@
  */
 
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { isString } from '@packrat/guards';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 
@@ -79,12 +80,12 @@ const FABRIC_PATTERNS = [
 
 // ── Unit Conversion ───────────────────────────────────────────────────
 
-function toGrams(value: number, unit: string): number | null {
+function toGrams({ value, unit }: { value: number; unit: string }): number | null {
   const factor = WEIGHT_CONVERSIONS[unit.toLowerCase()];
   return factor ? Math.round(value * factor * 100) / 100 : null;
 }
 
-function toFahrenheit(value: number, unit: string): number {
+function toFahrenheit({ value, unit }: { value: number; unit: string }): number {
   if (unit.toUpperCase() === 'C') return Math.round((value * 9) / 5 + 32);
   return value;
 }
@@ -102,7 +103,7 @@ export function parseWeightGrams(text: string): number | null {
 
   const simple = WEIGHT_SIMPLE.exec(text);
   if (simple?.[1] !== undefined && simple[2] !== undefined) {
-    return toGrams(Number.parseFloat(simple[1]), simple[2]);
+    return toGrams({ value: Number.parseFloat(simple[1]), unit: simple[2] });
   }
   return null;
 }
@@ -117,12 +118,12 @@ export function parseTempRatingF(text: string): number | null {
   const range = TEMP_RANGE.exec(text);
   if (range?.[1] !== undefined && range[2] !== undefined && range[3] !== undefined) {
     const lower = Math.min(Number.parseInt(range[1], 10), Number.parseInt(range[2], 10));
-    return toFahrenheit(lower, range[3]);
+    return toFahrenheit({ value: lower, unit: range[3] });
   }
 
   const single = TEMP_SINGLE.exec(text);
   if (single?.[1] !== undefined && single[2] !== undefined) {
-    return toFahrenheit(Number.parseInt(single[1], 10), single[2]);
+    return toFahrenheit({ value: Number.parseInt(single[1], 10), unit: single[2] });
   }
   return null;
 }
@@ -214,10 +215,15 @@ export function extractSpecsFromRow(row: ProductRow): ProductSpecs {
 const SPECS_TABLE = 'parsed_specs';
 
 export class SpecParser {
-  constructor(
-    private readonly conn: DuckDBConnection,
-    private readonly sourceTable = 'gear_data',
-  ) {}
+  constructor({
+    conn,
+    sourceTable = 'gear_data',
+  }: { conn: DuckDBConnection; sourceTable?: string }) {
+    this.conn = conn;
+    this.sourceTable = sourceTable;
+  }
+  private readonly conn: DuckDBConnection;
+  private readonly sourceTable: string;
 
   /** Parse all products and store results in DuckDB. */
   async build(batchSize = 10_000): Promise<{ total: number; parsed: number }> {
@@ -235,7 +241,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow));
+      allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow)); // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     }
 
     // Create specs table
@@ -259,7 +265,7 @@ export class SpecParser {
           const v = (x: unknown) =>
             x === null || x === undefined
               ? 'NULL'
-              : typeof x === 'string'
+              : isString(x)
                 ? `'${SQLFragments.escapeSql(String(x))}'`
                 : String(x);
           return `(${v(s.site)}, ${v(s.name)}, ${v(s.brand)}, ${v(s.category)}, ${v(s.price)}, ${v(s.product_url)}, ${v(s.weight_grams)}, ${v(s.capacity_liters)}, ${v(s.temp_rating_f)}, ${v(s.fill_power)}, ${v(s.waterproof_rating)}, ${v(s.seasons)}, ${v(s.gender)}, ${v(s.fabric)})`;
@@ -286,7 +292,13 @@ export class SpecParser {
   }
 
   /** Search products by name/brand and return parsed specs. */
-  async getProductSpecs(query: string, limit = 10): Promise<ProductSpecs[]> {
+  async getProductSpecs({
+    query,
+    limit = 10,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<ProductSpecs[]> {
     const kw = SQLFragments.escapeSql(query.toLowerCase());
     const result = await this.conn.runAndReadAll(`
       SELECT * FROM ${SPECS_TABLE}
@@ -300,7 +312,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 
@@ -355,7 +367,7 @@ export class SpecParser {
         const col = columns[i];
         if (col !== undefined) obj[col] = row[i];
       }
-      return obj as unknown as ProductSpecs;
+      return obj as unknown as ProductSpecs; // safe-cast: DuckDB query result matches this row schema — columns are mapped by name
     });
   }
 }

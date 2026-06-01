@@ -34,7 +34,13 @@ export default function SeasonSuggestionsScreen() {
     });
   };
 
-  const handleCreatePack = (suggestion: PackSuggestion, index: number) => {
+  const handleCreatePack = ({
+    suggestion,
+    index,
+  }: {
+    suggestion: PackSuggestion;
+    index: number;
+  }) => {
     setCreatingPackIndex(index);
 
     // Add a short delay to show the loading state
@@ -49,10 +55,10 @@ export default function SeasonSuggestionsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <>
       <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
 
-      <ScrollView className="flex-1 px-4">
+      <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">
           <View className="mb-6">
             <Text variant="body" className="text-muted-foreground">
@@ -73,8 +79,9 @@ export default function SeasonSuggestionsScreen() {
             ) : (
               <View className="flex-row items-center">
                 <Icon
+                  namingScheme="sfSymbol"
+                  name="sparkles"
                   materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
-                  ios={{ name: 'sparkles' }}
                   size={18}
                   color="white"
                 />
@@ -99,8 +106,9 @@ export default function SeasonSuggestionsScreen() {
               <View className="flex-row items-center gap-2 mb-4">
                 <View className="flex-row items-center gap-1">
                   <Icon
+                    namingScheme="sfSymbol"
+                    name="leaf"
                     materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
-                    ios={{ name: 'leaf' }}
                     size={16}
                     color={colors.grey}
                   />
@@ -111,8 +119,9 @@ export default function SeasonSuggestionsScreen() {
                 <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                 <View className="flex-row items-center gap-1">
                   <Icon
+                    namingScheme="sfSymbol"
+                    name="mappin"
                     materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
-                    ios={{ name: 'mappin' }}
                     size={16}
                     color={colors.grey}
                   />
@@ -151,7 +160,7 @@ export default function SeasonSuggestionsScreen() {
 
                   <Button
                     variant="secondary"
-                    onPress={() => handleCreatePack(suggestion, index)}
+                    onPress={() => handleCreatePack({ suggestion, index })}
                     disabled={creatingPackIndex === index}
                     className="w-full"
                   >
@@ -180,6 +189,6 @@ export default function SeasonSuggestionsScreen() {
         onSelect={handleGenerateSuggestions}
         selectText={t('auth.next')}
       />
-    </View>
+    </>
   );
 }

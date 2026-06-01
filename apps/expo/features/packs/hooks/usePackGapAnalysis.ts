@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 export interface GapAnalysisRequest {
   destination?: string;
   tripType?: string;
-  duration?: string;
+  duration?: number;
   startDate?: string;
   endDate?: string;
 }
@@ -22,25 +22,22 @@ export interface GapAnalysisResponse {
   summary?: string;
 }
 
-// API function
-export const analyzePackGaps = async (
-  packId: string,
-  context?: GapAnalysisRequest,
-): Promise<GapAnalysisResponse> => {
-  try {
-    const response = await axiosInstance.post(`/api/packs/${packId}/gap-analysis`, context || {});
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    console.log('Gap Analysis Error:', JSON.stringify(error));
-    throw new Error(`Failed to analyze pack gaps: ${message}`);
-  }
+export const analyzePackGaps = async ({
+  packId,
+  context,
+}: {
+  packId: string;
+  context?: GapAnalysisRequest;
+}): Promise<GapAnalysisResponse> => {
+  const { data, error } = await apiClient.packs({ packId })['gap-analysis'].post(context ?? {});
+  if (error) throw new Error(`Failed to analyze pack gaps: ${error.value}`);
+  // safe-cast: treaty response shape matches GapAnalysisResponse as validated by the API schema
+  return data as unknown as GapAnalysisResponse;
 };
 
-// Hook
 export function usePackGapAnalysis() {
   return useMutation({
     mutationFn: ({ packId, context }: { packId: string; context?: GapAnalysisRequest }) =>
-      analyzePackGaps(packId, context),
+      analyzePackGaps({ packId, context }),
   });
 }

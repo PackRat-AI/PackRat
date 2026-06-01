@@ -10,9 +10,12 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const rows = await cache.analyzeBrand(args.name, parseCsvArg(args.sites));
-    printTable(rows as unknown as Record<string, unknown>[], {
-      title: `Brand Analysis: "${args.name}"`,
+    const rows = await cache.analyzeBrand({ brandName: args.name, sites: parseCsvArg(args.sites) });
+    printTable({
+      rows,
+      options: {
+        title: `Brand Analysis: "${args.name}"`,
+      },
     });
   },
 });

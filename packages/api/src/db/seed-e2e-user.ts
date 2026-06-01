@@ -10,6 +10,7 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { nodeEnv } from '@packrat/env/node';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
@@ -17,7 +18,6 @@ import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-post
 import { Client } from 'pg';
 import WebSocket from 'ws';
 import { hashPassword } from '../utils/auth';
-import * as schema from './schema';
 
 neonConfig.webSocketConstructor = WebSocket;
 
@@ -64,17 +64,22 @@ async function seedE2EUser() {
       .where(eq(schema.users.email, normalizedEmail))
       .limit(1);
 
+    let userId: string;
     const existingUser = existing[0];
     if (existingUser) {
+      userId = existingUser.id;
       await db
         .update(schema.users)
         .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
-        .where(eq(schema.users.id, existingUser.id));
-      console.log(`E2E user refreshed: ${normalizedEmail} (id=${existingUser.id})`);
+        .where(eq(schema.users.id, userId));
+      console.log(`E2E user refreshed: ${normalizedEmail} (id=${userId})`);
     } else {
+      userId = crypto.randomUUID();
       const [inserted] = await db
         .insert(schema.users)
         .values({
+          id: userId,
+          name: 'E2E Automation',
           email: normalizedEmail,
           passwordHash,
           emailVerified: true,
@@ -83,8 +88,28 @@ async function seedE2EUser() {
           role: 'USER',
         })
         .returning();
-      console.log(`E2E user created: ${normalizedEmail} (id=${inserted?.id})`);
+      userId = inserted?.id ?? userId;
+      console.log(`E2E user created: ${normalizedEmail} (id=${userId})`);
     }
+
+    // Upsert the credential account row that better-auth looks up during sign-in.
+    // better-auth sets accountId = email for the 'credential' provider.
+    await db
+      .insert(schema.account)
+      .values({
+        id: crypto.randomUUID(),
+        accountId: normalizedEmail,
+        providerId: 'credential',
+        userId,
+        password: passwordHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [schema.account.providerId, schema.account.accountId],
+        set: { userId, password: passwordHash, updatedAt: new Date() },
+      });
+    console.log(`E2E credential account upserted for: ${normalizedEmail}`);
   } finally {
     await pgClient?.end();
   }
