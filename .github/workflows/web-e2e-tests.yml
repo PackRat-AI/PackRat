@@ -31,6 +31,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  E2E_DB_URL: postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e
+  E2E_API_URL: http://localhost:8787
+
 jobs:
   e2e-gate:
     name: Check E2E prerequisites
@@ -43,9 +47,9 @@ jobs:
         name: Verify E2E secrets are available
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
         run: |
-          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$NEON_DATABASE_URL" ]; then
+          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$E2E_TEST_PASSWORD" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -60,7 +64,7 @@ jobs:
     timeout-minutes: 30
 
     env:
-      # The E2E user is upserted into the dev DB by the seed step below,
+      # The E2E user is upserted into the local DB by the seed step below,
       # so both email and password are driven entirely by repo secrets.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -91,22 +95,83 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install chromium --with-deps
 
+      - name: Write local API E2E vars
+        env:
+          E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
+        run: |
+          cat > packages/api/.dev.vars.e2e << 'DEVVARS'
+          ADMIN_USERNAME=admin
+          ADMIN_PASSWORD=gobuffs
+          PACKRAT_API_KEY=secret
+          EMAIL_PROVIDER=resend
+          RESEND_API_KEY=e2e-resend-stub-not-used-in-web-e2e
+          EMAIL_FROM=no-reply@e2e.packrattest.local
+          AI_PROVIDER=openai
+          OPENAI_API_KEY=sk-e2e-stub-not-used-in-web-e2e
+          GOOGLE_GENERATIVE_AI_API_KEY=e2e-stub-not-used
+          PERPLEXITY_API_KEY=e2e-perplexity-stub-not-used-in-web-e2e
+          GOOGLE_CLIENT_ID=e2e-google-client-id
+          GOOGLE_CLIENT_SECRET=e2e-google-client-secret
+          APPLE_CLIENT_ID=com.packratai.e2e
+          APPLE_PRIVATE_KEY=e2e-apple-private-key-stub
+          APPLE_KEY_ID=E2EAPLKEY1
+          APPLE_TEAM_ID=E2ETEAMID1
+          CLOUDFLARE_ACCOUNT_ID=e2eaccountid
+          CLOUDFLARE_AI_GATEWAY_ID=ai-chat-gateway
+          R2_ACCESS_KEY_ID=e2er2accesskey
+          R2_SECRET_ACCESS_KEY=e2e-r2-secret-stub
+          PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-e2e
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides-e2e
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-e2e
+          R2_PUBLIC_URL=https://pub-e2estub.r2.dev
+          PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
+          PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
+          DEVVARS
+
+          printf 'BETTER_AUTH_SECRET=%s\n' \
+            "${E2E_BETTER_AUTH_SECRET:-e2e-better-auth-secret-at-least-32-chars}" \
+            >> packages/api/.dev.vars.e2e
+          printf 'WEATHER_API_KEY=%s\n' \
+            "${WEATHER_API_KEY:-e2e-fake-weather-key}" \
+            >> packages/api/.dev.vars.e2e
+          printf 'OPENWEATHER_KEY=%s\n' \
+            "${OPENWEATHER_KEY:-e2e-fake-weather-key}" \
+            >> packages/api/.dev.vars.e2e
+
+      - name: Start local API stack
+        env:
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+          PORT: "8787"
+        run: |
+          bun run --filter @packrat/api dev:e2e \
+            > /tmp/packrat-web-e2e-api.log 2>&1 &
+          echo "PACKRAT_WEB_E2E_API_PID=$!" >> "$GITHUB_ENV"
+
+          echo "Waiting for API to be ready on ${E2E_API_URL}/health ..."
+          for i in $(seq 1 45); do
+            if curl -sf "${E2E_API_URL}/health" > /dev/null; then
+              echo "API ready."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::local E2E API did not become ready"
+          cat /tmp/packrat-web-e2e-api.log
+          exit 1
+
       - name: Build Expo web app
         working-directory: apps/expo
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_API_URL: ${{ env.E2E_API_URL }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
           EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
         run: bunx expo export -p web --output-dir dist
-
-      - name: Seed E2E test user in dev DB
-        run: bun run --filter @packrat/api db:seed:e2e-user
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
       - name: Serve web app (SPA mode, port 8081)
         working-directory: apps/expo
@@ -125,8 +190,8 @@ jobs:
         working-directory: apps/expo
         env:
           BASE_URL: http://localhost:8081
-          API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          API_URL: ${{ env.E2E_API_URL }}
+          NEON_DATABASE_URL: ${{ env.E2E_DB_URL }}
           CI: "true"
         run: bun test:web
 
