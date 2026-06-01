@@ -133,6 +133,7 @@ jobs:
         working-directory: packages/api
         run: |
           cat > .dev.vars <<EOF
+          ENVIRONMENT=development
           NEON_DATABASE_URL=${NEON_DATABASE_URL}
           NEON_DATABASE_URL_READONLY=${NEON_DATABASE_URL_READONLY}
           BETTER_AUTH_URL=http://localhost:${API_PORT}
