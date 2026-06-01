@@ -19,10 +19,15 @@ const bin = useTsgo ? 'tsgo' : 'tsc';
 const label = useTsgo ? 'tsgo (native-preview)' : 'tsc';
 console.log(`▸ check-types via ${label}`);
 
-const { status } = spawnSync(bin, ['--noEmit', ...forwarded], {
+const { status, error } = spawnSync(bin, ['--noEmit', ...forwarded], {
   stdio: 'inherit',
   // `bun run` puts node_modules/.bin on PATH; resolve from there.
   env: process.env,
 });
+
+if (error) {
+  console.error(`Failed to spawn ${bin}: ${error.message}`);
+  process.exit(1);
+}
 
 process.exit(status ?? 1);

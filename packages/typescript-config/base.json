@@ -3,6 +3,7 @@
   "display": "Base",
   "compilerOptions": {
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "module": "ESNext",
