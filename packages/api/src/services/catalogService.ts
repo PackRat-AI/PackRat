@@ -339,10 +339,32 @@ export class CatalogService {
    * - For each item, insert or update only non-empty fields
    */
 
-  async upsertCatalogItems(items: NewCatalogItem[]): Promise<Pick<CatalogItem, 'id'>[]> {
+  async upsertCatalogItems(
+    items: NewCatalogItem[],
+  ): Promise<Pick<CatalogItem, 'id' | 'sku' | 'name' | 'description' | 'categories' | 'brand'>[]> {
     const columns = getTableColumns(catalogItems);
 
-    const upsertedItems = await this.db
+    // Project only the fields downstream needs: id + sku for tracking, plus the
+    // embedding-watched fields (name, description, categories, brand) the regen
+    // diff below reads. Stops Postgres from shipping full rows incl. 1536-dim
+    // embedding + reviews/qas/faqs back per 100-row batch.
+    //
+    // Type note: Drizzle 0.45.x narrows the insert query type after
+    // `.onConflictDoUpdate()` such that the field-projected `.returning()`
+    // overload is no longer visible — only the no-arg version. The runtime
+    // honors the fields object regardless, so we cast the call site to the
+    // base shape and annotate the return type explicitly. Cost win lands in
+    // SQL (`RETURNING id, sku, name, description, categories, brand`).
+    const returningFields = {
+      id: catalogItems.id,
+      sku: catalogItems.sku,
+      name: catalogItems.name,
+      description: catalogItems.description,
+      categories: catalogItems.categories,
+      brand: catalogItems.brand,
+    };
+
+    const upsertQuery = this.db
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
@@ -364,16 +386,24 @@ export class CatalogService {
           }
           return acc;
         }, {}),
-      })
-      .returning();
+      });
 
-    // Check if any embedding-related fields have changed
-    const embeddingFields: Array<keyof CatalogItem> = [
-      'name',
-      'description',
-      'categories',
-      'brand',
-    ];
+    // Cast the call site to bypass the 0.45.x overload-narrowing; the explicit
+    // return-type annotation on the function keeps consumer-facing safety.
+    const upsertedItems = await (
+      upsertQuery as unknown as {
+        returning: (
+          fields: typeof returningFields,
+        ) => Promise<
+          Pick<CatalogItem, 'id' | 'sku' | 'name' | 'description' | 'categories' | 'brand'>[]
+        >;
+      }
+    ).returning(returningFields);
+
+    // Check if any embedding-related fields have changed. Scope to the keys
+    // present in the narrowed `.returning(...)` projection above so TS can
+    // index both `inputItem[field]` and `item[field]` without complaint.
+    const embeddingFields = ['name', 'description', 'categories', 'brand'] as const;
 
     const itemsToUpdate = upsertedItems.filter((item) => {
       const inputItem = items.find((i) => i.sku === item.sku);
@@ -386,8 +416,15 @@ export class CatalogService {
     });
 
     if (itemsToUpdate.length > 0) {
-      // Regenerate embeddings for updated items
-      const embeddingTexts = itemsToUpdate.map((item) => getEmbeddingText({ item }));
+      // Regenerate embeddings for updated items. Use the INPUT items as the
+      // source text — they have every field getEmbeddingText reads
+      // (model, variants, techs, color, size, material, reviews, qas, faqs).
+      // The narrow `.returning(...)` projection above does not include those,
+      // so the returned rows can't feed the helper.
+      const embeddingTexts = itemsToUpdate.map((item) => {
+        const inputItem = items.find((i) => i.sku === item.sku);
+        return getEmbeddingText({ item: inputItem ?? item });
+      });
       const embeddings = await generateManyEmbeddings({
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,

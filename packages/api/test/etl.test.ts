@@ -269,7 +269,7 @@ describe('processValidItemsBatch', () => {
 // Postgres to the Worker on every 100-row batch insert.
 // ─────────────────────────────────────────────────────────────────────────────
 describe('upsertCatalogItems return shape (U1 characterization)', () => {
-  it('today: returns full rows including embedding + fat JSONB (U2 will narrow)', async () => {
+  it('post-U2: returns only {id, sku, name, description, categories, brand} (no embedding or fat JSONB)', async () => {
     const service = new CatalogService({ explicitEnv: TEST_ENV as any, useHttpDriver: true });
 
     const sku = `U1-SHAPE-${Date.now()}`;
@@ -289,25 +289,25 @@ describe('upsertCatalogItems return shape (U1 characterization)', () => {
     expect(result.length).toBe(1);
     const returned = result[0] as Record<string, unknown>;
 
-    // Today: `.returning()` (no arg) returns every column. embedding is null
-    // for a fresh insert, but the COLUMN is included in the returned row shape.
-    // U2 flips this to `.returning({id, sku, name, description, categories, brand})`
-    // and these assertions become `.not.toHaveProperty(...)` for the dropped fields.
+    // Post-U2: `.returning(...)` projects only the fields the regen diff and
+    // downstream callers actually read. Cost win: full catalog rows
+    // (~50-100KB each with fat JSONB + embedding) no longer ship from Postgres
+    // back to the Worker on every ETL batch insert.
     expect(returned).toHaveProperty('id');
     expect(returned).toHaveProperty('sku');
     expect(returned).toHaveProperty('name');
     expect(returned).toHaveProperty('description');
     expect(returned).toHaveProperty('categories');
     expect(returned).toHaveProperty('brand');
-    // The cost-bearing leak — these are present today, dropped post-U2:
-    expect(returned).toHaveProperty('embedding');
-    expect(returned).toHaveProperty('reviews');
-    expect(returned).toHaveProperty('qas');
-    expect(returned).toHaveProperty('faqs');
-    expect(returned).toHaveProperty('techs');
-    expect(returned).toHaveProperty('links');
-    expect(returned).toHaveProperty('variants');
-    expect(returned).toHaveProperty('images');
+    // The cost-bearing leak — these are gone post-U2:
+    expect(returned).not.toHaveProperty('embedding');
+    expect(returned).not.toHaveProperty('reviews');
+    expect(returned).not.toHaveProperty('qas');
+    expect(returned).not.toHaveProperty('faqs');
+    expect(returned).not.toHaveProperty('techs');
+    expect(returned).not.toHaveProperty('links');
+    expect(returned).not.toHaveProperty('variants');
+    expect(returned).not.toHaveProperty('images');
   });
 
   it('embedding regen trigger fires when input differs from existing on a watched field', async () => {
