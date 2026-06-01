@@ -44,6 +44,7 @@
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
     "portless:check": "bun run scripts/portless-check.ts",
     "portless:setup": "bash scripts/portless-setup.sh",
+    "portless:urls": "bun run scripts/portless-urls.ts",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:api-client:types": "vitest run --config packages/api-client/vitest.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
