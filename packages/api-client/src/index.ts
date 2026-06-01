@@ -1,6 +1,6 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
-import { isObject, isString } from '@packrat/guards';
+import { isFunction, isObject, isString } from '@packrat/guards';
 import { safeJsonStringify } from '@packrat/utils';
 
 /**
@@ -37,9 +37,7 @@ export type ApiClientConfig = {
  * other.
  */
 function isCloneable<T>(input: T): input is T & { clone(): T } {
-  return (
-    isObject(input) && 'clone' in input && typeof (input as { clone: unknown }).clone === 'function'
-  );
+  return isObject(input) && 'clone' in input && isFunction((input as { clone: unknown }).clone);
 }
 
 /**
