@@ -32,7 +32,8 @@ export function getPackDetailOptions(id: string) {
                 style: 'cancel',
               },
               {
-                text: t('common.ok'),
+                text: t('common.delete'),
+                style: 'destructive',
                 onPress: () => {
                   deletePack(id);
                   if (router.canGoBack()) {
