@@ -1,3 +1,4 @@
+import type { DuckDBConnection } from '@duckdb/node-api';
 import {
   extractSpecsFromRow,
   parseCapacityLiters,
@@ -7,8 +8,9 @@ import {
   parseTempRatingF,
   parseWaterproofRating,
   parseWeightGrams,
+  SpecParser,
 } from '@packrat/analytics/core/spec-parser';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('parseWeightGrams', () => {
   it('parses compound lbs + oz', () => {
@@ -184,5 +186,60 @@ describe('extractSpecsFromRow', () => {
     expect(specs.weight_grams).toBeNull();
     expect(specs.fill_power).toBeNull();
     expect(specs.seasons).toBeNull();
+  });
+});
+
+describe('SpecParser DB queries', () => {
+  const makeParser = (columns: string[], rows: unknown[][]) => {
+    const runAndReadAll = vi.fn().mockResolvedValue({
+      columnNames: () => columns,
+      getRows: () => rows,
+    });
+    const conn = { runAndReadAll } as unknown as DuckDBConnection;
+    return { parser: new SpecParser({ conn }), runAndReadAll };
+  };
+
+  it('getProductSpecs maps result rows to objects by column name', async () => {
+    const { parser } = makeParser(
+      ['name', 'brand'],
+      [
+        ['Half Dome', 'REI'],
+        ['Hornet', 'NEMO'],
+      ],
+    );
+    const specs = await parser.getProductSpecs({ query: "tent's" });
+    expect(specs).toEqual([
+      { name: 'Half Dome', brand: 'REI' },
+      { name: 'Hornet', brand: 'NEMO' },
+    ]);
+  });
+
+  it('filterProducts builds a WHERE clause from every provided filter', async () => {
+    const { parser, runAndReadAll } = makeParser(['name'], [['Tent']]);
+    const specs = await parser.filterProducts({
+      category: 'tent',
+      maxWeightG: 1500,
+      maxTempF: 30,
+      maxPrice: 600,
+      minPrice: 50,
+      gender: "women's",
+      seasons: '3-season',
+      sortBy: 'price',
+      limit: 5,
+    });
+    expect(specs).toEqual([{ name: 'Tent' }]);
+    const sql = runAndReadAll.mock.calls[0][0] as string;
+    expect(sql).toContain('WHERE');
+    expect(sql).toContain('weight_grams IS NOT NULL');
+    expect(sql).toContain('ORDER BY price');
+  });
+
+  it('filterProducts omits WHERE and uses defaults when no filters are given', async () => {
+    const { parser, runAndReadAll } = makeParser([], []);
+    const specs = await parser.filterProducts({});
+    expect(specs).toEqual([]);
+    const sql = runAndReadAll.mock.calls[0][0] as string;
+    expect(sql).not.toContain('WHERE');
+    expect(sql).toContain('ORDER BY weight_grams');
   });
 });
