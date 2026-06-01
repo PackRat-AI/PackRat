@@ -11,8 +11,49 @@ const ALLOWED_ORIGINS = [
   /^https:\/\/[\w-]+\.packratai\.com$/,
   /^https?:\/\/[\w-]+\.workers\.dev$/,
   /^http:\/\/localhost:\d+$/,
+  /^http:\/\/127\.0\.0\.1:\d+$/,
   /^exp:\/\//,
 ];
+
+export function isAllowedCorsOrigin(origin: string | null): origin is string {
+  return !!origin && ALLOWED_ORIGINS.some((re) => re.test(origin));
+}
+
+export function addCorsHeaders(request: Request, response: Response): Response {
+  const origin = request.headers.get('Origin');
+  if (!isAllowedCorsOrigin(origin)) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', origin);
+  headers.set('Access-Control-Allow-Credentials', 'true');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  headers.set('Access-Control-Expose-Headers', 'set-auth-token');
+  headers.append('Vary', 'Origin');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+export function corsPreflightResponse(request: Request): Response | null {
+  if (request.method !== 'OPTIONS') return null;
+  const origin = request.headers.get('Origin');
+  if (!isAllowedCorsOrigin(origin)) return new Response(null, { status: 204 });
+
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      Vary: 'Origin',
+    },
+  });
+}
 
 export const app = new Elysia({ adapter: CloudflareAdapter })
   .use(
@@ -20,8 +61,7 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
       credentials: true,
       origin: (request) => {
         const origin = request.headers.get('Origin');
-        if (!origin) return false;
-        return ALLOWED_ORIGINS.some((re) => re.test(origin));
+        return isAllowedCorsOrigin(origin);
       },
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

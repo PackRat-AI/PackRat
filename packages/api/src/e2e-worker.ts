@@ -1,5 +1,5 @@
 import type { MessageBatch } from '@cloudflare/workers-types';
-import { app } from '@packrat/api/app';
+import { addCorsHeaders, app, corsPreflightResponse } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
@@ -19,8 +19,11 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/auth')) {
+      const preflight = corsPreflightResponse(request);
+      if (preflight) return preflight;
+
       const auth = await getAuth(e);
-      return auth.handler(request);
+      return addCorsHeaders(request, await auth.handler(request));
     }
 
     return Reflect.apply(app.fetch, app, [request, e, ctx]);

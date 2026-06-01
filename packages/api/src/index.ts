@@ -8,13 +8,14 @@
 
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { neonConfig } from '@neondatabase/serverless';
-import { type App, app } from '@packrat/api/app';
+import { type App, addCorsHeaders, app, corsPreflightResponse } from '@packrat/api/app';
+import { getAuth } from '@packrat/api/auth';
 import { AppContainer } from '@packrat/api/containers';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
-import { setWorkerEnv } from '@packrat/api/utils/env-validation';
+import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
@@ -89,6 +90,17 @@ const workerHandler = {
     const e = enrichEnv(env);
     maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
+
+    // Route /api/auth/** to Better Auth before Elysia sees it.
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/auth')) {
+      const preflight = corsPreflightResponse(request);
+      if (preflight) return preflight;
+
+      const validatedEnv = getEnv();
+      const auth = await getAuth(validatedEnv);
+      return addCorsHeaders(request, await auth.handler(request));
+    }
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
   },
