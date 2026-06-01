@@ -67,6 +67,16 @@ export function useAuthInit() {
   }, []);
 
   useEffect(() => {
+    const navigate = (target: Parameters<typeof router.replace>[0]) => {
+      // On web, expo-router's navigationRef may not be ready yet during
+      // Strict Mode double-mount — defer by one event loop tick.
+      if (Platform.OS === 'web') {
+        setTimeout(() => router.replace(target), 0);
+      } else {
+        router.replace(target);
+      }
+    };
+
     const initializeAuth = async () => {
       await runVersionGateMigration();
 
@@ -140,14 +150,14 @@ export function useAuthInit() {
           return;
         }
 
-        router.replace({
+        navigate({
           pathname: '/auth',
           params: { showSkipLoginBtn: 'true', redirectTo: '/' },
         });
       } catch (error) {
         Sentry.captureException(error, { tags: { auth_action: 'init' } });
         console.error('Failed to initialize auth:', error);
-        router.replace('/auth');
+        navigate('/auth');
       } finally {
         setIsLoading(false);
       }

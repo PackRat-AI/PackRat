@@ -30,6 +30,7 @@ const EXCLUDED_FILE_PATTERNS = [
   /\/__tests__\//, // any file inside a __tests__ directory
   /\/test\//, // any file inside a test directory
   /\/playwright\//, // Playwright web E2E test infrastructure
+  /apps\/guides\/lib\/content\.ts$/, // generated file with large prose blobs containing "as X" in plain text
 ];
 
 // Safe casts that TypeScript requires and cannot be replaced with guards

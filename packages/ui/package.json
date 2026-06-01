@@ -2,6 +2,9 @@
   "name": "@packrat/ui",
   "version": "2.0.26",
   "private": true,
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@packrat-ai/nativewindui": "2.1.0"
   }
