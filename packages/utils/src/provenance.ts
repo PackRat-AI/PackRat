@@ -37,6 +37,8 @@ export const provenance: Record<string, ProvenanceEntry> = {
   group: { source: 'radashi' },
   sort: { source: 'radashi' },
   list: { source: 'radashi' },
+  first: { source: 'radashi' },
+  last: { source: 'radashi' },
   chunk: { source: 'es-toolkit' }, // radashi's equivalent is named `cluster`
 
   // --- async ---

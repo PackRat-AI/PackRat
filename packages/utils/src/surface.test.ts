@@ -22,6 +22,11 @@ describe('array surface', () => {
   });
   it('chunk splits into fixed sizes', () =>
     expect(array.chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]));
+  it('first/last replace ugly index access', () => {
+    expect(array.first([10, 20, 30])).toBe(10);
+    expect(array.last([10, 20, 30])).toBe(30);
+    expect(array.first([], 'fallback')).toBe('fallback');
+  });
 });
 
 describe('object surface', () => {
