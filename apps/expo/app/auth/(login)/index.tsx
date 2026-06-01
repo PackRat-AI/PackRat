@@ -114,12 +114,12 @@ export default function LoginScreen() {
             <Form className="gap-2">
               <FormSection className="ios:bg-background">
                 <FormItem>
-                  <View testID={Platform.OS === 'web' ? undefined : testIds.auth.emailInput}>
+                  <View testID={testIds.auth.emailInputContainer}>
                     <form.Field name="email">
                       {(field) => (
                         <TextField
                           testID={testIds.auth.emailInput}
-                          containerTestID={testIds.auth.emailInput}
+                          containerTestID={testIds.auth.emailInputContainer}
                           placeholder={Platform.select({
                             ios: 'Email',
                             default: '',
@@ -152,7 +152,7 @@ export default function LoginScreen() {
                     {(field) => (
                       <TextField
                         testID={testIds.auth.passwordInput}
-                        containerTestID={testIds.auth.passwordInput}
+                        containerTestID={testIds.auth.passwordInputContainer}
                         accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Password',

@@ -24,7 +24,9 @@ export const testIds = Object.freeze({
   auth: Object.freeze({
     signInEmailBtn: 'sign-in-email-button', // keep Maestro value
     emailInput: 'email-input',
+    emailInputContainer: 'email-input-container',
     passwordInput: 'password-input',
+    passwordInputContainer: 'password-input-container',
     continueBtn: 'continue-button',
     signOutBtn: 'sign-out-button', // keep Maestro value
   }),
@@ -34,8 +36,10 @@ export const testIds = Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
     emptyCreateBtn: 'create-pack-empty-button',
     cancelBtn: 'cancel-pack-form-button', // keep Maestro value
-    nameInput: 'pack-name-input', // keep Playwright + Maestro value
-    descriptionInput: 'pack-description-input', // keep Playwright + Maestro value
+    nameInput: 'packs:name-input',
+    nameInputContainer: 'packs:name-input-container',
+    descriptionInput: 'packs:description-input',
+    descriptionInputContainer: 'packs:description-input-container',
     submitBtn: 'submit-pack-button', // keep Maestro value
     deleteBtn: 'packs:delete',
     editBtn: 'packs:edit',
@@ -51,8 +55,11 @@ export const testIds = Object.freeze({
     scanPhotoOption: 'scan-from-photo-option', // keep Maestro value
     addFromCatalogOption: 'add-from-catalog-option', // keep Maestro value
     nameInput: 'items:name-input',
+    nameInputContainer: 'items:name-input-container',
     descriptionInput: 'items:description-input',
+    descriptionInputContainer: 'items:description-input-container',
     weightInput: 'items:weight-input',
+    weightInputContainer: 'items:weight-input-container',
     weightUnitControl: 'items:weight-unit',
     quantityInput: 'items:quantity-input',
     categoryInput: 'items:category-input',
@@ -72,7 +79,9 @@ export const testIds = Object.freeze({
     emptyCreateBtn: 'create-trip-empty-button',
     cancelBtn: 'cancel-trip-form-button', // keep Maestro value
     nameInput: 'trips:name-input',
+    nameInputContainer: 'trips:name-input-container',
     descriptionInput: 'trips:description-input',
+    descriptionInputContainer: 'trips:description-input-container',
     submitBtn: 'submit-trip-button', // keep Maestro value
     deleteBtn: 'trips:delete',
     editBtn: 'trips:edit',
