@@ -78,10 +78,16 @@ jobs:
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
+          # Hash apps/expo/package.json too: bun's --frozen-lockfile happily
+          # installs on top of a partial cache, so when only the workspace
+          # package.json changes (e.g. nativewindui pin), the lockfile hash
+          # alone misses the bust and partial restore-keys hands us a stale
+          # tree (most recent symptom: @babel/helper-compilation-targets'
+          # nested lru-cache@5 disappears, breaking expo export).
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock', 'apps/expo/package.json', 'package.json') }}
+          # Drop the partial-prefix fallback. A miss should be a clean
+          # install, not a slow drift toward an inconsistent tree.
 
       - name: Install dependencies
         env:
