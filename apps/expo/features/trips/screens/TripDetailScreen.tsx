@@ -1,5 +1,6 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
@@ -71,8 +72,23 @@ export function TripDetailScreen() {
 
   const confirmDeleteTrip = () => {
     const onConfirm = async () => {
-      await deleteTrip(id as string);
-      router.back();
+      try {
+        await deleteTrip(id as string);
+        router.back();
+      } catch (error) {
+        // useDeleteTrip already rolls back the optimistic flip and reports
+        // to Sentry; surface a UX-level error so the user knows the action
+        // didn't take. Alert.alert is a no-op-with-buttons on web, but its
+        // single-message form does render via window.alert there.
+        Sentry.captureException(error, {
+          tags: { feature: 'trips', action: 'delete', surface: 'TripDetailScreen' },
+        });
+        if (Platform.OS === 'web') {
+          window.alert(t('trips.deleteTripFailed'));
+        } else {
+          Alert.alert(t('common.error'), t('trips.deleteTripFailed'));
+        }
+      }
     };
     // react-native-web's Alert.alert ignores button onPress callbacks, so
     // the destructive handler never fires on web — drop straight to

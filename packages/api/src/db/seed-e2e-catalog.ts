@@ -23,13 +23,23 @@ import WebSocket from 'ws';
 
 neonConfig.webSocketConstructor = WebSocket;
 
+// Mirrors packages/api/src/db/index.ts so the seed script picks the same
+// driver path as the runtime — pg for raw Postgres (postgres:// or
+// postgresql://), neon-http for Neon and for the local db.localtest.me proxy
+// (which speaks Neon's HTTP wire format despite the URL looking standard).
 const isStandardPostgresUrl = (url: string) => {
   try {
     const u = new URL(url);
     const host = u.hostname.toLowerCase();
     const isNeonTech = host === 'neon.tech' || host.endsWith('.neon.tech');
     const isNeonCom = host === 'neon.com' || host.endsWith('.neon.com');
-    return u.protocol === 'postgres:' && !isNeonTech && !isNeonCom;
+    const isLocalNeonProxy = host === 'db.localtest.me';
+    return (
+      (u.protocol === 'postgres:' || u.protocol === 'postgresql:') &&
+      !isNeonTech &&
+      !isNeonCom &&
+      !isLocalNeonProxy
+    );
   } catch {
     return false;
   }

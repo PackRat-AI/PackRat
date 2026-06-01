@@ -56,7 +56,7 @@
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-sqlite": "~55.0.15",
-    "kysely": "^0.28.17",
+    "kysely": "0.28.17",
     "react": "19.2.6"
   },
   "devDependencies": {

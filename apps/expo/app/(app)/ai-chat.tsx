@@ -202,10 +202,13 @@ export default function AIChat() {
         // function runs each time. Pull the live token from authClient at
         // request time — useSession() resolves asynchronously and useChat
         // captures the transport at mount, so any value baked in earlier
-        // (or stashed in a ref) would go stale on rotation.
-        headers: async () => {
+        // (or stashed in a ref) would go stale on rotation. Omit the header
+        // entirely if we have no token rather than sending `Bearer ` — the
+        // browser still carries the cookie session via credentials:'include'.
+        headers: async (): Promise<Record<string, string>> => {
           const { data } = await authClient.getSession();
-          return { Authorization: `Bearer ${data?.session?.token ?? ''}` };
+          const token = data?.session?.token;
+          return token ? { Authorization: `Bearer ${token}` } : {};
         },
         body: () => ({
           contextType: contextRef.current.contextType,

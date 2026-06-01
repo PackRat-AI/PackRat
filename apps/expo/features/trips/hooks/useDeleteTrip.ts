@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { tripsStore } from 'expo-app/features/trips/store/trips';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
@@ -9,16 +10,29 @@ export function useDeleteTrip() {
     const tripObs = obs({ store: tripsStore, id });
     if (tripObs) tripObs.deleted.set(true);
 
-    // syncedCrud's PUT strips `deleted` (UpdateTripBodySchema doesn't expose
-    // it), so the store-only flip never reaches the DB. Fire DELETE.
-    const response = await apiClient.trips({ tripId: id }).delete();
+    Sentry.addBreadcrumb({
+      category: 'trips',
+      message: 'Deleting trip',
+      level: 'info',
+      data: { tripId: id },
+    });
 
-    // 404 = already deleted elsewhere, treat as success. Any other non-2xx
-    // means the server still has the trip; roll back the optimistic flip
-    // so the next list refetch re-renders the row in its real state.
-    if (response.error && response.status !== 404) {
+    // Two failure modes: a transport rejection (network drop, fetch abort)
+    // and a non-2xx response (server still has the trip). In both we need
+    // to undo the optimistic flip, capture, and rethrow so the caller can
+    // surface it. 404 is treated as success since the trip is already gone.
+    try {
+      const response = await apiClient.trips({ tripId: id }).delete();
+      if (response.error && response.status !== 404) {
+        throw new Error(`Trip delete failed (${response.status})`);
+      }
+    } catch (error) {
       if (tripObs) tripObs.deleted.set(false);
-      throw new Error(`Trip delete failed (${response.status})`);
+      Sentry.captureException(error, {
+        tags: { feature: 'trips', action: 'delete' },
+        extra: { tripId: id },
+      });
+      throw error;
     }
   }, []);
 

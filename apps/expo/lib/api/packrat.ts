@@ -4,7 +4,7 @@ import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
 import { authClient } from 'expo-app/lib/auth-client';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-app/lib/secureStore';
 import { Platform } from 'react-native';
 import { z } from 'zod';
 

@@ -462,6 +462,7 @@
     "viewDetails": "View Details",
     "deleteTrip": "Delete trip?",
     "deleteTripConfirmation": "Are you sure you want to delete this trip? This action cannot be undone.",
+    "deleteTripFailed": "Could not delete this trip. Please try again.",
     "noTripsYetTitle": "No Trips Yet",
     "createTripsToSee": "Create trips to start seeing your upcoming adventures!",
     "gotIt": "Got it",
