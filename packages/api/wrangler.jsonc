@@ -233,6 +233,126 @@
           "tag": "v3"
         }
       ]
+    },
+    // Local-only environment for e2e / local dev. NEVER deployed — exists so a
+    // Hyperdrive binding can front the local Postgres (workerd-native pooling,
+    // no flaky raw node-postgres sockets), mirroring how prod fronts Neon.
+    // Run with: wrangler dev -e local --env-file .dev.vars.e2e
+    // enrichEnv maps DB_HYPERDRIVE.connectionString -> NEON_DATABASE_URL.
+    "local": {
+      "hyperdrive": [
+        {
+          "binding": "DB_HYPERDRIVE",
+          // Placeholder id — never contacted locally; localConnectionString is
+          // used by `wrangler dev`. This env is not deployed.
+          "id": "local-only-not-deployed",
+          "localConnectionString": "postgres://e2e_user:e2e_pass@localhost:5455/packrat_e2e"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "AUTH_KV",
+          "id": "0d0dd76cec764c81be58ae7b871b47cb",
+          "preview_id": "f3441ec9f4b044e6b6c6a087251e3f00"
+        }
+      ],
+      "rate_limiting": [
+        {
+          "binding": "TOKEN_RATE_LIMITER",
+          "namespace_id": "1",
+          "simple": {
+            "limit": 5,
+            "period": 60
+          }
+        }
+      ],
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
+      "r2_buckets": [
+        {
+          "binding": "PACKRAT_BUCKET",
+          "bucket_name": "packrat-bucket-preview",
+          "preview_bucket_name": "packrat-bucket-preview"
+        },
+        {
+          "binding": "PACKRAT_SCRAPY_BUCKET",
+          "bucket_name": "packrat-scrapy-bucket",
+          "preview_bucket_name": "packrat-scrapy-bucket"
+        },
+        {
+          "binding": "PACKRAT_GUIDES_BUCKET",
+          "bucket_name": "packrat-guides",
+          "preview_bucket_name": "packrat-guides"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "queue": "packrat-etl-queue-dev",
+            "binding": "ETL_QUEUE"
+          },
+          {
+            "queue": "packrat-logs-queue-dev",
+            "binding": "LOGS_QUEUE"
+          },
+          {
+            "queue": "packrat-embeddings-queue-dev",
+            "binding": "EMBEDDINGS_QUEUE"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "packrat-etl-queue-dev",
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_concurrency": 1
+          },
+          {
+            "queue": "packrat-logs-queue-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
+          },
+          {
+            "queue": "packrat-embeddings-queue-dev",
+            "max_batch_size": 100,
+            "max_batch_timeout": 5
+          }
+        ]
+      },
+      "ai": {
+        "binding": "AI"
+      },
+      "containers": [
+        {
+          "name": "packrat-api-container-local",
+          "class_name": "AppContainer",
+          "image": "./Dockerfile",
+          "max_instances": 5
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "AppContainer",
+            "name": "APP_CONTAINER"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "new_sqlite_classes": ["TikTokContainer"],
+          "tag": "v1"
+        },
+        {
+          "new_sqlite_classes": ["AppContainer"],
+          "tag": "v2"
+        },
+        {
+          "deleted_classes": ["TikTokContainer"],
+          "tag": "v3"
+        }
+      ]
     }
   }
 }

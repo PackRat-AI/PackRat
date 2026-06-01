@@ -86,6 +86,10 @@ export const apiEnvObjectSchema = z.object({
   // Hyperdrive binding for the dedicated OSM/trail Postgres instance.
   // When present, its connectionString overrides OSM_DATABASE_URL at runtime.
   OSM_HYPERDRIVE: z.unknown().optional(),
+  // Hyperdrive binding for the main Postgres DB. Only present in the local-only
+  // `local` wrangler env (fronts the e2e Postgres); when present its
+  // connectionString overrides NEON_DATABASE_URL at runtime.
+  DB_HYPERDRIVE: z.unknown().optional(),
   // Better Auth KV namespace for session storage and rate limiting
   AUTH_KV: z.unknown(),
 });
@@ -141,6 +145,7 @@ export type ValidatedEnv = Omit<
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   OSM_HYPERDRIVE?: Hyperdrive;
+  DB_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
 };
 

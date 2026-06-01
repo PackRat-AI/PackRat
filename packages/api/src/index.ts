@@ -113,10 +113,19 @@ type CfFetchFn = (
 ) => Response | Promise<Response>;
 
 function enrichEnv(env: Env): Env {
-  if (env.OSM_HYPERDRIVE) {
-    return { ...env, OSM_DATABASE_URL: env.OSM_HYPERDRIVE.connectionString };
+  let enriched = env;
+  // Local-only `local` env: Hyperdrive fronts the e2e Postgres.
+  if (env.DB_HYPERDRIVE) {
+    enriched = {
+      ...enriched,
+      NEON_DATABASE_URL: env.DB_HYPERDRIVE.connectionString,
+      NEON_DATABASE_URL_READONLY: env.DB_HYPERDRIVE.connectionString,
+    };
   }
-  return env;
+  if (env.OSM_HYPERDRIVE) {
+    enriched = { ...enriched, OSM_DATABASE_URL: env.OSM_HYPERDRIVE.connectionString };
+  }
+  return enriched;
 }
 
 const workerHandler = {
