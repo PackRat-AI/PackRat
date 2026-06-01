@@ -43,6 +43,7 @@
     "mcp": "bun run --cwd packages/mcp dev",
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
     "portless:check": "bun run scripts/portless-check.ts",
+    "portless:clean": "portless prune",
     "portless:setup": "bash scripts/portless-setup.sh",
     "portless:urls": "bun run scripts/portless-urls.ts",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
