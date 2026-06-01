@@ -46,8 +46,8 @@ const IPV6_HEX_GROUP_PATTERN = /^[0-9a-f]{1,4}$/i;
  */
 function extractMappedIpv4(hostname: string): string | null {
   const match = IPV4_MAPPED_IPV6_PATTERN.exec(hostname);
-  if (!match) return null;
-  const tail = match[1];
+  const tail = match?.[1];
+  if (tail === undefined) return null;
 
   // Already a dotted quad (e.g. `::ffff:127.0.0.1`).
   if (tail.includes('.')) {
@@ -62,9 +62,14 @@ function extractMappedIpv4(hostname: string): string | null {
   if (groups.length > 2 || groups.some((g) => g === '' || !IPV6_HEX_GROUP_PATTERN.test(g))) {
     return null;
   }
-  // Combine into a single 32-bit value: high group is the upper 16 bits.
-  const high = groups.length === 2 ? Number.parseInt(groups[0], 16) : 0;
-  const low = Number.parseInt(groups[groups.length - 1], 16);
+  // Combine into a single 32-bit value: high group is the upper 16 bits. The
+  // guard above guarantees every group is a non-empty hex string; the explicit
+  // undefined checks satisfy noUncheckedIndexedAccess without a non-null assert.
+  const highStr = groups.length === 2 ? groups[0] : '0';
+  const lowStr = groups[groups.length - 1];
+  if (highStr === undefined || lowStr === undefined) return null;
+  const high = Number.parseInt(highStr, 16);
+  const low = Number.parseInt(lowStr, 16);
   if (Number.isNaN(high) || Number.isNaN(low) || high > 0xffff || low > 0xffff) return null;
   const value = (high << 16) | low;
   return [(value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff].join(

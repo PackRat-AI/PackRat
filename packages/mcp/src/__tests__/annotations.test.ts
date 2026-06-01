@@ -184,11 +184,11 @@ describe('U7 tool annotation catalog', () => {
   it.each(toolNames)('tool %s has an annotations object', (name) => {
     const tool = tools[name];
     expect(tool, `${name}: tool record missing`).toBeDefined();
-    expect(tool.annotations, `${name}: annotations missing`).toBeDefined();
+    expect(tool!.annotations, `${name}: annotations missing`).toBeDefined();
   });
 
   it.each(toolNames)('tool %s has a non-empty title ≤ 64 chars', (name) => {
-    const ann = tools[name].annotations;
+    const ann = tools[name]!.annotations;
     expect(ann?.title, `${name}: annotation title missing`).toBeDefined();
     const title = ann?.title ?? '';
     expect(title.length).toBeGreaterThan(0);
@@ -196,24 +196,24 @@ describe('U7 tool annotation catalog', () => {
   });
 
   it.each(toolNames)('tool %s has readOnlyHint set explicitly as a boolean', (name) => {
-    const ann = tools[name].annotations;
+    const ann = tools[name]!.annotations;
     expect(typeof ann?.readOnlyHint, `${name}: readOnlyHint not boolean`).toBe('boolean');
   });
 
   it.each(toolNames)('tool %s has idempotentHint set explicitly as a boolean', (name) => {
-    const ann = tools[name].annotations;
+    const ann = tools[name]!.annotations;
     expect(typeof ann?.idempotentHint, `${name}: idempotentHint not boolean`).toBe('boolean');
   });
 
   it.each(toolNames)('tool %s has openWorldHint set explicitly as a boolean', (name) => {
-    const ann = tools[name].annotations;
+    const ann = tools[name]!.annotations;
     expect(typeof ann?.openWorldHint, `${name}: openWorldHint not boolean`).toBe('boolean');
   });
 
   it.each(
     toolNames,
   )('tool %s sets destructiveHint when readOnlyHint=false (avoids SDK default of true)', (name) => {
-    const ann = tools[name].annotations;
+    const ann = tools[name]!.annotations;
     if (ann?.readOnlyHint === false) {
       expect(typeof ann?.destructiveHint, `${name}: destructiveHint not boolean`).toBe('boolean');
     }

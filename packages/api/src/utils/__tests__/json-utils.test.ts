@@ -70,6 +70,21 @@ describe('json-utils', () => {
       expect(result?.reviewCount).toBe(42);
     });
 
+    it('parses faqs and techs supplied as JSON strings', () => {
+      const result = mapJsonRowToItem({
+        name: 'X',
+        faqs: '[{"question":"Q1","answer":"A1"}]',
+        techs: '{"Material":"Nylon","Capacity":"40L"}',
+      });
+      expect(result?.faqs).toBeDefined();
+      expect(result?.techs).toMatchObject({ Material: 'Nylon', Capacity: '40L' });
+    });
+
+    it('falls back to an empty faqs array when the faqs string is malformed', () => {
+      const result = mapJsonRowToItem({ name: 'Y', faqs: '{not valid json' });
+      expect(result?.faqs).toEqual([]);
+    });
+
     it('maps reviewCount from string', () => {
       const result = mapJsonRowToItem({ reviewCount: '128' });
       expect(result?.reviewCount).toBe(128);

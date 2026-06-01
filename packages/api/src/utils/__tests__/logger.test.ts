@@ -139,6 +139,28 @@ describe('logger', () => {
       expect(opts?.extra).toMatchObject({ event: 'etl.failed', meta: { nested: 1 } });
     });
 
+    it('always copies httpStatus and errorCode into Sentry extra (and tags)', () => {
+      const err = new Error('http fail');
+      logger.error({
+        event: 'http.failed',
+        ctx: { httpStatus: 503, errorCode: 'UPSTREAM_DOWN', err },
+      });
+      const [, rawOpts] = vi.mocked(Sentry.captureException).mock.calls[0] ?? [];
+      const opts = rawOpts as
+        | { tags?: Record<string, string>; extra?: Record<string, unknown> }
+        | undefined;
+      expect(opts?.extra).toMatchObject({ httpStatus: 503, errorCode: 'UPSTREAM_DOWN' });
+      expect(opts?.tags).toMatchObject({ httpStatus: '503', errorCode: 'UPSTREAM_DOWN' });
+    });
+
+    it('emits a serializationError fallback when the line cannot be stringified', () => {
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+      logger.error({ event: 'etl.circular', ctx: { circular } });
+      const out = errorSpy.mock.calls.at(-1)?.[0] as string;
+      expect(out).toContain('serializationError');
+    });
+
     it('forwards ERROR without ctx.err to captureMessage at error level', () => {
       logger.error({ event: 'etl.failed', ctx: { jobId: 'j7' } });
       expect(Sentry.captureMessage).toHaveBeenCalledOnce();

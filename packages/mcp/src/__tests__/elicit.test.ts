@@ -223,7 +223,7 @@ describe('confirmAction', () => {
       },
     });
     expect(spy).toHaveBeenCalledTimes(1);
-    const [params, options] = spy.mock.calls[0];
+    const [params, options] = spy.mock.calls[0]!;
     expect(options).toEqual({ relatedRequestId: 'req-abc-123' });
     // Sanity: the schema is well-formed and the message is preserved.
     expect(params).toMatchObject({
@@ -245,7 +245,7 @@ describe('confirmAction', () => {
         expectedConfirmation: 'X',
       },
     });
-    expect(spy.mock.calls[0][1]).toEqual({ relatedRequestId: 42 });
+    expect(spy.mock.calls[0]![1]).toEqual({ relatedRequestId: 42 });
   });
 
   it('uses a custom fieldLabel in the requested schema', async () => {
@@ -361,7 +361,7 @@ describe('chooseFromList', () => {
         choices: ['A', 'B', 'C'],
       },
     });
-    const [params, options] = spy.mock.calls[0];
+    const [params, options] = spy.mock.calls[0]!;
     expect(options).toEqual({ relatedRequestId: 'req-xyz' });
     const properties = (params.requestedSchema as { properties: { choice: { enum: string[] } } })
       .properties;

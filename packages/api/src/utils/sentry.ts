@@ -5,7 +5,6 @@
  * so every function here safely operates on the current request scope.
  */
 
-import { isObject } from '@packrat/guards';
 import {
   addBreadcrumb,
   captureException,
@@ -50,13 +49,16 @@ export type SentryOperationContext = {
  */
 const capturedErrors = new WeakSet<object>();
 
+// `instanceof Object` (not @packrat/guards' isObject, which is plain-object
+// only) so Error instances — the primary thing we dedup — are covered, while
+// primitives (string/number throws) are skipped. WeakSet needs an object key.
 function markCaptured(error: unknown): void {
-  if (isObject(error)) capturedErrors.add(error);
+  if (error instanceof Object) capturedErrors.add(error);
 }
 
 /** True if our helpers have already reported this error to Sentry. */
 export function isCaptured(error: unknown): boolean {
-  return isObject(error) && capturedErrors.has(error);
+  return error instanceof Object && capturedErrors.has(error);
 }
 
 /**
@@ -113,7 +115,9 @@ export function captureApiException(opts: { error: unknown } & SentryOperationCo
  */
 export function record<T>(
   opts: SentryOperationContext & {
-    attributes?: Record<string, unknown>;
+    // Span attributes must be primitive (Sentry's SpanAttributeValue); keep it
+    // narrow rather than Record<string, unknown> so it's assignable to startSpan.
+    attributes?: Record<string, string | number | boolean>;
     fn: () => Promise<T>;
   },
 ): Promise<T> {

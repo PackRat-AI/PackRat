@@ -191,7 +191,7 @@ describe('rate-limited tool dispatch — envelope', () => {
         retryable: true,
       },
     });
-    expect(result.content[0].text).toMatch(/rate limit exceeded/i);
+    expect(result.content[0]!.text).toMatch(/rate limit exceeded/i);
   });
 
   it('passes through to the handler when the binding allows', async () => {
@@ -213,7 +213,7 @@ describe('rate-limited tool dispatch — envelope', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(result.isError).toBeUndefined();
-    expect(result.content[0].text).toBe('ok');
+    expect(result.content[0]!.text).toBe('ok');
     expect(binding.limit).toHaveBeenCalledWith({ key: 'u_1:packrat_get_pack' });
   });
 });

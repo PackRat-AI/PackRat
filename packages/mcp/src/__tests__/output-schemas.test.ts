@@ -347,7 +347,7 @@ describe('U8 tier-1 tools register an outputSchema', () => {
   it.each(tier1)('%s declares an outputSchema', (name) => {
     const tool = tools[name];
     expect(tool, `expected ${name} to be registered`).toBeDefined();
-    expect(tool.outputSchema, `${name}: outputSchema not registered`).toBeDefined();
+    expect(tool!.outputSchema, `${name}: outputSchema not registered`).toBeDefined();
   });
 });
 

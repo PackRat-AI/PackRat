@@ -178,13 +178,13 @@ describe('packrat_admin_hard_delete_user (U10 elicitation)', () => {
 
     // Elicitation fired with the agents@0.13 relatedRequestId option.
     expect(elicitSpy).toHaveBeenCalledTimes(1);
-    expect(elicitSpy.mock.calls[0][1]).toEqual({ relatedRequestId: 'test-req-1' });
+    expect(elicitSpy.mock.calls[0]![1]).toEqual({ relatedRequestId: 'test-req-1' });
 
     // API DELETE chain executed: admin.users({id}).hard.delete({reason})
     expect(result.isError).toBeUndefined();
     const deletes = calls.filter((c) => c.path.at(-1) === 'delete');
     expect(deletes).toHaveLength(1);
-    expect(deletes[0].args[0]).toEqual({ reason: 'GDPR request #1' });
+    expect(deletes[0]!.args[0]).toEqual({ reason: 'GDPR request #1' });
   });
 
   it('does NOT fire the DELETE when the user types the wrong confirmation', async () => {
