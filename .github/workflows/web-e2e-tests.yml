@@ -167,12 +167,28 @@ jobs:
           EOF
           echo "Wrote .dev.vars ($(wc -l < .dev.vars) keys)"
 
+      # The Workers AI binding has no local emulator, so `wrangler dev` opens a
+      # remote-proxy session (needs CF login) at boot — which fails in CI. Sign-in
+      # doesn't use AI, and env-validation's `AI: z.unknown()` tolerates it being
+      # absent, so strip the AI binding for the E2E run → fully-local, no auth.
+      - name: Generate E2E wrangler config (no remote AI binding)
+        working-directory: packages/api
+        run: |
+          bun -e "
+            const c = require('./wrangler.jsonc');
+            delete c.ai;
+            if (c.env && c.env.dev) delete c.env.dev.ai;
+            require('node:fs').writeFileSync('./wrangler.e2e.json', JSON.stringify(c, null, 2));
+          "
+          echo "Generated wrangler.e2e.json (AI binding removed)"
+
       # ── Start the API worker (wrangler dev) and wait for health ─────────────
       - name: Start API (wrangler dev) on localhost
         working-directory: packages/api
         run: |
           # Background the worker; capture logs so failures are debuggable.
-          bun run dev --port "${API_PORT}" --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
+          bunx wrangler dev --config wrangler.e2e.json -e dev \
+            --port "${API_PORT}" --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
           echo "Waiting for API on http://localhost:${API_PORT} ..."
           for i in $(seq 1 60); do
             if curl -sf "http://localhost:${API_PORT}/api/health" >/dev/null 2>&1 \
