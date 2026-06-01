@@ -10,20 +10,10 @@ import { JotaiProvider } from './JotaiProvider';
 import { TanstackProvider } from './TanstackProvider';
 
 /**
- * Web version of Providers.
- * Removes native-only providers:
- *   - KeyboardProvider (react-native-keyboard-controller — no web support)
- * Keeps:
- *   - BottomSheetModalProvider — @gorhom/bottom-sheet 5.x runs on web via
- *     Reanimated + gesture-handler. Screens like PackDetailScreen render
- *     BottomSheetView inline, which subscribes to BottomSheetModalInternalContext
- *     and throws on web without this provider.
- *   - ActionSheetProvider — feature code calls useActionSheet() to show item
- *     more-actions menus. Without the provider the hook returns a no-op
- *     showActionSheetWithOptions and the menu never appears. The provider's
- *     CustomActionSheet renders React.Children.only(children), so the
- *     direct child here MUST be a single element.
- * Metro automatically picks this file over providers/index.tsx for web builds.
+ * Web Providers. Drops KeyboardProvider (no web support); keeps
+ * BottomSheetModalProvider for inline BottomSheetView and ActionSheetProvider
+ * for useActionSheet(). CustomActionSheet wraps its child in
+ * React.Children.only — keep the direct child a single element.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (

@@ -102,14 +102,7 @@ export default function AIChat() {
   locationRef.current = context.location;
 
   const { data: _authSession } = authClient.useSession();
-  const token = _authSession?.session?.token ?? null;
   const userId = _authSession?.user?.id ?? '';
-  // Keep the latest token in a ref so the transport's headers function reads
-  // it at request time — authClient.useSession() resolves asynchronously,
-  // and useChat captures `transport` at mount, so a token baked into headers
-  // at construction time would be stale (often null) when the user hits send.
-  const tokenRef = React.useRef(token);
-  tokenRef.current = token;
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -205,19 +198,14 @@ export default function AIChat() {
       transport: new DefaultChatTransport({
         fetch: expoFetch as unknown as typeof globalThis.fetch,
         api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-        // HttpChatTransport awaits resolve(this.headers) on every send, so an
-        // async function lets us pull the live token at request time. Prefer
-        // tokenRef (driven by useSession()), and fall back to a direct
-        // getSession() call when the user submits before the hook resolved —
-        // otherwise we'd ship Bearer "" → 401.
+        // HttpChatTransport awaits resolve(this.headers) per send, so this
+        // function runs each time. Pull the live token from authClient at
+        // request time — useSession() resolves asynchronously and useChat
+        // captures the transport at mount, so any value baked in earlier
+        // (or stashed in a ref) would go stale on rotation.
         headers: async () => {
-          let t = tokenRef.current;
-          if (!t) {
-            const { data } = await authClient.getSession();
-            t = data?.session?.token ?? null;
-            tokenRef.current = t;
-          }
-          return { Authorization: `Bearer ${t ?? ''}` };
+          const { data } = await authClient.getSession();
+          return { Authorization: `Bearer ${data?.session?.token ?? ''}` };
         },
         body: () => ({
           contextType: contextRef.current.contextType,

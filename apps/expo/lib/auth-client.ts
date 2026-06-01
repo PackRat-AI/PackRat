@@ -5,21 +5,17 @@ import * as SecureStore from 'expo-secure-store';
 
 export const authClient = createAuthClient({
   baseURL: getApiBaseUrl(),
-  // Web: the API origin differs from the page origin (Expo web on :18082,
-  // API on :18787, prod web at packrat.world / api.packrat.world), so the
-  // browser drops the better-auth session cookie unless we explicitly opt
-  // into credentials. @better-auth/expo's plugin sets credentials='omit'
-  // in its `init()` hook on native (cookies are managed via SecureStore
-  // there), but that init() short-circuits with `if (isWeb) return;` —
-  // so this top-level option only takes effect on web.
+  // Send the cross-origin session cookie on web (expoClient's init() that
+  // sets credentials:'omit' short-circuits with `if (isWeb) return`, so
+  // this top-level option only takes effect there).
   fetchOptions: { credentials: 'include' },
   plugins: [
     expoClient({
       scheme: 'packrat',
       storagePrefix: 'packrat',
       storage: {
-        setItem: (key: string, value: string) => SecureStore.setItem(key, value),
-        getItem: (key: string) => SecureStore.getItem(key),
+        setItem: SecureStore.setItem,
+        getItem: SecureStore.getItem,
       },
     }),
   ],

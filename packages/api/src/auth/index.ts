@@ -191,12 +191,12 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     ],
 
     rateLimit: {
-      // Local web dev hits /api/auth/get-session aggressively (better-auth's
-      // useSession() hook plus apiClient's per-request token lookup), which
-      // trips the prod 100/min limit within seconds. Disable rate limiting
-      // when running against a localhost API; prod keeps the original
-      // throttle.
-      enabled: !env.BETTER_AUTH_URL.startsWith('http://localhost'),
+      // Drop the throttle only when ENVIRONMENT === 'development' AND
+      // BETTER_AUTH_URL is a localhost URL. Defense in depth: one misset
+      // env shouldn't disable rate limiting in production.
+      enabled: !(
+        env.ENVIRONMENT === 'development' && env.BETTER_AUTH_URL.startsWith('http://localhost')
+      ),
       window: 60,
       max: 100,
       storage: 'secondary-storage',
@@ -205,10 +205,10 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     trustedOrigins: [
       env.BETTER_AUTH_URL,
       'packrat://',
-      // Local web dev — accept any localhost port so parallel agents on
-      // bumped ports (e.g. 18082) don't need an allowlist update. Gated on
-      // the API URL pointing at localhost so prod never widens trust.
-      ...(env.BETTER_AUTH_URL.startsWith('http://localhost') ? ['http://localhost:*'] : []),
+      // Local web dev — accept any localhost port. Same dual gate as above.
+      ...(env.ENVIRONMENT === 'development' && env.BETTER_AUTH_URL.startsWith('http://localhost')
+        ? ['http://localhost:*']
+        : []),
     ],
   });
 

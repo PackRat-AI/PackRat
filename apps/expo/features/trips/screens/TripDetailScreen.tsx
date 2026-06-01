@@ -69,25 +69,21 @@ export function TripDetailScreen() {
     }
   };
 
-  const performDelete = async () => {
-    await deleteTrip(id as string);
-    router.back();
-  };
-
   const confirmDeleteTrip = () => {
+    const onConfirm = async () => {
+      await deleteTrip(id as string);
+      router.back();
+    };
+    // react-native-web's Alert.alert ignores button onPress callbacks, so
+    // the destructive handler never fires on web — drop straight to
+    // window.confirm there.
     if (Platform.OS === 'web') {
-      // react-native-web's Alert.alert ignores the buttons array's onPress
-      // callbacks, so the destructive handler never fires. Use the browser
-      // confirm directly — Playwright's page.on('dialog') accepts it the
-      // same way it would handle Alert.alert on native.
-      if (window.confirm(t('trips.deleteTripConfirmation'))) {
-        void performDelete();
-      }
+      if (window.confirm(t('trips.deleteTripConfirmation'))) void onConfirm();
       return;
     }
     Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirmation'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: performDelete },
+      { text: t('common.delete'), style: 'destructive', onPress: onConfirm },
     ]);
   };
 

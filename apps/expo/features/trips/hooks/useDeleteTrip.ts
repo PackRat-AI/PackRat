@@ -5,17 +5,21 @@ import { useCallback } from 'react';
 
 export function useDeleteTrip() {
   const deleteTrip = useCallback(async (id: string) => {
-    // Optimistically flip `deleted` in the local store so the UI hides the
-    // trip immediately.
+    // Optimistic local flip so the UI hides the trip immediately.
     const tripObs = obs({ store: tripsStore, id });
-    if (tripObs) {
-      tripObs.deleted.set(true);
+    if (tripObs) tripObs.deleted.set(true);
+
+    // syncedCrud's PUT strips `deleted` (UpdateTripBodySchema doesn't expose
+    // it), so the store-only flip never reaches the DB. Fire DELETE.
+    const response = await apiClient.trips({ tripId: id }).delete();
+
+    // 404 = already deleted elsewhere, treat as success. Any other non-2xx
+    // means the server still has the trip; roll back the optimistic flip
+    // so the next list refetch re-renders the row in its real state.
+    if (response.error && response.status !== 404) {
+      if (tripObs) tripObs.deleted.set(false);
+      throw new Error(`Trip delete failed (${response.status})`);
     }
-    // syncedCrud's PUT path strips the `deleted` field (UpdateTripBodySchema
-    // doesn't expose it), so a store-only flip never reaches the database
-    // and the next GET /api/trips returns the trip again. Fire DELETE
-    // explicitly — the trips route already supports soft-delete via DELETE.
-    await apiClient.trips({ tripId: id }).delete();
   }, []);
 
   return deleteTrip;

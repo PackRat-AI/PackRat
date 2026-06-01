@@ -210,15 +210,16 @@ test.describe('Trip CRUD', () => {
     const deleteResponse = await deletePromise;
     expect(deleteResponse.ok()).toBeTruthy();
 
-    // router.back() may not work after page.goto-seeded history; navigate
-    // explicitly like pack-delete does. With `deleted=true` now persisted
-    // server-side, GET /api/trips will exclude this trip on the list reload.
-    // Wipe the Legend State persist entries first so an `optimistic
-    // deleted:true` from this run can't merge against an older `deleted:false`
-    // cache slice and reappear.
+    // Navigate explicitly (router.back() can't rely on the page.goto-seeded
+    // history). Wipe the trips persist slice first so an older cached
+    // `deleted:false` row can't merge over the optimistic flip on reload.
+    // Anchored prefixes only — a bare `/trips/` substring match would also
+    // strip unrelated keys whose names happen to contain `trips`.
     await page.evaluate(() => {
       for (const key of Object.keys(window.localStorage)) {
-        if (/trips|legend|@LegendState/i.test(key)) window.localStorage.removeItem(key);
+        if (key.startsWith('trips') || key.startsWith('@LegendState')) {
+          window.localStorage.removeItem(key);
+        }
       }
     });
     await page.goto(`${BASE_URL}/trips`);
