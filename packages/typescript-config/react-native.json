@@ -5,6 +5,7 @@
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
     "jsx": "react-jsx",
+    "customConditions": ["react-native"],
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true
   }
