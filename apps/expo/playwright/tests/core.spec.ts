@@ -8,7 +8,8 @@ import type { Page } from '@playwright/test';
 import { BASE_URL, expect, test } from './fixtures';
 
 async function createPack(page: Page, packName: string) {
-  await page.goto(`${BASE_URL}/pack/new`);
+  await page.goto(`${BASE_URL}/packs`);
+  await page.getByTestId('create-pack-button').click();
   await page.getByTestId('packs:name-input').fill(packName);
 
   const packResponsePromise = page.waitForResponse(
