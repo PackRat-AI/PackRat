@@ -26,7 +26,7 @@ Verified current state (`chore/direnv-envrc`):
 
 Extract a `@packrat/typescript-config` package holding a small set of named base configs; every app and package shrinks to a thin `extends` plus its own intra-package `paths` and `include`.
 
-```
+```text
 packages/typescript-config/
   package.json
   base.json            # strict, target, lib, module resolution shared by all

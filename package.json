@@ -66,7 +66,7 @@
     "@types/bun": "^1.2.17",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^9.0.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260527.2",
+    "@typescript/native-preview": "7.0.0-dev.20260527.2",
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14",

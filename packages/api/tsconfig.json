@@ -1,7 +1,7 @@
 {
   "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "types": ["@cloudflare/workers-types/2022-10-31"],
+    "types": ["@cloudflare/workers-types/2022-10-31", "bun"],
     "paths": {
       "@packrat/api": ["./src/index.ts"],
       "@packrat/api/*": ["./src/*"]

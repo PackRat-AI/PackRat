@@ -153,9 +153,6 @@ export function createApiClient(config: ApiClientConfig) {
   // rather than `client.api.catalog.get()`. The server mounts every route
   // group under the `routes` plugin which itself has `prefix: '/api'`, so the
   // `.api` level of the Treaty surface is pure noise.
-  // Treaty only uses the callable form of `fetch`; the globalThis.fetch type
-  // includes a `preconnect` method our wrapper doesn't need. Cast through
-  // unknown to bridge the two shapes without pulling preconnect into scope.
   // parseDate:false disables Eden Treaty's JSON reviver that silently converts
   // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
   // this, every Zod z.string().datetime() field in API response schemas fails.
