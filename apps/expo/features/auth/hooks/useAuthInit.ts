@@ -147,6 +147,7 @@ export function useAuthInit() {
         if (!error && session?.user) {
           // safe-cast: widening Better Auth User to Record<string, unknown> for runtime additional-field access
           applySessionUser(session.user as Record<string, unknown>);
+          setIsLoading(false);
           return;
         }
 
