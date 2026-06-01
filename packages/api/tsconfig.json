@@ -1,8 +1,7 @@
 {
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
+    "types": ["@cloudflare/workers-types/2022-10-31"],
     "paths": {
       "@packrat/api": ["./src/index.ts"],
       "@packrat/api/*": ["./src/*"]
