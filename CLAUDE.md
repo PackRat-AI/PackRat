@@ -100,14 +100,29 @@ Other api-client consumers (admin, expo, guides, cli) compile fine — they each
 have well under 10 Treaty calls and no `registerTool` wrapper. mcp is the only
 workspace that crosses the threshold.
 
-Follow-up paths (any one is sufficient):
-1. **TypeScript project references** — mcp loads pre-built `.d.ts` from
+Follow-up paths (in order of preference):
+1. **Split `App` into domain apps** (`UserApp`, `AdminApp`, `CatalogApp`, …)
+   so each mcp tool file consumes only its domain's Treaty client. Cleanest
+   architecturally; requires changing api's route mounting to expose typed
+   sub-apps. Side benefit: api-client consumers can opt into smaller surfaces.
+2. **TypeScript project references** — mcp loads pre-built `.d.ts` from
    `@packrat/api-client` instead of source. Requires `composite: true` across
-   workspaces and `tsc --build`.
-2. **Split `App` into domain apps** (`UserApp`, `AdminApp`, `CatalogApp`, …).
-   Each mcp tool file consumes only its domain's Treaty client.
-3. **Extract tool handlers into typed functions** so the deep Treaty type is
-   consumed in ~50 small isolated scopes rather than one huge program.
+   workspaces and `tsc --build`. Touches every workspace's tsconfig and the
+   turbo build pipeline.
+3. **Narrow client opt-in** — export a `NarrowApiClient` variant of the api-
+   client that exposes the same traversal/verb shape but with `unknown` data
+   per response. mcp opts in via `createNarrowApiClient(...)`. Loses per-
+   endpoint request/response inference; tool handlers must compensate with
+   zod schemas at the call site (which they already declare for MCP input).
+
+Things that DID NOT work (don't try these again):
+- Adding `Promise<unknown>` to `call()` instead of generic `Promise<TreatyResponse<T>>`.
+- Replacing `McpClients` typing with a narrow interface at the McpClients level —
+  doesn't help because the actual deep type computation happens at each
+  `agent.api.X.Y.Z()` call site in source files.
+- Extracting tool handlers into separate functions (kept the same
+  AgentContext-typed api param) — the per-call-site Treaty inference still
+  happens inside each handler body.
 
 mcp continues to be type-checked at deploy time by `wrangler deploy` (and at
 test time by `bun test:mcp`). The skip only affects the per-package CI gate.
