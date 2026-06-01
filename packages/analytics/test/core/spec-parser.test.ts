@@ -228,7 +228,7 @@ describe('SpecParser DB queries', () => {
       limit: 5,
     });
     expect(specs).toEqual([{ name: 'Tent' }]);
-    const sql = runAndReadAll.mock.calls[0][0] as string;
+    const sql = String(runAndReadAll.mock.calls[0]?.[0]);
     expect(sql).toContain('WHERE');
     expect(sql).toContain('weight_grams IS NOT NULL');
     expect(sql).toContain('ORDER BY price');
@@ -238,7 +238,7 @@ describe('SpecParser DB queries', () => {
     const { parser, runAndReadAll } = makeParser([], []);
     const specs = await parser.filterProducts({});
     expect(specs).toEqual([]);
-    const sql = runAndReadAll.mock.calls[0][0] as string;
+    const sql = String(runAndReadAll.mock.calls[0]?.[0]);
     expect(sql).not.toContain('WHERE');
     expect(sql).toContain('ORDER BY weight_grams');
   });
