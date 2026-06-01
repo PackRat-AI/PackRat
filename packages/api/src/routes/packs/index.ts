@@ -100,13 +100,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         },
       });
 
-      // computePacksWeights' type signature still asks for full PackItem (it
-      // reads weight/quantity/worn/consumable — all in the projection above).
-      // Cast through PackWithItems to satisfy TS without widening the runtime
-      // shape. Wire-shape Zod parse below ensures the response contract holds.
-      return z
-        .array(PackWithWeightsSchema)
-        .parse(computePacksWeights({ packs: result as unknown as PackWithItems[] }));
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
@@ -265,9 +259,39 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/:packId',
     async ({ params }) => {
       const db = createDb();
+      // Drop packItems.embedding (1536-dim). Wire-shape was already clean via
+      // Zod strip (PackWithWeightsSchema doesn't declare embedding); this
+      // closes the DB→Worker egress + compute leak on the detail endpoint.
+      // Same pattern as the list endpoint above — the audit missed this
+      // callsite; folded in here for parity.
       const pack = await db.query.packs.findFirst({
         where: eq(packs.id, params.packId),
-        with: { items: { where: eq(packItems.deleted, false) } },
+        with: {
+          items: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+              weight: true,
+              weightUnit: true,
+              quantity: true,
+              category: true,
+              consumable: true,
+              worn: true,
+              image: true,
+              notes: true,
+              packId: true,
+              catalogItemId: true,
+              userId: true,
+              deleted: true,
+              isAIGenerated: true,
+              templateItemId: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            where: eq(packItems.deleted, false),
+          },
+        },
       });
 
       if (!pack) throw new NotFoundError('Pack not found');
@@ -314,11 +338,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         if (!pack) return status(404, { error: 'Pack not found' });
         const canAccess = pack.isPublic || pack.userId === user.userId;
         if (!canAccess) return status(403, { error: 'Unauthorized' });
-        // computePackBreakdown reads name/weight/weightUnit/category/quantity/
-        // worn/consumable — all in the minimal projection above. Cast through
-        // PackWithItems to satisfy the wider type signature without widening
-        // the runtime shape.
-        return computePackBreakdown(pack as unknown as PackWithItems);
+        return computePackBreakdown(pack);
       } catch (error) {
         captureApiException({
           error: error,
