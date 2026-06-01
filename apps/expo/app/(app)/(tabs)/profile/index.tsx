@@ -13,7 +13,6 @@ import {
   ListSectionHeader,
   Text,
 } from '@packrat/ui/nativewindui';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { isLoadingAtom, suppressSignOutNavAtom } from 'expo-app/features/auth/atoms/authAtoms';
@@ -24,6 +23,7 @@ import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

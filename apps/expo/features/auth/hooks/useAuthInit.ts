@@ -1,13 +1,13 @@
 import { when } from '@legendapp/state';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { asBoolean, asString } from '@packrat/guards';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as Sentry from '@sentry/react-native';
 import { userStore, userSyncState } from 'expo-app/features/auth/store';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 import { authClient } from 'expo-app/lib/auth-client';
+import Storage from 'expo-app/lib/expoSqliteKvStore';
+import { GoogleSignin } from 'expo-app/lib/googleSignin';
 import { router } from 'expo-router';
-import Storage from 'expo-sqlite/kv-store';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 

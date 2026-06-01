@@ -4,7 +4,7 @@ import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { authClient } from 'expo-app/lib/auth-client';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-app/lib/secureStore';
 import { z } from 'zod';
 
 // The expoClient plugin serialises all cookies into SecureStore under this key.

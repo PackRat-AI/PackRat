@@ -1,7 +1,7 @@
 import { expoClient } from '@better-auth/expo/client';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { createAuthClient } from 'better-auth/react';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-app/lib/secureStore';
 
 export const authClient = createAuthClient({
   baseURL: clientEnvs.EXPO_PUBLIC_API_URL,
