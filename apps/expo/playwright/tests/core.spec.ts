@@ -7,9 +7,12 @@
 import type { Page } from '@playwright/test';
 import { BASE_URL, expect, test } from './fixtures';
 
+const visibleCreatePackButton = (page: Page) =>
+  page.locator('[data-testid="create-pack-button"]:visible').first();
+
 async function createPack(page: Page, packName: string) {
   await page.goto(`${BASE_URL}/packs`);
-  await page.getByTestId('create-pack-button').click();
+  await visibleCreatePackButton(page).click();
   await page.getByTestId('packs:name-input').fill(packName);
 
   const packResponsePromise = page.waitForResponse(
@@ -27,14 +30,14 @@ async function createPack(page: Page, packName: string) {
 
 test('authenticated packs route loads app shell', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/packs`);
-  await expect(page.getByTestId('create-pack-button')).toBeVisible();
+  await expect(visibleCreatePackButton(page)).toBeVisible();
 });
 
 // ─── Packs ───────────────────────────────────────────────────────────────────
 
 test('packs tab loads and shows create button', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/packs`);
-  await expect(page.getByTestId('create-pack-button')).toBeVisible();
+  await expect(visibleCreatePackButton(page)).toBeVisible();
 });
 
 test('create a pack end-to-end', async ({ authedPage: page }) => {
