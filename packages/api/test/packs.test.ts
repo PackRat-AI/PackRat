@@ -536,13 +536,14 @@ describe('Packs Routes', () => {
       expect(linkedItem).toBeDefined();
       expect(linkedItem?.catalogItem).toBeDefined();
 
-      // Cost-bearing assertion: today `catalogItem: true` in the Drizzle `with`
-      // hydrates EVERY column. U5 narrows to a whitelist; these flip to
-      // `.not.toHaveProperty('embedding')` etc.
-      expect(linkedItem?.catalogItem).toHaveProperty('embedding');
-      expect(linkedItem?.catalogItem).toHaveProperty('reviews');
-      expect(linkedItem?.catalogItem).toHaveProperty('qas');
-      expect(linkedItem?.catalogItem).toHaveProperty('faqs');
+      // Cost-bearing assertion: post-U5 the `with: { catalogItem: { columns: {...} } }`
+      // whitelist drops embedding + fat JSONB from the join. Hot path was
+      // PackService.getPackDetails returning ~1-2 MB per call for a pack with
+      // 20 catalog-linked items.
+      expect(linkedItem?.catalogItem).not.toHaveProperty('embedding');
+      expect(linkedItem?.catalogItem).not.toHaveProperty('reviews');
+      expect(linkedItem?.catalogItem).not.toHaveProperty('qas');
+      expect(linkedItem?.catalogItem).not.toHaveProperty('faqs');
     });
   });
 });

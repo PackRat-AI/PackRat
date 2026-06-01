@@ -48,7 +48,24 @@ export class PackService {
         items: {
           where: eq(packItems.deleted, false),
           with: {
-            catalogItem: true,
+            // Drop embedding + fat JSONB on the joined catalog row. computePackWeights
+            // and downstream pack-detail callers only need scalars for rendering.
+            // /catalog/:id remains the source of truth when the heavy JSONB is needed.
+            catalogItem: {
+              columns: {
+                id: true,
+                name: true,
+                brand: true,
+                weight: true,
+                weightUnit: true,
+                images: true,
+                categories: true,
+                productUrl: true,
+                sku: true,
+                price: true,
+                ratingValue: true,
+              },
+            },
           },
         },
       },
