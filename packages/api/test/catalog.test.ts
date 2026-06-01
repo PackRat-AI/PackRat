@@ -1,5 +1,6 @@
+import { CatalogService } from '@packrat/api/services';
 import { describe, expect, it } from 'vitest';
-import { seedCatalogItem } from './utils/db-helpers';
+import { seedCatalogItem, seedFatCatalogItem } from './utils/db-helpers';
 import {
   api,
   apiWithApiKey,
@@ -367,6 +368,133 @@ describe('Catalog Routes', () => {
       const res2 = await apiWithAuth(`/catalog/${seededItem.id}/similar?limit=0`);
       const data2 = await expectJsonResponse(res2, ['items']);
       expect(data2.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // U1 characterization — locks current shape of catalog endpoints so the
+  // Tier-1 projection units (U2-U6) can prove they didn't silently regress
+  // wire-shape or DB-side projection. Each assertion flips at the unit that
+  // changes its underlying query — the flip is part of that unit's commit.
+  //
+  // Cost mechanism note (see plan Summary): the win is at the DB→Worker
+  // boundary, not Worker→Client. Service-level assertions below check
+  // whether the embedding column is hydrated into the JS object returned by
+  // the service (the actual cost surface). Wire-shape assertions are
+  // secondary because Zod schemas strip embedding on the way out for most
+  // catalog routes regardless of query projection.
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('shape contract (U1 characterization)', () => {
+    it('GET /catalog list — wire-shape today contains every CatalogItemSchema field (Zod strips embedding)', async () => {
+      await seedFatCatalogItem({ name: 'U1 Fat Item — catalog list' });
+
+      const res = await apiWithAuth('/catalog?limit=5');
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(Array.isArray(data.items)).toBe(true);
+      expect(data.items.length).toBeGreaterThan(0);
+
+      const seededItem = data.items.find((it: { name: string }) =>
+        it.name?.includes('U1 Fat Item'),
+      );
+      expect(seededItem).toBeDefined();
+
+      // Today: response items include every CatalogItemSchema field including the fat JSONB.
+      // U4 will drop variants/techs/links/reviews/qas/faqs from the DB-side projection;
+      // wire-shape will then show these fields as undefined (Zod permits — they are nullable+optional).
+      expect(seededItem).toHaveProperty('id');
+      expect(seededItem).toHaveProperty('name');
+      expect(seededItem).toHaveProperty('sku');
+      expect(seededItem).toHaveProperty('brand');
+      expect(seededItem).toHaveProperty('weight');
+      // Embedding is already absent from wire (Zod schema doesn't include it).
+      expect(seededItem).not.toHaveProperty('embedding');
+      // Fat JSONB IS present today on the wire — U4 will drop these from the projection.
+      expect(seededItem).toHaveProperty('reviews');
+      expect(seededItem).toHaveProperty('qas');
+      expect(seededItem).toHaveProperty('faqs');
+    });
+
+    it('CatalogService.getCatalogItems — DB-side projection today includes embedding (U4 will drop it)', async () => {
+      await seedFatCatalogItem({ name: 'U1 Fat Item — service projection' });
+
+      const service = new CatalogService();
+      const result = await service.getCatalogItems({ limit: 5 });
+
+      const seededItem = result.items.find((it) => it.name?.includes('U1 Fat Item'));
+      expect(seededItem).toBeDefined();
+
+      // This is the cost-bearing assertion — the service today selects every column via
+      // getTableColumns(catalogItems), so embedding + fat JSONB are hydrated into JS even though
+      // the route's Zod parse strips embedding from the wire. U4 flips this assertion to
+      // `.not.toHaveProperty('embedding')` and similar for the fat JSONB.
+      expect(seededItem).toHaveProperty('embedding');
+      expect(seededItem).toHaveProperty('reviews');
+      expect(seededItem).toHaveProperty('qas');
+      expect(seededItem).toHaveProperty('faqs');
+      expect(seededItem).toHaveProperty('techs');
+      expect(seededItem).toHaveProperty('links');
+      expect(seededItem).toHaveProperty('variants');
+    });
+
+    it('GET /catalog/:id — baseline shape (not changing in this PR; locked ahead of pivot migration)', async () => {
+      const seeded = await seedFatCatalogItem({ name: 'U1 Fat Item — detail' });
+
+      const res = await apiWithAuth(`/catalog/${seeded.id}`);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data.id).toBe(seeded.id);
+      expect(data.name).toBe('U1 Fat Item — detail');
+      // Wire-shape baseline — embedding stripped, fat JSONB present, usageCount computed.
+      expect(data).not.toHaveProperty('embedding');
+      expect(data).toHaveProperty('reviews');
+      expect(data).toHaveProperty('qas');
+      expect(data).toHaveProperty('faqs');
+      expect(data).toHaveProperty('usageCount');
+    });
+
+    it('GET /catalog/:id/similar — baseline shape (not changing in this PR; locked ahead of pivot migration)', async () => {
+      const seeded = await seedFatCatalogItem({ name: 'U1 Fat Item — similar source' });
+
+      const res = await apiWithAuth(`/catalog/${seeded.id}/similar?limit=3&threshold=0`);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data).toHaveProperty('items');
+      expect(data).toHaveProperty('sourceItem');
+      expect(data).toHaveProperty('total');
+      expect(Array.isArray(data.items)).toBe(true);
+      // sourceItem already excludes embedding (route destructures it out at routes/catalog/index.ts:470).
+      expect(data.sourceItem).not.toHaveProperty('embedding');
+      // Each result item already excludes embedding (route destructures at line 455).
+      for (const item of data.items) {
+        expect(item).not.toHaveProperty('embedding');
+        expect(item).toHaveProperty('similarity');
+      }
+    });
+
+    it('GET /catalog/vector-search — baseline shape (not changing in this PR; locked ahead of pivot migration)', async () => {
+      await seedFatCatalogItem({ name: 'U1 Fat Item — vector search' });
+
+      // Vector search requires a real embedding for the source query; without an AI provider
+      // configured in tests this path returns { items: [] } early. Assert the response envelope
+      // shape regardless of whether items are populated.
+      const res = await apiWithAuth('/catalog/vector-search?q=fat%20tent');
+      expect(res.status).toBe(200);
+      const data = await res.json();
+
+      expect(data).toHaveProperty('items');
+      expect(data).toHaveProperty('total');
+      expect(data).toHaveProperty('limit');
+      expect(data).toHaveProperty('offset');
+      expect(data).toHaveProperty('nextOffset');
+      expect(Array.isArray(data.items)).toBe(true);
+      // When the search returns items, each has similarity and no embedding.
+      for (const item of data.items) {
+        expect(item).not.toHaveProperty('embedding');
+        expect(item).toHaveProperty('similarity');
+      }
     });
   });
 });
