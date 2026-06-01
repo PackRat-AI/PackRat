@@ -33,6 +33,19 @@ export type ApiClientConfig = {
 };
 
 /**
+ * Structural predicate: anything with a `clone(): T` method (Request, Response,
+ * etc.) is cloneable. We avoid `instanceof Request` because consumers with
+ * `@cloudflare/workers-types` ambient see two distinct Request declarations
+ * (DOM + workers) and `instanceof` narrows to one but the variable can be the
+ * other.
+ */
+function isCloneable<T>(input: T): input is T & { clone(): T } {
+  return (
+    isObject(input) && 'clone' in input && typeof (input as { clone: unknown }).clone === 'function'
+  );
+}
+
+/**
  * Construct a typed Treaty client for the PackRat API. Handles bearer-token
  * injection and transparent refresh on 401 (for every path except the
  * refresh endpoint itself).
@@ -140,7 +153,10 @@ export function createApiClient(config: ApiClientConfig) {
 
     // Pre-clone a Request before any reads so the retry has an intact body.
     // For URL/string inputs (the common Eden Treaty case) this is a no-op.
-    const firstBase = input instanceof Request ? input.clone() : input;
+    // Use a structural type predicate rather than `instanceof Request` so the
+    // narrowing stays clean across DOM- and workers-flavored Request types
+    // (consumers with @cloudflare/workers-types ambient see both declarations).
+    const firstBase = isCloneable(input) ? input.clone() : input;
 
     const firstToken = isRefreshPath ? null : await config.auth.getAccessToken();
     const [firstInput, firstInit] = buildRequest({ token: firstToken, base: firstBase });
