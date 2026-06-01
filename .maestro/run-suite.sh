@@ -26,25 +26,37 @@ fi
 
 UNIQUE_ID="$(date +%s)"
 
+date_ymd_offset() {
+  node -e "const d = new Date(); d.setDate(d.getDate() + Number(process.argv[1])); console.log(d.toISOString().slice(0, 10));" "$1"
+}
+
+date_part() {
+  node -e "const d = new Date(process.argv[1] + 'T00:00:00Z'); const part = process.argv[2]; if (part === 'month') console.log(new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(d)); if (part === 'day') console.log(String(d.getUTCDate()).padStart(Number(process.argv[3] || 0), '0')); if (part === 'year') console.log(String(d.getUTCFullYear())); if (part === 'month-num') console.log(String(d.getUTCMonth() + 1));" "$1" "$2" "${3:-0}"
+}
+
+today_label() {
+  node -e "const d = new Date(); const platform = process.argv[1]; if (platform === 'ios') console.log(new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(d)); else console.log(new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(d));" "$1"
+}
+
 if [ "$PLATFORM" = "ios" ]; then
-  START_DATE="$(date -j -v+7d +"%Y-%m-%d")"
-  END_DATE="$(date -j -v+14d +"%Y-%m-%d")"
-  TODAY_DATE="$(date -j +"%b %-d, %Y")"
-  get_month() { date -j -f "%Y-%m-%d" "$1" +"%B"; }
-  get_day() { date -j -f "%Y-%m-%d" "$1" +"%-d"; }
-  get_year() { date -j -f "%Y-%m-%d" "$1" +"%Y"; }
-  get_month_num() { date -j -f "%Y-%m-%d" "$1" +"%-m"; }
+  START_DATE="$(date_ymd_offset 7)"
+  END_DATE="$(date_ymd_offset 14)"
+  TODAY_DATE="$(today_label ios)"
+  get_month() { date_part "$1" month; }
+  get_day() { date_part "$1" day; }
+  get_year() { date_part "$1" year; }
+  get_month_num() { date_part "$1" month-num; }
   CONFIG_FILE="$ROOT_DIR/.maestro/config.yaml"
   MASTER_FLOW="$ROOT_DIR/.maestro/master-flow.yaml"
   DEFAULT_APP_ID="com.andrewbierman.packrat.preview"
 else
-  START_DATE="$(date -d "+7 days" +"%Y-%m-%d")"
-  END_DATE="$(date -d "+14 days" +"%Y-%m-%d")"
-  TODAY_DATE="$(date +"%-d %b %Y")"
-  get_month() { date -d "$1" +"%B"; }
-  get_day() { date -d "$1" +"%d"; }
-  get_year() { date -d "$1" +"%Y"; }
-  get_month_num() { date -d "$1" +"%-m"; }
+  START_DATE="$(date_ymd_offset 7)"
+  END_DATE="$(date_ymd_offset 14)"
+  TODAY_DATE="$(today_label android)"
+  get_month() { date_part "$1" month; }
+  get_day() { date_part "$1" day 2; }
+  get_year() { date_part "$1" year; }
+  get_month_num() { date_part "$1" month-num; }
   CONFIG_FILE="$ROOT_DIR/.maestro/config-android.yaml"
   MASTER_FLOW="$ROOT_DIR/.maestro/master-flow-android.yaml"
   DEFAULT_APP_ID="com.packratai.mobile.preview"

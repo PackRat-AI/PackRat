@@ -112,14 +112,12 @@ export async function chunkCsvForR2({
       batch.map(async ({ index, from, to }) => {
         const obj = await r2.get(objectKey, { range: { offset: from, length: to - from } });
         if (!obj) throw new Error(`R2 peek read returned null for ${objectKey} [${from},${to})`);
-        const text = await obj.text();
-        const lastNewlineIndex = text.lastIndexOf('\n');
+        const bytes = await obj.bytes();
+        const lastNewlineIndex = bytes.lastIndexOf(0x0a);
         if (lastNewlineIndex === -1) {
           throw new ChunkBoundaryError(objectKey, { from, to });
         }
-        // TextEncoder gives byte length of the prefix — accurate for non-ASCII CSV
-        // content where char index != byte offset (e.g. accented product names).
-        const byteEnd = from + new TextEncoder().encode(text.slice(0, lastNewlineIndex)).byteLength;
+        const byteEnd = from + lastNewlineIndex;
         return { index, byteEnd };
       }),
     );

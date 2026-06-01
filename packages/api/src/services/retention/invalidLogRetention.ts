@@ -79,15 +79,15 @@ export async function sweepInvalidItemLogs(
 
     rowCount = removed.length;
     deleted += rowCount;
-    if (rowCount === 0) break;
+    if (rowCount < batchSize) break;
   }
 
   return {
     deleted,
     iterations,
-    // capped only when we hit the iteration ceiling with rows still remaining;
-    // if the last batch returned 0 rows we exhausted the table (not capped).
-    capped: rowCount > 0,
+    // A full final batch at the iteration ceiling means more expired rows may
+    // remain; a short final batch exhausted the expired set.
+    capped: iterations >= maxIterations && rowCount === batchSize,
     retentionDays,
   };
 }

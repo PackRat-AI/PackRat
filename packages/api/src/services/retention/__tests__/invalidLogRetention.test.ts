@@ -54,14 +54,14 @@ describe('sweepInvalidItemLogs', () => {
     expect(result.retentionDays).toBe(90);
   });
 
-  it('accumulates deletions across batches until an empty one stops the loop', async () => {
+  it('accumulates deletions across batches until a short batch stops the loop', async () => {
     const fullBatch: FakeRow[] = Array.from({ length: 10_000 }, () => ({ id: 1 }));
     setBatches([fullBatch, fullBatch, [{ id: 1 }], []]);
 
     const result = await sweepInvalidItemLogs({} as Env);
 
     expect(result.deleted).toBe(20_001);
-    expect(result.iterations).toBe(4);
+    expect(result.iterations).toBe(3);
     expect(result.capped).toBe(false);
   });
 
@@ -69,7 +69,7 @@ describe('sweepInvalidItemLogs', () => {
     const fullBatch: FakeRow[] = Array.from({ length: 100 }, () => ({ id: 1 }));
     setBatches([fullBatch, fullBatch, fullBatch, fullBatch, fullBatch]);
 
-    const result = await sweepInvalidItemLogs({} as Env, { maxIterations: 3 });
+    const result = await sweepInvalidItemLogs({} as Env, { batchSize: 100, maxIterations: 3 });
 
     expect(result.iterations).toBe(3);
     expect(result.capped).toBe(true);

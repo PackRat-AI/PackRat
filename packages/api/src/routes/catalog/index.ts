@@ -39,7 +39,23 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
-const FILE_EXT_RE = /\.[^.]*$/;
+function workflowInstanceId({ source, filename }: { source: string; filename: string }): string {
+  const dotIndex = filename.lastIndexOf('.');
+  const baseFilename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+  const rawId = `${source}-${baseFilename}`;
+  const sanitized = Array.from(rawId)
+    .map((ch) => {
+      const code = ch.charCodeAt(0);
+      const isDigit = code >= 48 && code <= 57;
+      const isUpper = code >= 65 && code <= 90;
+      const isLower = code >= 97 && code <= 122;
+      return isDigit || isUpper || isLower || ch === '_' || ch === '-' ? ch : '-';
+    })
+    .join('')
+    .slice(0, 64);
+
+  return sanitized || 'catalog-etl';
+}
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
@@ -343,8 +359,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         chunksTotal: totalChunks,
       }));
 
-      // CF Workflows instance IDs only allow [a-zA-Z0-9_-] — strip the file extension.
-      const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
+      const instanceId = workflowInstanceId({ source, filename });
 
       await db.insert(etlJobs).values({
         id: jobId,

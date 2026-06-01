@@ -17,7 +17,13 @@ const candidates = [
   join(repoRoot, '../development/packages/api/.dev.vars'),
 ];
 
-const source = candidates.find((candidate) => Bun.file(candidate).exists());
+let source: string | undefined;
+for (const candidate of candidates) {
+  if (await Bun.file(candidate).exists()) {
+    source = candidate;
+    break;
+  }
+}
 if (!source) {
   console.error('Error: Could not find a base .dev.vars file.');
   console.error('  Checked:');

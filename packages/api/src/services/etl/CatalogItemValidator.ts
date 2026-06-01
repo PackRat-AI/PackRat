@@ -9,9 +9,6 @@ import type { ValidationError } from '@packrat/schemas/validation';
 // String-level check only; no DNS resolution (which is itself an SSRF vector).
 // IPv6 hostnames are bracket-stripped before matching (URL.hostname returns
 // bracketed form: `[::1]`).
-const PRIVATE_HOSTNAME_PATTERN =
-  /^(?:localhost|127\.|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|169\.254\.|::1$|fc00:|fd00:|fe80:)/i;
-
 // Length caps — chosen to accommodate the widest real-world catalog rows while
 // preventing a scraper bug or supply-chain compromise from saturating the
 // catalog with multi-MB blobs.
@@ -24,6 +21,33 @@ const SKU_MAX_LENGTH = 200;
 
 const SKU_PATTERN = /^[A-Za-z0-9_./-]+$/;
 const IPV6_BRACKET_PATTERN = /^\[(.+)\]$/;
+
+function isPrivateHostname(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+  if (
+    lower === 'localhost' ||
+    lower.startsWith('127.') ||
+    lower.startsWith('10.') ||
+    lower.startsWith('192.168.') ||
+    lower.startsWith('169.254.')
+  ) {
+    return true;
+  }
+
+  const firstIpv4Octets = lower.split('.').slice(0, 2);
+  if (firstIpv4Octets[0] === '172') {
+    const secondOctet = Number(firstIpv4Octets[1]);
+    if (Number.isInteger(secondOctet) && secondOctet >= 16 && secondOctet <= 31) {
+      return true;
+    }
+  }
+
+  if (lower === '::1') return true;
+  const firstHextet = Number.parseInt(lower.split(':')[0] ?? '', 16);
+  if (Number.isNaN(firstHextet)) return false;
+
+  return (firstHextet & 0xfe00) === 0xfc00 || (firstHextet & 0xffc0) === 0xfe80;
+}
 
 export class CatalogItemValidator {
   validateItem(item: Partial<NewCatalogItem>): ValidatedCatalogItem {
@@ -160,7 +184,7 @@ export class CatalogItemValidator {
     // Strip IPv6 brackets so `[::1]` matches the IPv6 patterns and not the
     // bracketed-string fallback.
     const hostname = parsed.hostname.replace(IPV6_BRACKET_PATTERN, '$1');
-    if (PRIVATE_HOSTNAME_PATTERN.test(hostname)) {
+    if (isPrivateHostname(hostname)) {
       return 'Product URL hostname must not be a private/loopback/link-local address';
     }
 
