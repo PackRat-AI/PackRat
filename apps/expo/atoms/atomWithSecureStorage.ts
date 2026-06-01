@@ -1,4 +1,5 @@
 import { isFunction } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import * as SecureStore from 'expo-secure-store';
 import { atom } from 'jotai';
 
@@ -14,7 +15,7 @@ export const atomWithSecureStorage = <T>({
   baseAtom.onMount = (setValue) => {
     (async () => {
       const item = await SecureStore.getItemAsync(key);
-      setValue(item ? JSON.parse(item) : initialValue);
+      setValue(item ? safeJsonParse<T>(item) : initialValue);
     })();
   };
 
@@ -23,7 +24,7 @@ export const atomWithSecureStorage = <T>({
     (get, set, update) => {
       const nextValue = isFunction(update) ? update(get(baseAtom)) : update;
       set(baseAtom, nextValue);
-      SecureStore.setItemAsync(key, JSON.stringify(nextValue));
+      SecureStore.setItemAsync(key, safeJsonStringify(nextValue));
     },
   );
 

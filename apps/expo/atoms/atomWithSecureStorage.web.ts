@@ -1,4 +1,5 @@
 import { isFunction } from '@packrat/guards';
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import { atom } from 'jotai';
 
 /**
@@ -19,7 +20,7 @@ export const atomWithSecureStorage = <T>({
   baseAtom.onMount = (setValue) => {
     try {
       const item = localStorage.getItem(key);
-      setValue(item !== null ? JSON.parse(item) : initialValue);
+      setValue(item !== null ? safeJsonParse<T>(item, { strict: true }) : initialValue);
     } catch {
       setValue(initialValue);
     }
@@ -31,7 +32,7 @@ export const atomWithSecureStorage = <T>({
       const nextValue = isFunction(update) ? (update as (prev: T) => T)(get(baseAtom)) : update;
       set(baseAtom, nextValue);
       try {
-        localStorage.setItem(key, JSON.stringify(nextValue));
+        localStorage.setItem(key, safeJsonStringify(nextValue));
       } catch {
         // Ignore storage errors
       }

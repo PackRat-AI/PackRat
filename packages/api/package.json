@@ -54,6 +54,7 @@
     "@packrat/schemas": "workspace:*",
     "@packrat/types": "workspace:*",
     "@packrat/units": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@sentry/cloudflare": "^10.37.0",
     "@sinclair/typebox": "^0.34.15",
     "@types/nodemailer": "^6.4.17",

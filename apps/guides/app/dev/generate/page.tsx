@@ -2,6 +2,7 @@
 
 import { guideEnv } from '@packrat/env/next';
 import { assertEnum } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import {
@@ -145,7 +146,7 @@ export default function GeneratePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: safeJsonStringify({
           title,
           description,
           categories: selectedCategories,
@@ -193,7 +194,7 @@ export default function GeneratePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: safeJsonStringify({
           count: batchCount,
           categories: batchCategories.length > 0 ? batchCategories : undefined,
         }),

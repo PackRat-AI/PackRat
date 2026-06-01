@@ -10,7 +10,8 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@elysiajs/eden": "catalog:",
-    "@packrat/guards": "workspace:*"
+    "@packrat/guards": "workspace:*",
+    "@packrat/utils": "workspace:*"
   },
   "devDependencies": {
     "@packrat/api": "workspace:*",

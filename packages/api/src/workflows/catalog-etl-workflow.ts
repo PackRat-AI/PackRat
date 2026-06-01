@@ -30,6 +30,7 @@ import { setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
 import { toRecord } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import type { ChunkSpec } from './shared/chunkCsvForR2';
@@ -139,7 +140,7 @@ export async function processChunk({
 
         let parsedObj: Record<string, unknown>;
         try {
-          parsedObj = toRecord(JSON.parse(trimmed));
+          parsedObj = toRecord(safeJsonParse(trimmed, { strict: true }));
         } catch (parseErr) {
           invalidItemsBatch.push({
             jobId,
@@ -189,7 +190,7 @@ export async function processChunk({
     const lastLine = buffer.trim();
     if (lastLine && firstLineSkipped) {
       try {
-        const parsedObj = toRecord(JSON.parse(lastLine));
+        const parsedObj = toRecord(safeJsonParse(lastLine, { strict: true }));
         const item = mapJsonRowToItem(parsedObj);
         if (item) {
           const validated = validator.validateItem(item);

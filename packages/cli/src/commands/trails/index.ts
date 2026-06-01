@@ -1,4 +1,5 @@
 import { toRecord, toRecordArray } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -34,7 +35,7 @@ const searchCmd = defineCommand({
       action: 'search trails',
     });
     if (args.json) {
-      process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+      process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
       return;
     }
     printTable({
@@ -60,7 +61,7 @@ const getCmd = defineCommand({
       action: 'get trail',
       resourceHint: `trail ${args.id}`,
     });
-    process.stdout.write(`${JSON.stringify(trail, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(trail, null, 2)}\n`);
   },
 });
 
@@ -75,7 +76,7 @@ const geometryCmd = defineCommand({
       action: 'get trail geometry',
       resourceHint: `trail ${args.id}`,
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

@@ -8,6 +8,7 @@ import {
   catalogItems,
   type NewCatalogItem,
 } from '@packrat/db';
+import { safeJsonStringify } from '@packrat/utils';
 import {
   and,
   asc,
@@ -382,7 +383,8 @@ export class CatalogService {
 
       return embeddingFields.some(
         (field) =>
-          inputItem[field] && JSON.stringify(inputItem[field]) !== JSON.stringify(item[field]),
+          inputItem[field] &&
+          safeJsonStringify(inputItem[field]) !== safeJsonStringify(item[field]),
       );
     });
 

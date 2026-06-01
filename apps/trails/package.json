@@ -18,6 +18,7 @@
     "@packrat/app": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/overpass": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-dialog": "catalog:",
     "@radix-ui/react-label": "catalog:",

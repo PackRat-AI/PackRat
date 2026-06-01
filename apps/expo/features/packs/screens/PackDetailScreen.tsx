@@ -1,6 +1,7 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { safeJsonStringify } from '@packrat/utils';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
@@ -285,7 +286,7 @@ export function PackDetailScreen() {
       return router.push({
         pathname: '/auth',
         params: {
-          redirectTo: JSON.stringify({
+          redirectTo: safeJsonStringify({
             pathname: '/ai-chat',
             params: {
               packId: id,

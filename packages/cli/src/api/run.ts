@@ -5,6 +5,7 @@
  */
 
 import { isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import chalk from 'chalk';
 import consola from 'consola';
 import { loadConfig } from './config';
@@ -170,7 +171,7 @@ function extractMessage(body: unknown): string | null {
     if (isString(obj.message)) return obj.message;
     if (isString(obj.error)) return obj.error;
     try {
-      return JSON.stringify(body);
+      return safeJsonStringify(body);
     } catch {
       return null;
     }

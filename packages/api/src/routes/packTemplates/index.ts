@@ -14,6 +14,7 @@ import {
   UpdatePackTemplateItemRequestSchema,
   UpdatePackTemplateRequestSchema,
 } from '@packrat/schemas/packTemplates';
+import { safeJsonStringify } from '@packrat/utils';
 import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
@@ -59,7 +60,7 @@ async function fetchTikTokPostData(
     new Request('http://container/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tiktokUrl: url }),
+      body: safeJsonStringify({ tiktokUrl: url }),
     }),
   );
 

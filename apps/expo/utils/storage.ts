@@ -1,3 +1,4 @@
+import { safeJsonParse, safeJsonStringify } from '@packrat/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { createJSONStorage } from 'jotai/utils';
@@ -6,10 +7,10 @@ import { createJSONStorage } from 'jotai/utils';
 export const asyncStorage = createJSONStorage<WeatherLocation[]>(() => ({
   getItem: async (key: string) => {
     const value = await AsyncStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
+    return value ? safeJsonParse<WeatherLocation[]>(value) : null;
   },
   setItem: async (key: string, value: unknown) => {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
+    await AsyncStorage.setItem(key, safeJsonStringify(value));
   },
   removeItem: async (key: string) => {
     await AsyncStorage.removeItem(key);

@@ -1,5 +1,6 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 import type { AgentContext } from './types';
 
 type TreatyResult = {
@@ -22,7 +23,7 @@ function asContent({ uri, body }: { uri: string; body: object }): {
   contents: Array<{ uri: string; mimeType: string; text: string }>;
 } {
   return {
-    contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(body, null, 2) }],
+    contents: [{ uri, mimeType: 'application/json', text: safeJsonStringify(body, null, 2) }],
   };
 }
 

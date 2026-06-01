@@ -62,6 +62,7 @@
     "@packrat/schemas": "workspace:*",
     "@packrat/types": "workspace:*",
     "@packrat/units": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@react-native-ai/apple": "~0.10.0",
     "@react-native-ai/llama": "~0.10.0",
     "@react-native-async-storage/async-storage": "2.2.0",

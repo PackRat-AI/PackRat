@@ -1,6 +1,7 @@
 import { treaty } from '@elysiajs/eden';
 import type { App } from '@packrat/api';
 import { isObject, isString } from '@packrat/guards';
+import { safeJsonStringify } from '@packrat/utils';
 
 /**
  * Auth integration hooks. Session state (token storage, refresh dedup,
@@ -49,7 +50,7 @@ export function createApiClient(config: ApiClientConfig) {
         const response = await baseFetcher(`${config.baseUrl}/api/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
+          body: safeJsonStringify({ refreshToken }),
         });
         const data = (await response.json().catch(() => null)) as {
           success?: boolean;
@@ -240,7 +241,7 @@ export class PackRatApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
     return this.handleResponse<T>(response);
   }
@@ -249,7 +250,7 @@ export class PackRatApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PUT',
       headers: this.headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
     return this.handleResponse<T>(response);
   }
@@ -258,7 +259,7 @@ export class PackRatApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers: this.headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? safeJsonStringify(body) : undefined,
     });
     return this.handleResponse<T>(response);
   }
@@ -297,7 +298,7 @@ export function createPackRatClient({
 // ── MCP tool result helpers ───────────────────────────────────────────────────
 
 export function ok(data: unknown): { content: [{ type: 'text'; text: string }] } {
-  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+  return { content: [{ type: 'text', text: safeJsonStringify(data, null, 2) }] };
 }
 
 export function err(error: unknown): { content: [{ type: 'text'; text: string }]; isError: true } {

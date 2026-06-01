@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -18,7 +19,7 @@ const forecastCmd = defineCommand({
       action: 'get weather forecast',
       resourceHint: args.location,
     });
-    process.stdout.write(`${JSON.stringify(forecast, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(forecast, null, 2)}\n`);
   },
 });
 
@@ -32,7 +33,7 @@ const searchCmd = defineCommand({
       promise: client.weather.search.get({ query: { q: args.q } }),
       action: 'search weather',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });
 

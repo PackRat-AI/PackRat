@@ -1,3 +1,4 @@
+import { safeJsonStringify } from '@packrat/utils';
 import { defineCommand } from 'citty';
 import { getUserClient } from '../../api/client';
 import { requireAuth, runApi } from '../../api/run';
@@ -18,6 +19,6 @@ export default defineCommand({
       promise: client['season-suggestions'].post({ location: args.location, date: args.date }),
       action: 'season suggestions',
     });
-    process.stdout.write(`${JSON.stringify(data, null, 2)}\n`);
+    process.stdout.write(`${safeJsonStringify(data, null, 2)}\n`);
   },
 });

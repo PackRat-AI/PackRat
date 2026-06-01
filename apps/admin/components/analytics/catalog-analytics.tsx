@@ -1,5 +1,6 @@
 'use client';
 
+import { safeJsonStringify } from '@packrat/utils';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import {
@@ -146,7 +147,7 @@ function EtlJobFailuresDialog({ jobId, totalInvalid }: { jobId: string; totalInv
                             raw data
                           </summary>
                           <pre className="mt-1 text-xs whitespace-pre-wrap break-all">
-                            {JSON.stringify(s.rawData, null, 2)}
+                            {safeJsonStringify(s.rawData, null, 2)}
                           </pre>
                         </details>
                       )}

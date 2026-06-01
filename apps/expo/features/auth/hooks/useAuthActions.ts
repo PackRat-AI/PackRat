@@ -1,4 +1,5 @@
 import { asBoolean, asString } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -27,7 +28,7 @@ import {
 
 function redirect(route: string) {
   try {
-    const parsedRoute: Href = JSON.parse(route);
+    const parsedRoute = safeJsonParse<Href>(route, { strict: true });
     return router.dismissTo(parsedRoute);
   } catch {
     router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here

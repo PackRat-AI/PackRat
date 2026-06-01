@@ -4,6 +4,7 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
 import { toRecord } from '@packrat/guards';
+import { safeJsonParse } from '@packrat/utils';
 import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
@@ -109,7 +110,7 @@ export async function processCatalogETL({
 
           let obj: Record<string, unknown>;
           try {
-            obj = toRecord(JSON.parse(trimmed));
+            obj = toRecord(safeJsonParse(trimmed, { strict: true }));
           } catch (parseErr) {
             invalidItemsBatch.push({
               jobId,
@@ -156,7 +157,7 @@ export async function processCatalogETL({
       const lastLine = buffer.trim();
       if (lastLine && firstLineSkipped) {
         try {
-          const obj = toRecord(JSON.parse(lastLine));
+          const obj = toRecord(safeJsonParse(lastLine, { strict: true }));
           const item = mapJsonRowToItem(obj);
           if (item) {
             const validated = validator.validateItem(item);

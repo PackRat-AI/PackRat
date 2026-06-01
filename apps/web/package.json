@@ -13,6 +13,7 @@
     "@packrat/app": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/utils": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-query-devtools": "catalog:",

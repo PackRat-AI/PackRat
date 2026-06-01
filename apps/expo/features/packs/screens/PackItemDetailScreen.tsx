@@ -1,5 +1,6 @@
 import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { safeJsonStringify } from '@packrat/utils';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -111,7 +112,7 @@ export function ItemDetailScreen() {
       return router.push({
         pathname: '/auth',
         params: {
-          redirectTo: JSON.stringify({
+          redirectTo: safeJsonStringify({
             pathname: '/ai-chat',
             params: {
               itemId: item.id,

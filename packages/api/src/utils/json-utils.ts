@@ -1,7 +1,8 @@
-import { parseFaqs, parsePrice, parseWeight, safeJsonParse } from '@packrat/api/utils/csv-utils';
+import { parseCatalogJson, parseFaqs, parsePrice, parseWeight } from '@packrat/api/utils/csv-utils';
 import type { NewCatalogItem } from '@packrat/db';
 import { isNumber, isObject, isString, toStringRecord } from '@packrat/guards';
 import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
+import { safeJsonParse } from '@packrat/utils';
 
 // Module-level regex constant (Biome useTopLevelRegex)
 const NEWLINE_CHARS = /[\r\n]+/g;
@@ -99,7 +100,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
     const val = rawCategories.trim();
     try {
       item.categories = val.startsWith('[')
-        ? (JSON.parse(val) as unknown[]).filter((c): c is string => isString(c))
+        ? safeJsonParse<unknown[]>(val, { strict: true }).filter((c): c is string => isString(c))
         : val
             .split(',')
             .map((v) => v.trim())
@@ -121,12 +122,12 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   const unitStr = isString(rawWeightUnit) ? rawWeightUnit : undefined;
 
   if (isNumber(rawWeight) && rawWeight > 0) {
-    const { weight, unit } = parseWeight(String(rawWeight), unitStr);
+    const { weight, unit } = parseWeight({ weightStr: String(rawWeight), unitStr });
     item.weight = weight ?? undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
     item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
   } else if (isString(rawWeight) && parseFloat(rawWeight) > 0) {
-    const { weight, unit } = parseWeight(rawWeight, unitStr);
+    const { weight, unit } = parseWeight({ weightStr: rawWeight, unitStr });
     item.weight = weight ?? undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
     item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
@@ -174,7 +175,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
     item.techs = toStringRecord(rawTechs);
   } else if (isString(rawTechs) && rawTechs.trim()) {
     try {
-      const parsed = safeJsonParse<Record<string, string>>(rawTechs);
+      const parsed = parseCatalogJson<Record<string, string>>(rawTechs);
       item.techs = Array.isArray(parsed) ? {} : toStringRecord(parsed);
     } catch {
       item.techs = {};
@@ -186,7 +187,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
     const techs = toStringRecord(item.techs);
     const claimedWeight = techs['Claimed Weight'] ?? techs.weight;
     if (claimedWeight) {
-      const { weight, unit } = parseWeight(claimedWeight);
+      const { weight, unit } = parseWeight({ weightStr: claimedWeight });
       item.weight = weight ?? undefined;
       const parsedUnit = WeightUnitSchema.safeParse(unit);
       item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
