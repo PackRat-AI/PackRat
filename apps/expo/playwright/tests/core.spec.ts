@@ -166,8 +166,7 @@ test('create a trip with dates', async ({ authedPage: page }) => {
 
 test('catalog tab loads items', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for items to load — at least one item name visible
-  await expect(page.locator('text=/\\d+,?\\d+ items/i').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId(/^catalog:item-/).first()).toBeVisible({ timeout: 10_000 });
 });
 
 test('catalog search filters results', async ({ authedPage: page }) => {
@@ -180,9 +179,10 @@ test('catalog search filters results', async ({ authedPage: page }) => {
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });
-  await searchBox.fill('sleeping bag');
-  // Results should update — check item names
-  await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 10_000 });
+  await searchBox.fill('headlamp');
+  await expect(page.getByTestId(/^catalog:item-.*Headlamp/i).first()).toBeVisible({
+    timeout: 10_000,
+  });
 });
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
