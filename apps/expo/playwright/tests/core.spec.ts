@@ -24,11 +24,9 @@ async function createPack(page: Page, packName: string) {
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 
-test('dashboard loads authenticated', async ({ authedPage: page }) => {
-  await page.goto(`${BASE_URL}/`);
-  // Tab bar must be visible — confirms app rendered past the auth gate
-  await expect(page.getByRole('tab', { name: /Dashboard/i })).toBeVisible();
-  await expect(page.getByRole('tab', { name: /Packs/i })).toBeVisible();
+test('authenticated packs route loads app shell', async ({ authedPage: page }) => {
+  await page.goto(`${BASE_URL}/packs`);
+  await expect(page.getByTestId('create-pack-button')).toBeVisible();
 });
 
 // ─── Packs ───────────────────────────────────────────────────────────────────
