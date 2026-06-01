@@ -827,7 +827,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           userId: user.userId,
           embedding,
         } as NewPackItem) // safe-cast: object literal matches NewPackItem shape; cast required because embedding field type is narrower in the inferred type
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: POST returns full newItem to client (route spreads ...newItem at 201); defer narrowing to Tier-3 #13 (response-schema split)
 
       await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
@@ -858,6 +858,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     async ({ params, user }) => {
       const db = createDb();
       const item = await db.query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: detail endpoint returns full item to client via PackItemSchema; defer narrowing to Tier-3 #13 (response-schema split)
         where: eq(packItems.id, params.itemId),
         with: { pack: true },
       });
@@ -899,6 +900,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       } = getEnv();
 
       const existingItem = await db.query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: PATCH path reads existingItem for getEmbeddingText diff (needs name/description/etc.); defer to pivot migration where embedding regen source can be sourced explicitly
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
@@ -938,6 +940,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if ('image' in data) {
         try {
           const item = await db.query.packItems.findFirst({
+            // lint:allow-unprojected-fat-table reason: image-cleanup helper reads only .image; could narrow to columns: { image: true } in Tier-2 cleanup pass
             where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
           });
           const oldImage = item?.image ?? null;
@@ -954,7 +957,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         .update(packItems)
         .set(updateData)
         .where(and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)))
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: PATCH returns full updatedItem to client via PackItemSchema; defer narrowing to Tier-3 #13 (response-schema split)
 
       if (!updatedItem) throw new NotFoundError('Pack item not found');
 
@@ -984,6 +987,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const itemId = params.itemId;
 
       const item = await db.query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: DELETE existence check + reads .packId; could narrow but defer to pivot-migration cleanup
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
@@ -1018,6 +1022,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
       const sourceItem = await db.query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer to pivot migration (separate pack_item_embeddings table)
         where: eq(packItems.id, itemId),
         with: { pack: true },
       });
