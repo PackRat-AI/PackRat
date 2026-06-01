@@ -23,33 +23,18 @@ import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
 
-// Local-dev hook: route `@neondatabase/serverless` through Neon's official
-// local proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, recommended by
-// https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
-// points at the local `db.localtest.me` host. The proxy serves both the HTTP
-// /sql API (used by neon-http, which is what auth/index.ts uses) and the
-// WebSocket /v2 endpoint (used by neon-serverless Pool) — so prod and local
-// share the exact same driver code paths with no adapter switch.
-let neonLocalConfigured = false;
-function maybeConfigureLocalNeon(databaseUrl: string, proxyPortOverride?: string): void {
-  if (neonLocalConfigured) return;
-  try {
-    const u = new URL(databaseUrl);
-    const host = u.hostname.toLowerCase();
-    const isNeon =
-      host === 'neon.tech' ||
-      host.endsWith('.neon.tech') ||
-      host === 'neon.com' ||
-      host.endsWith('.neon.com');
-    if (isNeon) return;
-    const proxyPort = proxyPortOverride ?? '4444';
-    neonConfig.fetchEndpoint = (h) =>
-      h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
-    neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
-    neonConfig.useSecureWebSocket = host !== 'db.localtest.me';
-  } finally {
-    neonLocalConfigured = true;
-  }
+// Origins allowed to make cross-origin (credentialed) requests to the API.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/(www\.)?packrat\.world$/,
+  /^https:\/\/[\w-]+\.packrat\.world$/,
+  /^https:\/\/[\w-]+\.packratai\.com$/,
+  /^https?:\/\/[\w-]+\.workers\.dev$/,
+  /^http:\/\/localhost:\d+$/,
+  /^exp:\/\//,
+];
+
+function isAllowedOrigin(origin: string | null): origin is string {
+  return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
 }
 
 export const app = new Elysia({ adapter: CloudflareAdapter })
@@ -58,20 +43,7 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
       // Better Auth uses cookies — credentials must be true and origins must
       // be explicit (not wildcard) so the browser sends cookies cross-origin.
       credentials: true,
-      origin: (request) => {
-        const origin = request.headers.get('Origin');
-        if (!origin) return false;
-        // Allow the API base URL and any subdomain of packrat.world
-        const allowed = [
-          /^https:\/\/(www\.)?packrat\.world$/,
-          /^https:\/\/[\w-]+\.packrat\.world$/,
-          /^https:\/\/[\w-]+\.packratai\.com$/,
-          /^https?:\/\/[\w-]+\.workers\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-          /^exp:\/\//,
-        ];
-        return allowed.some((re) => re.test(origin));
-      },
+      origin: (request) => isAllowedOrigin(request.headers.get('Origin')),
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
@@ -115,6 +87,19 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .get('/health', () => ({ status: 'ok' as const }), {
     detail: { summary: 'Health status', tags: ['Meta'] },
   })
+  // Better Auth handles all /api/auth/** requests. Routing it through Elysia
+  // (rather than dispatching before Elysia) means the `cors` plugin above
+  // applies its credentialed-CORS policy and OPTIONS preflight to auth routes
+  // too. `auth` is resolved per-request because it depends on the Cloudflare
+  // env bindings, which are only available at request time.
+  .all(
+    '/api/auth/*',
+    async ({ request }) => {
+      const auth = await getAuth(getEnv());
+      return auth.handler(request);
+    },
+    { parse: 'none', detail: { hide: true } },
+  )
   .use(routes)
   .compile();
 
@@ -135,67 +120,36 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
+// Local-dev hook: route `@neondatabase/serverless` through Neon's official local
+// proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, see docker-compose.test.yml
+// and https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
+// points at `db.localtest.me`. The proxy serves the HTTP /sql API (neon-http,
+// used by auth) and the WebSocket /v2 endpoint (neon-serverless Pool), so local
+// and prod share the exact same driver path — no node-postgres TCP sockets
+// (which workerd silently drops between requests).
+let neonLocalConfigured = false;
+function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
+  if (neonLocalConfigured || !databaseUrl) return;
+  try {
+    const host = new URL(databaseUrl).hostname.toLowerCase();
+    if (host !== 'db.localtest.me') return;
+    const proxyPort = '4444';
+    neonConfig.fetchEndpoint = (h) =>
+      h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
+    neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
+    neonConfig.useSecureWebSocket = false;
+  } catch {
+    // not a valid URL — leave neon defaults in place
+  } finally {
+    neonLocalConfigured = true;
+  }
+}
+
 const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
+    maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
-    maybeConfigureLocalNeon(e.NEON_DATABASE_URL, e.NEON_LOCAL_PROXY_PORT);
-
-    // Route /api/auth/** to Better Auth before Elysia sees it.
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/auth')) {
-      // Better Auth does not implement CORS preflight (OPTIONS) responses, so
-      // we mirror the Elysia CORS allowlist here. Without this, browser-based
-      // sign-in calls from the web app (a different origin than the API) fail
-      // the preflight and never reach Better Auth.
-      const origin = request.headers.get('Origin');
-      const isAllowedOrigin =
-        !!origin &&
-        [
-          /^https:\/\/(www\.)?packrat\.world$/,
-          /^https:\/\/[\w-]+\.packrat\.world$/,
-          /^https:\/\/[\w-]+\.packratai\.com$/,
-          /^https?:\/\/[\w-]+\.workers\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-          /^exp:\/\//,
-        ].some((re) => re.test(origin));
-
-      const corsHeaders: Record<string, string> = isAllowedOrigin
-        ? {
-            'Access-Control-Allow-Origin': origin,
-            'Access-Control-Allow-Credentials': 'true',
-            Vary: 'Origin',
-          }
-        : {};
-
-      if (request.method === 'OPTIONS') {
-        return new Response(null, {
-          status: 204,
-          headers: {
-            ...corsHeaders,
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers':
-              request.headers.get('Access-Control-Request-Headers') ??
-              'Content-Type, Authorization, X-API-Key',
-            'Access-Control-Max-Age': '86400',
-          },
-        });
-      }
-
-      const validatedEnv = getEnv();
-      const auth = await getAuth(validatedEnv);
-      const authResponse = await auth.handler(request);
-      if (!isAllowedOrigin) return authResponse;
-      // Copy Better Auth's response and append CORS headers so cookies/JSON
-      // payloads reach the cross-origin caller.
-      const headers = new Headers(authResponse.headers);
-      for (const [k, v] of Object.entries(corsHeaders)) headers.set(k, v);
-      return new Response(authResponse.body, {
-        status: authResponse.status,
-        statusText: authResponse.statusText,
-        headers,
-      });
-    }
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
   },

@@ -63,16 +63,13 @@ async function addItemViaForm(
 
 test.describe('Pack CRUD', () => {
   test('create pack → appears in packs list', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(30_000);
     const packName = `E2E-Create-${Date.now()}`;
 
     await createPackViaForm(page, packName);
 
     await page.goto(`${BASE_URL}/packs`);
-    // Scope to visible elements — Expo Router keeps hidden tab panels in DOM
-    await expect(page.locator(`:text("${packName}"):visible`).first()).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(page.getByText(packName)).toBeVisible({ timeout: 10_000 });
   });
 
   test('edit pack name → updated name appears in detail', async ({ authedPage: page }) => {
@@ -208,18 +205,12 @@ test.describe('Item CRUD within a pack', () => {
     const moreActionsButton = page.getByTestId(`items:more-actions-${itemId}`);
     if (await moreActionsButton.isVisible()) {
       await moreActionsButton.click();
-      // Use exact match so the item name "E2E-DeleteItem-..." doesn't match
       const deleteOption = page
-        .getByText('Delete', { exact: true })
-        .or(page.getByRole('menuitem', { name: 'Delete' }))
+        .getByText(/delete/i)
+        .or(page.getByRole('menuitem', { name: /delete/i }))
         .first();
       await deleteOption.waitFor({ timeout: 5_000 });
-
-      // The action sheet entrance animation is 225ms. Wait for it to finish before
-      // clicking — clicks during the animation are silently ignored by _onSelect().
-      await page.waitForTimeout(350);
       await deleteOption.click();
-      // Alert.alert → window.confirm on web; the dialog handler registered above accepts it.
 
       // Item card should be gone
       await expect(page.getByTestId(`items:card-${itemId}`)).not.toBeVisible({ timeout: 10_000 });

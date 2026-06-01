@@ -2,7 +2,11 @@ import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -41,10 +45,19 @@ export default function AuthIndexScreen() {
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
+  const setIsLoadingGlobal = useSetAtom(isLoadingAtom);
 
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
   }, [redirectTo, setRedirectTo]);
+
+  // After a sign-out via "Sign-in again", isLoadingAtom is left true by the
+  // profile screen so AppLayout can detect the unauthenticated state and
+  // navigate here. Once this screen mounts, loading is done — clear the atom
+  // so the Sign In button renders instead of the spinner.
+  React.useEffect(() => {
+    setIsLoadingGlobal(false);
+  }, [setIsLoadingGlobal]);
 
   if (isLoading) {
     return (

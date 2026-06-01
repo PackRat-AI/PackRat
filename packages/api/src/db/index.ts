@@ -13,10 +13,11 @@ const isStandardPostgresUrl = (url: string) => {
     const host = u.hostname.toLowerCase();
     const isNeonTech = host === 'neon.tech' || host.endsWith('.neon.tech');
     const isNeonCom = host === 'neon.com' || host.endsWith('.neon.com');
-    // `db.localtest.me` is the hostname the local Neon HTTP proxy uses (see
-    // packages/api/docker-compose.test.yml). The URL looks like raw Postgres
-    // but the proxy fronts the real connection and speaks Neon's HTTP/WS
-    // wire format, so we route through the neon driver — same path as prod.
+    // `db.localtest.me` is the host the local Neon HTTP proxy uses (see
+    // packages/api/docker-compose.test.yml). The URL looks like raw Postgres but
+    // the proxy speaks Neon's HTTP/WS wire format, so route it through the neon
+    // driver — the same code path as prod, with no node-postgres TCP sockets
+    // (which workerd silently drops between requests).
     const isLocalNeonProxy = host === 'db.localtest.me';
     return (
       (u.protocol === 'postgres:' || u.protocol === 'postgresql:') &&

@@ -20,7 +20,8 @@
     "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
-    "check-types": "tsc --noEmit",
+    "check-types": "bun scripts/check-types.ts",
+    "check-types:tsgo": "bun scripts/check-types.ts --tsgo",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",
     "configure:deps": "bun run .github/scripts/configure-deps.ts",
@@ -34,7 +35,7 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run scripts/lint/no-owned-max-params.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts",
+    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run scripts/lint/no-owned-max-params.ts && bun run packages/env/scripts/no-raw-process-env.ts && bun run scripts/lint/no-duplicate-guards.ts && bun run scripts/lint/no-unauth-routes.ts && bun run scripts/lint/check-drizzle-migrations.ts && bun run scripts/lint/no-direct-wrapped-imports.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
     "mcp": "bun run --cwd packages/mcp dev",
@@ -65,6 +66,7 @@
     "@types/bun": "^1.2.17",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^9.0.0",
+    "@typescript/native-preview": "7.0.0-dev.20260527.2",
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14",
@@ -172,7 +174,6 @@
     "ws": "^8.18.1",
     "zod": "^3.24.2"
   },
-  "patchedDependencies": {},
   "trustedDependencies": [
     "@sentry/cli"
   ]

@@ -1,66 +1,86 @@
-import * as fs from 'node:fs';
+/**
+ * Playwright global setup — runs once before all tests.
+ *
+ * Signs the seeded e2e user in through Better Auth and saves the resulting
+ * browser storage state (the `better-auth.session_token` cookie plus the
+ * hydrated user store) to `.auth-state.json`. The `authedPage` fixture loads
+ * that state so every test starts authenticated without logging in again.
+ *
+ * The sign-in request is issued from the page context (not Node) so the
+ * browser persists the Set-Cookie session token exactly as a real login would.
+ * On web the bearer token lives in an HttpOnly cookie that JS can't read, so
+ * cookie-based auth (credentials: 'include') is the only path — there is no
+ * access/refresh token to cache.
+ */
 import * as path from 'node:path';
 import { chromium } from '@playwright/test';
 
-const DASHBOARD_TAB_RE = /Dashboard/i;
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8081';
-export const AUTH_STATE_PATH = path.join(__dirname, '../.auth/state.json');
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8098';
+const API_URL = process.env.API_URL ?? 'http://localhost:8798';
+const EMAIL = process.env.TEST_EMAIL ?? 'e2e@packrattest.local';
+const PASSWORD = process.env.TEST_PASSWORD ?? 'E2eTestPass123!';
 
-export default async function setup() {
-  const email = process.env.TEST_EMAIL;
-  const password = process.env.TEST_PASSWORD;
-  if (!email || !password) {
-    throw new Error('TEST_EMAIL and TEST_PASSWORD must be set');
+// Local Ubuntu has no Playwright-bundled Chromium; set PW_CHANNEL=chrome to use
+// the system browser. CI installs Chromium normally and leaves PW_CHANNEL unset.
+const CHANNEL = process.env.PW_CHANNEL || undefined;
+
+export const STORAGE_STATE = path.join(__dirname, '../.auth-state.json');
+
+async function setup() {
+  const browser = await chromium.launch({ channel: CHANNEL });
+  try {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Establish the web origin so the session cookie is scoped to it.
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+
+    // Sign in from the page context so the browser stores the session cookie.
+    // Retry transient 5xx — a local wrangler dev worker talking to a raw
+    // Postgres (no Hyperdrive) occasionally drops a pooled connection.
+    let result = { status: 0, body: '' };
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      result = await page.evaluate(
+        async ({ api, email, password }) => {
+          try {
+            const res = await fetch(`${api}/api/auth/sign-in/email`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            return { status: res.status, body: await res.text() };
+          } catch (err) {
+            // A 5xx from the worker may arrive without CORS headers, surfacing
+            // as a thrown "Failed to fetch" — treat as a retryable transient.
+            return { status: 0, body: String(err) };
+          }
+        },
+        { api: API_URL, email: EMAIL, password: PASSWORD },
+      );
+      if (result.status === 200) break;
+      // 429 (rate limit) and 5xx/0 (transient DB/proxy blips on a local stack)
+      // are retryable; other 4xx are real auth failures.
+      const retryable = result.status === 429 || result.status === 0 || result.status >= 500;
+      if (!retryable) break;
+      await page.waitForTimeout(result.status === 429 ? 4000 : 2000);
+    }
+    if (result.status !== 200) {
+      throw new Error(`Better Auth sign-in failed ${result.status}: ${result.body}`);
+    }
+
+    const cookies = await context.cookies();
+    if (!cookies.some((c) => c.name === 'better-auth.session_token')) {
+      throw new Error('Sign-in succeeded but no better-auth.session_token cookie was set');
+    }
+
+    // The session cookie is all the app needs — on load it calls get-session
+    // with the cookie and hydrates its user store / isAuthed itself. Save it.
+    await context.storageState({ path: STORAGE_STATE });
+    console.log(`[globalSetup] Signed in as ${EMAIL}; storage state saved`);
+  } finally {
+    await browser.close();
   }
-
-  fs.mkdirSync(path.dirname(AUTH_STATE_PATH), { recursive: true });
-
-  // Headless by default; opt into a visible browser with PWHEADED=1.
-  const browser = await chromium.launch({
-    channel: 'chrome',
-    headless: process.env.PWHEADED !== '1',
-    args: ['--incognito', '--no-default-browser-check', '--no-first-run', '--password-store=basic'],
-  });
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
-  // Start from the auth entry screen, then click through to login
-  await page.goto(`${BASE_URL}/auth`, { waitUntil: 'load' });
-
-  // Click the "Sign In" button to open the login modal
-  await page.getByTestId('sign-in-email-button').waitFor({ timeout: 15_000 });
-  await page.getByTestId('sign-in-email-button').click();
-
-  // testID on TextField spreads via {...props} → TextInput → <input>, so
-  // getByTestId() resolves to the <input> element directly. fill() on it
-  // properly triggers onChangeText; page.keyboard.press('Enter') then fires
-  // the password field's onSubmitEditing → form.handleSubmit().
-  await page.getByTestId('email-input').waitFor({ timeout: 15_000 });
-  await page.getByTestId('email-input').fill(email);
-  await page.getByTestId('password-input').fill(password);
-
-  // Wait for the sign-in API response so we know auth cookies are set before
-  // navigating away. router.dismissTo('/') from a stack screen is unreliable
-  // on web, so we drive navigation explicitly after the API call succeeds.
-  const [signInResponse] = await Promise.all([
-    page.waitForResponse(
-      (r) => r.url().includes('/sign-in/email') && r.request().method() === 'POST',
-      { timeout: 30_000 },
-    ),
-    page.keyboard.press('Enter'),
-  ]);
-
-  if (!signInResponse.ok()) {
-    const body = await signInResponse.text().catch(() => '');
-    throw new Error(`Sign-in failed (${signInResponse.status()}): ${body}`);
-  }
-
-  // Auth cookies are now set; navigate to the main app explicitly
-  await page.goto(`${BASE_URL}/`, { waitUntil: 'load' });
-  await page.getByRole('tab', { name: DASHBOARD_TAB_RE }).waitFor({ timeout: 15_000 });
-
-  await context.storageState({ path: AUTH_STATE_PATH });
-  console.log(`[globalSetup] Logged in as ${email}`);
-
-  await browser.close();
 }
+
+export default setup;

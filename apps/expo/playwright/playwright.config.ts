@@ -7,44 +7,26 @@ export default defineConfig({
   globalSetup: './tests/globalSetup.ts',
   timeout: 30_000,
   expect: { timeout: 10_000 },
-  // Tests create their own data (timestamped names) and otherwise read shared
-  // catalog/profile data, so parallel runs are safe. Override with
-  // PW_WORKERS=1 if you suspect a flake is contention-related.
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: Number(process.env.PW_WORKERS ?? (process.env.CI ? 2 : 4)),
+  workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
 
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     video: 'on-first-retry',
-    // Headless by default everywhere. Opt into a visible browser with
-    // `PWHEADED=1` — never have the run pop windows on the dev's desktop
-    // unless explicitly requested.
-    headless: process.env.PWHEADED !== '1',
+    headless: true,
   },
 
   projects: [
     {
       name: 'chromium',
-      // `channel: 'chrome'` uses the locally installed Google Chrome —
-      // Playwright's bundled chromium has no Ubuntu 26.04 build yet.
-      // Playwright already isolates each context with an ephemeral user-data
-      // dir, but `--incognito` makes that explicit.
-      use: {
-        ...devices['Desktop Chrome'],
-        channel: 'chrome',
-        launchOptions: {
-          args: [
-            '--incognito',
-            '--no-default-browser-check',
-            '--no-first-run',
-            '--password-store=basic',
-          ],
-        },
-      },
+      // PW_CHANNEL=chrome uses the system browser where no Playwright-bundled
+      // Chromium is available (e.g. Ubuntu 26.04 dev boxes). Unset in CI, which
+      // installs Chromium via `playwright install`.
+      use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL || undefined },
     },
   ],
 });

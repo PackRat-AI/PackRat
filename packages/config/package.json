@@ -9,6 +9,9 @@
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@packrat/guards": "workspace:*"
   }

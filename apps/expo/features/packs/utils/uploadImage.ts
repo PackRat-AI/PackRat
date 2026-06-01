@@ -15,9 +15,11 @@ export const uploadImage = async ({
   }
 
   try {
+    const userId = userStore.id.peek();
+    if (!userId) throw new Error('Cannot upload: user not authenticated');
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
-    const remoteFileName = `${userStore.id.peek()}-${fileName}`;
+    const remoteFileName = `${userId}-${fileName}`;
     const { url: presignedUrl } = await getPresignedUrl({
       fileName: remoteFileName,
       contentType: type,
