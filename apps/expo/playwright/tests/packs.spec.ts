@@ -205,11 +205,16 @@ test.describe('Item CRUD within a pack', () => {
     const moreActionsButton = page.getByTestId(`items:more-actions-${itemId}`);
     if (await moreActionsButton.isVisible()) {
       await moreActionsButton.click();
+      // Exact "Delete" so the regex doesn't latch onto the item name
+      // "E2E-DeleteItem-...". The CustomActionSheet entrance animation is
+      // ~225ms; wait for it to settle before clicking or _onSelect() drops
+      // the press silently.
       const deleteOption = page
-        .getByText(/delete/i)
-        .or(page.getByRole('menuitem', { name: /delete/i }))
+        .getByText('Delete', { exact: true })
+        .or(page.getByRole('menuitem', { name: 'Delete' }))
         .first();
       await deleteOption.waitFor({ timeout: 5_000 });
+      await page.waitForTimeout(350);
       await deleteOption.click();
 
       // Item card should be gone

@@ -102,8 +102,11 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
   const { id: packId } = (await packResponse.json()) as { id: number };
 
-  // Navigate to pack detail and open "Add from Catalog" sheet
+  // Navigate to pack detail and open the "Add" bottom sheet first; its options
+  // (add-from-catalog-option, etc.) are only mounted inside the BottomSheet
+  // after present() fires.
   await page.goto(`${BASE_URL}/pack/${packId}`);
+  await page.getByTestId('add-item-button').click();
   await page.getByTestId('add-from-catalog-option').last().click();
 
   // Dialog with catalog items should appear
@@ -218,7 +221,8 @@ test('settings screen loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText('AI Models')).toBeVisible();
   await expect(page.getByText('Danger Zone')).toBeVisible();
-  await expect(page.getByText(/PackRat v/i)).toBeVisible();
+  // Dev/preview builds prepend an env tag like "PackRat (Dev) v2.0.26".
+  await expect(page.getByText(/PackRat(?: \([^)]+\))? v\d/i)).toBeVisible();
 });
 
 // ─── AI Chat ──────────────────────────────────────────────────────────────────

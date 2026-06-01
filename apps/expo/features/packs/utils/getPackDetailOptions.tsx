@@ -54,7 +54,12 @@ export function getPackDetailOptions(id: string) {
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
-          <Button variant="plain" size="icon" onPress={() => addItemActionsRef.current?.present()}>
+          <Button
+            testID={testIds.items.addItemBtn}
+            variant="plain"
+            size="icon"
+            onPress={() => addItemActionsRef.current?.present()}
+          >
             <Icon name="plus" color={colors.grey2} />
           </Button>
           <AddPackItemActions ref={addItemActionsRef} packId={id} />

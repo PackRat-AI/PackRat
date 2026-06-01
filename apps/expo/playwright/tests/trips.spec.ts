@@ -213,6 +213,14 @@ test.describe('Trip CRUD', () => {
     // router.back() may not work after page.goto-seeded history; navigate
     // explicitly like pack-delete does. With `deleted=true` now persisted
     // server-side, GET /api/trips will exclude this trip on the list reload.
+    // Wipe the Legend State persist entries first so an `optimistic
+    // deleted:true` from this run can't merge against an older `deleted:false`
+    // cache slice and reappear.
+    await page.evaluate(() => {
+      for (const key of Object.keys(window.localStorage)) {
+        if (/trips|legend|@LegendState/i.test(key)) window.localStorage.removeItem(key);
+      }
+    });
     await page.goto(`${BASE_URL}/trips`);
     await page.waitForLoadState('networkidle');
     await expect(page.getByText(tripName)).not.toBeVisible({ timeout: 10_000 });
