@@ -32,6 +32,7 @@ const WEB_STUBS = {
   'expo-sqlite/kv-store': 'mocks/expo-sqlite-kv-store.ts',
   // Required by lib/persist-plugin.web.ts (ObservablePersistAsyncStorage)
   '@react-native-async-storage/async-storage': 'mocks/async-storage.ts',
+  'expo-secure-store': 'mocks/expo-secure-store.ts',
   // Keyboard utilities — on web the software keyboard doesn't overlay content
   'react-native-keyboard-controller': 'mocks/react-native-keyboard-controller.tsx',
   '@react-native-community/datetimepicker': 'mocks/react-native-community-datetimepicker.tsx',

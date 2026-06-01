@@ -4,20 +4,20 @@
   "packages/api": {
     "summaryPath": "packages/api/coverage/unit/coverage-summary.json",
     "tier": "B",
-    "lines": 98.31,
+    "lines": 96.5,
     "branches": 95.43,
     "functions": 100,
-    "statements": 98.31,
-    "recordedAt": "2026-05-19"
+    "statements": 96.5,
+    "recordedAt": "2026-06-01"
   },
   "apps/expo": {
     "summaryPath": "apps/expo/coverage/unit/coverage-summary.json",
     "tier": "C",
     "lines": 97.36,
-    "branches": 95,
+    "branches": 93.65,
     "functions": 100,
     "statements": 97.36,
-    "recordedAt": "2026-05-19"
+    "recordedAt": "2026-06-01"
   },
   "packages/mcp": {
     "summaryPath": "packages/mcp/coverage/coverage-summary.json",
@@ -32,10 +32,10 @@
     "summaryPath": "packages/analytics/coverage/coverage-summary.json",
     "tier": "B",
     "lines": 84.48,
-    "branches": 83.33,
-    "functions": 89.13,
+    "branches": 82.73,
+    "functions": 87.23,
     "statements": 84.48,
-    "recordedAt": "2026-05-19"
+    "recordedAt": "2026-06-01"
   },
   "packages/overpass": {
     "summaryPath": "packages/overpass/coverage/coverage-summary.json",

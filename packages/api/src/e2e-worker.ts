@@ -23,7 +23,7 @@ export default {
       return auth.handler(request);
     }
 
-    return app.fetch(request, e, ctx);
+    return Reflect.apply(app.fetch, app, [request, e, ctx]);
   },
 
   async queue(_batch: MessageBatch<unknown>): Promise<void> {
