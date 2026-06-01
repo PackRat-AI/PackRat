@@ -31,8 +31,13 @@ export const stableStringify = configure({ deterministic: true, bigint: true });
 export { configure as configureStringify } from 'safe-stable-stringify';
 
 /**
- * Safe drop-in for `JSON.parse`: never throws, guards against prototype
- * pollution (`__proto__`), and returns the input unchanged for non-JSON.
- * Pass a type parameter for the expected shape.
+ * Safe drop-in for `JSON.parse`: guards against prototype pollution
+ * (`__proto__`) and, by default, never throws — returning the input unchanged
+ * for non-JSON. Pass a type parameter for the expected shape.
+ *
+ * For call sites that relied on `JSON.parse` THROWING on invalid input (e.g. a
+ * surrounding try/catch drives control flow), pass `{ strict: true }` to
+ * preserve that behavior exactly.
  */
-export const safeParse = <T = unknown>(value: string): T => destr<T>(value);
+export const safeParse = <T = unknown>(value: string, options?: { strict?: boolean }): T =>
+  destr<T>(value, options);

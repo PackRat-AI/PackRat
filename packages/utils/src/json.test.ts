@@ -63,4 +63,9 @@ describe('safeParse', () => {
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     expect(Object.getPrototypeOf(parsed)).toBe(Object.prototype);
   });
+
+  it('throws on invalid input when { strict: true } (preserves JSON.parse behavior)', () => {
+    expect(() => safeParse('not json at all', { strict: true })).toThrow();
+    expect(safeParse<{ a: number }>('{"a":1}', { strict: true })).toEqual({ a: 1 });
+  });
 });
