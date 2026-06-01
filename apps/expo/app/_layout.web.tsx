@@ -9,7 +9,7 @@ import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
-import { type RefObject, useRef } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 
 /**
  * Web version of the root layout.
@@ -29,6 +29,13 @@ function RootLayout() {
   appAlert = useRef<AlertMethods>(null);
 
   const { colorScheme, isDarkColorScheme } = useColorScheme();
+
+  // Sync NativeWind dark mode class to <html> on web (darkMode: 'class' requires it)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', isDarkColorScheme);
+    }
+  }, [isDarkColorScheme]);
 
   return (
     <Providers>
