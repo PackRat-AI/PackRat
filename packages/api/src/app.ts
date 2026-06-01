@@ -19,7 +19,13 @@ export function isAllowedCorsOrigin(origin: string | null): origin is string {
   return !!origin && ALLOWED_ORIGINS.some((re) => re.test(origin));
 }
 
-export function addCorsHeaders(request: Request, response: Response): Response {
+export function addCorsHeaders({
+  request,
+  response,
+}: {
+  request: Request;
+  response: Response;
+}): Response {
   const origin = request.headers.get('Origin');
   if (!isAllowedCorsOrigin(origin)) return response;
 

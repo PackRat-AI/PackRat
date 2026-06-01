@@ -23,7 +23,7 @@ export default {
       if (preflight) return preflight;
 
       const auth = await getAuth(e);
-      return addCorsHeaders(request, await auth.handler(request));
+      return addCorsHeaders({ request, response: await auth.handler(request) });
     }
 
     return Reflect.apply(app.fetch, app, [request, e, ctx]);

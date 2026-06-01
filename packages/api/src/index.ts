@@ -99,7 +99,7 @@ const workerHandler = {
 
       const validatedEnv = getEnv();
       const auth = await getAuth(validatedEnv);
-      return addCorsHeaders(request, await auth.handler(request));
+      return addCorsHeaders({ request, response: await auth.handler(request) });
     }
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
