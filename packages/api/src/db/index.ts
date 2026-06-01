@@ -13,8 +13,17 @@ const isStandardPostgresUrl = (url: string) => {
     const host = u.hostname.toLowerCase();
     const isNeonTech = host === 'neon.tech' || host.endsWith('.neon.tech');
     const isNeonCom = host === 'neon.com' || host.endsWith('.neon.com');
+    // `db.localtest.me` is the host the local Neon HTTP proxy uses (see
+    // packages/api/docker-compose.test.yml). The URL looks like raw Postgres but
+    // the proxy speaks Neon's HTTP/WS wire format, so route it through the neon
+    // driver — the same code path as prod, with no node-postgres TCP sockets
+    // (which workerd silently drops between requests).
+    const isLocalNeonProxy = host === 'db.localtest.me';
     return (
-      (u.protocol === 'postgres:' || u.protocol === 'postgresql:') && !isNeonTech && !isNeonCom
+      (u.protocol === 'postgres:' || u.protocol === 'postgresql:') &&
+      !isNeonTech &&
+      !isNeonCom &&
+      !isLocalNeonProxy
     );
   } catch {
     return false;
@@ -34,12 +43,6 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
         // which is not supported in the Cloudflare Workers runtime (miniflare).
         idleTimeoutMillis: 0,
         connectionTimeoutMillis: 10000,
-        // Open a fresh connection per use rather than reusing pooled sockets.
-        // This is the right client pattern when a Hyperdrive (which pools at the
-        // edge) fronts Postgres, and it also avoids the workerd/miniflare issue
-        // where a pooled TCP socket is silently dropped between requests and the
-        // next acquire then times out.
-        maxUses: 1,
       });
       newPool.on('error', () => {
         pgPools.delete(url);

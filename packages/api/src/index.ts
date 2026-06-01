@@ -8,6 +8,7 @@
 
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
+import { neonConfig } from '@neondatabase/serverless';
 import { getAuth } from '@packrat/api/auth';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
@@ -113,24 +114,41 @@ type CfFetchFn = (
 ) => Response | Promise<Response>;
 
 function enrichEnv(env: Env): Env {
-  let enriched = env;
-  // Local-only `local` env: Hyperdrive fronts the e2e Postgres.
-  if (env.DB_HYPERDRIVE) {
-    enriched = {
-      ...enriched,
-      NEON_DATABASE_URL: env.DB_HYPERDRIVE.connectionString,
-      NEON_DATABASE_URL_READONLY: env.DB_HYPERDRIVE.connectionString,
-    };
-  }
   if (env.OSM_HYPERDRIVE) {
-    enriched = { ...enriched, OSM_DATABASE_URL: env.OSM_HYPERDRIVE.connectionString };
+    return { ...env, OSM_DATABASE_URL: env.OSM_HYPERDRIVE.connectionString };
   }
-  return enriched;
+  return env;
+}
+
+// Local-dev hook: route `@neondatabase/serverless` through Neon's official local
+// proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, see docker-compose.test.yml
+// and https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
+// points at `db.localtest.me`. The proxy serves the HTTP /sql API (neon-http,
+// used by auth) and the WebSocket /v2 endpoint (neon-serverless Pool), so local
+// and prod share the exact same driver path — no node-postgres TCP sockets
+// (which workerd silently drops between requests).
+let neonLocalConfigured = false;
+function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
+  if (neonLocalConfigured || !databaseUrl) return;
+  try {
+    const host = new URL(databaseUrl).hostname.toLowerCase();
+    if (host !== 'db.localtest.me') return;
+    const proxyPort = '4444';
+    neonConfig.fetchEndpoint = (h) =>
+      h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
+    neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
+    neonConfig.useSecureWebSocket = false;
+  } catch {
+    // not a valid URL — leave neon defaults in place
+  } finally {
+    neonLocalConfigured = true;
+  }
 }
 
 const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
+    maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
