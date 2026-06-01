@@ -20,12 +20,16 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in Pack Name
+# iOS: tap the container Pressable (pack-name-container) which is the
+# accessibility leaf and focuses the inner TextInput on press.
+# Android: match by placeholder text (no container wrapper needed).
 - runFlow:
     when:
       platform: iOS
     commands:
       - tapOn:
-          text: "move, Pack Name"
+          id: "pack-name-container"
+      - waitForAnimationToEnd
       - inputText: ${PACK_NAME}
 - runFlow:
     when:
@@ -70,11 +74,12 @@ appId: ${APP_ID}
 # Also confirm we are on the packs list by checking for the create button
 - assertVisible:
     id: "create-pack-button"
+- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       id: "packs:list-item-${PACK_NAME}"
     direction: DOWN
-    timeout: 60000
-    speed: 99
+    timeout: 30000
+    speed: 40
 - assertVisible:
     id: "packs:list-item-${PACK_NAME}"

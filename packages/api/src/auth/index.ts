@@ -279,7 +279,14 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     // lives entirely on api.packrat.world via the oauthProvider plugin above.
     // Keeping it in trustedOrigins would expand the CORS/CSRF bypass surface
     // for no behavioral reason.
-    trustedOrigins: [env.PACKRAT_API_URL, 'packrat://'],
+    //
+    // localhost is trusted only in development (e.g. the Playwright e2e harness
+    // serves the static export on a separate port) — never in production.
+    trustedOrigins: [
+      env.PACKRAT_API_URL,
+      'packrat://',
+      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
+    ],
   });
 
   return auth;

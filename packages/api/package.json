@@ -16,6 +16,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
+    "cf-typegen": "wrangler types",
     "check:xss": "xss-scan",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",

@@ -3,6 +3,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { TouchableWithoutFeedback, View } from 'react-native';
 
 type HorizontalCatalogItemCardProps = {
@@ -36,7 +37,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
       onPress={isSelectable ? () => restProps.onSelect(item) : restProps.onPress}
     >
       <View
-        testID={`catalog-item-card-${item.id}`}
+        testID={testIds.items.catalogCard(item.id)}
         className={`rounded-lg flex-row gap-3 border p-4 bg-red
            ${
              isSelectable && restProps.selected

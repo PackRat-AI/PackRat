@@ -1,10 +1,6 @@
 {
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@packrat/db": ["../db/src/index.ts"],

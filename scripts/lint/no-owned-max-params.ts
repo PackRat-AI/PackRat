@@ -51,6 +51,8 @@ const EXCLUDED_FILES = new Set([
   // (signature fixed by the language) and an inline `AgentContext.registerFlaggedTool`
   // implementation (signature fixed by that interface) — neither is an owned API.
   'packages/mcp/scripts/dump-catalog.ts',
+  // Web shim that must mirror expo-secure-store's positional (key, value) API.
+  'apps/expo/lib/secureStore.web.ts',
 ]);
 // Cloudflare Workers/Workflows runtime entrypoint handlers — the runtime calls
 // these with fixed positional args, exactly like `fetch`/`queue`.

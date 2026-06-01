@@ -8,6 +8,7 @@ import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/Larg
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -118,7 +119,9 @@ function CatalogItemsScreen() {
 
         <View className="mb-4 px-4">
           <View className="flex-row items-center justify-between">
-            <Text className="text-muted-foreground">{totalItemsText}</Text>
+            <Text testID={testIds.catalog.totalItemsCount} className="text-muted-foreground">
+              {totalItemsText}
+            </Text>
           </View>
 
           {paginatedItems.length > 0 && (
@@ -143,74 +146,77 @@ function CatalogItemsScreen() {
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}
-        searchBar={{
-          iosHideWhenScrolling: false,
-          onChangeText: setSearchValue,
-          ref: asNonNullableRef(searchBarRef),
-
-          placeholder: t('catalog.searchPlaceholder'),
-          content: (
-            <LargeTitleHeaderSearchContentContainer>
-              {isSearching ? (
-                isVectorLoading || !isQueryReady ? (
-                  <View className="flex-1 items-center justify-center p-6">
-                    <ActivityIndicator className="text-primary" size="large" />
-                  </View>
-                ) : (
-                  <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-                    <View className="px-4 pt-2">
-                      {searchResults.length > 0 && (
-                        <Text className="text-xs text-muted-foreground">
-                          {searchResults.length} {t('catalog.results')}
-                        </Text>
-                      )}
+        // safe-cast: testID exists in runtime 2.0.5 implementation but absent from published types; fixed in nativewindui PR
+        searchBar={
+          {
+            iosHideWhenScrolling: false,
+            onChangeText: setSearchValue,
+            ref: asNonNullableRef(searchBarRef),
+            testID: testIds.catalog.searchBtn,
+            placeholder: t('catalog.searchPlaceholder'),
+            content: (
+              <LargeTitleHeaderSearchContentContainer>
+                {isSearching ? (
+                  isVectorLoading || !isQueryReady ? (
+                    <View className="flex-1 items-center justify-center p-6">
+                      <ActivityIndicator className="text-primary" size="large" />
                     </View>
-
-                    {searchResults.map((item: CatalogItem) => (
-                      <View className="px-4 pt-4" key={item.id}>
-                        <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
-                      </View>
-                    ))}
-
-                    {searchResults.length === 0 && (
-                      <View className="flex-1 items-center justify-center p-8">
-                        {vectorError ? (
-                          <>
-                            <View className="bg-destructive/10 mb-4 rounded-full p-4">
-                              <Icon name="close-circle" size={32} color="text-destructive" />
-                            </View>
-                            <Text className="mb-1 text-lg font-medium text-foreground">
-                              {t('catalog.searchError')}
-                            </Text>
-                            <Text className="text-center text-muted-foreground">
-                              {t('catalog.unableToSearch')}
-                            </Text>
-                          </>
-                        ) : (
-                          <>
-                            <View className="mb-4 rounded-full bg-muted p-4">
-                              <Icon name="magnify" size={32} color="text-muted-foreground" />
-                            </View>
-                            <Text className="mb-1 text-lg font-medium text-foreground">
-                              {t('catalog.noResults')}
-                            </Text>
-                            <Text className="text-center text-muted-foreground">
-                              {t('catalog.tryAdjustingFilters')}
-                            </Text>
-                          </>
+                  ) : (
+                    <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+                      <View className="px-4 pt-2">
+                        {searchResults.length > 0 && (
+                          <Text className="text-xs text-muted-foreground">
+                            {searchResults.length} {t('catalog.results')}
+                          </Text>
                         )}
                       </View>
-                    )}
-                  </ScrollView>
-                )
-              ) : (
-                <View className="flex-1 items-center justify-center p-4">
-                  <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
-                </View>
-              )}
-            </LargeTitleHeaderSearchContentContainer>
-          ),
-        }}
+
+                      {searchResults.map((item: CatalogItem) => (
+                        <View className="px-4 pt-4" key={item.id}>
+                          <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
+                        </View>
+                      ))}
+
+                      {searchResults.length === 0 && (
+                        <View className="flex-1 items-center justify-center p-8">
+                          {vectorError ? (
+                            <>
+                              <View className="bg-destructive/10 mb-4 rounded-full p-4">
+                                <Icon name="close-circle" size={32} color="text-destructive" />
+                              </View>
+                              <Text className="mb-1 text-lg font-medium text-foreground">
+                                {t('catalog.searchError')}
+                              </Text>
+                              <Text className="text-center text-muted-foreground">
+                                {t('catalog.unableToSearch')}
+                              </Text>
+                            </>
+                          ) : (
+                            <>
+                              <View className="mb-4 rounded-full bg-muted p-4">
+                                <Icon name="magnify" size={32} color="text-muted-foreground" />
+                              </View>
+                              <Text className="mb-1 text-lg font-medium text-foreground">
+                                {t('catalog.noResults')}
+                              </Text>
+                              <Text className="text-center text-muted-foreground">
+                                {t('catalog.tryAdjustingFilters')}
+                              </Text>
+                            </>
+                          )}
+                        </View>
+                      )}
+                    </ScrollView>
+                  )
+                ) : (
+                  <View className="flex-1 items-center justify-center p-4">
+                    <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
+                  </View>
+                )}
+              </LargeTitleHeaderSearchContentContainer>
+            ),
+          } as React.ComponentProps<typeof LargeTitleHeader>['searchBar']
+        }
       />
 
       <FlatList

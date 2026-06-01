@@ -43,5 +43,7 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Assert we are back on the auth screen
-- assertVisible:
-    text: "Sign In"
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 15000
