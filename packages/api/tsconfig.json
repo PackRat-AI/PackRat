@@ -1,25 +1,32 @@
 {
-  // Package-scoped tsconfig, extending the shared base. The root tsconfig sets
-  // `"jsx": "react-native"` for the Expo app; the API uses @kitajs/html's
-  // string-rendering JSX runtime for server-side HTML (e.g. the OAuth consent
-  // page in src/auth/consent-page.tsx). This package-local override keeps the
-  // two contexts from colliding.
+  // Package-scoped tsconfig. The root tsconfig sets `"jsx": "react-native"`
+  // for the Expo app; the API uses @kitajs/html's string-rendering JSX runtime
+  // for server-side HTML (e.g. the OAuth consent page in
+  // src/auth/consent-page.tsx). Package-local override keeps the two
+  // contexts from colliding.
   //
-  // JSX runtime config follows @elysiajs/html's recommended pattern: classic
-  // runtime with Html.createElement + Html.Fragment as the JSX factory. This is
-  // the form @kitajs/ts-html-plugin assumes; the automatic runtime
-  // (jsxImportSource) breaks its compile-time XSS detection (error K601 for a
-  // missing `safe` attribute). @kitajs/html is listed in `types` so its global
-  // JSX namespace loads alongside the wrangler-generated worker-configuration
-  // types.
+  // JSX runtime config follows @elysiajs/html's recommended pattern:
+  // classic runtime with Html.createElement + Html.Fragment as the JSX
+  // factory. This is the form @kitajs/ts-html-plugin assumes; switching
+  // to the automatic runtime (jsxImportSource) breaks the plugin's
+  // compile-time XSS detection (error K601 for missing `safe` attribute).
+  //
+  // Deliberately standalone (no `extends`, no `types` allowlist): the
+  // @kitajs/html global JSX namespace must load uncontested. A `types: [...]`
+  // restriction lets React's JSX collide with @kitajs/html's (both declare the
+  // same global JSX namespace), so the consent page fails to type-check. CF
+  // Workers types come via src/global.d.ts's
+  // `/// <reference types="@cloudflare/workers-types" />`.
   //
   // The @kitajs/html JSX files (auth/consent-*.tsx) + the worker entry that
   // imports them (src/index.ts) are excluded from the ROOT tsconfig so their
   // global JSX namespace can't pollute the React apps — see the root tsconfig
   // `exclude`.
-  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "types": ["./worker-configuration.d.ts", "bun", "@kitajs/html"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "jsx": "react",
     "jsxFactory": "Html.createElement",
     "jsxFragmentFactory": "Html.Fragment",

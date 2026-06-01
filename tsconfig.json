@@ -71,6 +71,12 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
+    // wrangler-generated CF types (`cf-typegen`). It contains an
+    // `import("./src/index")` referencing the worker entry, which would pull the
+    // excluded @kitajs/html consent route + page (and their global JSX namespace)
+    // back into this React/React-Native root program. CF binding types reach the
+    // API via src/global.d.ts's `/// <reference types="@cloudflare/workers-types" />`.
+    "**/worker-configuration.d.ts",
     // The API's @kitajs/html server-rendered HTML files declare a GLOBAL JSX
     // namespace that collides with the React/React-Native apps compiled in this
     // root program. Exclude just those files + the worker entry that imports them

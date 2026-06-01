@@ -262,7 +262,7 @@ describe('confirmAction', () => {
         fieldLabel: 'User ID',
       },
     });
-    const [params] = spy.mock.calls[0];
+    const [params] = spy.mock.calls[0]!;
     const properties = (
       params.requestedSchema as { properties: { confirmation: { title: string } } }
     ).properties;
