@@ -31,11 +31,17 @@ export class UserService {
   async create(input: CreateUserInput): Promise<User> {
     const passwordHash = input.password ? await hashPassword(input.password) : null;
 
+    // Better Auth's users schema requires a non-null `name`; derive from first/
+    // last, fall back to email. Per-package tsc surfaces this as a missing-field
+    // error against the Drizzle insert type — root tsc misses it but Postgres
+    // would reject the insert at runtime.
+    const fullName = [input.firstName, input.lastName].filter(Boolean).join(' ').trim();
     const [user] = await this.db
       .insert(users)
       .values({
         id: crypto.randomUUID(),
         email: input.email.toLowerCase(),
+        name: fullName || input.email.toLowerCase(),
         passwordHash,
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,
