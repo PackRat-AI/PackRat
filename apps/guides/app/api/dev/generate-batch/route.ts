@@ -1,5 +1,5 @@
 import { guideEnv } from '@packrat/env/next';
-import { GenerateBatchRequestSchema } from 'guides-app/lib/schemas/dev';
+import { GenerateBatchRequestSchema } from '@packrat/schemas/guides';
 import { generatePosts } from 'guides-app/scripts/generate-content';
 import { NextResponse } from 'next/server';
 

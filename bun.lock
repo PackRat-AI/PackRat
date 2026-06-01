@@ -217,6 +217,7 @@
         "@packrat/api": "workspace:*",
         "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
+        "@packrat/schemas": "workspace:*",
         "@packrat/web-ui": "workspace:*",
         "@radix-ui/react-accordion": "catalog:",
         "@radix-ui/react-alert-dialog": "catalog:",
@@ -452,7 +453,6 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
-        "typescript": "catalog:",
         "vitest": "catalog:",
       },
     },
@@ -585,7 +585,6 @@
       "devDependencies": {
         "@types/bun": "catalog:",
         "@types/uuid": "^11.0.0",
-        "typescript": "catalog:",
       },
     },
     "packages/config": {
@@ -593,9 +592,6 @@
       "version": "2.0.26",
       "dependencies": {
         "@packrat/guards": "workspace:*",
-      },
-      "devDependencies": {
-        "typescript": "catalog:",
       },
     },
     "packages/constants": {
@@ -623,9 +619,6 @@
       "dependencies": {
         "zod": "catalog:",
       },
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
     },
     "packages/guards": {
       "name": "@packrat/guards",
@@ -634,9 +627,6 @@
         "radash": "catalog:",
         "ts-extras": "catalog:",
         "zod": "catalog:",
-      },
-      "devDependencies": {
-        "typescript": "catalog:",
       },
     },
     "packages/mcp": {

@@ -256,3 +256,11 @@ export type WeatherAPISearchResponse = z.infer<typeof WeatherAPISearchResponseSc
 export type WeatherAPICurrentResponse = z.infer<typeof WeatherAPICurrentResponseSchema>;
 export type WeatherAPIForecastResponse = z.infer<typeof WeatherAPIForecastResponseSchema>;
 export type LocationSearchResponse = z.infer<typeof LocationSearchResponseSchema>;
+
+// ─── OpenWeather (api.openweathermap.org) response ────────────────────────────
+// Used by @packrat/api WeatherService to validate the upstream payload.
+export const OpenWeatherResponseSchema = z.object({
+  main: z.object({ temp: z.number(), humidity: z.number() }),
+  weather: z.array(z.object({ main: z.string() })),
+  wind: z.object({ speed: z.number() }),
+});

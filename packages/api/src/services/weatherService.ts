@@ -1,12 +1,6 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { z } from 'zod';
-
-const WeatherApiResponse = z.object({
-  main: z.object({ temp: z.number(), humidity: z.number() }),
-  weather: z.array(z.object({ main: z.string() })),
-  wind: z.object({ speed: z.number() }),
-});
+import { OpenWeatherResponseSchema } from '@packrat/schemas/weather';
 
 type WeatherData = {
   location: string;
@@ -55,7 +49,7 @@ export class WeatherService {
       throw error;
     }
 
-    const data = WeatherApiResponse.parse(await response.json());
+    const data = OpenWeatherResponseSchema.parse(await response.json());
 
     return {
       location,
