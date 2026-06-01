@@ -1,10 +1,33 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "target": "ES2022",
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "isolatedModules": true,
+    "jsx": "preserve",
     "incremental": true,
-    "plugins": [{ "name": "next" }]
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "admin-app/*": ["./*"],
+      "@packrat/app": ["../../packages/app/src/index.ts"],
+      "@packrat/app/*": ["../../packages/app/src/*"],
+      "@packrat/api/*": ["../../packages/api/src/*"],
+      "@packrat/api-client": ["../../packages/api-client/src/index.ts"],
+      "@packrat/guards": ["../../packages/guards/src"],
+      "@packrat/guards/*": ["../../packages/guards/src/*"],
+      "@packrat/web-ui": ["../../packages/web-ui/src"],
+      "@packrat/web-ui/*": ["../../packages/web-ui/src/*"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
