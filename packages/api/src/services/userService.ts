@@ -31,11 +31,14 @@ export class UserService {
   async create(input: CreateUserInput): Promise<User> {
     const passwordHash = input.password ? await hashPassword(input.password) : null;
 
+    const fullName = [input.firstName, input.lastName].filter(Boolean).join(' ').trim();
     const [user] = await this.db
       .insert(users)
       .values({
         id: crypto.randomUUID(),
         email: input.email.toLowerCase(),
+        // Better Auth requires a non-null `name`; derive from first/last, fall back to email.
+        name: fullName || input.email.toLowerCase(),
         passwordHash,
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,

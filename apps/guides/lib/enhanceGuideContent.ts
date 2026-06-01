@@ -56,11 +56,21 @@ export async function enhanceGuideContent({
     throw new Error('PACKRAT_API_KEY environment variable is required for content enhancement');
   }
 
-  // safe-cast: Eden Treaty fetcher expects typeof fetch; CF Workers adds preconnect
-  // which is never called by Eden — only the (input, init) signature is used.
+  // Eden Treaty only invokes the callable form of fetch; lib.dom's `fetch` also
+  // exposes a `preconnect` method our wrapper doesn't implement. Compose our
+  // callable with `fetch`'s static properties via `Object.assign` so the result
+  // satisfies `typeof fetch` structurally — no cast.
   const catalogFetcher: typeof fetch = Object.assign(
-    (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
-      const existing = init?.headers ? Object.fromEntries(new Headers(init.headers)) : {};
+    (input: RequestInfo | URL, init?: RequestInit) => {
+      // Build a plain-object headers map. We avoid `Object.fromEntries(new Headers(...))`
+      // because workers-types' Headers declaration (in scope for api type-checking)
+      // doesn't expose [Symbol.iterator] even though DOM Headers does at runtime.
+      const existing: Record<string, string> = {};
+      if (init?.headers) {
+        new Headers(init.headers).forEach((v, k) => {
+          existing[k] = v;
+        });
+      }
       return fetch(input, {
         ...init,
         headers: { ...existing, 'X-API-KEY': apiKey },

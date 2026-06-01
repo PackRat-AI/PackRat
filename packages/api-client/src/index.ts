@@ -33,6 +33,12 @@ export type ApiClientConfig = {
  * injection and transparent refresh on 401 (for every path except the
  * refresh endpoint itself).
  */
+function isCloneable<T>(input: T): input is T & { clone(): T } {
+  return (
+    isObject(input) && 'clone' in input && typeof (input as { clone: unknown }).clone === 'function'
+  );
+}
+
 export function createApiClient(config: ApiClientConfig) {
   const baseFetcher = config.fetcher ?? fetch;
   let pendingRefresh: Promise<string | null> | null = null;
@@ -133,7 +139,9 @@ export function createApiClient(config: ApiClientConfig) {
 
     // Pre-clone a Request before any reads so the retry has an intact body.
     // For URL/string inputs (the common Eden Treaty case) this is a no-op.
-    const firstBase = input instanceof Request ? input.clone() : input;
+    // Use a structural type predicate rather than `instanceof Request` so the
+    // narrowing stays clean across DOM- and workers-flavored Request types.
+    const firstBase = isCloneable(input) ? input.clone() : input;
 
     const firstToken = isRefreshPath ? null : await config.auth.getAccessToken();
     const [firstInput, firstInit] = buildRequest({ token: firstToken, base: firstBase });
@@ -153,14 +161,22 @@ export function createApiClient(config: ApiClientConfig) {
   // rather than `client.api.catalog.get()`. The server mounts every route
   // group under the `routes` plugin which itself has `prefix: '/api'`, so the
   // `.api` level of the Treaty surface is pure noise.
-  // Treaty only uses the callable form of `fetch`; the globalThis.fetch type
-  // includes a `preconnect` method our wrapper doesn't need. Cast through
-  // unknown to bridge the two shapes without pulling preconnect into scope.
+  //
+  // Eden Treaty only invokes the callable form of fetch; lib.dom's `fetch` also
+  // exposes a `preconnect` method our wrapper doesn't implement. Compose our
+  // callable with the global `fetch`'s static properties via `Object.assign` so
+  // the result satisfies `typeof fetch` structurally — no cast, no Proxy trap.
+  //
   // parseDate:false disables Eden Treaty's JSON reviver that silently converts
   // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
   // this, every Zod z.string().datetime() field in API response schemas fails.
+  const treatyFetcher: typeof fetch = Object.assign(
+    (input: RequestInfo | URL, init?: RequestInit) => authFetcher({ input, init }),
+    fetch,
+  );
+
   return treaty<App>(config.baseUrl, {
-    fetcher: ((input, init) => authFetcher({ input, init })) as unknown as typeof fetch,
+    fetcher: treatyFetcher,
     parseDate: false,
   }).api;
 }

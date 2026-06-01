@@ -140,7 +140,7 @@ export function useSubmitTrailConditionReport(): SubmitResult {
       // Write the new entry through the typed `obs()` helper (apps/expo/lib/store.ts)
       // which routes the cast through one documented place instead of a per-call
       // suppression.
-      obs(trailConditionReportsStore, id).set(newReport);
+      obs({ store: trailConditionReportsStore, id }).set(newReport);
 
       // Yield a microtask so Legend-State finishes marking this change as a
       // pending set before we sample the sync state. Without this, the

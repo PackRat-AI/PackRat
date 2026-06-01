@@ -4,9 +4,10 @@ import { bigint, customType, index, jsonb, pgTable, text } from 'drizzle-orm/pg-
 // PostGIS geometry — drizzle-kit 0.28+ emits customType dataType() verbatim when the
 // type string starts with a known native PG type name ('geometry' is on that list).
 const geometry = customType<{ data: string; driverData: string }>({
-  dataType(config?: { type?: string; srid?: number }) {
-    const type = config?.type ?? 'Geometry';
-    const srid = config?.srid ?? 4326;
+  dataType(config) {
+    const opts = config as { type?: string; srid?: number } | undefined;
+    const type = opts?.type ?? 'Geometry';
+    const srid = opts?.srid ?? 4326;
     return `geometry(${type},${srid})`;
   },
 });
