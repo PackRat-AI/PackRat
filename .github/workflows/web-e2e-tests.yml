@@ -9,6 +9,7 @@ on:
       - "!apps/expo/**/*.test.ts"
       - "!apps/expo/**/*.test.tsx"
       - "!apps/expo/vitest.config.ts"
+      - "packages/api/**"
       - ".github/workflows/web-e2e-tests.yml"
   # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
   # CI feedback on their own code.  Secrets are unavailable for forks, so
@@ -21,6 +22,7 @@ on:
       - "!apps/expo/**/*.test.ts"
       - "!apps/expo/**/*.test.tsx"
       - "!apps/expo/vitest.config.ts"
+      - "packages/api/**"
       - ".github/workflows/web-e2e-tests.yml"
   workflow_dispatch:
 
@@ -43,9 +45,10 @@ jobs:
         name: Verify E2E secrets are available
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
         run: |
-          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$NEON_DATABASE_URL" ]; then
+          # The local stack supplies its own DB; only the seeded test-user
+          # credentials are required from secrets.
+          if [ -n "$E2E_TEST_EMAIL" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -60,10 +63,17 @@ jobs:
     timeout-minutes: 30
 
     env:
-      # The E2E user is upserted into the dev DB by the seed step below,
-      # so both email and password are driven entirely by repo secrets.
+      # The seeded e2e user. The local stack auths against the local DB, so there
+      # is no dependency on the deployed API being reachable / CORS-open.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      # The whole stack runs on localhost: a local Neon HTTP proxy in front of a
+      # Docker Postgres, a `wrangler dev` API worker, and the served web SPA.
+      # db.localtest.me resolves to 127.0.0.1 via public wildcard DNS; the API's
+      # maybeConfigureLocalNeon() routes the neon driver to the proxy on :4444.
+      NEON_DATABASE_URL: postgres://test_user:test_password@db.localtest.me/packrat_test
+      NEON_DATABASE_URL_READONLY: postgres://test_user:test_password@db.localtest.me/packrat_test
+      API_PORT: "8787"
 
     steps:
       - name: Checkout repository
@@ -91,26 +101,100 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install chromium --with-deps
 
-      - name: Build Expo web app
+      # ── Local DB stack: Postgres + Neon HTTP/WS proxy on :4444 ──────────────
+      - name: Start local Neon proxy + Postgres
+        working-directory: packages/api
+        env:
+          POSTGRES_TEST_HOST_PORT: "5433"
+          NEON_PROXY_HOST_PORT: "4444"
+        run: |
+          docker compose -p packrat-e2e -f docker-compose.test.yml up -d --wait
+          echo "Stack up. Containers:"
+          docker compose -p packrat-e2e -f docker-compose.test.yml ps
+
+      # Node-side scripts (migrate/seed) can't use the worker-only
+      # db.localtest.me neon-proxy routing, so they hit raw Postgres on :5433.
+      # The worker (.dev.vars below) uses db.localtest.me → proxy :4444.
+      - name: Run migrations + seed e2e user (local DB)
+        env:
+          NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+        run: |
+          bun run --filter @packrat/api db:migrate
+          bun run --filter @packrat/api db:seed:e2e-user
+
+      # ── Write the worker's .dev.vars: real URLs + dummy-but-valid stand-ins ──
+      # env-validation.ts requires ~25 keys to boot; sign-in only exercises the
+      # DB + Better Auth, so AI/email/maps/storage keys are placeholder values
+      # that satisfy the schema's format constraints (sk-/pplx- prefixes, urls,
+      # emails) without calling those services.
+      - name: Write API .dev.vars for E2E
+        working-directory: packages/api
+        run: |
+          cat > .dev.vars <<EOF
+          NEON_DATABASE_URL=${NEON_DATABASE_URL}
+          NEON_DATABASE_URL_READONLY=${NEON_DATABASE_URL_READONLY}
+          BETTER_AUTH_URL=http://localhost:${API_PORT}
+          BETTER_AUTH_SECRET=${{ secrets.E2E_BETTER_AUTH_SECRET || 'e2e-better-auth-secret-32chars-minimum-xx' }}
+          JWT_SECRET=${{ secrets.E2E_JWT_SECRET || 'e2e-jwt-secret-placeholder' }}
+          GOOGLE_CLIENT_ID=e2e-google-client-id
+          GOOGLE_CLIENT_SECRET=e2e-google-client-secret
+          APPLE_CLIENT_ID=world.packrat.app
+          APPLE_PRIVATE_KEY=e2e-apple-private-key
+          APPLE_KEY_ID=e2e-apple-key-id
+          APPLE_TEAM_ID=e2e-apple-team-id
+          ADMIN_USERNAME=admin
+          ADMIN_PASSWORD=e2e-admin
+          PACKRAT_API_KEY=e2e-api-key
+          RESEND_API_KEY=e2e-resend-key
+          EMAIL_FROM=no-reply@packrattest.local
+          OPENAI_API_KEY=sk-e2e-placeholder
+          GOOGLE_GENERATIVE_AI_API_KEY=e2e-google-ai
+          PERPLEXITY_API_KEY=pplx-e2e-placeholder
+          OPENWEATHER_KEY=e2e-openweather
+          WEATHER_API_KEY=e2e-weather
+          CLOUDFLARE_ACCOUNT_ID=e2e-account
+          R2_ACCESS_KEY_ID=e2e-r2-access
+          R2_SECRET_ACCESS_KEY=e2e-r2-secret
+          PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-preview
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-bucket
+          R2_PUBLIC_URL=https://example.r2.dev
+          PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
+          PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
+          EXPO_PUBLIC_API_URL=http://localhost:${API_PORT}
+          EOF
+          echo "Wrote .dev.vars ($(wc -l < .dev.vars) keys)"
+
+      # ── Start the API worker (wrangler dev) and wait for health ─────────────
+      - name: Start API (wrangler dev) on localhost
+        working-directory: packages/api
+        run: |
+          # Background the worker; capture logs so failures are debuggable.
+          bun run dev --port "${API_PORT}" --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
+          echo "Waiting for API on http://localhost:${API_PORT} ..."
+          for i in $(seq 1 60); do
+            if curl -sf "http://localhost:${API_PORT}/api/health" >/dev/null 2>&1 \
+               || curl -sf "http://localhost:${API_PORT}/" >/dev/null 2>&1; then
+              echo "API ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::API did not become ready — wrangler log:"; cat /tmp/wrangler.log; exit 1
+
+      - name: Build Expo web app (against local API)
         working-directory: apps/expo
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_API_URL: http://localhost:8787
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
           EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
         run: bunx expo export -p web --output-dir dist
 
-      - name: Seed E2E test user in dev DB
-        run: bun run --filter @packrat/api db:seed:e2e-user
-        env:
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
       - name: Serve web app (SPA mode, port 8081)
         working-directory: apps/expo
-        # -s routes all 404s to index.html for client-side routing
         run: npx serve -s dist -l 8081 &
 
       - name: Wait for web server
@@ -125,10 +209,13 @@ jobs:
         working-directory: apps/expo
         env:
           BASE_URL: http://localhost:8081
-          API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
-          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          API_URL: http://localhost:8787
           CI: "true"
         run: bun test:web
+
+      - name: Dump API log on failure
+        if: failure()
+        run: tail -200 /tmp/wrangler.log || true
 
       - name: Upload Playwright report on failure
         if: failure()
