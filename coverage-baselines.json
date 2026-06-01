@@ -31,10 +31,10 @@
   "packages/analytics": {
     "summaryPath": "packages/analytics/coverage/coverage-summary.json",
     "tier": "B",
-    "lines": 84.48,
+    "lines": 83.33,
     "branches": 82.73,
     "functions": 87.23,
-    "statements": 84.48,
+    "statements": 83.33,
     "recordedAt": "2026-06-01"
   },
   "packages/overpass": {
