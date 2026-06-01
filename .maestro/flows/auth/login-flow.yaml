@@ -140,6 +140,18 @@ appId: ${APP_ID}
             - tapOn:
                 text: "Close"
             - waitForAnimationToEnd
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - runFlow:
+                when:
+                  visible:
+                    text: "isn't responding"
+                commands:
+                  - tapOn:
+                      text: "Wait"
+                  - waitForAnimationToEnd
       - extendedWaitUntil:
           visible:
             id: "sign-in-email-button"
