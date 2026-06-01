@@ -91,7 +91,10 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
   // Navigate to pack detail and open "Add from Catalog" sheet
   await page.goto(`${BASE_URL}/pack/${packId}`);
-  await page.getByTestId('add-from-catalog-option').last().click();
+  await page.getByTestId('add-item-button').click();
+  const addFromCatalogOption = page.getByTestId('add-from-catalog-option').last();
+  await expect(addFromCatalogOption).toBeVisible({ timeout: 5_000 });
+  await addFromCatalogOption.click();
 
   // Dialog with catalog items should appear
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });
