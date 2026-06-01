@@ -199,13 +199,28 @@ export default function AIChat() {
       transport: new DefaultChatTransport({
         fetch: expoFetch as unknown as typeof globalThis.fetch,
         api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-        prepareSendMessagesRequest: async ({ body, headers, api, credentials }) => {
+        prepareSendMessagesRequest: async ({
+          body,
+          headers,
+          api,
+          credentials,
+          id,
+          messages,
+          trigger,
+          messageId,
+        }) => {
           const authToken = token ?? (await getStoredSessionToken());
           return {
             api,
             credentials,
             headers: authToken ? { ...headers, Authorization: `Bearer ${authToken}` } : headers,
-            body: body ?? {},
+            body: {
+              ...(body ?? {}),
+              id,
+              messages,
+              trigger,
+              messageId,
+            },
           };
         },
         body: () => ({
