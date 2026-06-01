@@ -160,7 +160,14 @@ export function createApiClient(config: ApiClientConfig) {
   // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
   // this, every Zod z.string().datetime() field in API response schemas fails.
   return treaty<App>(config.baseUrl, {
-    fetcher: ((input, init) => authFetcher({ input, init })) as unknown as typeof fetch,
+    // Eden Treaty types `fetcher` as the full `typeof fetch`, which carries a
+    // `preconnect` method. Treaty only ever calls the fetch signature, so we
+    // satisfy the shape with a no-op `preconnect` rather than casting through
+    // `unknown` — keeps the wrapper fully type-checked.
+    fetcher: Object.assign(
+      (input: RequestInfo | URL, init?: RequestInit) => authFetcher({ input, init }),
+      { preconnect: (() => {}) as typeof fetch.preconnect },
+    ),
     parseDate: false,
   }).api;
 }

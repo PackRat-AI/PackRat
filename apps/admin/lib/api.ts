@@ -52,7 +52,13 @@ const adminFetcher = async ({
 
 // Pre-drilled into .api.admin so call sites write `adminClient.stats.get()`.
 const adminClient = treaty<App>(API_BASE, {
-  fetcher: ((input, init) => adminFetcher({ input, init })) as unknown as typeof fetch,
+  // Eden Treaty types `fetcher` as the full `typeof fetch` (incl. `preconnect`),
+  // which Treaty never calls — satisfy the shape with a typed no-op instead of
+  // casting through `unknown`.
+  fetcher: Object.assign(
+    (input: RequestInfo | URL, init?: RequestInit) => adminFetcher({ input, init }),
+    { preconnect: (() => {}) as typeof fetch.preconnect },
+  ),
   parseDate: false,
 }).api.admin;
 
