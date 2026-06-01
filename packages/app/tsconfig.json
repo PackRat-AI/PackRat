@@ -6,6 +6,6 @@
       "@packrat/api-client": ["../../packages/api-client/src/index.ts"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "../../packages/typescript-config/cloudflare-types.d.ts"],
   "exclude": ["node_modules"]
 }
