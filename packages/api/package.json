@@ -70,7 +70,6 @@
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
     "pg": "catalog:",
-    "radash": "catalog:",
     "resend": "^6.10.0",
     "workers-ai-provider": "^0.7.2",
     "ws": "catalog:",

@@ -132,7 +132,6 @@
     "llama.rn": "0.10.1",
     "nanoid": "^5.1.9",
     "nativewind": "^4.2.3",
-    "radash": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "^17.0.4",
