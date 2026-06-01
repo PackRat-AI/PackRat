@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerAiTools(agent: AgentContext): void {
   // ── Web search (Perplexity) ───────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ query: string }>(
+    agent.server,
     'packrat_web_search',
     {
       title: 'Web Search',
@@ -32,7 +34,8 @@ export function registerAiTools(agent: AgentContext): void {
   // though the API itself rejects non-SELECT statements, raw DB access is
   // too high-blast-radius to expose to mcp:read or mcp:write clients.
 
-  agent.server.registerTool(
+  tool<{ query: string; limit: number }>(
+    agent.server,
     'packrat_execute_sql_query',
     {
       title: 'Execute Read-Only SQL Query',
@@ -60,7 +63,8 @@ export function registerAiTools(agent: AgentContext): void {
   //
   // Admin-classified per the EXPLICIT_ADMIN override in `scopes.ts`.
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_get_database_schema',
     {
       title: 'Get Database Schema',

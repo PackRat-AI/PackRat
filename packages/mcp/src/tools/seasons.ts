@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerSeasonTools(agent: AgentContext): void {
   // Note: the API requires a user with 20+ inventory items before serving
   // suggestions — the call may 422 for new users.
-  agent.server.registerTool(
+  tool<{ location: string; date: string }>(
+    agent.server,
     'packrat_get_season_suggestions',
     {
       title: 'Get Season Suggestions',

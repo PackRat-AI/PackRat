@@ -23,6 +23,7 @@ import { call, errResponse, nowIso } from '../client';
 import { type ConfirmReason, confirmAction } from '../elicit';
 import { ItemCategory, PackCategory } from '../enums';
 import { audit, createLogger } from '../observability';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 /**
@@ -116,7 +117,8 @@ function auditOutcome(result: ToolResult): {
 export function registerPackTemplateTools(agent: AgentContext): void {
   // ── Templates ─────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_list_pack_templates',
     {
       title: 'List Pack Templates',
@@ -133,7 +135,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       call({ promise: agent.api.user['pack-templates'].get(), action: 'list pack templates' }),
   );
 
-  agent.server.registerTool(
+  tool<{ template_id: string }>(
+    agent.server,
     'packrat_get_pack_template',
     {
       title: 'Get Pack Template',
@@ -158,7 +161,14 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   // `is_app_template` is forced to `false` here; the admin variant lives in
   // `packrat_create_app_pack_template` below.
 
-  agent.server.registerTool(
+  tool<{
+    name: string;
+    description?: string;
+    category: PackCategory;
+    image?: string;
+    tags?: string[];
+  }>(
+    agent.server,
     'packrat_create_pack_template',
     {
       title: 'Create Pack Template',
@@ -204,7 +214,14 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   // in `EXPLICIT_ADMIN` in `scopes.ts` (the tool doesn't carry the
   // `admin_` prefix so the prefix-based classifier can't pick it up).
 
-  agent.server.registerTool(
+  tool<{
+    name: string;
+    description?: string;
+    category: PackCategory;
+    image?: string;
+    tags?: string[];
+  }>(
+    agent.server,
     'packrat_create_app_pack_template',
     {
       title: 'Create App Pack Template (Admin)',
@@ -280,7 +297,15 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     },
   );
 
-  agent.server.registerTool(
+  tool<{
+    template_id: string;
+    name?: string;
+    description?: string;
+    category?: PackCategory;
+    image?: string;
+    tags?: string[];
+  }>(
+    agent.server,
     'packrat_update_pack_template',
     {
       title: 'Update Pack Template',
@@ -319,7 +344,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ template_id: string }>(
+    agent.server,
     'packrat_delete_pack_template',
     {
       title: 'Delete Pack Template',
@@ -343,7 +369,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
 
   // ── Template items ────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ template_id: string }>(
+    agent.server,
     'packrat_list_pack_template_items',
     {
       title: 'List Pack Template Items',
@@ -364,7 +391,20 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{
+    template_id: string;
+    name: string;
+    description?: string;
+    weight: number;
+    weight_unit: 'g' | 'oz' | 'kg' | 'lb';
+    quantity: number;
+    category: ItemCategory;
+    consumable: boolean;
+    worn: boolean;
+    image?: string;
+    notes?: string;
+  }>(
+    agent.server,
     'packrat_add_pack_template_item',
     {
       title: 'Add Pack Template Item',
@@ -422,7 +462,20 @@ export function registerPackTemplateTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{
+    item_id: string;
+    name?: string;
+    description?: string;
+    weight?: number;
+    weight_unit?: 'g' | 'oz' | 'kg' | 'lb';
+    quantity?: number;
+    category?: ItemCategory;
+    consumable?: boolean;
+    worn?: boolean;
+    image?: string;
+    notes?: string;
+  }>(
+    agent.server,
     'packrat_update_pack_template_item',
     {
       title: 'Update Pack Template Item',
@@ -465,7 +518,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
     },
   );
 
-  agent.server.registerTool(
+  tool<{ item_id: string }>(
+    agent.server,
     'packrat_delete_pack_template_item',
     {
       title: 'Delete Pack Template Item',
@@ -492,7 +546,8 @@ export function registerPackTemplateTools(agent: AgentContext): void {
   // surface matches what the API enforces — non-admin OAuth sessions don't
   // see it in tools/list.
 
-  agent.server.registerTool(
+  tool<{ content_url: string; is_app_template: boolean }>(
+    agent.server,
     'packrat_generate_pack_template_from_url',
     {
       title: 'Generate Pack Template From URL (Admin)',

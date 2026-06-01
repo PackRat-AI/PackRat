@@ -2,12 +2,14 @@ import { z } from 'zod';
 import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
 import { ItemCategory, PackCategory } from '../enums';
 import { GetPackOutputSchema, ListPacksOutputSchema } from '../output-schemas';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerPackTools(agent: AgentContext): void {
   // ── List packs ────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ include_public: boolean; limit?: number; offset: number }>(
+    agent.server,
     'packrat_list_packs',
     {
       title: 'List My Packs',
@@ -66,7 +68,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Get pack details ──────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ pack_id: string }>(
+    agent.server,
     'packrat_get_pack',
     {
       title: 'Get Pack',
@@ -95,7 +98,14 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Create pack ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    name: string;
+    description?: string;
+    category: PackCategory;
+    is_public: boolean;
+    tags?: string[];
+  }>(
+    agent.server,
     'packrat_create_pack',
     {
       title: 'Create Pack',
@@ -139,7 +149,15 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Update pack ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    pack_id: string;
+    name?: string;
+    description?: string | null;
+    category?: PackCategory;
+    is_public?: boolean;
+    tags?: string[];
+  }>(
+    agent.server,
     'packrat_update_pack',
     {
       title: 'Update Pack',
@@ -177,7 +195,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Delete pack ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ pack_id: string }>(
+    agent.server,
     'packrat_delete_pack',
     {
       title: 'Delete Pack',
@@ -203,7 +222,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── List pack items ───────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ pack_id: string }>(
+    agent.server,
     'packrat_list_pack_items',
     {
       title: 'List Pack Items',
@@ -226,7 +246,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Get a single pack item ────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ item_id: string }>(
+    agent.server,
     'packrat_get_pack_item',
     {
       title: 'Get Pack Item',
@@ -249,7 +270,18 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Add item to pack ──────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    pack_id: string;
+    name: string;
+    category: ItemCategory;
+    weight_grams: number;
+    quantity: number;
+    catalog_item_id?: number;
+    is_consumable: boolean;
+    is_worn: boolean;
+    notes?: string;
+  }>(
+    agent.server,
     'packrat_add_pack_item',
     {
       title: 'Add Pack Item',
@@ -312,7 +344,17 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Update pack item ──────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    item_id: string;
+    name?: string;
+    category?: ItemCategory;
+    weight_grams?: number;
+    quantity?: number;
+    is_consumable?: boolean;
+    is_worn?: boolean;
+    notes?: string | null;
+  }>(
+    agent.server,
     'packrat_update_pack_item',
     {
       title: 'Update Pack Item',
@@ -354,7 +396,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Remove item from pack ─────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ item_id: string }>(
+    agent.server,
     'packrat_remove_pack_item',
     {
       title: 'Remove Pack Item',
@@ -378,7 +421,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Similar items for an item in a pack ───────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ pack_id: string; item_id: string; limit: number; threshold?: number }>(
+    agent.server,
     'packrat_similar_pack_items',
     {
       title: 'Find Similar Pack Items',
@@ -414,7 +458,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Pack item suggestions ─────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ pack_id: string; existing_catalog_item_ids: number[] }>(
+    agent.server,
     'packrat_suggest_pack_items',
     {
       title: 'Suggest Pack Items',
@@ -442,7 +487,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Weight history ────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_get_pack_weight_history',
     {
       title: 'Get Pack Weight History',
@@ -462,7 +508,8 @@ export function registerPackTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ pack_id: string; weight_grams: number }>(
+    agent.server,
     'packrat_record_pack_weight',
     {
       title: 'Record Pack Weight',
@@ -489,7 +536,8 @@ export function registerPackTools(agent: AgentContext): void {
   );
 
   // ── Pack weight analysis (server-computed breakdown) ─────────────────────
-  agent.server.registerTool(
+  tool<{ pack_id: string }>(
+    agent.server,
     'packrat_analyze_pack_weight',
     {
       title: 'Analyze Pack Weight',
@@ -513,7 +561,15 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Gap analysis ──────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    pack_id: string;
+    destination: string;
+    trip_type: PackCategory;
+    duration_days: number;
+    start_date?: string;
+    end_date?: string;
+  }>(
+    agent.server,
     'packrat_analyze_pack_gaps',
     {
       title: 'Analyze Pack Gaps',
@@ -550,7 +606,8 @@ export function registerPackTools(agent: AgentContext): void {
 
   // ── Image-based gear detection ───────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ image_key: string; match_limit: number }>(
+    agent.server,
     'packrat_analyze_pack_image',
     {
       title: 'Analyze Pack Image',

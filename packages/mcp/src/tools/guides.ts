@@ -1,9 +1,17 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerGuidesTools(agent: AgentContext): void {
-  agent.server.registerTool(
+  tool<{
+    page: number;
+    limit: number;
+    category?: string;
+    sort_field?: 'title' | 'category' | 'createdAt' | 'updatedAt';
+    sort_order?: 'asc' | 'desc';
+  }>(
+    agent.server,
     'packrat_list_guides',
     {
       title: 'List Outdoor Guides',
@@ -36,7 +44,8 @@ export function registerGuidesTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_list_guide_categories',
     {
       title: 'List Guide Categories',
@@ -53,7 +62,13 @@ export function registerGuidesTools(agent: AgentContext): void {
       call({ promise: agent.api.user.guides.categories.get(), action: 'list guide categories' }),
   );
 
-  agent.server.registerTool(
+  tool<{
+    query: string;
+    page: number;
+    limit: number;
+    category?: string;
+  }>(
+    agent.server,
     'packrat_search_guides',
     {
       title: 'Search Outdoor Guides',
@@ -78,7 +93,8 @@ export function registerGuidesTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ guide_id: string }>(
+    agent.server,
     'packrat_get_guide',
     {
       title: 'Get Guide',

@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerFeedTools(agent: AgentContext): void {
   // ── Posts ─────────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ page: number; limit: number }>(
+    agent.server,
     'packrat_list_feed',
     {
       title: 'List Feed Posts',
@@ -25,7 +27,8 @@ export function registerFeedTools(agent: AgentContext): void {
       call({ promise: agent.api.user.feed.get({ query: { page, limit } }), action: 'list feed' }),
   );
 
-  agent.server.registerTool(
+  tool<{ caption: string; images?: string[] }>(
+    agent.server,
     'packrat_create_feed_post',
     {
       title: 'Create Feed Post',
@@ -49,7 +52,8 @@ export function registerFeedTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ post_id: string }>(
+    agent.server,
     'packrat_get_feed_post',
     {
       title: 'Get Feed Post',
@@ -70,7 +74,8 @@ export function registerFeedTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ post_id: string }>(
+    agent.server,
     'packrat_delete_feed_post',
     {
       title: 'Delete Feed Post',
@@ -95,7 +100,8 @@ export function registerFeedTools(agent: AgentContext): void {
   // Note: `toggle_feed_post_like` is non-idempotent by name (each call flips
   // the like state) but additive in MCP's "destroys data" sense — no posts
   // or comments are removed.
-  agent.server.registerTool(
+  tool<{ post_id: string }>(
+    agent.server,
     'packrat_toggle_feed_post_like',
     {
       title: 'Toggle Feed Post Like',
@@ -119,7 +125,8 @@ export function registerFeedTools(agent: AgentContext): void {
 
   // ── Comments ──────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ post_id: string; page: number; limit: number }>(
+    agent.server,
     'packrat_list_feed_comments',
     {
       title: 'List Feed Comments',
@@ -144,7 +151,8 @@ export function registerFeedTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ post_id: string; content: string; parent_comment_id?: number }>(
+    agent.server,
     'packrat_create_feed_comment',
     {
       title: 'Create Feed Comment',
@@ -173,7 +181,8 @@ export function registerFeedTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ post_id: string; comment_id: string }>(
+    agent.server,
     'packrat_delete_feed_comment',
     {
       title: 'Delete Feed Comment',
@@ -198,7 +207,8 @@ export function registerFeedTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ post_id: string; comment_id: string }>(
+    agent.server,
     'packrat_toggle_feed_comment_like',
     {
       title: 'Toggle Feed Comment Like',

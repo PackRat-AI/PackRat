@@ -4,11 +4,10 @@
   "private": true,
   "description": "PackRat MCP Server — outdoor adventure planning via Model Context Protocol",
   "scripts": {
-    "_disabled-check-types-reason": "Renamed from check-types so turbo skips this workspace and CI doesn't run it. Strict tsc OOMs (>14 GB v8 heap, exceeds the runner) on ~50 McpServer.registerTool calls × @packrat/api-client's deep Eden treaty<App> type × strict null analysis (#2533). Re-enable once that Eden surface is bounded behind a typed facade. Mcp is still type-checked at deploy via wrangler + Biome in CI.",
+    "check-types": "tsc --noEmit",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e dev",
     "dev": "wrangler dev -e dev",
-    "disabled-check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:integration": "vitest run --project mcp-integration",
     "test:unit": "vitest run --project mcp-unit",

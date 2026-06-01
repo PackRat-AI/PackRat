@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerUserTools(agent: AgentContext): void {
   // ── Profile ───────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_get_profile',
     {
       title: 'Get My Profile',
@@ -21,7 +23,13 @@ export function registerUserTools(agent: AgentContext): void {
     async () => call({ promise: agent.api.user.user.profile.get(), action: 'get profile' }),
   );
 
-  agent.server.registerTool(
+  tool<{
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    avatar_url?: string;
+  }>(
+    agent.server,
     'packrat_update_profile',
     {
       title: 'Update My Profile',

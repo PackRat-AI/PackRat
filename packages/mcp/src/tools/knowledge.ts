@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerKnowledgeTools(agent: AgentContext): void {
   // ── Outdoor guides RAG search ─────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ query: string; limit: number }>(
+    agent.server,
     'packrat_search_outdoor_guides',
     {
       title: 'Search Outdoor Knowledge Base',
@@ -31,7 +33,8 @@ export function registerKnowledgeTools(agent: AgentContext): void {
 
   // ── Knowledge-base reader (URL extraction) ────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ url: string }>(
+    agent.server,
     'packrat_extract_url_content',
     {
       title: 'Extract URL Content',

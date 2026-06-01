@@ -1,12 +1,14 @@
 import { z } from 'zod';
 import { call, nowIso } from '../client';
 import { CrossingDifficulty, TrailCondition, TrailSurface } from '../enums';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerTrailConditionTools(agent: AgentContext): void {
   // ── List trail condition reports ──────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ trail_name?: string; limit: number }>(
+    agent.server,
     'packrat_get_trail_conditions',
     {
       title: 'Get Trail Condition Reports',
@@ -34,7 +36,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── List user's own trail reports ─────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ updated_since?: string }>(
+    agent.server,
     'packrat_list_my_trail_reports',
     {
       title: 'List My Trail Reports',
@@ -63,7 +66,19 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── Submit trail condition ────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    trail_name: string;
+    trail_region?: string;
+    surface: TrailSurface;
+    overall_condition: TrailCondition;
+    hazards?: string[];
+    water_crossings?: number;
+    water_crossing_difficulty?: CrossingDifficulty;
+    notes?: string;
+    photos?: string[];
+    trip_id?: string;
+  }>(
+    agent.server,
     'packrat_submit_trail_condition',
     {
       title: 'Submit Trail Condition Report',
@@ -125,7 +140,19 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── Update trail report ───────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    report_id: string;
+    trail_name?: string;
+    trail_region?: string | null;
+    surface?: TrailSurface;
+    overall_condition?: TrailCondition;
+    hazards?: string[];
+    water_crossings?: number;
+    water_crossing_difficulty?: CrossingDifficulty | null;
+    notes?: string | null;
+    photos?: string[];
+  }>(
+    agent.server,
     'packrat_update_trail_condition',
     {
       title: 'Update Trail Condition Report',
@@ -184,7 +211,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
 
   // ── Delete trail report ───────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ report_id: string }>(
+    agent.server,
     'packrat_delete_trail_condition',
     {
       title: 'Delete Trail Condition Report',

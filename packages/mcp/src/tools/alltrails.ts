@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerAlltrailsTools(agent: AgentContext): void {
-  agent.server.registerTool(
+  tool<{ url: string }>(
+    agent.server,
     'packrat_preview_alltrails_url',
     {
       title: 'Preview AllTrails URL',

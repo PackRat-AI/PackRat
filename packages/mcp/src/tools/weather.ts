@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { call } from '../client';
 import { GetWeatherOutputSchema } from '../output-schemas';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerWeatherTools(agent: AgentContext): void {
   // ── Get weather (single API call) ─────────────────────────────────────────
-  agent.server.registerTool(
+  tool<{ location: string }>(
+    agent.server,
     'packrat_get_weather',
     {
       title: 'Get Weather Forecast',
@@ -40,7 +42,8 @@ export function registerWeatherTools(agent: AgentContext): void {
 
   // ── Search weather location ───────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ query: string }>(
+    agent.server,
     'packrat_search_weather_location',
     {
       title: 'Search Weather Locations',
@@ -63,7 +66,8 @@ export function registerWeatherTools(agent: AgentContext): void {
 
   // ── Search weather location by coordinates ────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ latitude: number; longitude: number }>(
+    agent.server,
     'packrat_search_weather_by_coordinates',
     {
       title: 'Search Weather By Coordinates',
@@ -90,7 +94,8 @@ export function registerWeatherTools(agent: AgentContext): void {
 
   // ── Forecast by location id ───────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ location_id: string | number }>(
+    agent.server,
     'packrat_get_weather_forecast',
     {
       title: 'Get Weather Forecast By Location ID',

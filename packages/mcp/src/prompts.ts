@@ -1,11 +1,20 @@
 import { z } from 'zod';
 import { ExperienceLevel, PackCategory, PackStyle, WeightPriority } from './enums';
+import { prompt } from './registerTool';
 import type { AgentContext } from './types';
 
 export function registerPrompts(agent: AgentContext): void {
   // ── Trip planning prompt ──────────────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    destination: string;
+    duration_days: string;
+    activity: PackCategory;
+    season?: string;
+    experience_level: ExperienceLevel;
+    pack_style: PackStyle;
+  }>(
+    agent.server,
     'plan_trip',
     {
       description:
@@ -74,7 +83,12 @@ At the end, provide:
 
   // ── Pack optimization prompt ──────────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    pack_id: string;
+    target_weight_kg?: string;
+    budget_usd?: string;
+  }>(
+    agent.server,
     'optimize_pack_weight',
     {
       description:
@@ -123,7 +137,14 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
 
   // ── Gear recommendations prompt ───────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    activity: string;
+    conditions?: string;
+    category?: string;
+    budget_usd?: string;
+    weight_priority: WeightPriority;
+  }>(
+    agent.server,
     'recommend_gear',
     {
       description:
@@ -180,7 +201,11 @@ Format the response as:
 
   // ── Trail research prompt ─────────────────────────────────────────────────
 
-  agent.server.registerPrompt(
+  prompt<{
+    trail_name: string;
+    start_date?: string;
+  }>(
+    agent.server,
     'trail_research',
     {
       description:

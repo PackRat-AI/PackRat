@@ -24,12 +24,14 @@
 
 import { call } from '../client';
 import { WhoAmIOutputSchema } from '../output-schemas';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerAuthTools(agent: AgentContext): void {
   // ── Whoami ────────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_whoami',
     {
       title: 'Who Am I',

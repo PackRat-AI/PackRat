@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { call, clampLimit, nowIso, ok, PAGINATION_LIMIT_MAX, withNextOffset } from '../client';
 import { GetTripOutputSchema, ListTripsOutputSchema } from '../output-schemas';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
+
+type TripLocation = { latitude: number; longitude: number; name?: string };
 
 const LocationInput = z.object({
   latitude: z.number().min(-90).max(90),
@@ -12,7 +15,8 @@ const LocationInput = z.object({
 export function registerTripTools(agent: AgentContext): void {
   // ── List trips ────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ limit?: number; offset: number }>(
+    agent.server,
     'packrat_list_trips',
     {
       title: 'List My Trips',
@@ -59,7 +63,8 @@ export function registerTripTools(agent: AgentContext): void {
 
   // ── Get trip ──────────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ trip_id: string }>(
+    agent.server,
     'packrat_get_trip',
     {
       title: 'Get Trip',
@@ -86,7 +91,16 @@ export function registerTripTools(agent: AgentContext): void {
 
   // ── Create trip ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    name: string;
+    description?: string;
+    location?: TripLocation;
+    start_date?: string;
+    end_date?: string;
+    notes?: string;
+    pack_id?: string;
+  }>(
+    agent.server,
     'packrat_create_trip',
     {
       title: 'Create Trip',
@@ -131,7 +145,17 @@ export function registerTripTools(agent: AgentContext): void {
 
   // ── Update trip ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    trip_id: string;
+    name?: string;
+    description?: string | null;
+    location?: TripLocation | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    notes?: string | null;
+    pack_id?: string | null;
+  }>(
+    agent.server,
     'packrat_update_trip',
     {
       title: 'Update Trip',
@@ -173,7 +197,8 @@ export function registerTripTools(agent: AgentContext): void {
 
   // ── Delete trip ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ trip_id: string }>(
+    agent.server,
     'packrat_delete_trip',
     {
       title: 'Delete Trip',

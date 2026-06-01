@@ -1,11 +1,21 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerTrailTools(agent: AgentContext): void {
   // ── Search trails ─────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    q?: string;
+    lat?: number;
+    lon?: number;
+    radius?: number;
+    sport?: string;
+    limit?: number;
+    offset?: number;
+  }>(
+    agent.server,
     'packrat_search_trails',
     {
       title: 'Search Trails',
@@ -38,7 +48,8 @@ export function registerTrailTools(agent: AgentContext): void {
 
   // ── Get trail metadata ────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ osm_id: string }>(
+    agent.server,
     'packrat_get_trail',
     {
       title: 'Get Trail',
@@ -62,7 +73,8 @@ export function registerTrailTools(agent: AgentContext): void {
 
   // ── Get trail geometry ────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ osm_id: string }>(
+    agent.server,
     'packrat_get_trail_geometry',
     {
       title: 'Get Trail Geometry',

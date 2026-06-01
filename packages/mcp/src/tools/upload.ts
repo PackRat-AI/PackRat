@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerUploadTools(agent: AgentContext): void {
-  agent.server.registerTool(
+  tool<{ file_name: string; content_type: string; size: number }>(
+    agent.server,
     'packrat_upload_image_url',
     {
       title: 'Create Image Upload URL',

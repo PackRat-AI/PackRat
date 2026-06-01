@@ -31,6 +31,7 @@ import {
   AdminCatalogOverviewOutputSchema,
   AdminStatsOutputSchema,
 } from '../output-schemas';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 /**
@@ -192,7 +193,8 @@ const READ_ADMIN_ANNOTATIONS = {
 export function registerAdminTools(agent: AgentContext): void {
   // ── Stats / users / packs / catalog ───────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_stats',
     {
       title: 'Admin: Platform Stats',
@@ -211,7 +213,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ q?: string; limit: number; offset: number }>(
+    agent.server,
     'packrat_admin_list_users',
     {
       title: 'Admin: List Users',
@@ -236,7 +239,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ user_id: string; reason: string }>(
+    agent.server,
     'packrat_admin_hard_delete_user',
     {
       title: 'Admin: Hard-Delete User',
@@ -303,7 +307,8 @@ export function registerAdminTools(agent: AgentContext): void {
     },
   );
 
-  agent.server.registerTool(
+  tool<{ q?: string; limit: number; offset: number; include_deleted: boolean }>(
+    agent.server,
     'packrat_admin_list_packs',
     {
       title: 'Admin: List Packs',
@@ -333,7 +338,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ pack_id: string }>(
+    agent.server,
     'packrat_admin_delete_pack',
     {
       title: 'Admin: Delete Pack',
@@ -388,7 +394,8 @@ export function registerAdminTools(agent: AgentContext): void {
     },
   );
 
-  agent.server.registerTool(
+  tool<{ q?: string; limit: number; offset: number }>(
+    agent.server,
     'packrat_admin_list_catalog',
     {
       title: 'Admin: List Catalog Items',
@@ -412,7 +419,17 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{
+    item_id: string | number;
+    name?: string;
+    brand?: string;
+    categories?: string[];
+    weight?: number;
+    weight_unit?: 'g' | 'oz' | 'kg' | 'lb';
+    price?: number;
+    description?: string;
+  }>(
+    agent.server,
     'packrat_admin_update_catalog_item',
     {
       title: 'Admin: Update Catalog Item',
@@ -453,7 +470,8 @@ export function registerAdminTools(agent: AgentContext): void {
     },
   );
 
-  agent.server.registerTool(
+  tool<{ item_id: string | number }>(
+    agent.server,
     'packrat_admin_delete_catalog_item',
     {
       title: 'Admin: Delete Catalog Item',
@@ -509,7 +527,8 @@ export function registerAdminTools(agent: AgentContext): void {
 
   // ── Trails (admin) ────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ q: string; sport?: string; limit: number; offset: number }>(
+    agent.server,
     'packrat_admin_search_trails',
     {
       title: 'Admin: Search Trails',
@@ -534,7 +553,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ osm_id: string }>(
+    agent.server,
     'packrat_admin_get_trail',
     {
       title: 'Admin: Get Trail',
@@ -551,7 +571,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ osm_id: string }>(
+    agent.server,
     'packrat_admin_get_trail_geometry',
     {
       title: 'Admin: Get Trail Geometry',
@@ -568,7 +589,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ q?: string; limit: number; offset: number; include_deleted: boolean }>(
+    agent.server,
     'packrat_admin_list_trail_condition_reports',
     {
       title: 'Admin: List Trail Condition Reports',
@@ -601,7 +623,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ report_id: string }>(
+    agent.server,
     'packrat_admin_delete_trail_condition_report',
     {
       title: 'Admin: Delete Trail Condition Report',
@@ -662,7 +685,8 @@ export function registerAdminTools(agent: AgentContext): void {
 
   // ── Analytics: platform ───────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ period?: 'day' | 'week' | 'month'; range?: number }>(
+    agent.server,
     'packrat_admin_analytics_growth',
     {
       title: 'Admin: Analytics Growth',
@@ -683,7 +707,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ period?: 'day' | 'week' | 'month'; range?: number }>(
+    agent.server,
     'packrat_admin_analytics_activity',
     {
       title: 'Admin: Analytics Activity',
@@ -706,7 +731,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_analytics_active_users',
     {
       title: 'Admin: Active Users',
@@ -725,7 +751,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_analytics_pack_breakdown',
     {
       title: 'Admin: Pack Breakdown',
@@ -745,7 +772,8 @@ export function registerAdminTools(agent: AgentContext): void {
 
   // ── Analytics: catalog ────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_analytics_catalog_overview',
     {
       title: 'Admin: Catalog Overview',
@@ -764,7 +792,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ limit: number }>(
+    agent.server,
     'packrat_admin_analytics_top_brands',
     {
       title: 'Admin: Top Brands',
@@ -784,7 +813,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_analytics_catalog_prices',
     {
       title: 'Admin: Catalog Prices',
@@ -800,7 +830,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_analytics_catalog_embeddings',
     {
       title: 'Admin: Catalog Embedding Stats',
@@ -816,7 +847,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ limit: number }>(
+    agent.server,
     'packrat_admin_analytics_etl_jobs',
     {
       title: 'Admin: ETL Jobs',
@@ -836,7 +868,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ limit: number }>(
+    agent.server,
     'packrat_admin_analytics_etl_failure_summary',
     {
       title: 'Admin: ETL Failure Summary',
@@ -856,7 +889,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ job_id: string; limit: number }>(
+    agent.server,
     'packrat_admin_analytics_etl_job_failures',
     {
       title: 'Admin: ETL Job Failures',
@@ -880,7 +914,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<Record<string, never>>(
+    agent.server,
     'packrat_admin_etl_reset_stuck',
     {
       title: 'Admin: ETL Reset Stuck Jobs',
@@ -902,7 +937,8 @@ export function registerAdminTools(agent: AgentContext): void {
       }),
   );
 
-  agent.server.registerTool(
+  tool<{ job_id: string }>(
+    agent.server,
     'packrat_admin_etl_retry_job',
     {
       title: 'Admin: ETL Retry Job',

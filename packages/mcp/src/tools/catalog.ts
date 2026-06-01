@@ -1,12 +1,21 @@
 import { z } from 'zod';
 import { call, clampLimit, PAGINATION_LIMIT_MAX } from '../client';
 import { CatalogSortField, SortOrder } from '../enums';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerCatalogTools(agent: AgentContext): void {
   // ── Text search ───────────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    query?: string;
+    category?: string;
+    limit: number;
+    page: number;
+    sort_by?: CatalogSortField;
+    sort_order: SortOrder;
+  }>(
+    agent.server,
     'packrat_search_gear_catalog',
     {
       title: 'Search Gear Catalog',
@@ -59,7 +68,8 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Semantic/vector search ────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ query: string; limit: number }>(
+    agent.server,
     'packrat_semantic_gear_search',
     {
       title: 'Semantic Gear Search',
@@ -85,7 +95,8 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Get single item ───────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ item_id: number }>(
+    agent.server,
     'packrat_get_catalog_item',
     {
       title: 'Get Catalog Item',
@@ -111,7 +122,8 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Similar catalog items ─────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ item_id: number; limit: number; threshold?: number }>(
+    agent.server,
     'packrat_similar_catalog_items',
     {
       title: 'Find Similar Catalog Items',
@@ -143,7 +155,8 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── List categories ───────────────────────────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{ limit?: number }>(
+    agent.server,
     'packrat_list_gear_categories',
     {
       title: 'List Gear Categories',
@@ -166,7 +179,20 @@ export function registerCatalogTools(agent: AgentContext): void {
 
   // ── Create a catalog item (user-submitted) ────────────────────────────────
 
-  agent.server.registerTool(
+  tool<{
+    name: string;
+    description?: string;
+    brand?: string;
+    model?: string;
+    weight: number;
+    weight_unit: 'g' | 'oz' | 'kg' | 'lb';
+    sku: string;
+    categories?: string[];
+    images?: string[];
+    rating?: number;
+    product_url: string;
+  }>(
+    agent.server,
     'packrat_create_catalog_item',
     {
       title: 'Create Catalog Item',
@@ -231,7 +257,8 @@ export function registerCatalogTools(agent: AgentContext): void {
   // NOTE: this duplicates work the API could do in a single `/catalog/compare`
   // endpoint that accepts an `ids[]` query. Tracked in the API thickening list.
 
-  agent.server.registerTool(
+  tool<{ item_ids: number[] }>(
+    agent.server,
     'packrat_compare_gear_items',
     {
       title: 'Compare Gear Items',

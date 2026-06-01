@@ -63,13 +63,15 @@ jobs:
       - name: Biome (lint + format check)
         run: bun biome check packages/mcp
 
-      # NOTE: no MCP type-check step here. Strict tsc OOMs (>14 GB v8 heap, more
-      # than the runner can give) on ~50 McpServer.registerTool calls ×
-      # @packrat/api-client's deep Eden `treaty<App>` type × strict null
-      # analysis — see #2533. The MCP package is still type-checked at deploy
-      # (wrangler) and via Biome above. Re-enable once the Eden surface is
-      # bounded behind a typed facade (extract tool handlers; instantiate
-      # treaty<App> once) so the type-check fits in memory.
+      # Type-check MCP. Previously disabled (#2533): strict tsc OOM'd (>14 GB
+      # v8 heap) because the SDK's `registerTool<OutputArgs, InputArgs>` generic
+      # resolved against each tool's recursive Zod v3 shape at all ~104 call
+      # sites (~5–15M instantiations each, tripping TS2589). Fixed by the
+      # `tool<TArgs>()` wrapper (src/registerTool.ts), which instantiates that
+      # generic once against `never` and carries an explicit per-tool arg type —
+      # the package now type-checks in <1 GB.
+      - name: Type-check MCP package
+        run: bun run --cwd packages/mcp check-types
 
       - name: Run MCP tests (unit + integration)
         run: bun run --cwd packages/mcp test

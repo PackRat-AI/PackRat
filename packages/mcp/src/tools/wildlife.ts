@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { call } from '../client';
+import { tool } from '../registerTool';
 import type { AgentContext } from '../types';
 
 export function registerWildlifeTools(agent: AgentContext): void {
-  agent.server.registerTool(
+  tool<{ image_key: string }>(
+    agent.server,
     'packrat_identify_wildlife',
     {
       title: 'Identify Wildlife From Image',
