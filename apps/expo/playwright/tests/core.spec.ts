@@ -4,7 +4,23 @@
  * Each test navigates to a route after seeding auth tokens in localStorage.
  * TestIds match the constants in lib/testIds.ts and the Maestro iOS flows.
  */
+import type { Page } from '@playwright/test';
 import { BASE_URL, expect, test } from './fixtures';
+
+async function createPack(page: Page, packName: string) {
+  await page.goto(`${BASE_URL}/pack/new`);
+  await page.getByTestId('packs:name-input').fill(packName);
+
+  const packResponsePromise = page.waitForResponse(
+    (r) => r.url().includes('/api/packs') && r.request().method() === 'POST',
+    { timeout: 15_000 },
+  );
+  await page.getByTestId('submit-pack-button').click();
+
+  const packResponse = await packResponsePromise;
+  expect(packResponse.ok()).toBeTruthy();
+  return packResponse;
+}
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 
@@ -25,19 +41,7 @@ test('packs tab loads and shows create button', async ({ authedPage: page }) => 
 test('create a pack end-to-end', async ({ authedPage: page }) => {
   const packName = `E2E-Pack-${Date.now()}`;
 
-  // Use waitForResponse to capture the created pack ID.
-  // Navigating directly to /pack/new means router.back() fails on submit,
-  // so we intercept the API response instead of relying on navigation.
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
-  expect(packResponse.ok()).toBeTruthy();
+  await createPack(page, packName);
 
   // Verify pack appears in the list
   await page.goto(`${BASE_URL}/packs`);
@@ -49,17 +53,7 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
 test('add item manually to a pack', async ({ authedPage: page }) => {
   const packName = `E2E-AddItem-${Date.now()}`;
 
-  // Create a pack via API and capture the ID
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
-  expect(packResponse.ok()).toBeTruthy();
+  const packResponse = await createPack(page, packName);
   const { id: packId } = (await packResponse.json()) as { id: number };
 
   // Fill the item creation form using testIds
@@ -90,16 +84,7 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
 test('add item from catalog to a pack', async ({ authedPage: page }) => {
   const packName = `E2E-Catalog-${Date.now()}`;
 
-  // Create a pack and capture the ID
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
+  const packResponse = await createPack(page, packName);
   const { id: packId } = (await packResponse.json()) as { id: number };
 
   // Navigate to pack detail and open "Add from Catalog" sheet
@@ -228,15 +213,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   // Create a pack to chat about first
   const packName = `E2E-AI-${Date.now()}`;
 
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
+  const packResponse = await createPack(page, packName);
   const { id: packId } = (await packResponse.json()) as { id: number };
 
   await page.goto(
