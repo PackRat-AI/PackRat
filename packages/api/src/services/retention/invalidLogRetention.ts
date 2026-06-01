@@ -13,6 +13,7 @@
 
 import { createDbClient } from '@packrat/api/db';
 import type { Env } from '@packrat/api/utils/env-validation';
+import { record } from '@packrat/api/utils/sentry';
 import { invalidItemLogs } from '@packrat/db';
 import { inArray, lt, sql } from 'drizzle-orm';
 
@@ -59,38 +60,44 @@ export async function sweepInvalidItemLogs({
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
   const maxIterations = options.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 
-  const db = createDbClient(env);
+  return record({
+    operation: 'retention.sweepInvalidItemLogs',
+    extra: { retentionDays, batchSize, maxIterations },
+    fn: async () => {
+      const db = createDbClient(env);
 
-  let deleted = 0;
-  let iterations = 0;
-  let rowCount = 0;
-  const cutoff = sql`now() - (${retentionDays}::int * interval '1 day')`;
+      let deleted = 0;
+      let iterations = 0;
+      let rowCount = 0;
+      const cutoff = sql`now() - (${retentionDays}::int * interval '1 day')`;
 
-  for (let i = 0; i < maxIterations; i++) {
-    iterations++;
+      for (let i = 0; i < maxIterations; i++) {
+        iterations++;
 
-    const selectExpired = db
-      .select({ id: invalidItemLogs.id })
-      .from(invalidItemLogs)
-      .where(lt(invalidItemLogs.createdAt, cutoff))
-      .limit(batchSize);
+        const selectExpired = db
+          .select({ id: invalidItemLogs.id })
+          .from(invalidItemLogs)
+          .where(lt(invalidItemLogs.createdAt, cutoff))
+          .limit(batchSize);
 
-    const removed = await db
-      .delete(invalidItemLogs)
-      .where(inArray(invalidItemLogs.id, selectExpired))
-      .returning();
+        const removed = await db
+          .delete(invalidItemLogs)
+          .where(inArray(invalidItemLogs.id, selectExpired))
+          .returning();
 
-    rowCount = removed.length;
-    deleted += rowCount;
-    if (rowCount === 0) break;
-  }
+        rowCount = removed.length;
+        deleted += rowCount;
+        if (rowCount === 0) break;
+      }
 
-  return {
-    deleted,
-    iterations,
-    // capped only when we hit the iteration ceiling with rows still remaining;
-    // if the last batch returned 0 rows we exhausted the table (not capped).
-    capped: rowCount > 0,
-    retentionDays,
-  };
+      return {
+        deleted,
+        iterations,
+        // capped only when we hit the iteration ceiling with rows still remaining;
+        // if the last batch returned 0 rows we exhausted the table (not capped).
+        capped: rowCount > 0,
+        retentionDays,
+      };
+    },
+  });
 }

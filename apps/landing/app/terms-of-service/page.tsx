@@ -27,7 +27,9 @@ export const metadata = {
   title: 'Terms of Service | PackRat',
   description:
     'The terms that govern your use of PackRat, including outdoor adventure planning features and MCP connector access.',
-  robots: { index: true, follow: true },
+  // TEMPLATE pending legal review (see file header) — keep out of search
+  // indexes until counsel signs off and operator TODOs are resolved.
+  robots: { index: false, follow: false },
 };
 
 export default function TermsOfServicePage() {

@@ -130,6 +130,26 @@ describe('chunkCsvForR2', () => {
     );
   });
 
+  it('throws RangeError for a non-positive chunkBytes', async () => {
+    const { r2 } = fakeR2(makeCsv(10));
+    await expect(
+      chunkCsvForR2({ r2, objectKey: 'fixture.csv', chunkBytes: 0 }),
+    ).rejects.toBeInstanceOf(RangeError);
+    await expect(
+      chunkCsvForR2({ r2, objectKey: 'fixture.csv', chunkBytes: -1 }),
+    ).rejects.toBeInstanceOf(RangeError);
+  });
+
+  it('throws RangeError for a non-integer or non-positive peekBytes', async () => {
+    const { r2 } = fakeR2(makeCsv(10));
+    await expect(
+      chunkCsvForR2({ r2, objectKey: 'fixture.csv', peekBytes: 0 }),
+    ).rejects.toBeInstanceOf(RangeError);
+    await expect(
+      chunkCsvForR2({ r2, objectKey: 'fixture.csv', peekBytes: 1.5 }),
+    ).rejects.toBeInstanceOf(RangeError);
+  });
+
   it('throws ChunkBoundaryError when no newline is found in the peek window', async () => {
     // A single very long row with no internal newlines forces peekBytes=256
     // to scan a tail with no \n at all.

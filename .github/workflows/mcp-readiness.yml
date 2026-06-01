@@ -63,6 +63,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -80,21 +82,29 @@ jobs:
         run: bun packages/mcp/scripts/dump-catalog.ts
 
       - name: Run submission-readiness probe (human-readable)
+        env:
+          RS_URL: ${{ github.event.inputs.rs_url }}
+          AS_URL: ${{ github.event.inputs.as_url }}
+          BRAND_DOMAIN: ${{ github.event.inputs.brand_domain }}
         run: |
           bun packages/mcp/scripts/submission-readiness.ts \
-            --rs-url "${{ github.event.inputs.rs_url }}" \
-            --as-url "${{ github.event.inputs.as_url }}" \
-            --brand-domain "${{ github.event.inputs.brand_domain }}"
+            --rs-url "$RS_URL" \
+            --as-url "$AS_URL" \
+            --brand-domain "$BRAND_DOMAIN"
 
       # Re-run with --json so the artifact captures the structured
       # report. (Two runs is cheap: each is < 5s of HTTP probes.)
       - name: Run submission-readiness probe (JSON artifact)
         if: always()
+        env:
+          RS_URL: ${{ github.event.inputs.rs_url }}
+          AS_URL: ${{ github.event.inputs.as_url }}
+          BRAND_DOMAIN: ${{ github.event.inputs.brand_domain }}
         run: |
           bun packages/mcp/scripts/submission-readiness.ts \
-            --rs-url "${{ github.event.inputs.rs_url }}" \
-            --as-url "${{ github.event.inputs.as_url }}" \
-            --brand-domain "${{ github.event.inputs.brand_domain }}" \
+            --rs-url "$RS_URL" \
+            --as-url "$AS_URL" \
+            --brand-domain "$BRAND_DOMAIN" \
             --json > readiness-report.json || true
 
       - name: Upload readiness report

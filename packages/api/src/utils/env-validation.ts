@@ -112,11 +112,38 @@ export const apiEnvObjectSchema = z.object({
 // that introspect `.shape`.
 export const apiEnvSchema = apiEnvObjectSchema;
 
+// Shared BETTER_AUTH_* → PACKRAT_* migration logic. Applied to both the
+// runtime schema and the relaxed test schema so a lone BETTER_AUTH_SECRET /
+// BETTER_AUTH_URL maps to the canonical name in either context.
+type AuthMigrationEnv = {
+  PACKRAT_AUTH_SECRET?: string;
+  PACKRAT_API_URL?: string;
+  BETTER_AUTH_SECRET?: string;
+  BETTER_AUTH_URL?: string;
+};
+
+function resolveAuthPair<T extends AuthMigrationEnv>(
+  env: T,
+): T & {
+  PACKRAT_AUTH_SECRET: string;
+  PACKRAT_API_URL: string;
+} {
+  return {
+    ...env,
+    // safe-assertion: refineAuthPair guarantees one side of each pair is set.
+    PACKRAT_AUTH_SECRET: (env.PACKRAT_AUTH_SECRET ?? env.BETTER_AUTH_SECRET) as string,
+    PACKRAT_API_URL: (env.PACKRAT_API_URL ?? env.BETTER_AUTH_URL) as string,
+  };
+}
+
 // Runtime validation schema: enforces "at least one of each transitional
 // pair" (BETTER_AUTH_* OR PACKRAT_*) and resolves the canonical PACKRAT_*
 // fields from whichever name was provided. Consumer code reads
 // env.PACKRAT_AUTH_SECRET / env.PACKRAT_API_URL only.
 const validatedApiEnvSchema = apiEnvObjectSchema
+  // Inline superRefine callback (matches the codebase convention in
+  // packages/env/src/analytics.ts): the (value, ctx) signature is Zod's, not
+  // an owned API, so it's exempt from the one-object-param lint.
   .superRefine((env, ctx) => {
     if (!env.PACKRAT_AUTH_SECRET && !env.BETTER_AUTH_SECRET) {
       ctx.addIssue({
@@ -134,38 +161,49 @@ const validatedApiEnvSchema = apiEnvObjectSchema
       });
     }
   })
+  .transform(resolveAuthPair);
+
+// Stable test defaults for the auth pair. Applied inside the transform so a
+// lone BETTER_AUTH_SECRET / BETTER_AUTH_URL still maps to the canonical name
+// (an inline `.default()` on the PACKRAT_* fields would always win over the
+// BETTER_AUTH_* fallback, defeating the migration in tests).
+const TEST_AUTH_SECRET_DEFAULT = 'test-better-auth-secret-32-chars-long!!';
+const TEST_API_URL_DEFAULT = 'http://localhost:8787';
+
+// Relaxed schema for test environments. Mirrors the runtime schema's
+// BETTER_AUTH_* → PACKRAT_* fallback so a lone BETTER_AUTH_SECRET /
+// BETTER_AUTH_URL resolves to the canonical name. Falls back to stable test
+// defaults only when neither name in a pair is provided.
+const testEnvSchema = apiEnvObjectSchema
+  .partial()
+  .extend({
+    ENVIRONMENT: z.enum(['development', 'production']).default('development'),
+    SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
+    NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
+    NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
+    OSM_DATABASE_URL: z.string().url().optional().default('postgres://user:pass@localhost/db'),
+    PACKRAT_AUTH_SECRET: z.string().optional(),
+    PACKRAT_API_URL: z.string().url().optional(),
+    BETTER_AUTH_SECRET: z.string().optional(),
+    BETTER_AUTH_URL: z.string().url().optional(),
+    CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
+    AI: z.unknown().optional(),
+    PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
+    PACKRAT_BUCKET: z.unknown().optional(),
+    PACKRAT_GUIDES_BUCKET: z.unknown().optional(),
+    ETL_QUEUE: z.unknown().optional(),
+    LOGS_QUEUE: z.unknown().optional(),
+    EMBEDDINGS_QUEUE: z.unknown().optional(),
+    ETL_WORKFLOW: z.unknown().optional(),
+    APP_CONTAINER: z.unknown().optional(),
+    AUTH_KV: z.unknown().optional(),
+  })
   .transform((env) => ({
     ...env,
-    // safe-assertion: superRefine guarantees one side of each pair is set.
-    PACKRAT_AUTH_SECRET: (env.PACKRAT_AUTH_SECRET ?? env.BETTER_AUTH_SECRET) as string,
-    PACKRAT_API_URL: (env.PACKRAT_API_URL ?? env.BETTER_AUTH_URL) as string,
+    PACKRAT_AUTH_SECRET:
+      env.PACKRAT_AUTH_SECRET ?? env.BETTER_AUTH_SECRET ?? TEST_AUTH_SECRET_DEFAULT,
+    PACKRAT_API_URL: env.PACKRAT_API_URL ?? env.BETTER_AUTH_URL ?? TEST_API_URL_DEFAULT,
   }));
-
-// Relaxed schema for test environments
-const testEnvSchema = apiEnvObjectSchema.partial().extend({
-  ENVIRONMENT: z.enum(['development', 'production']).default('development'),
-  SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
-  NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
-  NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
-  OSM_DATABASE_URL: z.string().url().optional().default('postgres://user:pass@localhost/db'),
-  // Tests may set either name; default both to a stable test value so the
-  // transform always resolves to a non-empty PACKRAT_AUTH_SECRET / PACKRAT_API_URL.
-  PACKRAT_AUTH_SECRET: z.string().optional().default('test-better-auth-secret-32-chars-long!!'),
-  PACKRAT_API_URL: z.string().url().optional().default('http://localhost:8787'),
-  BETTER_AUTH_SECRET: z.string().optional(),
-  BETTER_AUTH_URL: z.string().url().optional(),
-  CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
-  AI: z.unknown().optional(),
-  PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
-  PACKRAT_BUCKET: z.unknown().optional(),
-  PACKRAT_GUIDES_BUCKET: z.unknown().optional(),
-  ETL_QUEUE: z.unknown().optional(),
-  LOGS_QUEUE: z.unknown().optional(),
-  EMBEDDINGS_QUEUE: z.unknown().optional(),
-  ETL_WORKFLOW: z.unknown().optional(),
-  APP_CONTAINER: z.unknown().optional(),
-  AUTH_KV: z.unknown().optional(),
-});
 
 type ValidatedAppEnv = z.infer<typeof validatedApiEnvSchema>;
 

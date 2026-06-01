@@ -1657,7 +1657,7 @@ or annotation surfaces.
 bun run deploy:dev
 
 # Prod (CI on tag in U17; manual fallback below)
-wrangler deploy --env prod
+wrangler deploy --env prod --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)
 ```
 
 ### Tail logs
@@ -1695,9 +1695,14 @@ for the refactor.**
 
 ### Operator steps
 
-1. Tag a dev release (`git tag mcp-v3.0.0-rc.1 && git push --tags`) — CI
-   deploys to `packrat-mcp-dev` + `packrat-api-dev` via the existing U17
-   deploy workflow.
+1. Deploy to dev manually — `bun run deploy:dev` from `packages/mcp`
+   (and the equivalent for the API worker) ships the current commit to
+   `packrat-mcp-dev` + `packrat-api-dev`. **Do NOT tag for this.** Any
+   `mcp-v*` tag (including an `-rc` suffix) matches the `mcp-deploy.yml`
+   trigger (`tags: ['mcp-v*']`) and deploys straight to PROD
+   (`mcp.packratai.com`) — there is no dev tag pattern. Reserve the
+   `mcp-v<semver>` prod tag (see § "Common operations → Deploy") for the
+   final release, only after this dev gate passes.
 2. Open `https://claude.ai` in a fresh browser profile (no PackRat cookies
    from a prior session — the AS-domain switch should be visible in the
    address bar).

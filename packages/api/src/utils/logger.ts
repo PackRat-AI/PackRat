@@ -45,7 +45,15 @@ function forwardToSentry({ level, event, ctx }: EmitArgs): void {
         err = v;
         continue;
       }
-      if (isString(v) || isNumber(v) || v === true || v === false) {
+      // Per CLAUDE.md, httpStatus and errorCode must always be searchable in
+      // Sentry `extra`. Keep them in tags too (for pivoting) but always copy
+      // them into extras regardless of their scalar type.
+      if (k === 'httpStatus' || k === 'errorCode') {
+        sentryExtras[k] = v;
+        if (isString(v) || isNumber(v) || v === true || v === false) {
+          sentryTags[k] = String(v);
+        }
+      } else if (isString(v) || isNumber(v) || v === true || v === false) {
         sentryTags[k] = String(v);
       } else {
         sentryExtras[k] = v;

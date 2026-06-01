@@ -2,6 +2,7 @@ import { createDbClient } from '@packrat/api/db';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { logger } from '@packrat/api/utils/logger';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { etlJobs, type NewCatalogItem } from '@packrat/db';
 import { eq, sql } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
@@ -52,8 +53,8 @@ export async function processValidItemsBatch({
       env,
       params: {
         jobId,
-        valid: items.length,
-        processed: items.length,
+        valid: mergedItems.length,
+        processed: mergedItems.length,
       },
     });
   } catch (error) {
@@ -65,10 +66,11 @@ export async function processValidItemsBatch({
       event: 'etl.embedding.fallback',
       ctx: {
         jobId,
-        skuCount: items.length,
+        skuCount: mergedItems.length,
         errorName: error instanceof Error ? error.name : 'unknown',
       },
     });
+    captureApiException({ error, operation: 'etl.embedding.fallback', extra: { jobId } });
 
     const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
     await catalogService.trackEtlJob({ itemIds: upsertedItems, jobId });
@@ -76,18 +78,33 @@ export async function processValidItemsBatch({
       env,
       params: {
         jobId,
-        valid: items.length,
-        processed: items.length,
+        valid: mergedItems.length,
+        processed: mergedItems.length,
       },
     });
 
-    const db = createDbClient(env);
-    await db
-      .update(etlJobs)
-      .set({
-        totalEmbeddingFailures: sql`COALESCE(${etlJobs.totalEmbeddingFailures}, 0) + ${items.length}`,
-      })
-      .where(eq(etlJobs.id, jobId));
+    // The metric update runs after the main writes have already committed.
+    // Isolate it so a failure here can't bubble up and make the caller retry
+    // the whole (already-persisted) batch.
+    try {
+      const db = createDbClient(env);
+      await db
+        .update(etlJobs)
+        .set({
+          totalEmbeddingFailures: sql`COALESCE(${etlJobs.totalEmbeddingFailures}, 0) + ${mergedItems.length}`,
+        })
+        .where(eq(etlJobs.id, jobId));
+    } catch (metricError) {
+      logger.error({
+        event: 'etl.embedding.fallback.metric_failed',
+        ctx: { jobId, err: metricError },
+      });
+      captureApiException({
+        error: metricError,
+        operation: 'etl.embedding.fallback.metric',
+        extra: { jobId },
+      });
+    }
   } finally {
     logger.info({ event: 'etl.valid_items.batch_complete', ctx: { jobId, count: items.length } });
   }

@@ -25,6 +25,53 @@ const SKU_MAX_LENGTH = 200;
 const SKU_PATTERN = /^[A-Za-z0-9_./-]+$/;
 const IPV6_BRACKET_PATTERN = /^\[(.+)\]$/;
 
+// IPv4-mapped IPv6 prefix, e.g. `::ffff:127.0.0.1` or its normalized hex form
+// `::ffff:7f00:1`, and the `::ffff:0:…` variant. `URL.hostname` collapses the
+// dotted tail into two hex groups, so we must accept both textual and hex tails.
+// Matches the prefix and captures whatever follows it (one or two hex groups, or
+// a dotted-quad), case-insensitively.
+const IPV4_MAPPED_IPV6_PATTERN = /^::ffff:(?:0:)?([0-9a-f.:]+)$/i;
+// Hoisted to top level (lint/performance/useTopLevelRegex) — used per-octet/group
+// inside extractMappedIpv4's hot path.
+const IPV4_OCTET_PATTERN = /^\d{1,3}$/;
+const IPV6_HEX_GROUP_PATTERN = /^[0-9a-f]{1,4}$/i;
+
+/**
+ * If `hostname` is an IPv4-mapped IPv6 address (`::ffff:…` / `::ffff:0:…`, in
+ * either dotted `::ffff:127.0.0.1` or hex `::ffff:7f00:1` form), returns the
+ * embedded dotted-quad IPv4 string (e.g. `127.0.0.1`). Otherwise returns null.
+ *
+ * This lets the existing IPv4 private/loopback/link-local/CGNAT ranges be
+ * re-applied to addresses that would otherwise slip through as opaque IPv6 hex.
+ */
+function extractMappedIpv4(hostname: string): string | null {
+  const match = IPV4_MAPPED_IPV6_PATTERN.exec(hostname);
+  if (!match) return null;
+  const tail = match[1];
+
+  // Already a dotted quad (e.g. `::ffff:127.0.0.1`).
+  if (tail.includes('.')) {
+    const octets = tail.split('.');
+    if (octets.length !== 4) return null;
+    if (octets.some((o) => o === '' || !IPV4_OCTET_PATTERN.test(o) || Number(o) > 255)) return null;
+    return octets.join('.');
+  }
+
+  // Hex form: one or two 16-bit groups (e.g. `7f00:1` → 127.0.0.1, or `1` → 0.0.0.1).
+  const groups = tail.split(':');
+  if (groups.length > 2 || groups.some((g) => g === '' || !IPV6_HEX_GROUP_PATTERN.test(g))) {
+    return null;
+  }
+  // Combine into a single 32-bit value: high group is the upper 16 bits.
+  const high = groups.length === 2 ? Number.parseInt(groups[0], 16) : 0;
+  const low = Number.parseInt(groups[groups.length - 1], 16);
+  if (Number.isNaN(high) || Number.isNaN(low) || high > 0xffff || low > 0xffff) return null;
+  const value = (high << 16) | low;
+  return [(value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff].join(
+    '.',
+  );
+}
+
 export class CatalogItemValidator {
   validateItem(item: Partial<NewCatalogItem>): ValidatedCatalogItem {
     const errors: ValidationError[] = [];
@@ -161,6 +208,15 @@ export class CatalogItemValidator {
     // bracketed-string fallback.
     const hostname = parsed.hostname.replace(IPV6_BRACKET_PATTERN, '$1');
     if (PRIVATE_HOSTNAME_PATTERN.test(hostname)) {
+      return 'Product URL hostname must not be a private/loopback/link-local address';
+    }
+
+    // IPv4-mapped IPv6 (`::ffff:127.0.0.1`) normalizes to hex (`::ffff:7f00:1`)
+    // in URL.hostname, matching neither the IPv4 nor the IPv6 branches above.
+    // Extract the embedded IPv4 and re-test it so mapped forms can't bypass the
+    // private/loopback/link-local/CGNAT ranges.
+    const mappedIpv4 = extractMappedIpv4(hostname);
+    if (mappedIpv4 !== null && PRIVATE_HOSTNAME_PATTERN.test(mappedIpv4)) {
       return 'Product URL hostname must not be a private/loopback/link-local address';
     }
 

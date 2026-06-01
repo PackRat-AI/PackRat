@@ -106,9 +106,12 @@ interface RegisteredToolInternal {
 
 function getRegisteredTools(server: McpServer): Record<string, RegisteredToolInternal> {
   const internal = server as unknown as {
-    _registeredTools: Record<string, RegisteredToolInternal>;
+    _registeredTools?: Record<string, RegisteredToolInternal>;
   };
-  return internal._registeredTools;
+  // Default to `{}` if the SDK drops `_registeredTools` so `Object.keys`
+  // yields an empty list and failures route through the descriptive
+  // zero-tools canary below rather than throwing a raw TypeError here.
+  return internal._registeredTools ?? {};
 }
 
 /**

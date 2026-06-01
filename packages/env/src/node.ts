@@ -36,6 +36,9 @@ export const nodeEnvSchema = z.object({
   // ── Neon / Postgres (packages/api/migrate.ts, seed.ts) ────────────
   NEON_DATABASE_URL: z.string().url().optional(),
   NEON_DATABASE_URL_READONLY: z.string().url().optional(),
+  // Opt-in override for the seed-dev destructive guard, for non-local targets
+  // like an ephemeral CI database (packages/api/src/db/seed-dev.ts).
+  ALLOW_DESTRUCTIVE_SEED: z.enum(['0', '1']).optional(),
 
   // ── OSM trail database (packages/osm-import) ──────────────────────
   // Managed production PostGIS (mirrors OSM_DATABASE_URL in the Worker via Hyperdrive).

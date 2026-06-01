@@ -15,6 +15,13 @@
  *   - The form POSTs to `/api/auth/oauth2/consent` with `accept`, `scope`,
  *     and `oauth_query` fields. Better Auth's sessionMiddleware on that
  *     endpoint covers CSRF via the session cookie — no separate token.
+ *     IMPORTANT: that endpoint reads `scope` as a SINGLE space-joined string
+ *     (`ctx.body.scope?.split(" ")`, body schema `scope: z.string().optional()`),
+ *     NOT one field per scope. So the per-scope checkboxes are `name="scope_option"`
+ *     (UX only) and a single hidden `<input name="scope">` carries the
+ *     space-joined selection — written by an inline submit handler when JS is
+ *     on, or its server-rendered default (the full approvable set) when JS is
+ *     off. Submitting multiple `scope` fields would silently grant only one.
  *   - Non-admins have `mcp:admin` filtered out before render (see
  *     `consent-route.tsx`). This is the FIRST-CLASS scope-reduction
  *     mechanism the plugin supports — `customAccessTokenClaims` CANNOT
@@ -193,6 +200,35 @@ footer a:hover { color: var(--ink); text-decoration: underline; }
 footer .sep { margin: 0 8px; opacity: .5; }
 `;
 
+// ── Inline submit handler (kept as a string — `<script>` content is raw) ────
+//
+// Better Auth's /oauth2/consent endpoint expects ONE space-joined `scope`
+// string, not one form field per scope. On submit, this reads the checked
+// `scope_option` checkboxes and writes their space-joined values into the
+// single hidden `<input name="scope">`, so the user can de-select individual
+// scopes (partial approval). With JS disabled this never runs and the hidden
+// input keeps its server-rendered default (the full approvable set).
+//
+// No CSP is set on this route (consent-route.tsx sets only cache-control,
+// x-content-type-options, x-frame-options), so no nonce is required. If a
+// `script-src` CSP is ever added, this inline script will need a matching
+// nonce. @kitajs/html renders `<script>` children raw (no escaping), so the
+// string is emitted verbatim.
+const CONSENT_FORM_SCRIPT = `
+(function () {
+  var form = document.getElementById('consent-form');
+  if (!form) return;
+  var scopeInput = document.getElementById('consent-scope');
+  if (!scopeInput) return;
+  form.addEventListener('submit', function () {
+    var boxes = form.querySelectorAll('input[name="scope_option"]:checked');
+    var scopes = [];
+    for (var i = 0; i < boxes.length; i++) scopes.push(boxes[i].value);
+    scopeInput.value = scopes.join(' ');
+  });
+})();
+`;
+
 // ── JSX components ──────────────────────────────────────────────────────────
 
 function PackratLogo(): JSX.Element {
@@ -227,9 +263,18 @@ function ScopeRow({ scope }: { scope: string }): JSX.Element {
     title: scope,
     description: 'No description available.',
   };
+  // NOTE: the checkbox is deliberately NOT `name="scope"`. Better Auth's
+  // /oauth2/consent endpoint reads a SINGLE space-joined `scope` string
+  // (`ctx.body.scope?.split(" ")`); multiple form fields named `scope` would
+  // collapse to one value and silently grant only one scope. Instead these
+  // checkboxes drive UX only (name="scope_option") and an inline submit
+  // handler writes the space-joined selection into the hidden `scope` input
+  // below. With JS disabled, that hidden input's default (the full approvable
+  // set) is submitted — see CONSENT_FORM_SCRIPT and the hidden input in
+  // ConsentPage.
   return (
     <label class="scope">
-      <input type="checkbox" name="scope" value={scope} checked />
+      <input type="checkbox" name="scope_option" value={scope} checked />
       <span class="scope-body">
         <strong safe>{meta.title}</strong>
         <span class="scope-id" safe>
@@ -316,6 +361,13 @@ function ConsentPage(data: ConsentPageData): JSX.Element {
   // HTML5-strict output the old code shipped.
   const escapedOauthQuery = Html.escapeHtml(oauthQuery);
 
+  // Default value for the single hidden `scope` field: the full approvable
+  // set, space-joined per RFC 6749 §3.3. This is the NO-JS fallback — if the
+  // submit handler doesn't run, this exact set is granted (matching what the
+  // user sees pre-checked). The scope strings are catalog-defined (no spaces),
+  // so the join is unambiguous. Escaped for the `value="..."` attribute.
+  const defaultScopeValue = Html.escapeHtml(approvableScopes.join(' '));
+
   return (
     <html lang="en">
       <head>
@@ -346,8 +398,12 @@ function ConsentPage(data: ConsentPageData): JSX.Element {
               Signed in as <SignedInIdent user={user} />
             </p>
 
-            <form method="POST" action="/api/auth/oauth2/consent" novalidate>
+            <form id="consent-form" method="POST" action="/api/auth/oauth2/consent" novalidate>
               <input type="hidden" name="oauth_query" value={escapedOauthQuery} />
+              {/* Single space-joined `scope` field the endpoint actually reads.
+                  Defaults to the full approvable set (no-JS fallback); the
+                  inline submit handler overwrites it with the checked subset. */}
+              <input type="hidden" id="consent-scope" name="scope" value={defaultScopeValue} />
 
               <div class="perm-heading" safe>
                 {`Permissions ${clientName} will receive`}
@@ -366,6 +422,7 @@ function ConsentPage(data: ConsentPageData): JSX.Element {
               </div>
               <ClientLinks client={client} clientName={clientName} />
             </form>
+            <script>{CONSENT_FORM_SCRIPT}</script>
           </div>
         </main>
         <footer>

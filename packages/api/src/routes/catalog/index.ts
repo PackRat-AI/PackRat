@@ -4,6 +4,7 @@ import { CatalogService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { buildInstanceId } from '@packrat/api/utils/buildInstanceId';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
@@ -38,8 +39,6 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
-
-const FILE_EXT_RE = /\.[^.]*$/;
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
@@ -343,8 +342,10 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         chunksTotal: totalChunks,
       }));
 
-      // CF Workflows instance IDs only allow [a-zA-Z0-9_-] — strip the file extension.
-      const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
+      // CF Workflows instance IDs must match ^[a-zA-Z0-9_][a-zA-Z0-9-_]*$ — the
+      // freeform filename is sanitized (extension stripped, disallowed chars
+      // replaced, leading char guaranteed valid) before it's combined with source.
+      const instanceId = buildInstanceId(`${source}-${filename}`);
 
       await db.insert(etlJobs).values({
         id: jobId,

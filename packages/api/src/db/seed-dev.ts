@@ -191,7 +191,29 @@ const POST_CAPTIONS = [
 
 // ── Safety guard ────────────────────────────────────────────────────────
 
+// Hosts considered safe for destructive seeding: loopback + common docker
+// service hostnames used in local compose setups. Anything else (including a
+// non-neon managed Postgres URL) is rejected unless explicitly overridden.
+const LOCAL_SEED_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  '[::1]',
+  '0.0.0.0',
+  'postgres',
+  'db',
+  'database',
+  'pg',
+  'host.docker.internal',
+]);
+
 function assertNotProduction(dbUrl: string): void {
+  // Explicit operator override for non-local targets (e.g. an ephemeral CI
+  // database). Conservative opt-in only — never on by default.
+  if (nodeEnv.ALLOW_DESTRUCTIVE_SEED === '1') {
+    return;
+  }
+
   const host = (() => {
     try {
       return new URL(dbUrl).hostname.toLowerCase();
@@ -199,18 +221,20 @@ function assertNotProduction(dbUrl: string): void {
       return '';
     }
   })();
-  const looksProd =
-    host.endsWith('.neon.tech') ||
-    host.endsWith('.neon.com') ||
-    host === 'neon.tech' ||
-    host === 'neon.com';
-  if (looksProd) {
-    throw new Error(
-      `Refusing to seed-dev against a Neon-hosted URL (${host}). drizzle-seed ` +
-        'TRUNCATEs tables before inserting, which would destroy production data. ' +
-        'There is no override flag — point at a local/docker Postgres instead.',
-    );
+
+  // Allowlist: only permit known-local hosts. drizzle-seed TRUNCATEs tables
+  // before inserting, so any non-local host could destroy real data — reject
+  // by default rather than blocklisting specific managed providers.
+  if (LOCAL_SEED_HOSTS.has(host)) {
+    return;
   }
+
+  throw new Error(
+    `Refusing to seed-dev against a non-local database host (${host || 'unparseable URL'}). ` +
+      'drizzle-seed TRUNCATEs tables before inserting, which would destroy data on a ' +
+      'production or shared instance. Point at a local/docker Postgres (localhost, 127.0.0.1, ' +
+      'or a docker service hostname), or set ALLOW_DESTRUCTIVE_SEED=1 to override deliberately.',
+  );
 }
 
 const isStandardPostgresUrl = (url: string) => {

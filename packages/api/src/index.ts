@@ -20,7 +20,7 @@ import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
-import { captureApiException } from '@packrat/api/utils/sentry';
+import { captureApiException, record } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import type { CatalogETLMessage } from './services/etl/types';
@@ -141,7 +141,12 @@ const workerHandler = {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
     if (controller.cron === '0 9 * * *') {
-      const result = await sweepInvalidItemLogs({ env });
+      const result = await record({
+        operation: 'sweepInvalidItemLogs',
+        tags: { trigger: 'cron' },
+        extra: { cron: controller.cron },
+        fn: async () => sweepInvalidItemLogs({ env }),
+      });
       console.log(
         `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
           `iterations=${result.iterations} capped=${result.capped} ` +

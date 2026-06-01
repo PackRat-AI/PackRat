@@ -53,6 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          persist-credentials: false
           ref: ${{ github.event.inputs.ref || github.ref }}
           # Need a real commit SHA, not a shallow merge — wrangler stamps
           # MCP_COMMIT_SHA from `git rev-parse --short HEAD` below.

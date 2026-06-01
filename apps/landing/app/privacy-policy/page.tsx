@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
       <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Privacy Policy</h1>
-          <p className="text-muted-foreground">Last updated: May 22, 2025</p>
+          <p className="text-muted-foreground">Last updated: May 31, 2026</p>
         </div>
 
         <section className="space-y-4">

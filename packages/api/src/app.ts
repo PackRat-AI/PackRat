@@ -14,7 +14,7 @@
 import { cors } from '@elysiajs/cors';
 import { routes } from '@packrat/api/routes';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
-import { captureApiException } from '@packrat/api/utils/sentry';
+import { captureApiException, setRequestId } from '@packrat/api/utils/sentry';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 
@@ -43,36 +43,62 @@ export const appBase = new Elysia({ adapter: CloudflareAdapter })
     }),
   )
   .use(packratOpenApi)
-  .onError(({ error, code, request }) => {
-    // Only report unexpected server errors — not user-input or routing errors.
+  // Per-request correlation id. Cloudflare's `cf-ray` is stable across the
+  // request (and visible in CF logs); fall back to a UUID off-platform. We
+  // (1) tag the Sentry scope so the onError report and every
+  // captureApiException/record event in this request share `request_id`,
+  // (2) echo it in the X-Request-Id response header so a caller can quote it
+  // back, and (3) expose it on the handler context as `requestId` (the one
+  // thing the elysia-requestid plugin offered) so routes can read/log it.
+  .derive(({ request, set }) => {
+    const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID();
+    setRequestId(requestId);
+    set.headers['x-request-id'] = requestId;
+    return { requestId };
+  })
+  .onError(({ error, code, request, route, path }) => {
+    const requestId = request?.headers.get('cf-ray') ?? 'unknown';
+    // Central route-error sink (Elysia's recommended pattern). Only report
+    // unexpected server errors — not user-input or routing errors. Errors that
+    // inner code already enriched via captureApiException/record are skipped by
+    // the dedup marker, so this never double-reports.
     if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
       captureApiException({
-        error: error,
-        operation: 'elysia.onError',
+        error,
+        // Group by the matched route TEMPLATE (e.g. /catalog/:id), not the
+        // concrete path — low cardinality in Sentry. Concrete path goes to extra.
+        operation: route ? `route ${request?.method ?? ''} ${route}`.trim() : 'elysia.onError',
         tags: {
           error_code: String(code),
           method: request?.method ?? 'UNKNOWN',
-          path: request ? new URL(request.url).pathname : 'UNKNOWN',
+          route: route ?? 'UNKNOWN',
+          request_id: requestId,
         },
-        extra: { errorCode: String(code), httpStatus: 500 },
+        extra: {
+          errorCode: String(code),
+          httpStatus: 500,
+          path: path ?? (request ? new URL(request.url).pathname : 'UNKNOWN'),
+        },
       });
     }
 
+    // Echo the correlation id in body + header so the caller can quote it.
+    const headers = { 'Content-Type': 'application/json', 'X-Request-Id': requestId };
     if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(JSON.stringify({ error: 'Validation failed' }), {
+      return new Response(JSON.stringify({ error: 'Validation failed', requestId }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
     if (code === 'NOT_FOUND') {
-      return new Response(JSON.stringify({ error: 'Not found' }), {
+      return new Response(JSON.stringify({ error: 'Not found', requestId }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ error: 'Internal server error', requestId }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   })
   .get('/', () => 'PackRat API is running!', {

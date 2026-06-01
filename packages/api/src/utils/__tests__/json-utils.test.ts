@@ -197,6 +197,12 @@ describe('json-utils', () => {
       expect(result?.weight).toBeGreaterThan(0);
     });
 
+    it('ignores zero weight from techs Claimed Weight field', () => {
+      const result = mapJsonRowToItem({ techs: { 'Claimed Weight': '0 g' } });
+      expect(result?.weight).toBeUndefined();
+      expect(result?.weightUnit).toBeUndefined();
+    });
+
     it('maps availability from valid string', () => {
       const result = mapJsonRowToItem({ availability: 'in_stock' });
       expect(result?.availability).toBe('in_stock');

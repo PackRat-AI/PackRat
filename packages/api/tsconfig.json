@@ -19,6 +19,7 @@
   // see the root tsconfig `exclude`.
   "compilerOptions": {
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "jsx": "react",

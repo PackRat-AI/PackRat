@@ -119,6 +119,55 @@ describe('renderConsentPage()', () => {
     expect(html).not.toContain('value="mcp:admin"');
   });
 
+  // ── scope serialization contract ─────────────────────────────────────────
+  //
+  // Better Auth's /oauth2/consent endpoint reads `scope` as a SINGLE
+  // space-joined string (`ctx.body.scope?.split(" ")`, body schema
+  // `scope: z.string().optional()`). Submitting one form field per scope all
+  // named `scope` would collapse to a single value and silently grant only
+  // one scope, breaking consent-time scope reduction. These tests pin the
+  // contract: exactly one hidden `name="scope"` field carrying the
+  // space-joined approvable set, and the per-scope checkboxes use a different
+  // name so they never POST a `scope` field.
+
+  it('submits a SINGLE space-joined hidden `scope` field (no-JS default = approvable set)', () => {
+    const html = renderConsentPage(
+      makeData({
+        approvableScopes: ['mcp:read', 'mcp:write'],
+      }),
+    );
+    // Exactly one hidden input named `scope`, value = space-joined set.
+    expect(html).toContain('name="scope" value="mcp:read mcp:write"');
+    // It is the only `name="scope"` field in the document (checkboxes use a
+    // different name) — so the endpoint receives one space-joined string.
+    expect(html.match(/name="scope"/g)).toHaveLength(1);
+  });
+
+  it('does NOT render any checkbox named `scope` (would break the single-string contract)', () => {
+    const html = renderConsentPage(makeData());
+    // Checkboxes drive UX only; they must not post a `scope` field.
+    expect(html).not.toContain('type="checkbox" name="scope"');
+    expect(html).toContain('type="checkbox" name="scope_option"');
+  });
+
+  it('includes the inline submit handler that joins checked scopes into the hidden field', () => {
+    const html = renderConsentPage(makeData());
+    expect(html).toContain('id="consent-form"');
+    expect(html).toContain('id="consent-scope"');
+    expect(html).toContain('input[name="scope_option"]:checked');
+  });
+
+  it('joins all approvable scopes (incl. mcp:admin) for the admin no-JS default', () => {
+    const html = renderConsentPage(
+      makeData({
+        isAdmin: true,
+        approvableScopes: ['mcp:read', 'mcp:write', 'mcp:admin'],
+      }),
+    );
+    expect(html).toContain('name="scope" value="mcp:read mcp:write mcp:admin"');
+    expect(html.match(/name="scope"/g)).toHaveLength(1);
+  });
+
   it('renders mcp:admin as an approvable scope for admins', () => {
     const html = renderConsentPage(
       makeData({

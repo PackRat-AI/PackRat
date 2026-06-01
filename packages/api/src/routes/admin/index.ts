@@ -4,6 +4,7 @@ import { createDb } from '@packrat/api/db';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import { catalogItems, packs, users } from '@packrat/db';
 import { assertAllDefined, queryBoolean } from '@packrat/guards';
 import {
@@ -126,11 +127,14 @@ async function verifyBetterAuthAdmin(request: Request): Promise<boolean> {
     if (!session || !session.user) return false;
     const role = (session.user as { role?: string }).role;
     return role === 'ADMIN';
-  } catch {
+  } catch (err) {
     // Fail closed on any error path — DB outages, transport failures,
     // malformed bearer, etc. The 401 from `adminAuthGuard` is the
     // operationally correct response: the caller's bearer didn't
-    // resolve into an authorized session.
+    // resolve into an authorized session. Capture first so a real
+    // Better Auth/DB outage leaves a Sentry trail instead of looking
+    // identical to a bad bearer.
+    captureApiException({ error: err, operation: 'verifyBetterAuthAdmin' });
     return false;
   } finally {
     clearTimeout(timeoutId);

@@ -739,7 +739,7 @@ docs/solutions/                   # NEW entries written *after* each phase
 **Dependencies:** U2
 
 **Files:**
-- Modify: `packages/mcp/wrangler.jsonc` (add `ratelimits` binding `MCP_TOOLS_RL`; add `triggers.crons` for the KV purge)
+- Modify: `packages/mcp/wrangler.jsonc` (add `rate_limiting` binding `MCP_TOOLS_RL`; add `triggers.crons` for the KV purge)
 - Create: `packages/mcp/src/rate-limit.ts` (thin wrapper around the binding; returns a 429-equivalent `isError: true` tool response when triggered)
 - Modify: `packages/mcp/src/index.ts` (wire `MCP_TOOLS_RL.limit({ key: `${props.userId}:${toolName}` })` into the tool dispatch path; add the `scheduled()` handler for the KV cron)
 - Modify: `packages/mcp/src/types.ts` (`Env.MCP_TOOLS_RL: RateLimit`)

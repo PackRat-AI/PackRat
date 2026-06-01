@@ -1896,80 +1896,92 @@ async function seed() {
     // drizzle-seed doesn't fire its random per-column generators for
     // anything we left unspecified.
     for (const templateDef of FEATURED_TEMPLATES) {
-      const existing = await seedDb.query.packTemplates.findFirst({
-        where: and(
-          eq(schema.packTemplates.id, templateDef.id),
-          eq(schema.packTemplates.deleted, false),
-        ),
+      const items = templateDef.items;
+
+      // Wrap the existence check + both inserts in a single transaction so a
+      // crash between the template insert and its items insert rolls the
+      // template row back. Without this, a half-written template would be
+      // skipped by the existence check on rerun, breaking idempotent resume.
+      const skipped = await seedDb.transaction(async (tx) => {
+        const existing = await tx.query.packTemplates.findFirst({
+          where: and(
+            eq(schema.packTemplates.id, templateDef.id),
+            eq(schema.packTemplates.deleted, false),
+          ),
+        });
+
+        if (existing) {
+          console.log(`  ↳ Skipping "${templateDef.name}" (already exists)`);
+          return true;
+        }
+
+        // Template — one row with every column fixed to literal values.
+        await drizzleSeed(tx, { packTemplates: schema.packTemplates }).refine((f) => ({
+          packTemplates: {
+            count: 1,
+            columns: {
+              id: f.default({ defaultValue: templateDef.id }),
+              name: f.default({ defaultValue: templateDef.name }),
+              description: f.default({ defaultValue: templateDef.description }),
+              category: f.default({ defaultValue: templateDef.category }),
+              userId: f.default({ defaultValue: adminUserId }),
+              image: f.default({ defaultValue: null }),
+              tags: f.default({ defaultValue: templateDef.tags }),
+              isAppTemplate: f.default({ defaultValue: true }),
+              deleted: f.default({ defaultValue: false }),
+              contentSource: f.default({ defaultValue: null }),
+              contentId: f.default({ defaultValue: null }),
+              localCreatedAt: f.default({ defaultValue: now }),
+              localUpdatedAt: f.default({ defaultValue: now }),
+              createdAt: f.default({ defaultValue: now }),
+              updatedAt: f.default({ defaultValue: now }),
+            },
+          },
+        }));
+
+        console.log(`  ✓ Inserted template: "${templateDef.name}"`);
+
+        // Items — N rows, each column cycled via valuesFromArray over the
+        // template's items[]. drizzle-seed iterates row-by-row, taking the
+        // i-th value from each column's values array, so the columns stay
+        // aligned per item.
+        await drizzleSeed(tx, { packTemplateItems: schema.packTemplateItems }).refine((f) => ({
+          packTemplateItems: {
+            count: items.length,
+            columns: {
+              id: f.valuesFromArray({ values: items.map((i) => i.id) }),
+              name: f.valuesFromArray({ values: items.map((i) => i.name) }),
+              description: f.valuesFromArray({
+                values: items.map((i) => i.description ?? undefined),
+              }),
+              weight: f.valuesFromArray({ values: items.map((i) => i.weight) }),
+              weightUnit: f.valuesFromArray({ values: items.map((i) => i.weightUnit) }),
+              quantity: f.valuesFromArray({ values: items.map((i) => i.quantity) }),
+              category: f.valuesFromArray({ values: items.map((i) => i.category ?? null) }),
+              consumable: f.valuesFromArray({ values: items.map((i) => i.consumable) }),
+              worn: f.valuesFromArray({ values: items.map((i) => i.worn) }),
+              image: f.default({ defaultValue: null }),
+              notes: f.valuesFromArray({ values: items.map((i) => i.notes ?? undefined) }),
+              packTemplateId: f.default({ defaultValue: templateDef.id }),
+              catalogItemId: f.default({ defaultValue: null }),
+              userId: f.default({ defaultValue: adminUserId }),
+              deleted: f.default({ defaultValue: false }),
+              createdAt: f.default({ defaultValue: now }),
+              updatedAt: f.default({ defaultValue: now }),
+            },
+          },
+        }));
+
+        console.log(`    ↳ Inserted ${items.length} items`);
+        return false;
       });
 
-      if (existing) {
-        console.log(`  ↳ Skipping "${templateDef.name}" (already exists)`);
+      if (skipped) {
         skippedTemplates++;
-        continue;
+      } else {
+        insertedItems += items.length;
+        insertedTemplates++;
       }
-
-      // Template — one row with every column fixed to literal values.
-      await drizzleSeed(seedDb, { packTemplates: schema.packTemplates }).refine((f) => ({
-        packTemplates: {
-          count: 1,
-          columns: {
-            id: f.default({ defaultValue: templateDef.id }),
-            name: f.default({ defaultValue: templateDef.name }),
-            description: f.default({ defaultValue: templateDef.description }),
-            category: f.default({ defaultValue: templateDef.category }),
-            userId: f.default({ defaultValue: adminUserId }),
-            image: f.default({ defaultValue: null }),
-            tags: f.default({ defaultValue: templateDef.tags }),
-            isAppTemplate: f.default({ defaultValue: true }),
-            deleted: f.default({ defaultValue: false }),
-            contentSource: f.default({ defaultValue: null }),
-            contentId: f.default({ defaultValue: null }),
-            localCreatedAt: f.default({ defaultValue: now }),
-            localUpdatedAt: f.default({ defaultValue: now }),
-            createdAt: f.default({ defaultValue: now }),
-            updatedAt: f.default({ defaultValue: now }),
-          },
-        },
-      }));
-
-      console.log(`  ✓ Inserted template: "${templateDef.name}"`);
-
-      // Items — N rows, each column cycled via valuesFromArray over the
-      // template's items[]. drizzle-seed iterates row-by-row, taking the
-      // i-th value from each column's values array, so the columns stay
-      // aligned per item.
-      const items = templateDef.items;
-      await drizzleSeed(seedDb, { packTemplateItems: schema.packTemplateItems }).refine((f) => ({
-        packTemplateItems: {
-          count: items.length,
-          columns: {
-            id: f.valuesFromArray({ values: items.map((i) => i.id) }),
-            name: f.valuesFromArray({ values: items.map((i) => i.name) }),
-            description: f.valuesFromArray({
-              values: items.map((i) => i.description ?? undefined),
-            }),
-            weight: f.valuesFromArray({ values: items.map((i) => i.weight) }),
-            weightUnit: f.valuesFromArray({ values: items.map((i) => i.weightUnit) }),
-            quantity: f.valuesFromArray({ values: items.map((i) => i.quantity) }),
-            category: f.valuesFromArray({ values: items.map((i) => i.category ?? null) }),
-            consumable: f.valuesFromArray({ values: items.map((i) => i.consumable) }),
-            worn: f.valuesFromArray({ values: items.map((i) => i.worn) }),
-            image: f.default({ defaultValue: null }),
-            notes: f.valuesFromArray({ values: items.map((i) => i.notes ?? undefined) }),
-            packTemplateId: f.default({ defaultValue: templateDef.id }),
-            catalogItemId: f.default({ defaultValue: null }),
-            userId: f.default({ defaultValue: adminUserId }),
-            deleted: f.default({ defaultValue: false }),
-            createdAt: f.default({ defaultValue: now }),
-            updatedAt: f.default({ defaultValue: now }),
-          },
-        },
-      }));
-      insertedItems += items.length;
-
-      console.log(`    ↳ Inserted ${items.length} items`);
-      insertedTemplates++;
     }
 
     console.log('\n✅ Seed complete!');

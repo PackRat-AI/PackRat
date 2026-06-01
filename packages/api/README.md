@@ -20,6 +20,7 @@ bun run test:unit         # unit-only, no DB
 
 ```sh
 bun run db:generate       # drizzle-kit generate (after editing schema)
+cd packages/api && bunx drizzle-kit check   # verify the generated snapshot chain (run before migrate)
 bun run db:migrate        # apply pending migrations to NEON_DATABASE_URL
 ```
 

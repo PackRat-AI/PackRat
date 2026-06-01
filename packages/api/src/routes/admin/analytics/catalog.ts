@@ -1,6 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, invalidItemLogs } from '@packrat/db';
@@ -165,7 +166,12 @@ async function reingestJob(args: {
 
     return { success: true, newJobId, objectKey, workflowInstanceId };
   } catch (error) {
-    console.error(`ETL ${mode} error:`, error);
+    captureApiException({
+      error,
+      operation: `admin.analytics.catalog.reingest.${mode}`,
+      tags: { feature: 'catalogAnalytics' },
+      extra: { originalJobId, mode, force },
+    });
     return {
       _statusCode: 500,
       error: `Failed to ${mode === 'retry' ? 'retry' : 'repair'} ETL job`,
@@ -708,7 +714,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           delta,
         };
       } catch (error) {
-        console.error('ETL reconcile error:', error);
+        captureApiException({
+          error,
+          operation: 'admin.analytics.catalog.reconcile',
+          tags: { feature: 'catalogAnalytics' },
+          extra: { jobId: params.jobId },
+        });
         return status(500, {
           error: 'Failed to reconcile ETL job',
           code: 'ETL_RECONCILE_ERROR',
@@ -752,7 +763,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
         // Single GROUP BY query. catalog_item_etl_jobs is the per-item-per-job
         // join; we attribute each catalog item to its most recent ingest source
         // via DISTINCT ON. Then aggregate per source.
-        const rows = (await db.execute(sql`
+        const auditResult = await db.execute(sql`
           WITH latest_per_item AS (
             SELECT DISTINCT ON (cie.catalog_item_id)
               cie.catalog_item_id,
@@ -803,7 +814,8 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           ${sourceFilter ? sql`WHERE lpi.source = ${sourceFilter}` : sql``}
           GROUP BY lpi.source, lj.last_id, lj.last_at
           ORDER BY lpi.source
-        `)) as unknown as Array<{
+        `);
+        const rows = (auditResult.rows ?? auditResult) as Array<{
           source: string;
           total_items: number;
           last_id: string | null;
@@ -897,7 +909,12 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           sources,
         };
       } catch (error) {
-        console.error('Catalog audit error:', error);
+        captureApiException({
+          error,
+          operation: 'admin.analytics.catalog.audit',
+          tags: { feature: 'catalogAnalytics' },
+          extra: { source: query.source ?? null },
+        });
         return status(500, { error: 'Failed to generate catalog audit', code: 'AUDIT_ERROR' });
       }
     },

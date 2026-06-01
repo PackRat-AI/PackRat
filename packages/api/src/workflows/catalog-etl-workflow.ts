@@ -28,6 +28,7 @@ import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { isJsonlFile, mapJsonRowToItem } from '@packrat/api/utils/json-utils';
+import { record } from '@packrat/api/utils/sentry';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/db';
 import { toRecord } from '@packrat/guards';
 import { parse } from 'csv-parse';
@@ -244,6 +245,9 @@ export async function processChunk({
           rawData: { parseError: message },
           rowIndex: parserLine,
         });
+        // Count the skipped row toward rowsProcessed (reported as rowIndex);
+        // otherwise rows dropped by the parser silently undercount the total.
+        rowIndex++;
       },
     });
 
@@ -263,11 +267,11 @@ export async function processChunk({
       throw err;
     });
 
-    for await (const record of parser) {
+    for await (const rawRow of parser) {
       if (rowIndex % 100 === 0) {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      const row = record as string[];
+      const row = rawRow as string[];
 
       if (!isHeaderProcessed) {
         fieldMap = {};
@@ -368,25 +372,37 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
       if (chunks.length === 0) {
         throw new Error(`Workflow ${jobId} received empty chunks array`);
       }
-      await step.do('aggregate', async () => {
-        const db = createDbClient(this.env);
-        await db
-          .update(etlJobs)
-          .set({
-            totalProcessed: totals.rowsProcessed,
-            totalValid: totals.rowsValid,
-            totalInvalid: totals.rowsInvalid,
-          })
-          .where(eq(etlJobs.id, jobId));
-      });
+      await step.do('aggregate', async () =>
+        record({
+          operation: 'catalogEtl.aggregate',
+          extra: { jobId },
+          fn: async () => {
+            const db = createDbClient(this.env);
+            await db
+              .update(etlJobs)
+              .set({
+                totalProcessed: totals.rowsProcessed,
+                totalValid: totals.rowsValid,
+                totalInvalid: totals.rowsInvalid,
+              })
+              .where(eq(etlJobs.id, jobId));
+          },
+        }),
+      );
 
-      await step.do('finalize', async () => {
-        const db = createDbClient(this.env);
-        await db
-          .update(etlJobs)
-          .set({ status: 'completed', completedAt: new Date() })
-          .where(eq(etlJobs.id, jobId));
-      });
+      await step.do('finalize', async () =>
+        record({
+          operation: 'catalogEtl.finalize',
+          extra: { jobId },
+          fn: async () => {
+            const db = createDbClient(this.env);
+            await db
+              .update(etlJobs)
+              .set({ status: 'completed', completedAt: new Date() })
+              .where(eq(etlJobs.id, jobId));
+          },
+        }),
+      );
 
       return {
         jobId,
@@ -407,6 +423,8 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
       } catch {
         // ignore — status update is best-effort; don't mask the original error
       }
+      // No manual capture: this class is exported via instrumentWorkflowWithSentry
+      // (index.ts), which captures the rethrown error with workflow context.
       throw err;
     }
   }
