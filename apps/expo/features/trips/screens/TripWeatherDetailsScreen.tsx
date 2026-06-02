@@ -62,10 +62,6 @@ export default function TripWeatherDetailsScreen() {
       setGradientColors(getWeatherBackgroundColors({ code: weatherCode, isNight }));
     } catch (e) {
       console.error(e);
-      Sentry.captureException(e, {
-        tags: { feature: 'trips', action: 'fetchWeather' },
-        extra: { latitude, longitude },
-      });
       setError('Failed to load weather');
     } finally {
       setLoading(false);

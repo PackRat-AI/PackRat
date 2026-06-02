@@ -132,10 +132,6 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       );
     } catch (err) {
       console.error('Upload error:', err);
-      Sentry.captureException(err, {
-        tags: { feature: 'feed', action: 'handleSubmit.upload' },
-        extra: { photoCount: photos.length },
-      });
       Alert.alert(t('common.error'), t('feed.uploadFailed'));
     } finally {
       setUploading(false);

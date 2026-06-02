@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react-native';
 import { formatWeatherData, getWeatherData } from 'expo-app/features/weather/lib/weatherService';
 import { useState } from 'react';
 import type { WeatherLocation } from '../types';
@@ -30,10 +29,6 @@ export function useLocationRefresh() {
       return false;
     } catch (err) {
       console.error('Error refreshing location:', err);
-      Sentry.captureException(err, {
-        tags: { feature: 'weather', action: 'refreshLocation' },
-        extra: { locationId },
-      });
       return false;
     } finally {
       setIsRefreshing(false);
@@ -64,10 +59,6 @@ export function useLocationRefresh() {
           }
         } catch (error) {
           console.error(`Error updating weather for ${location.name}:`, error);
-          Sentry.captureException(error, {
-            tags: { feature: 'weather', action: 'refreshAllLocations' },
-            extra: { locationId: location.id, locationName: location.name },
-          });
         }
       }
     } finally {
