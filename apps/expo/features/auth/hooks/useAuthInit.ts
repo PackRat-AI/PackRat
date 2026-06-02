@@ -32,17 +32,35 @@ function applySessionUser(sessionUser: Record<string, unknown>) {
   // Keep Sentry user identity in sync with the session.
   Sentry.setUser({ id: userId, email, username: name });
 
+  // Better Auth's getSession() may not return additionalFields (e.g. avatarUrl,
+  // firstName, lastName) if the session was created before those fields were
+  // added or if the client doesn't request them. Preserve existing persisted
+  // values for those fields rather than overwriting with null.
+  const existingUser = userStore.get();
+
   userStore.set({
     id: asString(sessionUser.id) ?? '',
     email: asString(sessionUser.email) ?? '',
-    firstName: name.split(' ')[0] ?? '',
-    lastName: name.split(' ').slice(1).join(' ') ?? '',
-    role: asString(sessionUser.role) ?? 'USER',
+    firstName:
+      asString(sessionUser.firstName) ?? name.split(' ')[0] ?? existingUser?.firstName ?? '',
+    lastName:
+      asString(sessionUser.lastName) ??
+      name.split(' ').slice(1).join(' ') ??
+      existingUser?.lastName ??
+      '',
+    role: asString(sessionUser.role) ?? existingUser?.role ?? 'USER',
     emailVerified: asBoolean(sessionUser.emailVerified) ?? null,
-    avatarUrl: asString(sessionUser.avatarUrl) ?? asString(sessionUser.image) ?? null,
-    createdAt: asString(sessionUser.createdAt) ?? null,
-    updatedAt: asString(sessionUser.updatedAt) ?? null,
-    preferredWeightUnit: 'g',
+    avatarUrl:
+      asString(sessionUser.avatarUrl) ??
+      asString(sessionUser.image) ??
+      existingUser?.avatarUrl ??
+      null,
+    createdAt: asString(sessionUser.createdAt) ?? existingUser?.createdAt ?? null,
+    updatedAt: asString(sessionUser.updatedAt) ?? existingUser?.updatedAt ?? null,
+    preferredWeightUnit:
+      (sessionUser.preferredWeightUnit as import('@packrat/constants').WeightUnit | undefined) ??
+      existingUser?.preferredWeightUnit ??
+      'g',
   });
 }
 
