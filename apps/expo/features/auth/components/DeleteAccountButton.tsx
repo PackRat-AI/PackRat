@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -42,7 +43,10 @@ export function DeleteAccountButton() {
                     try {
                       setIsDeleting(true);
                       await deleteAccount(); // handles redirect
-                    } catch (_error) {
+                    } catch (deleteError) {
+                      Sentry.captureException(deleteError, {
+                        tags: { feature: 'auth', action: 'deleteAccount' },
+                      });
                       setTimeout(() => {
                         alertRef.current?.alert({
                           title: t('common.error'),
