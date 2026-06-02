@@ -8,6 +8,9 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   update:
     name: Publish EAS Update

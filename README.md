@@ -107,7 +107,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 
 [![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](/docs/ "Go to project documentation")
 
-[![view - Testing Guide](https://img.shields.io/badge/view-Testing_Guide-green?style=for-the-badge)](/TESTING.md "Go to testing documentation")
+[![view - Testing Guide](https://img.shields.io/badge/view-Testing_Guide-green?style=for-the-badge)](/docs/testing.md "Go to testing documentation")
 
 </div>
 

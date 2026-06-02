@@ -48,6 +48,29 @@ describe('Catalog Routes', () => {
       expect(Array.isArray(data) || data.items).toBeTruthy();
     });
 
+    it('returns catalog items with unknown weight', async () => {
+      const seededItem = await seedCatalogItem({
+        name: 'Mystery Weight Shell',
+        weight: null,
+        weightUnit: null,
+      });
+      const sort = encodeURIComponent(JSON.stringify({ field: 'createdAt', order: 'desc' }));
+
+      const res = await apiWithAuth(`/catalog?sort=${sort}`);
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items']);
+      const item = data.items.find(
+        (catalogItem: { id: number }) => catalogItem.id === seededItem.id,
+      );
+      expect(item).toBeDefined();
+      expect(item).toMatchObject({
+        id: seededItem.id,
+        weight: null,
+        weightUnit: null,
+      });
+    });
+
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/catalog?page=1&limit=10');
 
