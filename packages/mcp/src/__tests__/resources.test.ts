@@ -149,7 +149,7 @@ describe('U9 glossary resource', () => {
     const { agent, server } = makeAgent();
     registerResources(agent);
     const { fixed } = getResources(server);
-    expect(fixed['packrat://glossary']).toBeDefined();
+    expect(Object.keys(fixed)).toContain('packrat://glossary');
   });
 
   it('returns the glossary markdown with mimeType text/markdown', async () => {
@@ -277,7 +277,7 @@ describe('U9 pack list provider', () => {
       }>
     )();
     expect(result.resources).toEqual([]);
-    expect(warn).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]?.[0]).toMatch(/packs/);
     warn.mockRestore();
   });
@@ -523,7 +523,7 @@ describe('U9 static catalog/categories resource', () => {
     const { agent, server } = makeAgent();
     registerResources(agent);
     const { fixed } = getResources(server);
-    expect(fixed['packrat://catalog/categories']).toBeDefined();
+    expect(Object.keys(fixed)).toContain('packrat://catalog/categories');
   });
 
   it('returns JSON content from the categories endpoint', async () => {

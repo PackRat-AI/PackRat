@@ -65,7 +65,7 @@ function promptByName(captured: Captured[], name: string): Captured {
 }
 
 function textOf(result: PromptResult): string {
-  return result.messages[0].content.text;
+  return result.messages[0]?.content.text ?? '';
 }
 
 describe('registerPrompts', () => {

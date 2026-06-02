@@ -180,7 +180,7 @@ describe('rate-limited tool dispatch — envelope', () => {
     });
 
     // Tool handler MUST NOT fire on a rejected rate-limit check.
-    expect(handler).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(0);
 
     // U8 envelope contract: isError + structuredContent.error with the
     // canonical `rate_limited` code and retryable=true.

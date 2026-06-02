@@ -13,8 +13,18 @@ import { defineConfig } from 'vitest/config';
  *
  * Coverage thresholds were lowered (and the exclusion list shrunk) as
  * part of U17 so the threshold applies to the broader risk surface
- * (`src/index.ts`, `src/tools/**`, `src/resources.ts`, `src/prompts.ts`,
- * `src/auth.ts`) that the per-unit + integration tests now exercise.
+ * (`src/tools/**`, `src/resources.ts`, `src/prompts.ts`, `src/auth.ts`)
+ * that the per-unit + integration tests now exercise. All pure logic that
+ * used to live in `src/index.ts` (bearer parsing, correlation headers,
+ * CORS) has been extracted into Node-importable modules (`request-helpers.ts`,
+ * `cors.ts`) and is unit-covered directly.
+ *
+ * `src/index.ts` itself stays excluded: it imports `agents/mcp` (the
+ * `cloudflare:workers` scheme), so it cannot be loaded by the Node-native
+ * unit runner at all, and V8 coverage is unsupported under the Workers pool
+ * the integration project uses — the same constraint that keeps the API
+ * worker entrypoint out of coverage. Its residual surface is the
+ * `McpAgent` DO shell + handler wiring, exercised by the integration tests.
  * `src/types.ts` stays excluded (no runtime).
  */
 export default defineConfig({
@@ -27,6 +37,12 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/**/*.spec.ts',
+        // Worker DO entrypoint: imports `agents/mcp` (cloudflare:workers
+        // scheme) so it can't load in Node-native vitest; V8 coverage is
+        // unsupported under the Workers pool. Pure logic was extracted to
+        // request-helpers.ts / cors.ts (both unit-covered); the residual
+        // McpAgent shell is integration-tested.
+        'src/index.ts',
         // Type definitions — no runtime logic.
         'src/types.ts',
       ],

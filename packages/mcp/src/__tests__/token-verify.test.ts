@@ -187,7 +187,7 @@ describe('verifyMcpToken — happy paths', () => {
   it('accepts a JWT whose aud claim is an array of one (the MCP audience)', async () => {
     const token = await makeJwt({ aud: [AUDIENCE] });
     const result = await verifyMcpToken({ token, env, ctx });
-    expect(result).not.toBeNull();
+    expect(result?.sub).toBe('user-123');
   });
 });
 
