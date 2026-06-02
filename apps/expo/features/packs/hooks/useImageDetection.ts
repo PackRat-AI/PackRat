@@ -42,7 +42,7 @@ export function useImageDetection() {
         const err = new Error(String(error.value ?? 'Failed to analyze image'));
         Sentry.captureException(err, {
           tags: { feature: 'packs', action: 'analyzeImage' },
-          extra: { image, matchLimit, apiError: error.value, httpStatus: error.status },
+          extra: { matchLimit, apiError: error.value, httpStatus: error.status },
         });
         throw err;
       }
