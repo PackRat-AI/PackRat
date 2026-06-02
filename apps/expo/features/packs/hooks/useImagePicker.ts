@@ -1,4 +1,5 @@
 import { assertDefined } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid';
@@ -46,6 +47,9 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
       }
     } catch (err) {
       console.error('Error picking image:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'imagePicker', action: 'pickImage' },
+      });
       throw err;
     }
   };
@@ -77,6 +81,9 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
       }
     } catch (err) {
       console.error('Error taking photo:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'imagePicker', action: 'takePhoto' },
+      });
       throw err;
     }
   };
@@ -100,6 +107,9 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
       return fileName;
     } catch (err) {
       console.error('Error saving image locally:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'imagePicker', action: 'permanentlyPersistImageLocally' },
+      });
       return null;
     }
   };

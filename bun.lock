@@ -22,7 +22,7 @@
     },
     "apps/admin": {
       "name": "packrat-admin-app",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/api-client": "workspace:*",
@@ -71,7 +71,7 @@
     },
     "apps/expo": {
       "name": "packrat-expo-app",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@ai-sdk/react": "^3.0.170",
         "@better-auth/expo": "^1.6.9",
@@ -210,7 +210,7 @@
     },
     "apps/guides": {
       "name": "packrat-guides-app",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@ai-sdk/openai": "catalog:",
         "@elysiajs/eden": "catalog:",
@@ -299,7 +299,7 @@
     },
     "apps/landing": {
       "name": "packrat-landing-app",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@emotion/is-prop-valid": "^1.3.1",
         "@hookform/resolvers": "catalog:",
@@ -369,7 +369,7 @@
     },
     "apps/trails": {
       "name": "packrat-trails-app",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/app": "workspace:*",
@@ -442,7 +442,7 @@
     },
     "packages/analytics": {
       "name": "@packrat/analytics",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@duckdb/node-api": "catalog:",
         "@packrat/env": "workspace:*",
@@ -459,7 +459,7 @@
     },
     "packages/api": {
       "name": "@packrat/api",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@ai-sdk/google": "^3.0.64",
         "@ai-sdk/openai": "catalog:",
@@ -480,7 +480,7 @@
         "@packrat/schemas": "workspace:*",
         "@packrat/types": "workspace:*",
         "@packrat/units": "workspace:*",
-        "@sentry/cloudflare": "^10.0.0",
+        "@sentry/cloudflare": "^10.37.0",
         "@sinclair/typebox": "^0.34.15",
         "@types/nodemailer": "^6.4.17",
         "ai": "catalog:",
@@ -523,7 +523,7 @@
     },
     "packages/api-client": {
       "name": "@packrat/api-client",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@elysiajs/eden": "catalog:",
         "@packrat/guards": "workspace:*",
@@ -541,7 +541,7 @@
     },
     "packages/app": {
       "name": "@packrat/app",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/api-client": "workspace:*",
         "@packrat/schemas": "workspace:*",
@@ -562,11 +562,11 @@
     },
     "packages/checks": {
       "name": "@packrat/checks",
-      "version": "2.0.26",
+      "version": "2.0.27",
     },
     "packages/cli": {
       "name": "@packrat/cli",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "bin": {
         "packrat": "./src/index.ts",
       },
@@ -590,21 +590,21 @@
     },
     "packages/config": {
       "name": "@packrat/config",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/guards": "workspace:*",
       },
     },
     "packages/constants": {
       "name": "@packrat/constants",
-      "version": "0.0.0",
+      "version": "2.0.27",
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
     "packages/db": {
       "name": "@packrat/db",
-      "version": "0.0.0",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "drizzle-orm": "catalog:",
@@ -616,14 +616,14 @@
     },
     "packages/env": {
       "name": "@packrat/env",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "zod": "catalog:",
       },
     },
     "packages/guards": {
       "name": "@packrat/guards",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "radash": "catalog:",
         "ts-extras": "catalog:",
@@ -632,7 +632,7 @@
     },
     "packages/mcp": {
       "name": "@packrat/mcp",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@cloudflare/workers-oauth-provider": "^0.4.0",
         "@modelcontextprotocol/sdk": "^1.11.0",
@@ -652,7 +652,7 @@
     },
     "packages/osm-db": {
       "name": "@packrat/osm-db",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@neondatabase/serverless": "catalog:",
         "drizzle-orm": "catalog:",
@@ -666,7 +666,7 @@
     },
     "packages/osm-import": {
       "name": "@packrat/osm-import",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/env": "workspace:*",
         "pg": "catalog:",
@@ -674,7 +674,7 @@
     },
     "packages/overpass": {
       "name": "@packrat/overpass",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/guards": "workspace:*",
         "zod": "catalog:",
@@ -686,7 +686,7 @@
     },
     "packages/schemas": {
       "name": "@packrat/schemas",
-      "version": "0.0.0",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/db": "workspace:*",
@@ -699,7 +699,7 @@
     },
     "packages/types": {
       "name": "@packrat/types",
-      "version": "0.0.0",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/schemas": "workspace:*",
@@ -714,14 +714,14 @@
     },
     "packages/ui": {
       "name": "@packrat/ui",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat-ai/nativewindui": "2.0.3-2",
       },
     },
     "packages/units": {
       "name": "@packrat/units",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/constants": "workspace:*",
         "@packrat/guards": "workspace:*",
@@ -733,7 +733,7 @@
     },
     "packages/web-ui": {
       "name": "@packrat/web-ui",
-      "version": "2.0.26",
+      "version": "2.0.27",
       "dependencies": {
         "@packrat/guards": "workspace:*",
         "@radix-ui/react-accordion": "catalog:",

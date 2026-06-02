@@ -4,6 +4,8 @@
  * The caller obtains a presigned URL from the API (same as the native flow)
  * but the binary upload uses fetch instead of expo-file-system.
  */
+
+import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
@@ -24,6 +26,12 @@ export const uploadImage = async ({
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
     const remoteFileName = `${userStore.id.peek()}-${fileName}`;
 
+    Sentry.addBreadcrumb({
+      category: 'upload',
+      message: 'Starting image upload (web)',
+      level: 'info',
+      data: { fileName, type },
+    });
     const { url: presignedUrl } = await getPresignedUrl({
       fileName: remoteFileName,
       contentType: type,
@@ -45,6 +53,10 @@ export const uploadImage = async ({
     return remoteFileName;
   } catch (err) {
     console.error('Error uploading image:', err);
+    Sentry.captureException(err, {
+      tags: { feature: 'upload', action: 'uploadImage.web' },
+      extra: { fileName },
+    });
     throw err;
   }
 };
@@ -59,7 +71,14 @@ const getPresignedUrl = async ({
   const { data, error } = await apiClient.upload.presigned.get({
     query: { fileName, contentType },
   });
-  if (error || !data) throw new Error(`Failed to get upload URL: ${error?.value}`);
+  if (error || !data) {
+    const err = new Error(`Failed to get upload URL: ${String(error?.value ?? 'no data')}`);
+    Sentry.captureException(err, {
+      tags: { feature: 'upload', action: 'getPresignedUrl.web' },
+      extra: { fileName, contentType, apiError: error?.value, httpStatus: error?.status },
+    });
+    throw err;
+  }
   return data;
 };
 

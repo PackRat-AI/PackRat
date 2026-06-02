@@ -1,5 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
@@ -60,6 +61,9 @@ export function IdentificationScreen() {
           }
         } catch (err) {
           console.error('Error selecting image:', err);
+          Sentry.captureException(err, {
+            tags: { feature: 'wildlife', action: 'handleSelectImage' },
+          });
           appAlert.current?.alert({
             title: t('common.error'),
             message: t('wildlife.failedToSelectImage'),
