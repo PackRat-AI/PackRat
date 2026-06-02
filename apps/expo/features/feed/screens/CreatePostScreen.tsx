@@ -1,4 +1,5 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
@@ -49,6 +50,9 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       }
     } catch (err) {
       console.error('Error picking images:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'feed', action: 'pickImages' },
+      });
     }
   }, [t]);
 
@@ -75,6 +79,9 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       }
     } catch (err) {
       console.error('Error taking photo:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'feed', action: 'takePhoto' },
+      });
     }
   }, [t]);
 
@@ -125,6 +132,10 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       );
     } catch (err) {
       console.error('Upload error:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'feed', action: 'handleSubmit.upload' },
+        extra: { photoCount: photos.length },
+      });
       Alert.alert(t('common.error'), t('feed.uploadFailed'));
     } finally {
       setUploading(false);

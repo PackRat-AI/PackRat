@@ -1,6 +1,7 @@
 import type { UIMessage } from '@ai-sdk/react';
 import { isObject, isString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 
 export type ChatContext = {
   itemId?: string;
@@ -74,6 +75,9 @@ export async function loadChatMessages(context: ChatContext): Promise<UIMessage[
     return parsed;
   } catch (error) {
     console.error('Failed to load chat messages:', error);
+    Sentry.captureException(error, {
+      tags: { feature: 'ai.chat', action: 'loadChatMessages' },
+    });
     return null;
   }
 }
@@ -94,6 +98,9 @@ export async function saveChatMessages({
     await AsyncStorage.setItem(key, JSON.stringify(messages));
   } catch (error) {
     console.error('Failed to save chat messages:', error);
+    Sentry.captureException(error, {
+      tags: { feature: 'ai.chat', action: 'saveChatMessages' },
+    });
   }
 }
 
@@ -106,5 +113,8 @@ export async function clearChatMessages(context: ChatContext): Promise<void> {
     await AsyncStorage.removeItem(key);
   } catch (error) {
     console.error('Failed to clear chat messages:', error);
+    Sentry.captureException(error, {
+      tags: { feature: 'ai.chat', action: 'clearChatMessages' },
+    });
   }
 }

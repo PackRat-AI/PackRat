@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import {
   formatWeatherData,
   getWeatherData,
@@ -28,6 +29,10 @@ export function useLocationSearch() {
       setResults(searchResults);
     } catch (err) {
       console.error('Error searching locations:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'weather', action: 'search' },
+        extra: { query },
+      });
       setError('Failed to search locations. Please try again.');
     } finally {
       setIsLoading(false);
@@ -54,6 +59,10 @@ export function useLocationSearch() {
       }
     } catch (err) {
       console.error('Error searching locations by coordinates:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'weather', action: 'searchByCoordinates' },
+        extra: { latitude, longitude },
+      });
       setError('Failed to find locations near you. Please try again or search manually.');
     } finally {
       setIsLoading(false);
@@ -82,6 +91,10 @@ export function useLocationSearch() {
       }
     } catch (err) {
       console.error('Error adding location:', err);
+      Sentry.captureException(err, {
+        tags: { feature: 'weather', action: 'addSearchResult' },
+        extra: { locationId: result.id, locationName: result.name },
+      });
       setError('Failed to add location. Please try again.');
       return false;
     } finally {

@@ -1,4 +1,5 @@
 import type { WeatherAPIForecastResponse } from '@packrat/schemas/weather';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import {
@@ -43,6 +44,12 @@ export default function TripWeatherDetailsScreen() {
       setLoading(true);
       setError(null);
 
+      Sentry.addBreadcrumb({
+        category: 'trips',
+        message: 'Fetching trip weather',
+        level: 'info',
+        data: { latitude, longitude },
+      });
       const locations = await searchLocationsByCoordinates({ latitude, longitude });
       const first = locations[0];
       if (!first) throw new Error('No location found for these coordinates');
@@ -55,6 +62,10 @@ export default function TripWeatherDetailsScreen() {
       setGradientColors(getWeatherBackgroundColors({ code: weatherCode, isNight }));
     } catch (e) {
       console.error(e);
+      Sentry.captureException(e, {
+        tags: { feature: 'trips', action: 'fetchWeather' },
+        extra: { latitude, longitude },
+      });
       setError('Failed to load weather');
     } finally {
       setLoading(false);
