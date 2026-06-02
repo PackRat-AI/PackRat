@@ -18,8 +18,8 @@ type WeatherToolOutput =
         details: {
           humidity: number;
           windSpeed: number;
-          feelsLike: number;
-          isDay: number;
+          feelsLike?: number;
+          isDay?: number;
         };
       };
     }
@@ -128,7 +128,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
               <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
               <Text className="text-base font-semibold text-blue-800 dark:text-blue-200">
                 {t('ai.tools.weatherIn', {
-                  location: toolInvocation.output.data.name,
+                  location: toolInvocation.output.data.name || toolInvocation.input.location,
                 })}
               </Text>
             </View>
@@ -140,8 +140,8 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
               <View className="flex-row items-center">
                 <Icon
                   name={getWeatherIconByCondition({
-                    condition: toolInvocation.output.data.condition,
-                    isDay: toolInvocation.output.data.details.isDay,
+                    condition: toolInvocation.output.data.condition || '',
+                    isDay: toolInvocation.output.data.details?.isDay,
                   })}
                   size={48}
                   color="#3b82f6"
@@ -153,7 +153,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     {toolInvocation.output.data.temperature}°
                   </Text>
                   <Text className="mt-1 text-base text-gray-600 dark:text-gray-300">
-                    {toolInvocation.output.data.condition}
+                    {toolInvocation.output.data.condition || '—'}
                   </Text>
                 </View>
               </View>
@@ -170,7 +170,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {toolInvocation.output.data.details.humidity}%
+                    {toolInvocation.output.data.details?.humidity ?? '—'}%
                   </Text>
                 </View>
 
@@ -184,7 +184,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {toolInvocation.output.data.details.windSpeed} mph
+                    {toolInvocation.output.data.details?.windSpeed ?? '—'} mph
                   </Text>
                 </View>
               </View>
