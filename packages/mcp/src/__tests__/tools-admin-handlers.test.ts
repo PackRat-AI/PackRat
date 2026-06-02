@@ -26,6 +26,14 @@ import { describe, expect, it } from 'vitest';
 import { registerAdminTools } from '../tools/admin';
 import { type ApiCall, firstText, getToolHandler, makeAgent, makeExtra } from './_tool-harness';
 
+/** Safely read the structured error envelope from an isError result. */
+function errorEnvelope(structured: Record<string, unknown> | undefined): {
+  code?: unknown;
+  retryable?: unknown;
+} {
+  return (structured?.error ?? {}) as { code?: unknown; retryable?: unknown };
+}
+
 /**
  * Find a recorded call whose property chain ends with `segments` (the last
  * element being the terminal HTTP verb). The proxy records non-verb calls
@@ -383,7 +391,7 @@ describe('admin handlers — API error path (call failure branch)', () => {
     const result = await getToolHandler(server, opts.name)(opts.args, makeExtra());
 
     expect(result.isError).toBe(true);
-    const code = result.structuredContent?.error?.code;
+    const code = errorEnvelope(result.structuredContent).code;
     expect(typeof code).toBe('string');
     expect((code as string).length).toBeGreaterThan(0);
     // A 500 envelope maps to the retryable `api_error` code (client.ts).
@@ -431,8 +439,8 @@ describe('admin destructive handlers — timeout + post-confirm failure branches
     );
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent?.error?.code).toBe('confirmation_timeout');
-    expect(result.structuredContent?.error?.retryable).toBe(true);
+    expect(errorEnvelope(result.structuredContent).code).toBe('confirmation_timeout');
+    expect(errorEnvelope(result.structuredContent).retryable).toBe(true);
     // Timed-out confirmation must suppress the DELETE.
     expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
   });
@@ -447,7 +455,7 @@ describe('admin destructive handlers — timeout + post-confirm failure branches
       makeExtra(),
     );
 
-    expect(result.structuredContent?.error?.code).toBe('confirmation_timeout');
+    expect(errorEnvelope(result.structuredContent).code).toBe('confirmation_timeout');
     expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
   });
 
@@ -474,7 +482,7 @@ describe('admin destructive handlers — timeout + post-confirm failure branches
     );
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent?.error?.code).toBe('api_error');
+    expect(errorEnvelope(result.structuredContent).code).toBe('api_error');
     // The confirmed DELETE did fire (then failed upstream).
     expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(1);
   });
