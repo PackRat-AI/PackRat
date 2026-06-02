@@ -1,4 +1,5 @@
 import { when } from '@legendapp/state';
+import { WEIGHT_UNITS } from '@packrat/constants';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -42,10 +43,13 @@ function applySessionUser(sessionUser: Record<string, unknown>) {
     id: asString(sessionUser.id) ?? '',
     email: asString(sessionUser.email) ?? '',
     firstName:
-      asString(sessionUser.firstName) ?? name.split(' ')[0] ?? existingUser?.firstName ?? '',
+      asString(sessionUser.firstName) ??
+      (name.split(' ')[0] || undefined) ??
+      existingUser?.firstName ??
+      '',
     lastName:
       asString(sessionUser.lastName) ??
-      name.split(' ').slice(1).join(' ') ??
+      (name.split(' ').slice(1).join(' ') || undefined) ??
       existingUser?.lastName ??
       '',
     role: asString(sessionUser.role) ?? existingUser?.role ?? 'USER',
@@ -58,7 +62,9 @@ function applySessionUser(sessionUser: Record<string, unknown>) {
     createdAt: asString(sessionUser.createdAt) ?? existingUser?.createdAt ?? null,
     updatedAt: asString(sessionUser.updatedAt) ?? existingUser?.updatedAt ?? null,
     preferredWeightUnit:
-      (sessionUser.preferredWeightUnit as import('@packrat/constants').WeightUnit | undefined) ??
+      (WEIGHT_UNITS.includes(sessionUser.preferredWeightUnit as never)
+        ? (sessionUser.preferredWeightUnit as import('@packrat/constants').WeightUnit)
+        : undefined) ??
       existingUser?.preferredWeightUnit ??
       'g',
   });
