@@ -40,8 +40,8 @@ function trimCatalogItem(item: unknown) {
   };
 }
 
-export function createLocalTools() {
-  return {
+export function createLocalTools(isAuthenticated = false) {
+  const allTools = {
     getPackDetails: tool({
       description:
         'Get detailed information about a specific pack including all its items, weights, and categories. Use this when the user asks about a specific pack by name or ID.',
@@ -140,6 +140,8 @@ export function createLocalTools() {
           const weatherData = await getWeatherData(first.id);
           return { success: true, data: formatWeatherData(weatherData) };
         } catch (error) {
+          console.log('getWeatherForLocation error', { error });
+
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get weather data',
@@ -293,6 +295,14 @@ export function createLocalTools() {
       },
     }),
   };
+
+  if (isAuthenticated) {
+    return allTools;
+  }
+
+  // For unauthenticated users, only expose tools that operate on local device data.
+  const { getPackDetails, getPackItemDetails } = allTools;
+  return { getPackDetails, getPackItemDetails };
 }
 
 export type LocalTools = ReturnType<typeof createLocalTools>;

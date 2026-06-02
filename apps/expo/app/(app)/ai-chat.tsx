@@ -157,7 +157,8 @@ export default function AIChat() {
   // Build the right transport based on current AI mode.
   // Recreated when aiMode or modelStatus changes (modelStatus drives local readiness).
   const isLocalReady = modelStatus === 'ready';
-  const tools = React.useMemo(() => createLocalTools(), []);
+  const isAuthenticated = !!token;
+  const tools = React.useMemo(() => createLocalTools(isAuthenticated), [isAuthenticated]);
 
   const { transport, transportKey } = React.useMemo(() => {
     if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
@@ -456,7 +457,7 @@ export default function AIChat() {
             <View className="pl-4 pr-16">
               <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
               <View className="flex-row flex-wrap gap-2">
-                {getContextualSuggestions(context).map((suggestion) => (
+                {getContextualSuggestions(context, isAuthenticated).map((suggestion) => (
                   <TouchableOpacity
                     key={suggestion}
                     onPress={() => handleSubmit(suggestion)}
