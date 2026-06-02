@@ -150,6 +150,38 @@ describe('chunkCsvForR2', () => {
     ).rejects.toBeInstanceOf(RangeError);
   });
 
+  it('throws when r2.head returns null (object not found)', async () => {
+    const { r2 } = fakeR2(makeCsv(10), 'real-key.csv');
+    // Requesting a key the mock does not know about makes head() return null.
+    await expect(chunkCsvForR2({ r2, objectKey: 'missing-key.csv' })).rejects.toThrow(
+      'R2 object not found: missing-key.csv',
+    );
+  });
+
+  it('throws when r2.get returns null during a peek read', async () => {
+    const csv = makeCsv(1000, 50);
+    const bytes = encoder.encode(csv);
+    const head = async () =>
+      ({
+        key: 'fixture.csv',
+        size: bytes.length,
+        etag: 'fake-etag',
+        uploaded: new Date('2026-05-20T00:00:00Z'),
+      }) as Awaited<ReturnType<ChunkerR2['head']>>;
+    // get() always returns null so the peek loop hits the `if (!obj) throw`.
+    const get = async () => null as Awaited<ReturnType<ChunkerR2['get']>>;
+    const r2 = { head, get } as unknown as ChunkerR2;
+
+    await expect(
+      chunkCsvForR2({
+        r2,
+        objectKey: 'fixture.csv',
+        chunkBytes: Math.ceil(bytes.length / 3),
+        peekBytes: 256,
+      }),
+    ).rejects.toThrow('R2 peek read returned null');
+  });
+
   it('throws ChunkBoundaryError when no newline is found in the peek window', async () => {
     // A single very long row with no internal newlines forces peekBytes=256
     // to scan a tail with no \n at all.

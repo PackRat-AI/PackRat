@@ -70,6 +70,12 @@ describe('json-utils', () => {
       expect(result?.reviewCount).toBe(42);
     });
 
+    it('maps a sub-1 reviewCount number to 0 (|| 0 fallback)', () => {
+      // Math.trunc(0.4) === 0, so the `|| 0` fallback branch must run.
+      const result = mapJsonRowToItem({ reviewCount: 0.4 });
+      expect(result?.reviewCount).toBe(0);
+    });
+
     it('parses faqs and techs supplied as JSON strings', () => {
       const result = mapJsonRowToItem({
         name: 'X',
@@ -83,6 +89,30 @@ describe('json-utils', () => {
     it('falls back to an empty faqs array when the faqs string is malformed', () => {
       const result = mapJsonRowToItem({ name: 'Y', faqs: '{not valid json' });
       expect(result?.faqs).toEqual([]);
+    });
+
+    it('maps techs to {} when the techs string parses to a JSON array', () => {
+      // A JSON-array string is structurally valid JSON but not a key/value
+      // record, so it must collapse to {} rather than index into the array.
+      const result = mapJsonRowToItem({ name: 'Z', techs: '[1,2,3]' });
+      expect(result?.techs).toEqual({});
+    });
+
+    it('maps techs to {} when the techs string is malformed', () => {
+      // safeJsonParse returns [] on malformed input, which Array.isArray
+      // collapses to {} — techs must never be left as an array.
+      const result = mapJsonRowToItem({ name: 'Z', techs: '{not valid json' });
+      expect(result?.techs).toEqual({});
+    });
+
+    it('does not derive weight from techs when no claimed/weight key is present', () => {
+      // techs is a valid record but lacks 'Claimed Weight'/'weight', so the
+      // claimedWeight-falsy branch of the weight fallback must run and leave
+      // weight unset.
+      const result = mapJsonRowToItem({ name: 'Z', techs: '{"Material":"Nylon"}' });
+      expect(result?.techs).toEqual({ Material: 'Nylon' });
+      expect(result?.weight).toBeUndefined();
+      expect(result?.weightUnit).toBeUndefined();
     });
 
     it('maps reviewCount from string', () => {
@@ -177,8 +207,8 @@ describe('json-utils', () => {
 
     it('maps weight from number with unit string', () => {
       const result = mapJsonRowToItem({ weight: 280, weightUnit: 'g' });
-      expect(result?.weight).toBeGreaterThan(0);
-      expect(result?.weightUnit).toBeDefined();
+      expect(result?.weight).toBe(280);
+      expect(result?.weightUnit).toBe('g');
     });
 
     it('maps weight from string', () => {
