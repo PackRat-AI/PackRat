@@ -35,7 +35,6 @@ export function createTools(userId: string) {
       execute: async ({ location }) => {
         try {
           const weatherData = await weatherService.getWeatherForLocation(location);
-          console.log('getWeatherForLocation tool success', { location, weatherData });
           return {
             success: true,
             data: {
