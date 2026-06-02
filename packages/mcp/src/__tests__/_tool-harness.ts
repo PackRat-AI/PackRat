@@ -23,16 +23,31 @@ export type ApiCall = { path: string[]; args: unknown[] };
 
 const HTTP_VERBS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 
-/** Build an api proxy that records the property chain and final-call args. */
-export function makeApiStub(): { api: AgentContext['api']; calls: ApiCall[] } {
+/**
+ * Build an api proxy that records the property chain and final-call args.
+ *
+ * `fail: true` makes every HTTP verb resolve to a Treaty *error* envelope
+ * (`{ data: null, error, status: 500 }`) so the handler's error branch runs
+ * and returns an `isError` result — used to cover the `call()` failure path.
+ */
+export function makeApiStub(opts: { fail?: boolean } = {}): {
+  api: AgentContext['api'];
+  calls: ApiCall[];
+} {
   const calls: ApiCall[] = [];
+  const verbResult = () =>
+    opts.fail
+      ? Promise.resolve({
+          data: null,
+          error: { status: 500, value: { message: 'simulated upstream failure' } },
+          status: 500,
+        })
+      : Promise.resolve({ data: { success: true }, error: null, status: 200 });
   const make = (path: string[]): unknown => {
     const target = (...args: unknown[]) => {
       const last = path.at(-1) ?? '';
       calls.push({ path, args });
-      if (HTTP_VERBS.has(last)) {
-        return Promise.resolve({ data: { success: true }, error: null, status: 200 });
-      }
+      if (HTTP_VERBS.has(last)) return verbResult();
       return make([...path, '()']);
     };
     return new Proxy(target, {
@@ -44,9 +59,7 @@ export function makeApiStub(): { api: AgentContext['api']; calls: ApiCall[] } {
       apply: (_t, _this, args) => {
         const last = path.at(-1) ?? '';
         calls.push({ path, args });
-        if (HTTP_VERBS.has(last)) {
-          return Promise.resolve({ data: { success: true }, error: null, status: 200 });
-        }
+        if (HTTP_VERBS.has(last)) return verbResult();
         return make([...path, '()']);
       },
     });
@@ -63,14 +76,16 @@ export interface MockAgent extends AgentContext {
  * spy: `resolve` makes it return that result, `reject` makes it throw,
  * default resolves `{ action: 'cancel' }` (the U10 declined path).
  */
-export function makeAgent(elicit: { resolve?: ElicitInputResult; reject?: unknown } = {}): {
+export function makeAgent(
+  elicit: { resolve?: ElicitInputResult; reject?: unknown; apiFail?: boolean } = {},
+): {
   agent: MockAgent;
   server: McpServer;
   calls: ApiCall[];
   elicitSpy: ReturnType<typeof vi.fn>;
 } {
   const server = new McpServer({ name: 'test', version: '0.0.0' });
-  const { api, calls } = makeApiStub();
+  const { api, calls } = makeApiStub({ fail: elicit.apiFail });
   const elicitSpy = vi.fn();
   if (elicit.resolve !== undefined) elicitSpy.mockResolvedValue(elicit.resolve);
   else if (elicit.reject !== undefined) elicitSpy.mockRejectedValue(elicit.reject);

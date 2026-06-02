@@ -195,6 +195,22 @@ describe('confirmAction', () => {
     expect(result).toEqual({ confirmed: false, reason: 'unsupported' });
   });
 
+  it("falls back to 'unsupported' when a non-Error value is thrown (String(error) path)", async () => {
+    // Some transports reject with a bare string rather than an Error. The
+    // classifier coerces it via String(error) and, finding no known
+    // substring, treats it as unsupported.
+    const { agent } = agentRejecting('elicitation channel exploded');
+    const result = await confirmAction({
+      agent,
+      extra: makeExtra(),
+      opts: {
+        message: 'Type DELETE',
+        expectedConfirmation: 'DELETE',
+      },
+    });
+    expect(result).toEqual({ confirmed: false, reason: 'unsupported' });
+  });
+
   it("returns reason 'unsupported' immediately when agent.elicitInput is undefined", async () => {
     // Mirrors the `AgentContext.elicitInput?` absence path — unit tests
     // build a stub agent without the method; the helper short-circuits

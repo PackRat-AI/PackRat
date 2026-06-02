@@ -305,3 +305,244 @@ describe('packrat_analyze_pack_image', () => {
     expect(hit(calls, { segments: ['user', 'packs', 'analyze-image'], verb: 'post' })).toBe(true);
   });
 });
+
+// ── Optional-omitted body-building ──────────────────────────────────────────
+// These exercise the `if (x !== undefined) body.x = x` and conditional-spread
+// branches in the create/update handlers when optionals are absent, plus the
+// explicit-null path for nullable update fields.
+
+/** The body object passed to the terminal verb call. */
+function bodyOf(
+  calls: { path: string[]; args: unknown[] }[],
+  verb: string,
+): Record<string, unknown> {
+  const call = calls.find((c) => c.path.at(-1) === verb);
+  return (call?.args[0] ?? {}) as Record<string, unknown>;
+}
+
+/** Extract the structured error code from an isError result envelope. */
+function errorCodeOf(structured: Record<string, unknown> | undefined): unknown {
+  return (structured?.error as { code?: unknown } | undefined)?.code;
+}
+
+describe('packrat_create_pack — optional fields omitted', () => {
+  it('omits description and tags from the POST body when not supplied', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_create_pack')(
+      { name: 'Minimal Pack', category: PackCategory.Hiking, is_public: false },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const body = bodyOf(calls, 'post');
+    expect(body.description).toBeUndefined();
+    expect(body.tags).toBeUndefined();
+    expect(body.name).toBe('Minimal Pack');
+  });
+});
+
+describe('packrat_update_pack — optional fields omitted', () => {
+  it('builds a body with only localUpdatedAt when no fields supplied', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_update_pack')(
+      { pack_id: 'p_abc123' },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const body = bodyOf(calls, 'put');
+    expect(Object.keys(body)).not.toContain('name');
+    expect(Object.keys(body)).not.toContain('description');
+    expect(Object.keys(body)).not.toContain('category');
+    expect(Object.keys(body)).not.toContain('isPublic');
+    expect(Object.keys(body)).not.toContain('tags');
+    expect(Object.keys(body)).toContain('localUpdatedAt');
+  });
+
+  it('passes description: null through when explicitly set to null', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_update_pack')(
+      { pack_id: 'p_abc123', description: null },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const body = bodyOf(calls, 'put');
+    expect(Object.keys(body)).toContain('description');
+    expect(body.description).toBeNull();
+  });
+});
+
+describe('packrat_add_pack_item — optional fields omitted', () => {
+  it('omits catalog_item_id and notes from the POST body when not supplied', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_add_pack_item')(
+      {
+        pack_id: 'p_abc123',
+        name: 'Stove',
+        category: ItemCategory.Tools,
+        weight_grams: 90,
+        quantity: 1,
+        is_consumable: false,
+        is_worn: false,
+      },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const body = bodyOf(calls, 'post');
+    expect(body.catalogItemId).toBeUndefined();
+    expect(body.notes).toBeUndefined();
+  });
+});
+
+describe('packrat_update_pack_item — optional fields omitted', () => {
+  it('builds a body with only localUpdatedAt when no fields supplied', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_update_pack_item')(
+      { item_id: 'i_xyz789' },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const body = bodyOf(calls, 'patch');
+    for (const k of ['name', 'category', 'weight', 'quantity', 'consumable', 'worn', 'notes']) {
+      expect(Object.keys(body)).not.toContain(k);
+    }
+    expect(Object.keys(body)).toContain('localUpdatedAt');
+  });
+
+  it('passes notes: null through when explicitly set to null', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_update_pack_item')(
+      { item_id: 'i_xyz789', notes: null },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const body = bodyOf(calls, 'patch');
+    expect(Object.keys(body)).toContain('notes');
+    expect(body.notes).toBeNull();
+  });
+});
+
+describe('packrat_similar_pack_items — threshold omitted', () => {
+  it('omits the threshold query param when not supplied', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_similar_pack_items')(
+      { pack_id: 'p_abc123', item_id: 'i_xyz789', limit: 5 },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const call = calls.find((c) => c.path.at(-1) === 'get' && c.path.includes('similar'));
+    const query = (call?.args[0] as { query?: Record<string, unknown> })?.query ?? {};
+    expect(Object.keys(query)).not.toContain('threshold');
+    expect(query.limit).toBe('5');
+  });
+});
+
+// ── Error-path cases (one per distinct verb) ────────────────────────────────
+// makeAgent({ apiFail: true }) makes the api stub resolve a 500 envelope so the
+// `call()` failure branch runs and returns an isError result with a structured
+// error envelope.
+
+describe('packrat_list_packs — pagination/data branches', () => {
+  it('builds includePublic=0 query when include_public is false', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_list_packs')(
+      { include_public: false, offset: 0 },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    const get = calls.find((c) => c.path.at(-1) === 'get' && c.path.includes('packs'));
+    const query = (get?.args[0] as { query?: { includePublic?: number } })?.query;
+    expect(query?.includePublic).toBe(0);
+  });
+
+  it('paginates an array data payload and reports nextOffset', async () => {
+    const { agent, server } = makeAgent();
+    // Override the list endpoint to return a real array so the
+    // `Array.isArray(result.data) ? result.data : []` true-arm + slicing run.
+    const items = Array.from({ length: 5 }, (_, i) => ({ id: `p_${i}` }));
+    (agent as { api: unknown }).api = {
+      user: { packs: { get: async () => ({ data: items, error: null, status: 200 }) } },
+    };
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_list_packs')(
+      { include_public: true, offset: 0, limit: 2 },
+      makeExtra(),
+    );
+    expect(result.content[0]?.type).toBe('text');
+    expect(result.structuredContent).toBeDefined();
+    expect((result.structuredContent as { nextOffset?: number | null })?.nextOffset).toBe(2);
+  });
+});
+
+describe('packs error paths — apiFail returns structured error', () => {
+  it('list_packs (GET) surfaces an error envelope', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_list_packs')(
+      { include_public: true, offset: 0 },
+      makeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    const code = errorCodeOf(result.structuredContent);
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('create_pack (POST) surfaces an error envelope', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_create_pack')(
+      { name: 'X', category: PackCategory.Hiking, is_public: false },
+      makeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    const code = errorCodeOf(result.structuredContent);
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('update_pack (PUT) surfaces an error envelope', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_update_pack')(
+      { pack_id: 'p_abc123', name: 'Y' },
+      makeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    const code = errorCodeOf(result.structuredContent);
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('update_pack_item (PATCH) surfaces an error envelope', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_update_pack_item')(
+      { item_id: 'i_xyz789', name: 'Z' },
+      makeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    const code = errorCodeOf(result.structuredContent);
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('delete_pack (DELETE) surfaces an error envelope', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerPackTools(agent);
+    const result = await getToolHandler(server, 'packrat_delete_pack')(
+      { pack_id: 'p_abc123' },
+      makeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    const code = errorCodeOf(result.structuredContent);
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+});

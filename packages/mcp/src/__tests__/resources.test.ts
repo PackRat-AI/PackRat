@@ -247,6 +247,23 @@ describe('U9 pack list provider', () => {
     expect(nth(result.resources, 0).uri).toBe('packrat://packs/p_one');
   });
 
+  it('yields an empty list when the success payload is not an array', async () => {
+    // Success envelope (no error, data != null) but the body is an object,
+    // not an array — the `Array.isArray(...) ? ... : []` guard collapses it
+    // to an empty list rather than iterating a non-iterable.
+    const { agent, server } = makeAgent({
+      packsGet: () => Promise.resolve({ data: { unexpected: 'shape' }, error: null, status: 200 }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'pack');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{
+        resources: unknown[];
+      }>
+    )();
+    expect(result.resources).toEqual([]);
+  });
+
   it('returns empty array when the API errors (graceful degradation)', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { agent, server } = makeAgent({
@@ -325,6 +342,39 @@ describe('U9 trip list provider', () => {
     expect(result.resources).toEqual([]);
     warn.mockRestore();
   });
+
+  it('returns empty array when data is null but no error is set', async () => {
+    // The `result.data == null` arm of the guard (distinct from the
+    // `result.error` short-circuit): a 200 with a null body must still
+    // degrade to an empty list rather than throwing on `Array.isArray(null)`.
+    const { agent, server } = makeAgent({
+      tripsGet: () => Promise.resolve({ data: null, error: null, status: 200 }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'trip');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{
+        resources: unknown[];
+      }>
+    )();
+    expect(result.resources).toEqual([]);
+  });
+
+  it('yields an empty list when the trips payload is not an array', async () => {
+    // Success envelope with a non-array object body exercises the false arm
+    // of `Array.isArray(result.data) ? result.data : []`.
+    const { agent, server } = makeAgent({
+      tripsGet: () => Promise.resolve({ data: { not: 'an array' }, error: null, status: 200 }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'trip');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{
+        resources: unknown[];
+      }>
+    )();
+    expect(result.resources).toEqual([]);
+  });
 });
 
 describe('U9 catalog list provider', () => {
@@ -363,6 +413,50 @@ describe('U9 catalog list provider', () => {
     expect(nth(result.resources, 0).name).toBe('TestBrand Item 1');
     // The provider should have requested a limit of CATALOG_LIST_CAP from the API
     expect((calls[0] as { query?: { limit?: number } })?.query?.limit).toBe(CATALOG_LIST_CAP);
+  });
+
+  it('falls back to an empty list when the object response has no items array', async () => {
+    // The provider accepts either a bare array or an `{ items: [...] }`
+    // wrapper. A success payload that is an object WITHOUT an `items` array
+    // (e.g. an empty-result envelope) degrades to zero resources rather
+    // than throwing.
+    const { agent, server } = makeAgent({
+      catalogListGet: () =>
+        Promise.resolve({
+          data: { totalCount: 0, page: 1, limit: CATALOG_LIST_CAP, totalPages: 0 },
+          error: null,
+          status: 200,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'catalog_item');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{ resources: unknown[] }>
+    )();
+    expect(result.resources).toEqual([]);
+  });
+
+  it('names a catalog item with a numeric id and no name using the synthetic fallback', async () => {
+    // Catalog ids may be numeric (the filter accepts `typeof id === 'number'`).
+    // With no `name`, catalogName uses the `Catalog item <n>` fallback.
+    const { agent, server } = makeAgent({
+      catalogListGet: () =>
+        Promise.resolve({
+          data: [{ id: 9 }],
+          error: null,
+          status: 200,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'catalog_item');
+    const result = await (
+      template.resourceTemplate.listCallback as () => Promise<{
+        resources: Array<{ uri: string; name: string }>;
+      }>
+    )();
+    expect(result.resources).toHaveLength(1);
+    expect(nth(result.resources, 0).uri).toBe('packrat://catalog/9');
+    expect(nth(result.resources, 0).name).toBe('Catalog item 1');
   });
 
   it('handles a bare array response (no { items } wrapper)', async () => {
@@ -513,6 +607,92 @@ describe('U9 resource error handling', () => {
     expect(nth(result.contents, 0).mimeType).toBe('application/json');
     expect(nth(result.contents, 0).text).toContain('p_ok');
     expect(nth(result.contents, 0).text).toContain('My Pack');
+  });
+
+  it('surfaces the error-body `error` field in the McpError message when `message` is absent', async () => {
+    // extractErrorMessage prefers `.message`, but falls back to `.error`
+    // when the upstream envelope only carries that shape.
+    const { agent, server } = makeAgent({
+      packByIdGet: () =>
+        Promise.resolve({
+          data: null,
+          error: { status: 404, value: { error: 'pack archived' } },
+          status: 404,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'pack');
+    await expect(
+      template.readCallback(new URL('packrat://packs/p_arch'), { packId: 'p_arch' }),
+    ).rejects.toMatchObject({ message: expect.stringContaining('pack archived') });
+  });
+
+  it('coerces a non-Error rejection into the McpError message (String(e) path)', async () => {
+    // The Treaty promise can reject with a bare string; readJsonResource
+    // coerces it via String(e) so the thrown McpError still carries detail.
+    const { agent, server } = makeAgent({
+      packByIdGet: () => Promise.reject('raw transport string'),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'pack');
+    await expect(
+      template.readCallback(new URL('packrat://packs/p_raw'), { packId: 'p_raw' }),
+    ).rejects.toMatchObject({
+      code: -32603,
+      message: expect.stringContaining('raw transport string'),
+    });
+  });
+});
+
+// ── Read callbacks for trip + catalog_item templates ─────────────────────────
+
+describe('U9 trip + catalog_item read callbacks', () => {
+  it('reads a single trip by id and returns JSON-stringified content', async () => {
+    const { agent, server } = makeAgent({
+      tripByIdGet: () =>
+        Promise.resolve({
+          data: { id: 't_ok', name: 'JMT 2026' },
+          error: null,
+          status: 200,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'trip');
+    const result = (await template.readCallback(new URL('packrat://trips/t_ok'), {
+      tripId: 't_ok',
+    })) as { contents: Array<{ uri: string; mimeType: string; text: string }> };
+    expect(nth(result.contents, 0).mimeType).toBe('application/json');
+    expect(nth(result.contents, 0).text).toContain('JMT 2026');
+  });
+
+  it('reads a single catalog item by id and returns JSON-stringified content', async () => {
+    const { agent, server } = makeAgent({
+      catalogByIdGet: () =>
+        Promise.resolve({
+          data: { id: 'c_ok', name: 'MSR Hubba', brand: 'MSR' },
+          error: null,
+          status: 200,
+        }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'catalog_item');
+    const result = (await template.readCallback(new URL('packrat://catalog/c_ok'), {
+      itemId: 'c_ok',
+    })) as { contents: Array<{ uri: string; mimeType: string; text: string }> };
+    expect(nth(result.contents, 0).mimeType).toBe('application/json');
+    expect(nth(result.contents, 0).text).toContain('MSR Hubba');
+  });
+
+  it('throws McpError when reading a catalog item that the API 404s', async () => {
+    const { agent, server } = makeAgent({
+      catalogByIdGet: () =>
+        Promise.resolve({ data: null, error: { status: 404, value: null }, status: 404 }),
+    });
+    registerResources(agent);
+    const template = templateByName(server, 'catalog_item');
+    await expect(
+      template.readCallback(new URL('packrat://catalog/c_nope'), { itemId: 'c_nope' }),
+    ).rejects.toMatchObject({ code: -32602 });
   });
 });
 

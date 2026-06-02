@@ -37,6 +37,10 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/**/*.spec.ts',
+        // Test-support files (harness, accessors) live under __tests__ but
+        // aren't *.test.ts — they're test infrastructure, not product code,
+        // so they don't belong in the coverage denominator.
+        'src/__tests__/**',
         // Worker DO entrypoint: imports `agents/mcp` (cloudflare:workers
         // scheme) so it can't load in Node-native vitest; V8 coverage is
         // unsupported under the Workers pool. Pure logic was extracted to

@@ -93,6 +93,21 @@ describe('handleHealth', () => {
     expect(body.probes.api).toBe('down');
   });
 
+  it('returns 503 + status=degraded without probing when PACKRAT_API_URL is empty', async () => {
+    // The probe short-circuits on an empty binding (unit-test environment
+    // without PACKRAT_API_URL) rather than throwing a URL constructor error
+    // — so no fetch is issued and the API probe collapses to down.
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv({ PACKRAT_API_URL: '' }),
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes.api).toBe('down');
+    expect(fetchSpy).toHaveBeenCalledTimes(0);
+  });
+
   it('caches the result for 10s within a single isolate', async () => {
     fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
     await handleHealth({
@@ -122,6 +137,23 @@ describe('handleHealth', () => {
     expect(body.terms).toBe('https://packratai.com/terms-of-service');
     expect(body.privacy).toBe('https://packratai.com/privacy-policy');
     expect(body.support).toBe('mailto:hello@packratai.com');
+  });
+
+  it('reports degraded WITHOUT probing when PACKRAT_API_URL is undefined', async () => {
+    // Distinct from the empty-string case above: a missing binding (the
+    // `!base` arm rather than `base.length === 0`) must also short-circuit
+    // before `fetch` so `${undefined}/health` never reaches the URL parser.
+    const env = makeEnv({ PACKRAT_API_URL: undefined as unknown as string });
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env,
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes.api).toBe('down');
+    // The guard returns before any network call is attempted.
+    expect(fetchSpy).toHaveBeenCalledTimes(0);
   });
 });
 

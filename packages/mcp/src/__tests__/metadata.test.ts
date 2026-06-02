@@ -51,6 +51,30 @@ describe('authorizationServerUrl', () => {
     const slashed = { PACKRAT_API_URL: 'https://api.packrat.world/' } as Env;
     expect(authorizationServerUrl(slashed)).toBe('https://api.packrat.world');
   });
+
+  it('falls back to an empty string when PACKRAT_API_URL is unset', () => {
+    // Defensive `?? ''` guard: a missing binding (e.g. an unconfigured dev
+    // env) must not crash the metadata builder — it yields an empty issuer
+    // rather than throwing on `undefined.replace(...)`.
+    const missing = {} as Env;
+    expect(authorizationServerUrl(missing)).toBe('');
+  });
+
+  it('returns an empty string verbatim when PACKRAT_API_URL is an empty string', () => {
+    // The `?? ''` nullish coalesce does NOT fire for a defined-but-empty
+    // value: an explicit `''` flows through the left arm and the trailing
+    // -slash `.replace` is a no-op, so the result is still the empty issuer.
+    const empty = { PACKRAT_API_URL: '' } as Env;
+    expect(authorizationServerUrl(empty)).toBe('');
+  });
+
+  it('explicitly distinguishes a null binding (right arm of ?? ) from a URL', () => {
+    // A `null` binding (not just `undefined`) also takes the `?? ''` arm —
+    // pinned so a runtime that hands back `null` instead of `undefined`
+    // still degrades to an empty issuer rather than throwing.
+    const nulled = { PACKRAT_API_URL: null } as unknown as Env;
+    expect(authorizationServerUrl(nulled)).toBe('');
+  });
 });
 
 describe('buildResourceMetadata', () => {

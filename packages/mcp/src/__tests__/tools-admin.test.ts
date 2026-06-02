@@ -37,6 +37,12 @@ import { registerAdminTools } from '../tools/admin';
 import { registerPackTemplateTools } from '../tools/packTemplates';
 import type { AgentContext } from '../types';
 import { nth } from './_access';
+import {
+  firstText as hFirstText,
+  getToolHandler as hGetToolHandler,
+  makeAgent as hMakeAgent,
+  makeExtra as hMakeExtra,
+} from './_tool-harness';
 
 // ── Stubs ────────────────────────────────────────────────────────────────────
 
@@ -410,5 +416,97 @@ describe('U10 catalog — every documented tool gates on a confirmation', () => 
     expect(result.isError).toBe(true);
     expect(result.structuredContent?.error?.code).toBe('user_cancelled');
     expect(calls.filter((c) => ['delete', 'post'].includes(c.path.at(-1) ?? ''))).toHaveLength(0);
+  });
+});
+
+// ── Elicitation-failure mapping: timeout + post-accept API failure ───────────
+// These drive the `elicitFailureResponse`/`auditElicitDeclined` `timeout`
+// arms and the `auditOutcome` failure-with-error branch. They use the shared
+// `_tool-harness` makeAgent because it supports `reject` (→ timeout) and
+// `apiFail` (→ 500 envelope) together with a per-call audit context.
+
+const TIMEOUT_ERROR = new Error('Elicitation request timed out');
+
+describe('admin elicitation timeout mapping', () => {
+  it('packrat_admin_hard_delete_user → confirmation_timeout (retryable) when the prompt times out', async () => {
+    const { agent, server, calls } = hMakeAgent({ reject: TIMEOUT_ERROR });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_hard_delete_user')(
+      { user_id: 'user-42', reason: 'GDPR' },
+      hMakeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('confirmation_timeout');
+    expect((result.structuredContent?.error as { retryable: boolean }).retryable).toBe(true);
+    expect(hFirstText(result)).toContain('timed out');
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
+  });
+
+  it('packrat_admin_delete_pack → confirmation_timeout when the prompt times out', async () => {
+    const { agent, server, calls } = hMakeAgent({ reject: TIMEOUT_ERROR });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_delete_pack')(
+      { pack_id: 'pack-7' },
+      hMakeExtra(),
+    );
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('confirmation_timeout');
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
+  });
+});
+
+describe('admin auditOutcome failure branch (accept then API 500)', () => {
+  it('packrat_admin_delete_pack → api_error envelope after confirmation accepted', async () => {
+    const { agent, server, calls } = hMakeAgent({
+      resolve: { action: 'accept', content: { confirmation: 'DELETE' } },
+      apiFail: true,
+    });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_delete_pack')(
+      { pack_id: 'pack-7' },
+      hMakeExtra(),
+    );
+    // Confirmation passed → the DELETE fired → the 500 envelope surfaced via
+    // call(), exercising auditOutcome's `isError === true` + structured-error arm.
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(1);
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('api_error');
+  });
+
+  it('packrat_admin_hard_delete_user → api_error envelope after confirmation accepted', async () => {
+    const { agent, server, calls } = hMakeAgent({
+      resolve: { action: 'accept', content: { confirmation: 'user-42' } },
+      apiFail: true,
+    });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_hard_delete_user')(
+      { user_id: 'user-42', reason: 'GDPR' },
+      hMakeExtra(),
+    );
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(1);
+    expect(result.isError).toBe(true);
+    expect((result.structuredContent?.error as { code: string }).code).toBe('api_error');
+  });
+});
+
+describe('admin audit context — getAuditContext present branch', () => {
+  it('uses the agent-provided audit context when getAuditContext is defined', async () => {
+    const { agent, server, calls } = hMakeAgent({ resolve: { action: 'cancel' } });
+    // Provide a real audit context so the `getAuditContext?.() ?? {}` nullish
+    // fallback takes its left (defined) side.
+    agent.getAuditContext = () => ({
+      userId: 'admin-1',
+      scopes: ['mcp:admin'] as const,
+      correlationId: 'corr-1',
+    });
+    registerAdminTools(agent);
+    const result = await hGetToolHandler(server, 'packrat_admin_delete_pack')(
+      { pack_id: 'pack-7' },
+      hMakeExtra(),
+    );
+    // Cancelled → user_cancelled envelope, no DELETE — but the audit line ran
+    // with the provided actor (left side of the `??`).
+    expect((result.structuredContent?.error as { code: string }).code).toBe('user_cancelled');
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
   });
 });

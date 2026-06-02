@@ -119,3 +119,184 @@ describe('registerTrailConditionTools', () => {
     expect(delCall?.path).toEqual(['user', 'trail-conditions', '()', 'delete']);
   });
 });
+
+describe('registerTrailConditionTools — optional-omitted branches', () => {
+  it('packrat_list_my_trail_reports without updated_since → GETs with empty query', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_list_my_trail_reports');
+
+    const result = await handler({}, makeExtra());
+
+    expect(result.content[0]?.type).toBe('text');
+    const getCall = calls.find((c) => c.path.at(-1) === 'get');
+    expect(getCall?.path).toEqual(['user', 'trail-conditions', 'mine', 'get']);
+    expect(getCall?.args[0]).toEqual({ query: {} });
+  });
+
+  it('packrat_submit_trail_condition with only required args → POSTs with nullish defaults', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_submit_trail_condition');
+
+    const result = await handler(
+      {
+        trail_name: 'Minimal Trail',
+        surface: TrailSurface.Dirt,
+        overall_condition: TrailCondition.Fair,
+      },
+      makeExtra(),
+    );
+
+    expect(result.content[0]?.type).toBe('text');
+    const postCall = calls.find((c) => c.path.at(-1) === 'post');
+    const body = postCall?.args[0] as Record<string, unknown>;
+    expect(body?.trailRegion).toBeNull();
+    expect(body?.hazards).toEqual([]);
+    expect(body?.waterCrossings).toBe(0);
+    expect(body?.waterCrossingDifficulty).toBeNull();
+    expect(body?.notes).toBeNull();
+    expect(body?.photos).toEqual([]);
+    expect(body?.tripId).toBeUndefined();
+  });
+
+  it('packrat_update_trail_condition with only report_id → PUTs body omitting all optional keys', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_update_trail_condition');
+
+    const result = await handler({ report_id: 'r_min' }, makeExtra());
+
+    expect(result.content[0]?.type).toBe('text');
+    const putCall = calls.find((c) => c.path.at(-1) === 'put');
+    const body = putCall?.args[0] as Record<string, unknown>;
+    const keys = Object.keys(body);
+    expect(keys).not.toContain('trailName');
+    expect(keys).not.toContain('trailRegion');
+    expect(keys).not.toContain('surface');
+    expect(keys).not.toContain('overallCondition');
+    expect(keys).not.toContain('hazards');
+    expect(keys).not.toContain('waterCrossings');
+    expect(keys).not.toContain('waterCrossingDifficulty');
+    expect(keys).not.toContain('notes');
+    expect(keys).not.toContain('photos');
+    expect(keys).toContain('localUpdatedAt');
+  });
+
+  it('packrat_update_trail_condition with all optional fields set → PUTs full body', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_update_trail_condition');
+
+    const result = await handler(
+      {
+        report_id: 'r_full',
+        trail_name: 'Full Trail',
+        trail_region: 'Cascades',
+        surface: TrailSurface.Dirt,
+        overall_condition: TrailCondition.Good,
+        hazards: ['ice'],
+        water_crossings: 2,
+        water_crossing_difficulty: CrossingDifficulty.Easy,
+        notes: 'fresh',
+        photos: ['https://example.com/x.jpg'],
+      },
+      makeExtra(),
+    );
+
+    expect(result.content[0]?.type).toBe('text');
+    const putCall = calls.find((c) => c.path.at(-1) === 'put');
+    const body = putCall?.args[0] as Record<string, unknown>;
+    expect(body?.trailRegion).toBe('Cascades');
+    expect(body?.hazards).toEqual(['ice']);
+    expect(body?.waterCrossings).toBe(2);
+    expect(body?.waterCrossingDifficulty).toBe('easy');
+    expect(body?.notes).toBe('fresh');
+    expect(body?.photos).toEqual(['https://example.com/x.jpg']);
+  });
+
+  it('packrat_update_trail_condition with explicit null nullable fields → PUTs nulls', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_update_trail_condition');
+
+    const result = await handler(
+      {
+        report_id: 'r_null',
+        trail_region: null,
+        water_crossing_difficulty: null,
+        notes: null,
+      },
+      makeExtra(),
+    );
+
+    expect(result.content[0]?.type).toBe('text');
+    const putCall = calls.find((c) => c.path.at(-1) === 'put');
+    const body = putCall?.args[0] as Record<string, unknown>;
+    expect(body?.trailRegion).toBeNull();
+    expect(body?.waterCrossingDifficulty).toBeNull();
+    expect(body?.notes).toBeNull();
+  });
+});
+
+describe('registerTrailConditionTools — error paths', () => {
+  it('packrat_get_trail_conditions surfaces upstream failure (GET verb)', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_get_trail_conditions');
+
+    const result = await handler({ limit: 20 }, makeExtra());
+
+    expect(result.isError).toBe(true);
+    expect(typeof result.structuredContent?.error).toBe('object');
+    const code = (result.structuredContent?.error as { code?: unknown })?.code;
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('packrat_submit_trail_condition surfaces upstream failure (POST verb)', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_submit_trail_condition');
+
+    const result = await handler(
+      {
+        trail_name: 'Err Trail',
+        surface: TrailSurface.Dirt,
+        overall_condition: TrailCondition.Good,
+      },
+      makeExtra(),
+    );
+
+    expect(result.isError).toBe(true);
+    const code = (result.structuredContent?.error as { code?: unknown })?.code;
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('packrat_update_trail_condition surfaces upstream failure (PUT verb)', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_update_trail_condition');
+
+    const result = await handler({ report_id: 'r_err', trail_name: 'x' }, makeExtra());
+
+    expect(result.isError).toBe(true);
+    const code = (result.structuredContent?.error as { code?: unknown })?.code;
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+
+  it('packrat_delete_trail_condition surfaces upstream failure (DELETE verb)', async () => {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerTrailConditionTools(agent);
+    const handler = getToolHandler(server, 'packrat_delete_trail_condition');
+
+    const result = await handler({ report_id: 'r_err' }, makeExtra());
+
+    expect(result.isError).toBe(true);
+    const code = (result.structuredContent?.error as { code?: unknown })?.code;
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+  });
+});

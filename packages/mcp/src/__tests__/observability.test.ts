@@ -172,6 +172,51 @@ describe('scrubFields', () => {
     });
   });
 
+  it('passes an allowlisted key through unchanged when its value is a non-object (no nested recursion)', () => {
+    // `actor` has a nested allowlist, but isPlainObject short-circuits on a
+    // non-object value — so a string `actor` is left verbatim rather than
+    // being treated as a nested record.
+    expect(scrubFields({ actor: 'system' })).toEqual({ actor: 'system' });
+  });
+
+  it('passes an allowlisted key through unchanged when its value is an array (not a plain object)', () => {
+    // Arrays reach isObject but fail the prototype check, so they are NOT
+    // recursed into — they pass through so callers can log arrays of
+    // primitive scopes under an allowlisted parent.
+    expect(scrubFields({ actor: ['mcp:admin', 'mcp:read'] })).toEqual({
+      actor: ['mcp:admin', 'mcp:read'],
+    });
+  });
+
+  it('passes an allowlisted key through unchanged when its value is a class instance (non-plain proto)', () => {
+    // A class instance has a custom prototype, so it is not a plain object
+    // and is left untouched at the top level.
+    class Marker {
+      kind = 'audit';
+    }
+    const instance = new Marker();
+    expect(scrubFields({ target: instance })).toEqual({ target: instance });
+  });
+
+  it('drops a function value nested under an allowlisted parent', () => {
+    // scrubNested mirrors the top-level rule: functions never survive into a
+    // log line, even when nested under actor/target/error.
+    const out = scrubFields({ actor: { userId: 'u1', toJSON: () => 'leak' } });
+    expect(out.actor).toEqual({ userId: 'u1' });
+  });
+
+  it('does not recurse into a null-prototype object (treated as non-plain)', () => {
+    // radash `isObject` returns false for `Object.create(null)`, so the
+    // `isPlainObject` guard rejects it at the `!isObject` check and the value
+    // passes through verbatim. This is also why the `proto === null` arm of
+    // `isPlainObject` is unreachable: nothing with a null proto ever reaches
+    // the prototype comparison (see report note).
+    const nullProto = Object.create(null) as Record<string, unknown>;
+    nullProto.userId = 'u1';
+    nullProto.secret = 'leak';
+    expect(scrubFields({ actor: nullProto })).toEqual({ actor: nullProto });
+  });
+
   it('redacts a free-form bag of unknown keys', () => {
     expect(
       scrubFields({

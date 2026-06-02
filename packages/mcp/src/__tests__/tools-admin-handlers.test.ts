@@ -246,3 +246,236 @@ describe('admin read/list/analytics/get/search/update/etl handlers', () => {
     });
   });
 });
+
+/**
+ * Optional-omitted invocations: call each tool with ONLY its required args so
+ * the `if (x !== undefined)` / `?? default` false branches run. For
+ * update_catalog_item we additionally assert the recorded PATCH body omits
+ * every optional key (the body-builder skips `undefined` fields).
+ */
+describe('admin handlers — optional args omitted (false/default branches)', () => {
+  it('packrat_admin_list_users with only required pagination → users-list.get', async () => {
+    // `q` omitted → the `query.q` is `undefined`, exercising the optional-omitted path.
+    await expectAdminCall({
+      name: 'packrat_admin_list_users',
+      args: { limit: 10, offset: 0 },
+      segments: ['users-list', 'get'],
+    });
+  });
+
+  it('packrat_admin_list_packs with q omitted → packs-list.get', async () => {
+    await expectAdminCall({
+      name: 'packrat_admin_list_packs',
+      args: { limit: 20, offset: 0, include_deleted: false },
+      segments: ['packs-list', 'get'],
+    });
+  });
+
+  it('packrat_admin_list_catalog with q omitted → catalog-list.get', async () => {
+    await expectAdminCall({
+      name: 'packrat_admin_list_catalog',
+      args: { limit: 20, offset: 0 },
+      segments: ['catalog-list', 'get'],
+    });
+  });
+
+  it('packrat_admin_search_trails with sport omitted → trails.search.get', async () => {
+    await expectAdminCall({
+      name: 'packrat_admin_search_trails',
+      args: { q: 'ridge', limit: 10, offset: 0 },
+      segments: ['trails', 'search', 'get'],
+    });
+  });
+
+  it('packrat_admin_list_trail_condition_reports with q omitted → trails.conditions.get', async () => {
+    await expectAdminCall({
+      name: 'packrat_admin_list_trail_condition_reports',
+      args: { limit: 20, offset: 0, include_deleted: false },
+      segments: ['trails', 'conditions', 'get'],
+    });
+  });
+
+  it('packrat_admin_analytics_growth with period/range omitted → growth.get', async () => {
+    await expectAdminCall({
+      name: 'packrat_admin_analytics_growth',
+      args: {},
+      segments: ['analytics', 'platform', 'growth', 'get'],
+    });
+  });
+
+  it('packrat_admin_analytics_activity with period/range omitted → activity.get', async () => {
+    await expectAdminCall({
+      name: 'packrat_admin_analytics_activity',
+      args: {},
+      segments: ['analytics', 'platform', 'activity', 'get'],
+    });
+  });
+
+  it('packrat_admin_update_catalog_item with all optionals omitted → empty PATCH body', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerAdminTools(agent);
+    // Only the required `item_id`; every optional field is omitted so each
+    // `if (x !== undefined)` guard in the body-builder takes its false arm.
+    const result = await getToolHandler(server, 'packrat_admin_update_catalog_item')(
+      { item_id: 7 },
+      makeExtra(),
+    );
+
+    expect(result.content[0]?.type).toBe('text');
+    expect(firstText(result).length).toBeGreaterThan(0);
+
+    const patch = findCall(calls, ['catalog', '()', 'patch']);
+    expect(patch?.path.at(-1)).toBe('patch');
+    // No optional fields supplied → the partial body is empty.
+    expect(patch?.args[0]).toEqual({});
+  });
+
+  it('packrat_admin_update_catalog_item with a single optional → body carries only that key', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerAdminTools(agent);
+    // Supply only `brand`; every other `if (x !== undefined)` guard is false.
+    const result = await getToolHandler(server, 'packrat_admin_update_catalog_item')(
+      { item_id: 'sku-9', brand: 'Acme' },
+      makeExtra(),
+    );
+
+    expect(result.content[0]?.type).toBe('text');
+    expect(firstText(result).length).toBeGreaterThan(0);
+
+    const patch = findCall(calls, ['catalog', '()', 'patch']);
+    expect(patch?.args[0]).toEqual({ brand: 'Acme' });
+  });
+
+  it('packrat_admin_update_catalog_item with categories + description → both keys present', async () => {
+    const { agent, server, calls } = makeAgent();
+    registerAdminTools(agent);
+    // `categories` and `description` exercise the remaining `if (x !== undefined)`
+    // true arms of the body-builder not hit elsewhere.
+    const result = await getToolHandler(server, 'packrat_admin_update_catalog_item')(
+      { item_id: 9, categories: ['shelter', 'tarp'], description: 'Ultralight tarp' },
+      makeExtra(),
+    );
+
+    expect(result.content[0]?.type).toBe('text');
+    expect(firstText(result).length).toBeGreaterThan(0);
+
+    const patch = findCall(calls, ['catalog', '()', 'patch']);
+    expect(patch?.args[0]).toEqual({
+      categories: ['shelter', 'tarp'],
+      description: 'Ultralight tarp',
+    });
+  });
+});
+
+/**
+ * Error-path invocations: drive the `call(...)` failure branch via the
+ * `apiFail` api stub (every verb resolves to a 500 error envelope). The
+ * handler must return `isError: true` with a string error code in the
+ * structured envelope. We cover one read GET tool and the update PATCH tool.
+ */
+describe('admin handlers — API error path (call failure branch)', () => {
+  async function expectAdminError(opts: {
+    name: string;
+    args: Record<string, unknown>;
+  }): Promise<void> {
+    const { agent, server } = makeAgent({ apiFail: true });
+    registerAdminTools(agent);
+    const result = await getToolHandler(server, opts.name)(opts.args, makeExtra());
+
+    expect(result.isError).toBe(true);
+    const code = result.structuredContent?.error?.code;
+    expect(typeof code).toBe('string');
+    expect((code as string).length).toBeGreaterThan(0);
+    // A 500 envelope maps to the retryable `api_error` code (client.ts).
+    expect(code).toBe('api_error');
+  }
+
+  it('packrat_admin_stats surfaces an error envelope on a 500', async () => {
+    await expectAdminError({ name: 'packrat_admin_stats', args: {} });
+  });
+
+  it('packrat_admin_list_users surfaces an error envelope on a 500', async () => {
+    await expectAdminError({
+      name: 'packrat_admin_list_users',
+      args: { limit: 10, offset: 0 },
+    });
+  });
+
+  it('packrat_admin_update_catalog_item surfaces an error envelope on a 500', async () => {
+    await expectAdminError({
+      name: 'packrat_admin_update_catalog_item',
+      args: { item_id: 5, name: 'X' },
+    });
+  });
+});
+
+/**
+ * Destructive-tool branches the non-destructive handler tests can't reach:
+ * the `timeout` arms of `elicitFailureResponse` (admin.ts:68-73) and
+ * `auditElicitDeclined` (admin.ts:154-155), plus the `auditOutcome` failure
+ * branch (admin.ts:137-142) which only runs when a *confirmed* destructive
+ * action then hits an API error. `tools-admin.test.ts` already covers the
+ * happy/cancel/mismatch/unsupported paths; these fill the remaining arms.
+ */
+describe('admin destructive handlers — timeout + post-confirm failure branches', () => {
+  it('hard_delete_user: elicitation timeout → confirmation_timeout (retryable)', async () => {
+    // `confirmAction` classifies this message as `reason: 'timeout'`, driving
+    // both the `auditElicitDeclined` and `elicitFailureResponse` timeout arms.
+    const { agent, server, calls } = makeAgent({
+      reject: new Error('Elicitation request timed out'),
+    });
+    registerAdminTools(agent);
+    const result = await getToolHandler(server, 'packrat_admin_hard_delete_user')(
+      { user_id: 'user-42', reason: 'GDPR request' },
+      makeExtra(),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent?.error?.code).toBe('confirmation_timeout');
+    expect(result.structuredContent?.error?.retryable).toBe(true);
+    // Timed-out confirmation must suppress the DELETE.
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
+  });
+
+  it('delete_pack: elicitation timeout → confirmation_timeout', async () => {
+    const { agent, server, calls } = makeAgent({
+      reject: new Error('Elicitation request timed out'),
+    });
+    registerAdminTools(agent);
+    const result = await getToolHandler(server, 'packrat_admin_delete_pack')(
+      { pack_id: 'pack-7' },
+      makeExtra(),
+    );
+
+    expect(result.structuredContent?.error?.code).toBe('confirmation_timeout');
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(0);
+  });
+
+  it('hard_delete_user: confirmed then API 500 → failure outcome with error envelope', async () => {
+    // Accept + matching confirmation fires the DELETE, but `apiFail` makes it
+    // 500 — exercising `auditOutcome`'s `result.isError === true` branch and
+    // the `error ? ... : ...` ternary's truthy arm (the error envelope is
+    // always present, so the falsy arm is unreachable — see report).
+    const { agent, server, calls } = makeAgent({
+      resolve: { action: 'accept', content: { confirmation: 'user-42' } },
+      apiFail: true,
+    });
+    // Supply a real audit context so `auditCtxFor` takes the present arm of
+    // `agent.getAuditContext?.()` (admin.ts:100) rather than the empty default.
+    agent.getAuditContext = () => ({
+      userId: 'admin-1',
+      scopes: ['mcp:admin'],
+      correlationId: 'session:test',
+    });
+    registerAdminTools(agent);
+    const result = await getToolHandler(server, 'packrat_admin_hard_delete_user')(
+      { user_id: 'user-42', reason: 'GDPR request' },
+      makeExtra(),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent?.error?.code).toBe('api_error');
+    // The confirmed DELETE did fire (then failed upstream).
+    expect(calls.filter((c) => c.path.at(-1) === 'delete')).toHaveLength(1);
+  });
+});

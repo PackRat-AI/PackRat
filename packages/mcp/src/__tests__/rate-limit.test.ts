@@ -20,7 +20,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { errResponse, type McpToolResult } from '../client';
-import { checkRateLimit, toolRateLimitKey } from '../rate-limit';
+import { checkRateLimit, loginRateLimitKey, toolRateLimitKey } from '../rate-limit';
 import type { Env } from '../types';
 import { nth } from './_access';
 
@@ -75,11 +75,32 @@ describe('toolRateLimitKey', () => {
   });
 });
 
-// `loginRateLimitKey` tests retired in U6: the /login form was deleted with
-// the Better Auth cutover (U3+U4). The helper is still exported for now so
-// a future API-worker-side surface can reuse the namespace prefix shape, but
-// there is no live MCP-side caller, so the contract tests live with whichever
-// surface ends up adopting it.
+// `loginRateLimitKey` has no live MCP-side caller after the U3+U4 Better Auth
+// cutover (the /login form moved to the API worker), but the helper stays
+// exported so a future API-worker-side surface can reuse the namespace prefix
+// shape. The contract is pinned here so the `login:` prefix never silently
+// drifts into the `${userId}:` tool-key namespace.
+describe('loginRateLimitKey', () => {
+  it('prefixes the IP/ray with the `login:` namespace segment', () => {
+    expect(loginRateLimitKey('203.0.113.7')).toBe('login:203.0.113.7');
+  });
+
+  it('uses the cf-ray fallback verbatim when no IP could be resolved', () => {
+    // The caller passes `cf-ray` when `cf-connecting-ip` is missing; the
+    // key must stay distinct per-ray rather than collapsing to a global slot.
+    expect(loginRateLimitKey('8f1c2d3e4f5a6b7c-DFW')).toBe('login:8f1c2d3e4f5a6b7c-DFW');
+  });
+
+  it('never collides with the tool-key namespace for the same raw segment', () => {
+    // `login:<x>` vs `<userId>:<tool>` — the `login:` prefix guarantees the
+    // two surfaces occupy disjoint regions of the binding's keyspace.
+    const segment = 'shared-segment';
+    expect(loginRateLimitKey(segment)).not.toBe(
+      toolRateLimitKey({ userId: segment, toolName: 'packrat_get_pack' }),
+    );
+    expect(loginRateLimitKey(segment).startsWith('login:')).toBe(true);
+  });
+});
 
 describe('checkRateLimit — dev fallback', () => {
   it("returns true when env.MCP_TOOLS_RL is undefined (so vitest + wrangler dev don't break)", async () => {
