@@ -39,7 +39,7 @@ function applySessionUser(sessionUser: Record<string, unknown>) {
     lastName: name.split(' ').slice(1).join(' ') ?? '',
     role: asString(sessionUser.role) ?? 'USER',
     emailVerified: asBoolean(sessionUser.emailVerified) ?? null,
-    avatarUrl: asString(sessionUser.image) ?? null,
+    avatarUrl: asString(sessionUser.avatarUrl) ?? asString(sessionUser.image) ?? null,
     createdAt: asString(sessionUser.createdAt) ?? null,
     updatedAt: asString(sessionUser.updatedAt) ?? null,
     preferredWeightUnit: 'g',
