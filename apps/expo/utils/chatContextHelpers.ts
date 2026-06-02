@@ -28,7 +28,10 @@ export function generatePromptWithContext({
   return userMessage;
 }
 
-export function getContextualSuggestions(context?: ChatContext, isAuthenticated = false): string[] {
+export function getContextualSuggestions({
+  context,
+  isAuthenticated = false,
+}: { context?: ChatContext; isAuthenticated?: boolean } = {}): string[] {
   if (!context || context.contextType === 'general') {
     if (!isAuthenticated) {
       return [

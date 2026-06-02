@@ -467,7 +467,7 @@ export default function AIChat() {
             <View className="pl-4 pr-16">
               <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
               <View className="flex-row flex-wrap gap-2">
-                {getContextualSuggestions(context, isAuthenticated).map((suggestion) => (
+                {getContextualSuggestions({ context, isAuthenticated }).map((suggestion) => (
                   <TouchableOpacity
                     key={suggestion}
                     onPress={() => handleSubmit(suggestion)}

@@ -52,21 +52,23 @@ describe('getContextualSuggestions', () => {
   });
 
   it('returns general suggestions for a general context', () => {
-    const suggestions = getContextualSuggestions({ contextType: 'general' });
+    const suggestions = getContextualSuggestions({ context: { contextType: 'general' } });
     expect(Array.isArray(suggestions)).toBe(true);
     expect(suggestions.length).toBeGreaterThan(0);
   });
 
   it('returns item-specific suggestions with item name', () => {
     const suggestions = getContextualSuggestions({
-      contextType: 'item',
-      itemName: 'Rain Jacket',
+      context: {
+        contextType: 'item',
+        itemName: 'Rain Jacket',
+      },
     });
     expect(suggestions.some((s) => s.includes('Rain Jacket'))).toBe(true);
   });
 
   it('returns pack-specific suggestions for pack context', () => {
-    const suggestions = getContextualSuggestions({ contextType: 'pack' });
+    const suggestions = getContextualSuggestions({ context: { contextType: 'pack' } });
     expect(suggestions.length).toBeGreaterThan(0);
   });
 });
