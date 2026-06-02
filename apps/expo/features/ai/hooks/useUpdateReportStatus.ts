@@ -17,7 +17,12 @@ export const updateReportStatus = async (
     const err = new Error(String(error.value ?? 'Failed to update report status'));
     Sentry.captureException(err, {
       tags: { feature: 'ai', action: 'updateReportStatus' },
-      extra: { id: payload.id, status: payload.status, apiError: error.value, httpStatus: error.status },
+      extra: {
+        id: payload.id,
+        status: payload.status,
+        apiError: error.value,
+        httpStatus: error.status,
+      },
     });
     throw err;
   }

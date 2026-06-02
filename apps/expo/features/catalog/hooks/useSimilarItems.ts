@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { CatalogItem } from '../types';

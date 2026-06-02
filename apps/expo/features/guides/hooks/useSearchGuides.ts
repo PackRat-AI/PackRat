@@ -23,7 +23,13 @@ export const useSearchGuides = ({ query, category }: UseSearchGuidesParams) => {
         const err = new Error(String(error.value ?? 'Failed to search guides'));
         Sentry.captureException(err, {
           tags: { feature: 'guides', action: 'searchGuides' },
-          extra: { query, page: pageParam, category, apiError: error.value, httpStatus: error.status },
+          extra: {
+            query,
+            page: pageParam,
+            category,
+            apiError: error.value,
+            httpStatus: error.status,
+          },
         });
         throw err;
       }

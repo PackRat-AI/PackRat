@@ -27,7 +27,12 @@ const generateSeasonSuggestions = async (
     const err = new Error(String(error.value ?? 'Failed to generate season suggestions'));
     Sentry.captureException(err, {
       tags: { feature: 'packs', action: 'generateSeasonSuggestions' },
-      extra: { location: data.location, date: data.date, apiError: error.value, httpStatus: error.status },
+      extra: {
+        location: data.location,
+        date: data.date,
+        apiError: error.value,
+        httpStatus: error.status,
+      },
     });
     throw err;
   }
