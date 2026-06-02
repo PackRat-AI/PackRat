@@ -37,13 +37,12 @@ import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
-  desc,
   eq,
   getTableColumns,
-  gt,
   isNotNull,
   notInArray,
   or,
+  type SQL,
   sql,
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
@@ -395,8 +394,11 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           existingEmbeddings.length,
       );
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
-      const whereConditions = [gt(similarity, 0.1)];
+      // HNSW-eligible: ORDER BY raw distance ASC. See catalogService.vectorSearch
+      // for the full rationale on why `1 - (...)` wrapping defeats HNSW.
+      const distance = cosineDistance(catalogItems.embedding, avgEmbedding);
+      const similarity = sql<number>`1 - (${distance})`;
+      const whereConditions: SQL[] = [sql`${distance} < 0.9`];
       if (existingCatalogItemIds.length > 0) {
         whereConditions.push(notInArray(catalogItems.id, existingCatalogItemIds));
       }
@@ -413,7 +415,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         })
         .from(catalogItems)
         .where(and(...whereConditions))
-        .orderBy(desc(similarity))
+        .orderBy(distance)
         .limit(5);
 
       return similarItems;
@@ -911,14 +913,20 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         return status(403, { error: 'Access denied to private pack' });
       }
 
-      const catalogSimilarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+      // HNSW-eligible: ORDER BY raw distance ASC. The `similarity` field is
+      // preserved in the response (1 - distance) for caller compatibility.
+      const catalogDistance = cosineDistance(catalogItems.embedding, sourceItem.embedding);
+      const catalogSimilarity = sql<number>`1 - (${catalogDistance})`;
+      const maxCatalogDistance = 1 - threshold;
       const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
 
       const similarCatalogItems = await db
         .select({ ...catalogColumns, similarity: catalogSimilarity })
         .from(catalogItems)
-        .where(and(gt(catalogSimilarity, threshold), isNotNull(catalogItems.embedding)))
-        .orderBy(desc(catalogSimilarity))
+        .where(
+          and(sql`${catalogDistance} < ${maxCatalogDistance}`, isNotNull(catalogItems.embedding)),
+        )
+        .orderBy(catalogDistance)
         .limit(validLimit);
 
       const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;

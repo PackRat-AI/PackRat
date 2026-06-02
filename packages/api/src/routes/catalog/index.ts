@@ -26,10 +26,8 @@ import {
   and,
   cosineDistance,
   count,
-  desc,
   eq,
   getTableColumns,
-  gt,
   inArray,
   isNotNull,
   isNull,
@@ -554,7 +552,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found or has no embedding' });
       }
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+      // HNSW-eligible: ORDER BY raw distance ASC. The `similarity = 1 - distance`
+      // field is preserved in the response, but the operators see the raw
+      // distance so the planner can use embedding_idx (HNSW). Threshold
+      // mechanically flips from `similarity > T` to `distance < (1 - T)`.
+      const distance = cosineDistance(catalogItems.embedding, sourceItem.embedding);
+      const similarity = sql<number>`1 - (${distance})`;
+      const maxDistance = 1 - threshold;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
       const similarItems = await db
@@ -562,12 +566,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .from(catalogItems)
         .where(
           and(
-            gt(similarity, threshold),
+            sql`${distance} < ${maxDistance}`,
             ne(catalogItems.id, itemId),
             isNotNull(catalogItems.embedding),
           ),
         )
-        .orderBy(desc(similarity))
+        .orderBy(distance)
         .limit(validLimit);
 
       const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
