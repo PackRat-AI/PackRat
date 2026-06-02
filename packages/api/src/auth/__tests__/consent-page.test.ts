@@ -308,4 +308,48 @@ describe('GET /oauth/consent (Elysia route)', () => {
     const html = await res.text();
     expect(html).toContain('value="mcp:admin"');
   });
+
+  it('treats a session user with no role as non-admin (mcp:admin stripped)', async () => {
+    // session.user.role is undefined → `?? 'USER'` fallback → isAdmin=false.
+    mockSession({ id: 'u1', name: 'No Role', email: 'norole@e.com' });
+    mockOauthClientRow({
+      clientId: 'packrat-claude-mcp',
+      name: 'Claude',
+      icon: null,
+      tos: null,
+      policy: null,
+      uri: null,
+    });
+    const res = await (await getTestApp()).fetch(
+      new Request(
+        'http://localhost/oauth/consent?client_id=packrat-claude-mcp&scope=mcp%3Aread+mcp%3Aadmin',
+      ),
+    );
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('value="mcp:read"');
+    expect(html).not.toContain('value="mcp:admin"');
+  });
+
+  it('renders with an empty scope set when the scope param is absent', async () => {
+    // query.scope missing → `isString(...) ? : ''` takes the '' branch →
+    // no approvable scopes, but the page still renders 200.
+    mockSession({ id: 'u1', name: 'Test User', email: 'u@e.com', role: 'USER' });
+    mockOauthClientRow({
+      clientId: 'packrat-claude-mcp',
+      name: 'Claude',
+      icon: null,
+      tos: null,
+      policy: null,
+      uri: null,
+    });
+    const res = await (await getTestApp()).fetch(
+      new Request('http://localhost/oauth/consent?client_id=packrat-claude-mcp'),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/html');
+    const html = await res.text();
+    expect(html).toContain('Claude wants to access your PackRat account');
+    expect(html).not.toContain('value="mcp:admin"');
+  });
 });
