@@ -49,4 +49,5 @@ export interface CatalogItemInput {
   }>;
 }
 
-export type CatalogItemWithPackItemFields = CatalogItem & Partial<PackItemInput>;
+export type CatalogItemWithPackItemFields = CatalogItem &
+  Partial<Omit<PackItemInput, 'weight' | 'weightUnit'>>;

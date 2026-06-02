@@ -34,10 +34,7 @@ export class ChunkBoundaryError extends Error {
   constructor({
     objectKey,
     byteRange,
-  }: {
-    objectKey: string;
-    byteRange: { from: number; to: number };
-  }) {
+  }: { objectKey: string; byteRange: { from: number; to: number } }) {
     super(
       `No newline found in ${byteRange.to - byteRange.from} bytes ending at ${byteRange.to} ` +
         `of ${objectKey} — row larger than the peek window or file is not line-oriented.`,

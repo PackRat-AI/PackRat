@@ -96,6 +96,7 @@ export function getWeatherIconByCondition({
   condition: string;
   isDay?: number;
 }): MaterialIconName {
+  if (!condition) return isDay ? 'weather-sunny' : 'weather-night';
   const conditionLower = condition.toLowerCase();
 
   // Clear, sunny

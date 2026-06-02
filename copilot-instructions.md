@@ -88,10 +88,14 @@ cd apps/guides && bun dev
 - NEVER CANCEL: Takes ~1.4 seconds to start, set timeout to 30+ seconds
 - Runs on `http://localhost:3001` (if 3000 is taken)
 
-#### **Testing**
-- **API Unit Tests**: `bun test:api:unit` -- NEVER CANCEL: Takes ~5 seconds
-- **Expo Tests**: `bun test:expo` -- runs Expo/React Native unit tests
-- Tests run sequentially (`fileParallelism: false` in `packages/api/vitest.unit.config.ts`) to avoid database deadlocks
+#### **Testing** — see `docs/testing.md` for the full policy
+- **API Unit Tests**: `bun test:api:unit` -- Node env, deps mocked. Runtime varies with suite size
+- **Expo Tests**: `bun test:expo` -- Vitest, pure-TS modules only (no native imports)
+- **MCP Tests**: `bun test:mcp`
+- **Scripts Tests**: `bun test:scripts` -- analyzer tests for the coverage ratchet and assertion lint
+- **Coverage ratchet**: `bun check:coverage` -- compares each tracked workspace's `coverage/[unit/]coverage-summary.json` against `coverage-baselines.json` at the repo root. Fails CI on regression
+- **Assertion-strength lint**: `bun lint:weak-assertions` -- catches assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized inline snapshots
+- **Integration tests** (`bun run --cwd packages/api test`): require Docker (Postgres + neon-wsproxy), run sequentially (`fileParallelism: false`) to avoid database deadlocks. NOT coverage-counted (V8 unsupported under Cloudflare Workers pool)
 - Tests expect environment variables to be configured (see `.env.example`)
 
 #### **Build Commands**

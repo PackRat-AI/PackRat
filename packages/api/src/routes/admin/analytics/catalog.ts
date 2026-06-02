@@ -375,6 +375,13 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
               j.totalProcessed != null && j.totalProcessed > 0 && j.totalValid != null
                 ? Math.round((j.totalValid / j.totalProcessed) * 1000) / 10
                 : null,
+            failureRate:
+              j.totalProcessed != null && j.totalProcessed > 0 && j.totalInvalid != null
+                ? Math.round((j.totalInvalid / j.totalProcessed) * 1000) / 10
+                : null,
+            totalEmbeddingFailures: j.totalEmbeddingFailures,
+            verifiedRowCount: j.verifiedRowCount ?? null,
+            verifiedAt: j.verifiedAt?.toISOString() ?? null,
           })),
           summary: {
             totalRuns: s?.totalRuns ?? 0,

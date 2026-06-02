@@ -291,6 +291,15 @@ describe('csv-utils', () => {
       expect(result?.categories).toBeUndefined();
     });
 
+    it('handles blank categories gracefully', () => {
+      const values = ['   '];
+      const fieldMap = { categories: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.categories).toBeUndefined();
+    });
+
     it('handles empty images gracefully', () => {
       const values = [''];
       const fieldMap = { images: 0 };
@@ -307,6 +316,42 @@ describe('csv-utils', () => {
       const result = mapCsvRowToItem({ values, fieldMap });
 
       expect(result?.categories).toEqual(['invalid json']);
+    });
+
+    it('wraps malformed JSON array categories in an array', () => {
+      const values = ['["Electronics",'];
+      const fieldMap = { categories: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.categories).toEqual(['["Electronics",']);
+    });
+
+    it('ignores malformed JSON array images', () => {
+      const values = ['["img1.jpg",'];
+      const fieldMap = { images: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.images).toBeUndefined();
+    });
+
+    it('maps array-shaped techs to an empty object', () => {
+      const values = ['["unexpected"]'];
+      const fieldMap = { techs: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.techs).toEqual({});
+    });
+
+    it('ignores invalid availability values', () => {
+      const values = ['not_available'];
+      const fieldMap = { availability: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.availability).toBeUndefined();
     });
 
     it('processes description with newlines correctly', () => {

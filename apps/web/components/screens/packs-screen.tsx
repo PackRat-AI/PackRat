@@ -632,7 +632,7 @@ function AddItemSlideOver({
                         packId,
                         body: {
                           name: item.name,
-                          weight: item.weight,
+                          weight: item.weight ?? 0,
                           weightUnit: 'g',
                           catalogItemId: item.id,
                         },
@@ -648,7 +648,9 @@ function AddItemSlideOver({
                       <p className="text-xs text-muted-foreground">{item.seller}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold">{fw(item.weight)}</p>
+                      <p className="text-sm font-semibold">
+                        {item.weight === null ? 'Unknown' : fw(item.weight)}
+                      </p>
                       {item.price && <p className="text-xs text-muted-foreground">${item.price}</p>}
                     </div>
                   </div>

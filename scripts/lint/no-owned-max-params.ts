@@ -31,9 +31,6 @@ const EXCLUDED_DIRS = new Set([
 const EXCLUDED_PATH_PARTS = [
   '/test/',
   '/__tests__/',
-  // Hand-written stubs of external/framework classes (e.g. the Cloudflare
-  // `WorkflowEntrypoint` base) must mirror the framework's positional
-  // constructor/method signatures, not our object-param convention.
   '/__test-stubs__/',
   '/mocks/',
   '/playwright/',
@@ -60,9 +57,7 @@ const EXCLUDED_FILES = new Set([
   // Web shim that must mirror expo-secure-store's positional (key, value) API.
   'apps/expo/lib/secureStore.web.ts',
 ]);
-// Cloudflare Workers/Workflows runtime entrypoint handlers — the runtime calls
-// these with fixed positional args, exactly like `fetch`/`queue`.
-const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'scheduled', 'run', 'resolveRequest']);
+const FRAMEWORK_METHOD_NAMES = new Set(['fetch', 'queue', 'resolveRequest', 'scheduled']);
 const EXTERNAL_CALLBACK_NAMES = new Set([
   'fetcher',
   'keyExtractor',
@@ -201,6 +196,25 @@ function isFrameworkObjectMethod(node: ts.FunctionLikeDeclaration): boolean {
   return FRAMEWORK_METHOD_NAMES.has(name);
 }
 
+// Cloudflare WorkflowEntrypoint.run(event, step) is a framework-mandated
+// signature — exempt it, but narrowly: only `run` methods on a class that
+// extends WorkflowEntrypoint, never every method named `run`.
+function isWorkflowEntrypointRun(node: ts.FunctionLikeDeclaration): boolean {
+  if (!ts.isMethodDeclaration(node) || functionName(node) !== 'run') return false;
+  const cls = node.parent;
+  if (!ts.isClassLike(cls) || !cls.heritageClauses) return false;
+  return cls.heritageClauses.some(
+    (clause) =>
+      clause.token === ts.SyntaxKind.ExtendsKeyword &&
+      clause.types.some((type) => {
+        // Exact match (allowing a namespace qualifier like `cf.WorkflowEntrypoint`)
+        // so we don't accidentally exempt `NotWorkflowEntrypoint` / `WorkflowEntrypointStub`.
+        const name = type.expression.getText();
+        return name === 'WorkflowEntrypoint' || name.endsWith('.WorkflowEntrypoint');
+      }),
+  );
+}
+
 function isExternalCallback(node: ts.FunctionLikeDeclaration): boolean {
   if (EXTERNAL_CALLBACK_NAMES.has(functionName(node).replace(/^['"]|['"]$/g, ''))) return true;
 
@@ -229,6 +243,7 @@ function shouldCheck(node: ts.FunctionLikeDeclaration): boolean {
   if (isExternalCallback(node)) return false;
   if (isAssertionPredicate(node)) return false;
   if (isFrameworkObjectMethod(node)) return false;
+  if (isWorkflowEntrypointRun(node)) return false;
   if (ts.isGetAccessor(node) || ts.isSetAccessor(node)) return false;
   return true;
 }

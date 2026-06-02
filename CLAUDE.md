@@ -43,9 +43,13 @@ bun format            # Biome format --write
 bun check             # Biome check (no auto-fix, CI mode)
 bun check-types       # tsc --noEmit
 
-# Testing
-bun test:api:unit     # API unit tests (Vitest + Cloudflare pool)
-bun test:expo         # Expo tests (Vitest)
+# Testing — see docs/testing.md for the full policy
+bun test:api:unit       # API unit tests (Vitest, Node env, deps mocked)
+bun test:expo           # Expo pure-TS tests (Vitest)
+bun test:mcp            # MCP package tests
+bun test:scripts        # scripts/lint analyzer tests (ratchet + assertion lint)
+bun check:coverage      # Coverage ratchet — fails on regression vs coverage-baselines.json
+bun lint:weak-assertions # Catches assertion-free tests, bare .toBeDefined / .toHaveBeenCalled, oversized snapshots
 
 # Dependencies
 bun install           # Install all workspaces (takes 120s+, never cancel)
@@ -55,6 +59,10 @@ bun fix:deps          # manypkg auto-fix dependency issues
 # Versioning
 bun bump              # Bump monorepo version
 ```
+
+## Testing Policy (summary)
+
+PackRat enforces coverage at two layers: each workspace's `vitest.config.ts` declares per-metric thresholds (mostly 95%+; `packages/units` 100%, `packages/{analytics,overpass}` 80%), and a **coverage ratchet** (`bun check:coverage` against `coverage-baselines.json`) blocks any PR that lowers a workspace's coverage. An **assertion-strength lint** (`bun lint:weak-assertions`) flags coverage-theater patterns (assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized snapshots). `packages/api` integration tests still run (`api-tests.yml`) but are not coverage-counted — V8 instrumentation is unsupported under the Cloudflare Workers pool. Full policy and patterns: **`docs/testing.md`**.
 
 ## Code Style
 

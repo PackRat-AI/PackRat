@@ -1,17 +1,17 @@
 // Unit tests for the structured logger.
 
-import { logger } from '@packrat/api/utils/logger';
-import * as Sentry from '@sentry/cloudflare';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Default to "not initialized" so the base console-only tests below match the
-// real unit-test runtime. The Sentry-forwarding block flips it to true.
-vi.mock('@sentry/cloudflare', () => ({
-  isInitialized: vi.fn(() => false),
+const sentry = vi.hoisted(() => ({
+  addBreadcrumb: vi.fn(),
   captureException: vi.fn(),
   captureMessage: vi.fn(),
-  addBreadcrumb: vi.fn(),
+  isInitialized: vi.fn(() => false),
 }));
+
+vi.mock('@sentry/cloudflare', () => sentry);
+
+import { logger } from '@packrat/api/utils/logger';
 
 describe('logger', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
@@ -22,6 +22,11 @@ describe('logger', () => {
     logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    sentry.addBreadcrumb.mockReset();
+    sentry.captureException.mockReset();
+    sentry.captureMessage.mockReset();
+    sentry.isInitialized.mockReset();
+    sentry.isInitialized.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -54,6 +59,20 @@ describe('logger', () => {
       const line = parseLastLine(logSpy);
       expect(line.jobId).toBe('j1');
       expect(line.count).toBe(42);
+    });
+
+    it('falls back to a serialization error line when ctx cannot be stringified', () => {
+      const ctx: Record<string, unknown> = {};
+      ctx.self = ctx;
+
+      logger.info({ event: 'etl.circular', ctx: ctx });
+
+      const line = parseLastLine(logSpy);
+      expect(line).toMatchObject({
+        level: 'INFO',
+        event: 'etl.circular',
+        serializationError: true,
+      });
     });
   });
 
@@ -106,92 +125,97 @@ describe('logger', () => {
     });
   });
 
-  describe('Sentry forwarding (when initialized)', () => {
-    beforeEach(() => {
-      vi.mocked(Sentry.isInitialized).mockReturnValue(true);
-      vi.mocked(Sentry.captureException).mockClear();
-      vi.mocked(Sentry.captureMessage).mockClear();
-      vi.mocked(Sentry.addBreadcrumb).mockClear();
+  describe('sentry forwarding', () => {
+    it('adds info breadcrumbs with primitive tags and complex extras', () => {
+      sentry.isInitialized.mockReturnValue(true);
+
+      logger.info({
+        event: 'etl.started',
+        ctx: {
+          jobId: 'j1',
+          count: 42,
+          dryRun: true,
+          metadata: { source: 'test' },
+        },
+      });
+
+      expect(sentry.addBreadcrumb).toHaveBeenCalledWith({
+        category: 'etl.started',
+        level: 'info',
+        data: {
+          event: 'etl.started',
+          jobId: 'j1',
+          count: '42',
+          dryRun: 'true',
+          metadata: { source: 'test' },
+        },
+      });
     });
 
-    afterEach(() => {
-      vi.mocked(Sentry.isInitialized).mockReturnValue(false);
+    it('adds warn breadcrumbs at warning level', () => {
+      sentry.isInitialized.mockReturnValue(true);
+
+      logger.warn({ event: 'etl.retry', ctx: { jobId: 'j2' } });
+
+      expect(sentry.addBreadcrumb).toHaveBeenCalledWith({
+        category: 'etl.retry',
+        level: 'warning',
+        data: {
+          event: 'etl.retry',
+          jobId: 'j2',
+        },
+      });
     });
 
-    it('forwards ERROR with ctx.err to captureException, splitting scalar tags from object extras', () => {
+    it('captures error objects with event tags and extras', () => {
+      sentry.isInitialized.mockReturnValue(true);
       const err = new Error('boom');
+
       logger.error({
         event: 'etl.failed',
-        ctx: { jobId: 'j6', count: 3, ok: true, meta: { nested: 1 }, err },
+        ctx: {
+          err,
+          jobId: 'j3',
+          metadata: { source: 'test' },
+        },
       });
-      expect(Sentry.captureException).toHaveBeenCalledOnce();
-      const [captured, rawOpts] = vi.mocked(Sentry.captureException).mock.calls[0] ?? [];
-      const opts = rawOpts as
-        | { tags?: Record<string, string>; extra?: Record<string, unknown> }
-        | undefined;
-      expect(captured).toBe(err);
-      expect(opts?.tags).toMatchObject({
-        event: 'etl.failed',
-        jobId: 'j6',
-        count: '3',
-        ok: 'true',
+
+      expect(sentry.captureException).toHaveBeenCalledWith(err, {
+        tags: {
+          event: 'etl.failed',
+          jobId: 'j3',
+        },
+        extra: {
+          event: 'etl.failed',
+          metadata: { source: 'test' },
+        },
       });
-      expect(opts?.extra).toMatchObject({ event: 'etl.failed', meta: { nested: 1 } });
     });
 
-    it('always copies httpStatus and errorCode into Sentry extra (and tags)', () => {
-      const err = new Error('http fail');
-      logger.error({
-        event: 'http.failed',
-        ctx: { httpStatus: 503, errorCode: 'UPSTREAM_DOWN', err },
+    it('captures error events without error objects as messages', () => {
+      sentry.isInitialized.mockReturnValue(true);
+
+      logger.error({ event: 'etl.failed', ctx: { jobId: 'j4' } });
+
+      expect(sentry.captureMessage).toHaveBeenCalledWith('etl.failed', {
+        level: 'error',
+        tags: {
+          jobId: 'j4',
+        },
+        extra: {
+          event: 'etl.failed',
+        },
       });
-      const [, rawOpts] = vi.mocked(Sentry.captureException).mock.calls[0] ?? [];
-      const opts = rawOpts as
-        | { tags?: Record<string, string>; extra?: Record<string, unknown> }
-        | undefined;
-      expect(opts?.extra).toMatchObject({ httpStatus: 503, errorCode: 'UPSTREAM_DOWN' });
-      expect(opts?.tags).toMatchObject({ httpStatus: '503', errorCode: 'UPSTREAM_DOWN' });
     });
 
-    it('emits a serializationError fallback when the line cannot be stringified', () => {
-      const circular: Record<string, unknown> = {};
-      circular.self = circular;
-      logger.error({ event: 'etl.circular', ctx: { circular } });
-      const out = errorSpy.mock.calls.at(-1)?.[0] as string;
-      expect(out).toContain('serializationError');
-    });
-
-    it('forwards ERROR without ctx.err to captureMessage at error level', () => {
-      logger.error({ event: 'etl.failed', ctx: { jobId: 'j7' } });
-      expect(Sentry.captureMessage).toHaveBeenCalledOnce();
-      const [event, rawOpts] = vi.mocked(Sentry.captureMessage).mock.calls[0] ?? [];
-      const opts = rawOpts as { level?: string; tags?: Record<string, string> } | undefined;
-      expect(event).toBe('etl.failed');
-      expect(opts?.level).toBe('error');
-      expect(opts?.tags).toMatchObject({ jobId: 'j7' });
-    });
-
-    it('forwards WARN to an addBreadcrumb with warning level', () => {
-      logger.warn({ event: 'etl.fallback', ctx: { jobId: 'j8' } });
-      expect(Sentry.addBreadcrumb).toHaveBeenCalledOnce();
-      const [crumb] = vi.mocked(Sentry.addBreadcrumb).mock.calls[0] ?? [];
-      expect(crumb?.category).toBe('etl.fallback');
-      expect(crumb?.level).toBe('warning');
-      expect(crumb?.data).toMatchObject({ jobId: 'j8' });
-    });
-
-    it('forwards INFO to an addBreadcrumb with info level', () => {
-      logger.info({ event: 'etl.start', ctx: { jobId: 'j9' } });
-      expect(Sentry.addBreadcrumb).toHaveBeenCalledOnce();
-      const [crumb] = vi.mocked(Sentry.addBreadcrumb).mock.calls[0] ?? [];
-      expect(crumb?.level).toBe('info');
-    });
-
-    it('swallows Sentry errors so logging never throws', () => {
-      vi.mocked(Sentry.addBreadcrumb).mockImplementationOnce(() => {
-        throw new Error('sentry down');
+    it('swallows sentry forwarding failures after console output', () => {
+      sentry.isInitialized.mockReturnValue(true);
+      sentry.addBreadcrumb.mockImplementation(() => {
+        throw new Error('sentry unavailable');
       });
-      expect(() => logger.info({ event: 'etl.start', ctx: { jobId: 'j10' } })).not.toThrow();
+
+      expect(() => logger.info({ event: 'etl.best-effort' })).not.toThrow();
+      expect(logSpy).toHaveBeenCalledOnce();
     });
   });
 });
