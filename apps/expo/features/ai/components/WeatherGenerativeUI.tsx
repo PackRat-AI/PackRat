@@ -141,7 +141,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                 <Icon
                   name={getWeatherIconByCondition({
                     condition: toolInvocation.output.data.condition,
-                    isDay: toolInvocation.output.data.details.isDay,
+                    isDay: toolInvocation.output.data.details?.isDay,
                   })}
                   size={48}
                   color="#3b82f6"
@@ -170,7 +170,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {toolInvocation.output.data.details.humidity}%
+                    {toolInvocation.output.data.details?.humidity}%
                   </Text>
                 </View>
 
@@ -184,7 +184,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {toolInvocation.output.data.details.windSpeed} mph
+                    {toolInvocation.output.data.details?.windSpeed} mph
                   </Text>
                 </View>
               </View>
