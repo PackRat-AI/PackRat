@@ -29,8 +29,14 @@ const EXCLUDED_DIRS = new Set([
   'coverage',
 ]);
 
-const EXCLUDED_PATH_PARTS = ['/test/', '/__tests__/', '/mocks/', '/playwright/'];
-const EXCLUDED_FILE_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
+const EXCLUDED_PATH_PARTS = [
+  '/test/',
+  '/__tests__/',
+  '/__test-stubs__/',
+  '/mocks/',
+  '/playwright/',
+];
+const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
@@ -48,7 +54,6 @@ const EXCLUDED_FILES = new Set([
   'apps/swift/scripts/run-e2e.ts',
   'apps/swift/scripts/watch-sync-smoke.ts',
   // Cloudflare/Sentry/logger helpers intentionally mirror external callback/API shapes.
-  'packages/api/src/__test-stubs__/cloudflare-workers.ts',
   'packages/api/src/index.ts',
   'packages/api/src/auth/local-e2e.ts',
   'packages/api/src/services/retention/invalidLogRetention.ts',
@@ -87,7 +92,7 @@ interface Violation {
 function isTargetFile(relPath: string): boolean {
   if (EXCLUDED_FILES.has(relPath)) return false;
   if (EXCLUDED_PATH_PARTS.some((part) => relPath.includes(part))) return false;
-  if (EXCLUDED_FILE_SUFFIXES.some((suffix) => relPath.endsWith(suffix))) return false;
+  if (EXCLUDED_SUFFIXES.some((suffix) => relPath.endsWith(suffix))) return false;
   return TARGET_EXTENSIONS.has(extname(relPath));
 }
 
@@ -197,6 +202,25 @@ function isFrameworkObjectMethod(node: ts.FunctionLikeDeclaration): boolean {
   return FRAMEWORK_METHOD_NAMES.has(name);
 }
 
+// Cloudflare WorkflowEntrypoint.run(event, step) is a framework-mandated
+// signature — exempt it, but narrowly: only `run` methods on a class that
+// extends WorkflowEntrypoint, never every method named `run`.
+function isWorkflowEntrypointRun(node: ts.FunctionLikeDeclaration): boolean {
+  if (!ts.isMethodDeclaration(node) || functionName(node) !== 'run') return false;
+  const cls = node.parent;
+  if (!ts.isClassLike(cls) || !cls.heritageClauses) return false;
+  return cls.heritageClauses.some(
+    (clause) =>
+      clause.token === ts.SyntaxKind.ExtendsKeyword &&
+      clause.types.some((type) => {
+        // Exact match (allowing a namespace qualifier like `cf.WorkflowEntrypoint`)
+        // so we don't accidentally exempt `NotWorkflowEntrypoint` / `WorkflowEntrypointStub`.
+        const name = type.expression.getText();
+        return name === 'WorkflowEntrypoint' || name.endsWith('.WorkflowEntrypoint');
+      }),
+  );
+}
+
 function isExternalCallback(node: ts.FunctionLikeDeclaration): boolean {
   if (EXTERNAL_CALLBACK_NAMES.has(functionName(node).replace(/^['"]|['"]$/g, ''))) return true;
 
@@ -225,6 +249,7 @@ function shouldCheck(node: ts.FunctionLikeDeclaration): boolean {
   if (isExternalCallback(node)) return false;
   if (isAssertionPredicate(node)) return false;
   if (isFrameworkObjectMethod(node)) return false;
+  if (isWorkflowEntrypointRun(node)) return false;
   if (ts.isGetAccessor(node) || ts.isSetAccessor(node)) return false;
   return true;
 }

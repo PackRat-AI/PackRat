@@ -54,7 +54,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
       if (selected === 'cloud' && !isAuthenticated) return;
       if (selected === 'local' && !isModelReady) {
         // trigger download/init but don't switch mode yet
-        downloadLocalModel();
+        downloadLocalModel(isAuthenticated);
         return;
       }
       setMode(selected);
@@ -64,7 +64,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     };
 
     const handleDownload = () => {
-      downloadLocalModel();
+      downloadLocalModel(isAuthenticated);
     };
 
     const handleCancel = () => {

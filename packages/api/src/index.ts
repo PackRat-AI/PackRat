@@ -32,19 +32,6 @@ import type { CatalogETLMessage } from './services/etl/types';
 
 const bearerPrefixRegex = /^Bearer\s+/i;
 
-// Sentry options for both the Worker handlers and the workflow class.
-// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
-// defaults to 10% — observable enough for prod debugging without
-// overwhelming the Sentry quota.
-function sentryOptions(env: Env) {
-  return {
-    dsn: env.SENTRY_DSN,
-    environment: env.ENVIRONMENT,
-    tracesSampleRate: 0.1,
-    release: env.CF_VERSION_METADATA?.id,
-  };
-}
-
 // Origins allowed to make cross-origin (credentialed) requests to the API.
 const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/(www\.)?packrat\.world$/,
@@ -57,6 +44,19 @@ const ALLOWED_ORIGIN_PATTERNS = [
 
 function isAllowedOrigin(origin: string | null): origin is string {
   return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+
+// Sentry options for both the Worker handlers and the workflow class.
+// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
+// defaults to 10% — observable enough for prod debugging without
+// overwhelming the Sentry quota.
+function sentryOptions(env: Env) {
+  return {
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT,
+    tracesSampleRate: 0.1,
+    release: env.CF_VERSION_METADATA?.id,
+  };
 }
 
 export const app = new Elysia({ adapter: CloudflareAdapter })
@@ -213,7 +213,7 @@ function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
   }
 }
 
-const workerHandler = {
+const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
@@ -255,7 +255,7 @@ const workerHandler = {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
     if (controller.cron === '0 9 * * *') {
-      const result = await sweepInvalidItemLogs(env);
+      const result = await sweepInvalidItemLogs({ env });
       console.log(
         `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
           `iterations=${result.iterations} capped=${result.capped} ` +
@@ -272,9 +272,9 @@ const workerHandler = {
 
     throw new Error(`Unknown cron: ${controller.cron}`);
   },
-} satisfies ExportedHandler<Env>;
+};
 
 // withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
 // on first invocation and forward uncaught exceptions to Sentry. The
 // instrumented workflow class is exported separately above.
-export default withSentry(sentryOptions, workerHandler);
+export default withSentry(sentryOptions, handler);

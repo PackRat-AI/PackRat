@@ -46,8 +46,6 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
   const appleClientSecret = await generateAppleClientSecret(env);
 
   const db = createConnection({ url: env.NEON_DATABASE_URL, useNeonHttp: true });
-  const isLocalPostgres =
-    env.NEON_DATABASE_URL.includes('127.0.0.1') || env.NEON_DATABASE_URL.includes('localhost');
 
   const auth = betterAuth({
     baseURL: env.BETTER_AUTH_URL,
@@ -71,10 +69,11 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
           get: async (key: string) => env.AUTH_KV.get(key),
           // biome-ignore lint/complexity/useMaxParams: Better Auth secondaryStorage.set interface requires 3 params
           set: async (key: string, value: string, ttl?: number) => {
+            // KV requires a minimum expirationTtl of 60 seconds.
             await env.AUTH_KV.put(
               key,
               value,
-              ttl ? { expirationTtl: Math.max(ttl, 60) } : undefined,
+              ttl !== undefined ? { expirationTtl: Math.max(60, ttl) } : undefined,
             );
           },
           delete: async (key: string) => env.AUTH_KV.delete(key),
@@ -163,33 +162,24 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       // than a JWK object). Better Auth creates a fresh plaintext key when the
       // filtered list is empty, resolving the "JWK must be an object" error that
       // occurs after switching from encrypted to plaintext storage.
-      //
-      // Local e2e uses node-postgres through Wrangler/Miniflare; Better Auth's
-      // JWKS signing path can leave those requests in a canceled state there.
-      // Bearer sessions still cover native app authentication, so only omit JWT
-      // for local Postgres URLs.
-      ...(isLocalPostgres
-        ? []
-        : [
-            jwt({
-              jwks: { disablePrivateKeyEncryption: true },
-              adapter: {
-                // biome-ignore lint/suspicious/noExplicitAny: Better Auth ctx/key/jwks generics are not expressible here
-                getJwks: async (ctx: any) => {
-                  // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
-                  const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
-                  // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
-                  return keys.filter((key: any) => {
-                    try {
-                      return isObject(JSON.parse(key.privateKey));
-                    } catch {
-                      return false;
-                    }
-                  });
-                },
-              },
-            }),
-          ]),
+      jwt({
+        jwks: { disablePrivateKeyEncryption: true },
+        adapter: {
+          // biome-ignore lint/suspicious/noExplicitAny: Better Auth ctx/key/jwks generics are not expressible here
+          getJwks: async (ctx: any) => {
+            // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
+            const keys: any[] = (await ctx.context.adapter.findMany({ model: 'jwks' })) ?? [];
+            // biome-ignore lint/suspicious/noExplicitAny: jwks row type from Better Auth is not exported
+            return keys.filter((key: any) => {
+              try {
+                return isObject(JSON.parse(key.privateKey));
+              } catch {
+                return false;
+              }
+            });
+          },
+        },
+      }),
 
       // Admin: role-based user management endpoints.
       admin(),
@@ -209,8 +199,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
     // The web app is served from a different origin than the API (e.g. the
     // Playwright e2e harness serves the static export on a separate port), so
-    // its origin must be trusted for the cross-origin CSRF/CORS check. The
-    // Swift e2e runner may also launch a parallel local Worker on :8791. Only
+    // its origin must be trusted for the cross-origin CSRF/CORS check. Only
     // trust localhost in development — never in production.
     trustedOrigins: [
       env.BETTER_AUTH_URL,

@@ -45,10 +45,13 @@ export type RetentionOptions = {
  * that on first execution, the function returns `capped: true` and the
  * remainder is swept on subsequent runs.
  */
-export async function sweepInvalidItemLogs(
-  env: Env,
-  options: RetentionOptions = {},
-): Promise<RetentionResult> {
+export async function sweepInvalidItemLogs({
+  env,
+  options = {},
+}: {
+  env: Env;
+  options?: RetentionOptions;
+}): Promise<RetentionResult> {
   const retentionDays =
     options.retentionDays !== undefined && options.retentionDays > 0
       ? options.retentionDays

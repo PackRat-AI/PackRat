@@ -35,7 +35,18 @@ export function createTools(userId: string) {
       execute: async ({ location }) => {
         try {
           const weatherData = await weatherService.getWeatherForLocation(location);
-          return { success: true, data: { ...weatherData } };
+          return {
+            success: true,
+            data: {
+              name: weatherData.location,
+              temperature: weatherData.temperature,
+              condition: weatherData.conditions,
+              details: {
+                humidity: weatherData.humidity,
+                windSpeed: weatherData.windSpeed,
+              },
+            },
+          };
         } catch (error) {
           console.error('getWeatherForLocation tool error', error);
           return {

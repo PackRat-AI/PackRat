@@ -71,7 +71,13 @@ async function* streamToText(stream: ReadableStream<Uint8Array>) {
   }
 }
 
-async function fetchHeaderRow(r2: R2BucketService, objectKey: string): Promise<string> {
+async function fetchHeaderRow({
+  r2,
+  objectKey,
+}: {
+  r2: R2BucketService;
+  objectKey: string;
+}): Promise<string> {
   for (const length of HEADER_PEEK_SIZES) {
     const obj = await r2.get(objectKey, { range: { offset: 0, length } });
     if (!obj) throw new Error(`R2 header read returned null for ${objectKey}`);
@@ -217,7 +223,9 @@ export async function processChunk({
     }
   } else {
     // --- CSV path ---
-    const injectedHeader = isNonFirstChunk ? await fetchHeaderRow(r2, chunk.objectKey) : '';
+    const injectedHeader = isNonFirstChunk
+      ? await fetchHeaderRow({ r2, objectKey: chunk.objectKey })
+      : '';
 
     let fieldMap: Record<string, number> = {};
     let isHeaderProcessed = false;

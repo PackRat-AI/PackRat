@@ -4,6 +4,7 @@
   "private": true,
   "files": [
     "base.json",
+    "cloudflare-types.d.ts",
     "nextjs.json",
     "react-library.json",
     "react-native.json"

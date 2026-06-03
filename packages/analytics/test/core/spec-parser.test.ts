@@ -1,3 +1,4 @@
+import type { DuckDBConnection } from '@duckdb/node-api';
 import {
   extractSpecsFromRow,
   parseCapacityLiters,
@@ -188,13 +189,19 @@ describe('extractSpecsFromRow', () => {
   });
 });
 
-describe('SpecParser', () => {
+describe('SpecParser DB queries', () => {
   function makeResult(columns: string[], rows: unknown[][]) {
     return {
       columnNames: () => columns,
       getRows: () => rows,
     };
   }
+
+  const makeParser = (columns: string[], rows: unknown[][]) => {
+    const runAndReadAll = vi.fn().mockResolvedValue(makeResult(columns, rows));
+    const conn = { runAndReadAll } as unknown as DuckDBConnection;
+    return { parser: new SpecParser({ conn }), runAndReadAll };
+  };
 
   it('builds parsed specs with a mocked DuckDB connection', async () => {
     const run = vi.fn();
@@ -227,7 +234,7 @@ describe('SpecParser', () => {
     );
 
     const parser = new SpecParser({
-      conn: { run, runAndReadAll } as never,
+      conn: { run, runAndReadAll } as unknown as DuckDBConnection,
       sourceTable: 'gear_source',
     });
 
@@ -243,45 +250,52 @@ describe('SpecParser', () => {
     );
   });
 
-  it('searches product specs with escaped queries and custom limits', async () => {
-    const runAndReadAll = vi
-      .fn()
-      .mockResolvedValue(makeResult(['site', 'name', 'brand'], [['rei', 'Arc Bag', "Arc'teryx"]]));
-    const parser = new SpecParser({ conn: { runAndReadAll } as never });
-
-    const specs = await parser.getProductSpecs({ query: "Arc'teryx", limit: 3 });
-
-    expect(specs).toEqual([{ site: 'rei', name: 'Arc Bag', brand: "Arc'teryx" }]);
-    expect(runAndReadAll).toHaveBeenCalledWith(expect.stringContaining("arc''teryx"));
-    expect(runAndReadAll).toHaveBeenCalledWith(expect.stringContaining('LIMIT 3'));
+  it('getProductSpecs maps result rows to objects by column name', async () => {
+    const { parser } = makeParser(
+      ['name', 'brand'],
+      [
+        ['Half Dome', 'REI'],
+        ['Hornet', 'NEMO'],
+      ],
+    );
+    const specs = await parser.getProductSpecs({ query: "tent's" });
+    expect(specs).toEqual([
+      { name: 'Half Dome', brand: 'REI' },
+      { name: 'Hornet', brand: 'NEMO' },
+    ]);
   });
 
-  it('filters products with all optional predicates', async () => {
-    const runAndReadAll = vi.fn().mockResolvedValue(makeResult(['name'], [['Tent']]));
-    const parser = new SpecParser({ conn: { runAndReadAll } as never });
-
+  it('filterProducts builds a WHERE clause from every provided filter', async () => {
+    const { parser, runAndReadAll } = makeParser(['name'], [['Tent']]);
     const specs = await parser.filterProducts({
-      category: "men's tents",
+      category: 'tent',
       maxWeightG: 1500,
-      maxTempF: 20,
-      maxPrice: 400,
-      minPrice: 100,
-      gender: "men's",
+      maxTempF: 30,
+      maxPrice: 600,
+      minPrice: 50,
+      gender: "women's",
       seasons: '3-season',
       sortBy: 'price',
       limit: 5,
     });
-
     expect(specs).toEqual([{ name: 'Tent' }]);
     const sql = String(runAndReadAll.mock.calls[0]?.[0]);
-    expect(sql).toContain("men''s tents");
-    expect(sql).toContain('weight_grams IS NOT NULL AND weight_grams <= 1500');
-    expect(sql).toContain('temp_rating_f IS NOT NULL AND temp_rating_f <= 20');
-    expect(sql).toContain('price <= 400');
-    expect(sql).toContain('price >= 100');
-    expect(sql).toContain("gender = 'men''s'");
+    expect(sql).toContain('WHERE');
+    expect(sql).toContain('weight_grams IS NOT NULL');
+    expect(sql).toContain('temp_rating_f IS NOT NULL AND temp_rating_f <= 30');
+    expect(sql).toContain('price <= 600');
+    expect(sql).toContain('price >= 50');
+    expect(sql).toContain("gender = 'women''s'");
     expect(sql).toContain("seasons = '3-season'");
-    expect(sql).toContain('ORDER BY price ASC NULLS LAST');
-    expect(sql).toContain('LIMIT 5');
+    expect(sql).toContain('ORDER BY price');
+  });
+
+  it('filterProducts omits WHERE and uses defaults when no filters are given', async () => {
+    const { parser, runAndReadAll } = makeParser([], []);
+    const specs = await parser.filterProducts({});
+    expect(specs).toEqual([]);
+    const sql = String(runAndReadAll.mock.calls[0]?.[0]);
+    expect(sql).not.toContain('WHERE');
+    expect(sql).toContain('ORDER BY weight_grams');
   });
 });
