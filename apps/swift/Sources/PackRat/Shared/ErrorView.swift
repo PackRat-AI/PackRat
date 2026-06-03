@@ -139,7 +139,8 @@ private struct ErrorSurfaceView: View {
         UnavailableStateView(
             title: presentation.title,
             subtitle: presentation.description,
-            systemImage: presentation.systemImage
+            systemImage: presentation.systemImage,
+            accessibilityIdentifier: presentation.accessibilityIdentifier
         ) {
             if let retry, presentation.allowsRetry {
                 AsyncButton(presentation.retryTitle, action: retry)

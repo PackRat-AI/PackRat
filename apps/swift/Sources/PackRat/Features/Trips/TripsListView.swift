@@ -20,21 +20,23 @@ struct TripsListView: View {
                 ProgressView("Loading trips…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.trips.isEmpty {
                 ErrorView(error, retry: { await viewModel.load(context: modelContext) })
+                    .accessibilityIdentifier("trips_error_state")
             } else if viewModel.trips.isEmpty {
                 EmptyStateView(
                     "No Trips Yet",
                     subtitle: "Plan your first adventure",
                     systemImage: "map",
                     actionLabel: "Plan Trip",
+                    accessibilityIdentifier: "trips_empty_state",
                     action: { showingCreateSheet = true }
                 )
-                .accessibilityIdentifier("trips_empty_state")
             } else {
                 tripList
             }
         }
         .navigationTitle("Trips")
         .searchable(text: $viewModel.searchText, prompt: "Search trips")
+        .accessibilityIdentifier("trips_screen")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }

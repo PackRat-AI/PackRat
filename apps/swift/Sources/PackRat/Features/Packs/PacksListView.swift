@@ -35,19 +35,22 @@ struct PacksListView: View {
                 ProgressView("Loading…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if displayedPacks.isEmpty && !viewModel.searchText.isEmpty {
                 ContentUnavailableView.search(text: viewModel.searchText)
+                    .accessibilityIdentifier("packs_search_empty_state")
             } else if displayedPacks.isEmpty && !isExplore {
                 EmptyStateView(
                     "No Packs Yet",
                     subtitle: "Create your first pack to start tracking gear weight",
                     systemImage: "backpack",
                     actionLabel: "New Pack",
+                    accessibilityIdentifier: "packs_empty_state",
                     action: { showingCreateSheet = true }
                 )
             } else if displayedPacks.isEmpty && isExplore {
                 EmptyStateView(
                     "No Public Packs",
                     subtitle: "No packs match your filter",
-                    systemImage: "globe"
+                    systemImage: "globe",
+                    accessibilityIdentifier: "packs_public_empty_state"
                 )
             } else {
                 packList
@@ -65,13 +68,6 @@ struct PacksListView: View {
                 if viewModel.isLoading || isLoadingPublic {
                     ProgressView().controlSize(.small)
                 }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Picker("View", selection: $isExplore) {
-                    Label("My Packs", systemImage: "person.fill").tag(false)
-                    Label("Explore", systemImage: "globe").tag(true)
-                }
-                .pickerStyle(.segmented)
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Recent", systemImage: "clock") {
@@ -108,23 +104,34 @@ struct PacksListView: View {
     // MARK: - Category Filter Bar
 
     private var categoryFilterBar: some View {
-        HStack {
-            Picker("Category", selection: $selectedCategory) {
-                Label("All", systemImage: "line.3.horizontal.decrease.circle")
-                    .tag(nil as PackCategory?)
-                ForEach(PackCategory.allCases, id: \.self) { cat in
-                    Label(cat.label, systemImage: cat.symbol)
-                        .tag(Optional(cat))
-                }
+        VStack(spacing: 8) {
+            Picker("View", selection: $isExplore) {
+                Label("My Packs", systemImage: "person.fill").tag(false)
+                    .accessibilityIdentifier("packs_mode_my_packs")
+                Label("Explore", systemImage: "globe").tag(true)
+                    .accessibilityIdentifier("packs_mode_explore")
             }
-            .pickerStyle(.menu)
-            .accessibilityIdentifier("packs_category_filter")
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("packs_mode_picker")
 
-            Spacer()
+            HStack {
+                Picker("Category", selection: $selectedCategory) {
+                    Label("All", systemImage: "line.3.horizontal.decrease.circle")
+                        .tag(nil as PackCategory?)
+                    ForEach(PackCategory.allCases, id: \.self) { cat in
+                        Label(cat.label, systemImage: cat.symbol)
+                            .tag(Optional(cat))
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityIdentifier("packs_category_filter")
 
-            Text(selectedCategory?.label ?? "All")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Spacer()
+
+                Text(selectedCategory?.label ?? "All")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -166,6 +173,7 @@ struct PacksListView: View {
                     }
                 }
         }
+        .accessibilityIdentifier(isExplore ? "packs_public_list" : "packs_list")
     }
 
     // MARK: - Public Packs
