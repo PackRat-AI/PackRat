@@ -20,6 +20,7 @@
 EXPLAIN comparison against the production database confirms the root cause is the query shape, not pgvector instrumentation:
 
 **Current shape** (Drizzle pattern, all 5 callsites):
+
 ```sql
 SELECT id, ..., 1 - (embedding <=> $1) AS similarity
 FROM catalog_items
@@ -27,9 +28,11 @@ WHERE 1 - (embedding <=> $1) > 0.1
 ORDER BY 1 - (embedding <=> $1) DESC
 LIMIT 10
 ```
+
 Planner picks **Seq Scan + Sort** (parallel workers). Total cost: **427,921**.
 
 **HNSW-eligible shape**:
+
 ```sql
 SELECT id, ..., 1 - (embedding <=> $1) AS similarity
 FROM catalog_items
@@ -37,6 +40,7 @@ WHERE embedding <=> $1 < 0.9            -- equivalent threshold, raw distance
 ORDER BY embedding <=> $1               -- raw distance ASC, HNSW recognises this
 LIMIT 10
 ```
+
 Planner picks **Index Scan using embedding_idx (HNSW)**. Total cost: **3,704**.
 
 **~115× cheaper.** Subtracting from 1 is opaque to the planner: it can't see through arithmetic on an indexed column, so the `ORDER BY` is treated as ordering by a computed expression rather than the operator that HNSW serves.

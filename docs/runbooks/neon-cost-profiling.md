@@ -54,6 +54,7 @@ What the columns tell you:
 - `idx_scan` vs `seq_scan` ratio — on small tables (< ~1 MB) Postgres prefers seq scan and that's correct; on large tables a high seq_scan count usually means a missing or unused index.
 
 To reset and get a clean window (requires owner role):
+
 ```sql
 SELECT pg_stat_reset_single_table_counters((SELECT relid FROM pg_stat_user_tables WHERE relname='catalog_items'));
 ```
@@ -63,6 +64,7 @@ SELECT pg_stat_reset_single_table_counters((SELECT relid FROM pg_stat_user_table
 `pg_column_size(table.*)` over the full table will time out on anything > a few thousand rows because each call has to detoast the large JSONB and vector columns. Use `TABLESAMPLE BERNOULLI` to sample 1-5% instead.
 
 **Per-column average sizes** (which JSONB column dominates the bytes):
+
 ```sql
 SELECT
   COUNT(*) AS sampled,
@@ -77,6 +79,7 @@ FROM catalog_items TABLESAMPLE BERNOULLI (1);
 ```
 
 **Distribution percentiles** (how skewed — i.e., is the bill driven by a long tail of fat rows or by every row equally?):
+
 ```sql
 SELECT
   COUNT(*) AS sampled,
@@ -90,6 +93,7 @@ FROM catalog_items TABLESAMPLE BERNOULLI (1) c;
 A wide p50→p99 gap means list endpoints that sort by rating / popularity / usage pull mostly the fat rows — projection wins are larger than the average-row math suggests.
 
 **TOAST vs main heap split** (instant — metadata only, no row scan):
+
 ```sql
 SELECT
   pg_size_pretty(pg_relation_size('catalog_items'))      AS heap_main,
@@ -174,9 +178,9 @@ The Tier-1 projections PR (2026-06-01) introduced this verification flow. Reuse 
 
 **After (verify):**
 
-4. Console screenshots again. Same panels, same time window.
-5. Re-run Step 2's pg_stat_user_tables query. Diff `seq_tup_read` and `n_tup_upd` against baseline.
-6. Re-run Step 3's queries. Sizes themselves shouldn't change (projection doesn't shrink stored rows), but you're confirming the table grew on schedule and TOAST ratio is sane.
+1. Console screenshots again. Same panels, same time window.
+2. Re-run Step 2's pg_stat_user_tables query. Diff `seq_tup_read` and `n_tup_upd` against baseline.
+3. Re-run Step 3's queries. Sizes themselves shouldn't change (projection doesn't shrink stored rows), but you're confirming the table grew on schedule and TOAST ratio is sane.
 
 **What "good" looks like:**
 
