@@ -207,6 +207,10 @@ export default function AppLayout() {
             headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
+            // Disable the iOS swipe-to-dismiss gesture so its gesture recognizer
+            // does not compete with Toggle/Switch touch events, which was causing
+            // toggles to snap back immediately without registering the change.
+            gestureEnabled: false,
           }}
         />
         <Stack.Screen

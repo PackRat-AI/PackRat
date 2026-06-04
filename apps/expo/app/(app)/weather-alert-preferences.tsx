@@ -61,11 +61,26 @@ export default function WeatherAlertPreferencesScreen() {
     fogAlerts: false,
   });
 
-  function onToggle(key: keyof AlertPreferences) {
-    return (value: boolean) => {
-      setPreferences((prev) => ({ ...prev, [key]: value }));
-    };
-  }
+  // Pre-create stable handler references so Toggle/Switch components never
+  // receive a new onValueChange prop on re-render.  Unstable references cause
+  // React Native's controlled Switch on iOS to snap back because a re-render
+  // triggered by the new prop reference races with the native animation.
+  const togglers = React.useMemo(
+    () => ({
+      weatherNotifications: (v: boolean) =>
+        setPreferences((p) => ({ ...p, weatherNotifications: v })),
+      locationMonitoring: (v: boolean) => setPreferences((p) => ({ ...p, locationMonitoring: v })),
+      severeStorms: (v: boolean) => setPreferences((p) => ({ ...p, severeStorms: v })),
+      tornadoWarnings: (v: boolean) => setPreferences((p) => ({ ...p, tornadoWarnings: v })),
+      floodAlerts: (v: boolean) => setPreferences((p) => ({ ...p, floodAlerts: v })),
+      fireDanger: (v: boolean) => setPreferences((p) => ({ ...p, fireDanger: v })),
+      winterWeather: (v: boolean) => setPreferences((p) => ({ ...p, winterWeather: v })),
+      extremeTemperature: (v: boolean) => setPreferences((p) => ({ ...p, extremeTemperature: v })),
+      highWinds: (v: boolean) => setPreferences((p) => ({ ...p, highWinds: v })),
+      fogAlerts: (v: boolean) => setPreferences((p) => ({ ...p, fogAlerts: v })),
+    }),
+    [], // setPreferences from useState is guaranteed stable
+  );
 
   const alertTypesDisabled = !preferences.weatherNotifications;
 
@@ -95,7 +110,7 @@ export default function WeatherAlertPreferencesScreen() {
               </View>
               <Toggle
                 value={preferences.weatherNotifications}
-                onValueChange={onToggle('weatherNotifications')}
+                onValueChange={togglers.weatherNotifications}
               />
             </FormItem>
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
@@ -112,7 +127,7 @@ export default function WeatherAlertPreferencesScreen() {
               </View>
               <Toggle
                 value={preferences.locationMonitoring}
-                onValueChange={onToggle('locationMonitoring')}
+                onValueChange={togglers.locationMonitoring}
               />
             </FormItem>
           </FormSection>
@@ -151,7 +166,7 @@ export default function WeatherAlertPreferencesScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Toggle value={preferences[key]} onValueChange={onToggle(key)} />
+                  <Toggle value={preferences[key]} onValueChange={togglers[key]} />
                 </FormItem>
               </View>
             ))}
