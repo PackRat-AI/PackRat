@@ -13,44 +13,6 @@ import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-/**
- * Wraps Toggle with local optimistic state so the Switch value updates
- * immediately on tap without waiting for the parent's render cycle.
- *
- * iOS 26 (Liquid Glass) redesigned UISwitch with a new gesture recogniser
- * that races against React's concurrent scheduler. Even with stable
- * onValueChange references the controlled-value propagation path is too slow:
- * the native layer briefly sees the old `value` prop mid-animation and snaps
- * back.  Keeping a co-located local state ensures the Switch is always fed the
- * correct value in the same render as the user interaction.
- */
-function PreferenceToggle({
-  value,
-  onValueChange,
-}: {
-  value: boolean;
-  onValueChange: (v: boolean) => void;
-}) {
-  const [localValue, setLocalValue] = React.useState(value);
-
-  // Sync from parent when value is changed programmatically from outside.
-  const prevValueRef = React.useRef(value);
-  if (prevValueRef.current !== value) {
-    prevValueRef.current = value;
-    setLocalValue(value);
-  }
-
-  const handleChange = React.useCallback(
-    (newValue: boolean) => {
-      setLocalValue(newValue); // immediate local update — no snap-back
-      onValueChange(newValue); // propagate to parent
-    },
-    [onValueChange],
-  );
-
-  return <Toggle value={localValue} onValueChange={handleChange} />;
-}
-
 type AlertPreferences = {
   weatherNotifications: boolean;
   locationMonitoring: boolean;
@@ -99,26 +61,9 @@ export default function WeatherAlertPreferencesScreen() {
     fogAlerts: false,
   });
 
-  // Pre-create stable handler references so Toggle/Switch components never
-  // receive a new onValueChange prop on re-render.  Unstable references cause
-  // React Native's controlled Switch on iOS to snap back because a re-render
-  // triggered by the new prop reference races with the native animation.
-  const togglers = React.useMemo(
-    () => ({
-      weatherNotifications: (v: boolean) =>
-        setPreferences((p) => ({ ...p, weatherNotifications: v })),
-      locationMonitoring: (v: boolean) => setPreferences((p) => ({ ...p, locationMonitoring: v })),
-      severeStorms: (v: boolean) => setPreferences((p) => ({ ...p, severeStorms: v })),
-      tornadoWarnings: (v: boolean) => setPreferences((p) => ({ ...p, tornadoWarnings: v })),
-      floodAlerts: (v: boolean) => setPreferences((p) => ({ ...p, floodAlerts: v })),
-      fireDanger: (v: boolean) => setPreferences((p) => ({ ...p, fireDanger: v })),
-      winterWeather: (v: boolean) => setPreferences((p) => ({ ...p, winterWeather: v })),
-      extremeTemperature: (v: boolean) => setPreferences((p) => ({ ...p, extremeTemperature: v })),
-      highWinds: (v: boolean) => setPreferences((p) => ({ ...p, highWinds: v })),
-      fogAlerts: (v: boolean) => setPreferences((p) => ({ ...p, fogAlerts: v })),
-    }),
-    [], // setPreferences from useState is guaranteed stable
-  );
+  function onToggle(key: keyof AlertPreferences) {
+    return (value: boolean) => setPreferences((prev) => ({ ...prev, [key]: value }));
+  }
 
   const alertTypesDisabled = !preferences.weatherNotifications;
 
@@ -128,6 +73,7 @@ export default function WeatherAlertPreferencesScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        delaysContentTouches={false}
       >
         <Form className="gap-5 px-4 pt-4">
           <FormSection
@@ -146,9 +92,9 @@ export default function WeatherAlertPreferencesScreen() {
                   </Text>
                 </View>
               </View>
-              <PreferenceToggle
+              <Toggle
                 value={preferences.weatherNotifications}
-                onValueChange={togglers.weatherNotifications}
+                onValueChange={onToggle('weatherNotifications')}
               />
             </FormItem>
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
@@ -163,9 +109,9 @@ export default function WeatherAlertPreferencesScreen() {
                   </Text>
                 </View>
               </View>
-              <PreferenceToggle
+              <Toggle
                 value={preferences.locationMonitoring}
-                onValueChange={togglers.locationMonitoring}
+                onValueChange={onToggle('locationMonitoring')}
               />
             </FormItem>
           </FormSection>
@@ -204,7 +150,7 @@ export default function WeatherAlertPreferencesScreen() {
                       </Text>
                     </View>
                   </View>
-                  <PreferenceToggle value={preferences[key]} onValueChange={togglers[key]} />
+                  <Toggle value={preferences[key]} onValueChange={onToggle(key)} />
                 </FormItem>
               </View>
             ))}
