@@ -12,13 +12,11 @@
 # Production: https://api.packrat.world
 PACKRAT_API_URL=http://localhost:8787
 
-# Optional: build identifier (U16). Surfaced by `/status` as `commitSha`
-# so a reviewer can correlate a running Worker with a specific commit.
-# Set at deploy time, NOT in source — operators / CI use:
-#   wrangler deploy --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD) --env prod
-# (U17's mcp-deploy.yml does this automatically). When unset, `/status`
-# returns the sentinel string 'unknown'. Public, not a secret.
-# MCP_COMMIT_SHA=
+# The deploy identifier surfaced by `/status` as `deployId` comes from the
+# `version_metadata` binding (CF_VERSION_METADATA) declared in wrangler.jsonc —
+# the Cloudflare runtime injects it, so there's nothing to set here or at
+# deploy time. Under `wrangler dev` / vitest the binding is absent and
+# `/status` returns the sentinel string 'unknown'. Public, not a secret.
 
 # ── Bindings (NOT secrets — declared in wrangler.jsonc) ──────────────────────
 # The following are wired up as Cloudflare bindings in wrangler.jsonc and

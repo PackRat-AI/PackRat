@@ -21,7 +21,7 @@ describe('/health and /status (integration — deferred per U17 follow-up)', () 
 
   it.todo(
     'GET /status returns the public-safe metadata block with no secrets ' +
-      '(scope catalog, brand URLs, commitSha sentinel "unknown")',
+      '(scope catalog, brand URLs, deployId sentinel "unknown")',
   );
 
   it.todo('every response carries an X-Correlation-Id header (U15 outer-wrapper contract)');

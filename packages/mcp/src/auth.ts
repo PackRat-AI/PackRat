@@ -8,7 +8,7 @@
  *                       10s cache so reviewer probes don't synthesise load
  *                       against the upstream surface (U16).
  *   GET  /status      → public-safe metadata block: version, scope catalog,
- *                       build commit SHA (from env.MCP_COMMIT_SHA), legal /
+ *                       deploy id (from env.CF_VERSION_METADATA), legal /
  *                       support links (U16).
  *
  * Everything OAuth — the authorize/login/callback state machine, the DCR
@@ -192,8 +192,9 @@ export async function handleHealth({
  * `/status` — public-safe metadata block with no secrets ever.
  *
  * Returns the version + transport + scope catalog + brand URLs + the
- * build commit SHA (when `env.MCP_COMMIT_SHA` is bound at deploy time;
- * sentinel `'unknown'` otherwise). Unlike `/health` this is NOT cached:
+ * Cloudflare deploy id (`env.CF_VERSION_METADATA.id` when the
+ * `version_metadata` binding is present; sentinel `'unknown'` otherwise).
+ * Unlike `/health` this is NOT cached:
  * the body is pure constants + an env-var read, no upstream calls — so
  * the per-call cost is already O(1) and a cache would add only
  * complexity. Also unlike `/health` there is no probe, no 503 path,
@@ -217,6 +218,6 @@ export function handleStatus({ request: _request, env }: { request: Request; env
     terms: PUBLIC_LINKS.terms,
     privacy: PUBLIC_LINKS.privacy,
     support: PUBLIC_LINKS.support,
-    commitSha: env.MCP_COMMIT_SHA ?? 'unknown',
+    deployId: env.CF_VERSION_METADATA?.id ?? 'unknown',
   });
 }

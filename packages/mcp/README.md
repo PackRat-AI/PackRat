@@ -107,7 +107,7 @@ Optional:
 | --- | --- |
 | `MCP_FEATURE_FLAGS` | Comma-separated flags toggled at boot (e.g. `wildlife_id,season_suggestions`). |
 | `SENTRY_DSN` | Sentry DSN (U15). |
-| `MCP_COMMIT_SHA` | Build identifier surfaced on `/status`. Stamped at deploy time by CI; manual deploys can pass `--var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)`. |
+| `CF_VERSION_METADATA` | Cloudflare `version_metadata` binding (wrangler.jsonc). Runtime-injected `{ id, tag, timestamp }`; `/status` surfaces `id` as `deployId`. No deploy-time var or CI step needed. |
 
 No KV bindings are required. The worker is stateless apart from its Durable Object for MCP session continuity.
 

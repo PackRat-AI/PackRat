@@ -1335,35 +1335,29 @@ version + scope catalog they were promised.
   "terms":   "https://packratai.com/terms-of-service",
   "privacy": "https://packratai.com/privacy-policy",
   "support": "mailto:hello@packratai.com",
-  "commitSha": "a06b296" | "unknown"
+  "deployId": "<cloudflare version id>" | "unknown"
 }
 ```
 
 **No secrets ever**: the response only contains version + scopes +
-public URLs + the build SHA. Adding a new field requires a code review
+public URLs + the Cloudflare deploy id. Adding a new field requires a code review
 that explicitly notes the field is non-sensitive — the auth.test.ts
 suite asserts a denylist of secret-looking keys is absent so a
 careless refactor that surfaces `env` more broadly regresses visibly.
 
-### `MCP_COMMIT_SHA` — operator TODO at deploy time
+### `deployId` — no operator action needed
 
-`/status` surfaces `commitSha` from `env.MCP_COMMIT_SHA`, a `var` (not a
-secret) injected at deploy time. Two paths:
+`/status` surfaces `deployId` from `env.CF_VERSION_METADATA.id` — the
+Cloudflare `version_metadata` binding declared in `wrangler.jsonc`. The
+runtime injects it on every deploy, so there is **nothing to set** at
+deploy time: no `--var`, no CI step. It behaves identically under
+`wrangler deploy` and Cloudflare Workers Builds.
 
-**Manual deploy:**
-
-```bash
-wrangler deploy --env prod --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)
-```
-
-**CI (U17, `.github/workflows/mcp-deploy.yml`):** the workflow passes
-the same flag automatically using the tagged commit's short SHA.
-
-When the var is unset (`wrangler dev`, vitest, manual deploy without
-the flag) `/status` returns `commitSha: "unknown"` — acceptable for
-dev, never for prod. If `/status` returns `unknown` on a prod
-hostname, the last deploy bypassed the convention; re-run with the
-flag.
+`id` is the Cloudflare version UUID; Workers Builds maps it back to the
+originating git commit in its dashboard. When the binding is absent
+(`wrangler dev`, vitest) `/status` returns `deployId: "unknown"` —
+expected for local, and harmless. A prod hostname returning `unknown`
+means the `version_metadata` binding was dropped from the config.
 
 ### CORS interaction
 
@@ -1397,13 +1391,13 @@ Steps:
 
 1. Biome (`bun biome check packages/mcp`) — lint + format on the
    MCP package only. Cheap, runs in <5s.
-2. Type-check (`bun run --cwd packages/mcp check-types`) with
-   `NODE_OPTIONS=--max-old-space-size=14336`. The MCP SDK + zod + the
-   api-client type surface together need >8 GB of v8 heap to fit. The
-   GitHub Actions `ubuntu-latest` runner has 16 GB; we use 14 GB and
-   leave headroom for tsc's other allocations. **This is the official
-   type-validation surface** — `bun run check-types` OOMs on most
-   developer workstations and the CI run is the canonical pass/fail.
+2. Type-check (`bun run --cwd packages/mcp check-types` → `tsc --noEmit`).
+   Runs in ~1 GB / a few seconds: the `tool()`/`prompt()` wrappers
+   (`src/registerTool.ts`) erase the SDK's `registerTool`/`registerPrompt`
+   generics against `never`, so the recursive Zod-shape instantiation that
+   used to push tsc past 14 GB (and forced this check to be disabled) is
+   gone. Runs the same locally and in CI; also covered per-package by
+   `turbo run check-types`.
 3. MCP test suite (`bun run --cwd packages/mcp test`) — runs both the
    `mcp-unit` project (1,123 tests) and the `mcp-integration` project
    (currently 21 deferred `it.todo` placeholders; see below).
@@ -1411,31 +1405,31 @@ Steps:
    the auth + admin guard tests so a MCP-side scope-model change
    can't silently break the API-side enforcement contract.
 
-### `.github/workflows/mcp-deploy.yml` — tag-triggered prod deploy
+### Prod deploy — Cloudflare-native (no bespoke workflow)
 
-Triggers on `push` of any tag matching `mcp-v*` (e.g. `mcp-v2.1.0`).
-The intentional friction of a separate tag keeps prod deploys
-explicit; main-branch merges only redeploy the dev env (manual
-`bun run deploy:dev` for now).
+There is no `mcp-deploy.yml`. The MCP Worker deploys the same way the API
+Worker does — **Cloudflare Workers Builds** (the git-connected build in the
+Cloudflare dashboard): connect the `packrat-mcp` Worker to this repo, set
+the deploy command to `bun run --cwd packages/mcp deploy`
+(`wrangler deploy --minify`), and CF rebuilds + deploys on the configured
+branch. The PR gate (`mcp-test.yml`) is what guarantees only tested code
+reaches prod; there is no deploy-time re-run of the suite.
 
-Steps:
+`deployId` on `/status` comes from the `version_metadata` binding
+automatically (see § "`deployId` — no operator action needed") — no
+`--var`, no SHA-stamping step, no tagged-commit resolution.
 
-1. Re-run the MCP test suite (gates the deploy on tests passing — in
-   case a tag was pushed without a PR).
-2. Resolve the short SHA of the tagged commit so the worker bundle is
-   stamped with it.
-3. `wrangler deploy --env prod --var MCP_COMMIT_SHA:<short>` via the
-   `cloudflare/wrangler-action@v3` action. The MCP_COMMIT_SHA `var`
-   shows up on `/status` (see § "U16 /health + /status" above).
+**Manual fallback** (operator, from `packages/mcp`):
 
-### One-time operator setup — repo secrets
+```bash
+wrangler deploy --env prod     # prod → mcp.packratai.com
+bun run deploy:dev             # dev  → packrat-mcp-dev
+```
 
-The deploy workflow needs two repo secrets:
-
-| Secret | What it is | Where to get it |
-|---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Scoped API token with `Workers Scripts: Edit` + `Account Settings: Read` on the PackRat account | https://dash.cloudflare.com/profile/api-tokens → "Create Custom Token" → use the "Edit Cloudflare Workers" template. **TODO (operator):** issue once, store at https://github.com/andrewbierman/PackRat/settings/secrets/actions, rotate annually. |
-| `CLOUDFLARE_ACCOUNT_ID` | The PackRat Cloudflare account ID | Visible on every page of the Cloudflare dashboard's right sidebar. Or via `wrangler whoami` if logged in locally. **TODO (operator):** copy once, store as above. |
+Because deploys are no longer tag-triggered, there is no `mcp-v*` tag
+convention and no `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` repo
+secrets to provision for MCP. Workers Builds carries its own Cloudflare
+auth; a manual `wrangler deploy` uses the operator's local `wrangler login`.
 
 Both secrets must be set at the **repository** level (not the
 environment level — the deploy workflow doesn't use a GitHub
@@ -1656,8 +1650,9 @@ or annotation surfaces.
 # Dev (manual)
 bun run deploy:dev
 
-# Prod (CI on tag in U17; manual fallback below)
-wrangler deploy --env prod --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)
+# Prod — Cloudflare Workers Builds deploys on push (like the API).
+# Manual fallback (no --var needed; deployId comes from version_metadata):
+wrangler deploy --env prod
 ```
 
 ### Tail logs
@@ -1697,12 +1692,9 @@ for the refactor.**
 
 1. Deploy to dev manually — `bun run deploy:dev` from `packages/mcp`
    (and the equivalent for the API worker) ships the current commit to
-   `packrat-mcp-dev` + `packrat-api-dev`. **Do NOT tag for this.** Any
-   `mcp-v*` tag (including an `-rc` suffix) matches the `mcp-deploy.yml`
-   trigger (`tags: ['mcp-v*']`) and deploys straight to PROD
-   (`mcp.packratai.com`) — there is no dev tag pattern. Reserve the
-   `mcp-v<semver>` prod tag (see § "Common operations → Deploy") for the
-   final release, only after this dev gate passes.
+   `packrat-mcp-dev` + `packrat-api-dev`. Keep prod deploys (Workers
+   Builds on the configured branch, or a manual `wrangler deploy --env
+   prod`) until after this dev gate passes.
 2. Open `https://claude.ai` in a fresh browser profile (no PackRat cookies
    from a prior session — the AS-domain switch should be visible in the
    address bar).

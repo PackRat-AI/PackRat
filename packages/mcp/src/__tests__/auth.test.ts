@@ -176,28 +176,32 @@ describe('handleStatus', () => {
       terms: string;
       privacy: string;
       support: string;
-      commitSha: string;
+      deployId: string;
     };
     expect(body.service).toBe('packrat-mcp');
     expect(body.transport).toBe('streamable-http');
     expect(body.endpoint).toBe('/mcp');
     expect(body.scopes_supported).toEqual(['mcp', 'mcp:read', 'mcp:write', 'mcp:admin']);
-    expect(body.commitSha).toBe('unknown'); // sentinel when MCP_COMMIT_SHA is unset
+    expect(body.deployId).toBe('unknown'); // sentinel when CF_VERSION_METADATA is unbound
   });
 
-  it('surfaces MCP_COMMIT_SHA verbatim when bound', async () => {
+  it('surfaces the Cloudflare deploy id from CF_VERSION_METADATA when bound', async () => {
     const res = handleStatus({
       request: new Request('https://mcp.packratai.com/status'),
-      env: makeEnv({ MCP_COMMIT_SHA: 'abc1234' }),
+      env: makeEnv({
+        CF_VERSION_METADATA: { id: 'v-abc1234', tag: '', timestamp: '2026-06-04T00:00:00Z' },
+      }),
     });
-    const body = (await res.json()) as { commitSha: string };
-    expect(body.commitSha).toBe('abc1234');
+    const body = (await res.json()) as { deployId: string };
+    expect(body.deployId).toBe('v-abc1234');
   });
 
   it('never includes any internal/binding identifiers', async () => {
     const res = handleStatus({
       request: new Request('https://mcp.packratai.com/status'),
-      env: makeEnv({ MCP_COMMIT_SHA: 'abc1234' }),
+      env: makeEnv({
+        CF_VERSION_METADATA: { id: 'v-abc1234', tag: '', timestamp: '2026-06-04T00:00:00Z' },
+      }),
     });
     const text = await res.clone().text();
     expect(text).not.toContain('api.test'); // PACKRAT_API_URL must not leak

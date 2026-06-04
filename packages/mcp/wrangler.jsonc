@@ -24,7 +24,11 @@
   //
   // Optional vars:
   //   MCP_FEATURE_FLAGS            — comma-separated flag names enabled at boot
-  //   MCP_COMMIT_SHA               — stamped at deploy time, surfaced on /status
+  //
+  // The deploy identifier surfaced on /status comes from the
+  // `version_metadata` binding below (CF_VERSION_METADATA) — injected by the
+  // runtime, so no deploy-time `--var` or CI step is needed (works under both
+  // `wrangler deploy` and Cloudflare Workers Builds).
   //
   // See docs/mcp/runbook.md for the full deploy + secret-rotation procedure.
   // ───────────────────────────────────────────────────────────────────────────
@@ -34,6 +38,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "logpush": true,
+  // Runtime-injected deploy metadata ({ id, tag, timestamp }); surfaced on
+  // /status as `deployId`. No deploy-time --var needed.
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
@@ -115,7 +124,10 @@
           "namespace_id": "1",
           "simple": { "limit": 60, "period": 60 }
         }
-      ]
+      ],
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
     },
     // ───── Dev ─────────────────────────────────────────────────────────────
     // Kept as an explicit env so `wrangler deploy --env dev` ships a
@@ -143,7 +155,10 @@
           "namespace_id": "1",
           "simple": { "limit": 60, "period": 60 }
         }
-      ]
+      ],
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
     }
   }
 }

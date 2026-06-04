@@ -87,6 +87,16 @@ export interface AgentContext {
   getAuditContext?: () => { userId: string; scopes: readonly string[]; correlationId: string };
 }
 
+/**
+ * Shape of Cloudflare's `version_metadata` binding (declared in
+ * wrangler.jsonc). The runtime injects the live deploy's identifiers.
+ */
+export interface WorkerVersionMetadata {
+  id: string;
+  tag: string;
+  timestamp: string;
+}
+
 /** Cloudflare Worker environment bindings */
 export interface Env {
   /** Durable Object binding for MCP sessions */
@@ -109,19 +119,19 @@ export interface Env {
    */
   MCP_TOOLS_RL?: RateLimit;
   /**
-   * Build identifier injected at deploy time (U16). Typically the short
-   * git SHA of the commit that produced this Worker bundle — set by CI
-   * via `wrangler deploy --var MCP_COMMIT_SHA:$(git rev-parse --short HEAD)`
-   * (see U17 / `.github/workflows/mcp-deploy.yml`) or by an operator
-   * doing a manual deploy.
+   * Cloudflare `version_metadata` binding (declared in wrangler.jsonc). The
+   * runtime injects the current deploy's `{ id, tag, timestamp }` — no
+   * deploy-time `--var` and no CI step required, so it behaves identically
+   * under `wrangler deploy` and Cloudflare Workers Builds.
    *
-   * Surfaced verbatim by `/status` so a reviewer can correlate the
-   * running Worker with a specific commit. Optional — when unset
-   * (`wrangler dev`, vitest, manual deploy without the flag) `/status`
-   * returns the sentinel string `'unknown'`. **Never a secret** — it's a
-   * public version identifier on the same surface as the package version.
+   * `/status` surfaces `id` as `deployId` so a reviewer can correlate the
+   * running Worker with a specific Cloudflare version (which Workers Builds
+   * maps back to a git commit in its UI). Optional — absent under `wrangler
+   * dev` / vitest, where `/status` returns the sentinel `'unknown'`.
+   * **Never a secret** — it's a public deploy identifier on the same surface
+   * as the package version.
    */
-  MCP_COMMIT_SHA?: string;
+  CF_VERSION_METADATA?: WorkerVersionMetadata;
 }
 
 /**
