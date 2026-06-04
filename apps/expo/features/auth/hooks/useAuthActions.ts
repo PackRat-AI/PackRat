@@ -28,9 +28,9 @@ import {
 function redirect(route: string) {
   try {
     const parsedRoute: Href = JSON.parse(route);
-    return router.dismissTo(parsedRoute);
+    return router.replace(parsedRoute);
   } catch {
-    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
+    router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
