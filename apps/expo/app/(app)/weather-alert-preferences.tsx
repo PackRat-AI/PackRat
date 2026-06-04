@@ -10,7 +10,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as React from 'react';
-import { flushSync } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -63,15 +62,7 @@ export default function WeatherAlertPreferencesScreen() {
   });
 
   function onToggle(key: keyof AlertPreferences) {
-    return (value: boolean) => {
-      // flushSync forces the state update to commit synchronously before React
-      // yields back to the native layer.  Without it, React 18 concurrent mode
-      // can defer the update, causing the native UISwitch to read back the old
-      // value prop mid-animation and snap the toggle back to its original position.
-      flushSync(() => {
-        setPreferences((prev) => ({ ...prev, [key]: value }));
-      });
-    };
+    return (value: boolean) => setPreferences((prev) => ({ ...prev, [key]: value }));
   }
 
   const alertTypesDisabled = !preferences.weatherNotifications;
@@ -83,6 +74,7 @@ export default function WeatherAlertPreferencesScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         delaysContentTouches={false}
+        canCancelContentTouches={false}
       >
         <Form className="gap-5 px-4 pt-4">
           <FormSection
