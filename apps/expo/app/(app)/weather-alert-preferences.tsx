@@ -13,6 +13,44 @@ import * as React from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+/**
+ * Wraps Toggle with local optimistic state so the Switch value updates
+ * immediately on tap without waiting for the parent's render cycle.
+ *
+ * iOS 26 (Liquid Glass) redesigned UISwitch with a new gesture recogniser
+ * that races against React's concurrent scheduler. Even with stable
+ * onValueChange references the controlled-value propagation path is too slow:
+ * the native layer briefly sees the old `value` prop mid-animation and snaps
+ * back.  Keeping a co-located local state ensures the Switch is always fed the
+ * correct value in the same render as the user interaction.
+ */
+function PreferenceToggle({
+  value,
+  onValueChange,
+}: {
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+}) {
+  const [localValue, setLocalValue] = React.useState(value);
+
+  // Sync from parent when value is changed programmatically from outside.
+  const prevValueRef = React.useRef(value);
+  if (prevValueRef.current !== value) {
+    prevValueRef.current = value;
+    setLocalValue(value);
+  }
+
+  const handleChange = React.useCallback(
+    (newValue: boolean) => {
+      setLocalValue(newValue); // immediate local update — no snap-back
+      onValueChange(newValue); // propagate to parent
+    },
+    [onValueChange],
+  );
+
+  return <Toggle value={localValue} onValueChange={handleChange} />;
+}
+
 type AlertPreferences = {
   weatherNotifications: boolean;
   locationMonitoring: boolean;
@@ -108,7 +146,7 @@ export default function WeatherAlertPreferencesScreen() {
                   </Text>
                 </View>
               </View>
-              <Toggle
+              <PreferenceToggle
                 value={preferences.weatherNotifications}
                 onValueChange={togglers.weatherNotifications}
               />
@@ -125,7 +163,7 @@ export default function WeatherAlertPreferencesScreen() {
                   </Text>
                 </View>
               </View>
-              <Toggle
+              <PreferenceToggle
                 value={preferences.locationMonitoring}
                 onValueChange={togglers.locationMonitoring}
               />
@@ -166,7 +204,7 @@ export default function WeatherAlertPreferencesScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Toggle value={preferences[key]} onValueChange={togglers[key]} />
+                  <PreferenceToggle value={preferences[key]} onValueChange={togglers[key]} />
                 </FormItem>
               </View>
             ))}
