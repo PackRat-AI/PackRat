@@ -76,7 +76,6 @@ export default function WeatherAlertPreferencesScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         delaysContentTouches={false}
-        canCancelContentTouches={false}
       >
         <Form className="gap-5 px-4 pt-4">
           <FormSection
