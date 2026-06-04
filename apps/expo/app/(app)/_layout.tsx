@@ -204,7 +204,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="weather-alert-preferences"
           options={{
-            headerShown: false,
+            headerLargeTitle: true,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
