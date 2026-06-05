@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { executeSqlAiTool } from '../executeSqlAiTool';
+import { executeSqlAiTool } from '../src/services/executeSqlAiTool';
 
 // Mock the read-only DB so we can control what `.execute` returns. We need
 // to drive both the happy path (small result) and the budget-exceeded path
 // (synthetic large result) without an actual Postgres roundtrip.
 const mockExecute = vi.fn();
-vi.mock('../../db', () => ({
+vi.mock('../src/db', () => ({
   createReadOnlyDb: () => ({
     execute: mockExecute,
   }),
@@ -63,10 +63,10 @@ describe('executeSqlAiTool', () => {
       expect(result.byteCount).toBeGreaterThan(1_048_576);
     });
 
-    it('handles BigInt values (Postgres int8 / COUNT(*)) without throwing', async () => {
+    it('serializes BigInt values (Postgres int8 / COUNT(*)) as strings', async () => {
       // Neon HTTP driver returns int8 / COUNT(*) as JS BigInt by default —
       // JSON.stringify on BigInt throws TypeError without a replacer.
-      // The bigintSafeReplacer guards this path.
+      // The serializeBigInt path guards both budget measurement and returned data.
       mockExecute.mockResolvedValueOnce({
         rows: [{ total: 12345n }],
         rowCount: 1,
@@ -79,8 +79,26 @@ describe('executeSqlAiTool', () => {
       });
 
       expect(result.success).toBe(true);
+      expect(result.data).toEqual([{ total: '12345' }]);
+      expect(JSON.stringify(result)).toContain('"12345"');
       expect(result.error).toBeUndefined();
       expect(result.byteCount).toBeGreaterThan(0);
+    });
+
+    it('measures UTF-8 bytes instead of UTF-16 code units', async () => {
+      mockExecute.mockResolvedValueOnce({
+        rows: [{ name: '登山用バックパック' }],
+        rowCount: 1,
+      });
+
+      const result = await executeSqlAiTool({
+        query: 'SELECT name FROM catalog_items',
+        limit: 100,
+        userId: TEST_USER_ID,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.byteCount).toBeGreaterThan(JSON.stringify(result.data).length);
     });
   });
 

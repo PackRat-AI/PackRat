@@ -26,6 +26,8 @@ const serializeBigInt = (value: unknown): string | unknown => {
   return big !== undefined ? big.toString() : value;
 };
 
+const jsonByteLength = (json: string): number => new TextEncoder().encode(json).length;
+
 interface Params {
   query: string;
   limit: number;
@@ -74,7 +76,8 @@ export async function executeSqlAiTool(params: Params) {
   // Byte-budget check: measure serialized result size and reject when over
   // the cap with an actionable error so the AI agent can re-issue a
   // narrower query.
-  const byteCount = JSON.stringify(rows, (_key, value) => serializeBigInt(value)).length;
+  const serializedRows = JSON.stringify(rows, (_key, value) => serializeBigInt(value));
+  const byteCount = jsonByteLength(serializedRows);
   if (byteCount > BYTE_BUDGET_BYTES) {
     return {
       error: `Result exceeds ${BYTE_BUDGET_BYTES.toLocaleString()} byte budget (got ${byteCount.toLocaleString()}). Project specific columns or reduce limit.`,
@@ -85,7 +88,7 @@ export async function executeSqlAiTool(params: Params) {
 
   return {
     success: true,
-    data: rows,
+    data: JSON.parse(serializedRows),
     rowCount: resultWithRows.rowCount,
     executionTime: executionTime,
     byteCount,
