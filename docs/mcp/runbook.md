@@ -1374,36 +1374,24 @@ validation only fires on `/mcp` (the MCP transport endpoint).
 
 ## U17 CI + integration tests
 
-### `.github/workflows/mcp-test.yml` — PR gate
+MCP uses the repository's shared CI gates rather than a bespoke PR
+workflow:
 
-Triggers on `pull_request` (and `push` to `main` / `development`) when
-any of these paths change:
+- `.github/workflows/checks.yml` runs repo-wide Biome, custom lint rules,
+  unsafe-cast checks, route-auth checks, and `bun check-types`.
+- `.github/workflows/coverage.yml` runs the MCP test suite with coverage
+  (`bun run --cwd packages/mcp test --coverage`) and includes it in the
+  ratchet.
+- `.github/workflows/api-tests.yml` runs the API suite, including the
+  auth and admin guard tests that protect the OAuth/Admin side of the MCP
+  contract.
 
-- `packages/mcp/**` — the Worker source
-- `packages/api-client/**` — every tool wraps the Eden Treaty client
-- `packages/api/src/auth/**` — the OAuth-token-to-Better-Auth bridge
-- `packages/api/src/routes/admin/**` — the U5 scope-based admin gate
-  calls into these
-- `.github/workflows/mcp-test.yml` — self-trigger so workflow edits
-  are validated against the suite they gate
-
-Steps:
-
-1. Biome (`bun biome check packages/mcp`) — lint + format on the
-   MCP package only. Cheap, runs in <5s.
-2. Type-check (`bun run --cwd packages/mcp check-types` → `tsc --noEmit`).
-   Runs in ~1 GB / a few seconds: the `tool()`/`prompt()` wrappers
-   (`src/registerTool.ts`) erase the SDK's `registerTool`/`registerPrompt`
-   generics against `never`, so the recursive Zod-shape instantiation that
-   used to push tsc past 14 GB (and forced this check to be disabled) is
-   gone. Runs the same locally and in CI; also covered per-package by
-   `turbo run check-types`.
-3. MCP test suite (`bun run --cwd packages/mcp test`) — runs both the
-   `mcp-unit` project (1,123 tests) and the `mcp-integration` project
-   (currently 21 deferred `it.todo` placeholders; see below).
-4. API unit suite (`bun run --cwd packages/api test:unit`) — re-runs
-   the auth + admin guard tests so a MCP-side scope-model change
-   can't silently break the API-side enforcement contract.
+`packages/mcp` still has a local `check-types` script
+(`tsc --noEmit`). It now runs in ~1 GB / a few seconds: the
+`tool()`/`prompt()` wrappers (`src/registerTool.ts`) erase the SDK's
+`registerTool`/`registerPrompt` generics against `never`, so the
+recursive Zod-shape instantiation that used to push tsc past 14 GB is
+gone.
 
 ### Prod deploy — Cloudflare-native (no bespoke workflow)
 
@@ -1412,8 +1400,8 @@ Worker does — **Cloudflare Workers Builds** (the git-connected build in the
 Cloudflare dashboard): connect the `packrat-mcp` Worker to this repo, set
 the deploy command to `bun run --cwd packages/mcp deploy`
 (`wrangler deploy --minify`), and CF rebuilds + deploys on the configured
-branch. The PR gate (`mcp-test.yml`) is what guarantees only tested code
-reaches prod; there is no deploy-time re-run of the suite.
+branch. The shared PR gates above are what keep tested code flowing to
+prod; there is no deploy-time re-run of the suite.
 
 `deployId` on `/status` comes from the `version_metadata` binding
 automatically (see § "`deployId` — no operator action needed") — no
@@ -1597,10 +1585,10 @@ you need to probe an older snapshot.
 
 The check primitives are pure and have a comprehensive unit suite at
 `packages/mcp/src/__tests__/submission-readiness.test.ts` (62 tests).
-The PR-gate `mcp-test.yml` runs them alongside the existing 1,123-test
+The shared coverage workflow runs them alongside the rest of the MCP test
 surface. If a check's output shape ever drifts (new severity level,
 renamed status string), this suite fails loudly so the formatter, the
-CI workflow, and this runbook stay in lockstep.
+readiness probe, and this runbook stay in lockstep.
 
 ### Submission packet doc
 
