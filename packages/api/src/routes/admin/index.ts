@@ -606,7 +606,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
       const db = createDb();
       try {
-        const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
+        const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning(); // lint:allow-unprojected-fat-table reason: admin delete only checks .length; could narrow to .returning({id}) but defer to pivot-migration cleanup pass
         if (!deleted.length) return status(404, { error: 'Catalog item not found' });
         return { success: true as const };
       } catch (error) {
@@ -647,7 +647,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ...(body.description !== undefined && { description: body.description }),
           })
           .where(eq(catalogItems.id, id))
-          .returning();
+          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; could narrow to .returning({id, name}) but defer to pivot-migration cleanup pass
         const first = updated[0];
         if (!first) return status(404, { error: 'Catalog item not found' });
         return { id: first.id, name: first.name };

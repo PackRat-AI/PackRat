@@ -466,7 +466,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           reviews: data.reviews,
           embedding,
         })
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: POST returns full item to client via CatalogItemSchema.parse; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(newItem);
     },
@@ -547,6 +547,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
       const sourceItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer narrowing to pivot migration (separate catalog_item_embeddings table)
         where: eq(catalogItems.id, itemId),
       });
 
@@ -618,6 +619,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       } = getEnv();
 
       const existingItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs full row for getEmbeddingText diff (reads variants/techs/reviews/qas/faqs); defer to pivot migration
         where: eq(catalogItems.id, itemId),
       });
 
@@ -649,7 +651,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .update(catalogItems)
         .set(updateData)
         .where(eq(catalogItems.id, itemId))
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: PUT returns full updated item to client; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(updatedItem);
     },
@@ -682,6 +684,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: existence check only — could narrow to {id} but bundling with pivot migration to touch each callsite once
         where: eq(catalogItems.id, itemId),
       });
 
