@@ -1,4 +1,4 @@
-import { createDb } from '@packrat/api/db';
+import { createReadOnlyDb } from '@packrat/api/db';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -9,10 +9,14 @@ import { sql } from 'drizzle-orm';
  * without running Neon MCP / SQL editor by hand. Queries are pure metadata
  * (pg_class, pg_stat_*, pg_size_pretty) — no row scans, fast, safe to poll.
  *
- * Cost discipline:
+ * Cost + safety discipline:
+ * - Uses the read-only Neon URL (`createReadOnlyDb()`). Defense in depth:
+ *   even a future bug that introduces a write here would be rejected at
+ *   the DB role level rather than silently mutating production.
  * - No `SELECT *` against user tables (would defeat the projection work)
- * - All queries return small, fixed-size result sets
- * - Statement-timeout guard left to the caller (Elysia route applies one)
+ * - All queries return small, fixed-size result sets — total runtime stays
+ *   well under Neon's 30s HTTP timeout for typical schemas. No explicit
+ *   statement_timeout wrapper applied.
  */
 
 export interface TableMetrics {
@@ -59,10 +63,10 @@ export interface DbMetricsSnapshot {
 }
 
 export class DbMetricsService {
-  private db: ReturnType<typeof createDb>;
+  private db: ReturnType<typeof createReadOnlyDb>;
 
   constructor() {
-    this.db = createDb();
+    this.db = createReadOnlyDb();
   }
 
   async snapshot(): Promise<DbMetricsSnapshot> {
@@ -130,7 +134,14 @@ export class DbMetricsService {
         c.relname                                         AS name,
         c.reltuples::bigint::text                         AS est_rows,
         pg_relation_size(c.oid)::text                     AS heap_bytes,
-        COALESCE(pg_relation_size(c.reltoastrelid), 0)::text AS toast_bytes,
+        -- Many tables (small ones, or those with no TOAST'able columns) have
+        -- reltoastrelid = 0. pg_relation_size(0) raises 'invalid relation OID',
+        -- and COALESCE evaluates AFTER the function call, so the error wins.
+        -- CASE short-circuits the call.
+        CASE
+          WHEN c.reltoastrelid = 0 THEN '0'
+          ELSE pg_relation_size(c.reltoastrelid)::text
+        END                                               AS toast_bytes,
         pg_indexes_size(c.oid)::text                      AS index_bytes,
         pg_total_relation_size(c.oid)::text               AS total_bytes,
         COALESCE(s.seq_scan, 0)::text                     AS seq_scan,

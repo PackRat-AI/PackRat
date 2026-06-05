@@ -30,7 +30,10 @@ export const dbAnalyticsRoutes = new Elysia({ prefix: '/db' })
         return await service.snapshot();
       } catch (error) {
         console.error('db metrics snapshot error:', error);
-        return status(500, { error: 'Failed to gather DB metrics' });
+        return status(500, {
+          error: 'Failed to gather DB metrics',
+          code: 'ANALYTICS_DB_SNAPSHOT_ERROR',
+        });
       }
     },
     {
