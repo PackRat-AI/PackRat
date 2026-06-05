@@ -51,6 +51,38 @@ describe('Admin Routes', () => {
     });
   });
 
+  describe('GET /admin/analytics/db/snapshot', () => {
+    it('returns DB sizing + activity snapshot', async () => {
+      const res = await apiWithBasicAuth('/analytics/db/snapshot');
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['generatedAt', 'database', 'tables', 'indexes']);
+
+      expect(typeof data.generatedAt).toBe('string');
+      expect(typeof data.database.name).toBe('string');
+      expect(typeof data.database.sizeBytes).toBe('number');
+      expect(Array.isArray(data.tables)).toBe(true);
+      expect(Array.isArray(data.indexes)).toBe(true);
+
+      // catalog_items is always present in the schema; spot-check shape.
+      const catalogItemsRow = data.tables.find((t: { name: string }) => t.name === 'catalog_items');
+      expect(catalogItemsRow).toBeDefined();
+      expect(typeof catalogItemsRow.estimatedRows).toBe('number');
+      expect(typeof catalogItemsRow.heapBytes).toBe('number');
+      expect(typeof catalogItemsRow.toastBytes).toBe('number');
+      expect(typeof catalogItemsRow.indexBytes).toBe('number');
+      expect(typeof catalogItemsRow.totalBytes).toBe('number');
+      expect(typeof catalogItemsRow.seqScans).toBe('number');
+      expect(typeof catalogItemsRow.inserts).toBe('number');
+      expect(typeof catalogItemsRow.updates).toBe('number');
+    });
+
+    it('requires admin auth', async () => {
+      // Unauthenticated request via raw api()
+      const res = await api('/admin/analytics/db/snapshot');
+      expect(res.status).toBe(401);
+    });
+  });
+
   describe('GET /admin/users-list', () => {
     it('returns paginated users list', async () => {
       const res = await apiWithBasicAuth('/users-list');
