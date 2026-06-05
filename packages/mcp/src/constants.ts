@@ -4,13 +4,7 @@ export const WorkerRoute = {
   Health: '/health',
   Status: '/status',
   Mcp: '/mcp',
-  Authorize: '/authorize',
-  Login: '/login',
-  Callback: '/callback',
-  Token: '/token',
-  Register: '/register',
   WellKnownProtectedResource: '/.well-known/oauth-protected-resource',
-  WellKnownAuthorizationServer: '/.well-known/oauth-authorization-server',
   Favicon: '/favicon.ico',
 } as const;
 

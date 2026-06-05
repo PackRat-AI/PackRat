@@ -65,7 +65,7 @@
   // Workers Rate Limiting binding for authenticated tool calls. Keyed per-call
   // by `${userId}:${toolName}` — `userId` is now sourced from the JWT `sub`
   // claim (via `verifyMcpToken`) instead of the prior OAuthProvider props
-  // object, but the binding itself and the key shape are unchanged. 60
+  // object, but the binding itself and the key shape are unchanged.
   // successful checks per 60s is a deliberately humane default for interactive
   // Claude-mediated use; bursts beyond it surface to the model as the U8
   // `rate_limited` error envelope (retryable=true) so the model can back off

@@ -3,8 +3,8 @@
   "totalTools": 103,
   "counts": {
     "byClassification": {
-      "read": 35,
-      "write": 38,
+      "read": 43,
+      "write": 30,
       "admin": 30
     },
     "byDomain": {
@@ -415,7 +415,7 @@
       "title": "Analyze Pack Gaps",
       "description": "Identify missing essential gear categories for a specific trip context. Compares the pack's current categories against recommended essentials and returns what's missing.",
       "domain": "Packs",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -441,7 +441,7 @@
       "title": "Analyze Pack Weight",
       "description": "Return a detailed weight breakdown for a pack: total / base / worn / consumable grams plus a per-category aggregation sorted heaviest first.",
       "domain": "Packs",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -454,7 +454,7 @@
       "title": "Compare Gear Items",
       "description": "Compare multiple gear items side-by-side on weight, price, and rating. Provide 2–10 catalog item IDs.",
       "domain": "Gear & Catalog",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -1169,7 +1169,7 @@
       "title": "Semantic Gear Search",
       "description": "Search the gear catalog using vector/semantic search. Good for natural-language queries like \"warm but lightweight insulation layer for cold shoulder-season camping\" or \"minimalist trail running shoe for rocky terrain\".",
       "domain": "Gear & Catalog",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -1182,7 +1182,7 @@
       "title": "Find Similar Catalog Items",
       "description": "Find items similar to a given catalog item by embedding similarity.",
       "domain": "Gear & Catalog",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -1195,7 +1195,7 @@
       "title": "Find Similar Pack Items",
       "description": "Find catalog gear similar to a specific item in a pack (semantic similarity).",
       "domain": "Packs",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -1221,7 +1221,7 @@
       "title": "Suggest Pack Items",
       "description": "Return catalog item suggestions for a pack based on the items already in it.",
       "domain": "Packs",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,
@@ -1364,7 +1364,7 @@
       "title": "Web Search",
       "description": "Search the public web for current, real-time information. Use this for current trail conditions, recent news, current gear prices and deals, permit availability, or anything requiring up-to-date info not in the PackRat knowledge base.",
       "domain": "Knowledge & Search",
-      "classification": "write",
+      "classification": "read",
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": null,

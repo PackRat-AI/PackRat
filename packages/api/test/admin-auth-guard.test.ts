@@ -446,7 +446,7 @@ describe('adminAuthGuard — Better Auth bearer fallback (U5)', () => {
     // without ever calling the Better Auth mock. We assert this by
     // counting the spy invocations on `getAuth().api.getSession`.
     const { getAuth } = await import('@packrat/api/auth');
-    const auth = await vi.mocked(getAuth)({} as any);
+    const auth = await vi.mocked(getAuth)(withEnv() as Parameters<typeof getAuth>[0]);
     const getSessionSpy = auth.api.getSession as ReturnType<typeof vi.fn>;
     const callsBefore = getSessionSpy.mock.calls.length;
 
@@ -462,7 +462,7 @@ describe('adminAuthGuard — Better Auth bearer fallback (U5)', () => {
     // Auth ADMIN session should be accepted via the fallback. Verifies
     // the OR-of-two-paths shape of the guard.
     const { getAuth } = await import('@packrat/api/auth');
-    const auth = await vi.mocked(getAuth)({} as any);
+    const auth = await vi.mocked(getAuth)(withEnv() as Parameters<typeof getAuth>[0]);
     const getSessionSpy = auth.api.getSession as ReturnType<typeof vi.fn>;
     const callsBefore = getSessionSpy.mock.calls.length;
 

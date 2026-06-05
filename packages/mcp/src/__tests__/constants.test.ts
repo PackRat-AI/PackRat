@@ -15,28 +15,8 @@ describe('WorkerRoute', () => {
     expect(WorkerRoute.Mcp).toBe('/mcp');
   });
 
-  it('defines the OAuth authorize endpoint', () => {
-    expect(WorkerRoute.Authorize).toBe('/authorize');
-  });
-
-  it('defines the login endpoint', () => {
-    expect(WorkerRoute.Login).toBe('/login');
-  });
-
-  it('defines the OAuth callback endpoint', () => {
-    expect(WorkerRoute.Callback).toBe('/callback');
-  });
-
-  it('defines the token endpoint', () => {
-    expect(WorkerRoute.Token).toBe('/token');
-  });
-
-  it('defines the register endpoint', () => {
-    expect(WorkerRoute.Register).toBe('/register');
-  });
-
-  it('has exactly 12 route entries (8 originals + status + 2 well-known + favicon)', () => {
-    expect(Object.keys(WorkerRoute)).toHaveLength(12);
+  it('has exactly the active worker route entries', () => {
+    expect(Object.keys(WorkerRoute)).toHaveLength(6);
   });
 
   it('defines the /favicon.ico endpoint (Anthropic domain-ownership probe target)', () => {
@@ -49,12 +29,6 @@ describe('WorkerRoute', () => {
 
   it('defines the RFC 9728 protected-resource well-known path', () => {
     expect(WorkerRoute.WellKnownProtectedResource).toBe('/.well-known/oauth-protected-resource');
-  });
-
-  it('defines the RFC 8414 authorization-server well-known path', () => {
-    expect(WorkerRoute.WellKnownAuthorizationServer).toBe(
-      '/.well-known/oauth-authorization-server',
-    );
   });
 
   it('all routes start with /', () => {

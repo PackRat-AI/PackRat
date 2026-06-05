@@ -27,7 +27,7 @@ export function registerWeatherTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Weather Forecast',
         readOnlyHint: true,
-        idempotentHint: false,
+        idempotentHint: true,
         openWorldHint: true,
       },
     },
@@ -105,7 +105,7 @@ export function registerWeatherTools(agent: AgentContext): void {
       annotations: {
         title: 'Get Weather Forecast By Location ID',
         readOnlyHint: true,
-        idempotentHint: false,
+        idempotentHint: true,
         openWorldHint: true,
       },
     },

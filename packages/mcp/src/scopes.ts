@@ -88,8 +88,21 @@ const READ_PREFIXES: readonly string[] = [
   'packrat_preview_',
 ];
 
-// Read tools whose names don't match a prefix.
-const READ_NAMES: ReadonlySet<string> = new Set(['whoami', 'packrat_whoami']);
+// Read tools whose names don't match a prefix. Keep this list narrow: these
+// names do not mutate state, but their verbs are domain-specific enough that a
+// prefix classifier would otherwise fail closed into the write bucket.
+const READ_NAMES: ReadonlySet<string> = new Set([
+  'whoami',
+  'packrat_whoami',
+  'packrat_analyze_pack_gaps',
+  'packrat_analyze_pack_weight',
+  'packrat_compare_gear_items',
+  'packrat_semantic_gear_search',
+  'packrat_similar_catalog_items',
+  'packrat_similar_pack_items',
+  'packrat_suggest_pack_items',
+  'packrat_web_search',
+]);
 
 // Prefix bucket: admin tools. The classifier checks ADMIN_OVERRIDES first,
 // then these prefixes. Anything matching is `admin`-classified regardless

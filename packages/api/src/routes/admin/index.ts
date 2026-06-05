@@ -26,10 +26,8 @@ import { adminTrailsRoutes } from './trails';
 
 /**
  * Timeout for the Better Auth `getSession` fallback in `adminAuthGuard`.
- * Mirrors the timeout used at the MCP `/callback` role lookup
- * (`packages/mcp/src/auth.ts`) so degraded-Better-Auth behaviour is
- * consistent across producers: a slow session lookup fails closed in 5s
- * rather than holding the request open.
+ * Keeps degraded Better Auth behaviour bounded: a slow session lookup fails
+ * closed in 5s rather than holding the request open.
  */
 const BETTER_AUTH_GUARD_TIMEOUT_MS = 5000;
 

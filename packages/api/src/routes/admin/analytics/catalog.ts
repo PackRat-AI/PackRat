@@ -170,7 +170,13 @@ async function reingestJob(args: {
       error,
       operation: `admin.analytics.catalog.reingest.${mode}`,
       tags: { feature: 'catalogAnalytics' },
-      extra: { originalJobId, mode, force },
+      extra: {
+        httpStatus: 500,
+        errorCode: mode === 'retry' ? 'ETL_RETRY_ERROR' : 'ETL_REPAIR_ERROR',
+        originalJobId,
+        mode,
+        force,
+      },
     });
     return {
       _statusCode: 500,
@@ -725,7 +731,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           error,
           operation: 'admin.analytics.catalog.reconcile',
           tags: { feature: 'catalogAnalytics' },
-          extra: { jobId: params.jobId },
+          extra: { httpStatus: 500, errorCode: 'ETL_RECONCILE_ERROR', jobId: params.jobId },
         });
         return status(500, {
           error: 'Failed to reconcile ETL job',
@@ -920,7 +926,7 @@ export const catalogAnalyticsRoutes = new Elysia({ prefix: '/catalog' })
           error,
           operation: 'admin.analytics.catalog.audit',
           tags: { feature: 'catalogAnalytics' },
-          extra: { source: query.source ?? null },
+          extra: { httpStatus: 500, errorCode: 'AUDIT_ERROR', source: query.source ?? null },
         });
         return status(500, { error: 'Failed to generate catalog audit', code: 'AUDIT_ERROR' });
       }

@@ -70,6 +70,17 @@ describe('classifyTool', () => {
     expect(classifyTool('packrat_whoami')).toBe('read');
   });
 
+  it('classifies read-only domain verbs as read', () => {
+    expect(classifyTool('packrat_analyze_pack_gaps')).toBe('read');
+    expect(classifyTool('packrat_analyze_pack_weight')).toBe('read');
+    expect(classifyTool('packrat_compare_gear_items')).toBe('read');
+    expect(classifyTool('packrat_semantic_gear_search')).toBe('read');
+    expect(classifyTool('packrat_similar_catalog_items')).toBe('read');
+    expect(classifyTool('packrat_similar_pack_items')).toBe('read');
+    expect(classifyTool('packrat_suggest_pack_items')).toBe('read');
+    expect(classifyTool('packrat_web_search')).toBe('read');
+  });
+
   it('classifies the post-U7 packrat_get_*/packrat_list_* variants as read', () => {
     expect(classifyTool('packrat_get_pack')).toBe('read');
     expect(classifyTool('packrat_list_packs')).toBe('read');
