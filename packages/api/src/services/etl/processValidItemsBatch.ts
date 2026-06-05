@@ -32,6 +32,7 @@ export async function processValidItemsBatch({
       values: embeddingTexts,
       cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: env.CLOUDFLARE_API_TOKEN,
       provider: env.AI_PROVIDER,
       cloudflareAiBinding: env.AI,
     });
@@ -60,10 +61,13 @@ export async function processValidItemsBatch({
     // items minus their vectors), but we record the degradation on
     // etl_jobs.total_embedding_failures so operators see the count via
     // the admin endpoint without trawling logs. Closes audit P2 #3.
-    logger.warn('etl.embedding.fallback', {
-      jobId,
-      skuCount: items.length,
-      errorName: error instanceof Error ? error.name : 'unknown',
+    logger.warn({
+      event: 'etl.embedding.fallback',
+      ctx: {
+        jobId,
+        skuCount: items.length,
+        errorName: error instanceof Error ? error.name : 'unknown',
+      },
     });
 
     const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
@@ -85,6 +89,6 @@ export async function processValidItemsBatch({
       })
       .where(eq(etlJobs.id, jobId));
   } finally {
-    logger.info('etl.valid_items.batch_complete', { jobId, count: items.length });
+    logger.info({ event: 'etl.valid_items.batch_complete', ctx: { jobId, count: items.length } });
   }
 }

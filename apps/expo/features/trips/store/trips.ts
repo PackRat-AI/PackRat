@@ -14,13 +14,10 @@ const listTrips = async () => {
 };
 
 const createTrip = async (tripData: TripInStore) => {
-  if (!tripData.location) {
-    throw new Error('Trip location is required before sync');
-  }
   const { data, error } = await apiClient.trips.post({
     id: tripData.id,
     name: tripData.name,
-    location: tripData.location,
+    location: tripData.location ?? null,
     description: tripData.description ?? null,
     notes: tripData.notes ?? null,
     packId: tripData.packId ?? null,
@@ -43,6 +40,7 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.startDate !== undefined ? { startDate: data.startDate ?? null } : {}),
     ...(data.endDate !== undefined ? { endDate: data.endDate ?? null } : {}),
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
   });
   if (error) throw new Error(`Failed to update trip: ${error.value}`);
   return TripSchema.parse(result);

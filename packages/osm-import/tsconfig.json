@@ -1,0 +1,4 @@
+{
+  "extends": "@packrat/typescript-config/base.json",
+  "include": ["./*.ts"]
+}

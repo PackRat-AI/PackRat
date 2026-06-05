@@ -26,10 +26,8 @@ import {
   and,
   cosineDistance,
   count,
-  desc,
   eq,
   getTableColumns,
-  gt,
   inArray,
   isNotNull,
   isNull,
@@ -418,13 +416,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) {
-        // Configuration error: surface as a 500 with a clear message
-        throw new Error('Service unavailable: OpenAI API key not configured');
-      }
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
@@ -433,6 +432,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
@@ -464,7 +464,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           reviews: data.reviews,
           embedding,
         })
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: POST returns full item to client via CatalogItemSchema.parse; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(newItem);
     },
@@ -545,6 +545,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
       const sourceItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer narrowing to pivot migration (separate catalog_item_embeddings table)
         where: eq(catalogItems.id, itemId),
       });
 
@@ -552,7 +553,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found or has no embedding' });
       }
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+      // HNSW-eligible: ORDER BY raw distance ASC. The `similarity = 1 - distance`
+      // field is preserved in the response, but the operators see the raw
+      // distance so the planner can use embedding_idx (HNSW). Threshold
+      // mechanically flips from `similarity > T` to `distance < (1 - T)`.
+      const distance = cosineDistance(catalogItems.embedding, sourceItem.embedding);
+      const similarity = sql<number>`1 - (${distance})`;
+      const maxDistance = 1 - threshold;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
       const similarItems = await db
@@ -560,12 +567,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .from(catalogItems)
         .where(
           and(
-            gt(similarity, threshold),
+            sql`${distance} < ${maxDistance}`,
             ne(catalogItems.id, itemId),
             isNotNull(catalogItems.embedding),
           ),
         )
-        .orderBy(desc(similarity))
+        .orderBy(distance)
         .limit(validLimit);
 
       const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
@@ -606,15 +613,17 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) {
-        // Configuration error: surface as a 500 with a clear message
-        throw new Error('Service unavailable: OpenAI API key not configured');
-      }
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const existingItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs full row for getEmbeddingText diff (reads variants/techs/reviews/qas/faqs); defer to pivot migration
         where: eq(catalogItems.id, itemId),
       });
 
@@ -633,6 +642,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
       }
@@ -645,7 +655,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .update(catalogItems)
         .set(updateData)
         .where(eq(catalogItems.id, itemId))
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: PUT returns full updated item to client; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(updatedItem);
     },
@@ -678,6 +688,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: existence check only — could narrow to {id} but bundling with pivot migration to touch each callsite once
         where: eq(catalogItems.id, itemId),
       });
 

@@ -1,5 +1,6 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { captureApiException } from '@packrat/api/utils/sentry';
+import { OpenWeatherResponseSchema } from '@packrat/schemas/weather';
 
 type WeatherData = {
   location: string;
@@ -48,11 +49,7 @@ export class WeatherService {
       throw error;
     }
 
-    const data = (await response.json()) as {
-      main: { temp: number; humidity: number };
-      weather: Array<{ main: string }>;
-      wind: { speed: number };
-    };
+    const data = OpenWeatherResponseSchema.parse(await response.json());
 
     return {
       location,

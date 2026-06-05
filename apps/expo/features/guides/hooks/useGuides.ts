@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
@@ -26,7 +27,14 @@ export const useGuides = ({ category, sort }: UseGuidesParams = {}) => {
             : {}),
         },
       });
-      if (error) throw new Error(`Failed to fetch guides: ${error.value}`);
+      if (error) {
+        const err = new Error(String(error.value ?? 'Failed to fetch guides'));
+        Sentry.captureException(err, {
+          tags: { feature: 'guides', action: 'fetchGuides' },
+          extra: { page: pageParam, category, apiError: error.value, httpStatus: error.status },
+        });
+        throw err;
+      }
       return data;
     },
     getNextPageParam: (lastPage) => {

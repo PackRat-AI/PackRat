@@ -49,7 +49,7 @@ appId: ${APP_ID}
 
 # --- Start Date ---
 - tapOn:
-    id: "trips:start-date-input"
+    id: "trips:start-date-btn"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -80,7 +80,7 @@ appId: ${APP_ID}
 
 # --- End Date ---
 - tapOn:
-    id: "trips:end-date-input"
+    id: "trips:end-date-btn"
 - waitForAnimationToEnd
 - runFlow:
     when:

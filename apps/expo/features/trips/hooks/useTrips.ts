@@ -5,8 +5,13 @@ export function useTrips() {
   const trips = use$(() => {
     const tripsArray = Object.values(tripsStore.get());
 
-    // Only include trips that are not deleted
-    return tripsArray.filter((trip) => trip.deleted === false);
+    return tripsArray
+      .filter((trip) => trip.deleted === false)
+      .sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
   });
 
   return trips;

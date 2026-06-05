@@ -1,114 +1,86 @@
 /**
  * Playwright global setup — runs once before all tests.
  *
- * Priority order for obtaining auth tokens:
- *   1. TEST_ACCESS_TOKEN + TEST_REFRESH_TOKEN — used directly (no API call)
- *   2. TEST_EMAIL + TEST_PASSWORD — logs in against the API (matches the
- *      iOS/Android Maestro pattern: seed the user, then log in with credentials)
- *   3. Fallback — registers a fresh ephemeral user, reads the OTP from the DB,
- *      and verifies email to obtain tokens (useful for local development)
+ * Signs the seeded e2e user in through Better Auth and saves the resulting
+ * browser storage state (the `better-auth.session_token` cookie plus the
+ * hydrated user store) to `.auth-state.json`. The `authedPage` fixture loads
+ * that state so every test starts authenticated without logging in again.
  *
- * The resulting tokens are written to .auth-tokens.json so the authedPage
- * fixture can seed localStorage without hitting auth on every test.
+ * The sign-in request is issued from the page context (not Node) so the
+ * browser persists the Set-Cookie session token exactly as a real login would.
+ * On web the bearer token lives in an HttpOnly cookie that JS can't read, so
+ * cookie-based auth (credentials: 'include') is the only path — there is no
+ * access/refresh token to cache.
  */
-import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { neon } from '@neondatabase/serverless';
+import { chromium } from '@playwright/test';
 
-const API_URL = process.env.API_URL ?? 'http://localhost:8787';
-const DB_URL = process.env.NEON_DATABASE_URL ?? '***REDACTED_DB_URL***';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8098';
+const API_URL = process.env.API_URL ?? 'http://localhost:8798';
+const EMAIL = process.env.TEST_EMAIL ?? 'e2e@packrattest.local';
+const PASSWORD = process.env.TEST_PASSWORD ?? 'E2eTestPass123!';
 
-export const TOKENS_FILE = path.join(__dirname, '../.auth-tokens.json');
+// Local Ubuntu has no Playwright-bundled Chromium; set PW_CHANNEL=chrome to use
+// the system browser. CI installs Chromium normally and leaves PW_CHANNEL unset.
+const CHANNEL = process.env.PW_CHANNEL || undefined;
+
+export const STORAGE_STATE = path.join(__dirname, '../.auth-state.json');
 
 async function setup() {
-  // Priority 1: pre-minted tokens provided directly
-  if (process.env.TEST_ACCESS_TOKEN && process.env.TEST_REFRESH_TOKEN) {
-    const meRes = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${process.env.TEST_ACCESS_TOKEN}` },
-    });
-    const user = meRes.ok ? ((await meRes.json()) as { user: Record<string, unknown> }).user : null;
-    fs.writeFileSync(
-      TOKENS_FILE,
-      JSON.stringify({
-        accessToken: process.env.TEST_ACCESS_TOKEN,
-        refreshToken: process.env.TEST_REFRESH_TOKEN,
-        user,
-      }),
-    );
-    console.log('[globalSetup] Using tokens from TEST_ACCESS_TOKEN env var');
-    return;
-  }
+  const browser = await chromium.launch({ channel: CHANNEL });
+  try {
+    const context = await browser.newContext();
+    const page = await context.newPage();
 
-  // Priority 2: log in with the seeded E2E user (CI path, matches iOS/Android pattern)
-  if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
-    const loginRes = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: process.env.TEST_EMAIL, password: process.env.TEST_PASSWORD }),
-    });
-    if (!loginRes.ok) {
-      const body = await loginRes.text();
-      throw new Error(`Login failed ${loginRes.status}: ${body}`);
+    // Establish the web origin so the session cookie is scoped to it.
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+
+    // Sign in from the page context so the browser stores the session cookie.
+    // Retry transient 5xx — a local wrangler dev worker talking to a raw
+    // Postgres (no Hyperdrive) occasionally drops a pooled connection.
+    let result = { status: 0, body: '' };
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      result = await page.evaluate(
+        async ({ api, email, password }) => {
+          try {
+            const res = await fetch(`${api}/api/auth/sign-in/email`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            return { status: res.status, body: await res.text() };
+          } catch (err) {
+            // A 5xx from the worker may arrive without CORS headers, surfacing
+            // as a thrown "Failed to fetch" — treat as a retryable transient.
+            return { status: 0, body: String(err) };
+          }
+        },
+        { api: API_URL, email: EMAIL, password: PASSWORD },
+      );
+      if (result.status === 200) break;
+      // 429 (rate limit) and 5xx/0 (transient DB/proxy blips on a local stack)
+      // are retryable; other 4xx are real auth failures.
+      const retryable = result.status === 429 || result.status === 0 || result.status >= 500;
+      if (!retryable) break;
+      await page.waitForTimeout(result.status === 429 ? 4000 : 2000);
     }
-    const { accessToken, refreshToken, user } = (await loginRes.json()) as {
-      accessToken: string;
-      refreshToken: string;
-      user: Record<string, unknown>;
-    };
-    fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
-    console.log(`[globalSetup] Logged in as ${process.env.TEST_EMAIL}`);
-    return;
+    if (result.status !== 200) {
+      throw new Error(`Better Auth sign-in failed ${result.status}: ${result.body}`);
+    }
+
+    const cookies = await context.cookies();
+    if (!cookies.some((c) => c.name === 'better-auth.session_token')) {
+      throw new Error('Sign-in succeeded but no better-auth.session_token cookie was set');
+    }
+
+    // The session cookie is all the app needs — on load it calls get-session
+    // with the cookie and hydrates its user store / isAuthed itself. Save it.
+    await context.storageState({ path: STORAGE_STATE });
+    console.log(`[globalSetup] Signed in as ${EMAIL}; storage state saved`);
+  } finally {
+    await browser.close();
   }
-
-  // Priority 3: register a fresh ephemeral user (local dev fallback)
-  const email = `e2e-${Date.now()}@packrat.test`;
-  const password = 'E2eTest1!';
-
-  // 1. Register
-  const registerRes = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, firstName: 'E2E', lastName: 'User' }),
-  });
-  if (!registerRes.ok) {
-    const body = await registerRes.text();
-    throw new Error(`Register failed ${registerRes.status}: ${body}`);
-  }
-  console.log(`[globalSetup] Registered ${email}`);
-
-  // 2. Fetch OTP directly from the database
-  const sql = neon(DB_URL);
-  const rows = await sql`
-    SELECT otp.code
-    FROM one_time_passwords otp
-    JOIN users u ON u.id = otp.user_id
-    WHERE u.email = ${email}
-    ORDER BY otp.expires_at DESC
-    LIMIT 1
-  `;
-
-  const code = (rows[0] as { code: string } | undefined)?.code;
-  if (!code) throw new Error(`No OTP found in DB for ${email}`);
-  console.log(`[globalSetup] Got OTP from DB`);
-
-  // 3. Verify email
-  const verifyRes = await fetch(`${API_URL}/api/auth/verify-email`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code }),
-  });
-  if (!verifyRes.ok) {
-    const body = await verifyRes.text();
-    throw new Error(`Verify failed ${verifyRes.status}: ${body}`);
-  }
-  const { accessToken, refreshToken, user } = (await verifyRes.json()) as {
-    accessToken: string;
-    refreshToken: string;
-    user: Record<string, unknown>;
-  };
-  console.log('[globalSetup] Email verified, tokens obtained');
-
-  fs.writeFileSync(TOKENS_FILE, JSON.stringify({ accessToken, refreshToken, user }));
 }
 
 export default setup;

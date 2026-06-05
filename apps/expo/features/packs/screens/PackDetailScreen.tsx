@@ -20,7 +20,7 @@ import { obs } from 'expo-app/lib/store';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, ScrollView, Share, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
@@ -281,22 +281,6 @@ export function PackDetailScreen() {
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
   const handleAskAI = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify({
-            pathname: '/ai-chat',
-            params: {
-              packId: id,
-              packName: pack.name,
-              contextType: 'pack',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
     router.push({
       pathname: '/ai-chat',
       params: {
@@ -456,7 +440,12 @@ export function PackDetailScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
-          <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
+          <Image
+            source={{ uri: pack.image }}
+            className="h-48 w-full"
+            resizeMode="cover"
+            style={Platform.select({ web: { width: '100%', height: 192 } })}
+          />
         )}
 
         {/* Header */}

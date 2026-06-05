@@ -143,7 +143,7 @@ export default function SettingsScreen() {
                         </View>
                       )}
                       {(!isDownloaded || isError) && !isDownloading && !isPreparing && (
-                        <TouchableOpacity onPress={downloadLocalModel}>
+                        <TouchableOpacity onPress={() => downloadLocalModel(isAuthenticated)}>
                           <Text
                             variant="footnote"
                             className="font-medium"

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
@@ -12,7 +13,19 @@ export const updateReportStatus = async (
   const { data, error } = await apiClient.chat.reports({ id: payload.id }).patch({
     status: payload.status,
   });
-  if (error) throw new Error(`Failed to update report status: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to update report status'));
+    Sentry.captureException(err, {
+      tags: { feature: 'ai', action: 'updateReportStatus' },
+      extra: {
+        id: payload.id,
+        status: payload.status,
+        apiError: error.value,
+        httpStatus: error.status,
+      },
+    });
+    throw err;
+  }
   return data as unknown as { success: boolean };
 };
 

@@ -1,0 +1,12 @@
+{
+  "name": "@packrat/typescript-config",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "base.json",
+    "cloudflare-types.d.ts",
+    "nextjs.json",
+    "react-library.json",
+    "react-native.json"
+  ]
+}

@@ -16,7 +16,6 @@ import {
   desc,
   eq,
   getTableColumns,
-  gt,
   ilike,
   inArray,
   isNotNull,
@@ -71,7 +70,13 @@ export class CatalogService {
       order: 'asc' | 'desc';
     };
   }): Promise<{
-    items: CatalogItem[];
+    // List-context items: every CatalogItem field EXCEPT the heavy ones the
+    // service stops selecting per U4 (embedding + variants/techs/links/reviews/
+    // qas/faqs). Detail endpoints (/catalog/:id) still return full rows.
+    items: Omit<
+      CatalogItem,
+      'embedding' | 'variants' | 'techs' | 'links' | 'reviews' | 'qas' | 'faqs'
+    >[];
     total: number;
     limit: number;
     offset: number;
@@ -134,7 +139,36 @@ export class CatalogService {
     if (!limit) {
       const items = await this.db
         .select({
-          ...getTableColumns(catalogItems),
+          // List-context projection: scalar fields callers actually need for
+          // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
+          // per row) AND the fat JSONB (variants/techs/links/reviews/qas/faqs,
+          // 10s of KB each). Keep these for /catalog/:id detail.
+          // The win lands at the DB→Worker boundary, not just response Zod —
+          // see plan Summary "Cost-mechanism note".
+          id: catalogItems.id,
+          name: catalogItems.name,
+          productUrl: catalogItems.productUrl,
+          sku: catalogItems.sku,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          description: catalogItems.description,
+          categories: catalogItems.categories,
+          images: catalogItems.images,
+          brand: catalogItems.brand,
+          model: catalogItems.model,
+          ratingValue: catalogItems.ratingValue,
+          color: catalogItems.color,
+          size: catalogItems.size,
+          price: catalogItems.price,
+          availability: catalogItems.availability,
+          seller: catalogItems.seller,
+          productSku: catalogItems.productSku,
+          material: catalogItems.material,
+          currency: catalogItems.currency,
+          condition: catalogItems.condition,
+          reviewCount: catalogItems.reviewCount,
+          createdAt: catalogItems.createdAt,
+          updatedAt: catalogItems.updatedAt,
           pack_item_count: sql<number>`COALESCE(pack_item_counts.count, 0)`,
         })
         .from(catalogItems)
@@ -162,7 +196,36 @@ export class CatalogService {
     const [itemsWithCounts, totalCountResult] = await Promise.all([
       this.db
         .select({
-          ...getTableColumns(catalogItems),
+          // List-context projection: scalar fields callers actually need for
+          // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
+          // per row) AND the fat JSONB (variants/techs/links/reviews/qas/faqs,
+          // 10s of KB each). Keep these for /catalog/:id detail.
+          // The win lands at the DB→Worker boundary, not just response Zod —
+          // see plan Summary "Cost-mechanism note".
+          id: catalogItems.id,
+          name: catalogItems.name,
+          productUrl: catalogItems.productUrl,
+          sku: catalogItems.sku,
+          weight: catalogItems.weight,
+          weightUnit: catalogItems.weightUnit,
+          description: catalogItems.description,
+          categories: catalogItems.categories,
+          images: catalogItems.images,
+          brand: catalogItems.brand,
+          model: catalogItems.model,
+          ratingValue: catalogItems.ratingValue,
+          color: catalogItems.color,
+          size: catalogItems.size,
+          price: catalogItems.price,
+          availability: catalogItems.availability,
+          seller: catalogItems.seller,
+          productSku: catalogItems.productSku,
+          material: catalogItems.material,
+          currency: catalogItems.currency,
+          condition: catalogItems.condition,
+          reviewCount: catalogItems.reviewCount,
+          createdAt: catalogItems.createdAt,
+          updatedAt: catalogItems.updatedAt,
           pack_item_count: sql<number>`COALESCE(pack_item_counts.count, 0)`,
         })
         .from(catalogItems)
@@ -224,6 +287,7 @@ export class CatalogService {
       provider: this.env.AI_PROVIDER,
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
       cloudflareAiBinding: this.env.AI,
     });
 
@@ -237,11 +301,21 @@ export class CatalogService {
       };
     }
 
-    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+    // ORDER BY the raw cosine distance so the HNSW index (vector_cosine_ops
+    // on embedding_idx) can serve the query. Wrapping the distance in
+    // `1 - (...)` and ordering by that DESC made the planner fall back to
+    // Seq Scan + Sort across all ~1.79M catalog rows — ~115× more expensive
+    // than HNSW per EXPLAIN against prod. The `similarity` field is still
+    // computed and returned for caller compatibility (response shape
+    // unchanged); only the SQL operators ORDER BY / WHERE see the raw
+    // distance, which is what HNSW is built to serve.
+    const distance = cosineDistance(catalogItems.embedding, embedding);
+    const similarity = sql<number>`1 - (${distance})`;
 
     const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
-    const vectorWhere = and(isNotNull(catalogItems.embedding), gt(similarity, 0.1));
+    // `distance < 0.9` is equivalent to the previous `similarity > 0.1`.
+    const vectorWhere = and(isNotNull(catalogItems.embedding), sql`${distance} < 0.9`);
 
     const [items, vectorTotalCountResult] = await Promise.all([
       this.db
@@ -251,7 +325,7 @@ export class CatalogService {
         })
         .from(catalogItems)
         .where(vectorWhere)
-        .orderBy(desc(similarity))
+        .orderBy(distance) // ASC; HNSW-eligible
         .limit(limit)
         .offset(offset),
       this.db
@@ -286,6 +360,7 @@ export class CatalogService {
       openAiApiKey: this.env.OPENAI_API_KEY,
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
       provider: this.env.AI_PROVIDER,
       cloudflareAiBinding: this.env.AI,
     });
@@ -301,7 +376,10 @@ export class CatalogService {
         return Promise.resolve([]);
       }
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+      // HNSW-eligible: ORDER BY the raw distance ASC. See vectorSearch above
+      // for the full rationale on why `1 - (...)` wrapping defeats HNSW.
+      const distance = cosineDistance(catalogItems.embedding, embedding);
+      const similarity = sql<number>`1 - (${distance})`;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db
         .select({
@@ -309,8 +387,8 @@ export class CatalogService {
           similarity,
         })
         .from(catalogItems)
-        .where(and(isNotNull(catalogItems.embedding), gt(similarity, 0.1)))
-        .orderBy(desc(similarity))
+        .where(and(isNotNull(catalogItems.embedding), sql`${distance} < 0.9`))
+        .orderBy(distance)
         .limit(limit);
     });
 
@@ -340,10 +418,32 @@ export class CatalogService {
    * - For each item, insert or update only non-empty fields
    */
 
-  async upsertCatalogItems(items: NewCatalogItem[]): Promise<Pick<CatalogItem, 'id'>[]> {
+  async upsertCatalogItems(
+    items: NewCatalogItem[],
+  ): Promise<Pick<CatalogItem, 'id' | 'sku' | 'name' | 'description' | 'categories' | 'brand'>[]> {
     const columns = getTableColumns(catalogItems);
 
-    const upsertedItems = await this.db
+    // Project only the fields downstream needs: id + sku for tracking, plus the
+    // embedding-watched fields (name, description, categories, brand) the regen
+    // diff below reads. Stops Postgres from shipping full rows incl. 1536-dim
+    // embedding + reviews/qas/faqs back per 100-row batch.
+    //
+    // Type note: Drizzle 0.45.x narrows the insert query type after
+    // `.onConflictDoUpdate()` such that the field-projected `.returning()`
+    // overload is no longer visible — only the no-arg version. The runtime
+    // honors the fields object regardless, so we cast the call site to the
+    // base shape and annotate the return type explicitly. Cost win lands in
+    // SQL (`RETURNING id, sku, name, description, categories, brand`).
+    const returningFields = {
+      id: catalogItems.id,
+      sku: catalogItems.sku,
+      name: catalogItems.name,
+      description: catalogItems.description,
+      categories: catalogItems.categories,
+      brand: catalogItems.brand,
+    };
+
+    const upsertQuery = this.db
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
@@ -365,16 +465,24 @@ export class CatalogService {
           }
           return acc;
         }, {}),
-      })
-      .returning();
+      });
 
-    // Check if any embedding-related fields have changed
-    const embeddingFields: Array<keyof CatalogItem> = [
-      'name',
-      'description',
-      'categories',
-      'brand',
-    ];
+    // Cast the call site to bypass the 0.45.x overload-narrowing; the explicit
+    // return-type annotation on the function keeps consumer-facing safety.
+    const upsertedItems = await (
+      upsertQuery as unknown as {
+        returning: (
+          fields: typeof returningFields,
+        ) => Promise<
+          Pick<CatalogItem, 'id' | 'sku' | 'name' | 'description' | 'categories' | 'brand'>[]
+        >;
+      }
+    ).returning(returningFields);
+
+    // Check if any embedding-related fields have changed. Scope to the keys
+    // present in the narrowed `.returning(...)` projection above so TS can
+    // index both `inputItem[field]` and `item[field]` without complaint.
+    const embeddingFields = ['name', 'description', 'categories', 'brand'] as const;
 
     const itemsToUpdate = upsertedItems.filter((item) => {
       const inputItem = items.find((i) => i.sku === item.sku);
@@ -387,13 +495,21 @@ export class CatalogService {
     });
 
     if (itemsToUpdate.length > 0) {
-      // Regenerate embeddings for updated items
-      const embeddingTexts = itemsToUpdate.map((item) => getEmbeddingText({ item }));
+      // Regenerate embeddings for updated items. Use the INPUT items as the
+      // source text — they have every field getEmbeddingText reads
+      // (model, variants, techs, color, size, material, reviews, qas, faqs).
+      // The narrow `.returning(...)` projection above does not include those,
+      // so the returned rows can't feed the helper.
+      const embeddingTexts = itemsToUpdate.map((item) => {
+        const inputItem = items.find((i) => i.sku === item.sku);
+        return getEmbeddingText({ item: inputItem ?? item });
+      });
       const embeddings = await generateManyEmbeddings({
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
         provider: this.env.AI_PROVIDER,
         cloudflareAiBinding: this.env.AI,
       });
@@ -474,8 +590,30 @@ export class CatalogService {
     const batchSize = batch.messages.length;
     console.log(`Processing batch: ${batchSize} items`);
 
+    // Project only the fields getEmbeddingText reads. Drops embedding (null
+    // here anyway — these are items being backfilled), plus every scalar the
+    // helper doesn't touch (price, ratingValue, availability, seller,
+    // productSku, currency, condition, reviewCount, images, links, weight,
+    // weightUnit, productUrl, sku, timestamps). The fat JSONB cols (reviews,
+    // qas, faqs, variants, techs) ARE pulled because getEmbeddingText uses
+    // them — that's unavoidable for embedding regen.
     const itemsToEmbed = await this.db
-      .select()
+      .select({
+        id: catalogItems.id,
+        name: catalogItems.name,
+        description: catalogItems.description,
+        brand: catalogItems.brand,
+        model: catalogItems.model,
+        categories: catalogItems.categories,
+        variants: catalogItems.variants,
+        techs: catalogItems.techs,
+        color: catalogItems.color,
+        size: catalogItems.size,
+        material: catalogItems.material,
+        reviews: catalogItems.reviews,
+        qas: catalogItems.qas,
+        faqs: catalogItems.faqs,
+      })
       .from(catalogItems)
       .where(
         inArray(
@@ -494,6 +632,7 @@ export class CatalogService {
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
         provider: this.env.AI_PROVIDER,
         cloudflareAiBinding: this.env.AI,
       });

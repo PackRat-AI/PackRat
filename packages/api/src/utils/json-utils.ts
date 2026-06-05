@@ -121,12 +121,12 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
   const unitStr = isString(rawWeightUnit) ? rawWeightUnit : undefined;
 
   if (isNumber(rawWeight) && rawWeight > 0) {
-    const { weight, unit } = parseWeight(String(rawWeight), unitStr);
+    const { weight, unit } = parseWeight({ weightStr: String(rawWeight), unitStr });
     item.weight = weight ?? undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
     item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
   } else if (isString(rawWeight) && parseFloat(rawWeight) > 0) {
-    const { weight, unit } = parseWeight(rawWeight, unitStr);
+    const { weight, unit } = parseWeight({ weightStr: rawWeight, unitStr });
     item.weight = weight ?? undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
     item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
@@ -186,7 +186,7 @@ export function mapJsonRowToItem(obj: Record<string, unknown>): Partial<NewCatal
     const techs = toStringRecord(item.techs);
     const claimedWeight = techs['Claimed Weight'] ?? techs.weight;
     if (claimedWeight) {
-      const { weight, unit } = parseWeight(claimedWeight);
+      const { weight, unit } = parseWeight({ weightStr: claimedWeight });
       item.weight = weight ?? undefined;
       const parsedUnit = WeightUnitSchema.safeParse(unit);
       item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
