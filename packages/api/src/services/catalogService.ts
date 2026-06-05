@@ -479,51 +479,14 @@ export class CatalogService {
       }
     ).returning(returningFields);
 
-    // Check if any embedding-related fields have changed. Scope to the keys
-    // present in the narrowed `.returning(...)` projection above so TS can
-    // index both `inputItem[field]` and `item[field]` without complaint.
-    const embeddingFields = ['name', 'description', 'categories', 'brand'] as const;
-
-    const itemsToUpdate = upsertedItems.filter((item) => {
-      const inputItem = items.find((i) => i.sku === item.sku);
-      if (!inputItem) return false;
-
-      return embeddingFields.some(
-        (field) =>
-          inputItem[field] && JSON.stringify(inputItem[field]) !== JSON.stringify(item[field]),
-      );
-    });
-
-    if (itemsToUpdate.length > 0) {
-      // Regenerate embeddings for updated items. Use the INPUT items as the
-      // source text — they have every field getEmbeddingText reads
-      // (model, variants, techs, color, size, material, reviews, qas, faqs).
-      // The narrow `.returning(...)` projection above does not include those,
-      // so the returned rows can't feed the helper.
-      const embeddingTexts = itemsToUpdate.map((item) => {
-        const inputItem = items.find((i) => i.sku === item.sku);
-        return getEmbeddingText({ item: inputItem ?? item });
-      });
-      const embeddings = await generateManyEmbeddings({
-        openAiApiKey: this.env.OPENAI_API_KEY,
-        values: embeddingTexts,
-        cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
-        cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
-        provider: this.env.AI_PROVIDER,
-        cloudflareAiBinding: this.env.AI,
-      });
-
-      // Update items with new embeddings
-      const updatePromises = itemsToUpdate.map((item, index) =>
-        this.db
-          .update(catalogItems)
-          .set({ embedding: embeddings[index] })
-          .where(eq(catalogItems.sku, item.sku)),
-      );
-
-      await Promise.all(updatePromises);
-    }
+    // F4: an embedding-regen diff loop previously lived here. It was dead
+    // code — the UPSERT `set` clause uses `excluded.<col>` for the
+    // embedding-watched columns, so the returned row's values were always
+    // equal to the input's values, making `inputItem[field] !== item[field]`
+    // structurally always-false. The actual source-text diff now lives
+    // upstream in `processValidItemsBatch` (where it can run BEFORE
+    // generateManyEmbeddings, avoiding redundant OpenAI calls entirely).
+    // See docs/brainstorms/2026-06-01-embedding-regen-anomaly-requirements.md.
 
     return upsertedItems;
   }
@@ -541,6 +504,70 @@ export class CatalogService {
         etlJobId: jobId,
       })),
     );
+  }
+
+  /**
+   * Bulk-fetch existing catalog rows by SKU, projecting only the columns the
+   * ETL embedding-regen diff needs: the existing embedding (so unchanged
+   * source-text items can reuse it instead of re-calling OpenAI) plus every
+   * field `getEmbeddingText` reads.
+   *
+   * Used by `processValidItemsBatch` to skip redundant OpenAI embedding calls
+   * when the upserted row's source text hasn't changed — fixes the F4
+   * embedding-regen anomaly captured in
+   * `docs/brainstorms/2026-06-01-embedding-regen-anomaly-requirements.md`.
+   *
+   * Projection is explicit (not getTableColumns) per the U9 lint discipline.
+   */
+  async fetchExistingForRegen(
+    skus: string[],
+  ): Promise<
+    Map<
+      string,
+      Pick<
+        CatalogItem,
+        | 'id'
+        | 'sku'
+        | 'embedding'
+        | 'name'
+        | 'description'
+        | 'brand'
+        | 'model'
+        | 'categories'
+        | 'variants'
+        | 'techs'
+        | 'color'
+        | 'size'
+        | 'material'
+        | 'reviews'
+        | 'qas'
+        | 'faqs'
+      >
+    >
+  > {
+    if (skus.length === 0) return new Map();
+    const rows = await this.db
+      .select({
+        id: catalogItems.id,
+        sku: catalogItems.sku,
+        embedding: catalogItems.embedding,
+        name: catalogItems.name,
+        description: catalogItems.description,
+        brand: catalogItems.brand,
+        model: catalogItems.model,
+        categories: catalogItems.categories,
+        variants: catalogItems.variants,
+        techs: catalogItems.techs,
+        color: catalogItems.color,
+        size: catalogItems.size,
+        material: catalogItems.material,
+        reviews: catalogItems.reviews,
+        qas: catalogItems.qas,
+        faqs: catalogItems.faqs,
+      })
+      .from(catalogItems)
+      .where(inArray(catalogItems.sku, skus));
+    return new Map(rows.map((r) => [r.sku, r]));
   }
 
   async queueEmbeddingJobs(): Promise<{ count: number }> {
