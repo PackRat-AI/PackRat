@@ -4,9 +4,8 @@
  * Worker, updated for the cross-origin AS architecture.
  *
  * Operator runs this before filing Anthropic's Connector Store form
- * (https://clau.de/mcp-directory-submission). CI can run it via
- * `workflow_dispatch` from `.github/workflows/mcp-readiness.yml`. The script
- * probes two distinct hosts:
+ * (https://clau.de/mcp-directory-submission). The script probes two
+ * distinct hosts:
  *
  *   - RS (resource server)      = https://mcp.packratai.com
  *                                 hosts /mcp + PRM + /health + /status + favicon
@@ -15,8 +14,7 @@
  *
  * plus the brand domain (`packratai.com`) for the public docs / privacy /
  * terms pages. The probe emits a clear PASS / FAIL / WARN line per check
- * and exits 0 only when every check passes; CI gates the deploy tag on
- * green.
+ * and exits 0 only when every check passes.
  *
  * Why this exists separately from the unit tests:
  *   The unit suite (`packages/mcp/src/__tests__/*.test.ts`) asserts the
@@ -66,8 +64,7 @@
  *
  * Run env: Bun runtime (Node APIs are available). Do NOT run this against
  * production until both workers have actually been deployed; the operator
- * runs it once the deploy is live, and CI runs it on-demand via
- * workflow_dispatch.
+ * runs it once the deploy is live.
  */
 
 import { readFile } from 'node:fs/promises';

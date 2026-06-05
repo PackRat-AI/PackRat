@@ -1609,19 +1609,21 @@ operator's filing reference. It contains:
 The operator does not commit the populated reviewer credentials to the
 repo — the doc carries `TODO (operator)` placeholders.
 
-### CI: `workflow_dispatch` trigger
+### Operator check
 
-`.github/workflows/mcp-readiness.yml` runs the readiness script from
-GitHub Actions on-demand. Use it before pushing the `mcp-v*` deploy tag
-so the production probe runs against a CI-clean environment without
-needing local wrangler / bun.
+Run the readiness probe directly after the production deploy is live:
 
+```bash
+bun packages/mcp/scripts/submission-readiness.ts
 ```
-GitHub → Actions → "MCP Submission Readiness" → Run workflow →
-  rs_url:       https://mcp.packratai.com   (default; override for staging)
-  as_url:       https://api.packrat.world   (default; override for staging)
-  brand_domain: https://packratai.com       (default)
-  → Run
+
+For staging or other non-prod targets, pass explicit hosts:
+
+```bash
+bun packages/mcp/scripts/submission-readiness.ts \
+  --rs-url https://staging-mcp.example.com \
+  --as-url https://staging-api.example.com \
+  --brand-domain https://staging-packratai.example.com
 ```
 
 The job exits 0 on green / 1 on red so the workflow surfaces a clear

@@ -27,8 +27,6 @@ the public site).
    — see below):
    ```bash
    bun packages/mcp/scripts/submission-readiness.ts
-   # …or from CI: GitHub → Actions → "MCP Submission Readiness" →
-   #   "Run workflow" → leave RS / AS URLs as defaults → Run.
    ```
    The probe targets two distinct hosts: `mcp.packratai.com` (resource
    server) and `api.packrat.world` (authorization server, hosting
