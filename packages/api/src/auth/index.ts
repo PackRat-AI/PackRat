@@ -22,14 +22,12 @@ import { admin, bearer, jwt } from 'better-auth/plugins';
 // `openid`, `profile`, `email`, `offline_access` are the OIDC standard scopes
 // the plugin advertises by default; we include them explicitly so this list
 // is the single source of truth for `scopes_supported` in discovery metadata.
-// The `mcp` umbrella is back-compat with the legacy MCP scope; `mcp:read/write/admin`
-// are the granular surface mapped to tool visibility in packages/mcp/src/scopes.ts.
+// MCP scopes are mapped to tool visibility in packages/mcp/src/scopes.ts.
 const MCP_OAUTH_SCOPES = [
   'openid',
   'profile',
   'email',
   'offline_access',
-  'mcp',
   'mcp:read',
   'mcp:write',
   'mcp:admin',

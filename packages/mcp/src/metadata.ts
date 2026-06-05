@@ -14,7 +14,7 @@
  * tokens against THAT origin; tokens come back with `aud = canonicalResourceUrl`
  * which the verifier on this worker requires.
  *
- * The four scope strings here are the v1 listing surface (per the
+ * The three scope strings here are the v1 listing surface (per the
  * connector-readiness plan).
  */
 
@@ -22,12 +22,7 @@ import { ServiceMeta } from './constants';
 import type { Env } from './types';
 
 /** All OAuth scopes the MCP server supports. */
-export const SCOPES_SUPPORTED = [
-  'mcp', // umbrella scope for back-compat with pre-split clients
-  'mcp:read',
-  'mcp:write',
-  'mcp:admin',
-] as const;
+export const SCOPES_SUPPORTED = ['mcp:read', 'mcp:write', 'mcp:admin'] as const;
 
 export type Scope = (typeof SCOPES_SUPPORTED)[number];
 
@@ -103,7 +98,7 @@ export function authorizationServerUrl(env: Env): string {
  */
 export function buildWwwAuthenticateHeader({
   env: _env,
-  scope = 'mcp',
+  scope = 'mcp:read',
 }: {
   env: Env;
   scope?: Scope;

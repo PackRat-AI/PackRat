@@ -11,9 +11,7 @@
  *
  *   2. `visibleScopesForTool` produces the correct positive-list set
  *      with the proper inheritance: mcp:admin sees admin+write+read,
- *      mcp:write sees write+read, mcp:read sees read only, and the
- *      legacy `mcp` umbrella sees read-only (per the scope-to-tool
- *      table in the connector-store plan).
+ *      mcp:write sees write+read, and mcp:read sees read only.
  *
  *   3. `getVisibleTools` partial application produces a predicate that
  *      enforces visibility correctly, including the fail-closed
@@ -116,22 +114,19 @@ describe('visibleScopesForTool — scope inheritance', () => {
     expect(scopes).toEqual(['mcp:admin']);
   });
 
-  it('exposes write tools on mcp:write OR mcp:admin (no umbrella)', () => {
+  it('exposes write tools on mcp:write OR mcp:admin', () => {
     const scopes = visibleScopesForTool('create_pack');
     expect(scopes).toEqual(['mcp:write', 'mcp:admin']);
-    // Importantly: the legacy `mcp` umbrella does NOT authorize writes.
-    expect(scopes).not.toContain('mcp');
     expect(scopes).not.toContain('mcp:read');
   });
 
-  it('exposes read tools on every scope including the legacy umbrella', () => {
+  it('exposes read tools on every explicit MCP scope', () => {
     const scopes = visibleScopesForTool('get_pack');
-    expect(scopes).toEqual(['mcp', 'mcp:read', 'mcp:write', 'mcp:admin']);
+    expect(scopes).toEqual(['mcp:read', 'mcp:write', 'mcp:admin']);
   });
 
   it('exposes whoami on every scope (read classification)', () => {
     const scopes = visibleScopesForTool('whoami');
-    expect(scopes).toContain('mcp');
     expect(scopes).toContain('mcp:read');
   });
 
@@ -185,15 +180,6 @@ describe('getVisibleTools — partial-applied predicate', () => {
     expect(visible('get_database_schema')).toBe(true);
   });
 
-  it('with the legacy mcp umbrella — shows read only (back-compat)', () => {
-    const visible = getVisibleTools(['mcp']);
-    expect(visible('get_pack')).toBe(true);
-    expect(visible('list_packs')).toBe(true);
-    expect(visible('whoami')).toBe(true);
-    expect(visible('create_pack')).toBe(false);
-    expect(visible('admin_stats')).toBe(false);
-  });
-
   it('with multiple scopes — union of authorized tools', () => {
     const visible = getVisibleTools(['mcp:read', 'mcp:admin']);
     expect(visible('get_pack')).toBe(true);
@@ -220,7 +206,7 @@ describe('getVisibleTools — partial-applied predicate', () => {
 
   it('treats unknown tool names per their classification (write by default)', () => {
     // Unknown tool names fall into the `write` bucket, so they're visible
-    // to mcp:write and mcp:admin but not mcp:read or the umbrella.
+    // to mcp:write and mcp:admin but not mcp:read.
     const readOnly = getVisibleTools(['mcp:read']);
     const writeUp = getVisibleTools(['mcp:write']);
     expect(readOnly('mystery_tool')).toBe(false);

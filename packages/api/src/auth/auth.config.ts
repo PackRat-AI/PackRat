@@ -87,7 +87,6 @@ export const auth = betterAuth({
         'profile',
         'email',
         'offline_access',
-        'mcp',
         'mcp:read',
         'mcp:write',
         'mcp:admin',

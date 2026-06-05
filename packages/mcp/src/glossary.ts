@@ -187,13 +187,12 @@ template seeded from the trail's metadata.
 
 ## OAuth scopes
 
-The PackRat MCP server advertises four scopes. Tokens granted at
+The PackRat MCP server advertises three scopes. Tokens granted at
 \`/authorize\` carry one or more of these; tool visibility is gated
 on the granted set.
 
 | Scope | Grants |
 | --- | --- |
-| \`mcp\` | Back-compat umbrella for pre-split clients. Read-only access — same surface as \`mcp:read\`. |
 | \`mcp:read\` | All \`packrat_get_*\`, \`packrat_list_*\`, \`packrat_search_*\`, \`packrat_find_*\`, \`packrat_whoami\`. No writes, no admin. |
 | \`mcp:write\` | \`mcp:read\` + every \`packrat_create_*\`, \`packrat_update_*\`, \`packrat_delete_*\`, \`packrat_submit_*\`, \`packrat_record_*\`, \`packrat_add_*\`, \`packrat_toggle_*\`. The default scope Claude.ai requests. |
 | \`mcp:admin\` | \`mcp:write\` + every \`packrat_admin_*\` tool, plus \`packrat_execute_sql_query\`, \`packrat_get_database_schema\`, \`packrat_generate_pack_template_from_url\`, \`packrat_create_app_pack_template\`. Granted ONLY to users whose Better Auth role is \`ADMIN\`. |

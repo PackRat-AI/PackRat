@@ -286,7 +286,6 @@ function buildCatalog(): CatalogDump {
     totalTools: entries.length,
     counts: { byClassification, byDomain },
     scopes: [
-      { name: 'mcp', description: 'Legacy umbrella scope; treated as read-only for back-compat.' },
       {
         name: 'mcp:read',
         description: 'Read-only tools: get_*, list_*, search_*, find_*, whoami.',

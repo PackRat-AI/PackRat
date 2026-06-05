@@ -33,7 +33,7 @@ import { describe, it } from 'vitest';
 describe('well-known endpoints (integration — deferred per U17 follow-up)', () => {
   it.todo(
     'GET /.well-known/oauth-protected-resource returns the pinned resource URL, ' +
-      'authorization_servers, and the four v1 scopes',
+      'authorization_servers, and the three v1 scopes',
   );
 
   it.todo(
@@ -44,7 +44,7 @@ describe('well-known endpoints (integration — deferred per U17 follow-up)', ()
 
   it.todo(
     'GET /.well-known/oauth-authorization-server advertises scopes_supported ' +
-      'including all four scopes (mcp, mcp:read, mcp:write, mcp:admin)',
+      'including all three scopes (mcp:read, mcp:write, mcp:admin)',
   );
 
   it.todo(

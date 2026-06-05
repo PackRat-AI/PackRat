@@ -52,10 +52,10 @@ describe('MCP public docs page (/mcp)', () => {
     expect(source).toContain('https://mcp.packratai.com/mcp');
   });
 
-  it('lists the four OAuth scopes', () => {
+  it('lists the three OAuth scopes', () => {
     // Sourced from the JSON dump at render time, but the header / table
     // copy refers to them inline; the smoke test asserts both.
-    for (const scope of ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin']) {
+    for (const scope of ['mcp:read', 'mcp:write', 'mcp:admin']) {
       expect(source).toContain(scope);
     }
   });

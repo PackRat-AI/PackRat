@@ -181,7 +181,7 @@ describe('handleStatus', () => {
     expect(body.service).toBe('packrat-mcp');
     expect(body.transport).toBe('streamable-http');
     expect(body.endpoint).toBe('/mcp');
-    expect(body.scopes_supported).toEqual(['mcp', 'mcp:read', 'mcp:write', 'mcp:admin']);
+    expect(body.scopes_supported).toEqual(['mcp:read', 'mcp:write', 'mcp:admin']);
     expect(body.deployId).toBe('unknown'); // sentinel when CF_VERSION_METADATA is unbound
   });
 

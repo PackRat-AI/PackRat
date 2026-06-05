@@ -139,7 +139,7 @@ export const FORBIDDEN_PROMO_PATTERNS: ReadonlyArray<{ pattern: RegExp; label: s
 ];
 
 /** Required scopes the protected-resource metadata MUST advertise. */
-export const REQUIRED_SCOPES = ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin'] as const;
+export const REQUIRED_SCOPES = ['mcp:read', 'mcp:write', 'mcp:admin'] as const;
 
 /** Per-request fetch timeout in ms. */
 const FETCH_TIMEOUT_MS = 10_000;

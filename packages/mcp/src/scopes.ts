@@ -1,13 +1,8 @@
 /**
  * OAuth scope model + scope-based tool gating for the PackRat MCP Worker (U5).
  *
- * The PackRat MCP server advertises four coarse-grained scopes:
+ * The PackRat MCP server advertises three coarse-grained scopes:
  *
- *   `mcp`        — legacy umbrella scope kept for back-compat with any
- *                  client registered before the scope split. Treated as
- *                  read-only (per the connector-store plan's scope-to-tool
- *                  table); pre-split clients never expected to perform
- *                  writes through the MCP surface.
  *   `mcp:read`   — read-only tools: get_*, list_*, search_*, find_*, plus
  *                  whoami / extract_* / preview_*.
  *   `mcp:write`  — read + write tools (create/update/delete/submit/...).
@@ -143,21 +138,15 @@ export function classifyTool(name: string): ToolClassification {
  * The returned set is a *positive* list — at least one of these scopes
  * must be present in the granted scopes for the tool to be visible.
  *
- *   read   tools → ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin']
+ *   read   tools → ['mcp:read', 'mcp:write', 'mcp:admin']
  *   write  tools → ['mcp:write', 'mcp:admin']
  *   admin  tools → ['mcp:admin']
- *
- * `mcp` (the umbrella) authorizes only reads, per the scope-to-tool table
- * in the connector-readiness plan: pre-split clients only ever called read
- * tools, so it would be a quiet privilege escalation to suddenly let them
- * write or administer. New clients should request explicit scopes.
  */
 export function visibleScopesForTool(name: string): readonly Scope[] {
   const c = classifyTool(name);
   if (c === 'admin') return ['mcp:admin'];
   if (c === 'write') return ['mcp:write', 'mcp:admin'];
-  // read: include the umbrella scope for back-compat.
-  return ['mcp', 'mcp:read', 'mcp:write', 'mcp:admin'];
+  return ['mcp:read', 'mcp:write', 'mcp:admin'];
 }
 
 /**

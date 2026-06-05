@@ -183,7 +183,7 @@ describe('checkStreamableHttpAuth', () => {
       status: 401,
       headers: new Headers({
         'WWW-Authenticate':
-          'Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp"',
+          'Bearer resource_metadata="https://mcp.packratai.com/.well-known/oauth-protected-resource", scope="mcp:read"',
       }),
     });
     expect(checkStreamableHttpAuth(res).status).toBe('pass');
@@ -209,8 +209,8 @@ describe('checkProtectedResourceMetadata', () => {
     );
   });
 
-  it('fails when scopes_supported is missing one of the required four', () => {
-    const body = { ...happyBody, scopes_supported: ['mcp', 'mcp:read', 'mcp:write'] };
+  it('fails when scopes_supported is missing one of the required three', () => {
+    const body = { ...happyBody, scopes_supported: ['mcp:read', 'mcp:write'] };
     const res = makeRes({ status: 200, bodyText: JSON.stringify(body) });
     const result = checkProtectedResourceMetadata({ rsUrl: RS_TARGET, asUrl: AS_TARGET, res });
     expect(result.status).toBe('fail');
@@ -513,12 +513,12 @@ describe('checkStatusEndpoint', () => {
   it('fails when scopes_supported is missing a required scope', () => {
     const res = makeRes({
       status: 200,
-      bodyText: JSON.stringify({ scopes_supported: ['mcp', 'mcp:read', 'mcp:write'] }),
+      bodyText: JSON.stringify({ scopes_supported: ['mcp:read', 'mcp:write'] }),
     });
     expect(checkStatusEndpoint(res).status).toBe('fail');
   });
 
-  it('passes when scopes_supported contains all four PackRat scopes', () => {
+  it('passes when scopes_supported contains all three PackRat scopes', () => {
     const res = makeRes({
       status: 200,
       bodyText: JSON.stringify({ scopes_supported: [...REQUIRED_SCOPES] }),

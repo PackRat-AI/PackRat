@@ -81,15 +81,7 @@ const CLAUDE_POLICY_URI = 'https://www.anthropic.com/legal/privacy';
 const CLAUDE_TOS_URI = 'https://www.anthropic.com/legal/consumer-terms';
 const CLAUDE_CLIENT_URI = 'https://claude.ai';
 
-const CLAUDE_SCOPES = [
-  'openid',
-  'profile',
-  'email',
-  'offline_access',
-  'mcp',
-  'mcp:read',
-  'mcp:write',
-];
+const CLAUDE_SCOPES = ['openid', 'profile', 'email', 'offline_access', 'mcp:read', 'mcp:write'];
 
 // ── Script body ─────────────────────────────────────────────────────────────
 

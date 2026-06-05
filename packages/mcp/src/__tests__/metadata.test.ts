@@ -16,12 +16,8 @@ import type { Env } from '../types';
 const env = { PACKRAT_API_URL: 'https://api.packrat.world' } as Env;
 
 describe('SCOPES_SUPPORTED', () => {
-  it('declares the four v1 connector-store scopes', () => {
-    expect(SCOPES_SUPPORTED).toEqual(['mcp', 'mcp:read', 'mcp:write', 'mcp:admin']);
-  });
-
-  it('lists the umbrella scope first for back-compat', () => {
-    expect(SCOPES_SUPPORTED[0]).toBe('mcp');
+  it('declares the three v1 connector-store scopes', () => {
+    expect(SCOPES_SUPPORTED).toEqual(['mcp:read', 'mcp:write', 'mcp:admin']);
   });
 
   it('has no duplicates', () => {
@@ -96,8 +92,8 @@ describe('buildWwwAuthenticateHeader', () => {
     );
   });
 
-  it('defaults the scope hint to "mcp"', () => {
-    expect(buildWwwAuthenticateHeader({ env })).toContain('scope="mcp"');
+  it('defaults the scope hint to "mcp:read"', () => {
+    expect(buildWwwAuthenticateHeader({ env })).toContain('scope="mcp:read"');
   });
 
   it('passes through a specific requested scope when provided', () => {

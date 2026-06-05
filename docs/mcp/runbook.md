@@ -195,13 +195,12 @@ existing admin token. The rename is name-only; the bytes stay the same.
 
 ## U5 admin scope model
 
-The MCP Worker advertises four coarse-grained OAuth scopes (see
+The MCP Worker advertises three coarse-grained OAuth scopes (see
 `packages/mcp/src/scopes.ts` and `metadata.ts`):
 
 | Scope | Visible tools |
 | ----- | ------------- |
-| `mcp` (umbrella, back-compat) | read tools only (`packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, `packrat_extract_*`, `packrat_preview_*`, `packrat_whoami`) |
-| `mcp:read` | same as `mcp`, explicit |
+| `mcp:read` | read tools only (`packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, `packrat_extract_*`, `packrat_preview_*`, `packrat_whoami`) |
 | `mcp:write` | read + write tools (everything not classified `admin`) |
 | `mcp:admin` | read + write + every `packrat_admin_*` tool + the four explicit overrides `packrat_execute_sql_query` / `packrat_get_database_schema` / `packrat_generate_pack_template_from_url` / `packrat_create_app_pack_template` (the last two added in U7) |
 
@@ -1330,7 +1329,7 @@ version + scope catalog they were promised.
   "version": "<from constants.ts>",
   "transport": "streamable-http",
   "endpoint": "/mcp",
-  "scopes_supported": ["mcp", "mcp:read", "mcp:write", "mcp:admin"],
+  "scopes_supported": ["mcp:read", "mcp:write", "mcp:admin"],
   "docs":    "https://packratai.com/mcp",
   "terms":   "https://packratai.com/terms-of-service",
   "privacy": "https://packratai.com/privacy-policy",

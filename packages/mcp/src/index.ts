@@ -284,11 +284,7 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
    * which auto-emits `notifications/tools/list_changed`.
    *
    * `props.scopes` is set from the verified JWT's `scope` claim in the
-   * outer fetch wrapper. If absent (e.g. a token without a `scope` claim
-   * or one that failed parsing), we fall back to the `['mcp']` umbrella
-   * scope per the back-compat contract documented in `scopes.ts` — that
-   * scope only authorizes reads, so the worst-case misclassification is
-   * "an admin token loses access to admin tools until they re-auth".
+   * outer fetch wrapper. Missing scopes fail closed.
    */
   private applyScopeFilter(grantedScopes: readonly string[]): void {
     const isVisible = getVisibleTools(grantedScopes);
@@ -350,11 +346,10 @@ export class PackRatMCP extends McpAgent<Env, State, Props> {
     // `this.props` is injected by the outer fetch wrapper via `ctx.props`
     // before the DO fetch hits us (read by the `agents/mcp` SDK's `serve()`
     // implementation — see `node_modules/agents/dist/mcp/index.js`'s
-    // `getAgentByName(..., { props: ctx.props })`). Missing scopes fall
-    // back to the umbrella `['mcp']` per the back-compat contract.
+    // `getAgentByName(..., { props: ctx.props })`). Missing scopes fail
+    // closed, so a malformed token sees no tools.
     const props = this.props as { scopes?: readonly string[] } | undefined;
-    const grantedScopes: readonly string[] =
-      props?.scopes && props.scopes.length > 0 ? props.scopes : ['mcp'];
+    const grantedScopes: readonly string[] = props?.scopes ?? [];
     this.applyScopeFilter(grantedScopes);
   }
 }

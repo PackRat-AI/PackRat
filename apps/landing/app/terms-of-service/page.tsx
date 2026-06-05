@@ -105,9 +105,9 @@ export default function TermsOfServicePage() {
           <ul className="list-disc pl-6 space-y-1">
             <li>
               Connecting an MCP client to PackRat uses OAuth 2.1. The flow requires you to grant one
-              or more scopes — <code className="text-sm">mcp</code>,{' '}
-              <code className="text-sm">mcp:read</code>, <code className="text-sm">mcp:write</code>,
-              or <code className="text-sm">mcp:admin</code>. The client only receives the scopes you
+              or more scopes — <code className="text-sm">mcp:read</code>,{' '}
+              <code className="text-sm">mcp:write</code>, or{' '}
+              <code className="text-sm">mcp:admin</code>. The client only receives the scopes you
               approve. The <code className="text-sm">mcp:admin</code> scope is granted only to users
               with a PackRat admin role.
             </li>

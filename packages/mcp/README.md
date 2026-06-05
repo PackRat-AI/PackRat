@@ -33,12 +33,11 @@ As of the Better Auth OAuth consolidation refactor, the MCP worker no longer hos
 6. Claude receives a JWT (signed by Better Auth) at the token endpoint and redirects back to `claude.ai/api/mcp/auth_callback`.
 7. Claude retries the MCP request with `Authorization: Bearer <jwt>`; the MCP worker validates the JWT locally against the JWKS cache and dispatches the tool call.
 
-### Scopes (four, coarse-grained)
+### Scopes (three, coarse-grained)
 
 | Scope | Grants | Notes |
 | --- | --- | --- |
-| `mcp` | read tools only | Legacy umbrella scope, kept for back-compat with pre-split clients. |
-| `mcp:read` | `packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, plus `packrat_whoami` and a few `packrat_extract_*` / `packrat_preview_*` tools | Same as `mcp` but explicit. |
+| `mcp:read` | `packrat_get_*`, `packrat_list_*`, `packrat_search_*`, `packrat_find_*`, plus `packrat_whoami` and a few `packrat_extract_*` / `packrat_preview_*` tools | Read-only access. |
 | `mcp:write` | read + every create / update / delete / submit / record tool | The default scope Claude.ai requests alongside `mcp:read`. |
 | `mcp:admin` | read + write + every `packrat_admin_*` tool + the four explicit overrides (`packrat_execute_sql_query`, `packrat_get_database_schema`, `packrat_generate_pack_template_from_url`, `packrat_create_app_pack_template`) | Granted at consent time only when the user's Better Auth role resolves to `ADMIN`. The MCP also defense-in-depths the check at tool-dispatch time. |
 
