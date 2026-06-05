@@ -1,5 +1,5 @@
 import { treaty } from '@elysiajs/eden';
-import type { App } from '@packrat/api/app';
+import type { App } from '@packrat/api-client';
 import { isObject } from '@packrat/guards';
 import type {
   ActiveUsers,
