@@ -16,7 +16,6 @@ import {
   desc,
   eq,
   getTableColumns,
-  gt,
   ilike,
   inArray,
   isNotNull,
@@ -302,11 +301,21 @@ export class CatalogService {
       };
     }
 
-    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+    // ORDER BY the raw cosine distance so the HNSW index (vector_cosine_ops
+    // on embedding_idx) can serve the query. Wrapping the distance in
+    // `1 - (...)` and ordering by that DESC made the planner fall back to
+    // Seq Scan + Sort across all ~1.79M catalog rows — ~115× more expensive
+    // than HNSW per EXPLAIN against prod. The `similarity` field is still
+    // computed and returned for caller compatibility (response shape
+    // unchanged); only the SQL operators ORDER BY / WHERE see the raw
+    // distance, which is what HNSW is built to serve.
+    const distance = cosineDistance(catalogItems.embedding, embedding);
+    const similarity = sql<number>`1 - (${distance})`;
 
     const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
-    const vectorWhere = and(isNotNull(catalogItems.embedding), gt(similarity, 0.1));
+    // `distance < 0.9` is equivalent to the previous `similarity > 0.1`.
+    const vectorWhere = and(isNotNull(catalogItems.embedding), sql`${distance} < 0.9`);
 
     const [items, vectorTotalCountResult] = await Promise.all([
       this.db
@@ -316,7 +325,7 @@ export class CatalogService {
         })
         .from(catalogItems)
         .where(vectorWhere)
-        .orderBy(desc(similarity))
+        .orderBy(distance) // ASC; HNSW-eligible
         .limit(limit)
         .offset(offset),
       this.db
@@ -367,7 +376,10 @@ export class CatalogService {
         return Promise.resolve([]);
       }
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+      // HNSW-eligible: ORDER BY the raw distance ASC. See vectorSearch above
+      // for the full rationale on why `1 - (...)` wrapping defeats HNSW.
+      const distance = cosineDistance(catalogItems.embedding, embedding);
+      const similarity = sql<number>`1 - (${distance})`;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db
         .select({
@@ -375,8 +387,8 @@ export class CatalogService {
           similarity,
         })
         .from(catalogItems)
-        .where(and(isNotNull(catalogItems.embedding), gt(similarity, 0.1)))
-        .orderBy(desc(similarity))
+        .where(and(isNotNull(catalogItems.embedding), sql`${distance} < 0.9`))
+        .orderBy(distance)
         .limit(limit);
     });
 
