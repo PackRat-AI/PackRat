@@ -116,4 +116,19 @@ describe('getRelativeTime', () => {
     getRelativeTime({ dateValue: 'not-a-date', t: t as never });
     expect(t).toHaveBeenCalledWith('common.timeAgo.justNow');
   });
+
+  it('accepts a Date object input', () => {
+    vi.setSystemTime(new Date('2024-01-01T12:05:00Z'));
+    const result = getRelativeTime({ dateValue: new Date('2024-01-01T12:00:00Z') });
+    expect(result).toBe('5 minutes ago');
+  });
+
+  it('returns "Just now" for an invalid Date object with no translator', () => {
+    expect(getRelativeTime({ dateValue: new Date('not-a-real-date') })).toBe('Just now');
+  });
+
+  it('returns "Just now" for null/undefined with no translator', () => {
+    expect(getRelativeTime({ dateValue: null })).toBe('Just now');
+    expect(getRelativeTime({ dateValue: undefined })).toBe('Just now');
+  });
 });

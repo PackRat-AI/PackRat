@@ -115,13 +115,13 @@ function emit({ level, event, ctx }: EmitArgs): void {
 }
 
 export const logger = {
-  info(event: string, ctx?: LogContext): void {
+  info({ event, ctx }: { event: string; ctx?: LogContext }): void {
     emit({ level: 'INFO', event, ctx });
   },
-  warn(event: string, ctx?: LogContext): void {
+  warn({ event, ctx }: { event: string; ctx?: LogContext }): void {
     emit({ level: 'WARN', event, ctx });
   },
-  error(event: string, ctx?: LogContext): void {
+  error({ event, ctx }: { event: string; ctx?: LogContext }): void {
     emit({ level: 'ERROR', event, ctx });
   },
 };

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -9,7 +10,14 @@ export const useGuideCategories = () => {
     queryKey: ['guide-categories'],
     queryFn: async () => {
       const { data, error } = await apiClient.guides.categories.get();
-      if (error) throw new Error(`Failed to fetch guide categories: ${error.value}`);
+      if (error) {
+        const err = new Error(String(error.value ?? 'Failed to fetch guide categories'));
+        Sentry.captureException(err, {
+          tags: { feature: 'guides', action: 'fetchGuideCategories' },
+          extra: { apiError: error.value, httpStatus: error.status },
+        });
+        throw err;
+      }
 
       return [
         t('guides.all'),

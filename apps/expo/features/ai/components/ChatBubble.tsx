@@ -1,6 +1,7 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { keyIn } from '@packrat/guards';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
@@ -66,6 +67,9 @@ export const ChatBubble = React.memo(function ChatBubble({
       });
     } catch (error) {
       console.error('Failed to copy text:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'ai.chat', action: 'copyText' },
+      });
       Burnt.toast({
         title: t('ai.failedToCopyText'),
         preset: 'error',

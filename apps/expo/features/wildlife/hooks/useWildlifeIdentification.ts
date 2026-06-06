@@ -1,4 +1,5 @@
 import { isObject, zodGuard } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import type { SelectedImage } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils';
@@ -18,10 +19,18 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
   }
   const { data, error } = await apiClient.wildlife.identify.post({ image });
   if (error) {
-    const wrapped = new Error(`Wildlife identification failed: ${error.value}`) as Error & {
+    const wrapped = new Error(`Wildlife identification failed: ${String(error.value)}`) as Error & {
       isApiError?: boolean;
     };
     wrapped.isApiError = true;
+    Sentry.captureException(wrapped, {
+      tags: { feature: 'wildlife', action: 'identify' },
+      extra: {
+        apiError: error.value,
+        httpStatus: error.status,
+        imageFileName: selectedImage.fileName,
+      },
+    });
     throw wrapped;
   }
   if (!isIdentifyResponse(data))

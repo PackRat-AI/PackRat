@@ -26,10 +26,8 @@ import {
   and,
   cosineDistance,
   count,
-  desc,
   eq,
   getTableColumns,
-  gt,
   inArray,
   isNotNull,
   isNull,
@@ -39,23 +37,7 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
-function workflowInstanceId({ source, filename }: { source: string; filename: string }): string {
-  const dotIndex = filename.lastIndexOf('.');
-  const baseFilename = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
-  const rawId = `${source}-${baseFilename}`;
-  const sanitized = Array.from(rawId)
-    .map((ch) => {
-      const code = ch.charCodeAt(0);
-      const isDigit = code >= 48 && code <= 57;
-      const isUpper = code >= 65 && code <= 90;
-      const isLower = code >= 97 && code <= 122;
-      return isDigit || isUpper || isLower || ch === '_' || ch === '-' ? ch : '-';
-    })
-    .join('')
-    .slice(0, 64);
-
-  return sanitized || 'catalog-etl';
-}
+const FILE_EXT_RE = /\.[^.]*$/;
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .use(authPlugin)
@@ -359,7 +341,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         chunksTotal: totalChunks,
       }));
 
-      const instanceId = workflowInstanceId({ source, filename });
+      // CF Workflows instance IDs only allow [a-zA-Z0-9_-] — strip the file extension.
+      const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
 
       await db.insert(etlJobs).values({
         id: jobId,
@@ -481,7 +464,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           reviews: data.reviews,
           embedding,
         })
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: POST returns full item to client via CatalogItemSchema.parse; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(newItem);
     },
@@ -562,6 +545,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
       const sourceItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer narrowing to pivot migration (separate catalog_item_embeddings table)
         where: eq(catalogItems.id, itemId),
       });
 
@@ -569,7 +553,13 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found or has no embedding' });
       }
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+      // HNSW-eligible: ORDER BY raw distance ASC. The `similarity = 1 - distance`
+      // field is preserved in the response, but the operators see the raw
+      // distance so the planner can use embedding_idx (HNSW). Threshold
+      // mechanically flips from `similarity > T` to `distance < (1 - T)`.
+      const distance = cosineDistance(catalogItems.embedding, sourceItem.embedding);
+      const similarity = sql<number>`1 - (${distance})`;
+      const maxDistance = 1 - threshold;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
       const similarItems = await db
@@ -577,12 +567,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .from(catalogItems)
         .where(
           and(
-            gt(similarity, threshold),
+            sql`${distance} < ${maxDistance}`,
             ne(catalogItems.id, itemId),
             isNotNull(catalogItems.embedding),
           ),
         )
-        .orderBy(desc(similarity))
+        .orderBy(distance)
         .limit(validLimit);
 
       const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
@@ -633,6 +623,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       } = getEnv();
 
       const existingItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs full row for getEmbeddingText diff (reads variants/techs/reviews/qas/faqs); defer to pivot migration
         where: eq(catalogItems.id, itemId),
       });
 
@@ -664,7 +655,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         .update(catalogItems)
         .set(updateData)
         .where(eq(catalogItems.id, itemId))
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: PUT returns full updated item to client; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(updatedItem);
     },
@@ -697,6 +688,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       }
 
       const existingItem = await db.query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: existence check only — could narrow to {id} but bundling with pivot migration to touch each callsite once
         where: eq(catalogItems.id, itemId),
       });
 

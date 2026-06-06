@@ -1,14 +1,27 @@
-import type { PackWithItems } from '@packrat/db';
+import type {
+  PackForBreakdown,
+  PackForWeights,
+  PackItemForBreakdown,
+  PackItemForWeights,
+} from '@packrat/db';
 import type { WeightUnit } from '@packrat/units';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 
-export const computePackWeights = ({
+// Pack-weight + breakdown signatures are generic over the concrete row shape
+// so callers can project DB queries down to the columns these helpers
+// actually read (per the Tier-1 cost work). Type definitions live in
+// @packrat/db/projections.ts next to the schema they derive from.
+
+export const computePackWeights = <
+  TItem extends PackItemForWeights,
+  TPack extends PackForWeights<TItem>,
+>({
   pack,
   preferredUnit = 'g',
 }: {
-  pack: PackWithItems;
+  pack: TPack;
   preferredUnit?: WeightUnit;
-}): PackWithItems & { baseWeight: number; totalWeight: number } => {
+}): TPack & { baseWeight: number; totalWeight: number } => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }
@@ -33,13 +46,16 @@ export const computePackWeights = ({
   };
 };
 
-export const computePacksWeights = ({
+export const computePacksWeights = <
+  TItem extends PackItemForWeights,
+  TPack extends PackForWeights<TItem>,
+>({
   packs,
   preferredUnit = 'g',
 }: {
-  packs: PackWithItems[];
+  packs: TPack[];
   preferredUnit?: WeightUnit;
-}): (PackWithItems & { baseWeight: number; totalWeight: number })[] =>
+}): (TPack & { baseWeight: number; totalWeight: number })[] =>
   packs.map((pack) => computePackWeights({ pack, preferredUnit }));
 
 export interface PackCategoryBreakdown {
@@ -67,7 +83,12 @@ const GRAMS_PER_LB = 453.592;
  * grouping sorted heaviest first. Replaces ad-hoc breakdowns the edge apps
  * were computing client-side.
  */
-export const computePackBreakdown = (pack: PackWithItems): PackWeightBreakdown => {
+export const computePackBreakdown = <
+  TItem extends PackItemForBreakdown,
+  TPack extends PackForBreakdown<TItem>,
+>(
+  pack: TPack,
+): PackWeightBreakdown => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }

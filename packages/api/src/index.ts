@@ -7,19 +7,37 @@
  */
 
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
+import { cors } from '@elysiajs/cors';
 import { neonConfig } from '@neondatabase/serverless';
-import { type App, addCorsHeaders, app, corsPreflightResponse } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
 import { AppContainer } from '@packrat/api/containers';
+import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
+import { packratOpenApi } from '@packrat/api/utils/openapi';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
+import { Elysia } from 'elysia';
+import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
+
+// Origins allowed to make cross-origin (credentialed) requests to the API.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https:\/\/(www\.)?packrat\.world$/,
+  /^https:\/\/[\w-]+\.packrat\.world$/,
+  /^https:\/\/[\w-]+\.packratai\.com$/,
+  /^https?:\/\/[\w-]+\.workers\.dev$/,
+  /^http:\/\/localhost:\d+$/,
+  /^exp:\/\//,
+];
+
+function isAllowedOrigin(origin: string | null): origin is string {
+  return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
 
 // Sentry options for both the Worker handlers and the workflow class.
 // Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
@@ -28,14 +46,79 @@ import type { CatalogETLMessage } from './services/etl/types';
 function sentryOptions(env: Env) {
   return {
     dsn: env.SENTRY_DSN,
-    environment: env.ENVIRONMENT ?? 'production',
-    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
-    sendDefaultPii: false,
-    release: env.SENTRY_RELEASE ?? env.CF_VERSION_METADATA?.id,
+    environment: env.ENVIRONMENT,
+    tracesSampleRate: 0.1,
+    release: env.CF_VERSION_METADATA?.id,
   };
 }
 
-export { app, type App };
+export const app = new Elysia({ adapter: CloudflareAdapter })
+  .use(
+    cors({
+      // Better Auth uses cookies — credentials must be true and origins must
+      // be explicit (not wildcard) so the browser sends cookies cross-origin.
+      credentials: true,
+      origin: (request) => isAllowedOrigin(request.headers.get('Origin')),
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    }),
+  )
+  .use(packratOpenApi)
+  .onError(({ error, code, request }) => {
+    // Only report unexpected server errors — not user-input or routing errors.
+    if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
+      captureApiException({
+        error: error,
+        operation: 'elysia.onError',
+        tags: {
+          error_code: String(code),
+          method: request?.method ?? 'UNKNOWN',
+          path: request ? new URL(request.url).pathname : 'UNKNOWN',
+        },
+        extra: { errorCode: String(code), httpStatus: 500 },
+      });
+    }
+
+    if (code === 'VALIDATION' || code === 'PARSE') {
+      return new Response(JSON.stringify({ error: 'Validation failed' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (code === 'NOT_FOUND') {
+      return new Response(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  })
+  .get('/', () => 'PackRat API is running!', {
+    detail: { summary: 'Health check', tags: ['Meta'] },
+  })
+  .get('/health', () => ({ status: 'ok' as const }), {
+    detail: { summary: 'Health status', tags: ['Meta'] },
+  })
+  // Better Auth handles all /api/auth/** requests. Routing it through Elysia
+  // (rather than dispatching before Elysia) means the `cors` plugin above
+  // applies its credentialed-CORS policy and OPTIONS preflight to auth routes
+  // too. `auth` is resolved per-request because it depends on the Cloudflare
+  // env bindings, which are only available at request time.
+  .all(
+    '/api/auth/*',
+    async ({ request }) => {
+      const auth = await getAuth(getEnv());
+      return auth.handler(request);
+    },
+    { parse: 'none', detail: { hide: true } },
+  )
+  .use(routes)
+  .compile();
+
+export type App = typeof app;
 
 export { AppContainer };
 
@@ -85,22 +168,11 @@ function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
   }
 }
 
-const workerHandler = {
+const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
-
-    // Route /api/auth/** to Better Auth before Elysia sees it.
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/auth')) {
-      const preflight = corsPreflightResponse(request);
-      if (preflight) return preflight;
-
-      const validatedEnv = getEnv();
-      const auth = await getAuth(validatedEnv);
-      return addCorsHeaders({ request, response: await auth.handler(request) });
-    }
 
     return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
   },
@@ -138,7 +210,7 @@ const workerHandler = {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
     if (controller.cron === '0 9 * * *') {
-      const result = await sweepInvalidItemLogs(env);
+      const result = await sweepInvalidItemLogs({ env });
       console.log(
         `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
           `iterations=${result.iterations} capped=${result.capped} ` +
@@ -155,9 +227,9 @@ const workerHandler = {
 
     throw new Error(`Unknown cron: ${controller.cron}`);
   },
-} satisfies ExportedHandler<Env>;
+};
 
 // withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
 // on first invocation and forward uncaught exceptions to Sentry. The
 // instrumented workflow class is exported separately above.
-export default withSentry(sentryOptions, workerHandler);
+export default withSentry(sentryOptions, handler);

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
@@ -31,7 +32,14 @@ export const getSimilarCatalogItems = async ({
       ...(params?.threshold !== undefined ? { threshold: String(params.threshold) } : {}),
     },
   });
-  if (error) throw new Error(`Failed to fetch similar catalog items: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch similar catalog items'));
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'getSimilarCatalogItems' },
+      extra: { id, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   // safe-cast: treaty response shape matches SimilarItemsResponse as validated by the API schema
   return data as unknown as SimilarItemsResponse;
 };
@@ -53,7 +61,14 @@ export const getSimilarPackItems = async ({
         ...(params?.threshold !== undefined ? { threshold: String(params.threshold) } : {}),
       },
     });
-  if (error) throw new Error(`Failed to fetch similar pack items: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch similar pack items'));
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'getSimilarPackItems' },
+      extra: { packId, itemId, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   return data;
 };
 

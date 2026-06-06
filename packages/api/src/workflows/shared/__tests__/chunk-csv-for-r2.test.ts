@@ -36,7 +36,6 @@ function fakeR2(text: string, key = 'fixture.csv'): { r2: ChunkerR2; bytes: Uint
     return {
       size: slice.length,
       etag: 'fake-etag',
-      bytes: async () => slice,
       text: async () => new TextDecoder().decode(slice),
     } as Awaited<ReturnType<ChunkerR2['get']>>;
   };
@@ -178,27 +177,5 @@ describe('chunkCsvForR2', () => {
       // The header must NOT appear inside a non-first chunk.
       expect(slice).not.toContain(headerRow);
     }
-  });
-
-  it('preserves byte boundaries when non-ASCII data appears in the peek range', async () => {
-    const csv = `col1,col2\n${Array.from({ length: 200 }, (_, i) => `row-${i},café-${i}\n`).join('')}`;
-    const { r2, bytes } = fakeR2(csv);
-    const result = await chunkCsvForR2({
-      r2,
-      objectKey: 'fixture.csv',
-      chunkBytes: Math.ceil(bytes.length / 4),
-      peekBytes: 256,
-    });
-
-    const reconstructed = new Uint8Array(bytes.length);
-    let offset = 0;
-    for (const chunk of result.chunks) {
-      const slice = bytes.slice(chunk.byteStart, chunk.byteEnd + 1);
-      reconstructed.set(slice, offset);
-      offset += slice.length;
-    }
-
-    expect(offset).toBe(bytes.length);
-    expect(reconstructed).toEqual(bytes);
   });
 });

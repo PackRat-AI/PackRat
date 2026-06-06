@@ -17,12 +17,11 @@ import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackI
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import { testIds } from 'expo-app/lib/testIds';
 import 'expo-app/lib/devClient';
-import { type Href, router, Stack, useRouter } from 'expo-router';
+import { type Href, router, Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { useEffect, useRef } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export {
@@ -210,7 +209,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="weather-alert-preferences"
           options={{
-            headerShown: false,
+            headerLargeTitle: true,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -337,14 +336,6 @@ const getTripNewOptions = (t: TranslationFunction) => ({
   title: t('trips.createTrip'),
   presentation: 'modal' as const,
   animation: 'slide_from_bottom' as const,
-  headerLeft: () => {
-    const router = useRouter();
-    return (
-      <Pressable testID={testIds.trips.cancelBtn} onPress={() => router.back()} className="px-2">
-        <Text className="text-primary">{t('common.cancel')}</Text>
-      </Pressable>
-    );
-  },
 });
 
 const getTripEditOptions = (t: TranslationFunction) =>
@@ -370,14 +361,6 @@ const getPackNewOptions = (t: TranslationFunction) => ({
   title: t('packs.createPack'),
   presentation: 'modal' as const,
   animation: 'fade_from_bottom' as const,
-  headerLeft: () => {
-    const router = useRouter();
-    return (
-      <Pressable testID={testIds.packs.cancelBtn} onPress={() => router.back()} className="px-2">
-        <Text className="text-primary">{t('common.cancel')}</Text>
-      </Pressable>
-    );
-  },
 });
 
 const getItemNewOptions = (t: TranslationFunction) =>

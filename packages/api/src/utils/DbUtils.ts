@@ -11,6 +11,7 @@ export async function getPackDetails({ packId }: { packId: string }) {
     with: {
       items: {
         with: {
+          // lint:allow-unprojected-fat-table reason: DbUtils helper used by /item-suggestions + /gap-analysis (need item embeddings) and others; Tier-2 #11 — defer to pivot migration to touch all callsites once
           catalogItem: true,
         },
       },
@@ -44,7 +45,7 @@ export async function getCatalogItems({
   }
 
   const query = db
-    .select()
+    .select() // lint:allow-unprojected-fat-table reason: DbUtils.getCatalogItems is Tier-2 #11 — defer to pivot migration (callers TBD enumerated then; full-row select is the historical behavior)
     .from(catalogItems)
     .where(filters.length > 0 ? and(...filters) : undefined);
 

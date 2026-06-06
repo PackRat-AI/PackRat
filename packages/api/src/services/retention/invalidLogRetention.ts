@@ -45,10 +45,13 @@ export type RetentionOptions = {
  * that on first execution, the function returns `capped: true` and the
  * remainder is swept on subsequent runs.
  */
-export async function sweepInvalidItemLogs(
-  env: Env,
-  options: RetentionOptions = {},
-): Promise<RetentionResult> {
+export async function sweepInvalidItemLogs({
+  env,
+  options = {},
+}: {
+  env: Env;
+  options?: RetentionOptions;
+}): Promise<RetentionResult> {
   const retentionDays =
     options.retentionDays !== undefined && options.retentionDays > 0
       ? options.retentionDays
@@ -79,15 +82,15 @@ export async function sweepInvalidItemLogs(
 
     rowCount = removed.length;
     deleted += rowCount;
-    if (rowCount < batchSize) break;
+    if (rowCount === 0) break;
   }
 
   return {
     deleted,
     iterations,
-    // A full final batch at the iteration ceiling means more expired rows may
-    // remain; a short final batch exhausted the expired set.
-    capped: iterations >= maxIterations && rowCount === batchSize,
+    // capped only when we hit the iteration ceiling with rows still remaining;
+    // if the last batch returned 0 rows we exhausted the table (not capped).
+    capped: rowCount > 0,
     retentionDays,
   };
 }

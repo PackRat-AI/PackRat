@@ -68,19 +68,7 @@ export default function LoginScreen() {
         options={{
           title: t('auth.signIn'),
           headerShadowVisible: false,
-          headerLeft() {
-            return (
-              <Button
-                variant="plain"
-                className="ios:px-0"
-                onPress={() => {
-                  router.back();
-                }}
-              >
-                <Text className="text-primary">{t('common.cancel')}</Text>
-              </Button>
-            );
-          },
+          headerShown: false,
         }}
       />
       <KeyboardAwareScrollView
