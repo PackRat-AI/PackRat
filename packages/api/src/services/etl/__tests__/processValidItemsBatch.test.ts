@@ -62,8 +62,7 @@ const TEST_ENV = {
   CLOUDFLARE_AI_GATEWAY_ID: 'gw',
   CLOUDFLARE_API_TOKEN: 'token',
   AI: {},
-  // biome-ignore lint/suspicious/noExplicitAny: test stub for the Env shape
-} as any;
+} as unknown as Parameters<typeof processValidItemsBatch>[0]['env'];
 
 const makeItem = (sku: string, overrides: Record<string, unknown> = {}) => ({
   sku,
@@ -125,15 +124,17 @@ describe('processValidItemsBatch — source-text diff', () => {
     expect(callArgs.values.some((v: string) => v.includes('CHANGED-1'))).toBe(true);
     expect(callArgs.values.some((v: string) => v.includes('UNCHANGED-1'))).toBe(false);
 
-    // Upserted items received the right embeddings: fresh for NEW/CHANGED,
-    // reused for UNCHANGED.
+    // Upserted items: fresh partition gets the newly-generated embedding;
+    // reuse partition gets embedding: undefined so the UPSERT's
+    // COALESCE(excluded.embedding, catalog_items.embedding) preserves the
+    // stored vector without a redundant write.
     const upserted = mockUpsertCatalogItems.mock.calls[0]?.[0] as Array<{
       sku: string;
-      embedding: number[] | null;
+      embedding: number[] | undefined;
     }>;
     expect(upserted.find((u) => u.sku === 'NEW-1')?.embedding).toEqual(freshEmbeddings[0]);
     expect(upserted.find((u) => u.sku === 'CHANGED-1')?.embedding).toEqual(freshEmbeddings[1]);
-    expect(upserted.find((u) => u.sku === 'UNCHANGED-1')?.embedding).toEqual(fakeEmbedding(2));
+    expect(upserted.find((u) => u.sku === 'UNCHANGED-1')?.embedding).toBeUndefined();
   });
 
   it('skips generateManyEmbeddings entirely when every item is unchanged', async () => {
@@ -150,12 +151,15 @@ describe('processValidItemsBatch — source-text diff', () => {
 
     expect(mockGenerateManyEmbeddings).not.toHaveBeenCalled();
 
+    // All items are reuse — UPSERT receives embedding: undefined, which
+    // becomes NULL in the INSERT and triggers the COALESCE branch on
+    // conflict, preserving the stored vector without a write.
     const upserted = mockUpsertCatalogItems.mock.calls[0]?.[0] as Array<{
       sku: string;
-      embedding: number[];
+      embedding: number[] | undefined;
     }>;
-    expect(upserted[0]?.embedding).toEqual(fakeEmbedding(1));
-    expect(upserted[1]?.embedding).toEqual(fakeEmbedding(2));
+    expect(upserted[0]?.embedding).toBeUndefined();
+    expect(upserted[1]?.embedding).toBeUndefined();
   });
 
   it('treats an existing row with a null embedding as needing fresh generation', async () => {
@@ -197,5 +201,37 @@ describe('processValidItemsBatch — source-text diff', () => {
     const upserted = mockUpsertCatalogItems.mock.calls[0]?.[0] as Array<{ embedding: number[] }>;
     expect(upserted).toHaveLength(3);
     expect(upserted.every((u) => Array.isArray(u.embedding))).toBe(true);
+  });
+
+  it('throws → catch-block fallback path when generateManyEmbeddings returns short', async () => {
+    // Defense against silent NULL embeddings if the embedding provider ever
+    // returns fewer embeddings than inputs. The throw routes execution to the
+    // surrounding try/catch which records the failure on
+    // etl_jobs.total_embedding_failures and upserts the batch without
+    // embeddings (degraded but consistent).
+    const items = [makeItem('N1'), makeItem('N2'), makeItem('N3')];
+
+    mockFetchExistingForRegen.mockResolvedValue(new Map());
+    // Returns 2 embeddings for 3 fresh inputs — provider bug simulation.
+    mockGenerateManyEmbeddings.mockResolvedValue([fakeEmbedding(1), fakeEmbedding(2)]);
+
+    await processValidItemsBatch({ jobId: 'jobShortResp', items, env: TEST_ENV });
+
+    // The throw should cause the catch-block fallback path to run, which
+    // still upserts (without embeddings) — exactly once. The success path
+    // and fallback path each upsert exactly once, so we expect 1 total call
+    // (the catch block's upsert).
+    expect(mockUpsertCatalogItems).toHaveBeenCalledTimes(1);
+
+    // The fallback path passes mergedItems verbatim (no embedding key set),
+    // so the upsert items don't carry the partial freshEmbeddings.
+    const upserted = mockUpsertCatalogItems.mock.calls[0]?.[0] as Array<{
+      sku: string;
+      embedding?: number[];
+    }>;
+    expect(upserted).toHaveLength(3);
+    // None of the fallback items should carry one of the partial fresh
+    // embeddings — that would mean we silently shipped NULL on the third.
+    expect(upserted.some((u) => u.embedding === fakeEmbedding(1))).toBe(false);
   });
 });

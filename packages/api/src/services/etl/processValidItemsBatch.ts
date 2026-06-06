@@ -84,17 +84,33 @@ export async function processValidItemsBatch({
           })
         : [];
 
-    // Combine items with their embeddings (fresh for changed/new, existing
-    // for unchanged). text-embedding-3 is deterministic, so reused embeddings
-    // are byte-equivalent to what would have been regenerated.
+    // Guard: any short response from generateManyEmbeddings would silently
+    // write NULL embeddings for some fresh items, losing vector coverage on
+    // them. Throw so the surrounding try/catch routes to the existing
+    // "embedding generation failed" fallback path which records the failure
+    // count on etl_jobs.total_embedding_failures.
+    if (freshEmbeddings.length !== needFresh.length) {
+      throw new Error(
+        `generateManyEmbeddings returned ${freshEmbeddings.length} embeddings for ${needFresh.length} inputs`,
+      );
+    }
+
+    // Combine items with their embeddings:
+    //  - fresh partition: gets the newly-generated embedding (must be non-null,
+    //    enforced by the length guard above)
+    //  - reuse partition: gets `embedding: undefined` so the UPSERT's
+    //    `embedding = COALESCE(excluded.embedding, catalog_items.embedding)`
+    //    set clause preserves the stored vector without writing it back.
+    //    text-embedding-3 is deterministic, so this is byte-equivalent to
+    //    re-passing the existing embedding — minus the redundant write.
     let freshIndex = 0;
     const itemsWithEmbeddings = partitioned.map((p) => {
       if (p.kind === 'fresh') {
-        const embedding = freshEmbeddings[freshIndex] ?? null;
+        const embedding = freshEmbeddings[freshIndex];
         freshIndex += 1;
         return { ...p.item, embedding };
       }
-      return { ...p.item, embedding: p.existingEmbedding };
+      return { ...p.item, embedding: undefined };
     });
 
     const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);

@@ -460,6 +460,16 @@ export class CatalogService {
             // weight_unit stays in sync with weight validity
             acc[col.name] =
               sql`CASE WHEN excluded.${sql.identifier('weight')} IS NOT NULL AND excluded.${sql.identifier('weight')} > 0 THEN excluded.${sql.identifier('weight_unit')} ELSE COALESCE(${catalogItems.weightUnit}, excluded.${sql.identifier('weight_unit')}) END`;
+          } else if (col.name === 'embedding') {
+            // Preserve existing embedding when input doesn't provide one.
+            // processValidItemsBatch passes embedding: undefined (→ NULL in
+            // INSERT) for the "reuse existing" partition; COALESCE keeps the
+            // stored vector, avoiding a redundant write that would count as
+            // n_tup_upd + dirty the HNSW page even when bytes are identical.
+            // Fresh items always carry a non-null embedding so this branch
+            // doesn't affect them.
+            acc[col.name] =
+              sql`COALESCE(excluded.${sql.identifier(col.name)}, ${catalogItems.embedding})`;
           } else {
             acc[col.name] = sql`excluded.${sql.identifier(col.name)}`;
           }
