@@ -117,10 +117,11 @@ test.describe('Pack CRUD', () => {
     // Wait for the store to load and the owner check to resolve so header buttons appear
     await page.waitForLoadState('networkidle');
 
+    page.on('dialog', (dialog) => dialog.accept());
+
     const deleteButton = page.getByTestId(testIds.packs.deleteBtn);
     await deleteButton.waitFor({ timeout: 15_000 });
     await deleteButton.click();
-    await page.getByRole('button', { name: /^OK$/ }).click();
 
     // Pack deletion is a local soft-delete in the synced store; confirm the UI result.
     await page.goto(`${BASE_URL}/packs`);
