@@ -170,6 +170,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packs.descriptionInput}
                     placeholder={t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
