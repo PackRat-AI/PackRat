@@ -1,10 +1,12 @@
-import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
+import { Button, useColorScheme } from '@packrat/ui/nativewindui';
+import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { Share, View } from 'react-native';
+import { Platform, Share, View } from 'react-native';
 import { useDeleteTrip } from '../hooks';
 
 export function getTripDetailOptions(id: string) {
@@ -33,6 +35,33 @@ export function getTripDetailOptions(id: string) {
         }
       };
 
+      const deleteAndNavigate = () => {
+        deleteTrip(id);
+        if (router.canGoBack()) router.back();
+      };
+
+      const confirmDelete = () => {
+        if (Platform.OS === 'web') {
+          if (globalThis.confirm(t('trips.deleteTripConfirmation'))) {
+            deleteAndNavigate();
+          }
+          return;
+        }
+
+        appAlert.current?.alert({
+          title: t('trips.deleteTrip'),
+          message: t('trips.deleteTripConfirmation'),
+          buttons: [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('common.delete'),
+              style: 'destructive',
+              onPress: deleteAndNavigate,
+            },
+          ],
+        });
+      };
+
       return (
         <View className="flex-row items-center gap-2">
           <Button variant="plain" size="icon" onPress={handleShare}>
@@ -43,26 +72,17 @@ export function getTripDetailOptions(id: string) {
             />
           </Button>
 
-          <Alert
-            title={t('trips.deleteTrip')}
-            message={t('trips.deleteTripConfirmation')}
-            buttons={[
-              { text: t('common.cancel'), style: 'cancel' },
-              {
-                text: t('common.ok'),
-                onPress: () => {
-                  deleteTrip(id);
-                  if (router.canGoBack()) router.back();
-                },
-              },
-            ]}
+          <Button
+            testID={testIds.trips.deleteBtn}
+            variant="plain"
+            size="icon"
+            onPress={confirmDelete}
           >
-            <Button variant="plain" size="icon">
-              <Icon name="trash-can-outline" color={colors.grey2} />
-            </Button>
-          </Alert>
+            <Icon name="trash-can-outline" color={colors.grey2} />
+          </Button>
 
           <Button
+            testID={testIds.trips.editBtn}
             variant="plain"
             size="icon"
             onPress={() => router.push({ pathname: '/trip/[id]/edit', params: { id } })}

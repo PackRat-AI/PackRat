@@ -107,7 +107,7 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });
 
   // Wait for catalog items to load, then click the first one
-  const firstCard = page.getByTestId(/^catalog-item-card-/).first();
+  const firstCard = page.getByTestId(/^catalog:item-/).first();
   await firstCard.waitFor({ timeout: 15_000 });
   await firstCard.click();
 
@@ -242,7 +242,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   expect(chatResponse.ok()).toBeTruthy();
 
   await expect(page.getByTestId(/^ai-chat:assistant-message-/).last()).toContainText(
-    /shelter.*sleep system.*water treatment/i,
+    new RegExp(`working with your ${packName}.*optimize your pack`, 'i'),
     { timeout: 15_000 },
   );
 });
