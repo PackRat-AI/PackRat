@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import type { PackInput, PackItemInput } from '../types';
@@ -22,7 +23,19 @@ const generateSeasonSuggestions = async (
   data: SeasonSuggestionsRequest,
 ): Promise<SeasonSuggestionsResponse> => {
   const { data: result, error } = await apiClient['season-suggestions'].post(data);
-  if (error) throw new Error(`Failed to generate season suggestions: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to generate season suggestions'));
+    Sentry.captureException(err, {
+      tags: { feature: 'packs', action: 'generateSeasonSuggestions' },
+      extra: {
+        location: data.location,
+        date: data.date,
+        apiError: error.value,
+        httpStatus: error.status,
+      },
+    });
+    throw err;
+  }
   // safe-cast: treaty response shape matches SeasonSuggestionsResponse as validated by the API schema
   return result as unknown as SeasonSuggestionsResponse;
 };

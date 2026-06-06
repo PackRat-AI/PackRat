@@ -83,6 +83,7 @@ export const apiEnvObjectSchema = z.object({
   ETL_QUEUE: z.unknown(),
   LOGS_QUEUE: z.unknown(),
   EMBEDDINGS_QUEUE: z.unknown(),
+  ETL_WORKFLOW: z.unknown(),
   // App container Durable Object binding (APP_CONTAINER)
   APP_CONTAINER: z.unknown(),
   // Rate limiting binding (optional — not present in local dev/test)
@@ -113,6 +114,7 @@ const testEnvSchema = apiEnvObjectSchema.partial().extend({
   ETL_QUEUE: z.unknown().optional(),
   LOGS_QUEUE: z.unknown().optional(),
   EMBEDDINGS_QUEUE: z.unknown().optional(),
+  ETL_WORKFLOW: z.unknown().optional(),
   APP_CONTAINER: z.unknown().optional(),
   AUTH_KV: z.unknown().optional(),
 });
@@ -130,6 +132,7 @@ export type ValidatedEnv = Omit<
   | 'ETL_QUEUE'
   | 'LOGS_QUEUE'
   | 'EMBEDDINGS_QUEUE'
+  | 'ETL_WORKFLOW'
   | 'APP_CONTAINER'
   | 'TOKEN_RATE_LIMITER'
   | 'AUTH_KV'
@@ -142,6 +145,7 @@ export type ValidatedEnv = Omit<
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
+  ETL_WORKFLOW: Workflow;
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   OSM_HYPERDRIVE?: Hyperdrive;
@@ -182,6 +186,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     ETL_QUEUE: (rawEnv.ETL_QUEUE ?? validated.data.ETL_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
     LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
     EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue, // safe-cast: Cloudflare Worker binding injected by runtime
+    ETL_WORKFLOW: (rawEnv.ETL_WORKFLOW ?? validated.data.ETL_WORKFLOW) as Workflow, // safe-cast: Cloudflare Worker binding injected by runtime
     // safe-cast: Cloudflare Worker binding injected by runtime
     APP_CONTAINER: (rawEnv.APP_CONTAINER ?? validated.data.APP_CONTAINER) as DurableObjectNamespace<
       Container<unknown>

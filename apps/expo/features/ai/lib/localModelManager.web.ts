@@ -16,9 +16,9 @@ export async function isLlamaModelDownloaded(): Promise<boolean> {
   return false;
 }
 
-export async function initLocalModel(): Promise<void> {}
+export async function initLocalModel(_isAuthenticated?: boolean): Promise<void> {}
 
-export async function downloadLocalModel(): Promise<void> {}
+export async function downloadLocalModel(_isAuthenticated?: boolean): Promise<void> {}
 
 export async function cancelLocalModelDownload(): Promise<void> {}
 

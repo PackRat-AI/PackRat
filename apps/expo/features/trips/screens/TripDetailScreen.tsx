@@ -1,6 +1,5 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
-import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
@@ -9,11 +8,10 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Platform, ScrollView, Share, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
-import { useDeleteTrip } from '../hooks';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
 
@@ -29,7 +27,6 @@ export function TripDetailScreen() {
   // the undefined case and returns early, ensuring trip is non-null at render time below.
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
-  const deleteTrip = useDeleteTrip();
 
   // Create a stable key for MapView based on location coordinates
   // This forces remount when location changes, fixing iOS initialRegion issue
@@ -56,53 +53,6 @@ export function TripDetailScreen() {
     return new Date(dateString).toISOString().split('T')[0];
   };
 
-  const handleShareTrip = async () => {
-    try {
-      const lines: string[] = [`${trip.name}`];
-      if (trip.location?.name) lines.push(` ${trip.location.name.split(',')[0]}`);
-      if (trip.startDate || trip.endDate) {
-        lines.push(`${formatDate(trip.startDate)} – ${formatDate(trip.endDate)}`);
-      }
-      if (trip.description) lines.push(`\n${trip.description}`);
-      await Share.share({ message: lines.join('\n') });
-    } catch {
-      // ignore
-    }
-  };
-
-  const confirmDeleteTrip = () => {
-    const onConfirm = async () => {
-      try {
-        await deleteTrip(id as string);
-        router.back();
-      } catch (error) {
-        // useDeleteTrip already rolls back the optimistic flip and reports
-        // to Sentry; surface a UX-level error so the user knows the action
-        // didn't take. Alert.alert is a no-op-with-buttons on web, but its
-        // single-message form does render via window.alert there.
-        Sentry.captureException(error, {
-          tags: { feature: 'trips', action: 'delete', surface: 'TripDetailScreen' },
-        });
-        if (Platform.OS === 'web') {
-          window.alert(t('trips.deleteTripFailed'));
-        } else {
-          Alert.alert(t('common.error'), t('trips.deleteTripFailed'));
-        }
-      }
-    };
-    // react-native-web's Alert.alert ignores button onPress callbacks, so
-    // the destructive handler never fires on web — drop straight to
-    // window.confirm there.
-    if (Platform.OS === 'web') {
-      if (window.confirm(t('trips.deleteTripConfirmation'))) void onConfirm();
-      return;
-    }
-    Alert.alert(t('trips.deleteTrip'), t('trips.deleteTripConfirmation'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: onConfirm },
-    ]);
-  };
-
   const handleWeatherPress = () => {
     if (!trip.location) return;
 
@@ -115,50 +65,14 @@ export function TripDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="p-4">
-          {/* Header */}
-          <View className="mb-3 flex-row items-start justify-between">
-            <Text className="flex-1 text-3xl font-bold text-foreground">{trip.name}</Text>
-            <Button variant="plain" size="icon" onPress={handleShareTrip}>
-              <Icon
-                materialIcon={{ type: 'MaterialIcons', name: 'share' }}
-                ios={{ name: 'square.and.arrow.up' }}
-                size={22}
-                color={colors.grey2}
-              />
-            </Button>
-            <Button
-              variant="plain"
-              size="icon"
-              testID={testIds.trips.editBtn}
-              onPress={() => router.push(`/trip/${id}/edit`)}
-            >
-              <Icon
-                materialIcon={{ type: 'MaterialCommunityIcons', name: 'pencil-box-outline' }}
-                ios={{ name: 'pencil' }}
-                size={22}
-                color={colors.grey2}
-              />
-            </Button>
-            <Button
-              variant="plain"
-              size="icon"
-              testID={testIds.trips.deleteBtn}
-              onPress={confirmDeleteTrip}
-            >
-              <Icon
-                materialIcon={{ type: 'MaterialCommunityIcons', name: 'trash-can-outline' }}
-                ios={{ name: 'trash' }}
-                size={22}
-                color={colors.grey2}
-              />
-            </Button>
-          </View>
+          {/* Trip name */}
+          <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
 
           {/* Dates */}
           <View className="mb-6" testID={testIds.trips.datesSection}>
