@@ -714,7 +714,7 @@ jobs:
             -no-snapshot-save -no-window -gpu swiftshader_indirect
             -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: bash .github/scripts/run-android-maestro-ci.sh
+          script: bun run .github/scripts/run-android-maestro-ci.ts
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}
           TEST_PASSWORD: ${{ env.TEST_PASSWORD }}

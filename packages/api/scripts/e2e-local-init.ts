@@ -71,4 +71,4 @@ console.log(`Generated: ${out}`);
 console.log('');
 console.log('Next steps:');
 console.log(`  1. Review ${out} and confirm the values look correct.`);
-console.log('  2. Run: scripts/e2e-local-start.sh');
+console.log('  2. Run: bun run scripts/e2e-local-start.ts');

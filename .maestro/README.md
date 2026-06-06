@@ -88,7 +88,7 @@ maestro test \
 ```bash
 TEST_EMAIL="your-test-account@example.com" \
 TEST_PASSWORD="your-test-password" \
-.maestro/run-suite.sh android --device "<adb-device-id>"
+bun run .maestro/run-suite.ts android --device "<adb-device-id>"
 ```
 
 `android` is the runner default. Use `adb devices` to find a physical device ID. If you run on a physical Android device against a local API, build the app with an `EXPO_PUBLIC_API_URL` reachable from the device, such as your machine's LAN IP instead of `localhost`.
