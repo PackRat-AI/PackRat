@@ -8,5 +8,8 @@
     "nextjs.json",
     "react-library.json",
     "react-native.json"
-  ]
+  ],
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  }
 }
