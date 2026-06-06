@@ -1,4 +1,4 @@
-import Storage from 'expo-sqlite/kv-store';
+import Storage from 'expo-app/lib/expoSqliteKvStore';
 
 export default {
   getItem: (key: string): string | null => Storage.getItemSync(key),

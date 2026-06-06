@@ -1,7 +1,7 @@
 import type { UIMessage } from '@ai-sdk/react';
 import { isObject, isString } from '@packrat/guards';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
+import AsyncStorage from 'expo-app/lib/asyncStorage';
 
 export type ChatContext = {
   itemId?: string;
