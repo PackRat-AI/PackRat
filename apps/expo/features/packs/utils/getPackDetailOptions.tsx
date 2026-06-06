@@ -26,6 +26,8 @@ export function getPackDetailOptions(id: string) {
         deletePack(id);
         if (router.canGoBack()) {
           router.back();
+        } else {
+          router.replace('/packs');
         }
       };
 

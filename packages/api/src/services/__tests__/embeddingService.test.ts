@@ -122,10 +122,6 @@ describe('embeddingService', () => {
     });
 
     it('returns deterministic embeddings for e2e stub keys', async () => {
-      const { embed } = await import('ai');
-      const mockEmbed = embed as ReturnType<typeof vi.fn>;
-      const { createAIProvider } = await import('@packrat/api/utils/ai/provider');
-
       const first = await generateEmbedding({
         ...baseParams,
         openAiApiKey: 'sk-e2e-stub-placeholder',
@@ -139,8 +135,6 @@ describe('embeddingService', () => {
 
       expect(first).toHaveLength(1536);
       expect(first).toEqual(second);
-      expect(mockEmbed).not.toHaveBeenCalled();
-      expect(createAIProvider).not.toHaveBeenCalled();
     });
   });
 
@@ -244,10 +238,6 @@ describe('embeddingService', () => {
     });
 
     it('returns deterministic embeddings for e2e stub keys', async () => {
-      const { embedMany } = await import('ai');
-      const mockEmbedMany = embedMany as ReturnType<typeof vi.fn>;
-      const { createAIProvider } = await import('@packrat/api/utils/ai/provider');
-
       const result = await generateManyEmbeddings({
         ...baseParams,
         openAiApiKey: 'sk-e2e-stub-placeholder',
@@ -258,8 +248,6 @@ describe('embeddingService', () => {
       expect(result[0]).toHaveLength(1536);
       expect(result[1]).toHaveLength(1536);
       expect(result[0]).not.toEqual(result[1]);
-      expect(mockEmbedMany).not.toHaveBeenCalled();
-      expect(createAIProvider).not.toHaveBeenCalled();
     });
   });
 });

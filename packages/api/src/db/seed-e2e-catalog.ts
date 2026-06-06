@@ -146,6 +146,9 @@ const ITEMS: SeedItem[] = [
   },
 ];
 
+const EMBEDDING_DIMENSIONS = 1536;
+const EMBEDDING_REQUEST_TIMEOUT_MS = 10_000;
+
 async function embedAll(opts: { values: string[]; openAiKey: string }): Promise<number[][]> {
   const { values, openAiKey } = opts;
   if (openAiKey.startsWith('sk-e2e-stub-')) {
@@ -156,7 +159,7 @@ async function embedAll(opts: { values: string[]; openAiKey: string }): Promise<
         hash = Math.imul(hash, 16777619);
       }
 
-      return Array.from({ length: 1536 }, (_, i) => {
+      return Array.from({ length: EMBEDDING_DIMENSIONS }, (_, i) => {
         hash ^= i;
         hash = Math.imul(hash, 16777619);
         return (hash >>> 0) / 0xffffffff;
@@ -164,14 +167,28 @@ async function embedAll(opts: { values: string[]; openAiKey: string }): Promise<
     });
   }
 
-  const res = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openAiKey}`,
-    },
-    body: JSON.stringify({ model: 'text-embedding-3-small', input: values }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), EMBEDDING_REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openAiKey}`,
+      },
+      body: JSON.stringify({ model: 'text-embedding-3-small', input: values }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`OpenAI embeddings timed out after ${EMBEDDING_REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`OpenAI embeddings failed ${res.status}: ${body.slice(0, 200)}`);
@@ -212,11 +229,20 @@ async function seedCatalog() {
       values: newItems.map((i) => `${i.name}. ${i.description}`),
       openAiKey,
     });
+    if (embeddings.length !== newItems.length) {
+      throw new Error(
+        `Embedding count mismatch: expected ${newItems.length}, got ${embeddings.length}`,
+      );
+    }
 
     for (let i = 0; i < newItems.length; i++) {
       const item = newItems[i];
       const embedding = embeddings[i];
-      if (!item || !embedding) continue;
+      if (!item || !embedding || embedding.length !== EMBEDDING_DIMENSIONS) {
+        throw new Error(
+          `Invalid embedding at index ${i}: expected ${EMBEDDING_DIMENSIONS} dimensions`,
+        );
+      }
       await db.insert(schema.catalogItems).values({
         name: item.name,
         productUrl: `https://example.com/${item.sku}`,
