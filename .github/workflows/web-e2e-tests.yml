@@ -126,6 +126,7 @@ jobs:
           NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
           E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+          OPENAI_API_KEY: sk-e2e-stub-placeholder
         run: |
           bun run --filter @packrat/api db:migrate
           bun run --filter @packrat/api db:seed:e2e-user

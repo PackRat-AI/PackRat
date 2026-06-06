@@ -148,6 +148,22 @@ const ITEMS: SeedItem[] = [
 
 async function embedAll(opts: { values: string[]; openAiKey: string }): Promise<number[][]> {
   const { values, openAiKey } = opts;
+  if (openAiKey.startsWith('sk-e2e-stub-')) {
+    return values.map((value) => {
+      let hash = 2166136261;
+      for (let i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+
+      return Array.from({ length: 1536 }, (_, i) => {
+        hash ^= i;
+        hash = Math.imul(hash, 16777619);
+        return (hash >>> 0) / 0xffffffff;
+      });
+    });
+  }
+
   const res = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
