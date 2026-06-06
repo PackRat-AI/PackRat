@@ -15,6 +15,7 @@ const COOKIE_STORE_KEY = 'packrat_cookie';
 const WEB_TOKEN_CACHE_MS = 30_000;
 let cachedToken: string | null = null;
 let cachedTokenExpiresAt = 0;
+let pendingTokenRequest: Promise<string | null> | null = null;
 
 export const apiClient = createApiClient({
   baseUrl: getApiBaseUrl(),
@@ -23,10 +24,17 @@ export const apiClient = createApiClient({
       if (Platform.OS === 'web') {
         const now = Date.now();
         if (cachedToken && now < cachedTokenExpiresAt) return cachedToken;
-        const { data } = await authClient.getSession();
-        cachedToken = data?.session?.token ?? null;
-        cachedTokenExpiresAt = now + WEB_TOKEN_CACHE_MS;
-        return cachedToken;
+        pendingTokenRequest ??= authClient
+          .getSession()
+          .then(({ data }) => {
+            cachedToken = data?.session?.token ?? null;
+            cachedTokenExpiresAt = Date.now() + WEB_TOKEN_CACHE_MS;
+            return cachedToken;
+          })
+          .finally(() => {
+            pendingTokenRequest = null;
+          });
+        return pendingTokenRequest;
       }
       const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
       return parseSessionToken(cookieStr);
@@ -38,6 +46,7 @@ export const apiClient = createApiClient({
     onNeedsReauth: async () => {
       cachedToken = null;
       cachedTokenExpiresAt = 0;
+      pendingTokenRequest = null;
       // 401 can be transient; verify the session is really gone before
       // bouncing the user.
       const { data } = await authClient.getSession();
