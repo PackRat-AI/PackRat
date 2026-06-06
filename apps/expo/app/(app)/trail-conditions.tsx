@@ -57,7 +57,7 @@ export default function TrailConditionsScreen() {
   const filteredReports = useMemo(() => {
     if (!reports) return [];
     if (selectedSurface === 'all') return reports;
-    return reports.filter((r) => r.surface === selectedSurface);
+    return reports.filter((r: TrailConditionReport) => r.surface === selectedSurface);
   }, [reports, selectedSurface]);
 
   if (!featureFlags.enableTrailConditions) return null;

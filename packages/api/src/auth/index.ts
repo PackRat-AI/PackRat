@@ -14,7 +14,7 @@ import { createConnection } from '@packrat/api/db';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db';
 import { isObject } from '@packrat/guards';
-import { betterAuth } from 'better-auth';
+import { type BetterAuthPlugin, betterAuth } from 'better-auth';
 import { admin, bearer, jwt } from 'better-auth/plugins';
 
 // ─── Per-isolate auth instance cache ─────────────────────────────────────────
@@ -27,9 +27,17 @@ import { admin, bearer, jwt } from 'better-auth/plugins';
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
 const authCache = new Map<string, Promise<any>>();
 
+function getTrustedOrigins(env: ValidatedEnv): string[] {
+  const configured = env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return [env.BETTER_AUTH_URL, ...(configured ?? []), 'packrat://'];
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}`;
+  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}|${env.BETTER_AUTH_TRUSTED_ORIGINS ?? ''}`;
   const cached = authCache.get(cacheKey);
   if (cached) return cached;
 
@@ -53,7 +61,9 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
 
     advanced: {
       // All IDs are UUID-formatted text (matching the DB migration).
-      generateId: () => crypto.randomUUID(),
+      database: {
+        generateId: () => crypto.randomUUID(),
+      },
       // Trust the X-Forwarded-For header added by Cloudflare.
       ipAddress: {
         ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'],
@@ -182,7 +192,8 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       }),
 
       // Admin: role-based user management endpoints.
-      admin(),
+      // safe-cast: Better Auth 1.6.13's admin plugin return type is narrower than BetterAuthPlugin.
+      admin() as unknown as BetterAuthPlugin,
 
       // Expo: promotes the expo-origin header → Origin so the CSRF check
       // passes for requests from the native app (which can't send a browser
@@ -191,25 +202,13 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     ],
 
     rateLimit: {
-      // Drop the throttle only when ENVIRONMENT === 'development' AND
-      // BETTER_AUTH_URL is a localhost URL. Defense in depth: one misset
-      // env shouldn't disable rate limiting in production.
-      enabled: !(
-        env.ENVIRONMENT === 'development' && env.BETTER_AUTH_URL.startsWith('http://localhost')
-      ),
+      enabled: true,
       window: 60,
       max: 100,
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [
-      env.BETTER_AUTH_URL,
-      'packrat://',
-      // Local web dev — accept any localhost port. Same dual gate as above.
-      ...(env.ENVIRONMENT === 'development' && env.BETTER_AUTH_URL.startsWith('http://localhost')
-        ? ['http://localhost:*']
-        : []),
-    ],
+    trustedOrigins: getTrustedOrigins(env),
   });
 
   return auth;

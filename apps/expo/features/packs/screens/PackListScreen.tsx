@@ -40,6 +40,12 @@ type FilterOption = {
   value: PackCategory | 'all';
 };
 
+type PackListRow = {
+  id: string;
+  name: string;
+  category: PackCategory | null;
+};
+
 function CreatePackIconButton() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
@@ -90,7 +96,7 @@ export function PackListScreen() {
 
   const packs = selectedTypeIndex === USER_PACKS_INDEX ? userPacks : allPacksQuery.data;
 
-  const filteredPacks = packs?.filter((pack) => {
+  const filteredPacks = packs?.filter((pack: PackListRow) => {
     const matchesSearch = pack.name.toLowerCase().includes(searchValue.toLowerCase());
     const matchesCategory = activeFilter === 'all' || pack.category === activeFilter;
     return matchesSearch && matchesCategory;
@@ -179,9 +185,14 @@ export function PackListScreen() {
             ? 'No public packs are available at the moment.'
             : `No public ${activeFilter} packs are available.`}
         </Text>
-        <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreatePack}>
+        <Pressable
+          testID={testIds.packs.emptyCreateBtn}
+          accessibilityLabel={testIds.packs.emptyCreateBtn}
+          className="rounded-lg bg-primary px-4 py-2"
+          onPress={handleCreatePack}
+        >
           <Text className="font-medium text-primary-foreground">{t('packs.createNewPack')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };

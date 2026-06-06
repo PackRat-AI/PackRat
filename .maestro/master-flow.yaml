@@ -6,22 +6,36 @@ appId: ${APP_ID}
 # Setup & Authentication
 - runFlow: flows/setup/clear-state.yaml
 - runFlow: flows/auth/login-flow.yaml
+- runFlow: flows/setup/session-persistence-flow.yaml
 
 # Dashboard
 - runFlow: flows/dashboard/dashboard-tiles-flow.yaml
+- runFlow: flows/dashboard/pack-templates-flow.yaml
 
 # Packs CRUD
 - runFlow: flows/packs/create-pack-flow.yaml
 - runFlow: flows/packs/pack-detail-flow.yaml
+- runFlow: flows/packs/pack-edit-share-flow.yaml
+- runFlow: flows/packs/pack-toggle-filter-flow.yaml
 - runFlow: flows/packs/add-item-actions-flow.yaml
+- runFlow: flows/packs/add-item-manual-flow.yaml
+- runFlow: flows/packs/add-item-in-pack-catalog-flow.yaml
+- runFlow: flows/packs/add-item-catalog-flow.yaml
 
 # Trips CRUD
 - runFlow: flows/trips/create-trip-flow.yaml
 - runFlow: flows/trips/trip-detail-flow.yaml
+- runFlow: flows/trips/trip-edit-flow.yaml
 
 # Catalog
 - runFlow: flows/catalog/catalog-browse-flow.yaml
+- runFlow: flows/catalog/catalog-search-flow.yaml
 - runFlow: flows/catalog/catalog-item-detail-flow.yaml
+
+# AI and Guides
+- runFlow: flows/ai/ai-chat-dashboard-flow.yaml
+- runFlow: flows/ai/ai-chat-pack-flow.yaml
+- runFlow: flows/guides/guides-browse-flow.yaml
 
 # Profile
 - runFlow: flows/profile/profile-view-flow.yaml
@@ -32,3 +46,6 @@ appId: ${APP_ID}
 
 # Logout (destroys session - must be last)
 - runFlow: flows/auth/logout-flow.yaml
+
+# Logged-out negative auth test
+- runFlow: flows/negative/invalid-login-flow.yaml

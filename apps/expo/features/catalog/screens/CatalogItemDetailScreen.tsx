@@ -100,7 +100,7 @@ export function CatalogItemDetailScreen() {
                 {t('catalog.categoriesLabel')}
               </Text>
               <View className="flex-row flex-wrap gap-2">
-                {item.categories.map((category) => (
+                {item.categories.map((category: string) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
                     <Text> {decodeHtmlEntities(category)}</Text>
                   </Chip>
@@ -212,7 +212,7 @@ export function CatalogItemDetailScreen() {
                 {Object.entries(item.techs).map(([key, value]) => (
                   <View key={key} className="gap-1">
                     <Text className="text-xs text-muted-foreground uppercase">{key}</Text>
-                    <Text className="font-medium text-foreground">{value}</Text>
+                    <Text className="font-medium text-foreground">{String(value)}</Text>
                   </View>
                 ))}
               </View>

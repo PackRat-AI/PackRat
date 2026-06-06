@@ -242,7 +242,7 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   expect(chatResponse.ok()).toBeTruthy();
 
   await expect(page.getByTestId(/^ai-chat:assistant-message-/).last()).toContainText(
-    new RegExp(`working with your ${packName}.*optimize your pack`, 'i'),
+    /shelter.*sleep system.*water treatment/i,
     { timeout: 15_000 },
   );
 });

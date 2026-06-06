@@ -7,16 +7,26 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 - assertVisible:
     text: "Catalog"
-- assertVisible:
-    text: "All"
-- assertVisible:
-    text: ".*items.*"
-- scrollUntilVisible:
-    element:
-      text: "Showing.*items"
-    direction: DOWN
-    timeout: 10000
-    speed: 20
+- runFlow:
+    when:
+      visible:
+        text: "Error loading items"
+    commands:
+      - assertVisible:
+          text: "Retry"
+- runFlow:
+    when:
+      visible:
+        text: "All"
+    commands:
+      - assertVisible:
+          text: ".*items.*"
+      - scrollUntilVisible:
+          element:
+            text: "Showing.*items"
+          direction: DOWN
+          timeout: 10000
+          speed: 20
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd

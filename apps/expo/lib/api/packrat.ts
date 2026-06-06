@@ -1,17 +1,12 @@
 import { createApiClient } from '@packrat/api-client';
-import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
-import { authClient } from 'expo-app/lib/auth-client';
+import { authClient, parseSessionToken } from 'expo-app/lib/auth-client';
 import * as SecureStore from 'expo-app/lib/secureStore';
 import { Platform } from 'react-native';
-import { z } from 'zod';
 
-// expoClient serialises cookies into SecureStore under this key on native.
 const COOKIE_STORE_KEY = 'packrat_cookie';
-
-const CookieStoreSchema = z.record(z.object({ value: z.string() }));
 
 // On web expoClient short-circuits and expo-secure-store is an empty stub, so
 // we fall back to authClient.getSession(). Cache the token for 30s to keep
@@ -20,18 +15,6 @@ const CookieStoreSchema = z.record(z.object({ value: z.string() }));
 const WEB_TOKEN_CACHE_MS = 30_000;
 let cachedToken: string | null = null;
 let cachedTokenExpiresAt = 0;
-
-function parseSessionToken(cookieJson: string | null): string | null {
-  if (!cookieJson) return null;
-  const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
-  if (!cookies) return null;
-  // HTTPS prod prefixes the cookie with __Secure-; HTTP local doesn't.
-  return (
-    cookies['better-auth.session_token']?.value ??
-    cookies['__Secure-better-auth.session_token']?.value ??
-    null
-  );
-}
 
 export const apiClient = createApiClient({
   baseUrl: getApiBaseUrl(),
@@ -48,7 +31,8 @@ export const apiClient = createApiClient({
       const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
       return parseSessionToken(cookieStr);
     },
-    // Better Auth has no separate refresh-token endpoint.
+    // Better Auth has no separate refresh-token endpoint; the 7-day session
+    // token is the only credential. Returning null here is intentional.
     getRefreshToken: () => null,
     onAccessTokenRefreshed: () => {},
     onNeedsReauth: async () => {

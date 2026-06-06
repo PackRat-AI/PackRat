@@ -48,8 +48,9 @@ export function getPackDetailOptions(id: string) {
               style: 'cancel',
             },
             {
-              text: t('common.ok'),
+              text: t('common.delete'),
               style: 'destructive',
+              testID: testIds.packs.deleteConfirmBtn,
               onPress: deleteAndNavigate,
             },
           ],

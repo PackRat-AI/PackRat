@@ -8,7 +8,6 @@ import { Icon } from 'expo-app/components/Icon';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { testIds } from 'expo-app/lib/testIds';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -27,6 +26,7 @@ interface ChatBubbleProps {
   userQuery?: string;
   isLast: boolean;
   status: 'submitted' | 'streaming' | 'ready' | 'error';
+  testID?: string;
 }
 
 export const ChatBubble = React.memo(function ChatBubble({
@@ -34,6 +34,7 @@ export const ChatBubble = React.memo(function ChatBubble({
   userQuery,
   isLast,
   status,
+  testID,
 }: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
   const bottomSheetRef = useSheetRef();
@@ -87,7 +88,7 @@ export const ChatBubble = React.memo(function ChatBubble({
 
   return (
     <View
-      testID={isAI ? testIds.aiChat.assistantMessage(item.id) : undefined}
+      testID={testID}
       className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}
     >
       {/* <ContextMenu

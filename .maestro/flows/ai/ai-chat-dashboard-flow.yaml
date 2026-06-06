@@ -6,6 +6,30 @@ appId: ${APP_ID}
 # NOTE: This test intentionally does NOT tap the AI tile to avoid session destruction
 - launchApp
 - waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Software update"
+          commands:
+            - back
+            - waitForAnimationToEnd
+            - launchApp
+      - runFlow:
+          when:
+            visible:
+              text: "Update ready to install"
+          commands:
+            - back
+            - waitForAnimationToEnd
+            - launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Dashboard"
+    timeout: 15000
 
 # Navigate to Dashboard
 - tapOn:

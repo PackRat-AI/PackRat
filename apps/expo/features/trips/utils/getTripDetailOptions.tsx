@@ -56,6 +56,7 @@ export function getTripDetailOptions(id: string) {
             {
               text: t('common.delete'),
               style: 'destructive',
+              testID: testIds.trips.deleteConfirmBtn,
               onPress: deleteAndNavigate,
             },
           ],
@@ -93,7 +94,12 @@ export function getTripDetailOptions(id: string) {
           <Button
             variant="plain"
             size="icon"
-            onPress={() => router.push({ pathname: '/trip/new', params: { copyFromTripId: id } })}
+            onPress={() =>
+              router.push({
+                pathname: '/trip/new',
+                params: { copyFromTripId: id },
+              })
+            }
           >
             <Icon name="plus" color={colors.grey2} />
           </Button>

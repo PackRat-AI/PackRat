@@ -24,6 +24,7 @@ export const apiEnvObjectSchema = z.object({
   // Better Auth
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(), // API base URL e.g. https://api.packrat.world
+  BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
   // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
@@ -106,6 +107,7 @@ const testEnvSchema = apiEnvObjectSchema.partial().extend({
   OSM_DATABASE_URL: z.string().url().optional().default('postgres://user:pass@localhost/db'),
   BETTER_AUTH_SECRET: z.string().optional().default('test-better-auth-secret-32-chars-long!!'),
   BETTER_AUTH_URL: z.string().url().optional().default('http://localhost:8787'),
+  BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
   CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
   AI: z.unknown().optional(),
   PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
@@ -157,8 +159,10 @@ export type Env = ValidatedEnv;
 // Cache for validated envs keyed by the raw env reference.
 const envCache = new WeakMap<object, ValidatedEnv>();
 
-function isTestEnvironment(): boolean {
+function isTestEnvironment(rawEnv?: Record<string, unknown>): boolean {
   return (
+    rawEnv?.NODE_ENV === 'test' ||
+    rawEnv?.VITEST === 'true' ||
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
     (typeof globalThis !== 'undefined' &&
@@ -167,7 +171,7 @@ function isTestEnvironment(): boolean {
 }
 
 function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
-  const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
+  const schema = isTestEnvironment(rawEnv) ? testEnvSchema : apiEnvSchema;
   const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);

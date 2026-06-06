@@ -459,6 +459,9 @@ export default function AIChat() {
                 userQuery={userQuery}
                 isLast={index === messages.length - 1}
                 status={status}
+                testID={
+                  item.role === 'assistant' ? testIds.aiChat.assistantMessage(item.id) : undefined
+                }
               />
             );
           })}
