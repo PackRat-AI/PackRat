@@ -103,6 +103,7 @@ export default function AIChat() {
   locationRef.current = context.location;
 
   const { data: _authSession } = authClient.useSession();
+  const token = _authSession?.session?.token ?? null;
   const userId = _authSession?.user?.id ?? '';
   const isAuthenticated = !!token;
   const [input, setInput] = React.useState('');
