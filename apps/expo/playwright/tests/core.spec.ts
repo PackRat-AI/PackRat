@@ -9,18 +9,24 @@ import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 const visibleCreatePackButton = (page: Page) =>
-  page.locator('[data-testid="create-pack-button"]:visible').first();
+  page
+    .locator(
+      [
+        `[data-testid="${testIds.packs.createBtn}"]:visible`,
+        `[data-testid="${testIds.packs.emptyCreateBtn}"]:visible`,
+      ].join(', '),
+    )
+    .first();
 
 async function createPack(page: Page, packName: string) {
-  await page.goto(`${BASE_URL}/packs`);
-  await visibleCreatePackButton(page).click();
-  await page.getByTestId('packs:name-input').fill(packName);
-
   const packResponsePromise = page.waitForResponse(
     (r) => r.url().includes('/api/packs') && r.request().method() === 'POST',
     { timeout: 15_000 },
   );
-  await page.getByTestId('submit-pack-button').click();
+
+  await page.goto(`${BASE_URL}/pack/new`);
+  await page.getByTestId(testIds.packs.nameInput).fill(packName);
+  await page.getByTestId(testIds.packs.submitBtn).click();
 
   const packResponse = await packResponsePromise;
   expect(packResponse.ok()).toBeTruthy();
