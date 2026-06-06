@@ -137,6 +137,7 @@ jobs:
           NEON_DATABASE_URL=${NEON_DATABASE_URL}
           NEON_DATABASE_URL_READONLY=${NEON_DATABASE_URL_READONLY}
           BETTER_AUTH_URL=http://localhost:${API_PORT}
+          BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:8081
           BETTER_AUTH_SECRET=${{ secrets.E2E_BETTER_AUTH_SECRET || 'e2e-better-auth-secret-32chars-minimum-xx' }}
           JWT_SECRET=${{ secrets.E2E_JWT_SECRET || 'e2e-jwt-secret-placeholder' }}
           GOOGLE_CLIENT_ID=e2e-google-client-id
