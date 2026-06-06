@@ -158,7 +158,7 @@ jobs:
           RESEND_API_KEY=e2e-resend-key
           EMAIL_FROM=no-reply@packrattest.local
           AI_PROVIDER=openai
-          OPENAI_API_KEY=sk-e2e-placeholder
+          OPENAI_API_KEY=sk-e2e-stub-placeholder
           GOOGLE_GENERATIVE_AI_API_KEY=e2e-google-ai
           PERPLEXITY_API_KEY=pplx-e2e-placeholder
           OPENWEATHER_KEY=e2e-openweather
