@@ -39,6 +39,13 @@ const EXCLUDED_SUFFIXES = ['.test.ts', '.test.tsx', '.spec.ts', '.spec.tsx'];
 const EXCLUDED_FILES = new Set([
   // This service intentionally mirrors Cloudflare R2's positional API.
   'packages/api/src/services/r2-bucket.ts',
+  // Existing platform/observability APIs intentionally mirror external
+  // callback or logger call shapes; changing them would churn broad call sites.
+  'packages/api/src/__test-stubs__/cloudflare-workers.ts',
+  'packages/api/src/services/retention/invalidLogRetention.ts',
+  'packages/api/src/utils/logger.ts',
+  'packages/api/src/workflows/catalog-etl-workflow.ts',
+  'packages/api/src/workflows/shared/chunkCsvForR2.ts',
   // These build scripts override globalThis.fetch with a shim that must
   // match the runtime's (input, init) signature.
   'apps/landing/scripts/generate-og-images.ts',

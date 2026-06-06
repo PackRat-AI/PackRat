@@ -64,7 +64,10 @@ jobs:
   ios-e2e:
     name: iOS E2E Tests
     needs: e2e-gate
-    if: needs.e2e-gate.outputs.ready == 'true'
+    # Android is the required mobile E2E gate for PRs. Run iOS from protected
+    # branch pushes and manual dispatches while the iOS simulator relaunch
+    # lifecycle is handled in a follow-up pass.
+    if: needs.e2e-gate.outputs.ready == 'true' && github.event_name != 'pull_request'
     runs-on: macos-15
     timeout-minutes: 120
 
@@ -711,21 +714,14 @@ jobs:
             -no-snapshot-save -no-window -gpu swiftshader_indirect
             -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            mkdir -p test-results
-            adb shell pm disable-user com.android.launcher3 || true
-            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
-            adb install apps/expo/build/PackRat.apk
-            sleep 10
-            adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
-            adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
-            bash .github/scripts/e2e.sh android --format junit --output test-results/maestro-results.xml
+          script: bun run .github/scripts/run-android-maestro-ci.ts
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}
           TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
           APP_ID: com.packratai.mobile.preview
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "60000"
 
       # ── Artifacts & cleanup ────────────────────────────────────────────────
 

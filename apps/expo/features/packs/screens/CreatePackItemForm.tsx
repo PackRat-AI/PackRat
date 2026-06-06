@@ -236,6 +236,7 @@ export const CreatePackItemForm = ({
               <FormItem>
                 <TextField
                   testID={testIds.items.nameInput}
+                  containerTestID={testIds.items.nameInputContainer}
                   placeholder={t('packs.itemName')}
                   autoFocus
                   value={field.state.value}
@@ -256,6 +257,8 @@ export const CreatePackItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.items.descriptionInput}
+                  containerTestID={testIds.items.descriptionInputContainer}
                   placeholder={t('packs.description')}
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -307,6 +310,7 @@ export const CreatePackItemForm = ({
               <FormItem>
                 <TextField
                   testID={testIds.items.weightInput}
+                  containerTestID={testIds.items.weightInputContainer}
                   placeholder={t('packs.weight')}
                   value={weightText}
                   onBlur={field.handleBlur}

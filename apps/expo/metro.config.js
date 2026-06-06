@@ -10,6 +10,7 @@ const config = getSentryExpoConfig(__dirname);
 config.resolver = {
   ...config.resolver,
   assetExts: [...(config.resolver?.assetExts ?? []), 'wasm'],
+  blockList: /node_modules\/.*\/android\/\.cxx\/.*/,
   // Enable package.json "exports" field resolution so workspace packages with
   // subpath exports (e.g. @packrat/schemas/constants) resolve correctly.
   unstable_enablePackageExports: true,
@@ -31,6 +32,7 @@ const WEB_STUBS = {
   'expo-sqlite/kv-store': 'mocks/expo-sqlite-kv-store.ts',
   // Required by lib/persist-plugin.web.ts (ObservablePersistAsyncStorage)
   '@react-native-async-storage/async-storage': 'mocks/async-storage.ts',
+  'expo-secure-store': 'mocks/expo-secure-store.ts',
   // Keyboard utilities — on web the software keyboard doesn't overlay content
   'react-native-keyboard-controller': 'mocks/react-native-keyboard-controller.tsx',
   '@react-native-community/datetimepicker': 'mocks/react-native-community-datetimepicker.tsx',
@@ -44,11 +46,17 @@ config.resolver = {
   // biome-ignore lint/complexity/useMaxParams: Metro resolveRequest requires exactly 3 params
   resolveRequest: (context, moduleName, platform) => {
     if (platform === 'web' && WEB_STUBS[moduleName]) {
-      return { filePath: path.join(__dirname, WEB_STUBS[moduleName]), type: 'sourceFile' };
+      return {
+        filePath: path.join(__dirname, WEB_STUBS[moduleName]),
+        type: 'sourceFile',
+      };
     }
     if (originalResolveRequest) return originalResolveRequest(context, moduleName, platform);
     return context.resolveRequest(context, moduleName, platform);
   },
 };
 
-module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });
+module.exports = withNativeWind(config, {
+  input: './global.css',
+  inlineRem: 16,
+});

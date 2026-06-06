@@ -26,6 +26,7 @@ interface ChatBubbleProps {
   userQuery?: string;
   isLast: boolean;
   status: 'submitted' | 'streaming' | 'ready' | 'error';
+  testID?: string;
 }
 
 export const ChatBubble = React.memo(function ChatBubble({
@@ -33,6 +34,7 @@ export const ChatBubble = React.memo(function ChatBubble({
   userQuery,
   isLast,
   status,
+  testID,
 }: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
   const bottomSheetRef = useSheetRef();
@@ -85,7 +87,10 @@ export const ChatBubble = React.memo(function ChatBubble({
   const handleReport = useCallback(() => setIsReportModalVisible(true), []);
 
   return (
-    <View className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}>
+    <View
+      testID={testID}
+      className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}
+    >
       {/* <ContextMenu
         enabled={isAI ? !isLast || status === 'ready' : true}
         className="rounded-md"

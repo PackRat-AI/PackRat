@@ -1,4 +1,4 @@
-import { Pool as NeonPool, neon } from '@neondatabase/serverless';
+import { Pool as NeonPool, neon, neonConfig } from '@neondatabase/serverless';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import * as schema from '@packrat/db/schema';
@@ -6,6 +6,9 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+
+const runtimeEnv = () =>
+  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
 
 const isStandardPostgresUrl = (url: string) => {
   try {
@@ -32,13 +35,39 @@ const isStandardPostgresUrl = (url: string) => {
 
 const pgPools = new Map<string, Pool>();
 
+const getPgPoolMax = () => {
+  const parsed = Number(runtimeEnv().PACKRAT_PG_POOL_MAX);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5;
+};
+
+const shouldUseNeonWsProxy = (url: string) => {
+  if (runtimeEnv().PACKRAT_USE_NEON_WSPROXY === 'true') return true;
+
+  try {
+    const u = new URL(url);
+    return u.hostname === 'localhost' && u.port === '5432';
+  } catch {
+    return false;
+  }
+};
+
 export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
+    if (shouldUseNeonWsProxy(url)) {
+      neonConfig.wsProxy = () =>
+        runtimeEnv().NEON_WS_PROXY ?? 'localhost:5434/v1?address=postgres-test:5432';
+      neonConfig.useSecureWebSocket = false;
+      neonConfig.pipelineConnect = false;
+      neonConfig.pipelineTLS = false;
+      const neonPool = new NeonPool({ connectionString: url });
+      return drizzleServerless(neonPool, { schema });
+    }
+
     let pool = pgPools.get(url);
     if (!pool) {
       const newPool = new Pool({
         connectionString: url,
-        max: 5,
+        max: getPgPoolMax(),
         // idleTimeoutMillis: 0 prevents pg.Pool from calling setTimeout().unref(),
         // which is not supported in the Cloudflare Workers runtime (miniflare).
         idleTimeoutMillis: 0,
@@ -46,7 +75,6 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
       });
       newPool.on('error', () => {
         pgPools.delete(url);
-        newPool.end().catch(() => {});
       });
       pgPools.set(url, newPool);
       pool = newPool;

@@ -124,6 +124,7 @@ features/{name}/
 - **Forms**: TanStack React Form
 - **Feature flags**: `apps/expo/config.ts` — `featureFlags` object, default new flags to `false`
 - **Animations**: React Native Reanimated 4
+- **E2E selectors**: Prefer stable `testID` values from `apps/expo/lib/testIds.ts` for Maestro and Playwright selectors. Add or extend app-controlled test IDs for important user actions and assertions instead of matching visible text. Use text selectors only when the surface is external or not app-controlled, such as Expo dev-client UI, native permission dialogs, or unavoidable system copy.
 
 ### Web Apps (apps/guides, apps/landing, apps/trails)
 

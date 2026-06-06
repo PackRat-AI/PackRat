@@ -137,6 +137,7 @@ jobs:
           NEON_DATABASE_URL=${NEON_DATABASE_URL}
           NEON_DATABASE_URL_READONLY=${NEON_DATABASE_URL_READONLY}
           BETTER_AUTH_URL=http://localhost:${API_PORT}
+          BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:8081
           BETTER_AUTH_SECRET=${{ secrets.E2E_BETTER_AUTH_SECRET || 'e2e-better-auth-secret-32chars-minimum-xx' }}
           JWT_SECRET=${{ secrets.E2E_JWT_SECRET || 'e2e-jwt-secret-placeholder' }}
           GOOGLE_CLIENT_ID=e2e-google-client-id
@@ -152,7 +153,7 @@ jobs:
           RESEND_API_KEY=e2e-resend-key
           EMAIL_FROM=no-reply@packrattest.local
           AI_PROVIDER=openai
-          OPENAI_API_KEY=sk-e2e-placeholder
+          OPENAI_API_KEY=sk-e2e-stub-placeholder
           GOOGLE_GENERATIVE_AI_API_KEY=e2e-google-ai
           PERPLEXITY_API_KEY=pplx-e2e-placeholder
           OPENWEATHER_KEY=e2e-openweather
@@ -207,7 +208,7 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: http://localhost:8787
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
-          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
+          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://example.r2.dev' }}
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
         run: bunx expo export -p web --output-dir dist
