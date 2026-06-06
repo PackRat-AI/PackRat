@@ -33,7 +33,7 @@ import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/pack
 import { packsStore } from 'expo-app/features/packs/store/packs';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
-import { authClient } from 'expo-app/lib/auth-client';
+import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -211,17 +211,32 @@ export default function AIChat() {
       transport: new DefaultChatTransport({
         fetch: expoFetch as unknown as typeof globalThis.fetch,
         api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-        // HttpChatTransport awaits resolve(this.headers) per send, so this
-        // function runs each time. Pull the live token from authClient at
-        // request time — useSession() resolves asynchronously and useChat
-        // captures the transport at mount, so any value baked in earlier
-        // (or stashed in a ref) would go stale on rotation. Omit the header
-        // entirely if we have no token rather than sending `Bearer ` — the
-        // browser still carries the cookie session via credentials:'include'.
-        headers: async (): Promise<Record<string, string>> => {
+        prepareSendMessagesRequest: async ({
+          body,
+          headers,
+          api,
+          credentials,
+          id,
+          messages,
+          trigger,
+          messageId,
+        }) => {
+          // Pull the live web token at request time. useChat captures the
+          // transport at mount, so relying only on the hook token can go stale.
           const { data } = await authClient.getSession();
-          const token = data?.session?.token;
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          const authToken = data?.session?.token ?? token ?? (await getStoredSessionToken());
+          return {
+            api,
+            credentials: credentials ?? 'include',
+            headers: authToken ? { ...headers, Authorization: `Bearer ${authToken}` } : headers,
+            body: {
+              ...(body ?? {}),
+              id,
+              messages,
+              trigger,
+              messageId,
+            },
+          };
         },
         body: () => ({
           contextType: contextRef.current.contextType,
