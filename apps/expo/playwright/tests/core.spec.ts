@@ -107,7 +107,7 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });
 
   // Wait for catalog items to load, then click the first one
-  const firstCard = page.getByTestId(/^catalog:item-/).first();
+  const firstCard = page.getByTestId(/^catalog-item-card-/).first();
   await firstCard.waitFor({ timeout: 15_000 });
   await firstCard.click();
 
