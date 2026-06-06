@@ -8,6 +8,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -85,7 +86,10 @@ export const ChatBubble = React.memo(function ChatBubble({
   const handleReport = useCallback(() => setIsReportModalVisible(true), []);
 
   return (
-    <View className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}>
+    <View
+      testID={isAI ? testIds.aiChat.assistantMessage(item.id) : undefined}
+      className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}
+    >
       {/* <ContextMenu
         enabled={isAI ? !isLast || status === 'ready' : true}
         className="rounded-md"

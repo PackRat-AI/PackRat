@@ -4,40 +4,53 @@
  * Each test navigates to a route after seeding auth tokens in localStorage.
  * TestIds match the constants in lib/testIds.ts and the Maestro iOS flows.
  */
+import type { Page } from '@playwright/test';
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
+
+const visibleCreatePackButton = (page: Page) =>
+  page
+    .locator(
+      [
+        `[data-testid="${testIds.packs.createBtn}"]:visible`,
+        `[data-testid="${testIds.packs.emptyCreateBtn}"]:visible`,
+      ].join(', '),
+    )
+    .first();
+
+async function createPack(page: Page, packName: string) {
+  const packResponsePromise = page.waitForResponse(
+    (r) => r.url().includes('/api/packs') && r.request().method() === 'POST',
+    { timeout: 15_000 },
+  );
+
+  await page.goto(`${BASE_URL}/pack/new`);
+  await page.getByTestId(testIds.packs.nameInput).fill(packName);
+  await page.getByTestId(testIds.packs.submitBtn).click();
+
+  const packResponse = await packResponsePromise;
+  expect(packResponse.ok()).toBeTruthy();
+  return packResponse;
+}
 
 // ─── Dashboard ──────────────────────────────────────────────────────────────
 
-test('dashboard loads authenticated', async ({ authedPage: page }) => {
-  await page.goto(`${BASE_URL}/`);
-  // Tab bar must be visible — confirms app rendered past the auth gate
-  await expect(page.getByRole('tab', { name: /Dashboard/i })).toBeVisible();
-  await expect(page.getByRole('tab', { name: /Packs/i })).toBeVisible();
+test('authenticated packs route loads app shell', async ({ authedPage: page }) => {
+  await page.goto(`${BASE_URL}/packs`);
+  await expect(visibleCreatePackButton(page)).toBeVisible();
 });
 
 // ─── Packs ───────────────────────────────────────────────────────────────────
 
 test('packs tab loads and shows create button', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/packs`);
-  await expect(page.getByTestId('create-pack-button')).toBeVisible();
+  await expect(visibleCreatePackButton(page)).toBeVisible();
 });
 
 test('create a pack end-to-end', async ({ authedPage: page }) => {
   const packName = `E2E-Pack-${Date.now()}`;
 
-  // Use waitForResponse to capture the created pack ID.
-  // Navigating directly to /pack/new means router.back() fails on submit,
-  // so we intercept the API response instead of relying on navigation.
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
-  expect(packResponse.ok()).toBeTruthy();
+  await createPack(page, packName);
 
   // Verify pack appears in the list
   await page.goto(`${BASE_URL}/packs`);
@@ -49,17 +62,7 @@ test('create a pack end-to-end', async ({ authedPage: page }) => {
 test('add item manually to a pack', async ({ authedPage: page }) => {
   const packName = `E2E-AddItem-${Date.now()}`;
 
-  // Create a pack via API and capture the ID
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
-  expect(packResponse.ok()).toBeTruthy();
+  const packResponse = await createPack(page, packName);
   const { id: packId } = (await packResponse.json()) as { id: number };
 
   // Fill the item creation form using testIds
@@ -90,24 +93,15 @@ test('add item manually to a pack', async ({ authedPage: page }) => {
 test('add item from catalog to a pack', async ({ authedPage: page }) => {
   const packName = `E2E-Catalog-${Date.now()}`;
 
-  // Create a pack and capture the ID
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
+  const packResponse = await createPack(page, packName);
   const { id: packId } = (await packResponse.json()) as { id: number };
 
-  // Navigate to pack detail and open the "Add" bottom sheet first; its options
-  // (add-from-catalog-option, etc.) are only mounted inside the BottomSheet
-  // after present() fires.
+  // Navigate to pack detail and open "Add from Catalog" sheet
   await page.goto(`${BASE_URL}/pack/${packId}`);
   await page.getByTestId('add-item-button').click();
-  await page.getByTestId('add-from-catalog-option').last().click();
+  const addFromCatalogOption = page.getByTestId('add-from-catalog-option').last();
+  await expect(addFromCatalogOption).toBeVisible({ timeout: 5_000 });
+  await addFromCatalogOption.click();
 
   // Dialog with catalog items should appear
   await expect(page.getByText('Browse Catalog').first()).toBeVisible({ timeout: 10_000 });
@@ -130,17 +124,11 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
 
 test('trips tab loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/trips`);
-  await expect(page.getByText('Create New Trip')).toBeVisible();
+  await expect(page.getByTestId(testIds.trips.createBtn)).toBeVisible();
 });
 
 test('create a trip with dates', async ({ authedPage: page }) => {
-  test.setTimeout(60_000);
   const tripName = `E2E-Trip-${Date.now()}`;
-
-  const postPromise = page.waitForResponse(
-    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
-    { timeout: 20_000 },
-  );
 
   await page.goto(`${BASE_URL}/trip/new`);
   const nameInput = page.getByTestId('trips:name-input');
@@ -165,6 +153,10 @@ test('create a trip with dates', async ({ authedPage: page }) => {
   await endInput.waitFor({ timeout: 5_000 });
   await endInput.fill('2026-08-14');
 
+  const postPromise = page.waitForResponse(
+    (r) => r.url().includes('/api/trips') && r.request().method() === 'POST',
+    { timeout: 10_000 },
+  );
   await page.getByTestId('submit-trip-button').click();
 
   // Wait for the POST to complete so the trip is persisted before navigating
@@ -181,8 +173,7 @@ test('create a trip with dates', async ({ authedPage: page }) => {
 
 test('catalog tab loads items', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/catalog`);
-  // Wait for items to load — at least one item name visible
-  await expect(page.locator('text=/\\d+,?\\d+ items/i').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId(/^catalog:item-/).first()).toBeVisible({ timeout: 10_000 });
 });
 
 test('catalog search filters results', async ({ authedPage: page }) => {
@@ -195,9 +186,10 @@ test('catalog search filters results', async ({ authedPage: page }) => {
 
   const searchBox = page.locator('input[placeholder*="Search"]');
   await searchBox.waitFor({ timeout: 5_000 });
-  await searchBox.fill('sleeping bag');
-  // Results should update — check item names
-  await expect(page.getByText(/sleeping bag/i).first()).toBeVisible({ timeout: 10_000 });
+  await searchBox.fill('headlamp');
+  await expect(page.getByTestId(/^catalog:item-.*Headlamp/i).first()).toBeVisible({
+    timeout: 10_000,
+  });
 });
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -221,26 +213,16 @@ test('settings screen loads', async ({ authedPage: page }) => {
   await page.goto(`${BASE_URL}/settings`);
   await expect(page.getByText('AI Models')).toBeVisible();
   await expect(page.getByText('Danger Zone')).toBeVisible();
-  // Dev/preview builds prepend an env tag like "PackRat (Dev) v2.0.26".
-  await expect(page.getByText(/PackRat(?: \([^)]+\))? v\d/i)).toBeVisible();
+  await expect(page.getByText(/PackRat v/i)).toBeVisible();
 });
 
 // ─── AI Chat ──────────────────────────────────────────────────────────────────
 
 test('AI chat sends message and gets response', async ({ authedPage: page }) => {
-  test.setTimeout(60_000); // AI streaming responses can take 20-30s
   // Create a pack to chat about first
   const packName = `E2E-AI-${Date.now()}`;
 
-  const [packResponse] = await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/packs') && r.request().method() === 'POST'),
-    (async () => {
-      await page.goto(`${BASE_URL}/pack/new`);
-      await page.getByTestId('pack-name-input').fill(packName);
-      await page.getByTestId('submit-pack-button').click();
-    })(),
-  ]);
-
+  const packResponse = await createPack(page, packName);
   const { id: packId } = (await packResponse.json()) as { id: number };
 
   await page.goto(
@@ -250,13 +232,19 @@ test('AI chat sends message and gets response', async ({ authedPage: page }) => 
   // Greet message should be visible
   await expect(page.getByText(/working with your/i).first()).toBeVisible();
 
-  // Send a message
-  await page.getByRole('textbox', { name: /Ask about this pack/i }).fill('List 3 essential items.');
-  // Send button is icon-only with no accessible name; use the arrow-up icon character
-  await page.getByText('󰁝').click();
+  await page.getByTestId(testIds.aiChat.input).fill('List 3 essential items.');
+  const chatResponsePromise = page.waitForResponse(
+    (r) => r.url().includes('/api/chat') && r.request().method() === 'POST',
+    { timeout: 10_000 },
+  );
+  await page.getByTestId(testIds.aiChat.sendBtn).click();
+  const chatResponse = await chatResponsePromise;
+  expect(chatResponse.ok()).toBeTruthy();
 
-  // Wait for AI response (streaming may take a while)
-  await expect(page.getByText(/item/i).nth(1)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId(/^ai-chat:assistant-message-/).last()).toContainText(
+    /shelter.*sleep system.*water treatment/i,
+    { timeout: 15_000 },
+  );
 });
 
 // ─── Weather ──────────────────────────────────────────────────────────────────

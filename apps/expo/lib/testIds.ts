@@ -32,6 +32,7 @@ export const testIds = Object.freeze({
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs: Object.freeze({
     createBtn: 'create-pack-button', // keep Maestro value
+    emptyCreateBtn: 'create-pack-empty-button',
     cancelBtn: 'cancel-pack-form-button', // keep Maestro value
     nameInput: 'pack-name-input', // keep Playwright + Maestro value
     descriptionInput: 'pack-description-input', // keep Playwright + Maestro value
@@ -107,6 +108,14 @@ export const testIds = Object.freeze({
     aiModelsSection: 'settings:ai-models',
     dangerZone: 'settings:danger-zone',
     deleteAccountBtn: 'settings:delete-account',
+  }),
+
+  // ── AI Chat ───────────────────────────────────────────────────────────────
+  aiChat: Object.freeze({
+    input: 'ai-chat:input',
+    sendBtn: 'ai-chat:send',
+    stopBtn: 'ai-chat:stop',
+    assistantMessage: (id: string | number) => `ai-chat:assistant-message-${id}`,
   }),
 
   // ── Weather ───────────────────────────────────────────────────────────────

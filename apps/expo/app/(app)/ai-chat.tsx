@@ -36,6 +36,7 @@ import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { authClient } from 'expo-app/lib/auth-client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -593,6 +594,7 @@ function Composer({
     >
       <View className="flex-row items-end gap-2 px-4 py-2">
         <TextInput
+          testID={testIds.aiChat.input}
           placeholder={placeholder}
           style={TEXT_INPUT_STYLE}
           className="ios:pt-[7px] ios:pb-1 min-h-9 flex-1 rounded-[18px] border border-border bg-background py-1 pl-3 pr-8 text-base leading-5 text-foreground"
@@ -604,11 +606,18 @@ function Composer({
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <Button onPress={stop} size="icon" variant="primary" className="h-7 w-7 rounded-full">
+            <Button
+              testID={testIds.aiChat.stopBtn}
+              onPress={stop}
+              size="icon"
+              variant="primary"
+              className="h-7 w-7 rounded-full"
+            >
               <Icon name="stop" size={18} color="white" />
             </Button>
           ) : (
             <Button
+              testID={testIds.aiChat.sendBtn}
               onPress={handleSubmit}
               disabled={!input.length}
               size="icon"
