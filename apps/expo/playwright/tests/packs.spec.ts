@@ -117,23 +117,12 @@ test.describe('Pack CRUD', () => {
     // Wait for the store to load and the owner check to resolve so header buttons appear
     await page.waitForLoadState('networkidle');
 
-    page.on('dialog', (dialog) => dialog.accept());
-
-    const deleteSyncPromise = page.waitForResponse(
-      (r) =>
-        r.url().includes(`/api/packs/${packId}`) &&
-        (r.request().method() === 'PUT' || r.request().method() === 'PATCH'),
-      { timeout: 20_000 },
-    );
-
     const deleteButton = page.getByTestId(testIds.packs.deleteBtn);
     await deleteButton.waitFor({ timeout: 15_000 });
     await deleteButton.click();
+    await page.getByRole('button', { name: /^OK$/ }).click();
 
-    const response = await deleteSyncPromise;
-    expect(response.ok()).toBeTruthy();
-
-    // After deletion has synced, go to list and confirm pack is gone.
+    // Pack deletion is a local soft-delete in the synced store; confirm the UI result.
     await page.goto(`${BASE_URL}/packs`);
     await expect(page.getByText(packName)).not.toBeVisible({ timeout: 10_000 });
   });
@@ -213,8 +202,8 @@ test.describe('Item CRUD within a pack', () => {
     if (await moreActionsButton.isVisible()) {
       await moreActionsButton.click();
       const deleteOption = page
-        .getByText(/delete/i)
-        .or(page.getByRole('menuitem', { name: /delete/i }))
+        .getByRole('menuitem', { name: /^Delete$/ })
+        .or(page.getByRole('button', { name: /^Delete$/ }))
         .first();
       await deleteOption.waitFor({ timeout: 5_000 });
       await deleteOption.click();
