@@ -389,7 +389,25 @@ export const QueryMetricsRecentSchema = z.object({
   requests: z.array(QueryRecentRequestSchema),
 });
 
+export const QueryCallSiteStatSchema = z.object({
+  callSite: z.string(),
+  queryCount: z.number(),
+  totalDurationMs: z.number(),
+  totalResultBytes: z.number(),
+  avgDurationMs: z.number(),
+  distinctRoutes: z.number(),
+  samplePreview: z.string(),
+});
+
+export const QueryMetricsByCallSiteSchema = z.object({
+  periodHours: z.number(),
+  periodStart: z.string(),
+  callSites: z.array(QueryCallSiteStatSchema),
+});
+
 export type QueryRouteStat = z.infer<typeof QueryRouteStatSchema>;
 export type QueryRecentRequest = z.infer<typeof QueryRecentRequestSchema>;
+export type QueryCallSiteStat = z.infer<typeof QueryCallSiteStatSchema>;
 export type QueryMetricsSummary = z.infer<typeof QueryMetricsSummarySchema>;
 export type QueryMetricsRecent = z.infer<typeof QueryMetricsRecentSchema>;
+export type QueryMetricsByCallSite = z.infer<typeof QueryMetricsByCallSiteSchema>;

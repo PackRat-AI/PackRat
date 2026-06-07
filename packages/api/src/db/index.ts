@@ -1,7 +1,13 @@
 import { Pool as NeonPool, neon, neonConfig } from '@neondatabase/serverless';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { queryMetricsLogger } from '@packrat/api/utils/queryMetrics';
+import {
+  estimateResultBytes,
+  hashQuery,
+  queryMetricsAls,
+  recordQueryExecution,
+  setQueryTag,
+} from '@packrat/api/utils/queryMetrics';
 import * as schema from '@packrat/db/schema';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
@@ -52,6 +58,80 @@ const shouldUseNeonWsProxy = (url: string) => {
   }
 };
 
+// Wraps a Drizzle db instance to add a chainable .tag() method:
+//   db.tag('service.method').select().from(table)
+// Uses Proxy since $extend is not available in drizzle-orm 0.45.x.
+type WithTag<T> = T & { tag(label: string): WithTag<T> };
+
+function withTagging<T extends object>(db: T): WithTag<T> {
+  const proxy: WithTag<T> = new Proxy(db, {
+    get(target, prop) {
+      if (prop === 'tag') {
+        return (label: string) => {
+          setQueryTag(label);
+          return proxy;
+        };
+      }
+      const val = Reflect.get(target, prop, target);
+      return typeof val === 'function' ? (val as (...a: unknown[]) => unknown).bind(target) : val;
+    },
+  }) as WithTag<T>;
+  return proxy;
+}
+
+// ---------------------------------------------------------------------------
+// Driver instrumentation helpers
+//
+// Each helper wraps the underlying client's query method so that after every
+// execution we record: duration (ms), result size (bytes), and the current
+// query tag (set by callers via withQueryTag() in queryMetrics.ts).
+// ---------------------------------------------------------------------------
+
+// For neon-http: patches fn.query(sql, params?, options?) in-place.
+// Drizzle's neon-http session resolves clientQuery = client.query ?? client,
+// so it always goes through .query() when present.
+function instrumentNeonFn(fn: ReturnType<typeof neon>): ReturnType<typeof neon> {
+  const orig = fn.query.bind(fn);
+  fn.query = (async (...args: Parameters<typeof orig>) => {
+    const sql = args[0] as string;
+    const start = Date.now();
+    const result = await orig(...args);
+    const hash = hashQuery(sql);
+    recordQueryExecution({
+      hash,
+      preview: sql.slice(0, 120),
+      callSite: queryMetricsAls.getStore()?.currentQueryTag,
+      durationMs: Date.now() - start,
+      resultBytes: estimateResultBytes((result as { rows?: unknown }).rows),
+    });
+    return result;
+  }) as typeof fn.query;
+  return fn;
+}
+
+// For NeonPool / pg.Pool: patches pool.query({ text, ... }, params?) in-place.
+// Drizzle's neon-serverless session always passes a QueryConfig object as the
+// first arg (never a plain string), so we extract .text for metrics only.
+function instrumentPool<T extends { query: (...args: unknown[]) => Promise<unknown> }>(pool: T): T {
+  const orig = pool.query.bind(pool);
+  pool.query = (async (...args: Parameters<typeof orig>) => {
+    const first = args[0];
+    const sql = typeof first === 'string' ? first : ((first as { text?: string })?.text ?? '');
+    const start = Date.now();
+    const result = await orig(...args);
+    const hash = hashQuery(sql);
+    recordQueryExecution({
+      hash,
+      preview: sql.slice(0, 120),
+      callSite: queryMetricsAls.getStore()?.currentQueryTag,
+      durationMs: Date.now() - start,
+      resultBytes: estimateResultBytes((result as { rows?: unknown })?.rows),
+    });
+    return result;
+  }) as T['query'];
+  return pool;
+}
+
 export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHttp?: boolean }) => {
   if (isStandardPostgresUrl(url)) {
     if (shouldUseNeonWsProxy(url)) {
@@ -60,8 +140,8 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
       neonConfig.useSecureWebSocket = false;
       neonConfig.pipelineConnect = false;
       neonConfig.pipelineTLS = false;
-      const neonPool = new NeonPool({ connectionString: url });
-      return drizzleServerless(neonPool, { schema });
+      const neonPool = instrumentPool(new NeonPool({ connectionString: url }));
+      return withTagging(drizzleServerless(neonPool, { schema }));
     }
 
     let pool = pgPools.get(url);
@@ -80,14 +160,15 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
       pgPools.set(url, newPool);
       pool = newPool;
     }
-    return drizzlePg(pool, { schema, logger: queryMetricsLogger });
+    instrumentPool(pool);
+    return withTagging(drizzlePg(pool, { schema }));
   }
   if (useNeonHttp) {
-    const sql = neon(url);
-    return drizzle(sql, { schema, logger: queryMetricsLogger });
+    const fn = instrumentNeonFn(neon(url));
+    return withTagging(drizzle(fn, { schema }));
   }
-  const neonPool = new NeonPool({ connectionString: url });
-  return drizzleServerless(neonPool, { schema, logger: queryMetricsLogger });
+  const neonPool = instrumentPool(new NeonPool({ connectionString: url }));
+  return withTagging(drizzleServerless(neonPool, { schema }));
 };
 
 /**

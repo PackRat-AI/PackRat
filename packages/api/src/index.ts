@@ -19,6 +19,7 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
 import {
+  createQueryMetricsStore,
   flushQueryMetrics,
   initQueryMetricsStore,
   queryMetricsAls,
@@ -198,52 +199,65 @@ const handler: ExportedHandler<Env> = {
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
-    try {
-      if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
-        if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
-        await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
-      } else if (
-        batch.queue === 'packrat-embeddings-queue' ||
-        batch.queue === 'packrat-embeddings-queue-dev'
-      ) {
-        if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
-        await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
-          batch,
-        );
-      } else {
-        throw new Error(`Unknown queue: ${batch.queue}`);
+    const store = createQueryMetricsStore(`queue/${batch.queue}`, 'QUEUE');
+    await queryMetricsAls.run(store, async () => {
+      try {
+        if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
+          if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
+          await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
+        } else if (
+          batch.queue === 'packrat-embeddings-queue' ||
+          batch.queue === 'packrat-embeddings-queue-dev'
+        ) {
+          if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
+          await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
+            batch,
+          );
+        } else {
+          throw new Error(`Unknown queue: ${batch.queue}`);
+        }
+      } catch (error) {
+        captureApiException({
+          error: error,
+          operation: 'queue.handler',
+          tags: { queue_name: batch.queue },
+          extra: { messageCount: batch.messages.length },
+        });
+        throw error;
+      } finally {
+        store.totalDurationMs = Date.now() - store.startTimeMs;
+        await flushQueryMetrics(store).catch(() => {});
       }
-    } catch (error) {
-      captureApiException({
-        error: error,
-        operation: 'queue.handler',
-        tags: { queue_name: batch.queue },
-        extra: { messageCount: batch.messages.length },
-      });
-      throw error;
-    }
+    });
   },
 
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
-    if (controller.cron === '0 9 * * *') {
-      const result = await sweepInvalidItemLogs({ env });
-      console.log(
-        `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
-          `iterations=${result.iterations} capped=${result.capped} ` +
-          `retentionDays=${result.retentionDays}`,
-      );
-      if (result.capped) {
-        console.warn(
-          `[retention] invalid_item_logs sweep hit max-iterations cap; ` +
-            `remaining expired rows will be swept on the next run`,
-        );
+    const store = createQueryMetricsStore(`scheduled/${controller.cron}`, 'CRON');
+    await queryMetricsAls.run(store, async () => {
+      try {
+        if (controller.cron === '0 9 * * *') {
+          const result = await sweepInvalidItemLogs({ env });
+          console.log(
+            `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
+              `iterations=${result.iterations} capped=${result.capped} ` +
+              `retentionDays=${result.retentionDays}`,
+          );
+          if (result.capped) {
+            console.warn(
+              `[retention] invalid_item_logs sweep hit max-iterations cap; ` +
+                `remaining expired rows will be swept on the next run`,
+            );
+          }
+          return;
+        }
+        throw new Error(`Unknown cron: ${controller.cron}`);
+      } finally {
+        store.totalDurationMs = Date.now() - store.startTimeMs;
+        await flushQueryMetrics(store).catch(() => {});
       }
-      return;
-    }
-
-    throw new Error(`Unknown cron: ${controller.cron}`);
+    });
   },
 };
 

@@ -9,7 +9,7 @@ export default function QueryMetricsPage() {
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
         title="Query Metrics"
-        description="Persistent per-request compute and egress tracking — survives Neon compute restarts"
+        description="Per-query compute and egress tracked at the driver level, attributed to the call site that issued each query"
       />
       <QueryMetricsAnalytics />
     </div>

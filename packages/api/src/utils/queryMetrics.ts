@@ -11,17 +11,17 @@ export interface QueryMetricsStore {
   queries: CapturedQuery[];
   totalDurationMs: number;
   estimatedEgressBytes: number;
+  currentQueryTag?: string;
 }
 
 export const queryMetricsAls = new AsyncLocalStorage<QueryMetricsStore>();
 
 const SKIP_ROUTES = new Set(['/', '/health', '/openapi', '/openapi.json']);
 
-export function initQueryMetricsStore(request: Request): QueryMetricsStore {
-  const url = new URL(request.url);
+export function createQueryMetricsStore(route: string, method: string): QueryMetricsStore {
   return {
-    route: normalizeRoute(url.pathname),
-    method: request.method,
+    route,
+    method,
     startTimeMs: Date.now(),
     queries: [],
     totalDurationMs: 0,
@@ -29,16 +29,43 @@ export function initQueryMetricsStore(request: Request): QueryMetricsStore {
   };
 }
 
+export function initQueryMetricsStore(request: Request): QueryMetricsStore {
+  const url = new URL(request.url);
+  return createQueryMetricsStore(normalizeRoute(url.pathname), request.method);
+}
+
+export function setQueryMetricsUser(userId: string): void {
+  const store = queryMetricsAls.getStore();
+  if (store) store.userId = userId;
+}
+
+// Label the next query (or queries) with a human-readable tag visible in analytics.
+// Call right before issuing a query. The tag persists for the rest of the request
+// unless overwritten — safe because ALS is per-request.
+export function setQueryTag(tag: string): void {
+  const store = queryMetricsAls.getStore();
+  if (store) store.currentQueryTag = tag;
+}
+
+// Tag all DB queries issued within fn() with the given label.
+// Restores the previous tag on exit — safe for nested calls.
+export async function withQueryTag<T>(tag: string, fn: () => Promise<T>): Promise<T> {
+  const store = queryMetricsAls.getStore();
+  if (!store) return fn();
+  const prev = store.currentQueryTag;
+  store.currentQueryTag = tag;
+  try {
+    return await fn();
+  } finally {
+    store.currentQueryTag = prev;
+  }
+}
+
 function normalizeRoute(pathname: string): string {
-  return (
-    pathname
-      // UUIDs
-      .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id')
-      // Long numeric IDs (5+ digits)
-      .replace(/\/\d{5,}/g, '/:id')
-      // Long opaque tokens (base64url, 32+ chars)
-      .replace(/\/[a-zA-Z0-9_-]{32,}/g, '/:token')
-  );
+  return pathname
+    .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id')
+    .replace(/\/\d{5,}/g, '/:id')
+    .replace(/\/[a-zA-Z0-9_-]{32,}/g, '/:token');
 }
 
 export function hashQuery(query: string): string {
@@ -50,18 +77,18 @@ export function hashQuery(query: string): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-// Drizzle Logger interface — called synchronously before each query executes.
-// We only capture text + hash here; timing comes from the request-level wall clock.
-export const queryMetricsLogger = {
-  logQuery(query: string, _params: unknown[]): void {
-    const store = queryMetricsAls.getStore();
-    if (!store) return;
-    store.queries.push({
-      hash: hashQuery(query),
-      preview: query.slice(0, 120),
-    });
-  },
-};
+export function estimateResultBytes(rows: unknown): number {
+  try {
+    return new TextEncoder().encode(JSON.stringify(rows)).byteLength;
+  } catch {
+    return 0;
+  }
+}
+
+export function recordQueryExecution(entry: CapturedQuery): void {
+  const store = queryMetricsAls.getStore();
+  if (store) store.queries.push(entry);
+}
 
 export async function flushQueryMetrics(
   store: QueryMetricsStore,

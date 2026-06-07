@@ -676,6 +676,9 @@ export type NewCommentLike = InferInsertModel<typeof commentLikes>;
 export interface CapturedQuery {
   hash: string;
   preview: string;
+  callSite?: string;
+  durationMs: number;
+  resultBytes: number;
 }
 
 export const requestQueryMetrics = pgTable(

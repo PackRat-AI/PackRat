@@ -8,7 +8,11 @@ import {
   CardTitle,
 } from '@packrat/web-ui/components/card';
 import { Tabs, TabsList, TabsTrigger } from '@packrat/web-ui/components/tabs';
-import { useQueryMetricsRecent, useQueryMetricsSummary } from 'admin-app/hooks/use-query-metrics';
+import {
+  useQueryMetricsByCallSite,
+  useQueryMetricsRecent,
+  useQueryMetricsSummary,
+} from 'admin-app/hooks/use-query-metrics';
 import { useState } from 'react';
 
 function formatBytes(bytes: number): string {
@@ -33,6 +37,7 @@ const HOUR_OPTIONS: { label: string; value: Hours }[] = [
 
 export function QueryMetricsAnalytics() {
   const [hours, setHours] = useState<Hours>(24);
+  const { data: callSiteData, isLoading: callSiteLoading } = useQueryMetricsByCallSite(hours);
   const { data: summary, isLoading: summaryLoading } = useQueryMetricsSummary(hours);
   const { data: recent, isLoading: recentLoading } = useQueryMetricsRecent(50);
 
@@ -64,27 +69,96 @@ export function QueryMetricsAnalytics() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Compute</CardDescription>
+            <CardDescription>Total DB Compute</CardDescription>
             <CardTitle className="text-2xl">
-              {summaryLoading ? '—' : formatMs(summary?.summary.totalDurationMs ?? 0)}
+              {callSiteLoading
+                ? '—'
+                : formatMs(
+                    callSiteData?.callSites.reduce((acc, r) => acc + r.totalDurationMs, 0) ?? 0,
+                  )}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Egress (est.)</CardDescription>
+            <CardDescription>Total DB Egress</CardDescription>
             <CardTitle className="text-2xl">
-              {summaryLoading ? '—' : formatBytes(summary?.summary.totalEgressBytes ?? 0)}
+              {callSiteLoading
+                ? '—'
+                : formatBytes(
+                    callSiteData?.callSites.reduce((acc, r) => acc + r.totalResultBytes, 0) ?? 0,
+                  )}
             </CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      {/* Top routes by compute */}
+      {/* Top call sites by compute — primary view */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Queries by Compute</CardTitle>
+          <CardDescription>
+            Per-query DB time grouped by call site — exact timing measured at the driver level
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {callSiteLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    <th className="pb-2 font-medium">Call Site</th>
+                    <th className="pb-2 text-right font-medium">Calls</th>
+                    <th className="pb-2 text-right font-medium">Total Time</th>
+                    <th className="pb-2 text-right font-medium">Avg Time</th>
+                    <th className="pb-2 text-right font-medium">Total Egress</th>
+                    <th className="pb-2 text-right font-medium">Routes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(callSiteData?.callSites ?? []).map((row) => (
+                    <tr key={row.callSite} className="border-b last:border-0">
+                      <td className="py-2 max-w-[340px]">
+                        <span className="block truncate font-mono text-xs" title={row.callSite}>
+                          {row.callSite}
+                        </span>
+                        <span
+                          className="block truncate text-xs text-muted-foreground"
+                          title={row.samplePreview}
+                        >
+                          {row.samplePreview}
+                        </span>
+                      </td>
+                      <td className="py-2 text-right">{row.queryCount.toLocaleString()}</td>
+                      <td className="py-2 text-right">{formatMs(row.totalDurationMs)}</td>
+                      <td className="py-2 text-right">{formatMs(row.avgDurationMs)}</td>
+                      <td className="py-2 text-right">{formatBytes(row.totalResultBytes)}</td>
+                      <td className="py-2 text-right text-muted-foreground">
+                        {row.distinctRoutes}
+                      </td>
+                    </tr>
+                  ))}
+                  {(callSiteData?.callSites ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-4 text-center text-muted-foreground">
+                        No call-site data yet — queries need a callSite frame to appear here
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Top routes by compute — secondary context */}
       <Card>
         <CardHeader>
           <CardTitle>Top Routes by Compute</CardTitle>
-          <CardDescription>Total time spent in Postgres queries per endpoint</CardDescription>
+          <CardDescription>Request-level wall time per endpoint</CardDescription>
         </CardHeader>
         <CardContent>
           {summaryLoading ? (
@@ -112,53 +186,6 @@ export function QueryMetricsAnalytics() {
                     </tr>
                   ))}
                   {(summary?.topByCompute ?? []).length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                        No data for this period
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top routes by egress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Routes by Egress</CardTitle>
-          <CardDescription>
-            Estimated bytes returned per endpoint (from content-length)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {summaryLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Route</th>
-                    <th className="pb-2 font-medium">Method</th>
-                    <th className="pb-2 text-right font-medium">Calls</th>
-                    <th className="pb-2 text-right font-medium">Total</th>
-                    <th className="pb-2 text-right font-medium">Avg</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(summary?.topByEgress ?? []).map((row) => (
-                    <tr key={`${row.method}:${row.route}`} className="border-b last:border-0">
-                      <td className="py-2 font-mono text-xs">{row.route}</td>
-                      <td className="py-2 text-muted-foreground">{row.method}</td>
-                      <td className="py-2 text-right">{row.callCount.toLocaleString()}</td>
-                      <td className="py-2 text-right">{formatBytes(row.totalEgressBytes)}</td>
-                      <td className="py-2 text-right">{formatBytes(row.avgEgressBytes)}</td>
-                    </tr>
-                  ))}
-                  {(summary?.topByEgress ?? []).length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-4 text-center text-muted-foreground">
                         No data for this period
