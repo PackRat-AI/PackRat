@@ -236,8 +236,8 @@
       "d1_databases": [
         {
           "binding": "METRICS_DB",
-          "database_name": "packrat-metrics",
-          "database_id": "c9dedf14-aec8-42fa-aa81-76daa16c08b4"
+          "database_name": "packrat-metrics-dev",
+          "database_id": "92447d92-56fa-431b-aa33-659269f632de"
         }
       ],
       "workflows": [
