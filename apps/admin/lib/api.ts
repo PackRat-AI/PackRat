@@ -19,6 +19,8 @@ import type {
   EtlResponse,
   GrowthPoint,
   PriceBucket,
+  QueryMetricsRecent,
+  QueryMetricsSummary,
   TrailGeometry,
   TrailSearchItem,
   TrailSearchResult as TrailSearchResultList,
@@ -400,4 +402,16 @@ export function retryEtlJob(
     path: `/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`,
     init: { method: 'POST' },
   });
+}
+
+// ─── Query Metrics ─────────────────────────────────────────────────────────────
+
+export type { QueryMetricsSummary, QueryMetricsRecent };
+
+export function getQueryMetricsSummary(hours = 24): Promise<QueryMetricsSummary> {
+  return adminFetch({ path: `/analytics/query-metrics/summary?hours=${hours}` });
+}
+
+export function getQueryMetricsRecent(limit = 50): Promise<QueryMetricsRecent> {
+  return adminFetch({ path: `/analytics/query-metrics/recent?limit=${limit}` });
 }

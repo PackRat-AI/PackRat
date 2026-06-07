@@ -349,3 +349,47 @@ export type TrailSearchItem = z.infer<typeof TrailSearchItemSchema>;
 export type TrailSearchResult = z.infer<typeof TrailSearchResultSchema>;
 export type TrailGeometry = z.infer<typeof TrailGeometrySchema>;
 export type AdminTrailConditionReport = z.infer<typeof AdminTrailConditionReportSchema>;
+
+// ─── Query Metrics ────────────────────────────────────────────────────────────
+
+const QueryRouteStatSchema = z.object({
+  route: z.string(),
+  method: z.string(),
+  callCount: z.number(),
+  totalDurationMs: z.number(),
+  avgDurationMs: z.number(),
+  totalEgressBytes: z.number(),
+  avgEgressBytes: z.number(),
+});
+
+const QueryRecentRequestSchema = z.object({
+  id: z.string(),
+  capturedAt: z.string(),
+  route: z.string(),
+  method: z.string(),
+  statusCode: z.number().nullable(),
+  totalDurationMs: z.number(),
+  estimatedEgressBytes: z.number(),
+  queryCount: z.number(),
+});
+
+export const QueryMetricsSummarySchema = z.object({
+  periodHours: z.number(),
+  periodStart: z.string(),
+  summary: z.object({
+    totalRequests: z.number(),
+    totalDurationMs: z.number(),
+    totalEgressBytes: z.number(),
+  }),
+  topByCompute: z.array(QueryRouteStatSchema),
+  topByEgress: z.array(QueryRouteStatSchema),
+});
+
+export const QueryMetricsRecentSchema = z.object({
+  requests: z.array(QueryRecentRequestSchema),
+});
+
+export type QueryRouteStat = z.infer<typeof QueryRouteStatSchema>;
+export type QueryRecentRequest = z.infer<typeof QueryRecentRequestSchema>;
+export type QueryMetricsSummary = z.infer<typeof QueryMetricsSummarySchema>;
+export type QueryMetricsRecent = z.infer<typeof QueryMetricsRecentSchema>;

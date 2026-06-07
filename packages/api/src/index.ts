@@ -18,6 +18,11 @@ import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLog
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
+import {
+  flushQueryMetrics,
+  initQueryMetricsStore,
+  queryMetricsAls,
+} from '@packrat/api/utils/queryMetrics';
 import { captureApiException } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
@@ -174,7 +179,20 @@ const handler: ExportedHandler<Env> = {
     maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
-    return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+    const metricsStore = initQueryMetricsStore(request);
+    return queryMetricsAls.run(metricsStore, async () => {
+      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+      metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
+      // Clone to read body size without consuming the original response stream.
+      const clone = response.clone();
+      ctx.waitUntil(
+        clone.arrayBuffer().then((buf) => {
+          metricsStore.estimatedEgressBytes = buf.byteLength;
+          return flushQueryMetrics(metricsStore, response.status);
+        }),
+      );
+      return response;
+    });
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {

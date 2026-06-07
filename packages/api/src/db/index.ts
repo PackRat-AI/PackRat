@@ -1,6 +1,7 @@
 import { Pool as NeonPool, neon, neonConfig } from '@neondatabase/serverless';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { queryMetricsLogger } from '@packrat/api/utils/queryMetrics';
 import * as schema from '@packrat/db/schema';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
@@ -79,14 +80,14 @@ export const createConnection = ({ url, useNeonHttp }: { url: string; useNeonHtt
       pgPools.set(url, newPool);
       pool = newPool;
     }
-    return drizzlePg(pool, { schema });
+    return drizzlePg(pool, { schema, logger: queryMetricsLogger });
   }
   if (useNeonHttp) {
     const sql = neon(url);
-    return drizzle(sql, { schema });
+    return drizzle(sql, { schema, logger: queryMetricsLogger });
   }
   const neonPool = new NeonPool({ connectionString: url });
-  return drizzleServerless(neonPool, { schema });
+  return drizzleServerless(neonPool, { schema, logger: queryMetricsLogger });
 };
 
 /**

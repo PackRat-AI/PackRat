@@ -2,11 +2,13 @@ import { Elysia } from 'elysia';
 import { catalogAnalyticsRoutes } from './catalog';
 import { dbAnalyticsRoutes } from './db';
 import { platformAnalyticsRoutes } from './platform';
+import { queryMetricsRoutes } from './query-metrics';
 
 export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
   .use(platformAnalyticsRoutes)
   .use(catalogAnalyticsRoutes)
   .use(dbAnalyticsRoutes)
+  .use(queryMetricsRoutes)
   .get('/', () => ({
     analytics: {
       platform: {
@@ -23,6 +25,10 @@ export const analyticsRoutes = new Elysia({ prefix: '/analytics' })
       },
       db: {
         snapshot: '/api/admin/analytics/db/snapshot',
+      },
+      queryMetrics: {
+        summary: '/api/admin/analytics/query-metrics/summary',
+        recent: '/api/admin/analytics/query-metrics/recent',
       },
     },
   }));
