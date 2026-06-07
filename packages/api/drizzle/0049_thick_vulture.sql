@@ -1,0 +1,1 @@
+DROP TABLE "request_query_metrics" CASCADE;

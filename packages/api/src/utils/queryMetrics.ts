@@ -1,7 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { createDb } from '@packrat/api/db';
+import { createMetricsDb } from '@packrat/api/db/metricsDb';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { requestQueryMetricsD1 } from '@packrat/db/d1Schema';
 import type { CapturedQuery } from '@packrat/db/schema';
-import { requestQueryMetrics } from '@packrat/db/schema';
 
 export interface QueryMetricsStore {
   route: string;
@@ -98,9 +99,12 @@ export async function flushQueryMetrics(
   if (store.queries.length === 0 && store.totalDurationMs < 5) return;
 
   try {
-    const db = createDb();
-    await db.insert(requestQueryMetrics).values({
+    const env = getEnv();
+    if (!env.METRICS_DB) return;
+    const db = createMetricsDb(env.METRICS_DB);
+    await db.insert(requestQueryMetricsD1).values({
       id: crypto.randomUUID(),
+      capturedAt: Date.now(),
       route: store.route,
       method: store.method,
       statusCode: statusCode ?? null,
@@ -108,7 +112,7 @@ export async function flushQueryMetrics(
       estimatedEgressBytes: store.estimatedEgressBytes,
       queryCount: store.queries.length,
       userId: store.userId ?? null,
-      queries: store.queries,
+      queries: JSON.stringify(store.queries),
     });
   } catch {
     // Monitoring must never crash the app — swallow silently

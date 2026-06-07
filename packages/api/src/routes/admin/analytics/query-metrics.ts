@@ -1,34 +1,38 @@
-import { createDb } from '@packrat/api/db';
-import { requestQueryMetrics } from '@packrat/db/schema';
+import { createMetricsDb } from '@packrat/api/db/metricsDb';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { requestQueryMetricsD1 } from '@packrat/db/d1Schema';
 import { avg, count, desc, gte, sql, sum } from 'drizzle-orm';
 import { Elysia } from 'elysia';
 import { z } from 'zod';
+
+function getMetricsDb() {
+  const env = getEnv();
+  return createMetricsDb(env.METRICS_DB);
+}
 
 export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
   .get(
     '/summary',
     async ({ query }) => {
       const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 168);
-      const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+      const sinceMs = Date.now() - hours * 60 * 60 * 1000;
 
-      const db = createDb();
+      const db = getMetricsDb();
 
-      // lint:allow-unprojected-fat-table reason: requestQueryMetrics is a narrow metrics table, not a fat table with embeddings
       const rows = await db
-        .tag('adminAnalytics.queryMetricsSummary')
         .select({
-          route: requestQueryMetrics.route,
-          method: requestQueryMetrics.method,
-          callCount: count(requestQueryMetrics.id),
-          totalDurationMs: sum(requestQueryMetrics.totalDurationMs),
-          avgDurationMs: avg(requestQueryMetrics.totalDurationMs),
-          totalEgressBytes: sum(requestQueryMetrics.estimatedEgressBytes),
-          avgEgressBytes: avg(requestQueryMetrics.estimatedEgressBytes),
+          route: requestQueryMetricsD1.route,
+          method: requestQueryMetricsD1.method,
+          callCount: count(requestQueryMetricsD1.id),
+          totalDurationMs: sum(requestQueryMetricsD1.totalDurationMs),
+          avgDurationMs: avg(requestQueryMetricsD1.totalDurationMs),
+          totalEgressBytes: sum(requestQueryMetricsD1.estimatedEgressBytes),
+          avgEgressBytes: avg(requestQueryMetricsD1.estimatedEgressBytes),
         })
-        .from(requestQueryMetrics)
-        .where(gte(requestQueryMetrics.capturedAt, since))
-        .groupBy(requestQueryMetrics.route, requestQueryMetrics.method)
-        .orderBy(desc(sum(requestQueryMetrics.totalDurationMs)));
+        .from(requestQueryMetricsD1)
+        .where(gte(requestQueryMetricsD1.capturedAt, sinceMs))
+        .groupBy(requestQueryMetricsD1.route, requestQueryMetricsD1.method)
+        .orderBy(desc(sum(requestQueryMetricsD1.totalDurationMs)));
 
       type Row = (typeof rows)[number];
       const normalize = (rows: Row[]) =>
@@ -58,7 +62,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
 
       return {
         periodHours: hours,
-        periodStart: since.toISOString(),
+        periodStart: new Date(sinceMs).toISOString(),
         summary: { totalRequests, totalDurationMs, totalEgressBytes },
         topByCompute,
         topByEgress,
@@ -77,25 +81,29 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
     '/recent',
     async ({ query }) => {
       const limit = Math.min(Number(query.limit ?? 50), 200);
-      const db = createDb();
+      const db = getMetricsDb();
 
       const requests = await db
-        .tag('adminAnalytics.queryMetricsRecent')
         .select({
-          id: requestQueryMetrics.id,
-          capturedAt: sql<string>`${requestQueryMetrics.capturedAt}::text`,
-          route: requestQueryMetrics.route,
-          method: requestQueryMetrics.method,
-          statusCode: requestQueryMetrics.statusCode,
-          totalDurationMs: requestQueryMetrics.totalDurationMs,
-          estimatedEgressBytes: requestQueryMetrics.estimatedEgressBytes,
-          queryCount: requestQueryMetrics.queryCount,
+          id: requestQueryMetricsD1.id,
+          capturedAt: requestQueryMetricsD1.capturedAt,
+          route: requestQueryMetricsD1.route,
+          method: requestQueryMetricsD1.method,
+          statusCode: requestQueryMetricsD1.statusCode,
+          totalDurationMs: requestQueryMetricsD1.totalDurationMs,
+          estimatedEgressBytes: requestQueryMetricsD1.estimatedEgressBytes,
+          queryCount: requestQueryMetricsD1.queryCount,
         })
-        .from(requestQueryMetrics)
-        .orderBy(desc(requestQueryMetrics.capturedAt))
+        .from(requestQueryMetricsD1)
+        .orderBy(desc(requestQueryMetricsD1.capturedAt))
         .limit(limit);
 
-      return { requests };
+      return {
+        requests: requests.map((r) => ({
+          ...r,
+          capturedAt: new Date(r.capturedAt).toISOString(),
+        })),
+      };
     },
     {
       query: z.object({ limit: z.string().optional() }),
@@ -111,44 +119,42 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
     async ({ query }) => {
       const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 168);
       const limit = Math.min(Number(query.limit ?? 50), 200);
-      const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+      const sinceMs = Date.now() - hours * 60 * 60 * 1000;
 
-      const db = createDb();
+      const db = getMetricsDb();
 
-      // Unnest the queries JSONB array and group by callSite.
-      // durationMs and resultBytes are recorded per-query at the driver level,
-      // so sums here are exact — no proportional approximation needed.
-      // lint:allow-unprojected-fat-table reason: requestQueryMetrics is a narrow metrics table, not a fat table with embeddings
-      const rows = await db.tag('adminAnalytics.queryMetricsByCallSite').execute<{
+      // Use SQLite json_each() to unnest the queries JSON array and group by callSite.
+      // D1/SQLite json_each returns each array element as q.value (a JSON string).
+      const rows = await db.all<{
         call_site: string;
-        query_count: string;
-        total_duration_ms: string;
-        total_result_bytes: string;
-        avg_duration_ms: string;
-        distinct_routes: string;
+        query_count: number;
+        total_duration_ms: number;
+        total_result_bytes: number;
+        avg_duration_ms: number;
+        distinct_routes: number;
         sample_preview: string;
       }>(sql`
         SELECT
-          q->>'callSite'                         AS call_site,
-          COUNT(*)::text                         AS query_count,
-          SUM((q->>'durationMs')::int)::text     AS total_duration_ms,
-          SUM((q->>'resultBytes')::int)::text    AS total_result_bytes,
-          AVG((q->>'durationMs')::int)::text     AS avg_duration_ms,
-          COUNT(DISTINCT rqm.route)::text        AS distinct_routes,
-          MAX(q->>'preview')                     AS sample_preview
-        FROM ${requestQueryMetrics} rqm,
-          jsonb_array_elements(rqm.queries) AS q
-        WHERE rqm.captured_at >= ${since}
-          AND q->>'callSite' IS NOT NULL
-        GROUP BY q->>'callSite'
-        ORDER BY SUM((q->>'durationMs')::int) DESC
+          json_extract(q.value, '$.callSite')                              AS call_site,
+          COUNT(*)                                                          AS query_count,
+          SUM(CAST(json_extract(q.value, '$.durationMs')  AS INTEGER))     AS total_duration_ms,
+          SUM(CAST(json_extract(q.value, '$.resultBytes') AS INTEGER))     AS total_result_bytes,
+          AVG(CAST(json_extract(q.value, '$.durationMs')  AS INTEGER))     AS avg_duration_ms,
+          COUNT(DISTINCT rqm.route)                                         AS distinct_routes,
+          MAX(json_extract(q.value, '$.preview'))                           AS sample_preview
+        FROM request_query_metrics rqm,
+          json_each(rqm.queries) AS q
+        WHERE rqm.captured_at >= ${sinceMs}
+          AND json_extract(q.value, '$.callSite') IS NOT NULL
+        GROUP BY json_extract(q.value, '$.callSite')
+        ORDER BY SUM(CAST(json_extract(q.value, '$.durationMs') AS INTEGER)) DESC
         LIMIT ${limit}
       `);
 
       return {
         periodHours: hours,
-        periodStart: since.toISOString(),
-        callSites: rows.rows.map((r) => ({
+        periodStart: new Date(sinceMs).toISOString(),
+        callSites: rows.map((r) => ({
           callSite: r.call_site,
           queryCount: Number(r.query_count),
           totalDurationMs: Number(r.total_duration_ms ?? 0),

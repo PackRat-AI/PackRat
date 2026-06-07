@@ -669,10 +669,9 @@ export type NewPostComment = InferInsertModel<typeof postComments>;
 export type CommentLike = InferSelectModel<typeof commentLikes>;
 export type NewCommentLike = InferInsertModel<typeof commentLikes>;
 
-// Query metrics — one row per API request, captures Drizzle query traces and
-// timing. Written via ctx.waitUntil after the response is sent so it never
-// adds latency to the hot path. Persists across Neon compute restarts, which
-// is the primary motivation (pg_stat_statements resets on suspend).
+// CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
+// Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)
+// share the same type without a circular dependency.
 export interface CapturedQuery {
   hash: string;
   preview: string;
@@ -680,26 +679,3 @@ export interface CapturedQuery {
   durationMs: number;
   resultBytes: number;
 }
-
-export const requestQueryMetrics = pgTable(
-  'request_query_metrics',
-  {
-    id: text('id').primaryKey(),
-    capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
-    route: text('route').notNull(),
-    method: text('method').notNull(),
-    statusCode: integer('status_code'),
-    totalDurationMs: integer('total_duration_ms').notNull().default(0),
-    estimatedEgressBytes: integer('estimated_egress_bytes').notNull().default(0),
-    queryCount: integer('query_count').notNull().default(0),
-    userId: text('user_id'),
-    queries: jsonb('queries').$type<CapturedQuery[]>().notNull().default([]),
-  },
-  (table) => [
-    index('rqm_captured_at_idx').on(table.capturedAt),
-    index('rqm_route_idx').on(table.route),
-  ],
-);
-
-export type RequestQueryMetric = InferSelectModel<typeof requestQueryMetrics>;
-export type NewRequestQueryMetric = InferInsertModel<typeof requestQueryMetrics>;

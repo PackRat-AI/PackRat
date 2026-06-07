@@ -90,6 +90,8 @@ export const apiEnvObjectSchema = z.object({
   OSM_HYPERDRIVE: z.unknown().optional(),
   // Better Auth KV namespace for session storage and rate limiting
   AUTH_KV: z.unknown(),
+  // D1 database for query metrics (edge-local, no Neon egress for observability writes)
+  METRICS_DB: z.unknown(),
 });
 
 export const apiEnvSchema = apiEnvObjectSchema;
@@ -115,6 +117,7 @@ const testEnvSchema = apiEnvObjectSchema.partial().extend({
   ETL_WORKFLOW: z.unknown().optional(),
   APP_CONTAINER: z.unknown().optional(),
   AUTH_KV: z.unknown().optional(),
+  METRICS_DB: z.unknown().optional(),
 });
 
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
@@ -134,6 +137,7 @@ export type ValidatedEnv = Omit<
   | 'APP_CONTAINER'
   | 'TOKEN_RATE_LIMITER'
   | 'AUTH_KV'
+  | 'METRICS_DB'
 > & {
   CF_VERSION_METADATA: WorkerVersionMetadata;
   AI: Ai;
@@ -148,6 +152,7 @@ export type ValidatedEnv = Omit<
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   OSM_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
+  METRICS_DB: D1Database;
 };
 
 export type Env = ValidatedEnv;
@@ -194,6 +199,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     OSM_HYPERDRIVE: rawEnv.OSM_HYPERDRIVE as Hyperdrive | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     AUTH_KV: rawEnv.AUTH_KV as KVNamespace, // safe-cast: Cloudflare Worker binding injected by runtime
+    METRICS_DB: rawEnv.METRICS_DB as D1Database, // safe-cast: Cloudflare Worker binding injected by runtime
   } as ValidatedEnv; // safe-cast: all fields have been individually assigned above with correct runtime binding types
 }
 
