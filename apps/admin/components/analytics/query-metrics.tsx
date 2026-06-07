@@ -28,12 +28,15 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-type Hours = 1 | 6 | 24 | 168;
+type Hours = 1 | 6 | 24 | 168 | 720 | 2160 | 4380;
 const HOUR_OPTIONS: { label: string; value: Hours }[] = [
   { label: '1h', value: 1 },
   { label: '6h', value: 6 },
   { label: '24h', value: 24 },
   { label: '7d', value: 168 },
+  { label: '1m', value: 720 },
+  { label: '3m', value: 2160 },
+  { label: '6m', value: 4380 },
 ];
 
 function formatMonth(yyyyMm: string): string {

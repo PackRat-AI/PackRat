@@ -14,7 +14,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
   .get(
     '/summary',
     async ({ query }) => {
-      const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 168);
+      const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 4380);
       const sinceMs = Date.now() - hours * 60 * 60 * 1000;
 
       const db = getMetricsDb();
@@ -117,7 +117,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
   .get(
     '/by-callsite',
     async ({ query }) => {
-      const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 168);
+      const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 4380);
       const limit = Math.min(Number(query.limit ?? 50), 200);
       const sinceMs = Date.now() - hours * 60 * 60 * 1000;
 
