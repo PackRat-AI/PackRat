@@ -76,7 +76,7 @@ function withTagging<T extends object>(db: T): WithTag<T> {
       const val = Reflect.get(target, prop, target);
       return isFunction(val) ? (val as (...a: unknown[]) => unknown).bind(target) : val;
     },
-  }) as WithTag<T>;
+  }) as WithTag<T>; // safe-cast: Proxy structurally extends T with .tag(); TypeScript cannot infer this from the Proxy constructor
   return proxy;
 }
 

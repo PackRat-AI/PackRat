@@ -79,7 +79,10 @@ export function QueryMetricsAnalytics() {
       <div className="flex flex-wrap items-center gap-3">
         <Tabs
           value={period.mode === 'rolling' ? String(period.hours) : ''}
-          onValueChange={(v) => setPeriod({ mode: 'rolling', hours: Number(v) as RollingHours })}
+          onValueChange={(v) => {
+            const opt = ROLLING_OPTIONS.find((o) => String(o.value) === v);
+            if (opt) setPeriod({ mode: 'rolling', hours: opt.value });
+          }}
         >
           <TabsList>
             {ROLLING_OPTIONS.map((o) => (
