@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getQueryMetricsByCallSite,
+  getQueryMetricsByMonth,
   getQueryMetricsRecent,
   getQueryMetricsSummary,
 } from 'admin-app/lib/api';
@@ -29,5 +30,13 @@ export function useQueryMetricsByCallSite(hours = 24, limit = 50) {
     queryKey: queryKeys.queryMetrics.byCallSite(hours, limit),
     queryFn: () => getQueryMetricsByCallSite(hours, limit),
     refetchInterval: 60_000,
+  });
+}
+
+export function useQueryMetricsByMonth(months = 12) {
+  return useQuery({
+    queryKey: queryKeys.queryMetrics.byMonth(months),
+    queryFn: () => getQueryMetricsByMonth(months),
+    refetchInterval: 300_000,
   });
 }

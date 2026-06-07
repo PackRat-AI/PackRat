@@ -173,4 +173,52 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
           'Per-query compute and egress grouped by call site — exact timing, no approximation',
       },
     },
+  )
+
+  .get(
+    '/by-month',
+    async ({ query }) => {
+      const months = Math.min(Math.max(Number(query.months ?? 12), 1), 24);
+      const db = getMetricsDb();
+
+      // strftime on Unix-ms: divide by 1000 to get Unix seconds first.
+      const rows = await db.all<{
+        month: string;
+        request_count: number;
+        total_duration_ms: number;
+        total_egress_bytes: number;
+        avg_duration_ms: number;
+        total_query_count: number;
+      }>(sql`
+        SELECT
+          strftime('%Y-%m', datetime(captured_at / 1000, 'unixepoch')) AS month,
+          COUNT(*)                    AS request_count,
+          SUM(total_duration_ms)      AS total_duration_ms,
+          SUM(estimated_egress_bytes) AS total_egress_bytes,
+          AVG(total_duration_ms)      AS avg_duration_ms,
+          SUM(query_count)            AS total_query_count
+        FROM request_query_metrics
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT ${months}
+      `);
+
+      return {
+        months: rows.map((r) => ({
+          month: r.month,
+          requestCount: Number(r.request_count),
+          totalDurationMs: Number(r.total_duration_ms ?? 0),
+          totalEgressBytes: Number(r.total_egress_bytes ?? 0),
+          avgDurationMs: Math.round(Number(r.avg_duration_ms ?? 0)),
+          totalQueryCount: Number(r.total_query_count ?? 0),
+        })),
+      };
+    },
+    {
+      query: z.object({ months: z.string().optional() }),
+      detail: {
+        tags: ['Admin'],
+        summary: 'Monthly rollup of request count, compute, and egress — last N calendar months',
+      },
+    },
   );
