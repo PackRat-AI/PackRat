@@ -62,11 +62,15 @@ export async function withQueryTag<T>(tag: string, fn: () => Promise<T>): Promis
   }
 }
 
+const ROUTE_UUID_RE = /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const ROUTE_NUMERIC_ID_RE = /\/\d{5,}/g;
+const ROUTE_TOKEN_RE = /\/[a-zA-Z0-9_-]{32,}/g;
+
 function normalizeRoute(pathname: string): string {
   return pathname
-    .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id')
-    .replace(/\/\d{5,}/g, '/:id')
-    .replace(/\/[a-zA-Z0-9_-]{32,}/g, '/:token');
+    .replace(ROUTE_UUID_RE, '/:id')
+    .replace(ROUTE_NUMERIC_ID_RE, '/:id')
+    .replace(ROUTE_TOKEN_RE, '/:token');
 }
 
 export function hashQuery(query: string): string {
