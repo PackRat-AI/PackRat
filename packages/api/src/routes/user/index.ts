@@ -21,6 +21,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       try {
         const db = createDb();
         const [userRecord] = await db
+          .tag('user.getProfile')
           .select({
             id: users.id,
             email: users.email,
@@ -75,6 +76,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
 
         if (email) {
           const [existingUser] = await db
+            .tag('user.checkEmail')
             .select({ id: users.id })
             .from(users)
             .where(eq(users.email, email.toLowerCase()))
@@ -97,6 +99,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
         }
 
         const [updatedUser] = await db
+          .tag('user.updateProfile')
           .update(users)
           .set(updateData)
           .where(eq(users.id, user.userId))

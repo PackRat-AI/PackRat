@@ -6,7 +6,7 @@ import { and, arrayOverlaps, eq, inArray, type SQL, sql } from 'drizzle-orm';
 export async function getPackDetails({ packId }: { packId: string }) {
   const db = createDb();
 
-  const packData = await db.query.packs.findFirst({
+  const packData = await db.tag('utils.getPackDetails').query.packs.findFirst({
     where: eq(packs.id, packId),
     with: {
       items: {
@@ -45,6 +45,7 @@ export async function getCatalogItems({
   }
 
   const query = db
+    .tag('utils.getCatalogItems')
     .select() // lint:allow-unprojected-fat-table reason: DbUtils.getCatalogItems is Tier-2 #11 — defer to pivot migration (callers TBD enumerated then; full-row select is the historical behavior)
     .from(catalogItems)
     .where(filters.length > 0 ? and(...filters) : undefined);
@@ -84,7 +85,7 @@ export async function getSchemaInfo() {
       GROUP BY t.table_name
       ORDER BY t.table_name;
     `;
-    const result = await db.execute(sql.raw(schemaQuery));
+    const result = await db.tag('utils.getSchemaInfo').execute(sql.raw(schemaQuery));
 
     return result.rows
       .map((row) => `${row.table_name} (\n      ${row.columns}\n    );`)
