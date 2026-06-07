@@ -1,7 +1,7 @@
 import { createMetricsDb } from '@packrat/api/db/metricsDb';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { requestQueryMetricsD1 } from '@packrat/db/d1Schema';
-import { avg, count, desc, gte, sql, sum } from 'drizzle-orm';
+import { and, avg, count, desc, gte, lt, sql, sum } from 'drizzle-orm';
 import { Elysia } from 'elysia';
 import { z } from 'zod';
 
@@ -10,14 +10,48 @@ function getMetricsDb() {
   return createMetricsDb(env.METRICS_DB);
 }
 
+// Parse YYYY-MM into [sinceMs, untilMs) covering that full calendar month.
+function monthToRange(month: string): { sinceMs: number; untilMs: number } {
+  const parts = month.split('-').map(Number);
+  const y = parts[0] ?? 0;
+  const m = parts[1] ?? 0;
+  return {
+    sinceMs: new Date(y, m - 1, 1).getTime(),
+    untilMs: new Date(y, m, 1).getTime(),
+  };
+}
+
+const periodQuery = z.object({
+  hours: z.string().optional(),
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
+});
+
 export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
   .get(
     '/summary',
     async ({ query }) => {
-      const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 4380);
-      const sinceMs = Date.now() - hours * 60 * 60 * 1000;
-
       const db = getMetricsDb();
+
+      let sinceMs: number;
+      let untilMs: number | undefined;
+
+      if (query.month) {
+        ({ sinceMs, untilMs } = monthToRange(query.month));
+      } else {
+        const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 4380);
+        sinceMs = Date.now() - hours * 60 * 60 * 1000;
+      }
+
+      const where =
+        untilMs !== undefined
+          ? and(
+              gte(requestQueryMetricsD1.capturedAt, sinceMs),
+              lt(requestQueryMetricsD1.capturedAt, untilMs),
+            )
+          : gte(requestQueryMetricsD1.capturedAt, sinceMs);
 
       const rows = await db
         .select({
@@ -30,7 +64,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
           avgEgressBytes: avg(requestQueryMetricsD1.estimatedEgressBytes),
         })
         .from(requestQueryMetricsD1)
-        .where(gte(requestQueryMetricsD1.capturedAt, sinceMs))
+        .where(where)
         .groupBy(requestQueryMetricsD1.route, requestQueryMetricsD1.method)
         .orderBy(desc(sum(requestQueryMetricsD1.totalDurationMs)));
 
@@ -61,15 +95,15 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
       const totalEgressBytes = normalized.reduce((acc, r) => acc + r.totalEgressBytes, 0);
 
       return {
-        periodHours: hours,
         periodStart: new Date(sinceMs).toISOString(),
+        periodEnd: untilMs ? new Date(untilMs).toISOString() : null,
         summary: { totalRequests, totalDurationMs, totalEgressBytes },
         topByCompute,
         topByEgress,
       };
     },
     {
-      query: z.object({ hours: z.string().optional() }),
+      query: periodQuery,
       detail: {
         tags: ['Admin'],
         summary: 'Query metrics summary — top routes by compute and egress',
@@ -117,14 +151,21 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
   .get(
     '/by-callsite',
     async ({ query }) => {
-      const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 4380);
       const limit = Math.min(Number(query.limit ?? 50), 200);
-      const sinceMs = Date.now() - hours * 60 * 60 * 1000;
-
       const db = getMetricsDb();
 
-      // Use SQLite json_each() to unnest the queries JSON array and group by callSite.
-      // D1/SQLite json_each returns each array element as q.value (a JSON string).
+      let sinceMs: number;
+      let untilMs: number | undefined;
+
+      if (query.month) {
+        ({ sinceMs, untilMs } = monthToRange(query.month));
+      } else {
+        const hours = Math.min(Math.max(Number(query.hours ?? 24), 1), 4380);
+        sinceMs = Date.now() - hours * 60 * 60 * 1000;
+      }
+
+      const upperBound = untilMs !== undefined ? sql`AND rqm.captured_at < ${untilMs}` : sql``;
+
       const rows = await db.all<{
         call_site: string;
         query_count: number;
@@ -145,6 +186,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
         FROM request_query_metrics rqm,
           json_each(rqm.queries) AS q
         WHERE rqm.captured_at >= ${sinceMs}
+          ${upperBound}
           AND json_extract(q.value, '$.callSite') IS NOT NULL
         GROUP BY json_extract(q.value, '$.callSite')
         ORDER BY SUM(CAST(json_extract(q.value, '$.durationMs') AS INTEGER)) DESC
@@ -152,8 +194,8 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
       `);
 
       return {
-        periodHours: hours,
         periodStart: new Date(sinceMs).toISOString(),
+        periodEnd: untilMs ? new Date(untilMs).toISOString() : null,
         callSites: rows.map((r) => ({
           callSite: r.call_site,
           queryCount: Number(r.query_count),
@@ -166,7 +208,14 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
       };
     },
     {
-      query: z.object({ hours: z.string().optional(), limit: z.string().optional() }),
+      query: z.object({
+        hours: z.string().optional(),
+        limit: z.string().optional(),
+        month: z
+          .string()
+          .regex(/^\d{4}-\d{2}$/)
+          .optional(),
+      }),
       detail: {
         tags: ['Admin'],
         summary:

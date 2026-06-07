@@ -47,10 +47,10 @@ export const queryKeys = {
 
   queryMetrics: {
     all: () => ['queryMetrics'] as const,
-    summary: (hours?: number) => [...queryKeys.queryMetrics.all(), 'summary', hours] as const,
+    summary: (key?: string | number) => [...queryKeys.queryMetrics.all(), 'summary', key] as const,
     recent: (limit?: number) => [...queryKeys.queryMetrics.all(), 'recent', limit] as const,
-    byCallSite: (hours?: number, limit?: number) =>
-      [...queryKeys.queryMetrics.all(), 'byCallSite', hours, limit] as const,
+    byCallSite: (key?: string | number, limit?: number) =>
+      [...queryKeys.queryMetrics.all(), 'byCallSite', key, limit] as const,
     byMonth: (months?: number) => [...queryKeys.queryMetrics.all(), 'byMonth', months] as const,
   },
 

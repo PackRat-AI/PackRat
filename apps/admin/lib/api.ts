@@ -415,16 +415,32 @@ export type {
   QueryMetricsSummary,
 };
 
-export function getQueryMetricsSummary(hours = 24): Promise<QueryMetricsSummary> {
-  return adminFetch({ path: `/analytics/query-metrics/summary?hours=${hours}` });
+export function getQueryMetricsSummary({
+  hours = 24,
+  month,
+}: {
+  hours?: number;
+  month?: string;
+} = {}): Promise<QueryMetricsSummary> {
+  const q = month ? `month=${month}` : `hours=${hours}`;
+  return adminFetch({ path: `/analytics/query-metrics/summary?${q}` });
 }
 
 export function getQueryMetricsRecent(limit = 50): Promise<QueryMetricsRecent> {
   return adminFetch({ path: `/analytics/query-metrics/recent?limit=${limit}` });
 }
 
-export function getQueryMetricsByCallSite(hours = 24, limit = 50): Promise<QueryMetricsByCallSite> {
-  return adminFetch({ path: `/analytics/query-metrics/by-callsite?hours=${hours}&limit=${limit}` });
+export function getQueryMetricsByCallSite({
+  hours = 24,
+  limit = 50,
+  month,
+}: {
+  hours?: number;
+  limit?: number;
+  month?: string;
+} = {}): Promise<QueryMetricsByCallSite> {
+  const q = month ? `month=${month}&limit=${limit}` : `hours=${hours}&limit=${limit}`;
+  return adminFetch({ path: `/analytics/query-metrics/by-callsite?${q}` });
 }
 
 export function getQueryMetricsByMonth(months = 12): Promise<QueryMetricsByMonth> {

@@ -28,46 +28,114 @@ function formatMs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-type Hours = 1 | 6 | 24 | 168 | 720 | 2160 | 4380;
-const HOUR_OPTIONS: { label: string; value: Hours }[] = [
+type RollingHours = 1 | 6 | 24 | 168;
+const ROLLING_OPTIONS: { label: string; value: RollingHours }[] = [
   { label: '1h', value: 1 },
   { label: '6h', value: 6 },
   { label: '24h', value: 24 },
   { label: '7d', value: 168 },
-  { label: '1m', value: 720 },
-  { label: '3m', value: 2160 },
-  { label: '6m', value: 4380 },
 ];
+
+type Period = { mode: 'rolling'; hours: RollingHours } | { mode: 'month'; month: string };
+
+function toYyyyMm(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
 function formatMonth(yyyyMm: string): string {
   const [year, month] = yyyyMm.split('-');
   return new Date(Number(year), Number(month) - 1).toLocaleString('default', {
-    month: 'short',
+    month: 'long',
     year: 'numeric',
   });
 }
 
+function shiftMonth(yyyyMm: string, delta: number): string {
+  const parts = yyyyMm.split('-').map(Number);
+  const y = parts[0] ?? 0;
+  const m = parts[1] ?? 0;
+  const d = new Date(y, m - 1 + delta, 1);
+  return toYyyyMm(d);
+}
+
 export function QueryMetricsAnalytics() {
-  const [hours, setHours] = useState<Hours>(24);
-  const { data: callSiteData, isLoading: callSiteLoading } = useQueryMetricsByCallSite(hours);
-  const { data: summary, isLoading: summaryLoading } = useQueryMetricsSummary(hours);
+  const [period, setPeriod] = useState<Period>({ mode: 'rolling', hours: 24 });
+
+  const month = period.mode === 'month' ? period.month : undefined;
+  const hours = period.mode === 'rolling' ? period.hours : 24;
+
+  const { data: callSiteData, isLoading: callSiteLoading } = useQueryMetricsByCallSite({
+    hours,
+    month,
+  });
+  const { data: summary, isLoading: summaryLoading } = useQueryMetricsSummary({ hours, month });
   const { data: recent, isLoading: recentLoading } = useQueryMetricsRecent(50);
   const { data: byMonth, isLoading: byMonthLoading } = useQueryMetricsByMonth(12);
+
+  const currentMonth = toYyyyMm(new Date());
+  const isCurrentMonth = period.mode === 'month' && period.month === currentMonth;
 
   return (
     <div className="grid gap-6">
       {/* Period selector */}
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-muted-foreground">Period:</span>
-        <Tabs value={String(hours)} onValueChange={(v) => setHours(Number(v) as Hours)}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Tabs
+          value={period.mode === 'rolling' ? String(period.hours) : ''}
+          onValueChange={(v) => setPeriod({ mode: 'rolling', hours: Number(v) as RollingHours })}
+        >
           <TabsList>
-            {HOUR_OPTIONS.map((o) => (
+            {ROLLING_OPTIONS.map((o) => (
               <TabsTrigger key={o.value} value={String(o.value)}>
                 {o.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
+
+        <span className="text-muted-foreground text-sm">or</span>
+
+        {/* Month navigator */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() =>
+              setPeriod((p) => ({
+                mode: 'month',
+                month: shiftMonth(p.mode === 'month' ? p.month : currentMonth, -1),
+              }))
+            }
+            className="rounded px-2 py-1 text-sm hover:bg-muted"
+            aria-label="Previous month"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setPeriod((p) => ({
+                mode: 'month',
+                month: p.mode === 'month' ? p.month : currentMonth,
+              }))
+            }
+            className={`rounded px-3 py-1 text-sm font-medium ${period.mode === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`}
+          >
+            {period.mode === 'month' ? formatMonth(period.month) : 'Month'}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setPeriod((p) => ({
+                mode: 'month',
+                month: shiftMonth(p.mode === 'month' ? p.month : currentMonth, 1),
+              }))
+            }
+            disabled={isCurrentMonth}
+            className="rounded px-2 py-1 text-sm hover:bg-muted disabled:opacity-30"
+            aria-label="Next month"
+          >
+            ›
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
