@@ -10,7 +10,6 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@packrat/web-ui/components/tabs';
 import {
   useQueryMetricsByCallSite,
-  useQueryMetricsByMonth,
   useQueryMetricsRecent,
   useQueryMetricsSummary,
 } from 'admin-app/hooks/use-query-metrics';
@@ -70,7 +69,6 @@ export function QueryMetricsAnalytics() {
   });
   const { data: summary, isLoading: summaryLoading } = useQueryMetricsSummary({ hours, month });
   const { data: recent, isLoading: recentLoading } = useQueryMetricsRecent(50);
-  const { data: byMonth, isLoading: byMonthLoading } = useQueryMetricsByMonth(12);
 
   const currentMonth = toYyyyMm(new Date());
   const isCurrentMonth = period.mode === 'month' && period.month === currentMonth;
@@ -173,55 +171,6 @@ export function QueryMetricsAnalytics() {
           </CardHeader>
         </Card>
       </div>
-
-      {/* Monthly trends — always visible, not scoped to the period selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Trends</CardTitle>
-          <CardDescription>
-            Request volume, DB compute, and egress by calendar month
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {byMonthLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Month</th>
-                    <th className="pb-2 text-right font-medium">Requests</th>
-                    <th className="pb-2 text-right font-medium">DB Queries</th>
-                    <th className="pb-2 text-right font-medium">Total Compute</th>
-                    <th className="pb-2 text-right font-medium">Avg / Req</th>
-                    <th className="pb-2 text-right font-medium">Total Egress</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(byMonth?.months ?? []).map((row) => (
-                    <tr key={row.month} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{formatMonth(row.month)}</td>
-                      <td className="py-2 text-right">{row.requestCount.toLocaleString()}</td>
-                      <td className="py-2 text-right">{row.totalQueryCount.toLocaleString()}</td>
-                      <td className="py-2 text-right">{formatMs(row.totalDurationMs)}</td>
-                      <td className="py-2 text-right">{formatMs(row.avgDurationMs)}</td>
-                      <td className="py-2 text-right">{formatBytes(row.totalEgressBytes)}</td>
-                    </tr>
-                  ))}
-                  {(byMonth?.months ?? []).length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-4 text-center text-muted-foreground">
-                        No monthly data yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Top call sites by compute — primary view */}
       <Card>
