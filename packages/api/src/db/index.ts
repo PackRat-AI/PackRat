@@ -9,6 +9,7 @@ import {
   setQueryTag,
 } from '@packrat/api/utils/queryMetrics';
 import * as schema from '@packrat/db/schema';
+import { isFunction, isString } from '@packrat/guards';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
@@ -73,7 +74,7 @@ function withTagging<T extends object>(db: T): WithTag<T> {
         };
       }
       const val = Reflect.get(target, prop, target);
-      return typeof val === 'function' ? (val as (...a: unknown[]) => unknown).bind(target) : val;
+      return isFunction(val) ? (val as (...a: unknown[]) => unknown).bind(target) : val;
     },
   }) as WithTag<T>;
   return proxy;
@@ -116,7 +117,7 @@ function instrumentPool<T extends { query: (...args: unknown[]) => Promise<unkno
   const orig = pool.query.bind(pool);
   pool.query = (async (...args: Parameters<typeof orig>) => {
     const first = args[0];
-    const sql = typeof first === 'string' ? first : ((first as { text?: string })?.text ?? '');
+    const sql = isString(first) ? first : ((first as { text?: string })?.text ?? '');
     const start = Date.now();
     const result = await orig(...args);
     const hash = hashQuery(sql);
