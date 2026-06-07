@@ -374,8 +374,8 @@ const QueryRecentRequestSchema = z.object({
 });
 
 export const QueryMetricsSummarySchema = z.object({
-  periodHours: z.number(),
   periodStart: z.string(),
+  periodEnd: z.string().nullable(),
   summary: z.object({
     totalRequests: z.number(),
     totalDurationMs: z.number(),
@@ -400,8 +400,8 @@ export const QueryCallSiteStatSchema = z.object({
 });
 
 export const QueryMetricsByCallSiteSchema = z.object({
-  periodHours: z.number(),
   periodStart: z.string(),
+  periodEnd: z.string().nullable(),
   callSites: z.array(QueryCallSiteStatSchema),
 });
 

@@ -184,14 +184,27 @@ const handler: ExportedHandler<Env> = {
     return queryMetricsAls.run(metricsStore, async () => {
       const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
       metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
-      // Clone to read body size without consuming the original response stream.
-      const clone = response.clone();
-      ctx.waitUntil(
-        clone.arrayBuffer().then((buf) => {
-          metricsStore.estimatedEgressBytes = buf.byteLength;
-          return flushQueryMetrics(metricsStore, response.status);
-        }),
-      );
+      // Use Content-Length when available; fall back to cloning only for JSON/text
+      // responses. Skip body buffering for streaming or binary responses to avoid
+      // doubling memory usage.
+      const contentLength = response.headers.get('content-length');
+      if (contentLength !== null) {
+        metricsStore.estimatedEgressBytes = Number(contentLength);
+        ctx.waitUntil(flushQueryMetrics(metricsStore, response.status));
+      } else {
+        const ct = response.headers.get('content-type') ?? '';
+        if (ct.startsWith('application/json') || ct.startsWith('text/')) {
+          const clone = response.clone();
+          ctx.waitUntil(
+            clone.arrayBuffer().then((buf) => {
+              metricsStore.estimatedEgressBytes = buf.byteLength;
+              return flushQueryMetrics(metricsStore, response.status);
+            }),
+          );
+        } else {
+          ctx.waitUntil(flushQueryMetrics(metricsStore, response.status));
+        }
+      }
       return response;
     });
   },

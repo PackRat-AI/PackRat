@@ -48,20 +48,6 @@ export function setQueryTag(tag: string): void {
   if (store) store.currentQueryTag = tag;
 }
 
-// Tag all DB queries issued within fn() with the given label.
-// Restores the previous tag on exit — safe for nested calls.
-export async function withQueryTag<T>(tag: string, fn: () => Promise<T>): Promise<T> {
-  const store = queryMetricsAls.getStore();
-  if (!store) return fn();
-  const prev = store.currentQueryTag;
-  store.currentQueryTag = tag;
-  try {
-    return await fn();
-  } finally {
-    store.currentQueryTag = prev;
-  }
-}
-
 const ROUTE_UUID_RE = /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 const ROUTE_NUMERIC_ID_RE = /\/\d{5,}/g;
 const ROUTE_TOKEN_RE = /\/[a-zA-Z0-9_-]{32,}/g;
@@ -73,18 +59,21 @@ function normalizeRoute(pathname: string): string {
     .replace(ROUTE_TOKEN_RE, '/:token');
 }
 
+// FNV-1a 32-bit over the full query string — better distribution than a
+// truncated polynomial hash and avoids collisions for queries that share
+// a common prefix.
 export function hashQuery(query: string): string {
-  let h = 0;
-  const limit = Math.min(query.length, 500);
-  for (let i = 0; i < limit; i++) {
-    h = (Math.imul(31, h) + query.charCodeAt(i)) | 0;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < query.length; i++) {
+    h ^= query.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
   }
-  return (h >>> 0).toString(16).padStart(8, '0');
+  return h.toString(16).padStart(8, '0');
 }
 
 export function estimateResultBytes(rows: unknown): number {
   try {
-    return new TextEncoder().encode(JSON.stringify(rows)).byteLength;
+    return JSON.stringify(rows).length;
   } catch {
     return 0;
   }

@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 function getMetricsDb() {
   const env = getEnv();
+  if (!env.METRICS_DB) throw new Error('METRICS_DB binding is not configured');
   return createMetricsDb(env.METRICS_DB);
 }
 

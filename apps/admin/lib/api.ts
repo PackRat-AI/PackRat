@@ -20,7 +20,6 @@ import type {
   GrowthPoint,
   PriceBucket,
   QueryMetricsByCallSite,
-  QueryMetricsByMonth,
   QueryMetricsRecent,
   QueryMetricsSummary,
   TrailGeometry,
@@ -408,12 +407,7 @@ export function retryEtlJob(
 
 // ─── Query Metrics ─────────────────────────────────────────────────────────────
 
-export type {
-  QueryMetricsByCallSite,
-  QueryMetricsByMonth,
-  QueryMetricsRecent,
-  QueryMetricsSummary,
-};
+export type { QueryMetricsByCallSite, QueryMetricsRecent, QueryMetricsSummary };
 
 export function getQueryMetricsSummary({
   hours = 24,
@@ -441,8 +435,4 @@ export function getQueryMetricsByCallSite({
 } = {}): Promise<QueryMetricsByCallSite> {
   const q = month ? `month=${month}&limit=${limit}` : `hours=${hours}&limit=${limit}`;
   return adminFetch({ path: `/analytics/query-metrics/by-callsite?${q}` });
-}
-
-export function getQueryMetricsByMonth(months = 12): Promise<QueryMetricsByMonth> {
-  return adminFetch({ path: `/analytics/query-metrics/by-month?months=${months}` });
 }

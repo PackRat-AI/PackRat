@@ -152,7 +152,7 @@ export type ValidatedEnv = Omit<
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   OSM_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
-  METRICS_DB: D1Database;
+  METRICS_DB?: D1Database;
 };
 
 export type Env = ValidatedEnv;

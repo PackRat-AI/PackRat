@@ -21,7 +21,10 @@ export const requestQueryMetricsD1 = sqliteTable(
     userId: text('user_id'),
     queries: text('queries').notNull().default('[]'),
   },
-  (t) => [index('rqm_captured_at_idx').on(t.capturedAt), index('rqm_route_idx').on(t.route)],
+  (t) => [
+    index('rqm_captured_at_route_idx').on(t.capturedAt, t.route),
+    index('rqm_captured_at_idx').on(t.capturedAt),
+  ],
 );
 
 export type RequestQueryMetricD1 = InferSelectModel<typeof requestQueryMetricsD1>;

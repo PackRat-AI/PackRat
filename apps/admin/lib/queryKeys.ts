@@ -51,7 +51,6 @@ export const queryKeys = {
     recent: (limit?: number) => [...queryKeys.queryMetrics.all(), 'recent', limit] as const,
     byCallSite: (key?: string | number, limit?: number) =>
       [...queryKeys.queryMetrics.all(), 'byCallSite', key, limit] as const,
-    byMonth: (months?: number) => [...queryKeys.queryMetrics.all(), 'byMonth', months] as const,
   },
 
   catalogAnalytics: {
