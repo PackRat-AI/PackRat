@@ -190,7 +190,7 @@ const handler: ExportedHandler<Env> = {
       const contentLength = response.headers.get('content-length');
       if (contentLength !== null) {
         metricsStore.estimatedEgressBytes = Number(contentLength);
-        ctx.waitUntil(flushQueryMetrics(metricsStore, response.status));
+        ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
       } else {
         const ct = response.headers.get('content-type') ?? '';
         if (ct.startsWith('application/json') || ct.startsWith('text/')) {
@@ -198,11 +198,11 @@ const handler: ExportedHandler<Env> = {
           ctx.waitUntil(
             clone.arrayBuffer().then((buf) => {
               metricsStore.estimatedEgressBytes = buf.byteLength;
-              return flushQueryMetrics(metricsStore, response.status);
+              return flushQueryMetrics({ store: metricsStore, statusCode: response.status });
             }),
           );
         } else {
-          ctx.waitUntil(flushQueryMetrics(metricsStore, response.status));
+          ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
         }
       }
       return response;
@@ -212,7 +212,7 @@ const handler: ExportedHandler<Env> = {
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
-    const store = createQueryMetricsStore(`queue/${batch.queue}`, 'QUEUE');
+    const store = createQueryMetricsStore({ route: `queue/${batch.queue}`, method: 'QUEUE' });
     await queryMetricsAls.run(store, async () => {
       try {
         if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
@@ -239,7 +239,7 @@ const handler: ExportedHandler<Env> = {
         throw error;
       } finally {
         store.totalDurationMs = Date.now() - store.startTimeMs;
-        await flushQueryMetrics(store).catch(() => {});
+        await flushQueryMetrics({ store }).catch(() => {});
       }
     });
   },
@@ -247,7 +247,10 @@ const handler: ExportedHandler<Env> = {
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
-    const store = createQueryMetricsStore(`scheduled/${controller.cron}`, 'CRON');
+    const store = createQueryMetricsStore({
+      route: `scheduled/${controller.cron}`,
+      method: 'CRON',
+    });
     await queryMetricsAls.run(store, async () => {
       try {
         if (controller.cron === '0 9 * * *') {
@@ -268,7 +271,7 @@ const handler: ExportedHandler<Env> = {
         throw new Error(`Unknown cron: ${controller.cron}`);
       } finally {
         store.totalDurationMs = Date.now() - store.startTimeMs;
-        await flushQueryMetrics(store).catch(() => {});
+        await flushQueryMetrics({ store }).catch(() => {});
       }
     });
   },

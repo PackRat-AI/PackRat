@@ -49,7 +49,7 @@ function formatMonth(yyyyMm: string): string {
   });
 }
 
-function shiftMonth(yyyyMm: string, delta: number): string {
+function shiftMonth({ yyyyMm, delta }: { yyyyMm: string; delta: number }): string {
   const parts = yyyyMm.split('-').map(Number);
   const y = parts[0] ?? 0;
   const m = parts[1] ?? 0;
@@ -102,7 +102,10 @@ export function QueryMetricsAnalytics() {
             onClick={() =>
               setPeriod((p) => ({
                 mode: 'month',
-                month: shiftMonth(p.mode === 'month' ? p.month : currentMonth, -1),
+                month: shiftMonth({
+                  yyyyMm: p.mode === 'month' ? p.month : currentMonth,
+                  delta: -1,
+                }),
               }))
             }
             className="rounded px-2 py-1 text-sm hover:bg-muted"
@@ -127,7 +130,10 @@ export function QueryMetricsAnalytics() {
             onClick={() =>
               setPeriod((p) => ({
                 mode: 'month',
-                month: shiftMonth(p.mode === 'month' ? p.month : currentMonth, 1),
+                month: shiftMonth({
+                  yyyyMm: p.mode === 'month' ? p.month : currentMonth,
+                  delta: 1,
+                }),
               }))
             }
             disabled={isCurrentMonth}

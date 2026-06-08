@@ -354,16 +354,16 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
             timeout: '5 minutes',
           },
           async () => {
-            const store = createQueryMetricsStore(
-              `workflow/catalog-etl/chunk-${chunk.chunkIndex}`,
-              'WORKFLOW',
-            );
+            const store = createQueryMetricsStore({
+              route: `workflow/catalog-etl/chunk-${chunk.chunkIndex}`,
+              method: 'WORKFLOW',
+            });
             return queryMetricsAls.run(store, async () => {
               try {
                 return await processChunk({ jobId, chunk, env: this.env });
               } finally {
                 store.totalDurationMs = Date.now() - store.startTimeMs;
-                await flushQueryMetrics(store).catch(() => {});
+                await flushQueryMetrics({ store }).catch(() => {});
               }
             });
           },
@@ -387,7 +387,10 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
         throw new Error(`Workflow ${jobId} received empty chunks array`);
       }
       await step.do('aggregate', async () => {
-        const store = createQueryMetricsStore('workflow/catalog-etl/aggregate', 'WORKFLOW');
+        const store = createQueryMetricsStore({
+          route: 'workflow/catalog-etl/aggregate',
+          method: 'WORKFLOW',
+        });
         return queryMetricsAls.run(store, async () => {
           try {
             const db = createDbClient(this.env);
@@ -402,13 +405,16 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
               .where(eq(etlJobs.id, jobId));
           } finally {
             store.totalDurationMs = Date.now() - store.startTimeMs;
-            await flushQueryMetrics(store).catch(() => {});
+            await flushQueryMetrics({ store }).catch(() => {});
           }
         });
       });
 
       await step.do('finalize', async () => {
-        const store = createQueryMetricsStore('workflow/catalog-etl/finalize', 'WORKFLOW');
+        const store = createQueryMetricsStore({
+          route: 'workflow/catalog-etl/finalize',
+          method: 'WORKFLOW',
+        });
         return queryMetricsAls.run(store, async () => {
           try {
             const db = createDbClient(this.env);
@@ -419,7 +425,7 @@ export class CatalogEtlWorkflow extends WorkflowEntrypoint<Env, CatalogEtlWorkfl
               .where(eq(etlJobs.id, jobId));
           } finally {
             store.totalDurationMs = Date.now() - store.startTimeMs;
-            await flushQueryMetrics(store).catch(() => {});
+            await flushQueryMetrics({ store }).catch(() => {});
           }
         });
       });

@@ -40,7 +40,7 @@ export function useQueryMetricsByCallSite({
   month?: string;
 } = {}) {
   return useQuery({
-    queryKey: queryKeys.queryMetrics.byCallSite(month ?? hours, limit),
+    queryKey: queryKeys.queryMetrics.byCallSite({ key: month ?? hours, limit }),
     queryFn: () => getQueryMetricsByCallSite({ hours, limit, month }),
     refetchInterval: 60_000,
   });

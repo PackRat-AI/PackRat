@@ -58,7 +58,7 @@ const fakeQuery = { hash: 'abc12345', preview: 'SELECT 1', durationMs: 5, result
 
 describe('createQueryMetricsStore', () => {
   it('initialises store with route, method and empty queries', () => {
-    const store = createQueryMetricsStore('/api/foo', 'POST');
+    const store = createQueryMetricsStore({ route: '/api/foo', method: 'POST' });
     expect(store.route).toBe('/api/foo');
     expect(store.method).toBe('POST');
     expect(store.queries).toEqual([]);
@@ -178,20 +178,20 @@ describe('flushQueryMetrics', () => {
 
   it('skips health-check routes', async () => {
     const store = makeStore({ route: '/health', queries: [fakeQuery] });
-    await flushQueryMetrics(store);
+    await flushQueryMetrics({ store });
     expect(mocks.createMetricsDb).not.toHaveBeenCalled();
   });
 
   it('skips when no queries and duration is trivial', async () => {
     const store = makeStore({ queries: [], totalDurationMs: 2 });
-    await flushQueryMetrics(store);
+    await flushQueryMetrics({ store });
     expect(mocks.createMetricsDb).not.toHaveBeenCalled();
   });
 
   it('skips when METRICS_DB is absent from env', async () => {
     mocks.getEnv.mockReturnValue({ METRICS_DB: null });
     const store = makeStore({ queries: [fakeQuery] });
-    await flushQueryMetrics(store);
+    await flushQueryMetrics({ store });
     expect(mocks.createMetricsDb).not.toHaveBeenCalled();
   });
 
@@ -200,7 +200,7 @@ describe('flushQueryMetrics', () => {
     mocks.getEnv.mockReturnValue({ METRICS_DB: fakeD1 });
     const store = makeStore({ queries: [fakeQuery], totalDurationMs: 15, userId: 'u1' });
 
-    await flushQueryMetrics(store, 200);
+    await flushQueryMetrics({ store, statusCode: 200 });
 
     expect(mocks.createMetricsDb).toHaveBeenCalledWith(fakeD1);
     expect(mocks.mockInsertFn).toHaveBeenCalledWith({});
@@ -220,7 +220,7 @@ describe('flushQueryMetrics', () => {
     mocks.getEnv.mockReturnValue({ METRICS_DB: {} });
     const store = makeStore({ queries: [fakeQuery] });
 
-    await flushQueryMetrics(store);
+    await flushQueryMetrics({ store });
 
     expect(mocks.mockInsertValues).toHaveBeenCalledWith(
       expect.objectContaining({ statusCode: null }),
@@ -232,14 +232,14 @@ describe('flushQueryMetrics', () => {
     mocks.mockInsertValues.mockRejectedValueOnce(new Error('D1 error'));
     const store = makeStore({ queries: [fakeQuery] });
 
-    await expect(flushQueryMetrics(store)).resolves.not.toThrow();
+    await expect(flushQueryMetrics({ store })).resolves.not.toThrow();
   });
 
   it('flushes when there are queries even if duration is below threshold', async () => {
     mocks.getEnv.mockReturnValue({ METRICS_DB: {} });
     const store = makeStore({ queries: [fakeQuery], totalDurationMs: 0 });
 
-    await flushQueryMetrics(store);
+    await flushQueryMetrics({ store });
 
     expect(mocks.mockInsertValues).toHaveBeenCalled();
   });

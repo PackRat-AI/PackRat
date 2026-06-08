@@ -49,7 +49,7 @@ export const queryKeys = {
     all: () => ['queryMetrics'] as const,
     summary: (key?: string | number) => [...queryKeys.queryMetrics.all(), 'summary', key] as const,
     recent: (limit?: number) => [...queryKeys.queryMetrics.all(), 'recent', limit] as const,
-    byCallSite: (key?: string | number, limit?: number) =>
+    byCallSite: ({ key, limit }: { key?: string | number; limit?: number } = {}) =>
       [...queryKeys.queryMetrics.all(), 'byCallSite', key, limit] as const,
   },
 

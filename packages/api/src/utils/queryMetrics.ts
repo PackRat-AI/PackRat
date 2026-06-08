@@ -19,7 +19,13 @@ export const queryMetricsAls = new AsyncLocalStorage<QueryMetricsStore>();
 
 const SKIP_ROUTES = new Set(['/', '/health', '/openapi', '/openapi.json']);
 
-export function createQueryMetricsStore(route: string, method: string): QueryMetricsStore {
+export function createQueryMetricsStore({
+  route,
+  method,
+}: {
+  route: string;
+  method: string;
+}): QueryMetricsStore {
   return {
     route,
     method,
@@ -32,7 +38,7 @@ export function createQueryMetricsStore(route: string, method: string): QueryMet
 
 export function initQueryMetricsStore(request: Request): QueryMetricsStore {
   const url = new URL(request.url);
-  return createQueryMetricsStore(normalizeRoute(url.pathname), request.method);
+  return createQueryMetricsStore({ route: normalizeRoute(url.pathname), method: request.method });
 }
 
 export function setQueryMetricsUser(userId: string): void {
@@ -84,10 +90,13 @@ export function recordQueryExecution(entry: CapturedQuery): void {
   if (store) store.queries.push(entry);
 }
 
-export async function flushQueryMetrics(
-  store: QueryMetricsStore,
-  statusCode?: number,
-): Promise<void> {
+export async function flushQueryMetrics({
+  store,
+  statusCode,
+}: {
+  store: QueryMetricsStore;
+  statusCode?: number;
+}): Promise<void> {
   if (SKIP_ROUTES.has(store.route)) return;
   if (store.queries.length === 0 && store.totalDurationMs < 5) return;
 
