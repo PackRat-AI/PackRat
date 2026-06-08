@@ -19,7 +19,7 @@ import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
-import { seasonSuggestionsAnnouncementSeenAtom } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
 import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
@@ -40,7 +40,6 @@ import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
-import { useAtomValue } from 'jotai';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
@@ -170,7 +169,7 @@ export default function DashboardScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { hasMinimumItems } = useHasMinimumInventory(20);
-  const announcementSeen = useAtomValue(seasonSuggestionsAnnouncementSeenAtom);
+  const { announcementSeen } = useSeasonSuggestionsPrefs();
 
   useEffect(() => {
     if (!hasMinimumItems || announcementSeen) return;

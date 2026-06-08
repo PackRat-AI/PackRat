@@ -8,6 +8,7 @@ import {
 import * as Sentry from '@sentry/react-native';
 import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
+import { DEVICE_PREF_KEY_PREFIX } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import type { User } from 'expo-app/features/profile/types';
 import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
 import { authClient } from 'expo-app/lib/auth-client';
@@ -62,7 +63,8 @@ export function useAuthActions() {
   const clearLocalData = async () => {
     queryClient.clear();
     const allKeys = await Storage.getAllKeys();
-    await Promise.all(allKeys.map((key) => Storage.removeItem(key)));
+    const keysToRemove = allKeys.filter((key) => !key.startsWith(DEVICE_PREF_KEY_PREFIX));
+    await Promise.all(keysToRemove.map((key) => Storage.removeItem(key)));
     await AsyncStorage.clear();
     await ImageCacheManager.clearCache();
   };

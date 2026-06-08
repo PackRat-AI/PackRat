@@ -1,11 +1,10 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { useAtom } from 'jotai';
 import { Platform, View } from 'react-native';
-import { seasonSuggestionsOpenedAtom } from '../atoms/seasonSuggestionsAtoms';
 import { useHasMinimumInventory } from '../hooks/useHasMinimumInventory';
 
 export function SeasonSuggestionsTile() {
@@ -13,13 +12,11 @@ export function SeasonSuggestionsTile() {
   const router = useRouter();
   const { colors } = useColorScheme();
   const { hasMinimumItems } = useHasMinimumInventory(20);
-  const [opened, setOpened] = useAtom(seasonSuggestionsOpenedAtom);
+  const { opened, setOpened } = useSeasonSuggestionsPrefs();
 
   if (!hasMinimumItems) {
     return null;
   }
-
-  const showNewBadge = !opened;
 
   const handlePress = () => {
     setOpened(true);
@@ -42,7 +39,7 @@ export function SeasonSuggestionsTile() {
                 color="white"
               />
             </View>
-            {showNewBadge && (
+            {!opened && (
               <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-background bg-red-500" />
             )}
           </View>

@@ -2,14 +2,10 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useSetAtom } from 'jotai';
 import * as React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import {
-  seasonSuggestionsAnnouncementSeenAtom,
-  seasonSuggestionsOpenedAtom,
-} from '../atoms/seasonSuggestionsAtoms';
 
 interface SeasonSuggestionsUnlockSheetProps {
   onExplore: () => void;
@@ -20,8 +16,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
   SeasonSuggestionsUnlockSheetProps
 >(function SeasonSuggestionsUnlockSheet({ onExplore }, ref) {
   const { colors } = useColorScheme();
-  const setAnnouncementSeen = useSetAtom(seasonSuggestionsAnnouncementSeenAtom);
-  const setOpened = useSetAtom(seasonSuggestionsOpenedAtom);
+  const { setAnnouncementSeen, setOpened } = useSeasonSuggestionsPrefs();
 
   const dismiss = () => {
     setAnnouncementSeen(true);

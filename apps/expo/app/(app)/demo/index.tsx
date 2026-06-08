@@ -4,14 +4,10 @@ import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { Icon } from 'expo-app/components/Icon';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import {
-  seasonSuggestionsAnnouncementSeenAtom,
-  seasonSuggestionsOpenedAtom,
-} from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useHeaderSearchBar } from 'expo-app/lib/hooks/useHeaderSearchBar';
 import { useRouter } from 'expo-router';
-import { useAtom } from 'jotai';
 import { cssInterop } from 'nativewind';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -113,10 +109,8 @@ const COMPONENTS: ComponentItem[] = [
   {
     name: 'Season Suggestions Unlock',
     component: function SeasonSuggestionsUnlockDev() {
-      const [announcementSeen, setAnnouncementSeen] = useAtom(
-        seasonSuggestionsAnnouncementSeenAtom,
-      );
-      const [opened, setOpened] = useAtom(seasonSuggestionsOpenedAtom);
+      const { announcementSeen, setAnnouncementSeen, opened, setOpened } =
+        useSeasonSuggestionsPrefs();
       const router = useRouter();
 
       const reset = () => {
