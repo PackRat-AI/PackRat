@@ -1,7 +1,6 @@
 import { LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
@@ -12,13 +11,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   type SharedValue,
@@ -102,20 +95,18 @@ export default function SeasonSuggestionsResultsScreen() {
   const { location, date } = useLocalSearchParams<{ location: string; date: string }>();
   const seasonSuggestions = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
-  const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
   const [createdPacks, setCreatedPacks] = useState<Record<number, string>>({});
   const { colors } = useColorScheme();
-  const user = useUser();
   const triggered = useRef(false);
+
+  const { mutate: triggerSuggestions } = seasonSuggestions;
 
   useEffect(() => {
     if (!triggered.current && location && date) {
       triggered.current = true;
-      seasonSuggestions.mutate({ location, date });
+      triggerSuggestions({ location, date });
     }
-    // runs once on mount — location/date are stable URL params
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [triggerSuggestions, location, date]);
 
   const handleCreatePack = ({
     suggestion,
@@ -124,13 +115,9 @@ export default function SeasonSuggestionsResultsScreen() {
     suggestion: PackSuggestion;
     index: number;
   }) => {
-    setCreatingPackIndex(index);
-    setTimeout(() => {
-      const packId = createPackWithItems(suggestion);
-      setCreatingPackIndex(null);
-      setCreatedPacks((prev) => ({ ...prev, [index]: packId }));
-      Burnt.toast({ title: t('seasons.packCreated'), preset: 'done' });
-    }, 500);
+    const packId = createPackWithItems(suggestion);
+    setCreatedPacks((prev) => ({ ...prev, [index]: packId }));
+    Burnt.toast({ title: t('seasons.packCreated'), preset: 'done' });
   };
 
   const { data, error } = seasonSuggestions;
@@ -208,11 +195,8 @@ export default function SeasonSuggestionsResultsScreen() {
                             ? router.push(`/pack/${createdPacks[index]}`)
                             : handleCreatePack({ suggestion, index })
                         }
-                        disabled={creatingPackIndex === index}
                       >
-                        {creatingPackIndex === index ? (
-                          <ActivityIndicator size="small" />
-                        ) : createdPacks[index] ? (
+                        {createdPacks[index] ? (
                           <Text className="text-muted-foreground font-medium">
                             {t('common.view')}
                           </Text>
@@ -257,8 +241,6 @@ export default function SeasonSuggestionsResultsScreen() {
                               packId: '',
                               deleted: false,
                               isAIGenerated: false,
-                              // packItems.userId is text in the DB; PackItem.userId?: number is a stale type
-                              userId: user?.id as unknown as number,
                             }}
                             className="w-20 h-20 rounded-xl mb-1.5"
                             resizeMode="cover"
