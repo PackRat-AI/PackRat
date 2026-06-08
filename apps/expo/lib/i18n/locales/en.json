@@ -9,6 +9,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
+    "view": "View",
     "back": "Back",
     "loading": "Loading...",
     "error": "Error",
@@ -891,7 +892,8 @@
     "locationPermissionTitle": "Allow Location Access",
     "locationPermissionDescription": "PackRat uses your current location to provide season-accurate pack suggestions tailored to your local climate.",
     "allowLocationAccess": "Allow",
-    "notNow": "Not Now"
+    "notNow": "Not Now",
+    "packCreated": "Pack created"
   },
   "experience": {
     "beginner": "Beginner",

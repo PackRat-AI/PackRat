@@ -1,4 +1,5 @@
 import { LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
@@ -100,6 +101,7 @@ export default function SeasonSuggestionsResultsScreen() {
   const seasonSuggestions = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
   const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
+  const [createdPacks, setCreatedPacks] = useState<Record<number, string>>({});
   const { colors } = useColorScheme();
   const triggered = useRef(false);
 
@@ -123,7 +125,8 @@ export default function SeasonSuggestionsResultsScreen() {
     setTimeout(() => {
       const packId = createPackWithItems(suggestion);
       setCreatingPackIndex(null);
-      router.push(`/pack/${packId}`);
+      setCreatedPacks((prev) => ({ ...prev, [index]: packId }));
+      Burnt.toast({ title: t('seasons.packCreated'), preset: 'done' });
     }, 500);
   };
 
@@ -191,11 +194,19 @@ export default function SeasonSuggestionsResultsScreen() {
                         />
                       </View>
                       <TouchableOpacity
-                        onPress={() => handleCreatePack({ suggestion, index })}
+                        onPress={() =>
+                          createdPacks[index]
+                            ? router.push(`/pack/${createdPacks[index]}`)
+                            : handleCreatePack({ suggestion, index })
+                        }
                         disabled={creatingPackIndex === index}
                       >
                         {creatingPackIndex === index ? (
                           <ActivityIndicator size="small" />
+                        ) : createdPacks[index] ? (
+                          <Text className="text-muted-foreground font-medium">
+                            {t('common.view')}
+                          </Text>
                         ) : (
                           <Text className="text-primary font-medium">{t('common.create')}</Text>
                         )}
