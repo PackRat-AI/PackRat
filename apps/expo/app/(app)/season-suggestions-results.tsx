@@ -1,7 +1,7 @@
 import { LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
-import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
+import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
   type PackSuggestion,
@@ -225,12 +225,28 @@ export default function SeasonSuggestionsResultsScreen() {
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       className="-mx-4"
-                      contentContainerStyle={{ paddingLeft: 16, gap: 12 }}
+                      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
                     >
                       {suggestion.items.map((item) => (
                         <View key={item.name} className="w-20 items-center">
-                          <CatalogItemImage
-                            imageUrl={item.image ?? undefined}
+                          <PackItemImage
+                            item={{
+                              id: item.name,
+                              name: item.name,
+                              weight: item.weight,
+                              weightUnit: item.weightUnit,
+                              quantity: item.quantity,
+                              category: item.category ?? '',
+                              consumable: item.consumable,
+                              worn: item.worn,
+                              image: item.image,
+                              description: item.description ?? undefined,
+                              notes: item.notes,
+                              catalogItemId: item.catalogItemId,
+                              packId: '',
+                              deleted: false,
+                              isAIGenerated: true,
+                            }}
                             className="w-20 h-20 rounded-xl mb-1.5"
                             resizeMode="cover"
                           />
