@@ -303,14 +303,15 @@ export function CatalogItemDetailScreen() {
               <ItemReviews reviews={item.reviews} />
             </View>
           )}
-        </View>
 
-        <SimilarItems
-          catalogItemId={item.id.toString()}
-          itemName={item.name}
-          limit={5}
-          threshold={0.1}
-        />
+          {/* Similar Items Section */}
+          <SimilarItems
+            catalogItemId={item.id.toString()}
+            itemName={item.name}
+            limit={5}
+            threshold={0.1}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

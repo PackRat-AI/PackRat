@@ -97,7 +97,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   if (isLoading) {
     return (
       <View className="mt-6">
-        <Text className="mb-3 px-4 text-lg font-semibold text-foreground">
+        <Text className="mb-3 text-lg font-semibold text-foreground">
           {t('catalog.moreLike', { itemName })}
         </Text>
         <FlatList
