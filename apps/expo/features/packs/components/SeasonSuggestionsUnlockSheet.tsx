@@ -47,7 +47,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
       <BottomSheetView className="px-6 pb-10">
         {/* Icon header */}
         <View className="mb-5 mt-2 items-center">
-          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-orange-500">
+          <View className="h-16 w-16 items-center justify-center rounded-2xl bg-primary">
             <Icon
               name="leaf"
               namingScheme="sfSymbol"
@@ -72,13 +72,13 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
         {/* Feature highlights */}
         <View className="mb-6 gap-3">
           <View className="flex-row items-start gap-3">
-            <View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
+            <View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
               <Icon
                 name="map-marker"
                 materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
                 ios={{ name: 'location.fill' }}
                 size={14}
-                color="#f97316"
+                color={colors.primary}
               />
             </View>
             <View className="flex-1">
@@ -90,13 +90,13 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
           </View>
 
           <View className="flex-row items-start gap-3">
-            <View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900">
+            <View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
               <Icon
                 name="weather-sunny"
                 materialIcon={{ type: 'MaterialCommunityIcons', name: 'weather-sunny' }}
                 ios={{ name: 'sun.max.fill' }}
                 size={14}
-                color="#f97316"
+                color={colors.primary}
               />
             </View>
             <View className="flex-1">
@@ -110,7 +110,7 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
 
         {/* CTA */}
         <TouchableOpacity
-          className="mb-3 items-center rounded-xl bg-orange-500 p-4"
+          className="mb-3 items-center rounded-xl bg-primary p-4"
           onPress={handleExplore}
           activeOpacity={0.8}
         >
