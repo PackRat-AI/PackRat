@@ -115,7 +115,7 @@ function CatalogItemsScreen() {
           activeFilter={activeFilter}
           error={categoriesError}
           retry={refetchCategories}
-          className="py-2"
+          className="py-4"
           contentPaddingX={16}
         />
       </>
@@ -205,11 +205,7 @@ function CatalogItemsScreen() {
         keyExtractor={(group) => group.key}
         renderItem={({ item: group }) => (
           <View className="px-4">
-            <CatalogItemCard
-              item={group.representative}
-              variantCount={group.variants.length}
-              onPress={() => handleGroupPress(group)}
-            />
+            <CatalogItemCard item={group.representative} onPress={() => handleGroupPress(group)} />
           </View>
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}

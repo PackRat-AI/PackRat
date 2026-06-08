@@ -19,10 +19,9 @@ import { CatalogItemImage } from './CatalogItemImage';
 type CatalogItemCardProps = {
   item: CatalogItem;
   onPress: () => void;
-  variantCount?: number;
 };
 
-export function CatalogItemCard({ item, onPress, variantCount }: CatalogItemCardProps) {
+export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
@@ -80,13 +79,6 @@ export function CatalogItemCard({ item, onPress, variantCount }: CatalogItemCard
                   count: item.usageCount,
                   unit: item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs'),
                 })}
-              </Text>
-            </View>
-          )}
-          {variantCount && variantCount > 1 && (
-            <View className="rounded-full bg-muted px-2 py-0.5">
-              <Text className="text-xs text-muted-foreground">
-                {variantCount} {t('catalog.options')}
               </Text>
             </View>
           )}
