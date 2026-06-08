@@ -28,25 +28,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-function ShimmerBar() {
-  const { width } = useWindowDimensions();
-  const { colors } = useColorScheme();
-  const translateX = useSharedValue(-200);
-
-  useEffect(() => {
-    translateX.value = withRepeat(withTiming(width, { duration: 900, easing: Easing.linear }), -1);
-  }, [translateX, width]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    backgroundColor: colors.primary,
-  }));
-
-  return (
-    <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, width: 200 }, animStyle]} />
-  );
-}
-
 const SHIMMER_WIDTH = 140;
 
 function ShimmerBox({ shimmerX, className }: { shimmerX: SharedValue<number>; className: string }) {
@@ -152,18 +133,13 @@ export default function SeasonSuggestionsResultsScreen() {
     }, 500);
   };
 
-  const { data, isPending, error } = seasonSuggestions;
+  const { data, error } = seasonSuggestions;
 
   return (
     <>
       <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
-        {isPending && (
-          <View className="h-0.5 w-full overflow-hidden bg-muted -mx-4">
-            <ShimmerBar />
-          </View>
-        )}
         <View className="pt-6">
           {!data && !error && <SuggestionSkeleton />}
 
