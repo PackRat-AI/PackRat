@@ -1,6 +1,7 @@
 import { LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
@@ -104,6 +105,7 @@ export default function SeasonSuggestionsResultsScreen() {
   const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
   const [createdPacks, setCreatedPacks] = useState<Record<number, string>>({});
   const { colors } = useColorScheme();
+  const user = useUser();
   const triggered = useRef(false);
 
   useEffect(() => {
@@ -245,7 +247,9 @@ export default function SeasonSuggestionsResultsScreen() {
                               catalogItemId: item.catalogItemId,
                               packId: '',
                               deleted: false,
-                              isAIGenerated: true,
+                              isAIGenerated: false,
+                              // packItems.userId is text in the DB; PackItem.userId?: number is a stale type
+                              userId: user?.id as unknown as number,
                             }}
                             className="w-20 h-20 rounded-xl mb-1.5"
                             resizeMode="cover"
