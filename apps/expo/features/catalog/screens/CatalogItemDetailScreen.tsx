@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Text } from '@packrat/ui/nativewindui';
+import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
@@ -14,11 +15,70 @@ import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Linking, Text as RNText, ScrollView, View } from 'react-native';
+import { useAtomValue } from 'jotai';
+import { Linking, Pressable, Text as RNText, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
 import { normalizeDescription } from '../lib/normalizeDescription';
+import type { CatalogItem } from '../types';
+
+function VariantRow({
+  variant,
+  colors,
+}: {
+  variant: CatalogItem;
+  colors: ReturnType<typeof useColorScheme>['colors'];
+}) {
+  const { t } = useTranslation();
+  const label = [variant.size, variant.color].filter(Boolean).join(' · ');
+  return (
+    <View className="flex-row items-center justify-between border-b border-border py-3">
+      <View className="flex-1 gap-0.5">
+        {label ? <Text className="text-sm font-medium text-foreground">{label}</Text> : null}
+        <View className="flex-row items-center gap-3">
+          {variant.price != null && (
+            <Text className="text-sm text-foreground">
+              {variant.currency ?? '$'}
+              {variant.price.toFixed(2)}
+            </Text>
+          )}
+          {variant.weight != null && (
+            <Text className="text-xs text-muted-foreground">
+              {variant.weight} {variant.weightUnit}
+            </Text>
+          )}
+          {variant.availability && (
+            <View className="flex-row items-center gap-0.5">
+              <Ionicons
+                name={
+                  variant.availability === 'in_stock'
+                    ? 'checkmark-circle-outline'
+                    : 'close-circle-outline'
+                }
+                size={12}
+                color={variant.availability === 'in_stock' ? '#22c55e' : '#ef4444'}
+              />
+              <Text className="text-xs text-muted-foreground">
+                {variant.availability === 'in_stock'
+                  ? t('catalog.inStock')
+                  : t('catalog.outOfStock')}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+      {variant.productUrl ? (
+        <Pressable
+          onPress={() => Linking.openURL(variant.productUrl as string)}
+          className="ml-3 rounded-md border border-border px-3 py-1.5"
+        >
+          <Text className="text-xs text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -27,6 +87,12 @@ export function CatalogItemDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const MATERIAL_LENGTH_THRESHOLD = 60;
+
+  const groupVariants = useAtomValue(catalogGroupVariantsAtom);
+  // Show the variants section only when there are multiple variants for this
+  // group — i.e. when the user navigated from the grouped catalog list.
+  const otherVariants =
+    groupVariants.length > 1 ? groupVariants.filter((v) => v.id !== Number(id)) : [];
 
   const handleAddToPack = () => {
     router.push({
@@ -226,6 +292,20 @@ export function CatalogItemDetailScreen() {
           {item.reviews && item.reviews.length > 0 && (
             <View className="mt-2">
               <ItemReviews reviews={item.reviews} />
+            </View>
+          )}
+
+          {/* Variants Section */}
+          {otherVariants.length > 0 && (
+            <View className="mt-6">
+              <Text variant="callout" className="mb-1">
+                {t('catalog.variantsSection')}
+              </Text>
+              <View>
+                {otherVariants.map((variant) => (
+                  <VariantRow key={variant.id} variant={variant} colors={colors} />
+                ))}
+              </View>
             </View>
           )}
 
