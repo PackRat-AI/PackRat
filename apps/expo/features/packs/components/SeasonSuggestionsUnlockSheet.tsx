@@ -64,52 +64,13 @@ export const SeasonSuggestionsUnlockSheet = React.forwardRef<
           current season and your location — powered by AI.
         </Text>
 
-        {/* Feature highlights */}
-        <View className="mb-6 gap-3">
-          <View className="flex-row items-start gap-3">
-            <View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-              <Icon
-                name="map-marker"
-                materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
-                ios={{ name: 'location.fill' }}
-                size={14}
-                color={colors.primary}
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="font-medium">Location-aware</Text>
-              <Text variant="footnote" className="text-muted-foreground">
-                Uses your current location to tailor suggestions
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-start gap-3">
-            <View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-              <Icon
-                name="weather-sunny"
-                materialIcon={{ type: 'MaterialCommunityIcons', name: 'weather-sunny' }}
-                ios={{ name: 'sun.max.fill' }}
-                size={14}
-                color={colors.primary}
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="font-medium">Seasonal packing lists</Text>
-              <Text variant="footnote" className="text-muted-foreground">
-                Get AI-generated pack ideas matched to the time of year
-              </Text>
-            </View>
-          </View>
-        </View>
-
         {/* CTA */}
         <TouchableOpacity
           className="mb-3 items-center rounded-xl bg-primary p-4"
           onPress={handleExplore}
           activeOpacity={0.8}
         >
-          <Text className="font-semibold text-white">Explore Season Suggestions</Text>
+          <Text className="font-semibold text-white">Explore</Text>
         </TouchableOpacity>
 
         {/* Dismiss */}
