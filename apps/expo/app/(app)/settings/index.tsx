@@ -209,7 +209,7 @@ export default function SettingsScreen() {
                 onPress={() => {
                   setAnnouncementSeen(false);
                   setOpened(false);
-                  router.push('/');
+                  router.navigate('/');
                 }}
               >
                 <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
