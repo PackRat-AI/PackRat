@@ -23,13 +23,7 @@ import { useCatalogItemDetails } from '../hooks';
 import { normalizeDescription } from '../lib/normalizeDescription';
 import type { CatalogItem } from '../types';
 
-function VariantRow({
-  variant,
-  colors,
-}: {
-  variant: CatalogItem;
-  colors: ReturnType<typeof useColorScheme>['colors'];
-}) {
+function VariantRow({ variant }: { variant: CatalogItem }) {
   const { t } = useTranslation();
   const label = [variant.size, variant.color].filter(Boolean).join(' · ');
   return (
@@ -303,7 +297,7 @@ export function CatalogItemDetailScreen() {
               </Text>
               <View>
                 {otherVariants.map((variant) => (
-                  <VariantRow key={variant.id} variant={variant} colors={colors} />
+                  <VariantRow key={variant.id} variant={variant} />
                 ))}
               </View>
             </View>
