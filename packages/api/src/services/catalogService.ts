@@ -116,22 +116,29 @@ export class CatalogService {
     let orderBy = [desc(sql`COALESCE(pack_item_counts.count, 0)`), desc(catalogItems.id)]; // default ordering by usage
     if (sort) {
       const { field, order } = sort;
+      // All branches include `desc(catalogItems.id)` as a tiebreaker so that
+      // LIMIT/OFFSET pagination is stable. Without it, rows sharing the same
+      // sort-key value (e.g. all ETL-imported items have identical created_at)
+      // are ordered non-deterministically by the planner, causing the same item
+      // to appear on multiple pages and other items to be skipped entirely.
       if (field === 'category') {
         orderBy = [
           order === 'desc'
             ? desc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`)
             : asc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`),
+          desc(catalogItems.id),
         ];
       } else if (field === 'usage') {
         orderBy = [
           order === 'desc'
             ? desc(sql`COALESCE(pack_item_counts.count, 0)`)
             : asc(sql`COALESCE(pack_item_counts.count, 0)`),
+          desc(catalogItems.id),
         ];
       } else {
         const sortColumn = catalogItems[field];
         if (sortColumn) {
-          orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
+          orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn), desc(catalogItems.id)];
         }
       }
     }
