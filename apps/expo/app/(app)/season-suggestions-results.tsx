@@ -9,6 +9,7 @@ import {
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -46,54 +47,68 @@ function ShimmerBar() {
   );
 }
 
-function SkeletonBox({
-  translateX,
-  className,
-}: {
-  translateX: SharedValue<number>;
-  className: string;
-}) {
-  const shimmerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
+const SHIMMER_WIDTH = 140;
+
+function ShimmerBox({ shimmerX, className }: { shimmerX: SharedValue<number>; className: string }) {
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerX.value }],
   }));
 
   return (
-    <View className={`overflow-hidden bg-muted ${className}`}>
+    <View className={className} style={{ overflow: 'hidden' }}>
       <Animated.View
-        style={[{ position: 'absolute', top: 0, bottom: 0, width: 120 }, shimmerStyle]}
-        className="bg-white/20"
-      />
+        style={[{ position: 'absolute', top: 0, bottom: 0, width: SHIMMER_WIDTH }, animStyle]}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.45)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
     </View>
   );
 }
 
 function SuggestionSkeleton() {
   const { width } = useWindowDimensions();
-  const translateX = useSharedValue(-120);
+  const shimmerX = useSharedValue(-SHIMMER_WIDTH);
 
   useEffect(() => {
-    translateX.value = withRepeat(withTiming(width, { duration: 1000, easing: Easing.linear }), -1);
-  }, [translateX, width]);
+    shimmerX.value = withRepeat(withTiming(width, { duration: 1300, easing: Easing.linear }), -1);
+  }, [shimmerX, width]);
 
   return (
     <View className="gap-10">
+      <View className="flex-row items-center gap-3">
+        <ShimmerBox shimmerX={shimmerX} className="h-4 w-24 rounded-md bg-muted" />
+        <View className="h-1 w-1 rounded-full bg-muted" />
+        <ShimmerBox shimmerX={shimmerX} className="h-4 w-32 rounded-md bg-muted" />
+      </View>
+
       {[0, 1, 2].map((i) => (
         <View key={i}>
-          <View className="flex-row items-center justify-between mb-1">
-            <SkeletonBox translateX={translateX} className="h-6 w-40 rounded-lg" />
-            <SkeletonBox translateX={translateX} className="h-5 w-14 rounded-lg" />
+          <View className="mb-3 flex-row items-center justify-between">
+            <ShimmerBox shimmerX={shimmerX} className="h-6 w-44 rounded-lg bg-muted" />
+            <ShimmerBox shimmerX={shimmerX} className="h-5 w-14 rounded-lg bg-muted" />
           </View>
-          <SkeletonBox translateX={translateX} className="mb-1 h-3.5 w-20 rounded-md" />
-          <SkeletonBox translateX={translateX} className="mb-1 h-3.5 w-full rounded-md" />
-          <SkeletonBox translateX={translateX} className="mb-4 h-3.5 w-4/5 rounded-md" />
-          <View className="flex-row gap-3 -mx-4 px-4">
+          <ShimmerBox shimmerX={shimmerX} className="mb-1.5 h-3.5 w-20 rounded-md bg-muted" />
+          <ShimmerBox shimmerX={shimmerX} className="mb-1.5 h-3.5 w-full rounded-md bg-muted" />
+          <ShimmerBox shimmerX={shimmerX} className="mb-4 h-3.5 w-4/5 rounded-md bg-muted" />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={false}
+            className="-mx-4"
+            contentContainerStyle={{ paddingLeft: 16, gap: 12 }}
+          >
             {[0, 1, 2, 3].map((j) => (
               <View key={j} className="w-20 items-center gap-1.5">
-                <SkeletonBox translateX={translateX} className="h-20 w-20 rounded-xl" />
-                <SkeletonBox translateX={translateX} className="h-3 w-14 rounded-md" />
+                <ShimmerBox shimmerX={shimmerX} className="h-20 w-20 rounded-xl bg-muted" />
+                <ShimmerBox shimmerX={shimmerX} className="h-3 w-14 rounded-md bg-muted" />
               </View>
             ))}
-          </View>
+          </ScrollView>
         </View>
       ))}
     </View>
