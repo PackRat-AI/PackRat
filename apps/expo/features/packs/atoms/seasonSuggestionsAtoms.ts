@@ -1,31 +1,17 @@
-import { atomWithKvStorage } from 'expo-app/atoms/atomWithKvStorage';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { atomFamily } from 'jotai/utils';
-
-export const DEVICE_PREF_KEY_PREFIX = '__pref:';
-
-const announcementSeenFamily = atomFamily((userId: string) =>
-  atomWithKvStorage({
-    key: `${DEVICE_PREF_KEY_PREFIX}${userId}:season-suggestions:announcement-seen`,
-    initialValue: false,
-  }),
-);
-
-const openedFamily = atomFamily((userId: string) =>
-  atomWithKvStorage({
-    key: `${DEVICE_PREF_KEY_PREFIX}${userId}:season-suggestions:opened`,
-    initialValue: false,
-  }),
-);
+import { use$ } from '@legendapp/state/react';
+import { preferencesStore } from 'expo-app/features/auth/store/preferences';
 
 export function useSeasonSuggestionsPrefs() {
-  const user = useUser();
-  const userId = user?.id ?? '';
+  const announcementSeen = use$(preferencesStore.seasonSuggestions.announcementSeen) ?? false;
+  const opened = use$(preferencesStore.seasonSuggestions.opened) ?? false;
 
-  const announcementSeen = useAtomValue(announcementSeenFamily(userId));
-  const setAnnouncementSeen = useSetAtom(announcementSeenFamily(userId));
-  const [opened, setOpened] = useAtom(openedFamily(userId));
+  const setAnnouncementSeen = (value: boolean) => {
+    preferencesStore.seasonSuggestions.assign({ announcementSeen: value });
+  };
+
+  const setOpened = (value: boolean) => {
+    preferencesStore.seasonSuggestions.assign({ opened: value });
+  };
 
   return { announcementSeen, setAnnouncementSeen, opened, setOpened };
 }
