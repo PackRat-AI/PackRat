@@ -887,7 +887,11 @@
     "personalizedRecommendations": "Get personalized pack recommendations based on your gear inventory and current season.",
     "recommendedItems": "Recommended Items ({{count}})",
     "createThisPack": "Create This Pack",
-    "creatingPack": "Creating Pack..."
+    "creatingPack": "Creating Pack...",
+    "locationPermissionTitle": "Allow Location Access",
+    "locationPermissionDescription": "PackRat uses your current location to provide season-accurate pack suggestions tailored to your local climate.",
+    "allowLocationAccess": "Allow Access",
+    "notNow": "Not Now"
   },
   "experience": {
     "beginner": "Beginner",

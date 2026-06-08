@@ -1,37 +1,91 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
-import { Button, LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
   type PackSuggestion,
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
-import { LocationPicker } from 'expo-app/features/weather/components';
-import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Platform, ScrollView, View } from 'react-native';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const seasonSuggestionsMutation = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
   const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { colors } = useColorScheme();
+  const permissionSheetRef = useRef<BottomSheetModal>(null);
 
-  const handleGenerateSuggestions = (location: WeatherLocation) => {
-    setIsLocationPickerOpen(false);
+  const fetchLocationAndGenerate = async () => {
+    setIsGettingLocation(true);
+    try {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
 
-    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    assertDefined(currentDate);
+      const [geocode] = await Location.reverseGeocodeAsync({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
 
-    seasonSuggestionsMutation.mutate({
-      location: location.name,
-      date: currentDate,
-    });
+      const locationName =
+        geocode?.city ??
+        geocode?.region ??
+        geocode?.country ??
+        `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`;
+
+      const currentDate = new Date().toISOString().split('T')[0];
+      assertDefined(currentDate);
+
+      seasonSuggestionsMutation.mutate({ location: locationName, date: currentDate });
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { feature: 'seasons', action: 'fetchLocationAndGenerate' },
+      });
+      Alert.alert(t('weather.locationError'), t('weather.locationErrorMessage'));
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const handleGeneratePress = async () => {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status === 'granted') {
+      await fetchLocationAndGenerate();
+    } else {
+      permissionSheetRef.current?.present();
+    }
+  };
+
+  const handlePermissionAllow = async () => {
+    permissionSheetRef.current?.dismiss();
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      await fetchLocationAndGenerate();
+    } else {
+      Alert.alert(t('weather.permissionDenied'), t('weather.permissionDeniedMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('weather.openSettings'),
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              Linking.openURL('app-settings:');
+            } else {
+              Linking.openSettings();
+            }
+          },
+        },
+      ]);
+    }
   };
 
   const handleCreatePack = ({
@@ -43,16 +97,14 @@ export default function SeasonSuggestionsScreen() {
   }) => {
     setCreatingPackIndex(index);
 
-    // Add a short delay to show the loading state
     setTimeout(() => {
       const packId = createPackWithItems(suggestion);
-
       setCreatingPackIndex(null);
-
-      // Navigate to the created pack
       router.push(`/pack/${packId}`);
     }, 500);
   };
+
+  const isLoading = isGettingLocation || seasonSuggestionsMutation.isPending;
 
   return (
     <>
@@ -66,12 +118,13 @@ export default function SeasonSuggestionsScreen() {
             </Text>
           </View>
 
-          <Button
-            onPress={() => setIsLocationPickerOpen(true)}
-            disabled={seasonSuggestionsMutation.isPending}
-            className="w-full"
-          >
-            {seasonSuggestionsMutation.isPending ? (
+          <Button onPress={handleGeneratePress} disabled={isLoading} className="w-full">
+            {isGettingLocation ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="white" />
+                <Text className="ml-2 text-white">{t('weather.gettingLocation')}</Text>
+              </View>
+            ) : seasonSuggestionsMutation.isPending ? (
               <View className="flex-row items-center">
                 <ActivityIndicator size="small" color="white" />
                 <Text className="ml-2 text-white">{t('seasons.generatingSuggestions')}</Text>
@@ -182,13 +235,48 @@ export default function SeasonSuggestionsScreen() {
         </View>
       </ScrollView>
 
-      <LocationPicker
-        open={isLocationPickerOpen}
-        onClose={() => setIsLocationPickerOpen(false)}
-        title={t('location.selectLocation')}
-        onSelect={handleGenerateSuggestions}
-        selectText={t('auth.next')}
-      />
+      <Sheet
+        ref={permissionSheetRef}
+        enableDynamicSizing
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+      >
+        <BottomSheetView className="px-6 pb-10 pt-2">
+          <View className="items-center gap-5">
+            <View className="h-16 w-16 rounded-full bg-primary/10 items-center justify-center">
+              <Icon
+                ios={{ useMaterialIcon: true }}
+                materialIcon={{ type: 'MaterialIcons', name: 'my-location' }}
+                size={30}
+                color={colors.primary}
+              />
+            </View>
+
+            <View className="items-center gap-2">
+              <Text className="text-lg font-semibold text-center">
+                {t('seasons.locationPermissionTitle')}
+              </Text>
+              <Text className="text-muted-foreground text-center text-sm leading-relaxed">
+                {t('seasons.locationPermissionDescription')}
+              </Text>
+            </View>
+
+            <View className="w-full flex-row gap-3">
+              <Button
+                variant="secondary"
+                onPress={() => permissionSheetRef.current?.dismiss()}
+                className="flex-1"
+              >
+                <Text>{t('seasons.notNow')}</Text>
+              </Button>
+              <Button onPress={handlePermissionAllow} className="flex-1">
+                <Text className="text-white font-medium">{t('seasons.allowLocationAccess')}</Text>
+              </Button>
+            </View>
+          </View>
+        </BottomSheetView>
+      </Sheet>
     </>
   );
 }
