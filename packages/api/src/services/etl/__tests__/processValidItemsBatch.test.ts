@@ -38,9 +38,13 @@ vi.mock('../mergeItemsBySku', () => ({
 }));
 
 vi.mock('@packrat/api/db', () => ({
-  createDbClient: vi.fn(() => ({
-    update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
-  })),
+  createDbClient: vi.fn(() => {
+    const db = {
+      tag: (_label: string) => db,
+      update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+    };
+    return db;
+  }),
 }));
 
 vi.mock('@packrat/api/utils/logger', () => ({

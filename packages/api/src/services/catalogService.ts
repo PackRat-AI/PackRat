@@ -138,6 +138,7 @@ export class CatalogService {
 
     if (!limit) {
       const items = await this.db
+        .tag('catalog.getCatalogItems')
         .select({
           // List-context projection: scalar fields callers actually need for
           // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
@@ -195,6 +196,7 @@ export class CatalogService {
 
     const [itemsWithCounts, totalCountResult] = await Promise.all([
       this.db
+        .tag('catalog.getCatalogItems')
         .select({
           // List-context projection: scalar fields callers actually need for
           // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
@@ -242,7 +244,11 @@ export class CatalogService {
         .orderBy(...orderBy)
         .limit(limit)
         .offset(offset),
-      this.db.select({ totalCount: count() }).from(catalogItems).where(where),
+      this.db
+        .tag('catalog.getCatalogItemsCount')
+        .select({ totalCount: count() })
+        .from(catalogItems)
+        .where(where),
     ]);
     const totalCount = totalCountResult[0]?.totalCount ?? 0;
 
@@ -319,6 +325,7 @@ export class CatalogService {
 
     const [items, vectorTotalCountResult] = await Promise.all([
       this.db
+        .tag('catalog.vectorSearch')
         .select({
           ...columnsToSelect,
           similarity,
@@ -329,6 +336,7 @@ export class CatalogService {
         .limit(limit)
         .offset(offset),
       this.db
+        .tag('catalog.vectorSearchCount')
         .select({
           totalCount: count(),
         })
@@ -382,6 +390,7 @@ export class CatalogService {
       const similarity = sql<number>`1 - (${distance})`;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db
+        .tag('catalog.batchVectorSearch')
         .select({
           ...columnsToSelect,
           similarity,
@@ -401,6 +410,7 @@ export class CatalogService {
 
   async getCategories(limit = 10) {
     const rows = await this.db
+      .tag('catalog.getCategories')
       .select({
         category: sql<string>`jsonb_array_elements_text(${catalogItems.categories})`,
       })
@@ -444,6 +454,7 @@ export class CatalogService {
     };
 
     const upsertQuery = this.db
+      .tag('catalog.upsertItem')
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
@@ -508,12 +519,15 @@ export class CatalogService {
     itemIds: Pick<CatalogItem, 'id'>[];
     jobId: string;
   }): Promise<void> {
-    await this.db.insert(catalogItemEtlJobs).values(
-      itemIds.map((item) => ({
-        catalogItemId: item.id,
-        etlJobId: jobId,
-      })),
-    );
+    await this.db
+      .tag('catalog.createEtlJob')
+      .insert(catalogItemEtlJobs)
+      .values(
+        itemIds.map((item) => ({
+          catalogItemId: item.id,
+          etlJobId: jobId,
+        })),
+      );
   }
 
   /**
@@ -557,6 +571,7 @@ export class CatalogService {
   > {
     if (skus.length === 0) return new Map();
     const rows = await this.db
+      .tag('catalog.fetchForEmbeddingRegen')
       .select({
         id: catalogItems.id,
         sku: catalogItems.sku,
@@ -585,6 +600,7 @@ export class CatalogService {
 
     // Get count of items without embeddings
     const queueTotalCountResult = await this.db
+      .tag('catalog.countForEmbeddingQueue')
       .select({ totalCount: count() })
       .from(catalogItems)
       .where(isNull(catalogItems.embedding));
@@ -598,6 +614,7 @@ export class CatalogService {
 
     // Get items without embeddings
     const itemsWithoutEmbeddings = await this.db
+      .tag('catalog.getIdsForEmbeddingQueue')
       .select({ id: catalogItems.id })
       .from(catalogItems)
       .where(isNull(catalogItems.embedding));
@@ -635,6 +652,7 @@ export class CatalogService {
     // qas, faqs, variants, techs) ARE pulled because getEmbeddingText uses
     // them — that's unavoidable for embedding regen.
     const itemsToEmbed = await this.db
+      .tag('catalog.getItemsForEmbeddingBatch')
       .select({
         id: catalogItems.id,
         name: catalogItems.name,
@@ -680,6 +698,7 @@ export class CatalogService {
         const embedding = embeddings[i];
         if (!item || embedding === undefined) continue;
         await this.db
+          .tag('catalog.updateEmbedding')
           .update(catalogItems)
           .set({ embedding, updatedAt: new Date() })
           .where(eq(catalogItems.id, item.id));

@@ -150,6 +150,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(400, { error: 'Compare requires at least 2 distinct catalog IDs' });
       }
       const items = await db
+        .tag('catalog.compare')
         .select({
           id: catalogItems.id,
           name: catalogItems.name,
@@ -213,11 +214,15 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async () => {
       const db = createDb();
       const result = await db
+        .tag('catalog.embeddingsStats')
         .select({ totalCount: count() })
         .from(catalogItems)
         .where(isNull(catalogItems.embedding));
       const withoutEmbeddings = result[0]?.totalCount ?? 0;
-      const totalItemsResult = await db.select({ totalCount: count() }).from(catalogItems);
+      const totalItemsResult = await db
+        .tag('catalog.embeddingsStats')
+        .select({ totalCount: count() })
+        .from(catalogItems);
       const totalItems = totalItemsResult[0]?.totalCount ?? 0;
       return {
         itemsWithoutEmbeddings: Number(withoutEmbeddings),
@@ -254,7 +259,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           return status(400, { message: 'ETL_QUEUE is not configured' });
         }
 
-        await db.insert(etlJobs).values({
+        await db.tag('catalog.etlCreateJob').insert(etlJobs).values({
           id: jobId,
           status: 'running',
           source,
@@ -344,7 +349,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       // CF Workflows instance IDs only allow [a-zA-Z0-9_-] — strip the file extension.
       const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
 
-      await db.insert(etlJobs).values({
+      await db.tag('catalog.etlCreateJob').insert(etlJobs).values({
         id: jobId,
         status: 'running',
         source,
@@ -367,6 +372,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         await env.ETL_WORKFLOW.create({ id: instanceId, params });
       } catch (err) {
         await db
+          .tag('catalog.etlUpdateJobStatus')
           .update(etlJobs)
           .set({ status: 'failed', completedAt: new Date() })
           .where(eq(etlJobs.id, jobId));
@@ -437,6 +443,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       });
 
       const [newItem] = await db
+        .tag('catalog.create')
         .insert(catalogItems)
         .values({
           name: data.name,
@@ -495,7 +502,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
 
-      const item = await db.query.catalogItems.findFirst({
+      const item = await db.tag('catalog.getById').query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),
         with: {
           packItems: {
@@ -544,7 +551,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
 
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
-      const sourceItem = await db.query.catalogItems.findFirst({
+      const sourceItem = await db.tag('catalog.getSimilarSource').query.catalogItems.findFirst({
         // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer narrowing to pivot migration (separate catalog_item_embeddings table)
         where: eq(catalogItems.id, itemId),
       });
@@ -563,6 +570,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
       const similarItems = await db
+        .tag('catalog.getSimilarItems')
         .select({ ...columnsToSelect, similarity })
         .from(catalogItems)
         .where(
@@ -622,7 +630,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         AI,
       } = getEnv();
 
-      const existingItem = await db.query.catalogItems.findFirst({
+      const existingItem = await db.tag('catalog.update').query.catalogItems.findFirst({
         // lint:allow-unprojected-fat-table reason: needs full row for getEmbeddingText diff (reads variants/techs/reviews/qas/faqs); defer to pivot migration
         where: eq(catalogItems.id, itemId),
       });
@@ -652,6 +660,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       updateData.updatedAt = new Date();
 
       const [updatedItem] = await db
+        .tag('catalog.update')
         .update(catalogItems)
         .set(updateData)
         .where(eq(catalogItems.id, itemId))
@@ -687,7 +696,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found' });
       }
 
-      const existingItem = await db.query.catalogItems.findFirst({
+      const existingItem = await db.tag('catalog.delete').query.catalogItems.findFirst({
         // lint:allow-unprojected-fat-table reason: existence check only — could narrow to {id} but bundling with pivot migration to touch each callsite once
         where: eq(catalogItems.id, itemId),
       });
@@ -696,7 +705,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found' });
       }
 
-      await db.delete(catalogItems).where(eq(catalogItems.id, itemId));
+      await db.tag('catalog.delete').delete(catalogItems).where(eq(catalogItems.id, itemId));
       return { success: true };
     },
     {

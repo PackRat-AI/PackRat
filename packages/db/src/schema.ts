@@ -668,3 +668,14 @@ export type PostComment = InferSelectModel<typeof postComments>;
 export type NewPostComment = InferInsertModel<typeof postComments>;
 export type CommentLike = InferSelectModel<typeof commentLikes>;
 export type NewCommentLike = InferInsertModel<typeof commentLikes>;
+
+// CapturedQuery is the per-query record stored in D1 metrics (packages/api/src/db/metricsDb.ts).
+// Defined here so both the API (queryMetrics.ts) and the D1 schema (packages/db/src/d1Schema.ts)
+// share the same type without a circular dependency.
+export interface CapturedQuery {
+  hash: string;
+  preview: string;
+  callSite?: string;
+  durationMs: number;
+  resultBytes: number;
+}

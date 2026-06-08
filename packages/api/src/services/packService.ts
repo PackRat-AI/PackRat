@@ -2,6 +2,7 @@ import { createDb } from '@packrat/api/db';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { setQueryTag } from '@packrat/api/utils/queryMetrics';
 import { PACK_CATEGORIES } from '@packrat/constants';
 import { type NewPack, type NewPackItem, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
@@ -47,7 +48,7 @@ export class PackService {
   // force consumers to assert it back (and tools like tsgo correctly reject
   // that as accessing a non-existent field).
   async getPackDetails(packId: string) {
-    const pack = await this.db.query.packs.findFirst({
+    const pack = await this.db.tag('pack.getPackDetails').query.packs.findFirst({
       where: and(eq(packs.id, packId), eq(packs.userId, this.userId), eq(packs.deleted, false)),
       with: {
         items: {
@@ -123,7 +124,9 @@ export class PackService {
         );
       }
 
+      setQueryTag('pack.generatePacksInsertPacks');
       const createdPacks = await tx.insert(packs).values(packsToInsert).returning();
+      setQueryTag('pack.generatePacksInsertItems');
       await tx.insert(packItems).values(itemsToInsert);
       return createdPacks;
     });

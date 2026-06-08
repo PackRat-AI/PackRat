@@ -57,7 +57,7 @@ export async function executeSqlAiTool(params: Params) {
     setTimeout(() => reject(new Error('Query timeout')), 30000),
   );
 
-  const queryPromise = db.execute(sql.raw(finalQuery));
+  const queryPromise = db.tag('aiTool.executeSql').execute(sql.raw(finalQuery));
 
   let result: unknown;
   try {

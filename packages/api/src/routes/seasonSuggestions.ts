@@ -30,7 +30,7 @@ export const seasonSuggestionsRoutes = new Elysia({ prefix: '/season-suggestions
       const { location, date } = body;
       const db = createDb();
 
-      const items = await db.query.packItems.findMany({
+      const items = await db.tag('seasonSuggestions.getUserInventory').query.packItems.findMany({
         where: and(eq(packItems.userId, user.userId), eq(packItems.deleted, false)),
         columns: { embedding: false },
       });

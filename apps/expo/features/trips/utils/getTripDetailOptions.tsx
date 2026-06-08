@@ -56,7 +56,6 @@ export function getTripDetailOptions(id: string) {
             {
               text: t('common.delete'),
               style: 'destructive',
-              testID: testIds.trips.deleteConfirmBtn,
               onPress: deleteAndNavigate,
             },
           ],

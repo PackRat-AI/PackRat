@@ -27,8 +27,9 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const offset = (page - 1) * limit;
 
       const [totalResult, items] = await Promise.all([
-        db.select({ count: count() }).from(posts),
+        db.tag('feed.countPosts').select({ count: count() }).from(posts),
         db
+          .tag('feed.listPosts')
           .select({
             id: posts.id,
             userId: posts.userId,
@@ -58,15 +59,18 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
 
       const [likeCounts, myLikes, commentCounts] = await Promise.all([
         db
+          .tag('feed.getLikes')
           .select({ postId: postLikes.postId, cnt: count() })
           .from(postLikes)
           .where(inArray(postLikes.postId, postIds))
           .groupBy(postLikes.postId),
         db
+          .tag('feed.getLikes')
           .select({ postId: postLikes.postId })
           .from(postLikes)
           .where(and(inArray(postLikes.postId, postIds), eq(postLikes.userId, user.userId))),
         db
+          .tag('feed.getComments')
           .select({ postId: postComments.postId, cnt: count() })
           .from(postComments)
           .where(inArray(postComments.postId, postIds))
@@ -111,6 +115,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const db = createDb();
 
       const [newPost] = await db
+        .tag('feed.createPost')
         .insert(posts)
         .values({
           userId: user.userId,
@@ -121,7 +126,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
 
       if (!newPost) return status(400, { error: 'Failed to create post' });
 
-      const author = await db.query.users.findFirst({
+      const author = await db.tag('feed.getAuthor').query.users.findFirst({
         where: eq(users.id, user.userId),
         columns: { id: true, firstName: true, lastName: true },
       });
@@ -155,7 +160,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const postId = Number(params.postId);
       const db = createDb();
 
-      const post = await db.query.posts.findFirst({
+      const post = await db.tag('feed.getPost').query.posts.findFirst({
         where: eq(posts.id, postId),
         with: {
           user: { columns: { id: true, firstName: true, lastName: true } },
@@ -195,11 +200,13 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const postId = Number(params.postId);
       const db = createDb();
 
-      const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
+      const post = await db
+        .tag('feed.getPost')
+        .query.posts.findFirst({ where: eq(posts.id, postId) });
       if (!post) return status(404, { error: 'Post not found' });
       if (post.userId !== user.userId) return status(403, { error: 'Forbidden' });
 
-      await db.delete(posts).where(eq(posts.id, postId));
+      await db.tag('feed.deletePost').delete(posts).where(eq(posts.id, postId));
       return { success: true };
     },
     {
@@ -216,22 +223,26 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const postId = Number(params.postId);
       const db = createDb();
 
-      const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
+      const post = await db
+        .tag('feed.getPost')
+        .query.posts.findFirst({ where: eq(posts.id, postId) });
       if (!post) return status(404, { error: 'Post not found' });
 
-      const existing = await db.query.postLikes.findFirst({
+      const existing = await db.tag('feed.checkLike').query.postLikes.findFirst({
         where: and(eq(postLikes.postId, postId), eq(postLikes.userId, user.userId)),
       });
 
       if (existing) {
         await db
+          .tag('feed.unlikePost')
           .delete(postLikes)
           .where(and(eq(postLikes.postId, postId), eq(postLikes.userId, user.userId)));
       } else {
-        await db.insert(postLikes).values({ postId, userId: user.userId });
+        await db.tag('feed.likePost').insert(postLikes).values({ postId, userId: user.userId });
       }
 
       const [likeCountResult] = await db
+        .tag('feed.countLikes')
         .select({ cnt: count() })
         .from(postLikes)
         .where(eq(postLikes.postId, postId));
@@ -253,14 +264,21 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const { page = 1, limit = 20 } = query;
       const db = createDb();
 
-      const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
+      const post = await db
+        .tag('feed.getPost')
+        .query.posts.findFirst({ where: eq(posts.id, postId) });
       if (!post) return status(404, { error: 'Post not found' });
 
       const offset = (page - 1) * limit;
 
       const [totalResult, items] = await Promise.all([
-        db.select({ count: count() }).from(postComments).where(eq(postComments.postId, postId)),
         db
+          .tag('feed.getComments')
+          .select({ count: count() })
+          .from(postComments)
+          .where(eq(postComments.postId, postId)),
+        db
+          .tag('feed.getComments')
           .select({
             id: postComments.id,
             postId: postComments.postId,
@@ -290,11 +308,13 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
 
       const [likeCounts, myLikes] = await Promise.all([
         db
+          .tag('feed.getCommentLikes')
           .select({ commentId: commentLikes.commentId, cnt: count() })
           .from(commentLikes)
           .where(inArray(commentLikes.commentId, commentIds))
           .groupBy(commentLikes.commentId),
         db
+          .tag('feed.getCommentLikes')
           .select({ commentId: commentLikes.commentId })
           .from(commentLikes)
           .where(
@@ -343,10 +363,13 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const postId = Number(params.postId);
       const db = createDb();
 
-      const post = await db.query.posts.findFirst({ where: eq(posts.id, postId) });
+      const post = await db
+        .tag('feed.getPost')
+        .query.posts.findFirst({ where: eq(posts.id, postId) });
       if (!post) return status(404, { error: 'Post not found' });
 
       const [newComment] = await db
+        .tag('feed.createComment')
         .insert(postComments)
         .values({
           postId,
@@ -358,7 +381,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
 
       if (!newComment) return status(400, { error: 'Failed to create comment' });
 
-      const author = await db.query.users.findFirst({
+      const author = await db.tag('feed.getAuthor').query.users.findFirst({
         where: eq(users.id, user.userId),
         columns: { id: true, firstName: true, lastName: true },
       });
@@ -398,14 +421,14 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const commentId = Number(params.commentId);
       const db = createDb();
 
-      const comment = await db.query.postComments.findFirst({
+      const comment = await db.tag('feed.getComment').query.postComments.findFirst({
         where: and(eq(postComments.id, commentId), eq(postComments.postId, postId)),
       });
 
       if (!comment) return status(404, { error: 'Comment not found' });
       if (comment.userId !== user.userId) return status(403, { error: 'Forbidden' });
 
-      await db.delete(postComments).where(eq(postComments.id, commentId));
+      await db.tag('feed.deleteComment').delete(postComments).where(eq(postComments.id, commentId));
       return { success: true };
     },
     {
@@ -426,25 +449,30 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const commentId = Number(params.commentId);
       const db = createDb();
 
-      const comment = await db.query.postComments.findFirst({
+      const comment = await db.tag('feed.getComment').query.postComments.findFirst({
         where: and(eq(postComments.id, commentId), eq(postComments.postId, postId)),
       });
 
       if (!comment) return status(404, { error: 'Comment not found' });
 
-      const existing = await db.query.commentLikes.findFirst({
+      const existing = await db.tag('feed.checkCommentLike').query.commentLikes.findFirst({
         where: and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, user.userId)),
       });
 
       if (existing) {
         await db
+          .tag('feed.unlikeComment')
           .delete(commentLikes)
           .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, user.userId)));
       } else {
-        await db.insert(commentLikes).values({ commentId, userId: user.userId });
+        await db
+          .tag('feed.likeComment')
+          .insert(commentLikes)
+          .values({ commentId, userId: user.userId });
       }
 
       const [likeCountResult] = await db
+        .tag('feed.countLikes')
         .select({ cnt: count() })
         .from(commentLikes)
         .where(eq(commentLikes.commentId, commentId));

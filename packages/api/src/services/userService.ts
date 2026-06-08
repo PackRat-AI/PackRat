@@ -21,6 +21,7 @@ export class UserService {
 
   async findByEmail(email: string): Promise<User | null> {
     const [user] = await this.db
+      .tag('user.findByEmail')
       .select()
       .from(users)
       .where(eq(users.email, email.toLowerCase()))
@@ -37,6 +38,7 @@ export class UserService {
     // would reject the insert at runtime.
     const fullName = [input.firstName, input.lastName].filter(Boolean).join(' ').trim();
     const [user] = await this.db
+      .tag('user.create')
       .insert(users)
       .values({
         id: crypto.randomUUID(),

@@ -16,7 +16,7 @@ export async function processLogsBatch({
   const db = createDbClient(env);
 
   try {
-    await db.insert(invalidItemLogs).values(logs);
+    await db.tag('etl.insertInvalidLogs').insert(invalidItemLogs).values(logs);
     await updateEtlJobProgress({
       env,
       params: {

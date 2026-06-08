@@ -192,7 +192,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const db = createDb();
       const { userQuery, aiResponse, reason, userComment } = body;
 
-      await db.insert(reportedContent).values({
+      await db.tag('chat.createReport').insert(reportedContent).values({
         userId: user.userId,
         userQuery,
         aiResponse,
@@ -219,7 +219,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         return status(403, { error: 'Unauthorized' });
       }
 
-      const reportedItems = await db.query.reportedContent.findMany({
+      const reportedItems = await db.tag('chat.getReports').query.reportedContent.findMany({
         orderBy: (rc, { desc }) => [desc(rc.createdAt)],
         with: { user: true },
       });
@@ -255,6 +255,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const { status: reportStatus } = body;
 
       await db
+        .tag('chat.updateReportStatus')
         .update(reportedContent)
         .set({
           status: reportStatus,

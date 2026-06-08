@@ -153,6 +153,7 @@ export async function processValidItemsBatch({
 
     const db = createDbClient(env);
     await db
+      .tag('etl.recordEmbeddingFailures')
       .update(etlJobs)
       .set({
         totalEmbeddingFailures: sql`COALESCE(${etlJobs.totalEmbeddingFailures}, 0) + ${items.length}`,

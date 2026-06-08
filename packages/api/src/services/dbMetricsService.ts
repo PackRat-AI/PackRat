@@ -88,7 +88,9 @@ export class DbMetricsService {
   }
 
   private async fetchDatabaseInfo(): Promise<{ name: string; sizeBytes: number }> {
-    const rows = await this.db.execute<{ name: string; size_bytes: string }>(sql`
+    const rows = await this.db
+      .tag('dbMetrics.fetchDatabaseInfo')
+      .execute<{ name: string; size_bytes: string }>(sql`
       SELECT
         current_database() AS name,
         pg_database_size(current_database())::text AS size_bytes
@@ -101,7 +103,9 @@ export class DbMetricsService {
   }
 
   private async fetchStatsResetAt(): Promise<string | null> {
-    const rows = await this.db.execute<{ stats_reset: string | null }>(sql`
+    const rows = await this.db
+      .tag('dbMetrics.fetchStatsResetAt')
+      .execute<{ stats_reset: string | null }>(sql`
       SELECT stats_reset::text AS stats_reset
       FROM pg_stat_database
       WHERE datname = current_database()
@@ -110,7 +114,7 @@ export class DbMetricsService {
   }
 
   private async fetchTables(): Promise<TableMetrics[]> {
-    const rows = await this.db.execute<{
+    const rows = await this.db.tag('dbMetrics.fetchTables').execute<{
       name: string;
       est_rows: string;
       heap_bytes: string;
@@ -187,7 +191,7 @@ export class DbMetricsService {
   }
 
   private async fetchIndexes(): Promise<IndexMetrics[]> {
-    const rows = await this.db.execute<{
+    const rows = await this.db.tag('dbMetrics.fetchIndexes').execute<{
       table: string;
       name: string;
       bytes: string;
