@@ -16,4 +16,3 @@ CREATE TABLE IF NOT EXISTS request_query_metrics (
 );
 
 CREATE INDEX IF NOT EXISTS rqm_captured_at_route_idx ON request_query_metrics (captured_at, route);
-CREATE INDEX IF NOT EXISTS rqm_captured_at_idx       ON request_query_metrics (captured_at);

@@ -26,7 +26,7 @@ const periodQuery = z.object({
   hours: z.string().optional(),
   month: z
     .string()
-    .regex(/^\d{4}-\d{2}$/)
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
     .optional(),
 });
 
@@ -83,9 +83,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
 
       const normalized = normalize(rows);
 
-      const topByCompute = [...normalized]
-        .sort((a, b) => b.totalDurationMs - a.totalDurationMs)
-        .slice(0, 20);
+      const topByCompute = normalized.slice(0, 20);
 
       const topByEgress = [...normalized]
         .sort((a, b) => b.totalEgressBytes - a.totalEgressBytes)
@@ -209,14 +207,7 @@ export const queryMetricsRoutes = new Elysia({ prefix: '/query-metrics' })
       };
     },
     {
-      query: z.object({
-        hours: z.string().optional(),
-        limit: z.string().optional(),
-        month: z
-          .string()
-          .regex(/^\d{4}-\d{2}$/)
-          .optional(),
-      }),
+      query: periodQuery.extend({ limit: z.string().optional() }),
       detail: {
         tags: ['Admin'],
         summary:

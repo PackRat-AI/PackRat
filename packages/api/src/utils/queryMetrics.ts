@@ -73,7 +73,7 @@ export function hashQuery(query: string): string {
 
 export function estimateResultBytes(rows: unknown): number {
   try {
-    return JSON.stringify(rows).length;
+    return new TextEncoder().encode(JSON.stringify(rows)).byteLength;
   } catch {
     return 0;
   }
