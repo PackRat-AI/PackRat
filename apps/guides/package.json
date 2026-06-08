@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@lhci/cli": "catalog:",
-    "@types/mdx": "^2.0.13",
+    "@types/mdx": "^2.0.14",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
