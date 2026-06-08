@@ -143,14 +143,13 @@ export default function SeasonSuggestionsResultsScreen() {
     <>
       <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
 
-      {isPending && (
-        <View className="h-0.5 w-full overflow-hidden bg-muted">
-          <ShimmerBar />
-        </View>
-      )}
-
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
-        <View className="py-6">
+        {isPending && (
+          <View className="h-0.5 w-full overflow-hidden bg-muted -mx-4">
+            <ShimmerBar />
+          </View>
+        )}
+        <View className="pt-6">
           {!data && !error && <SuggestionSkeleton />}
 
           {error && (
@@ -166,7 +165,7 @@ export default function SeasonSuggestionsResultsScreen() {
 
           {data && (
             <View>
-              <View className="flex-row items-center gap-2 mb-8">
+              <View className="flex-row items-center gap-2 mb-4">
                 <View className="flex-row items-center gap-1">
                   <Icon
                     namingScheme="sfSymbol"
