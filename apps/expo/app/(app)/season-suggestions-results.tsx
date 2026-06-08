@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import Animated, {
   Easing,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -42,6 +43,60 @@ function ShimmerBar() {
 
   return (
     <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, width: 200 }, animStyle]} />
+  );
+}
+
+function SkeletonBox({
+  translateX,
+  className,
+}: {
+  translateX: SharedValue<number>;
+  className: string;
+}) {
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  return (
+    <View className={`overflow-hidden bg-muted ${className}`}>
+      <Animated.View
+        style={[{ position: 'absolute', top: 0, bottom: 0, width: 120 }, shimmerStyle]}
+        className="bg-white/20"
+      />
+    </View>
+  );
+}
+
+function SuggestionSkeleton() {
+  const { width } = useWindowDimensions();
+  const translateX = useSharedValue(-120);
+
+  useEffect(() => {
+    translateX.value = withRepeat(withTiming(width, { duration: 1000, easing: Easing.linear }), -1);
+  }, [translateX, width]);
+
+  return (
+    <View className="gap-10">
+      {[0, 1, 2].map((i) => (
+        <View key={i}>
+          <View className="flex-row items-center justify-between mb-1">
+            <SkeletonBox translateX={translateX} className="h-6 w-40 rounded-lg" />
+            <SkeletonBox translateX={translateX} className="h-5 w-14 rounded-lg" />
+          </View>
+          <SkeletonBox translateX={translateX} className="mb-1 h-3.5 w-20 rounded-md" />
+          <SkeletonBox translateX={translateX} className="mb-1 h-3.5 w-full rounded-md" />
+          <SkeletonBox translateX={translateX} className="mb-4 h-3.5 w-4/5 rounded-md" />
+          <View className="flex-row gap-3 -mx-4 px-4">
+            {[0, 1, 2, 3].map((j) => (
+              <View key={j} className="w-20 items-center gap-1.5">
+                <SkeletonBox translateX={translateX} className="h-20 w-20 rounded-xl" />
+                <SkeletonBox translateX={translateX} className="h-3 w-14 rounded-md" />
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -96,6 +151,8 @@ export default function SeasonSuggestionsResultsScreen() {
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">
+          {!data && !error && <SuggestionSkeleton />}
+
           {error && (
             <View className="rounded-xl border border-red-200 bg-red-50 p-4">
               <Text variant="callout" className="font-medium text-red-800">
