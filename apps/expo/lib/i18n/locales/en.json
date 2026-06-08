@@ -890,7 +890,7 @@
     "creatingPack": "Creating Pack...",
     "locationPermissionTitle": "Allow Location Access",
     "locationPermissionDescription": "PackRat uses your current location to provide season-accurate pack suggestions tailored to your local climate.",
-    "allowLocationAccess": "Allow Access",
+    "allowLocationAccess": "Allow",
     "notNow": "Not Now"
   },
   "experience": {
