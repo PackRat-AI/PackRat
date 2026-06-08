@@ -4,9 +4,14 @@ import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { Icon } from 'expo-app/components/Icon';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
+import {
+  seasonSuggestionsAnnouncementSeenAtom,
+  seasonSuggestionsOpenedAtom,
+} from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useHeaderSearchBar } from 'expo-app/lib/hooks/useHeaderSearchBar';
 import { useRouter } from 'expo-router';
+import { useAtom } from 'jotai';
 import { cssInterop } from 'nativewind';
 import type * as React from 'react';
 import { useState } from 'react';
@@ -105,6 +110,51 @@ function renderItem({ item }: { item: ComponentItem }) {
 }
 
 const COMPONENTS: ComponentItem[] = [
+  {
+    name: 'Season Suggestions Unlock',
+    component: function SeasonSuggestionsUnlockDev() {
+      const [announcementSeen, setAnnouncementSeen] = useAtom(
+        seasonSuggestionsAnnouncementSeenAtom,
+      );
+      const [opened, setOpened] = useAtom(seasonSuggestionsOpenedAtom);
+      const router = useRouter();
+
+      const reset = () => {
+        setAnnouncementSeen(false);
+        setOpened(false);
+      };
+
+      return (
+        <View className="gap-3">
+          <View className="flex-row items-center justify-between">
+            <Text variant="footnote" className="text-muted-foreground">
+              announcement seen
+            </Text>
+            <Text
+              variant="footnote"
+              className={announcementSeen ? 'text-green-500' : 'text-red-500'}
+            >
+              {String(announcementSeen)}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between">
+            <Text variant="footnote" className="text-muted-foreground">
+              feature opened
+            </Text>
+            <Text variant="footnote" className={opened ? 'text-green-500' : 'text-red-500'}>
+              {String(opened)}
+            </Text>
+          </View>
+          <Button onPress={reset}>
+            <Text>Reset unlock state (re-shows sheet on dashboard)</Text>
+          </Button>
+          <Button variant="secondary" onPress={() => router.push('/')}>
+            <Text>Go to Dashboard</Text>
+          </Button>
+        </View>
+      );
+    },
+  },
   {
     name: 'Links',
     component: function LinksExample() {
