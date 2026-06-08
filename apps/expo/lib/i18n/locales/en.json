@@ -563,7 +563,6 @@
     "selectedItemsQuantity": "Selected Items ({{count}})",
     "noRecentlyUsedItems": "No recently used items yet",
     "quantityFor": "Qty for {{name}}",
-    "options": "options",
     "variantsSection": "Variants",
     "variantSize": "Size",
     "variantColor": "Color"

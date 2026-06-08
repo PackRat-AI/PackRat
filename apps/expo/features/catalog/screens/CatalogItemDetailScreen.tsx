@@ -25,6 +25,7 @@ import type { CatalogItem } from '../types';
 
 function VariantRow({ variant }: { variant: CatalogItem }) {
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
   const label = [variant.size, variant.color].filter(Boolean).join(' · ');
   return (
     <View className="flex-row items-center justify-between border-b border-border py-3">
@@ -51,7 +52,7 @@ function VariantRow({ variant }: { variant: CatalogItem }) {
                     : 'close-circle-outline'
                 }
                 size={12}
-                color={variant.availability === 'in_stock' ? '#22c55e' : '#ef4444'}
+                color={variant.availability === 'in_stock' ? colors.green : colors.destructive}
               />
               <Text className="text-xs text-muted-foreground">
                 {variant.availability === 'in_stock'
@@ -68,7 +69,7 @@ function VariantRow({ variant }: { variant: CatalogItem }) {
           className="ml-3 flex-row items-center gap-1 rounded-md border border-border px-3 py-1.5"
         >
           <Text className="text-xs text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
-          <Icon name="open-in-new" size={11} color="text-foreground" />
+          <Icon name="open-in-new" size={11} color={colors.foreground} />
         </Pressable>
       ) : null}
     </View>
@@ -260,7 +261,7 @@ export function CatalogItemDetailScreen() {
                 onPress={() => Linking.openURL(item.productUrl as string)}
               >
                 <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
-                <Icon name="open-in-new" size={14} color="text-foreground" />
+                <Icon name="open-in-new" size={14} color={colors.foreground} />
               </Button>
             </View>
           </View>
@@ -268,9 +269,7 @@ export function CatalogItemDetailScreen() {
           {/* Variants Section */}
           {otherVariants.length > 0 && (
             <View className="mt-8">
-              <Text variant="callout" className="mb-1">
-                {t('catalog.variantsSection')}
-              </Text>
+              <Text variant="callout">{t('catalog.variantsSection')}</Text>
               <View>
                 {otherVariants.map((variant) => (
                   <VariantRow key={variant.id} variant={variant} />
@@ -304,15 +303,14 @@ export function CatalogItemDetailScreen() {
               <ItemReviews reviews={item.reviews} />
             </View>
           )}
-
-          {/* Similar Items Section */}
-          <SimilarItems
-            catalogItemId={item.id.toString()}
-            itemName={item.name}
-            limit={5}
-            threshold={0.1}
-          />
         </View>
+
+        <SimilarItems
+          catalogItemId={item.id.toString()}
+          itemName={item.name}
+          limit={5}
+          threshold={0.1}
+        />
       </ScrollView>
     </SafeAreaView>
   );
