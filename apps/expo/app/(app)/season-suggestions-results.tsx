@@ -1,6 +1,7 @@
 import { LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
   type PackSuggestion,
@@ -228,15 +229,11 @@ export default function SeasonSuggestionsResultsScreen() {
                     >
                       {suggestion.items.map((item) => (
                         <View key={item.name} className="w-20 items-center">
-                          <View className="w-20 h-20 rounded-xl bg-muted items-center justify-center mb-1.5">
-                            <Icon
-                              namingScheme="sfSymbol"
-                              name="shippingbox"
-                              materialIcon={{ type: 'MaterialIcons', name: 'inventory-2' }}
-                              size={28}
-                              color={colors.grey}
-                            />
-                          </View>
+                          <CatalogItemImage
+                            imageUrl={item.image ?? undefined}
+                            className="w-20 h-20 rounded-xl mb-1.5"
+                            resizeMode="cover"
+                          />
                           <Text
                             variant="caption1"
                             className="text-center text-muted-foreground"
