@@ -194,7 +194,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           .update(users)
           .set({ preferences: body, updatedAt: new Date() })
           .where(eq(users.id, user.userId))
-          .returning({ preferences: users.preferences });
+          .returning();
 
         if (!row) return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
 
