@@ -1,4 +1,4 @@
-import { ListItem, Text } from '@packrat/ui/nativewindui';
+import { ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -46,16 +46,13 @@ export function SeasonSuggestionsTile() {
         </View>
       }
       rightView={
-        <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            {t('packs.aiPowered')}
-          </Text>
+        <View className="px-4">
           <Icon name="chevron-right" size={17} color={colors.grey} />
         </View>
       }
       item={{
         title: t('packs.seasonSuggestions'),
-        subTitle: 'Pack ideas for the season',
+        subTitle: 'AI generated pack ideas for the season',
       }}
       onPress={handlePress}
       target="Cell"
