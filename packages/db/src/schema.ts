@@ -36,6 +36,7 @@ export const users = pgTable('users', {
   lastName: text('last_name'),
   avatarUrl: text('avatar_url'),
   passwordHash: text('password_hash'),
+  preferences: jsonb('preferences').default({}).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

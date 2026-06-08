@@ -9,6 +9,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
+    "view": "View",
     "back": "Back",
     "loading": "Loading...",
     "error": "Error",
@@ -890,7 +891,16 @@
     "personalizedRecommendations": "Get personalized pack recommendations based on your gear inventory and current season.",
     "recommendedItems": "Recommended Items ({{count}})",
     "createThisPack": "Create This Pack",
-    "creatingPack": "Creating Pack..."
+    "creatingPack": "Creating Pack...",
+    "locationPermissionTitle": "Allow Location Access",
+    "locationPermissionDescription": "PackRat uses your current location to provide season-accurate pack suggestions tailored to your local climate.",
+    "allowLocationAccess": "Allow",
+    "notNow": "Not Now",
+    "packCreated": "Pack created",
+    "unlockTitle": "Season Suggestions Unlocked",
+    "unlockDescription": "You've built up a solid gear inventory. PackRat can now suggest what to pack based on the current season and your location — powered by AI.",
+    "explore": "Explore",
+    "maybeLater": "Maybe later"
   },
   "experience": {
     "beginner": "Beginner",

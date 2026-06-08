@@ -8,8 +8,10 @@ export interface SeasonSuggestionsRequest {
   date: string;
 }
 
+export type SeasonSuggestionItem = PackItemInput & { id: string };
+
 export type PackSuggestion = PackInput & {
-  items: PackItemInput[];
+  items: SeasonSuggestionItem[];
 };
 
 export interface SeasonSuggestionsResponse {

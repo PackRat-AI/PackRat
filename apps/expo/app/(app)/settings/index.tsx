@@ -17,10 +17,12 @@ import {
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
 import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -32,6 +34,9 @@ export default function SettingsScreen() {
   const modelStatus = useAtomValue(localModelStatusAtom);
   const progress = useAtomValue(localModelProgressAtom);
   const isDownloaded = useAtomValue(localModelFileAvailableAtom);
+
+  const router = useRouter();
+  const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
 
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
@@ -197,6 +202,26 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={colors.grey} />
+              </TouchableOpacity>
+              <View className="h-px bg-border mx-4" />
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
+                onPress={() => {
+                  setAnnouncementSeen(false);
+                  setOpened(false);
+                  router.dismissAll();
+                  router.navigate('/');
+                }}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                  <Icon name="leaf" size={22} color={colors.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Reset Season Suggestions State</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                    {`seen: ${announcementSeen} · opened: ${opened}`}
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>

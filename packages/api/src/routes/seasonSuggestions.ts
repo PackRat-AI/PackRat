@@ -102,6 +102,7 @@ ${inventoryFormatted}`;
             const invItem = items.find((invItem) => invItem.id === item.id);
             if (!invItem) return undefined;
             return {
+              id: invItem.id,
               name: invItem.name,
               description: invItem.description ?? null,
               weight: invItem.weight,
