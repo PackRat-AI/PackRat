@@ -21,6 +21,7 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('@packrat/api/db', () => {
   const mockDb = {
+    tag: (_label: string) => mockDb,
     select: () => ({ from: () => ({ where: () => ({ limit: () => mockState }) }) }),
     delete: () => ({
       where: () => ({

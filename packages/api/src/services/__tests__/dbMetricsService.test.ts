@@ -14,7 +14,7 @@ import { DbMetricsService } from '../dbMetricsService';
 // ---------------------------------------------------------------------------
 
 const mockExecute = vi.fn();
-const mockDb = { execute: mockExecute };
+const mockDb = { execute: mockExecute, tag: (_label: string) => mockDb };
 
 vi.mock('@packrat/api/db', () => ({
   createReadOnlyDb: vi.fn(() => mockDb),

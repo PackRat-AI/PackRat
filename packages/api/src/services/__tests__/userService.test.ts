@@ -18,7 +18,10 @@ const mocks = vi.hoisted(() => {
     returningFn,
     valuesFn,
     insertFn,
-    createDb: vi.fn(() => ({ select: selectFn, insert: insertFn })),
+    createDb: vi.fn(() => {
+      const db = { tag: (_label: string) => db, select: selectFn, insert: insertFn };
+      return db;
+    }),
     hashPassword: vi.fn((p: string) => Promise.resolve(`hashed_${p}`)),
   };
 });
