@@ -9,7 +9,6 @@ import {
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -21,78 +20,28 @@ import {
 } from 'react-native';
 import Animated, {
   Easing,
-  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 
-const SHIMMER_WIDTH = 140;
+function ShimmerBar() {
+  const { width } = useWindowDimensions();
+  const { colors } = useColorScheme();
+  const translateX = useSharedValue(-200);
 
-function ShimmerBox({ shimmerX, className }: { shimmerX: SharedValue<number>; className: string }) {
+  useEffect(() => {
+    translateX.value = withRepeat(withTiming(width, { duration: 900, easing: Easing.linear }), -1);
+  }, [translateX, width]);
+
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shimmerX.value }],
+    transform: [{ translateX: translateX.value }],
+    backgroundColor: colors.primary,
   }));
 
   return (
-    <View className={className} style={{ overflow: 'hidden' }}>
-      <Animated.View
-        style={[{ position: 'absolute', top: 0, bottom: 0, width: SHIMMER_WIDTH }, animStyle]}
-      >
-        <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.45)', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
-    </View>
-  );
-}
-
-function SuggestionSkeleton() {
-  const { width } = useWindowDimensions();
-  const shimmerX = useSharedValue(-SHIMMER_WIDTH);
-
-  useEffect(() => {
-    shimmerX.value = withRepeat(withTiming(width, { duration: 1300, easing: Easing.linear }), -1);
-  }, [shimmerX, width]);
-
-  return (
-    <View className="gap-10">
-      <View className="flex-row items-center gap-3">
-        <ShimmerBox shimmerX={shimmerX} className="h-4 w-24 rounded-md bg-muted" />
-        <View className="h-1 w-1 rounded-full bg-muted" />
-        <ShimmerBox shimmerX={shimmerX} className="h-4 w-32 rounded-md bg-muted" />
-      </View>
-
-      {[0, 1, 2].map((i) => (
-        <View key={i}>
-          <View className="mb-3 flex-row items-center justify-between">
-            <ShimmerBox shimmerX={shimmerX} className="h-6 w-44 rounded-lg bg-muted" />
-            <ShimmerBox shimmerX={shimmerX} className="h-5 w-14 rounded-lg bg-muted" />
-          </View>
-          <ShimmerBox shimmerX={shimmerX} className="mb-1.5 h-3.5 w-20 rounded-md bg-muted" />
-          <ShimmerBox shimmerX={shimmerX} className="mb-1.5 h-3.5 w-full rounded-md bg-muted" />
-          <ShimmerBox shimmerX={shimmerX} className="mb-4 h-3.5 w-4/5 rounded-md bg-muted" />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={false}
-            className="-mx-4"
-            contentContainerStyle={{ paddingLeft: 16, gap: 12 }}
-          >
-            {[0, 1, 2, 3].map((j) => (
-              <View key={j} className="w-20 items-center gap-1.5">
-                <ShimmerBox shimmerX={shimmerX} className="h-20 w-20 rounded-xl bg-muted" />
-                <ShimmerBox shimmerX={shimmerX} className="h-3 w-14 rounded-md bg-muted" />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      ))}
-    </View>
+    <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, width: 200 }, animStyle]} />
   );
 }
 
@@ -139,10 +88,14 @@ export default function SeasonSuggestionsResultsScreen() {
     <>
       <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
 
+      {isPending && (
+        <View className="h-0.5 w-full overflow-hidden bg-muted">
+          <ShimmerBar />
+        </View>
+      )}
+
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">
-          {isPending && <SuggestionSkeleton />}
-
           {error && (
             <View className="rounded-xl border border-red-200 bg-red-50 p-4">
               <Text variant="callout" className="font-medium text-red-800">
@@ -172,7 +125,10 @@ export default function SeasonSuggestionsResultsScreen() {
                   <Icon
                     namingScheme="sfSymbol"
                     name="mappin"
-                    materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
+                    materialIcon={{
+                      type: 'MaterialIcons',
+                      name: 'location-on',
+                    }}
                     size={16}
                     color={colors.grey}
                   />
@@ -191,7 +147,10 @@ export default function SeasonSuggestionsResultsScreen() {
                         <Icon
                           namingScheme="sfSymbol"
                           name="sparkles"
-                          materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
+                          materialIcon={{
+                            type: 'MaterialIcons',
+                            name: 'auto-awesome',
+                          }}
                           size={15}
                           color={colors.primary}
                         />
@@ -227,13 +186,16 @@ export default function SeasonSuggestionsResultsScreen() {
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       className="-mx-4"
-                      contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+                      contentContainerStyle={{
+                        paddingHorizontal: 16,
+                        gap: 12,
+                      }}
                     >
                       {suggestion.items.map((item) => (
                         <View key={item.name} className="w-20 items-center">
                           <PackItemImage
                             item={{
-                              id: item.name,
+                              id: item.id,
                               name: item.name,
                               weight: item.weight,
                               weightUnit: item.weightUnit,
