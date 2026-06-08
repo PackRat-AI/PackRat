@@ -263,8 +263,22 @@ export function CatalogItemDetailScreen() {
             </View>
           </View>
 
+          {/* Variants Section */}
+          {otherVariants.length > 0 && (
+            <View className="mb-6">
+              <Text variant="callout" className="mb-1">
+                {t('catalog.variantsSection')}
+              </Text>
+              <View>
+                {otherVariants.map((variant) => (
+                  <VariantRow key={variant.id} variant={variant} />
+                ))}
+              </View>
+            </View>
+          )}
+
           {item.techs && Object.keys(item.techs).length > 0 && (
-            <View className="mt-8">
+            <View className="mt-6">
               <Text variant="callout" className="mb-2">
                 {t('catalog.specifications')}
               </Text>
@@ -286,20 +300,6 @@ export function CatalogItemDetailScreen() {
           {item.reviews && item.reviews.length > 0 && (
             <View className="mt-2">
               <ItemReviews reviews={item.reviews} />
-            </View>
-          )}
-
-          {/* Variants Section */}
-          {otherVariants.length > 0 && (
-            <View className="mt-6">
-              <Text variant="callout" className="mb-1">
-                {t('catalog.variantsSection')}
-              </Text>
-              <View>
-                {otherVariants.map((variant) => (
-                  <VariantRow key={variant.id} variant={variant} />
-                ))}
-              </View>
             </View>
           )}
 

@@ -79,16 +79,6 @@ function CatalogItemsScreen() {
 
   const groupedItems = useMemo(() => groupCatalogItems(paginatedItems), [paginatedItems]);
 
-  const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
-
-  const totalItemsText = `${Number(totalItems).toLocaleString()} ${
-    totalItems === 1 ? t('catalog.item') : t('catalog.items')
-  }`;
-  const showingText = t('catalog.showingItems', {
-    current: paginatedItems.length,
-    total: Number(totalItems).toLocaleString(),
-  });
-
   const setGroupVariants = useSetAtom(catalogGroupVariantsAtom);
 
   const handleGroupPress = (group: CatalogItemGroup) => {
@@ -125,32 +115,12 @@ function CatalogItemsScreen() {
           activeFilter={activeFilter}
           error={categoriesError}
           retry={refetchCategories}
-          className="px-4 py-2"
+          className="py-2"
+          contentPaddingX={16}
         />
-
-        <View className="mb-4 px-4">
-          <View className="flex-row items-center justify-between">
-            <Text testID={testIds.catalog.totalItemsCount} className="text-muted-foreground">
-              {totalItemsText}
-            </Text>
-          </View>
-
-          {groupedItems.length > 0 && (
-            <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
-          )}
-        </View>
       </>
     );
-  }, [
-    isSearching,
-    categories,
-    activeFilter,
-    categoriesError,
-    totalItemsText,
-    groupedItems.length,
-    showingText,
-    refetchCategories,
-  ]);
+  }, [isSearching, categories, activeFilter, categoriesError, refetchCategories]);
 
   return (
     <>
@@ -234,18 +204,20 @@ function CatalogItemsScreen() {
         data={groupedItems}
         keyExtractor={(group) => group.key}
         renderItem={({ item: group }) => (
-          <CatalogItemCard
-            item={group.representative}
-            variantCount={group.variants.length}
-            onPress={() => handleGroupPress(group)}
-          />
+          <View className="px-4">
+            <CatalogItemCard
+              item={group.representative}
+              variantCount={group.variants.length}
+              onPress={() => handleGroupPress(group)}
+            />
+          </View>
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}
         ListHeaderComponent={listHeader}
         refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={handleRefresh} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
-        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}
         contentInsetAdjustmentBehavior="automatic"
         ListFooterComponent={
           <>

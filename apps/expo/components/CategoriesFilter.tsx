@@ -11,6 +11,7 @@ export function CategoriesFilter({
   error,
   retry,
   className,
+  contentPaddingX = 0,
 }: {
   activeFilter: string;
   onFilter: (filter: string) => void;
@@ -18,6 +19,7 @@ export function CategoriesFilter({
   error?: Error | null;
   retry?: (() => void) | undefined;
   className?: string;
+  contentPaddingX?: number;
 }) {
   const { t } = useTranslation();
 
@@ -57,7 +59,13 @@ export function CategoriesFilter({
           </View>
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={
+            contentPaddingX ? { paddingHorizontal: contentPaddingX } : undefined
+          }
+        >
           {!data
             ? Array.from({ length: 10 }).map((_, i) => (
                 <View
