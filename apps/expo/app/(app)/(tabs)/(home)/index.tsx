@@ -9,6 +9,7 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
+import { useIsFocused } from '@react-navigation/native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
@@ -168,17 +169,17 @@ export default function DashboardScreen() {
   const unlockSheetRef = useRef<BottomSheetModal>(null);
   const { t } = useTranslation();
   const router = useRouter();
+  const isFocused = useIsFocused();
   const { hasMinimumItems } = useHasMinimumInventory(20);
   const { announcementSeen } = useSeasonSuggestionsPrefs();
 
   useEffect(() => {
-    if (!hasMinimumItems || announcementSeen) return;
-    // Delay slightly to allow KV atoms to hydrate from storage before checking
+    if (!isFocused || !hasMinimumItems || announcementSeen) return;
     const timer = setTimeout(() => {
-      if (!announcementSeen) unlockSheetRef.current?.present();
+      unlockSheetRef.current?.present();
     }, 500);
     return () => clearTimeout(timer);
-  }, [hasMinimumItems, announcementSeen]);
+  }, [isFocused, hasMinimumItems, announcementSeen]);
 
   const localizedTileInfo = useMemo(
     () => ({
