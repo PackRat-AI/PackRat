@@ -65,9 +65,10 @@ function VariantRow({ variant }: { variant: CatalogItem }) {
       {variant.productUrl ? (
         <Pressable
           onPress={() => Linking.openURL(variant.productUrl as string)}
-          className="ml-3 rounded-md border border-border px-3 py-1.5"
+          className="ml-3 flex-row items-center gap-1 rounded-md border border-border px-3 py-1.5"
         >
           <Text className="text-xs text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
+          <Icon name="open-in-new" size={11} color="text-foreground" />
         </Pressable>
       ) : null}
     </View>
@@ -259,13 +260,14 @@ export function CatalogItemDetailScreen() {
                 onPress={() => Linking.openURL(item.productUrl as string)}
               >
                 <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
+                <Icon name="open-in-new" size={14} color="text-foreground" />
               </Button>
             </View>
           </View>
 
           {/* Variants Section */}
           {otherVariants.length > 0 && (
-            <View className="mb-6">
+            <View className="mt-8">
               <Text variant="callout" className="mb-1">
                 {t('catalog.variantsSection')}
               </Text>
@@ -278,11 +280,11 @@ export function CatalogItemDetailScreen() {
           )}
 
           {item.techs && Object.keys(item.techs).length > 0 && (
-            <View className="mt-6">
+            <View className="mt-8">
               <Text variant="callout" className="mb-2">
                 {t('catalog.specifications')}
               </Text>
-              <View className="rounded-lg p-3 gap-4">
+              <View className="rounded-lg p-3 py-0 gap-4">
                 {Object.entries(item.techs).map(([key, value]) => (
                   <View key={key} className="gap-1">
                     <Text className="text-xs text-muted-foreground uppercase">{key}</Text>
