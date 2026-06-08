@@ -46,7 +46,7 @@ export function SeasonSuggestionsTile() {
         </View>
       }
       rightView={
-        <View className="px-4">
+        <View className="flex-1 items-center justify-center px-4">
           <Icon name="chevron-right" size={17} color={colors.grey} />
         </View>
       }
