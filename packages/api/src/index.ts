@@ -157,12 +157,16 @@ function enrichEnv(env: Env): Env {
 // and prod share the exact same driver path — no node-postgres TCP sockets
 // (which workerd silently drops between requests).
 let neonLocalConfigured = false;
-function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
+function maybeConfigureLocalNeon(opts: {
+  databaseUrl: string | undefined;
+  proxyPortOverride: string | undefined;
+}): void {
+  const { databaseUrl, proxyPortOverride } = opts;
   if (neonLocalConfigured || !databaseUrl) return;
   try {
     const host = new URL(databaseUrl).hostname.toLowerCase();
     if (host !== 'db.localtest.me') return;
-    const proxyPort = '4444';
+    const proxyPort = proxyPortOverride ?? '4444';
     neonConfig.fetchEndpoint = (h) =>
       h === 'db.localtest.me' ? `http://${h}:${proxyPort}/sql` : `https://${h}/sql`;
     neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
@@ -177,7 +181,10 @@ function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
 const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
-    maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
+    maybeConfigureLocalNeon({
+      databaseUrl: e.NEON_DATABASE_URL,
+      proxyPortOverride: e.NEON_LOCAL_PROXY_PORT,
+    });
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
     const metricsStore = initQueryMetricsStore(request);

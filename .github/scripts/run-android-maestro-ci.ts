@@ -52,6 +52,7 @@ await waitForReadyDevice();
 await run(['adb', 'install', '-r', '-d', 'apps/expo/build/PackRat.apk']);
 await waitForReadyDevice();
 await run(['adb', 'shell', 'pm', 'path', appId]);
+await run(['adb', 'shell', 'pm', 'clear', appId]);
 await run(['adb', 'shell', 'monkey', '-p', appId, '-c', 'android.intent.category.LAUNCHER', '1']);
 await waitForReadyDevice();
 await run(['adb', 'shell', 'input', 'keyevent', 'KEYCODE_BACK'], { allowFailure: true });

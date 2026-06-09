@@ -40,6 +40,12 @@ type FilterOption = {
   value: PackCategory | 'all';
 };
 
+type PackListRow = {
+  id: string;
+  name: string;
+  category: PackCategory | null;
+};
+
 function CreatePackIconButton() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
@@ -90,7 +96,7 @@ export function PackListScreen() {
 
   const packs = selectedTypeIndex === USER_PACKS_INDEX ? userPacks : allPacksQuery.data;
 
-  const filteredPacks = packs?.filter((pack) => {
+  const filteredPacks = packs?.filter((pack: PackListRow) => {
     const matchesSearch = pack.name.toLowerCase().includes(searchValue.toLowerCase());
     const matchesCategory = activeFilter === 'all' || pack.category === activeFilter;
     return matchesSearch && matchesCategory;
