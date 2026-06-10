@@ -27,23 +27,12 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
-        <BottomSheetView className="px-6 pb-12 pt-4">
-          <Text variant="title3" className="mb-2 text-center font-semibold">
-            {t('seasons.chooseLocation')}
-          </Text>
-          <Text variant="subhead" className="mb-10 text-center text-muted-foreground">
-            {t('seasons.chooseLocationDescription')}
-          </Text>
-
-          <View className="flex-row justify-center gap-12">
-            <View className="items-center gap-3">
+        <BottomSheetView className="px-6 pb-14 pt-6">
+          <View className="flex-row justify-center gap-10">
+            <View className="items-center gap-4">
               <TouchableOpacity
-                className="h-24 w-24 items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: colors.grey6,
-                  borderWidth: 1.5,
-                  borderColor: colors.grey4,
-                }}
+                className="h-32 w-32 items-center justify-center rounded-full"
+                style={{ backgroundColor: colors.grey6 }}
                 onPress={onSearchPress}
                 activeOpacity={0.65}
               >
@@ -51,7 +40,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                   namingScheme="sfSymbol"
                   name="magnifyingglass"
                   materialIcon={{ type: 'MaterialIcons', name: 'search' }}
-                  size={30}
+                  size={38}
                   color={colors.grey2}
                 />
               </TouchableOpacity>
@@ -60,14 +49,10 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
               </Text>
             </View>
 
-            <View className="items-center gap-3">
+            <View className="items-center gap-4">
               <TouchableOpacity
-                className="h-24 w-24 items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: colors.grey6,
-                  borderWidth: 1.5,
-                  borderColor: colors.grey4,
-                }}
+                className="h-32 w-32 items-center justify-center rounded-full"
+                style={{ backgroundColor: colors.grey6 }}
                 onPress={onCurrentLocationPress}
                 activeOpacity={0.65}
               >
@@ -75,11 +60,11 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                   namingScheme="sfSymbol"
                   name="location.fill"
                   materialIcon={{ type: 'MaterialIcons', name: 'my-location' }}
-                  size={30}
+                  size={38}
                   color={colors.grey2}
                 />
               </TouchableOpacity>
-              <Text variant="subhead" className="max-w-24 text-center font-medium">
+              <Text variant="subhead" className="max-w-28 text-center font-medium">
                 {t('seasons.useCurrentLocation')}
               </Text>
             </View>
