@@ -29,6 +29,11 @@ function VariantRow({ variant }: { variant: CatalogItem }) {
   const label = [variant.size, variant.color].filter(Boolean).join(' · ');
   return (
     <View className="flex-row items-center justify-between border-b border-border py-3">
+      <CatalogItemImage
+        imageUrl={variant.images?.[0]}
+        className="h-12 w-12 rounded-lg shrink-0 mr-3"
+        resizeMode="cover"
+      />
       <View className="flex-1 gap-0.5">
         {label ? <Text className="text-sm font-medium text-foreground">{label}</Text> : null}
         <View className="flex-row items-center gap-3">
