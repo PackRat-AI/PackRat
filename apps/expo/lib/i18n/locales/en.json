@@ -902,7 +902,13 @@
     "unlockTitle": "Season Suggestions Unlocked",
     "unlockDescription": "You've built up a solid gear inventory. PackRat can now suggest what to pack based on the current season and your location — powered by AI.",
     "explore": "Explore",
-    "maybeLater": "Maybe later"
+    "maybeLater": "Maybe later",
+    "chooseLocation": "Choose Location",
+    "chooseLocationDescription": "How would you like to set the location for your season suggestions?",
+    "useCurrentLocation": "Use Current Location",
+    "searchLocationTitle": "Search Location",
+    "searchLocationPlaceholder": "Search a city or location...",
+    "noLocationsFound": "No locations found"
   },
   "experience": {
     "beginner": "Beginner",
