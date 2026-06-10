@@ -319,7 +319,7 @@ function CartSheet({
           <Button variant="secondary" className="flex-1" onPress={onClear}>
             <Text>{t('catalog.clearSelection')}</Text>
           </Button>
-          <Button onPress={onAdd} variant="tonal" className="flex-1">
+          <Button onPress={onAdd} variant="primary" className="flex-1">
             <Text>
               {t('catalog.addItems', {
                 count: items.length,
@@ -629,7 +629,7 @@ export function CatalogBrowserModal({
             <Button variant="secondary" className="flex-1" onPress={() => setIsCartVisible(true)}>
               <Text>{t('catalog.viewCart', { count: selectedItems.size })}</Text>
             </Button>
-            <Button variant="tonal" className="flex-1" onPress={handleAddSelected}>
+            <Button variant="primary" className="flex-1" onPress={handleAddSelected}>
               <Text>
                 {t('catalog.addItems', {
                   count: selectedItems.size,
