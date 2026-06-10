@@ -7,17 +7,25 @@ import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogIt
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import * as Haptics from 'expo-haptics';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Pressable,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from 'use-debounce';
 import { useCatalogItemsInfinite } from '../hooks';
@@ -88,6 +96,32 @@ function QuickAccessSection({
   );
 }
 
+function QtyButton({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        scale.value = withSpring(0.78, { damping: 12, stiffness: 300 });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+      }}
+      onPress={onPress}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Animated.View
+        style={animStyle}
+        className="h-7 w-7 items-center justify-center rounded-full border border-border"
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 function CartSheet({
   visible,
   onClose,
@@ -111,7 +145,25 @@ function CartSheet({
   const { t } = useTranslation();
   const { bottom } = useSafeAreaInsets();
 
-  if (!visible) return null;
+  const translateY = useSharedValue(400);
+  const backdropOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      backdropOpacity.value = withTiming(1, { duration: 220 });
+      translateY.value = withSpring(0, { damping: 22, stiffness: 260, mass: 0.8 });
+    } else {
+      backdropOpacity.value = withTiming(0, { duration: 180 });
+      translateY.value = withTiming(400, { duration: 220 });
+    }
+  }, [visible]);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
 
   return (
     <View
@@ -124,23 +176,30 @@ function CartSheet({
         justifyContent: 'flex-end',
         zIndex: 10,
       }}
+      pointerEvents={visible ? 'auto' : 'none'}
     >
-      {/* Backdrop */}
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.45)',
-        }}
-        activeOpacity={1}
-        onPress={onClose}
-      />
+      {/* Animated backdrop */}
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          },
+          backdropStyle,
+        ]}
+      >
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+      </Animated.View>
 
-      {/* Sheet */}
-      <View className="bg-card rounded-t-3xl overflow-hidden" style={{ maxHeight: '78%' }}>
+      {/* Animated sheet */}
+      <Animated.View
+        className="bg-card rounded-t-3xl overflow-hidden"
+        style={[{ maxHeight: '78%' }, sheetStyle]}
+      >
         {/* Drag handle */}
         <View className="items-center pt-3 pb-1">
           <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -181,24 +240,20 @@ function CartSheet({
 
                 {/* Qty controls */}
                 <View className="flex-row items-center gap-2">
-                  <TouchableOpacity
+                  <QtyButton
                     onPress={() => {
                       if (qty <= 1) onRemoveItem(item.id);
                       else onQuantityChange(item.id, -1);
                     }}
-                    className="h-7 w-7 items-center justify-center rounded-full border border-border"
                   >
                     <Icon name="minus" size={13} color={colors.grey2} />
-                  </TouchableOpacity>
+                  </QtyButton>
                   <Text className="text-base font-semibold text-foreground text-center w-7">
                     {qty}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => onQuantityChange(item.id, 1)}
-                    className="h-7 w-7 items-center justify-center rounded-full border border-border"
-                  >
+                  <QtyButton onPress={() => onQuantityChange(item.id, 1)}>
                     <Icon name="plus" size={13} color={colors.foreground} />
-                  </TouchableOpacity>
+                  </QtyButton>
                 </View>
 
                 {/* Remove */}
@@ -230,7 +285,7 @@ function CartSheet({
             </Text>
           </Button>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
