@@ -1,7 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
-import { Button, LargeTitleHeader, Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
@@ -17,8 +16,6 @@ export default function SeasonSuggestionsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const { colors } = useColorScheme();
-  const permissionSheetRef = useRef<BottomSheetModal>(null);
   const locationSourceSheetRef = useRef<BottomSheetModal>(null);
   const locationSearchSheetRef = useRef<BottomSheetModal>(null);
   const { run: runSourceAction, handleDismiss: handleSourceDismiss } =
@@ -64,45 +61,7 @@ export default function SeasonSuggestionsScreen() {
     }
   };
 
-  const checkPermissionAndFetch = async () => {
-    const { status } = await Location.getForegroundPermissionsAsync();
-    if (status === 'granted') {
-      await fetchLocationAndNavigate();
-    } else {
-      permissionSheetRef.current?.present();
-    }
-  };
-
-  const handleGeneratePress = () => {
-    locationSourceSheetRef.current?.present();
-  };
-
-  const handleSourceSearchPress = () => {
-    runSourceAction(() => {
-      locationSearchSheetRef.current?.present();
-    });
-  };
-
-  const handleSourceCurrentLocationPress = () => {
-    runSourceAction(() => {
-      checkPermissionAndFetch();
-    });
-  };
-
-  const handleSearchBack = () => {
-    runSearchAction(() => {
-      locationSourceSheetRef.current?.present();
-    });
-  };
-
-  const handleLocationSelected = (location: string) => {
-    runSearchAction(() => {
-      navigateWithLocation(location);
-    });
-  };
-
-  const handlePermissionAllow = async () => {
-    permissionSheetRef.current?.dismiss();
+  const requestLocationAndFetch = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status === 'granted') {
       await fetchLocationAndNavigate();
@@ -121,6 +80,34 @@ export default function SeasonSuggestionsScreen() {
         },
       ]);
     }
+  };
+
+  const handleGeneratePress = () => {
+    locationSourceSheetRef.current?.present();
+  };
+
+  const handleSourceSearchPress = () => {
+    runSourceAction(() => {
+      locationSearchSheetRef.current?.present();
+    });
+  };
+
+  const handleSourceCurrentLocationPress = () => {
+    runSourceAction(() => {
+      requestLocationAndFetch();
+    });
+  };
+
+  const handleSearchBack = () => {
+    runSearchAction(() => {
+      locationSourceSheetRef.current?.present();
+    });
+  };
+
+  const handleLocationSelected = (location: string) => {
+    runSearchAction(() => {
+      navigateWithLocation(location);
+    });
   };
 
   return (
@@ -170,49 +157,6 @@ export default function SeasonSuggestionsScreen() {
         onLocationSelected={handleLocationSelected}
         onDismiss={handleSearchDismiss}
       />
-
-      <Sheet
-        ref={permissionSheetRef}
-        enableDynamicSizing
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
-      >
-        <BottomSheetView className="px-6 pb-10 pt-2">
-          <View className="items-center gap-5">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Icon
-                ios={{ useMaterialIcon: true }}
-                materialIcon={{ type: 'MaterialIcons', name: 'my-location' }}
-                size={30}
-                color={colors.primary}
-              />
-            </View>
-
-            <View className="items-center gap-2">
-              <Text className="text-center text-lg font-semibold">
-                {t('seasons.locationPermissionTitle')}
-              </Text>
-              <Text className="text-center text-sm leading-relaxed text-muted-foreground">
-                {t('seasons.locationPermissionDescription')}
-              </Text>
-            </View>
-
-            <View className="w-full flex-row gap-3">
-              <Button
-                variant="secondary"
-                onPress={() => permissionSheetRef.current?.dismiss()}
-                className="flex-1"
-              >
-                <Text>{t('seasons.notNow')}</Text>
-              </Button>
-              <Button onPress={handlePermissionAllow} className="flex-1">
-                <Text className="font-medium text-white">{t('seasons.allowLocationAccess')}</Text>
-              </Button>
-            </View>
-          </View>
-        </BottomSheetView>
-      </Sheet>
     </>
   );
 }

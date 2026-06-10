@@ -189,14 +189,14 @@ export const LocationSearchSheet = React.forwardRef<BottomSheetModal, LocationSe
             >
               <View
                 className="h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${colors.primary}15` }}
+                style={{ backgroundColor: colors.grey5 }}
               >
                 <Icon
                   namingScheme="sfSymbol"
                   name="mappin"
                   materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
                   size={16}
-                  color={colors.primary}
+                  color={colors.grey2}
                 />
               </View>
               <View className="flex-1">
