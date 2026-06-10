@@ -18,6 +18,7 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -146,19 +147,24 @@ function CartSheet({
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const { bottom } = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
 
-  const translateY = useSharedValue(400);
+  const translateY = useSharedValue(screenHeight);
   const dragY = useSharedValue(0);
   const backdropOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
-      backdropOpacity.value = withTiming(1, { duration: 220 });
-      translateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
+      backdropOpacity.value = withTiming(1, { duration: 300 });
+      translateY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
     } else {
-      dragY.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.quad) });
-      backdropOpacity.value = withTiming(0, { duration: 180 });
-      translateY.value = withTiming(400, { duration: 220 });
+      // Instant reset — no animation that fights the gesture dismiss path
+      dragY.value = 0;
+      backdropOpacity.value = withTiming(0, { duration: 280 });
+      translateY.value = withTiming(screenHeight, {
+        duration: 360,
+        easing: Easing.in(Easing.quad),
+      });
     }
   }, [visible]);
 
@@ -170,9 +176,21 @@ function CartSheet({
     })
     .onEnd((e) => {
       if (e.translationY > 80 || e.velocityY > 600) {
-        runOnJS(onClose)();
+        // Absorb the drag offset into translateY so the animation starts from the dragged position,
+        // then call onClose only after the sheet has finished sliding off-screen.
+        const captured = dragY.value;
+        dragY.value = 0;
+        translateY.value = captured;
+        backdropOpacity.value = withTiming(0, { duration: 280 });
+        translateY.value = withTiming(
+          screenHeight,
+          { duration: 340, easing: Easing.in(Easing.quad) },
+          (finished) => {
+            if (finished) runOnJS(onClose)();
+          },
+        );
       } else {
-        dragY.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.quad) });
+        dragY.value = withTiming(0, { duration: 320, easing: Easing.out(Easing.cubic) });
       }
     });
 
