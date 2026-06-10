@@ -1,5 +1,4 @@
 import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { Icon } from 'expo-app/components/Icon';
@@ -7,6 +6,7 @@ import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useHeaderSearchBar } from 'expo-app/lib/hooks/useHeaderSearchBar';
 import { useRouter } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { cssInterop } from 'nativewind';
 import type * as React from 'react';
 import { useState } from 'react';

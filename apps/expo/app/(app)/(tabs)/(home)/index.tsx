@@ -9,7 +9,6 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
-import { useIsFocused } from '@react-navigation/native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
@@ -41,6 +40,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from 'expo-router/react-navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
