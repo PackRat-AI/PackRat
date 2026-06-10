@@ -62,7 +62,7 @@ function CatalogItemsScreen() {
     error: paginatedError,
   } = useCatalogItemsInfinite({
     category: activeFilter === 'All' ? undefined : activeFilter,
-    limit: 20,
+    limit: 80,
     sort: { field: 'createdAt', order: 'desc' },
   });
 

@@ -36,6 +36,7 @@ import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { usePopularCatalogItems } from '../hooks/usePopularCatalogItems';
 import { useRecentlyUsedCatalogItems } from '../hooks/useRecentlyUsedCatalogItems';
 import { useVectorSearch } from '../hooks/useVectorSearch';
+import { groupCatalogItems } from '../lib/groupCatalogItems';
 import type { CatalogItem } from '../types';
 
 type CatalogBrowserModalProps = {
@@ -353,10 +354,17 @@ export function CatalogBrowserModal({
   const isDefaultView = !isSearching && activeFilter === 'All';
 
   const { data: categories } = useCatalogItemsCategories();
-  const { recentItems } = useRecentlyUsedCatalogItems();
+  const { recentItems: recentItemsRaw } = useRecentlyUsedCatalogItems();
+  const recentItems = useMemo(
+    () => groupCatalogItems(recentItemsRaw).map((g) => g.representative),
+    [recentItemsRaw],
+  );
   const { data: popularData, isLoading: isPopularLoading } = usePopularCatalogItems(8);
 
-  const popularItems = popularData?.items ?? [];
+  const popularItems = useMemo(
+    () => groupCatalogItems(popularData?.items ?? []).map((g) => g.representative),
+    [popularData],
+  );
 
   const {
     data: paginatedData,
@@ -369,7 +377,7 @@ export function CatalogBrowserModal({
     error: paginatedError,
   } = useCatalogItemsInfinite({
     category: activeFilter === 'All' ? undefined : activeFilter,
-    limit: 20,
+    limit: 80,
     sort: { field: 'createdAt', order: 'desc' },
   });
 
@@ -379,9 +387,15 @@ export function CatalogBrowserModal({
     error: searchError,
   } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
+  const paginatedRawItems = paginatedData?.pages.flatMap((page) => page.items) ?? [];
+  const groupedPaginatedItems = useMemo(
+    () => groupCatalogItems(paginatedRawItems),
+    [paginatedRawItems],
+  );
+
   const items = isSearching
     ? searchResult?.items || []
-    : paginatedData?.pages.flatMap((page) => page.items) || [];
+    : groupedPaginatedItems.map((g) => g.representative);
   const isLoading = isSearching ? isSearchLoading : isPaginatedLoading;
   const error = isSearching ? searchError : paginatedError;
 
@@ -598,7 +612,7 @@ export function CatalogBrowserModal({
           ) : (
             <FlatList
               data={items}
-              keyExtractor={(item, index) => `${item.id}-${index}`}
+              keyExtractor={(item) => String(item.id)}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}
               ItemSeparatorComponent={ItemSeparatorComponent}
