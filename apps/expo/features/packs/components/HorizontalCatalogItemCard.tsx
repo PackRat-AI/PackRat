@@ -4,7 +4,7 @@ import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogIt
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { testIds } from 'expo-app/lib/testIds';
-import { TouchableWithoutFeedback, View } from 'react-native';
+import { TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
 type HorizontalCatalogItemCardProps = {
   item: CatalogItem & { similarity?: number };
@@ -15,6 +15,8 @@ type HorizontalCatalogItemCardProps = {
   | {
       onSelect: (item: CatalogItem) => void;
       selected: boolean;
+      quantity?: number;
+      onQuantityChange?: (itemId: number, delta: number) => void;
     }
 );
 
@@ -29,21 +31,23 @@ const formatWeight = ({ weight, unit }: { weight?: number | null; unit?: string 
 };
 
 export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCatalogItemCardProps) {
-  const isSelectable = 'onSelect' in restProps;
   const { colors } = useColorScheme();
+
+  const handleCardPress = () => {
+    if ('onSelect' in restProps) {
+      if (!restProps.selected) {
+        restProps.onSelect(item);
+      }
+    } else {
+      restProps.onPress();
+    }
+  };
+
   return (
-    <TouchableWithoutFeedback
-      key={item.id}
-      onPress={isSelectable ? () => restProps.onSelect(item) : restProps.onPress}
-    >
+    <TouchableWithoutFeedback onPress={handleCardPress}>
       <View
         testID={testIds.items.catalogCard(item.id)}
-        className={`rounded-lg flex-row gap-3 border p-4 bg-red
-           ${
-             isSelectable && restProps.selected
-               ? 'border-primary bg-primary/5'
-               : 'border-border bg-card'
-           }`}
+        className="rounded-lg flex-row gap-3 border border-border bg-card p-4"
       >
         {/* Image */}
         <CatalogItemImage
@@ -53,33 +57,31 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
         />
 
         {/* Content */}
-        <View className="flex-1">
-          <Text className="font-medium text-foreground" numberOfLines={2}>
+        <View className="flex-1 min-w-0">
+          <Text className="font-medium text-foreground" numberOfLines={1}>
             {item.name}
           </Text>
           {item.brand && <Text className="text-sm text-muted-foreground">{item.brand}</Text>}
 
           <View className="mt-2 flex-row flex-wrap items-center gap-x-4 gap-y-1">
-            <Text>
-              {item.price && (
-                <Text className="text-sm font-medium text-foreground">
-                  {formatPrice({ price: item.price, currency: item.currency })}
-                </Text>
-              )}
-            </Text>
-            {item.weight && (
+            {!!item.price && (
+              <Text className="text-sm font-medium text-foreground">
+                {formatPrice({ price: item.price, currency: item.currency })}
+              </Text>
+            )}
+            {!!item.weight && (
               <Text className="text-sm text-muted-foreground">
                 {formatWeight({ weight: item.weight, unit: item.weightUnit })}
               </Text>
             )}
-            {item.ratingValue && (
+            {!!item.ratingValue && (
               <View className="flex-row items-center gap-1">
                 <Icon name="star" size={12} color={colors.yellow} />
                 <Text className="text-sm text-muted-foreground">{item.ratingValue.toFixed(1)}</Text>
               </View>
             )}
           </View>
-          {item.similarity && (
+          {!!item.similarity && (
             <Text
               className={`text-xs font-medium mt-4 ${
                 item.similarity >= 0.8
@@ -94,13 +96,47 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
           )}
         </View>
 
-        {/* Selection indicator */}
-        {isSelectable && (
-          <View className="items-center justify-center">
+        {/* Add / quantity control */}
+        {'onSelect' in restProps && (
+          <View className="items-center justify-center ml-1 shrink-0">
             {restProps.selected ? (
-              <Icon name="check-circle" size={24} color={colors.primary} />
+              <View className="items-center" style={{ gap: 2 }}>
+                <TouchableOpacity
+                  onPress={() => restProps.onQuantityChange?.(item.id, 1)}
+                  hitSlop={{ top: 10, bottom: 4, left: 10, right: 10 }}
+                  className="h-6 w-6 items-center justify-center"
+                >
+                  <Icon name="plus" size={13} color={colors.grey2} />
+                </TouchableOpacity>
+                <Text
+                  className="text-xl font-bold text-foreground text-center"
+                  style={{ minWidth: 28 }}
+                >
+                  {restProps.quantity ?? 1}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const qty = restProps.quantity ?? 1;
+                    if (qty <= 1) {
+                      restProps.onSelect(item);
+                    } else {
+                      restProps.onQuantityChange?.(item.id, -1);
+                    }
+                  }}
+                  hitSlop={{ top: 4, bottom: 10, left: 10, right: 10 }}
+                  className="h-6 w-6 items-center justify-center"
+                >
+                  <Icon name="minus" size={13} color={colors.grey2} />
+                </TouchableOpacity>
+              </View>
             ) : (
-              <Icon name="circle-outline" size={24} color={colors.grey2} />
+              <TouchableOpacity
+                onPress={() => restProps.onSelect(item)}
+                className="h-9 w-9 items-center justify-center rounded-full bg-muted/25"
+                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              >
+                <Icon name="plus" size={18} color={colors.grey2} />
+              </TouchableOpacity>
             )}
           </View>
         )}
