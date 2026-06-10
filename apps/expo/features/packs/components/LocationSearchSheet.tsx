@@ -105,6 +105,7 @@ export const LocationSearchSheet = React.forwardRef<BottomSheetModal, LocationSe
         snapPoints={['85%']}
         index={0}
         enablePanDownToClose
+        topInset={insets.top}
         onDismiss={onDismiss}
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
@@ -193,9 +194,9 @@ export const LocationSearchSheet = React.forwardRef<BottomSheetModal, LocationSe
               >
                 <Icon
                   namingScheme="sfSymbol"
-                  name="mappin"
+                  name="location.fill"
                   materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
-                  size={16}
+                  size={15}
                   color={colors.grey2}
                 />
               </View>
