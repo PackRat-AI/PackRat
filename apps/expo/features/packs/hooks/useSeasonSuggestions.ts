@@ -23,12 +23,14 @@ export interface SeasonSuggestionsResponse {
 }
 
 export class SeasonSuggestionsError extends Error {
-  constructor(
-    public readonly httpStatus: number,
-    public readonly serverMessage: string,
-  ) {
+  readonly httpStatus: number;
+  readonly serverMessage: string;
+
+  constructor({ httpStatus, serverMessage }: { httpStatus: number; serverMessage: string }) {
     super(serverMessage);
     this.name = 'SeasonSuggestionsError';
+    this.httpStatus = httpStatus;
+    this.serverMessage = serverMessage;
   }
 }
 
@@ -47,7 +49,7 @@ const generateSeasonSuggestions = async (
   if (error) {
     const httpStatus = error.status ?? 500;
     const serverMessage = extractServerMessage(error.value);
-    const err = new SeasonSuggestionsError(httpStatus, serverMessage);
+    const err = new SeasonSuggestionsError({ httpStatus, serverMessage });
     Sentry.captureException(err, {
       tags: { feature: 'packs', action: 'generateSeasonSuggestions' },
       extra: {

@@ -118,6 +118,95 @@ function classifyError(error: unknown): ErrorKind {
 
 const ICON_CIRCLE: ViewStyle = { width: 72, height: 72, borderRadius: 36 };
 
+// ---------------------------------------------------------------------------
+// Dev-only error simulator — tree-shaken in production builds (__DEV__ = false)
+// ---------------------------------------------------------------------------
+const DEV_ERROR_CHIPS: { label: string; error: Error }[] = __DEV__
+  ? [
+      {
+        label: '400',
+        error: new SeasonSuggestionsError({
+          httpStatus: 400,
+          serverMessage: 'Insufficient inventory',
+        }),
+      },
+      {
+        label: '401',
+        error: new SeasonSuggestionsError({ httpStatus: 401, serverMessage: 'Unauthorized' }),
+      },
+      { label: 'Net', error: new Error('Network request failed') },
+      {
+        label: 'AI',
+        error: new SeasonSuggestionsError({
+          httpStatus: 500,
+          serverMessage: 'AI generation failed',
+        }),
+      },
+      {
+        label: '503',
+        error: new SeasonSuggestionsError({
+          httpStatus: 503,
+          serverMessage: 'Service unavailable',
+        }),
+      },
+    ]
+  : [];
+
+interface DevErrorPanelProps {
+  active: Error | null;
+  onSelect: (err: Error | null) => void;
+}
+
+function DevErrorPanel({ active, onSelect }: DevErrorPanelProps) {
+  const { colors } = useColorScheme();
+  return (
+    <View
+      className="mb-4 rounded-xl p-3"
+      style={{ backgroundColor: colors.grey6, borderWidth: 1, borderColor: colors.grey4 }}
+    >
+      <Text variant="footnote" className="mb-2 font-semibold text-muted-foreground">
+        🧪 Dev — Force error state
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        {DEV_ERROR_CHIPS.map((chip) => {
+          const isActive = active === chip.error;
+          return (
+            <TouchableOpacity
+              key={chip.label}
+              className="rounded-lg px-3 py-1.5"
+              style={{
+                backgroundColor: isActive ? colors.primary : colors.grey5,
+              }}
+              onPress={() => onSelect(isActive ? null : chip.error)}
+              activeOpacity={0.7}
+            >
+              <Text
+                variant="footnote"
+                className="font-semibold"
+                style={{ color: isActive ? 'white' : colors.foreground }}
+              >
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        {active !== null && (
+          <TouchableOpacity
+            className="rounded-lg px-3 py-1.5"
+            style={{ backgroundColor: colors.grey5 }}
+            onPress={() => onSelect(null)}
+            activeOpacity={0.7}
+          >
+            <Text variant="footnote" className="font-semibold text-muted-foreground">
+              ✕ Clear
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
+
 interface ErrorCardProps {
   error: unknown;
   onRetry: () => void;
@@ -246,6 +335,7 @@ export default function SeasonSuggestionsResultsScreen() {
   const seasonSuggestions = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
   const [createdPacks, setCreatedPacks] = useState<Record<number, string>>({});
+  const [devForcedError, setDevForcedError] = useState<Error | null>(null);
   const { colors } = useColorScheme();
   const triggered = useRef(false);
 
@@ -278,6 +368,11 @@ export default function SeasonSuggestionsResultsScreen() {
   };
 
   const { data, error } = seasonSuggestions;
+  const displayError = devForcedError ?? error;
+
+  const handleDevRetry = () => {
+    setDevForcedError(null);
+  };
 
   return (
     <>
@@ -285,19 +380,21 @@ export default function SeasonSuggestionsResultsScreen() {
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="pt-6">
-          {!data && !error && <SuggestionSkeleton />}
+          {__DEV__ && <DevErrorPanel active={devForcedError} onSelect={setDevForcedError} />}
 
-          {error && (
+          {!displayError && !data && <SuggestionSkeleton />}
+
+          {displayError && (
             <ErrorCard
-              error={error}
-              onRetry={handleRetry}
+              error={displayError}
+              onRetry={devForcedError ? handleDevRetry : handleRetry}
               onGoBack={() => router.back()}
               onGoToInventory={() => router.push('/(app)/(tabs)/(home)')}
               onSignIn={() => router.replace('/auth')}
             />
           )}
 
-          {data && (
+          {data && !displayError && (
             <View>
               <View className="flex-row items-center gap-2 mb-4">
                 <View className="flex-row items-center gap-1">
