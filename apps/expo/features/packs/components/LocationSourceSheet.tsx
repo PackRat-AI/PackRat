@@ -27,12 +27,19 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
-        <BottomSheetView className="px-6 pb-14 pt-6">
+        <BottomSheetView className="px-6 pb-14 pt-4">
+          <Text variant="title3" className="mb-2 text-center font-semibold">
+            {t('seasons.chooseLocation')}
+          </Text>
+          <Text variant="subhead" className="mb-10 text-center text-muted-foreground">
+            {t('seasons.chooseLocationDescription')}
+          </Text>
+
           <View className="flex-row justify-center gap-10">
             <View className="items-center gap-4">
               <TouchableOpacity
                 className="h-32 w-32 items-center justify-center rounded-full"
-                style={{ backgroundColor: colors.grey6 }}
+                style={{ backgroundColor: colors.grey5 }}
                 onPress={onSearchPress}
                 activeOpacity={0.65}
               >
@@ -52,7 +59,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
             <View className="items-center gap-4">
               <TouchableOpacity
                 className="h-32 w-32 items-center justify-center rounded-full"
-                style={{ backgroundColor: colors.grey6 }}
+                style={{ backgroundColor: colors.grey5 }}
                 onPress={onCurrentLocationPress}
                 activeOpacity={0.65}
               >
@@ -65,7 +72,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                 />
               </TouchableOpacity>
               <Text variant="subhead" className="max-w-28 text-center font-medium">
-                {t('seasons.useCurrentLocation')}
+                {t('weather.useCurrentLocation')}
               </Text>
             </View>
           </View>
