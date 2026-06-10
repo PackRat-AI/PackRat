@@ -48,7 +48,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
     <TouchableWithoutFeedback onPress={handleCardPress}>
       <Animated.View
         testID={testIds.items.catalogCard(item.id)}
-        layout={LinearTransition.springify().damping(20).stiffness(260)}
+        layout={LinearTransition.duration(200)}
         className="rounded-lg flex-row gap-3 border border-border bg-card p-4"
       >
         {/* Image */}
