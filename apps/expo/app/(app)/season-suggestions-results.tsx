@@ -5,13 +5,20 @@ import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage'
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
   type PackSuggestion,
+  SeasonSuggestionsError,
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import {
+  ScrollView,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   Easing,
   type SharedValue,
@@ -89,6 +96,149 @@ function SuggestionSkeleton() {
   );
 }
 
+type ErrorKind = 'insufficient_inventory' | 'unauthenticated' | 'network' | 'ai' | 'generic';
+
+function classifyError(error: unknown): ErrorKind {
+  if (error instanceof SeasonSuggestionsError) {
+    if (error.httpStatus === 400) return 'insufficient_inventory';
+    if (error.httpStatus === 401) return 'unauthenticated';
+    if (error.httpStatus >= 500) return 'ai';
+  }
+  const msg = error instanceof Error ? error.message.toLowerCase() : '';
+  if (
+    msg.includes('network') ||
+    msg.includes('fetch') ||
+    msg.includes('timeout') ||
+    msg.includes('connection')
+  ) {
+    return 'network';
+  }
+  return 'generic';
+}
+
+const ICON_CIRCLE: ViewStyle = { width: 72, height: 72, borderRadius: 36 };
+
+interface ErrorCardProps {
+  error: unknown;
+  onRetry: () => void;
+  onGoBack: () => void;
+  onGoToInventory: () => void;
+  onSignIn: () => void;
+}
+
+function ErrorCard({ error, onRetry, onGoBack, onGoToInventory, onSignIn }: ErrorCardProps) {
+  const { t } = useTranslation();
+  const { colors } = useColorScheme();
+  const kind = classifyError(error);
+
+  const config = {
+    insufficient_inventory: {
+      sfSymbol: 'bag.badge.plus' as const,
+      materialIcon: 'add-shopping-cart' as const,
+      title: t('seasons.errorNotEnoughGearTitle'),
+      body: t('seasons.errorNotEnoughGearBody'),
+      primaryLabel: t('seasons.errorNotEnoughGearAction'),
+      primaryAction: onGoToInventory,
+      secondaryLabel: t('seasons.goBack'),
+      secondaryAction: onGoBack,
+    },
+    unauthenticated: {
+      sfSymbol: 'person.badge.key' as const,
+      materialIcon: 'login' as const,
+      title: t('seasons.errorSessionTitle'),
+      body: t('seasons.errorSessionBody'),
+      primaryLabel: t('seasons.errorSessionAction'),
+      primaryAction: onSignIn,
+      secondaryLabel: t('seasons.goBack'),
+      secondaryAction: onGoBack,
+    },
+    network: {
+      sfSymbol: 'wifi.slash' as const,
+      materialIcon: 'wifi-off' as const,
+      title: t('seasons.errorNetworkTitle'),
+      body: t('seasons.errorNetworkBody'),
+      primaryLabel: t('seasons.tryAgain'),
+      primaryAction: onRetry,
+      secondaryLabel: t('seasons.goBack'),
+      secondaryAction: onGoBack,
+    },
+    ai: {
+      sfSymbol: 'sparkles' as const,
+      materialIcon: 'auto-awesome' as const,
+      title: t('seasons.errorAiTitle'),
+      body: t('seasons.errorAiBody'),
+      primaryLabel: t('seasons.tryAgain'),
+      primaryAction: onRetry,
+      secondaryLabel: t('seasons.goBack'),
+      secondaryAction: onGoBack,
+    },
+    generic: {
+      sfSymbol: 'exclamationmark.circle' as const,
+      materialIcon: 'error-outline' as const,
+      title: t('seasons.errorGenericTitle'),
+      body: t('seasons.errorGenericBody'),
+      primaryLabel: t('seasons.tryAgain'),
+      primaryAction: onRetry,
+      secondaryLabel: t('seasons.goBack'),
+      secondaryAction: onGoBack,
+    },
+  } as const;
+
+  const {
+    sfSymbol,
+    materialIcon,
+    title,
+    body,
+    primaryLabel,
+    primaryAction,
+    secondaryLabel,
+    secondaryAction,
+  } = config[kind];
+
+  return (
+    <View className="flex-1 items-center justify-center py-16 px-4">
+      <View
+        className="mb-6 items-center justify-center"
+        style={[ICON_CIRCLE, { backgroundColor: colors.grey6 }]}
+      >
+        <Icon
+          namingScheme="sfSymbol"
+          name={sfSymbol}
+          materialIcon={{ type: 'MaterialIcons', name: materialIcon }}
+          size={30}
+          color={colors.grey2}
+        />
+      </View>
+
+      <Text variant="title3" className="mb-2 text-center font-semibold">
+        {title}
+      </Text>
+      <Text variant="subhead" className="mb-8 text-center leading-relaxed text-muted-foreground">
+        {body}
+      </Text>
+
+      <View className="w-full gap-3">
+        <TouchableOpacity
+          className="w-full items-center rounded-xl bg-primary px-6 py-3.5"
+          onPress={primaryAction}
+          activeOpacity={0.8}
+        >
+          <Text className="font-semibold text-white">{primaryLabel}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="w-full items-center rounded-xl px-6 py-3.5"
+          style={{ backgroundColor: colors.grey6 }}
+          onPress={secondaryAction}
+          activeOpacity={0.8}
+        >
+          <Text className="font-medium text-muted-foreground">{secondaryLabel}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 export default function SeasonSuggestionsResultsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -107,6 +257,13 @@ export default function SeasonSuggestionsResultsScreen() {
       triggerSuggestions({ location, date });
     }
   }, [triggerSuggestions, location, date]);
+
+  const handleRetry = () => {
+    if (location && date) {
+      seasonSuggestions.reset();
+      triggerSuggestions({ location, date });
+    }
+  };
 
   const handleCreatePack = ({
     suggestion,
@@ -131,14 +288,13 @@ export default function SeasonSuggestionsResultsScreen() {
           {!data && !error && <SuggestionSkeleton />}
 
           {error && (
-            <View className="rounded-xl border border-red-200 bg-red-50 p-4">
-              <Text variant="callout" className="font-medium text-red-800">
-                {t('errors.error')}
-              </Text>
-              <Text variant="body" className="text-red-700">
-                {error.message}
-              </Text>
-            </View>
+            <ErrorCard
+              error={error}
+              onRetry={handleRetry}
+              onGoBack={() => router.back()}
+              onGoToInventory={() => router.push('/(app)/(tabs)/(home)')}
+              onSignIn={() => router.replace('/auth')}
+            />
           )}
 
           {data && (
