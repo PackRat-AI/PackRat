@@ -3,6 +3,7 @@ import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -153,6 +154,11 @@ function CartSheet({
                   key={item.id}
                   className="flex-row items-center gap-3 px-4 py-3 border-b border-border"
                 >
+                  <CatalogItemImage
+                    imageUrl={item.images?.[0]}
+                    className="h-11 w-11 rounded-lg shrink-0"
+                    resizeMode="cover"
+                  />
                   <View className="flex-1 min-w-0">
                     <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
                       {item.name}
