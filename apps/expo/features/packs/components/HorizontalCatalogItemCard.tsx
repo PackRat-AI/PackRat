@@ -4,8 +4,17 @@ import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogIt
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { testIds } from 'expo-app/lib/testIds';
-import { TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 type HorizontalCatalogItemCardProps = {
   item: CatalogItem & { similarity?: number };
@@ -30,6 +39,39 @@ const formatWeight = ({ weight, unit }: { weight?: number | null; unit?: string 
   if (!weight) return '';
   return `${weight}${unit || 'g'}`;
 };
+
+function ScalePress({
+  onPress,
+  hitSlop,
+  className,
+  children,
+}: {
+  onPress: () => void;
+  hitSlop?: { top: number; bottom: number; left: number; right: number };
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        scale.value = withTiming(0.82, { duration: 80, easing: Easing.out(Easing.quad) });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) });
+      }}
+      onPress={onPress}
+      hitSlop={hitSlop}
+    >
+      <Animated.View style={animStyle} className={className}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCatalogItemCardProps) {
   const { colors } = useColorScheme();
@@ -109,20 +151,20 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
                 className="items-center"
                 style={{ gap: 2 }}
               >
-                <TouchableOpacity
+                <ScalePress
                   onPress={() => restProps.onQuantityChange?.(item.id, 1)}
                   hitSlop={{ top: 10, bottom: 4, left: 10, right: 10 }}
                   className="h-6 w-6 items-center justify-center"
                 >
                   <Icon name="plus" size={13} color={colors.grey2} />
-                </TouchableOpacity>
+                </ScalePress>
                 <Text
                   className="text-xl font-bold text-foreground text-center"
                   style={{ minWidth: 28 }}
                 >
                   {restProps.quantity ?? 1}
                 </Text>
-                <TouchableOpacity
+                <ScalePress
                   onPress={() => {
                     const qty = restProps.quantity ?? 1;
                     if (qty <= 1) {
@@ -135,7 +177,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
                   className="h-6 w-6 items-center justify-center"
                 >
                   <Icon name="minus" size={13} color={colors.grey2} />
-                </TouchableOpacity>
+                </ScalePress>
               </Animated.View>
             ) : (
               <Animated.View
@@ -143,13 +185,13 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
                 entering={FadeIn.duration(160)}
                 exiting={FadeOut.duration(100)}
               >
-                <TouchableOpacity
+                <ScalePress
                   onPress={() => restProps.onSelect(item)}
-                  className="h-9 w-9 items-center justify-center rounded-full bg-muted/25"
                   hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                  className="h-9 w-9 items-center justify-center rounded-full bg-muted/25"
                 >
                   <Icon name="plus" size={18} color={colors.grey2} />
-                </TouchableOpacity>
+                </ScalePress>
               </Animated.View>
             )}
           </View>

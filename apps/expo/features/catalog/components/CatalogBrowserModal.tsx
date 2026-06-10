@@ -163,6 +163,8 @@ function CartSheet({
   }, [visible]);
 
   const pan = Gesture.Pan()
+    .activeOffsetY(5)
+    .failOffsetY(-5)
     .onUpdate((e) => {
       dragY.value = Math.max(0, e.translationY);
     })
