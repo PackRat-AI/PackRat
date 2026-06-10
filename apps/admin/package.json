@@ -1,9 +1,10 @@
 {
   "name": "packrat-admin-app",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "private": true,
   "scripts": {
     "build": "next build",
+    "check-types": "tsc --noEmit",
     "clean": "bunx rimraf node_modules .next out",
     "dev": "next dev --port 3002",
     "doctor:react": "bunx react-doctor",

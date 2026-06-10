@@ -197,7 +197,15 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    trustedOrigins: [env.BETTER_AUTH_URL, 'packrat://'],
+    // The web app is served from a different origin than the API (e.g. the
+    // Playwright e2e harness serves the static export on a separate port), so
+    // its origin must be trusted for the cross-origin CSRF/CORS check. Only
+    // trust localhost in development — never in production.
+    trustedOrigins: [
+      env.BETTER_AUTH_URL,
+      'packrat://',
+      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
+    ],
   });
 
   return auth;

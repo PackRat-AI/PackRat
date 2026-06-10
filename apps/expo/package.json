@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -53,6 +53,8 @@
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.1.2",
     "@legendapp/state": "^3.0.0-beta.30",
+    "@packrat-ai/nativewindui": "2.0.3-2",
+    "@packrat/api": "workspace:*",
     "@packrat/api-client": "workspace:*",
     "@packrat/config": "workspace:*",
     "@packrat/constants": "workspace:*",
@@ -61,6 +63,7 @@
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
     "@packrat/types": "workspace:*",
+    "@packrat/ui": "workspace:*",
     "@packrat/units": "workspace:*",
     "@react-native-ai/apple": "~0.10.0",
     "@react-native-ai/llama": "~0.10.0",

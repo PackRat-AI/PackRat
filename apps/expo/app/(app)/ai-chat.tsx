@@ -25,6 +25,7 @@ import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTranspor
 import {
   getLocalModel,
   initLocalModel,
+  isAppleIntelligenceAvailable,
   releaseLocalModel,
 } from 'expo-app/features/ai/lib/localModelManager';
 import { createLocalTools } from 'expo-app/features/ai/lib/tools';
@@ -104,6 +105,7 @@ export default function AIChat() {
   const { data: _authSession } = authClient.useSession();
   const token = _authSession?.session?.token ?? null;
   const userId = _authSession?.user?.id ?? '';
+  const isAuthenticated = !!token;
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
@@ -128,14 +130,14 @@ export default function AIChat() {
   React.useEffect(() => {
     if (!featureFlags.enableLocalAI) return;
 
-    initLocalModel();
+    initLocalModel(isAuthenticated);
 
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'background' || nextState === 'inactive') {
         releaseLocalModel();
       } else if (nextState === 'active') {
         // Re-prepare the model when the app comes back to the foreground.
-        initLocalModel();
+        initLocalModel(isAuthenticatedRef.current);
       }
     });
 
@@ -150,14 +152,23 @@ export default function AIChat() {
     };
   }, []);
 
+  // Re-initialize the Apple provider when auth state changes so that the
+  // set of available tools stays in sync with the user's authentication status.
+  React.useEffect(() => {
+    if (!featureFlags.enableLocalAI || !isAppleIntelligenceAvailable()) return;
+    releaseLocalModel().then(() => initLocalModel(isAuthenticated));
+  }, [isAuthenticated]);
+
   // Keep a ref for context body values so the transport closure stays fresh
   const contextRef = React.useRef(context);
   contextRef.current = context;
+  const isAuthenticatedRef = React.useRef(isAuthenticated);
+  isAuthenticatedRef.current = isAuthenticated;
 
   // Build the right transport based on current AI mode.
   // Recreated when aiMode or modelStatus changes (modelStatus drives local readiness).
   const isLocalReady = modelStatus === 'ready';
-  const tools = React.useMemo(() => createLocalTools(), []);
+  const tools = React.useMemo(() => createLocalTools(isAuthenticated), [isAuthenticated]);
 
   const { transport, transportKey } = React.useMemo(() => {
     if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
@@ -449,12 +460,14 @@ export default function AIChat() {
               className="self-start ml-4 mb-8"
             />
           )}
-          {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+          {status === 'error' && (
+            <ErrorState error={error} onRetry={() => handleRetry()} onClear={handleClear} />
+          )}
           {messages.length < 2 && (
             <View className="pl-4 pr-16">
               <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
               <View className="flex-row flex-wrap gap-2">
-                {getContextualSuggestions(context).map((suggestion) => (
+                {getContextualSuggestions({ context, isAuthenticated }).map((suggestion) => (
                   <TouchableOpacity
                     key={suggestion}
                     onPress={() => handleSubmit(suggestion)}

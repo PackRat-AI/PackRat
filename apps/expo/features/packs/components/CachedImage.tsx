@@ -2,13 +2,24 @@ import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, Pressable, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   imageObjectKey: string;
   imageRemoteUrl: string;
   placeholderColor?: string;
+}
+
+const CLIENT_ERROR_STATUS_RE = /^Failed to download image: 4\d\d/;
+
+// Errors caused by bad content (wrong content-type, 4xx) are permanent — retrying won't help.
+// Network timeouts and 5xx are transient and worth retrying.
+function isPermanentDownloadError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    error.message.startsWith('Invalid content type') || CLIENT_ERROR_STATUS_RE.test(error.message)
+  );
 }
 
 export const CachedImage: React.FC<CachedImageProps> = ({
@@ -20,7 +31,38 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   const [imageLocalUri, setImageLocalUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isPermanentError, setIsPermanentError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const hasClearedCorruptedCache = useRef(false);
+
+  useEffect(() => {
+    hasClearedCorruptedCache.current = false;
+  }, [imageObjectKey]);
+
+  const handleImageError = useCallback(async () => {
+    if (!hasClearedCorruptedCache.current) {
+      hasClearedCorruptedCache.current = true;
+      Sentry.addBreadcrumb({
+        category: 'cachedImage',
+        message: 'Cached image failed to render — clearing corrupted cache entry',
+        level: 'warning',
+        data: { imageObjectKey },
+      });
+      try {
+        await ImageCacheManager.clearImage(imageObjectKey);
+      } catch (error) {
+        Sentry.captureException(error, {
+          tags: { feature: 'cachedImage', action: 'clearCorruptedCache' },
+          extra: { imageObjectKey },
+        });
+      }
+      setRetryCount((c) => c + 1);
+    } else {
+      // Second failure after auto-heal attempt — the image content itself is broken.
+      setIsPermanentError(true);
+      setHasError(true);
+    }
+  }, [imageObjectKey]);
 
   useEffect(() => {
     if (!imageObjectKey || !imageRemoteUrl) return;
@@ -29,6 +71,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     const loadImage = async () => {
       setLoading(true);
       setHasError(false);
+      setIsPermanentError(false);
       setImageLocalUri(null);
 
       try {
@@ -60,7 +103,10 @@ export const CachedImage: React.FC<CachedImageProps> = ({
           tags: { feature: 'cachedImage', action: 'loadImage' },
           extra: { imageObjectKey },
         });
-        if (!cancelled) setHasError(true);
+        if (!cancelled) {
+          setIsPermanentError(isPermanentDownloadError(error));
+          setHasError(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -84,11 +130,25 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   }
 
   if (hasError) {
+    if (isPermanentError) {
+      return (
+        <View
+          className={placeholderClass}
+          style={placeholderStyle}
+          accessibilityLabel="Image unavailable"
+        >
+          <Icon name="image-off" size={20} color="#999" />
+        </View>
+      );
+    }
     return (
       <Pressable
         className={placeholderClass}
         style={placeholderStyle}
-        onPress={() => setRetryCount((c) => c + 1)}
+        onPress={() => {
+          hasClearedCorruptedCache.current = false;
+          setRetryCount((c) => c + 1);
+        }}
         accessibilityLabel="Tap to retry loading image"
         accessibilityRole="button"
       >
@@ -97,5 +157,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     );
   }
 
-  return <Image source={{ uri: imageLocalUri ?? undefined }} {...props} />;
+  return (
+    <Image source={{ uri: imageLocalUri ?? undefined }} onError={handleImageError} {...props} />
+  );
 };

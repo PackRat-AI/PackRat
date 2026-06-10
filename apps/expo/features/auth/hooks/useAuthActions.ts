@@ -9,14 +9,14 @@ import * as Sentry from '@sentry/react-native';
 import { AuthClientError, toAuthError } from 'expo-app/features/auth/lib/authErrors';
 import { userStore } from 'expo-app/features/auth/store';
 import type { User } from 'expo-app/features/profile/types';
+import * as AppleAuthentication from 'expo-app/lib/appleAuthentication';
 import { authClient } from 'expo-app/lib/auth-client';
 import { t } from 'expo-app/lib/i18n';
+import * as Updates from 'expo-app/lib/updates';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { queryClient } from 'expo-app/providers/TanstackProvider';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
-import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   isLoadingAtom,
@@ -44,7 +44,7 @@ function mapToUser(raw: Record<string, unknown>): User {
     lastName: spaceIdx >= 0 ? name.slice(spaceIdx + 1) : '',
     role: asString(raw.role) ?? 'USER',
     emailVerified: asBoolean(raw.emailVerified) ?? null,
-    avatarUrl: asString(raw.image) ?? null,
+    avatarUrl: asString(raw.avatarUrl) ?? asString(raw.image) ?? null,
     createdAt: asString(raw.createdAt) ?? null,
     updatedAt: asString(raw.updatedAt) ?? null,
     preferredWeightUnit: (raw.preferredWeightUnit as User['preferredWeightUnit']) ?? 'g',

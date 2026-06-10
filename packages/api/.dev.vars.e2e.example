@@ -3,8 +3,8 @@
 # All other keys should match your main packages/api/.dev.vars.
 
 # ── Database (local Docker, port 5435) ─────────────────────────────────────
-NEON_DATABASE_URL=postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e
-NEON_DATABASE_URL_READONLY=postgres://e2e_user:e2e_pass@localhost:5435/packrat_e2e
+NEON_DATABASE_URL=postgres://test_user:test_password@db.localtest.me/packrat_test
+NEON_DATABASE_URL_READONLY=postgres://test_user:test_password@db.localtest.me/packrat_test
 
 # ── API & Auth URLs (wrangler dev on localhost) ─────────────────────────────
 EXPO_PUBLIC_API_URL=http://localhost:8787

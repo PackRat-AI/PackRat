@@ -1,10 +1,18 @@
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 export const fetchAllPacks = async () => {
   const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
-  if (error) throw new Error(`Failed to fetch all packs: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch all packs'));
+    Sentry.captureException(err, {
+      tags: { feature: 'packs', action: 'fetchAllPacks' },
+      extra: { apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   return data ?? [];
 };
 

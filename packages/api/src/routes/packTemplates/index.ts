@@ -1,8 +1,8 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
 import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
 import { CatalogService } from '@packrat/api/services/catalogService';
+import { createGoogleAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/db';
 import { assertDefined } from '@packrat/guards';
@@ -200,8 +200,20 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           return status(400, { error: 'contentUrl must be a valid URL' });
         }
 
-        const { GOOGLE_GENERATIVE_AI_API_KEY } = getEnv();
-        const google = createGoogleGenerativeAI({ apiKey: GOOGLE_GENERATIVE_AI_API_KEY });
+        const {
+          GOOGLE_GENERATIVE_AI_API_KEY,
+          CLOUDFLARE_ACCOUNT_ID,
+          CLOUDFLARE_AI_GATEWAY_ID,
+          CLOUDFLARE_API_TOKEN,
+          AI,
+        } = getEnv();
+        const google = createGoogleAIProvider({
+          googleApiKey: GOOGLE_GENERATIVE_AI_API_KEY,
+          cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+          cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+          cloudflareAiBinding: AI,
+        });
 
         let imageUrls: string[] = [];
         let videoUrl: string | undefined;

@@ -1,10 +1,11 @@
 {
   "name": "packrat-guides-app",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "private": true,
   "scripts": {
     "build": "bun run build-content && bun run generate-og-images && next build",
     "build-content": "bun run scripts/build-content.ts",
+    "check-types": "tsc --noEmit",
     "clean": "bunx rimraf .next node_modules out",
     "demo-enhancement": "bun run scripts/demo-enhancement.ts",
     "dev": "next dev",
@@ -29,6 +30,7 @@
     "@packrat/api": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
+    "@packrat/schemas": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",

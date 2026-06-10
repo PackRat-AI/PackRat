@@ -285,3 +285,7 @@ Defined in root `tsconfig.json`:
 - **Next.js build failures**: `apps/guides` and `apps/landing` may fail without internet (fetches remote data)
 - **Type errors after NativeWindUI update**: Check for renamed refs — v2.0.0 renamed `AlertRef` → `AlertMethods`, `LargeTitleSearchBarRef` → `LargeTitleSearchBarMethods`
 - **Bun install hangs**: Normal — takes 120+ seconds. Never cancel mid-install.
+
+## Documented Solutions
+
+`docs/solutions/` — documented solutions to past problems (bugs, best practices, workflow patterns), organized by category with YAML frontmatter (`module`, `tags`, `problem_type`). Relevant when implementing or debugging in documented areas.

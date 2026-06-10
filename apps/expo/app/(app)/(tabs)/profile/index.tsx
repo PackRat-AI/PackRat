@@ -14,6 +14,7 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { isLoadingAtom, suppressSignOutNavAtom } from 'expo-app/features/auth/atoms/authAtoms';
@@ -208,6 +209,9 @@ function ListHeaderComponent() {
           { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
         ]);
       } else {
+        Sentry.captureException(err, {
+          tags: { feature: 'profile', action: 'handleAvatarPress' },
+        });
         Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
       }
     } finally {

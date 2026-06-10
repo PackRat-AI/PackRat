@@ -1,4 +1,6 @@
+import * as Sentry from '@sentry/react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -136,8 +138,10 @@ export function useSubmitTrailConditionReport(): SubmitResult {
       if (cancelRef.current) cancelRef.current.cancelled = true;
       cancelRef.current = signal;
 
-      // @ts-expect-error: Safe because Legend-State uses Proxy
-      trailConditionReportsStore[id].set(newReport);
+      // Write the new entry through the typed `obs()` helper (apps/expo/lib/store.ts)
+      // which routes the cast through one documented place instead of a per-call
+      // suppression.
+      obs({ store: trailConditionReportsStore, id }).set(newReport);
 
       // Yield a microtask so Legend-State finishes marking this change as a
       // pending set before we sample the sync state. Without this, the
@@ -159,6 +163,10 @@ export function useSubmitTrailConditionReport(): SubmitResult {
         return id;
       } catch (err) {
         const asError = err instanceof Error ? err : new Error(String(err));
+        Sentry.captureException(asError, {
+          tags: { feature: 'trailConditions', action: 'submitReport.syncDrain' },
+          extra: { reportId: id },
+        });
         if (mountedRef.current && !signal.cancelled) {
           setError(asError);
           setIsPending(false);

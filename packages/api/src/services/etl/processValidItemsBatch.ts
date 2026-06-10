@@ -32,6 +32,7 @@ export async function processValidItemsBatch({
       values: embeddingTexts,
       cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: env.CLOUDFLARE_API_TOKEN,
       provider: env.AI_PROVIDER,
       cloudflareAiBinding: env.AI,
     });

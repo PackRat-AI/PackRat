@@ -29,7 +29,7 @@ export const PackSchema = z.object({
   userId: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  category: z.enum(PACK_CATEGORIES).nullable(),
+  category: z.enum(PACK_CATEGORIES).nullable().catch(null),
   isPublic: z.boolean(),
   image: z.string().nullable(),
   tags: z.array(z.string()).nullable(),

@@ -16,12 +16,18 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+const STATUS_TEXT: Record<number, string> = {
+  429: 'Too Many Requests',
+  500: 'Internal Server Error',
+  503: 'Service Unavailable',
+};
+
 function makeResponse(body: unknown, status = 200) {
   const ok = status < 400;
   return {
     ok,
     status,
-    statusText: ok ? 'OK' : 'Service Unavailable',
+    statusText: ok ? 'OK' : (STATUS_TEXT[status] ?? 'Service Unavailable'),
     json: vi.fn().mockResolvedValue(body),
   };
 }
@@ -92,14 +98,14 @@ describe('queryOverpass', () => {
     it('throws when response status is not ok (429)', async () => {
       mockFetch.mockResolvedValue(makeResponse({}, 429));
       await expect(queryOverpass({ ql: 'ql' })).rejects.toThrow(
-        'Overpass request failed: 429 Service Unavailable',
+        'Overpass request failed: 429 Too Many Requests',
       );
     });
 
     it('throws when response status is not ok (500)', async () => {
       mockFetch.mockResolvedValue(makeResponse({}, 500));
       await expect(queryOverpass({ ql: 'ql' })).rejects.toThrow(
-        'Overpass request failed: 500 Service Unavailable',
+        'Overpass request failed: 500 Internal Server Error',
       );
     });
 

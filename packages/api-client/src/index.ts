@@ -29,6 +29,19 @@ export type ApiClientConfig = {
 };
 
 /**
+ * Structural predicate: anything with a `clone(): T` method (Request, Response,
+ * etc.) is cloneable. We avoid `instanceof Request` because consumers with
+ * `@cloudflare/workers-types` ambient see two distinct Request declarations
+ * (DOM + workers) and `instanceof` narrows to one but the variable can be the
+ * other.
+ */
+function isCloneable<T>(input: T): input is T & { clone(): T } {
+  return (
+    isObject(input) && 'clone' in input && typeof (input as { clone: unknown }).clone === 'function'
+  );
+}
+
+/**
  * Construct a typed Treaty client for the PackRat API. Handles bearer-token
  * injection and transparent refresh on 401 (for every path except the
  * refresh endpoint itself).
@@ -105,7 +118,10 @@ export function createApiClient(config: ApiClientConfig) {
       token: string | null;
       base: RequestInfo | URL;
     }): [RequestInfo | URL, RequestInit | undefined] => {
-      if (!token) return [base, init];
+      // credentials:'include' lets the browser send the Better Auth session
+      // cookie on the web build, where the bearer token lives in an HttpOnly
+      // cookie that JS can't read. Harmless on native (bearer header is used).
+      if (!token) return [base, { ...init, credentials: 'include' }];
       const headers = new Headers();
       const existing = init?.headers;
       if (existing instanceof Headers) {
@@ -133,7 +149,10 @@ export function createApiClient(config: ApiClientConfig) {
 
     // Pre-clone a Request before any reads so the retry has an intact body.
     // For URL/string inputs (the common Eden Treaty case) this is a no-op.
-    const firstBase = input instanceof Request ? input.clone() : input;
+    // Use a structural type predicate rather than `instanceof Request` so the
+    // narrowing stays clean across DOM- and workers-flavored Request types
+    // (consumers with @cloudflare/workers-types ambient see both declarations).
+    const firstBase = isCloneable(input) ? input.clone() : input;
 
     const firstToken = isRefreshPath ? null : await config.auth.getAccessToken();
     const [firstInput, firstInit] = buildRequest({ token: firstToken, base: firstBase });
@@ -153,14 +172,18 @@ export function createApiClient(config: ApiClientConfig) {
   // rather than `client.api.catalog.get()`. The server mounts every route
   // group under the `routes` plugin which itself has `prefix: '/api'`, so the
   // `.api` level of the Treaty surface is pure noise.
-  // Treaty only uses the callable form of `fetch`; the globalThis.fetch type
-  // includes a `preconnect` method our wrapper doesn't need. Cast through
-  // unknown to bridge the two shapes without pulling preconnect into scope.
   // parseDate:false disables Eden Treaty's JSON reviver that silently converts
   // date-like strings (ISO 8601, "YYYY-MM-DD HH:MM") to Date objects. Without
   // this, every Zod z.string().datetime() field in API response schemas fails.
   return treaty<App>(config.baseUrl, {
-    fetcher: ((input, init) => authFetcher({ input, init })) as unknown as typeof fetch,
+    // Eden Treaty types `fetcher` as the full `typeof fetch`, which carries a
+    // `preconnect` method. Treaty only ever calls the fetch signature, so we
+    // satisfy the shape with a no-op `preconnect` rather than casting through
+    // `unknown` — keeps the wrapper fully type-checked.
+    fetcher: Object.assign(
+      (input: RequestInfo | URL, init?: RequestInit) => authFetcher({ input, init }),
+      { preconnect: (..._args: Parameters<typeof fetch.preconnect>): void => {} },
+    ),
     parseDate: false,
   }).api;
 }

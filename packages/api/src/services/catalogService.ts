@@ -224,6 +224,7 @@ export class CatalogService {
       provider: this.env.AI_PROVIDER,
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
       cloudflareAiBinding: this.env.AI,
     });
 
@@ -286,6 +287,7 @@ export class CatalogService {
       openAiApiKey: this.env.OPENAI_API_KEY,
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
       provider: this.env.AI_PROVIDER,
       cloudflareAiBinding: this.env.AI,
     });
@@ -394,6 +396,7 @@ export class CatalogService {
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
         provider: this.env.AI_PROVIDER,
         cloudflareAiBinding: this.env.AI,
       });
@@ -494,6 +497,7 @@ export class CatalogService {
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
         provider: this.env.AI_PROVIDER,
         cloudflareAiBinding: this.env.AI,
       });
