@@ -111,117 +111,127 @@ function CartSheet({
   const { t } = useTranslation();
   const { bottom } = useSafeAreaInsets();
 
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        {/* Backdrop */}
-        <TouchableOpacity
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.45)',
-          }}
-          activeOpacity={1}
-          onPress={onClose}
-        />
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',
+        zIndex: 10,
+      }}
+    >
+      {/* Backdrop */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.45)',
+        }}
+        activeOpacity={1}
+        onPress={onClose}
+      />
 
-        {/* Sheet */}
-        <View className="bg-card rounded-t-3xl overflow-hidden" style={{ maxHeight: '78%' }}>
-          {/* Drag handle */}
-          <View className="items-center pt-3 pb-1">
-            <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </View>
+      {/* Sheet */}
+      <View className="bg-card rounded-t-3xl overflow-hidden" style={{ maxHeight: '78%' }}>
+        {/* Drag handle */}
+        <View className="items-center pt-3 pb-1">
+          <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </View>
 
-          {/* Header */}
-          <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-border">
-            <Text className="text-base font-semibold text-foreground">
-              {t('catalog.cartTitle', { count: items.length })}
-            </Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Icon name="close" size={20} color={colors.grey2} />
-            </TouchableOpacity>
-          </View>
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-border">
+          <Text className="text-base font-semibold text-foreground">
+            {t('catalog.cartTitle', { count: items.length })}
+          </Text>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Icon name="close" size={20} color={colors.grey2} />
+          </TouchableOpacity>
+        </View>
 
-          {/* Items list */}
-          <ScrollView>
-            {items.map((item) => {
-              const qty = quantities.get(item.id) ?? 1;
-              return (
-                <View
-                  key={item.id}
-                  className="flex-row items-center gap-3 px-4 py-3 border-b border-border"
-                >
-                  <CatalogItemImage
-                    imageUrl={item.images?.[0]}
-                    className="h-11 w-11 rounded-lg shrink-0"
-                    resizeMode="cover"
-                  />
-                  <View className="flex-1 min-w-0">
-                    <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    {item.brand && (
-                      <Text className="text-xs text-muted-foreground">{item.brand}</Text>
-                    )}
-                  </View>
+        {/* Items list */}
+        <ScrollView>
+          {items.map((item) => {
+            const qty = quantities.get(item.id) ?? 1;
+            return (
+              <View
+                key={item.id}
+                className="flex-row items-center gap-3 px-4 py-3 border-b border-border"
+              >
+                <CatalogItemImage
+                  imageUrl={item.images?.[0]}
+                  className="h-11 w-11 rounded-lg shrink-0"
+                  resizeMode="cover"
+                />
+                <View className="flex-1 min-w-0">
+                  <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {item.brand && (
+                    <Text className="text-xs text-muted-foreground">{item.brand}</Text>
+                  )}
+                </View>
 
-                  {/* Qty controls */}
-                  <View className="flex-row items-center gap-2">
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (qty <= 1) onRemoveItem(item.id);
-                        else onQuantityChange(item.id, -1);
-                      }}
-                      className="h-7 w-7 items-center justify-center rounded-full border border-border"
-                    >
-                      <Icon name="minus" size={13} color={colors.grey2} />
-                    </TouchableOpacity>
-                    <Text className="text-base font-semibold text-foreground text-center w-7">
-                      {qty}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => onQuantityChange(item.id, 1)}
-                      className="h-7 w-7 items-center justify-center rounded-full border border-border"
-                    >
-                      <Icon name="plus" size={13} color={colors.foreground} />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Remove */}
+                {/* Qty controls */}
+                <View className="flex-row items-center gap-2">
                   <TouchableOpacity
-                    onPress={() => onRemoveItem(item.id)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => {
+                      if (qty <= 1) onRemoveItem(item.id);
+                      else onQuantityChange(item.id, -1);
+                    }}
+                    className="h-7 w-7 items-center justify-center rounded-full border border-border"
                   >
-                    <Icon name="trash-can-outline" size={18} color={colors.grey2} />
+                    <Icon name="minus" size={13} color={colors.grey2} />
+                  </TouchableOpacity>
+                  <Text className="text-base font-semibold text-foreground text-center w-7">
+                    {qty}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => onQuantityChange(item.id, 1)}
+                    className="h-7 w-7 items-center justify-center rounded-full border border-border"
+                  >
+                    <Icon name="plus" size={13} color={colors.foreground} />
                   </TouchableOpacity>
                 </View>
-              );
-            })}
-          </ScrollView>
 
-          {/* Footer */}
-          <View
-            className="flex-row gap-2 px-4 pt-3 border-t border-border"
-            style={{ paddingBottom: Math.max(bottom, 16) + 8 }}
-          >
-            <Button variant="secondary" className="flex-1" onPress={onClear}>
-              <Text>{t('catalog.clearSelection')}</Text>
-            </Button>
-            <Button onPress={onAdd} variant="tonal" className="flex-1">
-              <Text>
-                {t('catalog.addItems', {
-                  count: items.length,
-                  unit: items.length > 1 ? t('catalog.items') : t('catalog.item'),
-                })}
-              </Text>
-            </Button>
-          </View>
+                {/* Remove */}
+                <TouchableOpacity
+                  onPress={() => onRemoveItem(item.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Icon name="trash-can-outline" size={18} color={colors.grey2} />
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Footer */}
+        <View
+          className="flex-row gap-2 px-4 pt-3 border-t border-border"
+          style={{ paddingBottom: Math.max(bottom, 16) + 8 }}
+        >
+          <Button variant="secondary" className="flex-1" onPress={onClear}>
+            <Text>{t('catalog.clearSelection')}</Text>
+          </Button>
+          <Button onPress={onAdd} variant="tonal" className="flex-1">
+            <Text>
+              {t('catalog.addItems', {
+                count: items.length,
+                unit: items.length > 1 ? t('catalog.items') : t('catalog.item'),
+              })}
+            </Text>
+          </Button>
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 
