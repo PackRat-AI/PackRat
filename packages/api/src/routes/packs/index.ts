@@ -707,10 +707,10 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
                 reason: z.string(),
                 consumable: z.boolean(),
                 worn: z.boolean(),
-                priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
+                priority: z.enum(['must-have', 'nice-to-have', 'optional']),
               }),
             ),
-            summary: z.string().optional(),
+            summary: z.string(),
           }),
           temperature: 0.3,
         });
