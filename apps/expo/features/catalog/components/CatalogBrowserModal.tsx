@@ -22,10 +22,10 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,11 +105,11 @@ function QtyButton({ onPress, children }: { onPress: () => void; children: React
   return (
     <Pressable
       onPressIn={() => {
-        scale.value = withSpring(0.78, { damping: 12, stiffness: 300 });
+        scale.value = withTiming(0.82, { duration: 80, easing: Easing.out(Easing.quad) });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
       onPressOut={() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+        scale.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) });
       }}
       onPress={onPress}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -154,9 +154,9 @@ function CartSheet({
   useEffect(() => {
     if (visible) {
       backdropOpacity.value = withTiming(1, { duration: 220 });
-      translateY.value = withSpring(0, { damping: 22, stiffness: 260, mass: 0.8 });
+      translateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
     } else {
-      dragY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      dragY.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.quad) });
       backdropOpacity.value = withTiming(0, { duration: 180 });
       translateY.value = withTiming(400, { duration: 220 });
     }
@@ -170,7 +170,7 @@ function CartSheet({
       if (e.translationY > 80 || e.velocityY > 600) {
         runOnJS(onClose)();
       } else {
-        dragY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        dragY.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.quad) });
       }
     });
 
