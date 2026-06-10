@@ -16,9 +16,18 @@ import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtomValue } from 'jotai';
-import { Linking, Pressable, Text as RNText, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Linking,
+  Pressable,
+  Text as RNText,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
+import { ImageViewerModal } from '../components/ImageViewerModal';
 import { useCatalogItemDetails } from '../hooks';
 import { normalizeDescription } from '../lib/normalizeDescription';
 import type { CatalogItem } from '../types';
@@ -89,6 +98,8 @@ export function CatalogItemDetailScreen() {
   const { t } = useTranslation();
   const MATERIAL_LENGTH_THRESHOLD = 60;
 
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
   const groupVariants = useAtomValue(catalogGroupVariantsAtom);
   // Show the variants section only when there are multiple variants for this
   // group — i.e. when the user navigated from the grouped catalog list.
@@ -130,12 +141,66 @@ export function CatalogItemDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
+      <ImageViewerModal
+        visible={viewerIndex !== null}
+        images={item.images ?? []}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
       <ScrollView>
-        <CatalogItemImage
-          imageUrl={item.images?.[0]}
-          resizeMode="contain"
-          className="h-64 w-full"
-        />
+        {/* Hero image — tap to open full-screen viewer */}
+        <TouchableOpacity
+          activeOpacity={0.92}
+          onPress={() => (item.images?.length ?? 0) > 0 && setViewerIndex(0)}
+        >
+          <View>
+            <CatalogItemImage
+              imageUrl={item.images?.[0]}
+              resizeMode="contain"
+              className="h-64 w-full"
+            />
+            {(item.images?.length ?? 0) > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  backgroundColor: 'rgba(0,0,0,0.45)',
+                  borderRadius: 14,
+                  padding: 6,
+                }}
+              >
+                <Icon name="fullscreen" size={16} color="#fff" />
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {/* Thumbnail strip — shown when there are multiple images */}
+        {(item.images?.length ?? 0) > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingHorizontal: 16, paddingVertical: 8 }}
+          >
+            {item.images?.map((uri, i) => (
+              <TouchableOpacity
+                key={`${uri}-${i}`}
+                onPress={() => setViewerIndex(i)}
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  borderWidth: 1.5,
+                  borderColor: colors.grey4,
+                }}
+              >
+                <CatalogItemImage imageUrl={uri} resizeMode="cover" className="h-full w-full" />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         <View className="bg-background p-4">
           <View className="mb-2">
