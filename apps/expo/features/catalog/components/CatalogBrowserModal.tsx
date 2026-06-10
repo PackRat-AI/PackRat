@@ -20,7 +20,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -146,6 +148,7 @@ function CartSheet({
   const { bottom } = useSafeAreaInsets();
 
   const translateY = useSharedValue(400);
+  const dragY = useSharedValue(0);
   const backdropOpacity = useSharedValue(0);
 
   useEffect(() => {
@@ -153,13 +156,26 @@ function CartSheet({
       backdropOpacity.value = withTiming(1, { duration: 220 });
       translateY.value = withSpring(0, { damping: 22, stiffness: 260, mass: 0.8 });
     } else {
+      dragY.value = withSpring(0, { damping: 20, stiffness: 300 });
       backdropOpacity.value = withTiming(0, { duration: 180 });
       translateY.value = withTiming(400, { duration: 220 });
     }
   }, [visible]);
 
+  const pan = Gesture.Pan()
+    .onUpdate((e) => {
+      dragY.value = Math.max(0, e.translationY);
+    })
+    .onEnd((e) => {
+      if (e.translationY > 80 || e.velocityY > 600) {
+        runOnJS(onClose)();
+      } else {
+        dragY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+    });
+
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value + dragY.value }],
   }));
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
@@ -200,20 +216,27 @@ function CartSheet({
         className="bg-card rounded-t-3xl overflow-hidden"
         style={[{ maxHeight: '78%' }, sheetStyle]}
       >
-        {/* Drag handle */}
-        <View className="items-center pt-3 pb-1">
-          <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </View>
+        {/* Drag handle — pan gesture lives here so it doesn't fight the ScrollView */}
+        <GestureDetector gesture={pan}>
+          <View>
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </View>
 
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-border">
-          <Text className="text-base font-semibold text-foreground">
-            {t('catalog.cartTitle', { count: items.length })}
-          </Text>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Icon name="close" size={20} color={colors.grey2} />
-          </TouchableOpacity>
-        </View>
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-border">
+              <Text className="text-base font-semibold text-foreground">
+                {t('catalog.cartTitle', { count: items.length })}
+              </Text>
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Icon name="close" size={20} color={colors.grey2} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </GestureDetector>
 
         {/* Items list */}
         <ScrollView>

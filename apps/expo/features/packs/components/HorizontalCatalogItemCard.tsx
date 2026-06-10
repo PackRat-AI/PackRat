@@ -5,6 +5,7 @@ import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { testIds } from 'expo-app/lib/testIds';
 import { TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 type HorizontalCatalogItemCardProps = {
   item: CatalogItem & { similarity?: number };
@@ -45,8 +46,9 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
 
   return (
     <TouchableWithoutFeedback onPress={handleCardPress}>
-      <View
+      <Animated.View
         testID={testIds.items.catalogCard(item.id)}
+        layout={LinearTransition.springify().damping(20).stiffness(260)}
         className="rounded-lg flex-row gap-3 border border-border bg-card p-4"
       >
         {/* Image */}
@@ -100,7 +102,13 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
         {'onSelect' in restProps && (
           <View className="items-center justify-center ml-1 shrink-0">
             {restProps.selected ? (
-              <View className="items-center" style={{ gap: 2 }}>
+              <Animated.View
+                key="qty"
+                entering={FadeIn.duration(160)}
+                exiting={FadeOut.duration(100)}
+                className="items-center"
+                style={{ gap: 2 }}
+              >
                 <TouchableOpacity
                   onPress={() => restProps.onQuantityChange?.(item.id, 1)}
                   hitSlop={{ top: 10, bottom: 4, left: 10, right: 10 }}
@@ -128,19 +136,25 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
                 >
                   <Icon name="minus" size={13} color={colors.grey2} />
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
             ) : (
-              <TouchableOpacity
-                onPress={() => restProps.onSelect(item)}
-                className="h-9 w-9 items-center justify-center rounded-full bg-muted/25"
-                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              <Animated.View
+                key="add"
+                entering={FadeIn.duration(160)}
+                exiting={FadeOut.duration(100)}
               >
-                <Icon name="plus" size={18} color={colors.grey2} />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => restProps.onSelect(item)}
+                  className="h-9 w-9 items-center justify-center rounded-full bg-muted/25"
+                  hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                >
+                  <Icon name="plus" size={18} color={colors.grey2} />
+                </TouchableOpacity>
+              </Animated.View>
             )}
           </View>
         )}
-      </View>
+      </Animated.View>
     </TouchableWithoutFeedback>
   );
 }
