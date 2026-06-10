@@ -38,7 +38,8 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
           <View className="flex-row justify-center gap-12">
             <View className="items-center gap-3">
               <TouchableOpacity
-                className="h-24 w-24 items-center justify-center rounded-full bg-secondary"
+                className="h-24 w-24 items-center justify-center rounded-full"
+                style={{ backgroundColor: colors.grey6 }}
                 onPress={onSearchPress}
                 activeOpacity={0.7}
               >
@@ -46,8 +47,8 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                   namingScheme="sfSymbol"
                   name="magnifyingglass"
                   materialIcon={{ type: 'MaterialIcons', name: 'search' }}
-                  size={32}
-                  color={colors.foreground}
+                  size={30}
+                  color={colors.grey}
                 />
               </TouchableOpacity>
               <Text variant="subhead" className="text-center font-medium">
@@ -58,7 +59,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
             <View className="items-center gap-3">
               <TouchableOpacity
                 className="h-24 w-24 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${colors.primary}1A` }}
+                style={{ backgroundColor: colors.grey6 }}
                 onPress={onCurrentLocationPress}
                 activeOpacity={0.7}
               >
@@ -66,8 +67,8 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                   namingScheme="sfSymbol"
                   name="location.fill"
                   materialIcon={{ type: 'MaterialIcons', name: 'my-location' }}
-                  size={32}
-                  color={colors.primary}
+                  size={30}
+                  color={colors.grey}
                 />
               </TouchableOpacity>
               <Text variant="subhead" className="max-w-24 text-center font-medium">
