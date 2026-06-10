@@ -158,7 +158,7 @@ export default function SeasonSuggestionsResultsScreen() {
                 <View className="flex-row items-center gap-1">
                   <Icon
                     namingScheme="sfSymbol"
-                    name="mappin"
+                    name="location"
                     materialIcon={{
                       type: 'MaterialIcons',
                       name: 'location-on',
