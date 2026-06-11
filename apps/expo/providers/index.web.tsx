@@ -22,8 +22,10 @@ export function Providers({ children }: { children: ReactNode }) {
         <TanstackProvider>
           <SafeAreaProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
-              <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
-              <PortalHost />
+              <BottomSheetModalProvider>
+                {children}
+                <PortalHost />
+              </BottomSheetModalProvider>
             </GestureHandlerRootView>
           </SafeAreaProvider>
         </TanstackProvider>

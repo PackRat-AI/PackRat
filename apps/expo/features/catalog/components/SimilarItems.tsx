@@ -106,6 +106,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
           data={Array(3).fill(null)}
           renderItem={() => <LoadingCard />}
           keyExtractor={(_, index) => `loading-${index}`}
+          style={{ marginHorizontal: -16 }}
           contentContainerStyle={{ paddingHorizontal: 16 }}
         />
       </View>
@@ -127,6 +128,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
         data={data.items}
         renderItem={({ item }) => <SimilarItemCard item={item} onPress={handleItemPress} />}
         keyExtractor={(item) => item.id.toString()}
+        style={{ marginHorizontal: -16 }}
         contentContainerStyle={{ paddingHorizontal: 16 }}
       />
     </View>

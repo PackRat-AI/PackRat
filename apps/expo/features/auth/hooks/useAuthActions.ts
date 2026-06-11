@@ -20,6 +20,7 @@ import Storage from 'expo-sqlite/kv-store';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   isLoadingAtom,
+  isSignOutRedirectingAtom,
   needsReauthAtom,
   redirectToAtom,
   suppressSignOutNavAtom,
@@ -28,9 +29,9 @@ import {
 function redirect(route: string) {
   try {
     const parsedRoute: Href = JSON.parse(route);
-    return router.dismissTo(parsedRoute);
+    return router.replace(parsedRoute);
   } catch {
-    router.dismissTo(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
+    router.replace(route as Href); // safe-cast: Href = string | HrefObject; string literal branch failed JSON.parse so plain string is the correct type here
   }
 }
 
@@ -53,6 +54,7 @@ function mapToUser(raw: Record<string, unknown>): User {
 
 export function useAuthActions() {
   const setIsLoading = useSetAtom(isLoadingAtom);
+  const setIsSignOutRedirecting = useSetAtom(isSignOutRedirectingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
   const setNeedsReauth = useSetAtom(needsReauthAtom);
   const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
@@ -77,6 +79,7 @@ export function useAuthActions() {
     });
 
     setNeedsReauth(false);
+    setIsSignOutRedirecting(false);
     redirect(redirectTo);
   };
 
@@ -261,6 +264,7 @@ export function useAuthActions() {
     // Suppress AppLayout's auto-navigation to /auth so the profile screen can
     // show a post-sign-out prompt and handle navigation itself.
     setSuppressSignOutNav(true);
+    setIsSignOutRedirecting(true);
     setIsLoading(true);
     Sentry.addBreadcrumb({ category: 'auth', message: 'Sign out initiated', level: 'info' });
     try {

@@ -2,8 +2,9 @@ import { createDb } from '@packrat/api/db';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { setQueryTag } from '@packrat/api/utils/queryMetrics';
 import { PACK_CATEGORIES } from '@packrat/constants';
-import { type NewPack, type NewPackItem, type PackWithItems, packItems, packs } from '@packrat/db';
+import { type NewPack, type NewPackItem, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -41,14 +42,36 @@ export class PackService {
     this.db = createDb();
   }
 
-  async getPackDetails(packId: string): Promise<PackWithItems | null> {
-    const pack = await this.db.query.packs.findFirst({
+  // Return type is inferred to preserve the narrow `catalogItem` projection
+  // declared in the `with:` block below. Explicitly typing as
+  // `Promise<PackWithItems | null>` would erase the joined-relation shape and
+  // force consumers to assert it back (and tools like tsgo correctly reject
+  // that as accessing a non-existent field).
+  async getPackDetails(packId: string) {
+    const pack = await this.db.tag('pack.getPackDetails').query.packs.findFirst({
       where: and(eq(packs.id, packId), eq(packs.userId, this.userId), eq(packs.deleted, false)),
       with: {
         items: {
           where: eq(packItems.deleted, false),
           with: {
-            catalogItem: true,
+            // Drop embedding + fat JSONB on the joined catalog row. computePackWeights
+            // and downstream pack-detail callers only need scalars for rendering.
+            // /catalog/:id remains the source of truth when the heavy JSONB is needed.
+            catalogItem: {
+              columns: {
+                id: true,
+                name: true,
+                brand: true,
+                weight: true,
+                weightUnit: true,
+                images: true,
+                categories: true,
+                productUrl: true,
+                sku: true,
+                price: true,
+                ratingValue: true,
+              },
+            },
           },
         },
       },
@@ -101,7 +124,9 @@ export class PackService {
         );
       }
 
+      setQueryTag('pack.generatePacksInsertPacks');
       const createdPacks = await tx.insert(packs).values(packsToInsert).returning();
+      setQueryTag('pack.generatePacksInsertItems');
       await tx.insert(packItems).values(itemsToInsert);
       return createdPacks;
     });

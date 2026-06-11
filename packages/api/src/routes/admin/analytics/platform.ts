@@ -46,6 +46,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       try {
         const [userGrowth, packGrowth, catalogGrowth] = await Promise.all([
           db
+            .tag('adminAnalytics.userGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})::date::text`,
               count: count(),
@@ -55,6 +56,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
+            .tag('adminAnalytics.packGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})::date::text`,
               count: count(),
@@ -64,6 +66,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`),
           db
+            .tag('adminAnalytics.catalogGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${catalogItems.createdAt})::date::text`,
               count: count(),
@@ -116,6 +119,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       try {
         const [tripActivity, trailActivity, postActivity] = await Promise.all([
           db
+            .tag('adminAnalytics.tripActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})::date::text`,
               count: count(),
@@ -125,6 +129,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`),
           db
+            .tag('adminAnalytics.trailActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})::date::text`,
               count: count(),
@@ -141,6 +146,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
               sql`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})`,
             ),
           db
+            .tag('adminAnalytics.postActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${posts.createdAt})::date::text`,
               count: count(),
@@ -214,6 +220,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
 
       try {
         const packsByCategory = await db
+          .tag('adminAnalytics.packsBreakdown')
           .select({ category: packs.category, count: count() })
           .from(packs)
           .where(eq(packs.deleted, false))

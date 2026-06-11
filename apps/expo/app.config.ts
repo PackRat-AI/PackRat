@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.27',
+      version: '2.0.28',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -58,6 +58,13 @@ export default (): ExpoConfig =>
         ],
         'expo-secure-store',
         'expo-web-browser',
+        [
+          'expo-dev-client',
+          {
+            android: { toolsButton: false },
+            ios: { toolsButton: false },
+          },
+        ],
         'expo-apple-authentication',
         'expo-localization',
         [

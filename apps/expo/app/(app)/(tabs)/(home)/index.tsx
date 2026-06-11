@@ -1,5 +1,6 @@
 'use client';
 
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
@@ -8,6 +9,7 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
+import { useIsFocused } from '@react-navigation/native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
@@ -18,15 +20,18 @@ import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
 import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
 import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
 import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
 import { SeasonSuggestionsTile } from 'expo-app/features/packs/components/SeasonSuggestionsTile';
+import { SeasonSuggestionsUnlockSheet } from 'expo-app/features/packs/components/SeasonSuggestionsUnlockSheet';
 import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
 import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
 import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
+import { useHasMinimumInventory } from 'expo-app/features/packs/hooks/useHasMinimumInventory';
 import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
@@ -35,7 +40,8 @@ import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { useMemo, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
 const tileInfo = {
@@ -160,7 +166,20 @@ const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  const unlockSheetRef = useRef<BottomSheetModal>(null);
   const { t } = useTranslation();
+  const router = useRouter();
+  const isFocused = useIsFocused();
+  const { hasMinimumItems } = useHasMinimumInventory(20);
+  const { announcementSeen } = useSeasonSuggestionsPrefs();
+
+  useEffect(() => {
+    if (!isFocused || !hasMinimumItems || announcementSeen) return;
+    const timer = setTimeout(() => {
+      unlockSheetRef.current?.present();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [isFocused, hasMinimumItems, announcementSeen]);
 
   const localizedTileInfo = useMemo(
     () => ({
@@ -310,6 +329,10 @@ export default function DashboardScreen() {
             <AndroidTabBarInsetFix />
           </>
         }
+      />
+      <SeasonSuggestionsUnlockSheet
+        ref={unlockSheetRef}
+        onExplore={() => router.push('/season-suggestions')}
       />
     </>
   );

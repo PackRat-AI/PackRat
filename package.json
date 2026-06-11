@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -72,7 +72,7 @@
     "web:screenshots": "bun run --cwd apps/expo screenshots:web"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.0.3-2",
+    "@packrat-ai/nativewindui": "2.0.6",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-blur": "~55.0.14",

@@ -4,6 +4,7 @@ import { SearchInput } from 'expo-app/components/SearchInput';
 import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
@@ -63,10 +64,14 @@ export function PackSelectionScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
-      {/* Fixed: search + count label always visible */}
+    <SafeAreaView
+      className="flex-1 bg-background"
+      edges={['bottom']}
+      testID={testIds.catalog.packSelectionScreen}
+    >
       <View className="border-b border-border bg-background px-4 pb-2 pt-3">
         <SearchInput
+          testID={testIds.catalog.packSelectionSearch}
           textContentType="none"
           autoComplete="off"
           value={searchQuery}
@@ -98,6 +103,7 @@ export function PackSelectionScreen() {
             className="mx-4 mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
             onPress={() => handlePackSelect(item.id)}
             activeOpacity={0.7}
+            testID={testIds.catalog.packOption(item.name)}
           >
             <View className="p-4 py-8">
               <View className="flex-row items-center justify-between">

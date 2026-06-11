@@ -1,9 +1,10 @@
-import { Alert, Button, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
+import { Button, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
+import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { t } from 'expo-app/lib/i18n';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { useDeletePack, usePackOwnershipCheck } from '../hooks';
 
@@ -21,31 +22,48 @@ export function getPackDetailOptions(id: string) {
 
       if (!isOwner) return null;
 
+      const confirmDelete = () => {
+        const deleteAndNavigate = () => {
+          deletePack(id);
+          if (router.canGoBack()) {
+            router.back();
+          }
+        };
+
+        if (Platform.OS === 'web') {
+          if (globalThis.confirm(t('packs.deletePackConfirm'))) {
+            deleteAndNavigate();
+          }
+          return;
+        }
+
+        appAlert.current?.alert({
+          title: t('packs.deletePack'),
+          message: t('packs.deletePackConfirm'),
+          buttons: [
+            {
+              text: t('common.cancel'),
+              style: 'cancel',
+            },
+            {
+              text: t('common.delete'),
+              style: 'destructive',
+              onPress: deleteAndNavigate,
+            },
+          ],
+        });
+      };
+
       return (
         <View className="flex-row items-center gap-2">
-          <Alert
-            title={t('packs.deletePack')}
-            message={t('packs.deletePackConfirm')}
-            buttons={[
-              {
-                text: t('common.cancel'),
-                style: 'cancel',
-              },
-              {
-                text: t('common.ok'),
-                onPress: () => {
-                  deletePack(id);
-                  if (router.canGoBack()) {
-                    router.back();
-                  }
-                },
-              },
-            ]}
+          <Button
+            testID={testIds.packs.deleteBtn}
+            variant="plain"
+            size="icon"
+            onPress={confirmDelete}
           >
-            <Button testID={testIds.packs.deleteBtn} variant="plain" size="icon">
-              <Icon name="trash-can-outline" color={colors.grey2} />
-            </Button>
-          </Alert>
+            <Icon name="trash-can-outline" color={colors.grey2} />
+          </Button>
           <Button
             testID={testIds.packs.editBtn}
             variant="plain"

@@ -27,9 +27,17 @@ import { admin, bearer, jwt } from 'better-auth/plugins';
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
 const authCache = new Map<string, Promise<any>>();
 
+function getTrustedOrigins(env: ValidatedEnv): string[] {
+  const configured = env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return [env.BETTER_AUTH_URL, ...(configured ?? []), 'packrat://'];
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}`;
+  const cacheKey = `${env.NEON_DATABASE_URL}|${env.BETTER_AUTH_URL}|${env.BETTER_AUTH_TRUSTED_ORIGINS ?? ''}`;
   const cached = authCache.get(cacheKey);
   if (cached) return cached;
 
@@ -197,15 +205,7 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
       storage: 'secondary-storage',
     },
 
-    // The web app is served from a different origin than the API (e.g. the
-    // Playwright e2e harness serves the static export on a separate port), so
-    // its origin must be trusted for the cross-origin CSRF/CORS check. Only
-    // trust localhost in development — never in production.
-    trustedOrigins: [
-      env.BETTER_AUTH_URL,
-      'packrat://',
-      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
-    ],
+    trustedOrigins: getTrustedOrigins(env),
   });
 
   return auth;

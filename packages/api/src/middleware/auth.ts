@@ -3,6 +3,7 @@ import { getLocalE2EUserFromRequest } from '@packrat/api/auth/local-e2e';
 import { isValidApiKey } from '@packrat/api/utils/auth';
 import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { setQueryMetricsUser } from '@packrat/api/utils/queryMetrics';
 import { apiAddBreadcrumb, captureApiException, setApiUser } from '@packrat/api/utils/sentry';
 import { Elysia, status } from 'elysia';
 
@@ -70,6 +71,7 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
       // Attach user to the Sentry scope for this request so all subsequent
       // captures are automatically associated with the authenticated user.
       setApiUser({ id: user.userId, email: user.email, role: user.role });
+      setQueryMetricsUser(user.userId);
 
       return { user };
     },
@@ -115,6 +117,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).macro(
       }
 
       setApiUser({ id: session.user.id, email: session.user.email, role: 'ADMIN' });
+      setQueryMetricsUser(session.user.id);
 
       return {
         user: {

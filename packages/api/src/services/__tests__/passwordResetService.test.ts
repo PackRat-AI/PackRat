@@ -26,15 +26,19 @@ const mocks = vi.hoisted(() => {
     updateFn,
     findFirstUser,
     findFirstVerification,
-    createDb: vi.fn(() => ({
-      query: {
-        users: { findFirst: findFirstUser },
-        verification: { findFirst: findFirstVerification },
-      },
-      delete: deleteFn,
-      insert: insertFn,
-      update: updateFn,
-    })),
+    createDb: vi.fn(() => {
+      const db = {
+        tag: (_label: string) => db,
+        query: {
+          users: { findFirst: findFirstUser },
+          verification: { findFirst: findFirstVerification },
+        },
+        delete: deleteFn,
+        insert: insertFn,
+        update: updateFn,
+      };
+      return db;
+    }),
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
     timingSafeEqual: vi.fn(({ a, b }: { a: string; b: string }) => a === b),
     hashPassword: vi.fn((p: string) => Promise.resolve(`hashed_${p}`)),

@@ -4,8 +4,11 @@ import { captureApiException } from '@packrat/api/utils/sentry';
 import { users } from '@packrat/db';
 import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
+  GetPreferencesResponseSchema,
+  PatchPreferencesResponseSchema,
   UpdateUserRequestSchema,
   UpdateUserResponseSchema,
+  UserPreferencesSchema,
   UserProfileSchema,
 } from '@packrat/schemas/users';
 import { eq } from 'drizzle-orm';
@@ -27,6 +30,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       try {
         const db = createDb();
         const [userRecord] = await db
+          .tag('user.getProfile')
           .select({
             id: users.id,
             email: users.email,
@@ -81,6 +85,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
 
         if (email) {
           const [existingUser] = await db
+            .tag('user.checkEmail')
             .select({ id: users.id })
             .from(users)
             .where(eq(users.email, email.toLowerCase()))
@@ -103,6 +108,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
         }
 
         const [updatedUser] = await db
+          .tag('user.updateProfile')
           .update(users)
           .set(updateData)
           .where(eq(users.id, user.userId))
@@ -145,5 +151,80 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       body: 'user.UpdateUserRequest',
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Update user profile', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Get preferences
+  .get(
+    '/preferences',
+    async ({ user }) => {
+      try {
+        const db = createDb();
+        const [row] = await db
+          .tag('user.getPreferences')
+          .select({ preferences: users.preferences })
+          .from(users)
+          .where(eq(users.id, user.userId))
+          .limit(1);
+
+        if (!row) return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
+
+        return GetPreferencesResponseSchema.parse({
+          preferences: UserPreferencesSchema.parse(row.preferences ?? {}),
+        });
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'user.getPreferences',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
+        throw error;
+      }
+    },
+    {
+      response: { 200: GetPreferencesResponseSchema, 404: ErrorResponseSchema },
+      isAuthenticated: true,
+      detail: { tags: ['Users'], summary: 'Get user preferences', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Update preferences (full replace — client always sends complete state)
+  .patch(
+    '/preferences',
+    async ({ body, user }) => {
+      try {
+        const db = createDb();
+        const [row] = await db
+          .tag('user.updatePreferences')
+          .update(users)
+          .set({ preferences: body, updatedAt: new Date() })
+          .where(eq(users.id, user.userId))
+          .returning();
+
+        if (!row) return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
+
+        return PatchPreferencesResponseSchema.parse({
+          preferences: UserPreferencesSchema.parse(row.preferences ?? {}),
+        });
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'user.updatePreferences',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
+        throw error;
+      }
+    },
+    {
+      body: UserPreferencesSchema,
+      response: { 200: PatchPreferencesResponseSchema, 404: ErrorResponseSchema },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Users'],
+        summary: 'Update user preferences',
+        security: [{ bearerAuth: [] }],
+      },
     },
   );

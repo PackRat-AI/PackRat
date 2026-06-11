@@ -10,12 +10,22 @@ import {
   CreateReportRequestSchema,
   UpdateReportStatusRequestSchema,
 } from '@packrat/schemas/chat';
-import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
+
+const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
+  openAiApiKey?.startsWith('sk-e2e-stub-') === true;
 
 export const chatRoutes = new Elysia({ prefix: '/chat' })
   .model({
@@ -89,6 +99,26 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         if (!success) {
           return status(429, { error: 'Too many chat requests, please try again shortly.' });
         }
+      }
+
+      if (isE2EStubOpenAiKey(OPENAI_API_KEY)) {
+        return createUIMessageStreamResponse({
+          stream: createUIMessageStream({
+            originalMessages: messages,
+            execute: ({ writer }) => {
+              const id = 'e2e-chat-response';
+              writer.write({ type: 'text-start', id });
+              writer.write({
+                type: 'text-delta',
+                id,
+                delta:
+                  'For this e2e pack, three essential items are a shelter, a sleep system, and water treatment.',
+              });
+              writer.write({ type: 'text-end', id });
+              writer.write({ type: 'finish', finishReason: 'stop' });
+            },
+          }),
+        });
       }
 
       const aiProvider = createAIProvider({
@@ -167,7 +197,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const db = createDb();
       const { userQuery, aiResponse, reason, userComment } = body;
 
-      await db.insert(reportedContent).values({
+      await db.tag('chat.createReport').insert(reportedContent).values({
         userId: user.userId,
         userQuery,
         aiResponse,
@@ -194,7 +224,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         return status(403, { error: 'Unauthorized' });
       }
 
-      const reportedItems = await db.query.reportedContent.findMany({
+      const reportedItems = await db.tag('chat.getReports').query.reportedContent.findMany({
         orderBy: (rc, { desc }) => [desc(rc.createdAt)],
         with: { user: true },
       });
@@ -230,6 +260,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const { status: reportStatus } = body;
 
       await db
+        .tag('chat.updateReportStatus')
         .update(reportedContent)
         .set({
           status: reportStatus,

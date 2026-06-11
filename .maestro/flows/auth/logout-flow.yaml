@@ -3,21 +3,54 @@ appId: ${APP_ID}
 # Logout Flow: Navigate to profile and sign out
 - waitForAnimationToEnd
 
+- runFlow:
+    when:
+      visible:
+        text: "Sync in progress"
+    commands:
+      - tapOn:
+          text: "LOG OUT|PROCEED"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "You're now logged out!"
+    commands:
+      - tapOn:
+          text: "SIGN-IN AGAIN|Sign-in again"
+      - waitForAnimationToEnd
+
 # Navigate to the Profile tab
-- tapOn:
-    text: "Profile"
+- runFlow:
+    when:
+      visible:
+        text: "Profile"
+    commands:
+      - tapOn:
+          text: "Profile"
 
 - waitForAnimationToEnd
 
 # Scroll down to find the log out button if needed
-- scrollUntilVisible:
-    element:
-      text: "Log Out"
-    direction: DOWN
+- runFlow:
+    when:
+      visible:
+        text: "Profile"
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "Log Out"
+          direction: DOWN
 
 # Tap Log Out
-- tapOn:
-    text: "Log Out"
+- runFlow:
+    when:
+      visible:
+        text: "Log Out"
+    commands:
+      - tapOn:
+          text: "Log Out"
 
 - waitForAnimationToEnd
 
@@ -27,7 +60,7 @@ appId: ${APP_ID}
         text: "Sync in progress"
     commands:
       - tapOn:
-          text: "Proceed"
+          text: "LOG OUT|PROCEED"
 
 - waitForAnimationToEnd
 
@@ -35,15 +68,42 @@ appId: ${APP_ID}
 - runFlow:
     when:
       visible:
-        text: "Sign-in again"
+        text: "You're now logged out!"
     commands:
       - tapOn:
-          text: "Sign-in again"
+          text: "SIGN-IN AGAIN|Sign-in again"
 
 - waitForAnimationToEnd
 
-# Assert we are back on the auth screen
+- runFlow:
+    when:
+      visible:
+        text: "http://.*"
+    commands:
+      - tapOn:
+          text: "http://.*"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Runtime version:.*"
+    commands:
+      - tapOn:
+          text: "Close"
+      - waitForAnimationToEnd
+
+# Assert we are back on the auth screen.
 - extendedWaitUntil:
     visible:
-      text: "Sign In"
+      id: "sign-in-email-button"
     timeout: 15000
