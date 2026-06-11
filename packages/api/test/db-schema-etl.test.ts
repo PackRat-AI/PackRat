@@ -17,6 +17,12 @@ type ColumnInfo = {
 
 type IndexInfo = { indexname: string; indexdef: string };
 
+type QueryResult<T> = T[] | { rows: T[] };
+
+function rowsFromResult<T>(result: QueryResult<T>): T[] {
+  return Array.isArray(result) ? result : result.rows;
+}
+
 async function describeColumns(table: string): Promise<ColumnInfo[]> {
   const db = createDbClient({} as Env);
   const result = (await db.execute(sql`
@@ -24,8 +30,8 @@ async function describeColumns(table: string): Promise<ColumnInfo[]> {
     FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = ${table}
     ORDER BY ordinal_position
-  `)) as unknown as ColumnInfo[];
-  return result;
+  `)) as unknown as QueryResult<ColumnInfo>;
+  return rowsFromResult(result);
 }
 
 async function describeIndexes(table: string): Promise<IndexInfo[]> {
@@ -34,8 +40,8 @@ async function describeIndexes(table: string): Promise<IndexInfo[]> {
     SELECT indexname, indexdef
     FROM pg_indexes
     WHERE schemaname = 'public' AND tablename = ${table}
-  `)) as unknown as IndexInfo[];
-  return result;
+  `)) as unknown as QueryResult<IndexInfo>;
+  return rowsFromResult(result);
 }
 
 describe('Migration 0047 — ETL workflow columns', () => {

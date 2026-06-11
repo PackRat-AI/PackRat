@@ -24,6 +24,7 @@
       "!**/vite.config.ts.timestamp-*.mjs",
       "!**/src/codegen",
       "!**/.claude",
+      "!**/.worktrees",
       "!**/.expo"
     ]
   },

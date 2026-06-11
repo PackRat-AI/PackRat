@@ -270,8 +270,8 @@ Defined in root `tsconfig.json`:
 
 ## Database
 
-- ORM: Drizzle (`packages/api/src/db/schema.ts`)
-- Migrations: Drizzle Kit (`drizzle-kit`)
+- ORM: Drizzle (`packages/db/src/schema/` after the schema extraction)
+- Migrations: **always** Drizzle Kit (`drizzle-kit generate`) — never hand-written SQL
 - Embeddings: pgvector with 1536 dimensions
 
 ### Migration discipline (read before touching `packages/api/drizzle/`)

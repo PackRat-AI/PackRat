@@ -88,7 +88,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/users-list');
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      expect(Array.isArray(data)).toBe(true);
+      expect(Array.isArray(data.data)).toBe(true);
     });
 
     it('accepts search query parameter', async () => {
@@ -102,7 +102,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/packs-list');
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      expect(Array.isArray(data)).toBe(true);
+      expect(Array.isArray(data.data)).toBe(true);
     });
 
     it('accepts search query parameter', async () => {
@@ -116,7 +116,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/catalog-list');
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      expect(Array.isArray(data)).toBe(true);
+      expect(Array.isArray(data.data)).toBe(true);
     });
 
     it('accepts search query parameter', async () => {
@@ -128,14 +128,20 @@ describe('Admin Routes', () => {
   describe('DELETE /admin/users/:id', () => {
     it('deletes a user', async () => {
       const user = await seedTestUser({ email: 'admin-del-user@example.com' });
-      const res = await apiWithBasicAuth(`/users/${user.id}`, { method: 'DELETE' });
+      const res = await apiWithBasicAuth(`/users/${user.id}/hard`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason: 'integration test cleanup' }),
+      });
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);
     });
 
     it('returns 404 for a non-existent user', async () => {
-      const res = await apiWithBasicAuth('/users/999999', { method: 'DELETE' });
+      const res = await apiWithBasicAuth('/users/999999/hard', {
+        method: 'DELETE',
+        body: JSON.stringify({ reason: 'integration test cleanup' }),
+      });
       expect(res.status).toBe(404);
     });
   });
