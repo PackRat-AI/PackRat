@@ -10,7 +10,7 @@ import { HorizontalCatalogItemCard } from './HorizontalCatalogItemCard';
 
 interface GapSwapSheetProps {
   gap: GapAnalysisItem | null;
-  matches: CatalogItem[];
+  matches: (CatalogItem & { similarity?: number })[];
   isLoading: boolean;
   onSelect: (item: CatalogItem) => void;
 }

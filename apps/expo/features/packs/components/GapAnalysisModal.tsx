@@ -107,8 +107,8 @@ export function GapAnalysisModal({
   };
 
   const swapGap = swapIndex !== null ? (gaps[swapIndex] ?? null) : null;
-  const swapMatches =
-    swapIndex !== null ? ((matchResults[swapIndex]?.data?.items as CatalogItem[]) ?? []) : [];
+  const swapMatches: (CatalogItem & { similarity?: number })[] =
+    swapIndex !== null ? (matchResults[swapIndex]?.data?.items ?? []) : [];
   const swapLoading = swapIndex !== null ? (matchResults[swapIndex]?.isLoading ?? false) : false;
 
   return (
@@ -171,7 +171,7 @@ export function GapAnalysisModal({
                   <GapSuggestionRow
                     key={gap.suggestion}
                     gap={gap}
-                    topMatch={matchResults[i]?.data?.items?.[0] as CatalogItem | undefined}
+                    topMatch={matchResults[i]?.data?.items?.[0]}
                     isLoadingMatch={matchResults[i]?.isLoading ?? false}
                     selected={i in selections}
                     selectedItem={selections[i]?.item}
