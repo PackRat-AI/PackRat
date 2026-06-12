@@ -12,6 +12,114 @@ import type { Pack, PackCategory } from '../types';
 import { GapSuggestionRow } from './GapSuggestionRow';
 import { GapSwapSheet } from './GapSwapSheet';
 
+// ---------------------------------------------------------------------------
+// Dev panel — tree-shaken in production builds (__DEV__ = false)
+// ---------------------------------------------------------------------------
+const DEV_MOCK_ANALYSIS: GapAnalysisResponse = __DEV__
+  ? {
+      summary:
+        'Your pack covers the basics but is missing key safety and navigation gear for a multi-day backcountry trip.',
+      gaps: [
+        {
+          suggestion: 'Headlamp',
+          reason:
+            'No light source found. Essential for camp setup after dark and emergency navigation.',
+          priority: 'must-have',
+          consumable: false,
+          worn: false,
+        },
+        {
+          suggestion: 'Water Filter',
+          reason: 'No water purification method detected. Critical for backcountry water sources.',
+          priority: 'must-have',
+          consumable: false,
+          worn: false,
+        },
+        {
+          suggestion: 'First Aid Kit',
+          reason: 'No medical supplies in pack. Required for any overnight trip.',
+          priority: 'must-have',
+          consumable: true,
+          worn: false,
+        },
+        {
+          suggestion: 'Trekking Poles',
+          reason: 'Useful for steep terrain and reducing knee strain on descents.',
+          priority: 'nice-to-have',
+          consumable: false,
+          worn: false,
+        },
+        {
+          suggestion: 'Insulated Water Bottle',
+          reason: 'Keeps liquids from freezing overnight in cold conditions.',
+          priority: 'nice-to-have',
+          consumable: false,
+          worn: false,
+        },
+        {
+          suggestion: 'Gaiters',
+          reason: 'Useful for wet or snowy trail conditions to keep boots dry.',
+          priority: 'optional',
+          consumable: false,
+          worn: true,
+        },
+      ],
+    }
+  : { gaps: [], summary: '' };
+
+type DevState = 'results' | 'loading' | 'empty' | 'error' | null;
+
+const DEV_CHIPS: { label: string; state: DevState }[] = __DEV__
+  ? [
+      { label: 'Results', state: 'results' },
+      { label: 'Loading', state: 'loading' },
+      { label: 'Empty', state: 'empty' },
+      { label: 'Error', state: 'error' },
+    ]
+  : [];
+
+interface DevGapPanelProps {
+  active: DevState;
+  onSelect: (state: DevState) => void;
+}
+
+function DevGapPanel({ active, onSelect }: DevGapPanelProps) {
+  const { colors } = useColorScheme();
+  return (
+    <View
+      className="mb-4 rounded-xl p-3"
+      style={{ backgroundColor: colors.grey6, borderWidth: 1, borderColor: colors.grey4 }}
+    >
+      <Text variant="footnote" className="mb-2 font-semibold text-muted-foreground">
+        🧪 Dev — Force state
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        {DEV_CHIPS.map((chip) => {
+          const isActive = active === chip.state;
+          return (
+            <TouchableOpacity
+              key={chip.label}
+              className="rounded-lg px-3 py-1.5"
+              style={{ backgroundColor: isActive ? colors.primary : colors.grey5 }}
+              onPress={() => onSelect(isActive ? null : chip.state)}
+              activeOpacity={0.7}
+            >
+              <Text
+                variant="footnote"
+                className="font-semibold"
+                style={{ color: isActive ? 'white' : colors.foreground }}
+              >
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+// ---------------------------------------------------------------------------
+
 interface GapAnalysisModalProps {
   visible: boolean;
   onClose: () => void;
@@ -29,14 +137,29 @@ export function GapAnalysisModal({
   visible,
   onClose,
   pack,
-  analysis,
+  analysis: analysisProp,
   location,
   activity,
-  isLoading,
+  isLoading: isLoadingProp,
   onRetry,
 }: GapAnalysisModalProps) {
   const { t } = useTranslation();
   const { isDarkColorScheme, colors } = useColorScheme();
+
+  const [devState, setDevState] = useState<DevState>(null);
+
+  const isLoading = __DEV__ && devState === 'loading' ? true : isLoadingProp;
+  const analysis = __DEV__
+    ? devState === 'results'
+      ? DEV_MOCK_ANALYSIS
+      : devState === 'empty'
+        ? { gaps: [], summary: '' }
+        : devState === 'error'
+          ? null
+          : devState === 'loading'
+            ? null
+            : analysisProp
+    : analysisProp;
 
   const gaps = analysis?.gaps ?? [];
   const matchResults = useGapCatalogMatches(gaps);
@@ -153,6 +276,8 @@ export function GapAnalysisModal({
 
         {/* Content */}
         <ScrollView contentContainerClassName={cn('p-4', !analysis && 'flex-1')}>
+          {__DEV__ && <DevGapPanel active={devState} onSelect={setDevState} />}
+
           {isLoading ? (
             <View className="flex-1 items-center justify-center py-8">
               <ActivityIndicator size="large" />
