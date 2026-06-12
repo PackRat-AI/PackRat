@@ -1,4 +1,4 @@
-import { ActivityIndicator, Button, cn, Text, useSheetRef } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -43,8 +43,8 @@ export function GapAnalysisModal({
 
   const [selections, setSelections] = useState<Record<number, Selection>>({});
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
+  const [swapVisible, setSwapVisible] = useState(false);
 
-  const swapSheetRef = useSheetRef();
   const { addItemToPack, isLoading: isAdding } = useAddCatalogItem();
 
   const selectedCount = Object.keys(selections).length;
@@ -84,7 +84,6 @@ export function GapAnalysisModal({
         [swapIndex]: { item, quantity: current?.quantity ?? 1 },
       };
     });
-    swapSheetRef.current?.dismiss();
   };
 
   const handleAddAll = async () => {
@@ -181,7 +180,7 @@ export function GapAnalysisModal({
                     onQuantityChange={(delta) => handleQuantityChange(i, delta)}
                     onSwapPress={() => {
                       setSwapIndex(i);
-                      swapSheetRef.current?.present();
+                      setSwapVisible(true);
                     }}
                   />
                 ))}
@@ -241,7 +240,8 @@ export function GapAnalysisModal({
       </View>
 
       <GapSwapSheet
-        ref={swapSheetRef}
+        visible={swapVisible}
+        onClose={() => setSwapVisible(false)}
         gap={swapGap}
         matches={swapMatches}
         isLoading={swapLoading}

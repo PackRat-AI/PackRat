@@ -1,42 +1,50 @@
-import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { ActivityIndicator, Sheet, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { Icon } from 'expo-app/components/Icon';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import * as React from 'react';
-import { View } from 'react-native';
+import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
 import { HorizontalCatalogItemCard } from './HorizontalCatalogItemCard';
 
 interface GapSwapSheetProps {
+  visible: boolean;
+  onClose: () => void;
   gap: GapAnalysisItem | null;
   matches: (CatalogItem & { similarity?: number })[];
   isLoading: boolean;
   onSelect: (item: CatalogItem) => void;
 }
 
-export const GapSwapSheet = React.forwardRef<BottomSheetModal, GapSwapSheetProps>(
-  function GapSwapSheet({ gap, matches, isLoading, onSelect }, ref) {
-    const { colors } = useColorScheme();
+export function GapSwapSheet({
+  visible,
+  onClose,
+  gap,
+  matches,
+  isLoading,
+  onSelect,
+}: GapSwapSheetProps) {
+  const { colors } = useColorScheme();
 
-    return (
-      <Sheet
-        ref={ref}
-        snapPoints={['60%']}
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
-      >
-        <View className="px-4 pb-2 pt-1 border-b border-border">
-          <Text className="text-base font-semibold text-foreground">
-            {gap?.suggestion ?? 'Choose Gear'}
-          </Text>
-          <Text className="text-xs text-muted-foreground" numberOfLines={1}>
-            {gap?.reason}
-          </Text>
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-foreground">
+              {gap?.suggestion ?? 'Choose Gear'}
+            </Text>
+            {gap?.reason && (
+              <Text className="text-xs text-muted-foreground" numberOfLines={1}>
+                {gap.reason}
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity onPress={onClose} className="p-1">
+            <Icon name="close" size={24} color={colors.foreground} />
+          </TouchableOpacity>
         </View>
 
-        <BottomSheetScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
           {isLoading ? (
             <View className="items-center py-8">
               <ActivityIndicator size="large" />
@@ -48,7 +56,7 @@ export const GapSwapSheet = React.forwardRef<BottomSheetModal, GapSwapSheetProps
                 item={item}
                 onPress={() => {
                   onSelect(item);
-                  if (ref && 'current' in ref) ref.current?.dismiss();
+                  onClose();
                 }}
               />
             ))
@@ -57,8 +65,8 @@ export const GapSwapSheet = React.forwardRef<BottomSheetModal, GapSwapSheetProps
               <Text className="text-muted-foreground">No gear found for this suggestion.</Text>
             </View>
           )}
-        </BottomSheetScrollView>
-      </Sheet>
-    );
-  },
-);
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
