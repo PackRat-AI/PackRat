@@ -1,16 +1,222 @@
 import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useState } from 'react';
-import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAddCatalogItem } from '../hooks/useAddCatalogItem';
 import { useGapCatalogMatches } from '../hooks/useGapCatalogMatches';
-import type { GapAnalysisResponse } from '../hooks/usePackGapAnalysis';
+import type { GapAnalysisItem, GapAnalysisResponse } from '../hooks/usePackGapAnalysis';
 import type { Pack, PackCategory } from '../types';
 import { GapSuggestionRow } from './GapSuggestionRow';
-import { GapSwapSheet } from './GapSwapSheet';
+
+// ---------------------------------------------------------------------------
+// Swap sheet — CartSheet-style animated overlay, lives inside the same Modal
+// so it doesn't fight the stacking context
+// ---------------------------------------------------------------------------
+function SwapSheet({
+  visible,
+  onClose,
+  gap,
+  matches,
+  isLoading,
+  onSelect,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  gap: GapAnalysisItem | null;
+  matches: (CatalogItem & { similarity?: number })[];
+  isLoading: boolean;
+  onSelect: (item: CatalogItem) => void;
+}) {
+  const { colors } = useColorScheme();
+  const { bottom } = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
+
+  const translateY = useSharedValue(screenHeight);
+  const dragY = useSharedValue(0);
+  const backdropOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      backdropOpacity.value = withTiming(1, { duration: 300 });
+      translateY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
+    } else {
+      dragY.value = 0;
+      backdropOpacity.value = withTiming(0, { duration: 280 });
+      translateY.value = withTiming(screenHeight, {
+        duration: 360,
+        easing: Easing.in(Easing.quad),
+      });
+    }
+  }, [visible]);
+
+  const pan = Gesture.Pan()
+    .activeOffsetY(5)
+    .failOffsetY(-5)
+    .onUpdate((e) => {
+      dragY.value = Math.max(0, e.translationY);
+    })
+    .onEnd((e) => {
+      if (e.translationY > 80 || e.velocityY > 600) {
+        const captured = dragY.value;
+        dragY.value = 0;
+        translateY.value = captured;
+        backdropOpacity.value = withTiming(0, { duration: 280 });
+        translateY.value = withTiming(
+          screenHeight,
+          { duration: 340, easing: Easing.in(Easing.quad) },
+          (finished) => {
+            if (finished) runOnJS(onClose)();
+          },
+        );
+      } else {
+        dragY.value = withTiming(0, { duration: 320, easing: Easing.out(Easing.cubic) });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value + dragY.value }],
+  }));
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOpacity.value }));
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',
+        zIndex: 10,
+      }}
+      pointerEvents={visible ? 'auto' : 'none'}
+    >
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          },
+          backdropStyle,
+        ]}
+      >
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      </Animated.View>
+
+      <Animated.View
+        className="bg-card rounded-t-3xl overflow-hidden"
+        style={[{ maxHeight: '72%' }, sheetStyle]}
+      >
+        <GestureDetector gesture={pan}>
+          <View>
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </View>
+            <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-border">
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
+                  {gap?.suggestion ?? 'Choose Gear'}
+                </Text>
+                {gap?.reason && (
+                  <Text className="text-xs text-muted-foreground" numberOfLines={1}>
+                    {gap.reason}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Icon name="close" size={20} color={colors.grey2} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </GestureDetector>
+
+        <ScrollView
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: Math.max(bottom, 16) + 8 }}
+        >
+          {isLoading ? (
+            <View className="items-center py-8">
+              <ActivityIndicator size="large" />
+            </View>
+          ) : matches.length > 0 ? (
+            matches.map((item) => (
+              <View
+                key={item.id}
+                className="flex-row items-center gap-3 border border-border rounded-lg bg-card p-3"
+              >
+                <CatalogItemImage
+                  imageUrl={item.images?.[0]}
+                  className="h-12 w-12 rounded-md shrink-0"
+                  resizeMode="cover"
+                />
+                <View className="flex-1 min-w-0">
+                  <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {item.brand && (
+                    <Text className="text-xs text-muted-foreground">{item.brand}</Text>
+                  )}
+                  {item.similarity != null && (
+                    <Text
+                      className={`text-xs font-medium mt-1 ${
+                        item.similarity >= 0.8
+                          ? 'text-primary'
+                          : item.similarity >= 0.5
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                      }`}
+                    >
+                      {Math.round(item.similarity * 100)}% match
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    onSelect(item);
+                    onClose();
+                  }}
+                  className="rounded-full bg-primary px-3 py-1.5"
+                >
+                  <Text className="text-xs font-semibold text-white">Select</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            <View className="items-center py-8">
+              <Text className="text-muted-foreground">No gear found for this suggestion.</Text>
+            </View>
+          )}
+        </ScrollView>
+      </Animated.View>
+    </View>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Dev panel — tree-shaken in production builds (__DEV__ = false)
@@ -128,6 +334,8 @@ interface GapAnalysisModalProps {
   activity?: PackCategory;
   analysis: GapAnalysisResponse | null;
   isLoading: boolean;
+  isError: boolean;
+  onAnalyze: () => void;
   onRetry: () => void;
 }
 
@@ -141,6 +349,8 @@ export function GapAnalysisModal({
   location,
   activity,
   isLoading: isLoadingProp,
+  isError: isErrorProp,
+  onAnalyze,
   onRetry,
 }: GapAnalysisModalProps) {
   const { t } = useTranslation();
@@ -149,16 +359,16 @@ export function GapAnalysisModal({
   const [devState, setDevState] = useState<DevState>(null);
 
   const isLoading = __DEV__ && devState === 'loading' ? true : isLoadingProp;
+  const isError =
+    __DEV__ && devState === 'error' ? true : __DEV__ && devState !== null ? false : isErrorProp;
   const analysis = __DEV__
     ? devState === 'results'
       ? DEV_MOCK_ANALYSIS
       : devState === 'empty'
         ? { gaps: [], summary: '' }
-        : devState === 'error'
+        : devState === 'error' || devState === 'loading'
           ? null
-          : devState === 'loading'
-            ? null
-            : analysisProp
+          : analysisProp
     : analysisProp;
 
   const gaps = analysis?.gaps ?? [];
@@ -202,10 +412,7 @@ export function GapAnalysisModal({
     if (swapIndex === null) return;
     setSelections((prev) => {
       const current = prev[swapIndex];
-      return {
-        ...prev,
-        [swapIndex]: { item, quantity: current?.quantity ?? 1 },
-      };
+      return { ...prev, [swapIndex]: { item, quantity: current?.quantity ?? 1 } };
     });
   };
 
@@ -232,6 +439,8 @@ export function GapAnalysisModal({
   const swapMatches: (CatalogItem & { similarity?: number })[] =
     swapIndex !== null ? (matchResults[swapIndex]?.data?.items ?? []) : [];
   const swapLoading = swapIndex !== null ? (matchResults[swapIndex]?.isLoading ?? false) : false;
+
+  const isIdle = !isLoading && !isError && analysis === null;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
@@ -282,6 +491,26 @@ export function GapAnalysisModal({
             <View className="flex-1 items-center justify-center py-8">
               <ActivityIndicator size="large" />
               <Text className="mt-4 text-muted-foreground">{t('packs.analyzing')}</Text>
+            </View>
+          ) : isIdle ? (
+            <View className="flex-1 items-center justify-center py-8 mt-24">
+              <View className="mb-6 h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                <Icon
+                  materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
+                  ios={{ name: 'sparkle.magnifyingglass' }}
+                  size={32}
+                  color={colors.primary}
+                />
+              </View>
+              <Text className="text-center text-lg font-semibold text-foreground">
+                Ready to Analyze
+              </Text>
+              <Text className="mt-2 mb-8 text-center text-sm text-muted-foreground mx-8">
+                AI will scan your pack and suggest gear you might be missing for this trip.
+              </Text>
+              <Button onPress={onAnalyze} className="px-8">
+                <Text className="font-semibold">Analyze Pack</Text>
+              </Button>
             </View>
           ) : analysis ? (
             gaps.length > 0 ? (
@@ -362,16 +591,17 @@ export function GapAnalysisModal({
             </Button>
           </View>
         )}
-      </View>
 
-      <GapSwapSheet
-        visible={swapVisible}
-        onClose={() => setSwapVisible(false)}
-        gap={swapGap}
-        matches={swapMatches}
-        isLoading={swapLoading}
-        onSelect={handleSwapItem}
-      />
+        {/* Swap sheet — absolute overlay within the same Modal, avoids stacking issues */}
+        <SwapSheet
+          visible={swapVisible}
+          onClose={() => setSwapVisible(false)}
+          gap={swapGap}
+          matches={swapMatches}
+          isLoading={swapLoading}
+          onSelect={handleSwapItem}
+        />
+      </View>
     </Modal>
   );
 }

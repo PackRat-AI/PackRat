@@ -54,6 +54,7 @@ export function PackDetailScreen() {
     mutate: analyzeGaps,
     data: gapAnalysis,
     isPending: isAnalyzing,
+    isError: isAnalysisError,
     reset: resetAnalysis,
   } = usePackGapAnalysis();
 
@@ -208,23 +209,22 @@ export function PackDetailScreen() {
     setIsLocationPickerOpen(true);
   };
 
-  const handleLocationSelect = (location?: WeatherLocation) => {
-    setLocation(location);
+  const handleLocationSelect = (selectedLocation?: WeatherLocation) => {
+    setLocation(selectedLocation);
     setIsLocationPickerOpen(false);
 
-    // Validation: either activity or location must be selected
-    if (!selectedActivity && !location) {
-      // This shouldn't happen due to UI constraints, but handle gracefully
-      return;
-    }
+    if (!selectedActivity && !selectedLocation) return;
 
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
+  };
+
+  const runAnalysis = () => {
     analyzeGaps({
       packId: id,
       context: {
         destination: location?.name,
-        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
+        tripType: selectedActivity || pack.category,
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -232,14 +232,7 @@ export function PackDetailScreen() {
 
   const handleRetryAnalysis = () => {
     resetAnalysis();
-    analyzeGaps({
-      packId: id,
-      context: {
-        destination: location?.name,
-        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
-        startDate: new Date().toISOString().split('T')[0],
-      },
-    });
+    runAnalysis();
   };
 
   const getFilteredItems = () => {
@@ -736,8 +729,10 @@ export function PackDetailScreen() {
         pack={pack}
         location={location?.name}
         activity={selectedActivity}
-        analysis={gapAnalysis || null}
+        analysis={gapAnalysis ?? null}
         isLoading={isAnalyzing}
+        isError={isAnalysisError}
+        onAnalyze={runAnalysis}
         onRetry={handleRetryAnalysis}
       />
     </SafeAreaView>
