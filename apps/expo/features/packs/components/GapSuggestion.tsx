@@ -26,17 +26,20 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
     limit: 6,
   });
 
-  const handleAddItem = async (item: CatalogItem) => {
-    await addItemToPack({
-      packId,
-      opts: {
-        catalogItem: item,
-        data: {
-          consumable: gap.consumable,
-          worn: gap.worn,
+  const handleAddItems = async (items: Array<{ item: CatalogItem; quantity: number }>) => {
+    for (const { item, quantity } of items) {
+      await addItemToPack({
+        packId,
+        opts: {
+          catalogItem: item,
+          data: {
+            consumable: gap.consumable,
+            worn: gap.worn,
+            quantity,
+          },
         },
-      },
-    });
+      });
+    }
     setCatalogSuggestionsModalVisible(false);
     setIsAddressed(true);
     setVectorQuery('');
@@ -151,7 +154,7 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
           onRetry={refetch}
           onClose={() => setCatalogSuggestionsModalVisible(false)}
           gapItem={gap}
-          onAddItem={handleAddItem}
+          onAddItems={handleAddItems}
         />
       )}
     </>

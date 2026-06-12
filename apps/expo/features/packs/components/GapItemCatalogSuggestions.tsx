@@ -1,4 +1,3 @@
-import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
@@ -15,7 +14,7 @@ interface GapItemCatalogSuggestionsProps {
   isLoading: boolean;
   isAdding: boolean;
   gapItem: GapAnalysisItem;
-  onAddItem: (items: CatalogItem) => void;
+  onAddItems: (items: Array<{ item: CatalogItem; quantity: number }>) => void;
   onRetry: () => void;
 }
 
@@ -27,16 +26,42 @@ export function GapItemCatalogSuggestions({
   isAdding,
   onRetry,
   gapItem,
-  onAddItem,
+  onAddItems,
 }: GapItemCatalogSuggestionsProps) {
   const { isDarkColorScheme, colors } = useColorScheme();
-  const [selectedItem, setSelectedItem] = useState<number | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Record<number, number>>({});
+
+  const selectedCount = Object.keys(selectedItems).length;
+
+  const handleSelect = (item: CatalogItem) => {
+    setSelectedItems((prev) => {
+      if (prev[item.id] != null) {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      }
+      return { ...prev, [item.id]: 1 };
+    });
+  };
+
+  const handleQuantityChange = (itemId: number, delta: number) => {
+    setSelectedItems((prev) => {
+      const newQty = (prev[itemId] ?? 1) + delta;
+      if (newQty <= 0) {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      }
+      return { ...prev, [itemId]: newQty };
+    });
+  };
 
   const handleAddSelected = () => {
-    assertDefined(suggestions);
-    const itemToAdd = suggestions.find((item) => selectedItem === item.id);
-    assertDefined(itemToAdd);
-    onAddItem(itemToAdd);
+    if (!suggestions) return;
+    const itemsToAdd = suggestions
+      .filter((item) => selectedItems[item.id] != null)
+      .map((item) => ({ item, quantity: selectedItems[item.id] as number }));
+    onAddItems(itemsToAdd);
   };
 
   return (
@@ -68,8 +93,10 @@ export function GapItemCatalogSuggestions({
                   <HorizontalCatalogItemCard
                     key={item.id}
                     item={item}
-                    onSelect={(item) => setSelectedItem(item.id)}
-                    selected={selectedItem === item.id}
+                    onSelect={handleSelect}
+                    selected={item.id in selectedItems}
+                    quantity={selectedItems[item.id]}
+                    onQuantityChange={handleQuantityChange}
                   />
                 ))}
               </View>
@@ -114,11 +141,17 @@ export function GapItemCatalogSuggestions({
           <View className="border-t border-border p-4">
             <Button
               onPress={handleAddSelected}
-              disabled={selectedItem === null || isAdding}
+              disabled={selectedCount === 0 || isAdding}
               className="w-full"
             >
               {isAdding && <ActivityIndicator size="small" color="#fff" />}
-              <Text>{isAdding ? 'Adding...' : 'Add to Pack'}</Text>
+              <Text>
+                {isAdding
+                  ? 'Adding...'
+                  : selectedCount === 0
+                    ? 'Select Items to Add'
+                    : `Add ${selectedCount} Item${selectedCount !== 1 ? 's' : ''} to Pack`}
+              </Text>
             </Button>
           </View>
         )}
