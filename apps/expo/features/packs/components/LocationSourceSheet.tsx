@@ -51,7 +51,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                   color={colors.grey2}
                 />
               </TouchableOpacity>
-              <Text variant="body" className="text-center font-medium">
+              <Text variant="body" className="text-center">
                 {t('common.search')}
               </Text>
             </View>
@@ -71,7 +71,7 @@ export const LocationSourceSheet = React.forwardRef<BottomSheetModal, LocationSo
                   color={colors.grey2}
                 />
               </TouchableOpacity>
-              <Text variant="body" className="max-w-28 text-center">
+              <Text variant="body" className="max-w-36 text-center">
                 {t('weather.useCurrentLocation')}
               </Text>
             </View>
