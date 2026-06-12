@@ -73,6 +73,11 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - No `any` — use proper TypeScript types or `unknown`
 - Strict null checks enabled, no unchecked indexed access
 
+### TypeScript conventions
+
+- **Never use `as unknown as T`** to bypass type errors. Widen the function signature with a generic constraint, extract a structural type, or fix the source type instead. Each `as unknown` site is a place where two types don't agree and TS is being silenced — over time these become load-bearing lies. The only legitimate use is documenting a known third-party type bug inline with a precise assertion and a comment naming the bug.
+- **Prefer `Object.freeze({...} as const)` over bare `as const`** for narrow-typed lookup tables, column whitelists, and config dictionaries. `as const` is type-only; `Object.freeze` adds runtime immutability so accidental mutations fail loudly rather than silently corrupting state. Keep the inner `as const` for literal-type narrowing.
+
 ## Conventions
 
 ### API (packages/api)
@@ -84,6 +89,22 @@ Enforced by **Biome 2.0** via lefthook pre-commit hook:
 - Middleware in `src/middleware/` — use the `authPlugin` macro (`isAuthenticated: true`) for protected routes
 - Soft deletes for all user content
 - async/await everywhere (no raw promises)
+
+#### DB query projection discipline (cost-bearing)
+
+Neon compute + egress are metered. Every column a query SELECTs is bytes shipped from Postgres to the Worker. The `catalog_items` and `pack_items` tables carry a 1536-dim `vector(1536)` embedding column plus large JSONB content (`reviews`, `qas`, `faqs`, `techs`, `links`, `variants`) — a single unprojected row is ~50-100 KB. List endpoints, ETL `.returning()`, and embedding-backfill scans that don't project columns can ship multi-MB payloads per call.
+
+**Default to explicit projection at every Drizzle query touching `catalog_items` or `pack_items`:**
+
+- `db.select({ id: t.id, name: t.name, ... }).from(t)` — never `db.select().from(t)` for these tables
+- `db.query.X.findFirst/findMany({ columns: { id: true, ... } })` — never `with: { foo: true }` shortcut, never an unfiltered `findMany`
+- `.returning({ id: t.id, ... })` — never `.returning()` no-arg on insert/update/upsert against these tables
+- For exclude patterns (drop only embedding, keep everything else), use `getTableColumns(t)` destructure: `const { embedding: _, ...cols } = getTableColumns(catalogItems); db.select({ ...cols, similarity }).from(catalogItems)` — Drizzle docs document this as the official exclude shape
+- **Don't mix `true` and `false` in a `columns:` object** — Drizzle silently ignores the `false` entries when any `true` is present. Either all-whitelist or all-exclude.
+
+When a service or compute helper reads only a subset of columns, extract a projection type in `packages/db/src/projections.ts` (derive from the inferred schema via `Pick<>` so column renames propagate) and make the consumer generic over it. Lets callers narrow DB queries without `as unknown` casts at the boundary. Existing types there: `PackItemForWeights`, `PackForWeights`, `PackItemForBreakdown`, `PackForBreakdown`.
+
+**Lint:** `bun packages/api/scripts/lint/no-unprojected-fat-table-queries.ts` (runs in CI) fails the build on new `SELECT *` / no-`columns:` / no-arg `.returning()` against the fat tables. Use the inline opt-out `// lint:allow-unprojected-fat-table reason: <text>` only when the full row is genuinely needed (e.g., embedding regen text, detail endpoint).
 
 ### Mobile (apps/expo)
 
@@ -103,6 +124,7 @@ features/{name}/
 - **Forms**: TanStack React Form
 - **Feature flags**: `apps/expo/config.ts` — `featureFlags` object, default new flags to `false`
 - **Animations**: React Native Reanimated 4
+- **E2E selectors**: Prefer stable `testID` values from `apps/expo/lib/testIds.ts` for Maestro and Playwright selectors. Add or extend app-controlled test IDs for important user actions and assertions instead of matching visible text. Use text selectors only when the surface is external or not app-controlled, such as Expo dev-client UI, native permission dialogs, or unavoidable system copy.
 
 ### Web Apps (apps/guides, apps/landing, apps/trails)
 

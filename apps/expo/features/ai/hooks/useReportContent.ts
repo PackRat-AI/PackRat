@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import type { ReportReason } from '../lib/reportReasons';
@@ -23,7 +24,14 @@ export const reportContent = async (
     ...rest,
     ...(userComment != null ? { userComment } : {}),
   });
-  if (error) throw new Error(`Failed to report content: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to report content'));
+    Sentry.captureException(err, {
+      tags: { feature: 'ai', action: 'reportContent' },
+      extra: { apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   // safe-cast: treaty response shape matches ReportContentResponse as validated by the API schema
   return data as unknown as ReportContentResponse;
 };

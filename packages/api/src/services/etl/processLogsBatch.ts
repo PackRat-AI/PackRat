@@ -16,17 +16,12 @@ export async function processLogsBatch({
 }): Promise<void> {
   const db = createDbClient(env);
 
-  // invalid_item_logs is the forensic record of what failed validation;
-  // a lost DB write here leaves an operator chasing a data-quality complaint
-  // with no trail (audit P2 #2). `record` opens a span and captures+rethrows,
-  // so the failure is never swallowed. The structured logger.error keeps the
-  // wrangler/console trail distinct from the Sentry capture.
   await record({
     operation: 'etl.processLogsBatch',
     extra: { jobId, count: logs.length },
     fn: async () => {
       try {
-        await db.insert(invalidItemLogs).values(logs);
+        await db.tag('etl.insertInvalidLogs').insert(invalidItemLogs).values(logs);
         await updateEtlJobProgress({
           env,
           params: {

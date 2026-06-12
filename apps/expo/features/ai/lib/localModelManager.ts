@@ -133,7 +133,7 @@ export async function isLlamaModelDownloaded(): Promise<boolean> {
  * Initialise the local model. For Apple this is instant; for llama this
  * only prepares an already-downloaded model — call `downloadLocalModel` first.
  */
-export async function initLocalModel(): Promise<void> {
+export async function initLocalModel(isAuthenticated = false): Promise<void> {
   const status = store.get(localModelStatusAtom);
   if (status === 'downloading' || status === 'preparing' || status === 'ready') return;
 
@@ -141,7 +141,7 @@ export async function initLocalModel(): Promise<void> {
   store.set(localModelErrorAtom, null);
 
   if (isAppleIntelligenceAvailable()) {
-    await _initAppleModel();
+    await _initAppleModel(isAuthenticated);
   } else {
     await _initLlamaModel();
   }
@@ -151,10 +151,10 @@ export async function initLocalModel(): Promise<void> {
  * Download the llama model (no-op on Apple). Safe to call if already downloaded;
  * will fast-path to prepare().
  */
-export async function downloadLocalModel(): Promise<void> {
+export async function downloadLocalModel(isAuthenticated = false): Promise<void> {
   if (isAppleIntelligenceAvailable()) {
     // Apple model needs no download — just init
-    await _initAppleModel();
+    await _initAppleModel(isAuthenticated);
     return;
   }
 
@@ -329,7 +329,7 @@ export async function deleteLocalModel(): Promise<void> {
 
 // ─── private helpers ───────────────────────────────────────────────────────
 
-async function _initAppleModel(): Promise<void> {
+async function _initAppleModel(isAuthenticated = false): Promise<void> {
   // isAppleIntelligenceAvailable() has already confirmed availability — just init.
   store.set(localModelStatusAtom, 'preparing');
 
@@ -338,7 +338,7 @@ async function _initAppleModel(): Promise<void> {
     if (!mod) throw new Error('Apple module not available');
 
     const apple = mod.createAppleProvider({
-      availableTools: createLocalTools(),
+      availableTools: createLocalTools(isAuthenticated),
     });
 
     appleModel = new AppleModelWrapper(apple());

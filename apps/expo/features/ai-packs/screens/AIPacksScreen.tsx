@@ -6,6 +6,7 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { TextInput } from 'expo-app/components/TextInput';
@@ -33,6 +34,12 @@ export function AIPacksScreen() {
     },
     onSubmit: async ({ value }) => {
       try {
+        Sentry.addBreadcrumb({
+          category: 'ai',
+          message: 'Generating AI packs',
+          level: 'info',
+          data: { count: value.count },
+        });
         const packs = await generatePacks(value);
         alertRef.current?.alert({
           title: t('ai.packsGenerated'),
@@ -49,6 +56,9 @@ export function AIPacksScreen() {
           ],
         });
       } catch (error) {
+        Sentry.captureException(error, {
+          tags: { feature: 'ai', action: 'generatePacks' },
+        });
         alertRef.current?.alert({
           title: t('common.error'),
           message: t('ai.failedToGenerate'),

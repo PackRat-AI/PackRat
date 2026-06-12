@@ -37,6 +37,7 @@ export const apiEnvObjectSchema = z.object({
   PACKRAT_API_URL: z.string().url().optional(),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   BETTER_AUTH_URL: z.string().url().optional(),
+  BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
   // Google OAuth (Better Auth social provider)
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
@@ -106,6 +107,8 @@ export const apiEnvObjectSchema = z.object({
   OSM_HYPERDRIVE: z.unknown().optional(),
   // Better Auth KV namespace for session storage and rate limiting
   AUTH_KV: z.unknown(),
+  // D1 database for query metrics (edge-local, no Neon egress for observability writes)
+  METRICS_DB: z.unknown(),
 });
 
 // Re-export the object schema under its historical name for tests/consumers
@@ -186,6 +189,7 @@ const testEnvSchema = apiEnvObjectSchema
     PACKRAT_API_URL: z.string().url().optional(),
     BETTER_AUTH_SECRET: z.string().optional(),
     BETTER_AUTH_URL: z.string().url().optional(),
+    BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
     CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
     AI: z.unknown().optional(),
     PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
@@ -197,6 +201,7 @@ const testEnvSchema = apiEnvObjectSchema
     ETL_WORKFLOW: z.unknown().optional(),
     APP_CONTAINER: z.unknown().optional(),
     AUTH_KV: z.unknown().optional(),
+    METRICS_DB: z.unknown().optional(),
   })
   .transform((env) => ({
     ...env,
@@ -222,6 +227,7 @@ export type ValidatedEnv = Omit<
   | 'APP_CONTAINER'
   | 'TOKEN_RATE_LIMITER'
   | 'AUTH_KV'
+  | 'METRICS_DB'
 > & {
   CF_VERSION_METADATA: WorkerVersionMetadata;
   AI: Ai;
@@ -236,6 +242,7 @@ export type ValidatedEnv = Omit<
   TOKEN_RATE_LIMITER?: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   OSM_HYPERDRIVE?: Hyperdrive;
   AUTH_KV: KVNamespace;
+  METRICS_DB?: D1Database;
 };
 
 export type Env = ValidatedEnv;
@@ -243,8 +250,10 @@ export type Env = ValidatedEnv;
 // Cache for validated envs keyed by the raw env reference.
 const envCache = new WeakMap<object, ValidatedEnv>();
 
-function isTestEnvironment(): boolean {
+function isTestEnvironment(rawEnv?: Record<string, unknown>): boolean {
   return (
+    rawEnv?.NODE_ENV === 'test' ||
+    rawEnv?.VITEST === 'true' ||
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
     (typeof globalThis !== 'undefined' &&
@@ -256,7 +265,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
   // Production runs through the post-transform schema so the canonical
   // PACKRAT_* fields are always populated; tests use the relaxed schema
   // with explicit defaults for those fields.
-  const schema = isTestEnvironment() ? testEnvSchema : validatedApiEnvSchema;
+  const schema = isTestEnvironment(rawEnv) ? testEnvSchema : validatedApiEnvSchema;
   const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);
@@ -283,6 +292,7 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     TOKEN_RATE_LIMITER: rawEnv.TOKEN_RATE_LIMITER as ValidatedEnv['TOKEN_RATE_LIMITER'] | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     OSM_HYPERDRIVE: rawEnv.OSM_HYPERDRIVE as Hyperdrive | undefined, // safe-cast: Cloudflare Worker binding injected by runtime
     AUTH_KV: rawEnv.AUTH_KV as KVNamespace, // safe-cast: Cloudflare Worker binding injected by runtime
+    METRICS_DB: rawEnv.METRICS_DB as D1Database, // safe-cast: Cloudflare Worker binding injected by runtime
   } as ValidatedEnv; // safe-cast: all fields have been individually assigned above with correct runtime binding types
 }
 

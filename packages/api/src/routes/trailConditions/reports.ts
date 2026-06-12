@@ -54,6 +54,7 @@ export const trailConditionRoutes = new Elysia()
         }
 
         const reports = await db
+          .tag('trailConditions.listReports')
           .select()
           .from(trailConditionReports)
           .where(and(...conditions))
@@ -93,6 +94,7 @@ export const trailConditionRoutes = new Elysia()
 
       try {
         const [newReport] = await db
+          .tag('trailConditions.createReport')
           .insert(trailConditionReports)
           .values({
             id: data.id,
@@ -119,12 +121,14 @@ export const trailConditionRoutes = new Elysia()
       } catch (error) {
         const pgCode = (error as { code?: string })?.code;
         if (pgCode === '23505') {
-          const existing = await db.query.trailConditionReports.findFirst({
-            where: and(
-              eq(trailConditionReports.id, data.id),
-              eq(trailConditionReports.userId, user.userId),
-            ),
-          });
+          const existing = await db
+            .tag('trailConditions.findExistingReport')
+            .query.trailConditionReports.findFirst({
+              where: and(
+                eq(trailConditionReports.id, data.id),
+                eq(trailConditionReports.userId, user.userId),
+              ),
+            });
           if (existing) return toReportResponse(existing);
           return status(409, { error: 'Report ID already in use by another user' });
         }
@@ -168,6 +172,7 @@ export const trailConditionRoutes = new Elysia()
         }
 
         const reports = await db
+          .tag('trailConditions.listMineReports')
           .select()
           .from(trailConditionReports)
           .where(and(...conditions))
@@ -226,6 +231,7 @@ export const trailConditionRoutes = new Elysia()
           updateData.localUpdatedAt = new Date(data.localUpdatedAt);
 
         const [updated] = await db
+          .tag('trailConditions.updateReport')
           .update(trailConditionReports)
           .set(updateData)
           .where(
@@ -273,6 +279,7 @@ export const trailConditionRoutes = new Elysia()
 
       try {
         const [deleted] = await db
+          .tag('trailConditions.deleteReport')
           .update(trailConditionReports)
           .set({ deleted: true, updatedAt: new Date() })
           .where(

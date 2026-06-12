@@ -5,8 +5,20 @@ appId: ${APP_ID}
 - tapOn:
     text: "Trips"
 - waitForAnimationToEnd
-- tapOn:
-    id: "create-trip-button"
+- runFlow:
+    when:
+      visible:
+        text: "create-trip-empty-button"
+    commands:
+      - tapOn:
+          text: "create-trip-empty-button"
+- runFlow:
+    when:
+      visible:
+        id: "create-trip-button"
+    commands:
+      - tapOn:
+          id: "create-trip-button"
 - waitForAnimationToEnd
 # Try to submit without filling any fields
 - tapOn:
@@ -25,7 +37,7 @@ appId: ${APP_ID}
     when:
       platform: iOS
     commands:
-    - swipe:
+      - swipe:
           direction: DOWN
           duration: 300
 - waitForAnimationToEnd

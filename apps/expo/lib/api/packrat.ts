@@ -1,41 +1,14 @@
 import { createApiClient } from '@packrat/api-client';
-import { fromZod } from '@packrat/guards';
 import { store } from 'expo-app/atoms/store';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
-import { authClient } from 'expo-app/lib/auth-client';
-import * as SecureStore from 'expo-app/lib/secureStore';
-import { z } from 'zod';
-
-// The expoClient plugin serialises all cookies into SecureStore under this key.
-// Parsing it locally avoids a network round-trip on every API request.
-const COOKIE_STORE_KEY = 'packrat_cookie';
-
-const CookieStoreSchema = z.record(z.object({ value: z.string() }));
-
-// expoClient stores cookies as JSON: { "better-auth.session_token": { value, expires } }
-// HTTPS servers (remote dev/prod) prefix the cookie name with __Secure-; HTTP (local) does not.
-function parseSessionToken(cookieJson: string | null): string | null {
-  if (!cookieJson) return null;
-  const cookies = fromZod(CookieStoreSchema)(JSON.parse(cookieJson));
-  if (!cookies) return null;
-  return (
-    cookies['better-auth.session_token']?.value ??
-    cookies['__Secure-better-auth.session_token']?.value ??
-    null
-  );
-}
+import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
 
 export const apiClient = createApiClient({
   baseUrl: getApiBaseUrl(),
   auth: {
-    // Read the token from secure storage — no network call on every API request.
-    // On web there is no bearer token (the session is an HttpOnly cookie sent via
-    // credentials:'include'); the secureStore web shim returns null here.
-    getAccessToken: async () => {
-      const cookieStr = await SecureStore.getItemAsync(COOKIE_STORE_KEY);
-      return parseSessionToken(cookieStr);
-    },
+    // Read the token from SecureStore — no network call on every API request.
+    getAccessToken: getStoredSessionToken,
     // Better Auth has no separate refresh-token endpoint; the 7-day session
     // token is the only credential. Returning null here is intentional.
     getRefreshToken: () => null,

@@ -31,6 +31,17 @@ export const toBoolean = (value: unknown): boolean | undefined =>
   typeof value === 'boolean' ? value : undefined;
 
 /**
+ * Returns the value if it's a bigint, otherwise undefined.
+ *
+ * Useful for narrowing Postgres `int8` / `bigint` / `COUNT(*)` results — the
+ * Neon serverless driver returns those as JS BigInt by default, which throws
+ * on `JSON.stringify` without a replacer. Pair with `.toString()` at API
+ * boundaries when shipping bigints over JSON.
+ */
+export const toBigInt = (value: unknown): bigint | undefined =>
+  typeof value === 'bigint' ? value : undefined;
+
+/**
  * Returns the value if it's a Date, parses it if it's a string/number,
  * otherwise undefined.
  */

@@ -49,9 +49,22 @@ const MCP_AUDIENCE = 'https://mcp.packratai.com/mcp';
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth's generic type parameter is too specific to the exact plugin set — can't use ReturnType<typeof betterAuth> here
 const authCache = new Map<string, Promise<any>>();
 
+function getTrustedOrigins(env: ValidatedEnv): string[] {
+  const configured = env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return [
+    env.PACKRAT_API_URL,
+    ...(configured ?? []),
+    'packrat://',
+    ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
+  ];
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
 export async function getAuth(env: ValidatedEnv): Promise<any> {
-  const cacheKey = `${env.NEON_DATABASE_URL}|${env.PACKRAT_API_URL}`;
+  const cacheKey = `${env.NEON_DATABASE_URL}|${env.PACKRAT_API_URL}|${env.BETTER_AUTH_TRUSTED_ORIGINS ?? ''}|${env.ENVIRONMENT}`;
   const cached = authCache.get(cacheKey);
   if (cached) return cached;
 
@@ -267,24 +280,10 @@ async function buildAuth(env: ValidatedEnv): Promise<any> {
     },
 
     // NOTE: keep in lockstep with `auth.config.ts` (the CLI-facing static
-    // config). The two lists drift independently — see
-    // `docs/solutions/developer-experience/better-auth-cli-cloudflare-worker-factory-2026-05-02.md`
-    // and `docs/mcp/runbook.md` § "Better Auth trustedOrigins".
-    //
-    // `https://mcp.packratai.com` was removed in U1 of the OAuth provider
-    // consolidation refactor (docs/plans/2026-05-25-001-...). The MCP worker
-    // no longer calls Better Auth sign-in endpoints directly — the OAuth flow
-    // lives entirely on api.packrat.world via the oauthProvider plugin above.
-    // Keeping it in trustedOrigins would expand the CORS/CSRF bypass surface
-    // for no behavioral reason.
-    //
-    // localhost is trusted only in development (e.g. the Playwright e2e harness
-    // serves the static export on a separate port) — never in production.
-    trustedOrigins: [
-      env.PACKRAT_API_URL,
-      'packrat://',
-      ...(env.ENVIRONMENT === 'development' ? ['http://localhost:*'] : []),
-    ],
+    // config). `https://mcp.packratai.com` is intentionally not trusted here:
+    // OAuth lives on api.packrat.world and the MCP worker does not call Better
+    // Auth sign-in endpoints directly.
+    trustedOrigins: getTrustedOrigins(env),
   });
 
   return auth;

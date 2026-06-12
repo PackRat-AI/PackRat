@@ -8,7 +8,7 @@ import { testIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
@@ -98,9 +98,14 @@ export function TripsListScreen() {
         </View>
         <Text className="mb-1 text-lg font-medium text-foreground">{t('trips.noTripsFound')}</Text>
         <Text className="mb-6 text-center text-muted-foreground">{t('trips.noTripsYet')}</Text>
-        <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreateTrip}>
+        <Pressable
+          testID={testIds.trips.emptyCreateBtn}
+          accessibilityLabel={testIds.trips.emptyCreateBtn}
+          className="rounded-lg bg-primary px-4 py-2"
+          onPress={handleCreateTrip}
+        >
           <Text className="font-medium text-primary-foreground">{t('trips.createNewTrip')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };

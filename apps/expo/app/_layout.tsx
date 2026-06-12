@@ -14,6 +14,11 @@ import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/use
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
 import { useEffect, useRef } from 'react';
+import { LogBox } from 'react-native';
+
+if (__DEV__ && clientEnvs.EXPO_PUBLIC_DISABLE_LOGBOX === 'true') {
+  LogBox.ignoreAllLogs(true);
+}
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,

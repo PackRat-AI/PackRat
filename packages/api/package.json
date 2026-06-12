@@ -1,6 +1,6 @@
 {
   "name": "@packrat/api",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "private": true,
   "type": "module",
   "exports": {
@@ -34,10 +34,11 @@
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "dev": "wrangler dev -e=dev",
-    "dev:e2e": "bash scripts/e2e-local-start.sh",
-    "dev:e2e:init": "bash scripts/e2e-local-init.sh",
-    "dev:e2e:reset": "bash scripts/e2e-local-stop.sh --volumes && bash scripts/e2e-local-start.sh",
-    "dev:e2e:stop": "bash scripts/e2e-local-stop.sh",
+    "dev:e2e": "bun run scripts/e2e-local-start.ts",
+    "dev:e2e:init": "bun run scripts/e2e-local-init.ts",
+    "dev:e2e:node": "bun run scripts/e2e-node-server.ts",
+    "dev:e2e:reset": "bun run scripts/e2e-local-stop.ts --volumes && bun run scripts/e2e-local-start.ts",
+    "dev:e2e:stop": "bun run scripts/e2e-local-stop.ts",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage",
@@ -101,6 +102,7 @@
     "concurrently": "^8.2.2",
     "drizzle-orm": "catalog:",
     "drizzle-seed": "^0.3.1",
+    "miniflare": "^4.20260515.0",
     "typed-htmx": "^0.3.1",
     "vitest": "catalog:",
     "wrangler": "catalog:"

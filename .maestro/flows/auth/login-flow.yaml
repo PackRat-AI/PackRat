@@ -3,6 +3,33 @@ appId: ${APP_ID}
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 
+- runFlow:
+    when:
+      visible:
+        text: "http://.*"
+    commands:
+      - tapOn:
+          text: "http://.*"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      visible:
+        text: "Runtime version:.*"
+    commands:
+      - tapOn:
+          text: "Close"
+      - waitForAnimationToEnd
+
 # Dismiss Android ANR dialog that can appear during emulator boot before first interaction
 - runFlow:
     when:
@@ -31,20 +58,31 @@ appId: ${APP_ID}
           text: "OK"
       - waitForAnimationToEnd
 
-# Dev client only: if the dev server picker appears on iOS (saved Metro URL was
+# Dev client only: if the dev server picker appears (saved Metro URL was
 # cleared or is stale), tap the discovered server row identified by METRO_HOST:METRO_PORT.
 - runFlow:
     when:
-      platform: iOS
+      visible:
+        text: "DEVELOPMENT SERVERS"
     commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "http://${METRO_HOST}:${METRO_PORT}"
+      - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            text: "Runtime version:.*"
+          timeout: 45000
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd
       - runFlow:
           when:
             visible:
-              text: "DEVELOPMENT SERVERS"
+              text: "Reload"
           commands:
-            - waitForAnimationToEnd
             - tapOn:
-                text: "http://${METRO_HOST}:${METRO_PORT}"
+                point: "50%,10%"
             - waitForAnimationToEnd
 
 # Dev client only: dismiss the Expo "Developer Tools" intro + dev-menu sheet that
@@ -75,9 +113,49 @@ appId: ${APP_ID}
 # lets both cases (needs login / already logged in) reach the Packs assertion.
 - runFlow:
     when:
-      visible:
-        id: "sign-in-email-button"
+      notVisible:
+        text: "Packs"
     commands:
+      - runFlow:
+          when:
+            visible:
+              text: "Continue"
+          commands:
+            - tapOn:
+                text: "Continue"
+            - waitForAnimationToEnd
+            - runFlow:
+                when:
+                  visible:
+                    text: "Reload"
+                commands:
+                  - tapOn:
+                      point: "50%,10%"
+                  - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible:
+              text: "Runtime version:.*"
+          commands:
+            - tapOn:
+                text: "Close"
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - runFlow:
+                when:
+                  visible:
+                    text: "isn't responding"
+                commands:
+                  - tapOn:
+                      text: "Wait"
+                  - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            id: "sign-in-email-button"
+          timeout: 30000
       # Tap the "Sign In" (email) button to navigate to the email login screen
       - tapOn:
           id: "sign-in-email-button"

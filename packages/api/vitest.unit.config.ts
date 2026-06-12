@@ -37,9 +37,9 @@ export default defineConfig({
         'src/**/*.spec.ts',
         'src/**/*.d.ts',
         'src/index.ts',
-        // Elysia app composition (the typed `App` contract) — same nature as the
-        // worker entry above; exercised by integration tests in /test, not units.
+        // App assembly and local E2E worker are exercised through integration/E2E.
         'src/app.ts',
+        'src/e2e-worker.ts',
         'src/db/migrations/**',
         // Test infrastructure stubs (not production code)
         'src/__test-stubs__/**',

@@ -14,9 +14,14 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { isLoadingAtom, suppressSignOutNavAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  isSignOutRedirectingAtom,
+  suppressSignOutNavAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -208,6 +213,9 @@ function ListHeaderComponent() {
           { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
         ]);
       } else {
+        Sentry.captureException(err, {
+          tags: { feature: 'profile', action: 'handleAvatarPress' },
+        });
         Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
       }
     } finally {
@@ -249,6 +257,7 @@ function ListFooterComponent() {
   const { signOut } = useAuth();
   const { t } = useTranslation();
   const setIsLoading = useSetAtom(isLoadingAtom);
+  const setIsSignOutRedirecting = useSetAtom(isSignOutRedirectingAtom);
   const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -270,6 +279,7 @@ function ListFooterComponent() {
             // Clear spinner first so AppLayout doesn't show auth screen,
             // then release the suppress flag and navigate home as guest.
             setIsLoading(false);
+            setIsSignOutRedirecting(false);
             setSuppressSignOutNav(false);
             await AsyncStorage.setItem('skipped_login', 'true');
             router.replace('/');

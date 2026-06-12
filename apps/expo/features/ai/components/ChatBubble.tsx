@@ -1,6 +1,7 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { keyIn } from '@packrat/guards';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
@@ -25,6 +26,7 @@ interface ChatBubbleProps {
   userQuery?: string;
   isLast: boolean;
   status: 'submitted' | 'streaming' | 'ready' | 'error';
+  testID?: string;
 }
 
 export const ChatBubble = React.memo(function ChatBubble({
@@ -32,6 +34,7 @@ export const ChatBubble = React.memo(function ChatBubble({
   userQuery,
   isLast,
   status,
+  testID,
 }: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
   const bottomSheetRef = useSheetRef();
@@ -64,6 +67,9 @@ export const ChatBubble = React.memo(function ChatBubble({
       });
     } catch (error) {
       console.error('Failed to copy text:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'ai.chat', action: 'copyText' },
+      });
       Burnt.toast({
         title: t('ai.failedToCopyText'),
         preset: 'error',
@@ -81,7 +87,10 @@ export const ChatBubble = React.memo(function ChatBubble({
   const handleReport = useCallback(() => setIsReportModalVisible(true), []);
 
   return (
-    <View className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}>
+    <View
+      testID={testID}
+      className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}
+    >
       {/* <ContextMenu
         enabled={isAI ? !isLast || status === 'ready' : true}
         className="rounded-md"

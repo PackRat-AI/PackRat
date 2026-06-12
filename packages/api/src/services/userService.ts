@@ -24,6 +24,7 @@ export class UserService {
 
   async findByEmail(email: string): Promise<User | null> {
     const [user] = await this.db
+      .tag('user.findByEmail')
       .select()
       .from(users)
       .where(eq(users.email, email.toLowerCase()))
@@ -41,6 +42,7 @@ export class UserService {
       (input.email.split('@')[0] ?? input.email);
 
     const [user] = await this.db
+      .tag('user.create')
       .insert(users)
       .values({
         id: crypto.randomUUID(),

@@ -1,14 +1,10 @@
 /**
- * The PackRat API as an Elysia app — the typed contract exported as `App` and
+ * The PackRat API as an Elysia app - the typed contract exported as `App` and
  * consumed by `@packrat/api-client` (Eden Treaty).
  *
  * This module is deliberately JSX-free. The browser-facing OAuth consent page
- * (server-rendered HTML via @kitajs/html) is mounted on the *runtime* worker in
- * `index.ts`, NOT here, so it stays out of `App`. Including it would drag the
- * @kitajs/html JSX type surface into every Eden consumer's typecheck
- * (packages/mcp, apps/*), even though those consumers never call it — the
- * consent page is reached by a mid-OAuth-flow user-agent redirect, not the
- * typed client. See `index.ts` for the runtime mount.
+ * is mounted on the runtime worker in `index.ts`, not here, so it stays out of
+ * `App` and does not pull JSX types into every Eden consumer.
  */
 
 import { cors } from '@elysiajs/cors';
@@ -18,38 +14,72 @@ import { captureApiException, setRequestId } from '@packrat/api/utils/sentry';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 
+const ALLOWED_ORIGINS = [
+  /^https:\/\/(www\.)?packrat\.world$/,
+  /^https:\/\/[\w-]+\.packrat\.world$/,
+  /^https:\/\/[\w-]+\.packratai\.com$/,
+  /^https?:\/\/[\w-]+\.workers\.dev$/,
+  /^http:\/\/localhost:\d+$/,
+  /^http:\/\/127\.0\.0\.1:\d+$/,
+  /^exp:\/\//,
+];
+
+export function isAllowedCorsOrigin(origin: string | null): origin is string {
+  return !!origin && ALLOWED_ORIGINS.some((re) => re.test(origin));
+}
+
+export function addCorsHeaders({
+  request,
+  response,
+}: {
+  request: Request;
+  response: Response;
+}): Response {
+  const origin = request.headers.get('Origin');
+  if (!isAllowedCorsOrigin(origin)) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', origin);
+  headers.set('Access-Control-Allow-Credentials', 'true');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  headers.set('Access-Control-Expose-Headers', 'set-auth-token');
+  headers.append('Vary', 'Origin');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+export function corsPreflightResponse(request: Request): Response | null {
+  if (request.method !== 'OPTIONS') return null;
+  const origin = request.headers.get('Origin');
+  if (!isAllowedCorsOrigin(origin)) return new Response(null, { status: 204 });
+
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      Vary: 'Origin',
+    },
+  });
+}
+
 export const appBase = new Elysia({ adapter: CloudflareAdapter })
   .use(
     cors({
-      // Better Auth uses cookies — credentials must be true and origins must
-      // be explicit (not wildcard) so the browser sends cookies cross-origin.
       credentials: true,
-      origin: (request) => {
-        const origin = request.headers.get('Origin');
-        if (!origin) return false;
-        // Allow the API base URL and any subdomain of packrat.world
-        const allowed = [
-          /^https:\/\/(www\.)?packrat\.world$/,
-          /^https:\/\/[\w-]+\.packrat\.world$/,
-          /^https:\/\/[\w-]+\.packratai\.com$/,
-          /^https?:\/\/[\w-]+\.workers\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-          /^exp:\/\//,
-        ];
-        return allowed.some((re) => re.test(origin));
-      },
+      origin: (request) => isAllowedCorsOrigin(request.headers.get('Origin')),
       allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   )
   .use(packratOpenApi)
-  // Per-request correlation id. Cloudflare's `cf-ray` is stable across the
-  // request (and visible in CF logs); fall back to a UUID off-platform. We
-  // (1) tag the Sentry scope so the onError report and every
-  // captureApiException/record event in this request share `request_id`,
-  // (2) echo it in the X-Request-Id response header so a caller can quote it
-  // back, and (3) expose it on the handler context as `requestId` (the one
-  // thing the elysia-requestid plugin offered) so routes can read/log it.
   .derive(({ request, set }) => {
     const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID();
     setRequestId(requestId);
@@ -58,15 +88,9 @@ export const appBase = new Elysia({ adapter: CloudflareAdapter })
   })
   .onError(({ error, code, request, route, path }) => {
     const requestId = request?.headers.get('cf-ray') ?? 'unknown';
-    // Central route-error sink (Elysia's recommended pattern). Only report
-    // unexpected server errors — not user-input or routing errors. Errors that
-    // inner code already enriched via captureApiException/record are skipped by
-    // the dedup marker, so this never double-reports.
     if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
       captureApiException({
         error,
-        // Group by the matched route TEMPLATE (e.g. /catalog/:id), not the
-        // concrete path — low cardinality in Sentry. Concrete path goes to extra.
         operation: route ? `route ${request?.method ?? ''} ${route}`.trim() : 'elysia.onError',
         tags: {
           error_code: String(code),
@@ -82,7 +106,6 @@ export const appBase = new Elysia({ adapter: CloudflareAdapter })
       });
     }
 
-    // Echo the correlation id in body + header so the caller can quote it.
     const headers = { 'Content-Type': 'application/json', 'X-Request-Id': requestId };
     if (code === 'VALIDATION' || code === 'PARSE') {
       return new Response(JSON.stringify({ error: 'Validation failed', requestId }), {
@@ -107,10 +130,7 @@ export const appBase = new Elysia({ adapter: CloudflareAdapter })
   .get('/health', () => ({ status: 'ok' as const }), {
     detail: { summary: 'Health status', tags: ['Meta'] },
   })
-  .use(routes);
+  .use(routes)
+  .compile();
 
-/**
- * Typed contract consumed by `@packrat/api-client` (Eden Treaty). Excludes the
- * browser-facing OAuth consent route (mounted only at runtime in `index.ts`).
- */
 export type App = typeof appBase;

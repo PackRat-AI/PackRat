@@ -354,3 +354,80 @@ export type TrailSearchItem = z.infer<typeof TrailSearchItemSchema>;
 export type TrailSearchResult = z.infer<typeof TrailSearchResultSchema>;
 export type TrailGeometry = z.infer<typeof TrailGeometrySchema>;
 export type AdminTrailConditionReport = z.infer<typeof AdminTrailConditionReportSchema>;
+
+// ─── Query Metrics ────────────────────────────────────────────────────────────
+
+const QueryRouteStatSchema = z.object({
+  route: z.string(),
+  method: z.string(),
+  callCount: z.number(),
+  totalDurationMs: z.number(),
+  avgDurationMs: z.number(),
+  totalEgressBytes: z.number(),
+  avgEgressBytes: z.number(),
+});
+
+const QueryRecentRequestSchema = z.object({
+  id: z.string(),
+  capturedAt: z.string(),
+  route: z.string(),
+  method: z.string(),
+  statusCode: z.number().nullable(),
+  totalDurationMs: z.number(),
+  estimatedEgressBytes: z.number(),
+  queryCount: z.number(),
+});
+
+export const QueryMetricsSummarySchema = z.object({
+  periodStart: z.string(),
+  periodEnd: z.string().nullable(),
+  summary: z.object({
+    totalRequests: z.number(),
+    totalDurationMs: z.number(),
+    totalEgressBytes: z.number(),
+  }),
+  topByCompute: z.array(QueryRouteStatSchema),
+  topByEgress: z.array(QueryRouteStatSchema),
+});
+
+export const QueryMetricsRecentSchema = z.object({
+  requests: z.array(QueryRecentRequestSchema),
+});
+
+export const QueryCallSiteStatSchema = z.object({
+  callSite: z.string(),
+  queryCount: z.number(),
+  totalDurationMs: z.number(),
+  totalResultBytes: z.number(),
+  avgDurationMs: z.number(),
+  distinctRoutes: z.number(),
+  samplePreview: z.string(),
+});
+
+export const QueryMetricsByCallSiteSchema = z.object({
+  periodStart: z.string(),
+  periodEnd: z.string().nullable(),
+  callSites: z.array(QueryCallSiteStatSchema),
+});
+
+export const QueryMetricsByMonthItemSchema = z.object({
+  month: z.string(),
+  requestCount: z.number(),
+  totalDurationMs: z.number(),
+  totalEgressBytes: z.number(),
+  avgDurationMs: z.number(),
+  totalQueryCount: z.number(),
+});
+
+export const QueryMetricsByMonthSchema = z.object({
+  months: z.array(QueryMetricsByMonthItemSchema),
+});
+
+export type QueryRouteStat = z.infer<typeof QueryRouteStatSchema>;
+export type QueryRecentRequest = z.infer<typeof QueryRecentRequestSchema>;
+export type QueryCallSiteStat = z.infer<typeof QueryCallSiteStatSchema>;
+export type QueryMetricsByMonthItem = z.infer<typeof QueryMetricsByMonthItemSchema>;
+export type QueryMetricsSummary = z.infer<typeof QueryMetricsSummarySchema>;
+export type QueryMetricsRecent = z.infer<typeof QueryMetricsRecentSchema>;
+export type QueryMetricsByCallSite = z.infer<typeof QueryMetricsByCallSiteSchema>;
+export type QueryMetricsByMonth = z.infer<typeof QueryMetricsByMonthSchema>;

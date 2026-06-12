@@ -19,6 +19,9 @@ import type {
   EtlResponse,
   GrowthPoint,
   PriceBucket,
+  QueryMetricsByCallSite,
+  QueryMetricsRecent,
+  QueryMetricsSummary,
   TrailGeometry,
   TrailSearchItem,
   TrailSearchResult as TrailSearchResultList,
@@ -400,4 +403,36 @@ export function retryEtlJob(
     path: `/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`,
     init: { method: 'POST' },
   });
+}
+
+// ─── Query Metrics ─────────────────────────────────────────────────────────────
+
+export type { QueryMetricsByCallSite, QueryMetricsRecent, QueryMetricsSummary };
+
+export function getQueryMetricsSummary({
+  hours = 24,
+  month,
+}: {
+  hours?: number;
+  month?: string;
+} = {}): Promise<QueryMetricsSummary> {
+  const q = month ? `month=${month}` : `hours=${hours}`;
+  return adminFetch({ path: `/analytics/query-metrics/summary?${q}` });
+}
+
+export function getQueryMetricsRecent(limit = 50): Promise<QueryMetricsRecent> {
+  return adminFetch({ path: `/analytics/query-metrics/recent?limit=${limit}` });
+}
+
+export function getQueryMetricsByCallSite({
+  hours = 24,
+  limit = 50,
+  month,
+}: {
+  hours?: number;
+  limit?: number;
+  month?: string;
+} = {}): Promise<QueryMetricsByCallSite> {
+  const q = month ? `month=${month}&limit=${limit}` : `hours=${hours}&limit=${limit}`;
+  return adminFetch({ path: `/analytics/query-metrics/by-callsite?${q}` });
 }
