@@ -54,7 +54,6 @@
     "@gorhom/bottom-sheet": "^5.1.2",
     "@legendapp/state": "^3.0.0-beta.30",
     "@packrat-ai/nativewindui": "2.0.6",
-    "@packrat/api": "workspace:*",
     "@packrat/api-client": "workspace:*",
     "@packrat/config": "workspace:*",
     "@packrat/constants": "workspace:*",
