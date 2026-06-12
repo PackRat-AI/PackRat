@@ -1,0 +1,26 @@
+{
+  "name": "@packrat/consent-ui",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check:xss": "xss-scan",
+    "check-types": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@kitajs/html": "^4.2.13",
+    "@packrat/guards": "workspace:*"
+  },
+  "devDependencies": {
+    "@kitajs/ts-html-plugin": "^4.1.4"
+  }
+}

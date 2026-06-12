@@ -5,7 +5,6 @@ export default defineConfig({
   resolve: {
     alias: {
       'expo-app': resolve(__dirname, '.'),
-      '@packrat/api': resolve(__dirname, '../../packages/api/src/index.ts'),
       '@packrat/api-client': resolve(__dirname, '../../packages/api-client/src/index.ts'),
     },
   },

@@ -1,0 +1,211 @@
+/**
+ * Unit tests for `auth.ts` (post-U3+U4 — operational endpoints only).
+ *
+ * After the Better Auth OAuth consolidation cutover, `auth.ts` hosts only
+ * the operational surface (`handleHealth`, `handleStatus`). The OAuth state
+ * machine — authorize/login/callback/register — moved to the API worker
+ * and is exercised by `packages/api/src/auth/__tests__/`. The DCR gate,
+ * CSRF helpers, role-lookup bridge, and login form are deleted.
+ *
+ * This file covers:
+ *   - `handleHealth`: probes the upstream API `/health`, caches for 10s,
+ *     surfaces a 503 envelope when degraded.
+ *   - `handleStatus`: static metadata (version, scopes, commit SHA, brand
+ *     URLs). No probe; no cache.
+ */
+
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { __resetHealthCacheForTests, handleHealth, handleStatus } from '../auth';
+import type { Env } from '../types';
+
+function makeEnv(overrides: Partial<Env> = {}): Env {
+  return {
+    PackRatMCP: {} as Env['PackRatMCP'],
+    PACKRAT_API_URL: 'https://api.test',
+    ...overrides,
+  };
+}
+
+interface HealthProbeBody {
+  status: 'ok' | 'degraded';
+  service: string;
+  version: string;
+  transport: string;
+  endpoint: string;
+  docs: string;
+  terms: string;
+  privacy: string;
+  support: string;
+  probes: { api: 'ok' | 'down' };
+}
+
+// ── /health ─────────────────────────────────────────────────────────────────
+
+describe('handleHealth', () => {
+  let fetchSpy: MockInstance<typeof fetch>;
+  beforeEach(() => {
+    __resetHealthCacheForTests();
+    fetchSpy = vi.spyOn(globalThis, 'fetch');
+  });
+  afterEach(() => {
+    fetchSpy.mockRestore();
+    __resetHealthCacheForTests();
+  });
+
+  it('returns 200 + status=ok when the API probe succeeds', async () => {
+    fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('ok');
+    expect(body.probes.api).toBe('ok');
+    expect(body.service).toBe('packrat-mcp');
+    // Hits the API's root `/health`, NOT `/api/health`.
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://api.test/health',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('returns 503 + status=degraded when the API probe returns 500', async () => {
+    fetchSpy.mockResolvedValue(new Response(null, { status: 500 }));
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes.api).toBe('down');
+  });
+
+  it('returns 503 + status=degraded when the API probe throws', async () => {
+    fetchSpy.mockRejectedValue(new Error('network unreachable'));
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.probes.api).toBe('down');
+  });
+
+  it('returns 503 + status=degraded without probing when PACKRAT_API_URL is empty', async () => {
+    // The probe short-circuits on an empty binding (unit-test environment
+    // without PACKRAT_API_URL) rather than throwing a URL constructor error
+    // — so no fetch is issued and the API probe collapses to down.
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv({ PACKRAT_API_URL: '' }),
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes.api).toBe('down');
+    expect(fetchSpy).toHaveBeenCalledTimes(0);
+  });
+
+  it('caches the result for 10s within a single isolate', async () => {
+    fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
+    await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    // 3 calls, 1 upstream probe — cache hits on the next two.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces the brand-aligned legal/support URLs on the body', async () => {
+    fetchSpy.mockResolvedValue(new Response(null, { status: 200 }));
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env: makeEnv(),
+    });
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.docs).toBe('https://packratai.com/mcp');
+    expect(body.terms).toBe('https://packratai.com/terms-of-service');
+    expect(body.privacy).toBe('https://packratai.com/privacy-policy');
+    expect(body.support).toBe('mailto:hello@packratai.com');
+  });
+
+  it('reports degraded WITHOUT probing when PACKRAT_API_URL is undefined', async () => {
+    // Distinct from the empty-string case above: a missing binding (the
+    // `!base` arm rather than `base.length === 0`) must also short-circuit
+    // before `fetch` so `${undefined}/health` never reaches the URL parser.
+    const env = makeEnv({ PACKRAT_API_URL: undefined as unknown as string });
+    const res = await handleHealth({
+      request: new Request('https://mcp.packratai.com/health'),
+      env,
+    });
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as HealthProbeBody;
+    expect(body.status).toBe('degraded');
+    expect(body.probes.api).toBe('down');
+    // The guard returns before any network call is attempted.
+    expect(fetchSpy).toHaveBeenCalledTimes(0);
+  });
+});
+
+// ── /status ─────────────────────────────────────────────────────────────────
+
+describe('handleStatus', () => {
+  it('returns the public-safe metadata block (no probes, no upstream calls)', async () => {
+    const res = handleStatus({
+      request: new Request('https://mcp.packratai.com/status'),
+      env: makeEnv(),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      service: string;
+      version: string;
+      transport: string;
+      endpoint: string;
+      scopes_supported: string[];
+      docs: string;
+      terms: string;
+      privacy: string;
+      support: string;
+      deployId: string;
+    };
+    expect(body.service).toBe('packrat-mcp');
+    expect(body.transport).toBe('streamable-http');
+    expect(body.endpoint).toBe('/mcp');
+    expect(body.scopes_supported).toEqual(['mcp:read', 'mcp:write', 'mcp:admin']);
+    expect(body.deployId).toBe('unknown'); // sentinel when CF_VERSION_METADATA is unbound
+  });
+
+  it('surfaces the Cloudflare deploy id from CF_VERSION_METADATA when bound', async () => {
+    const res = handleStatus({
+      request: new Request('https://mcp.packratai.com/status'),
+      env: makeEnv({
+        CF_VERSION_METADATA: { id: 'v-abc1234', tag: '', timestamp: '2026-06-04T00:00:00Z' },
+      }),
+    });
+    const body = (await res.json()) as { deployId: string };
+    expect(body.deployId).toBe('v-abc1234');
+  });
+
+  it('never includes any internal/binding identifiers', async () => {
+    const res = handleStatus({
+      request: new Request('https://mcp.packratai.com/status'),
+      env: makeEnv({
+        CF_VERSION_METADATA: { id: 'v-abc1234', tag: '', timestamp: '2026-06-04T00:00:00Z' },
+      }),
+    });
+    const text = await res.clone().text();
+    expect(text).not.toContain('api.test'); // PACKRAT_API_URL must not leak
+    expect(text).not.toContain('PACKRAT_API_URL');
+    expect(text).not.toContain('PackRatMCP');
+  });
+});

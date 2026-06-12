@@ -2,10 +2,15 @@ import { z } from 'zod';
 
 // ─── Error responses ──────────────────────────────────────────────────────────
 
-// z.any() mirrors t.Unsafe<any> — Elysia invariance requires the handler return
-// type to be assignable to the declared response type, and error bodies frequently
-// carry extra fields (e.g. `code`). Using any sidesteps the invariance check the
-// same way t.Unsafe<any> did with TypeBox.
+// z.any() mirrors t.Unsafe<any>. Elysia's response validation is *invariant*:
+// it rejects any typed schema (even `z.object({ error, code? })`) against handlers
+// that `return status(code, { ...literal })`, because the literal return type
+// doesn't bidirectionally match the schema. Both `.passthrough()` and an explicit
+// object schema break ~30 handlers; only `z.any()` (which disables the check)
+// compiles. The consequence: Eden Treaty types the client `error` as `unknown`,
+// so the MCP `call()` helper (packages/mcp/src/client.ts) accepts `unknown` and
+// narrows the `{ value }` envelope defensively. The `unknown` is forced by the
+// framework here, not a missing type.
 const Err = z.any();
 export const AdminErrorResponses = {
   400: Err,

@@ -6,49 +6,34 @@
  * Elysia-native so Eden Treaty gets full end-to-end type safety.
  */
 
+import {
+  oauthProviderAuthServerMetadata,
+  oauthProviderOpenIdConfigMetadata,
+} from '@better-auth/oauth-provider';
 import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
-import { cors } from '@elysiajs/cors';
 import { neonConfig } from '@neondatabase/serverless';
+import { type App, appBase } from '@packrat/api/app';
 import { getAuth } from '@packrat/api/auth';
+import { consentRoute } from '@packrat/api/auth/consent-route';
 import { AppContainer } from '@packrat/api/containers';
-import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
-import { packratOpenApi } from '@packrat/api/utils/openapi';
 import {
   createQueryMetricsStore,
   flushQueryMetrics,
   initQueryMetricsStore,
   queryMetricsAls,
 } from '@packrat/api/utils/queryMetrics';
-import { captureApiException } from '@packrat/api/utils/sentry';
+import { captureApiException, record } from '@packrat/api/utils/sentry';
 import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
 import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
-import { Elysia } from 'elysia';
-import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
 
-// Origins allowed to make cross-origin (credentialed) requests to the API.
-const ALLOWED_ORIGIN_PATTERNS = [
-  /^https:\/\/(www\.)?packrat\.world$/,
-  /^https:\/\/[\w-]+\.packrat\.world$/,
-  /^https:\/\/[\w-]+\.packratai\.com$/,
-  /^https?:\/\/[\w-]+\.workers\.dev$/,
-  /^http:\/\/localhost:\d+$/,
-  /^exp:\/\//,
-];
+export type { App };
 
-function isAllowedOrigin(origin: string | null): origin is string {
-  return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
-}
-
-// Sentry options for both the Worker handlers and the workflow class.
-// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
-// defaults to 10% — observable enough for prod debugging without
-// overwhelming the Sentry quota.
 function sentryOptions(env: Env) {
   return {
     dsn: env.SENTRY_DSN,
@@ -58,79 +43,11 @@ function sentryOptions(env: Env) {
   };
 }
 
-export const app = new Elysia({ adapter: CloudflareAdapter })
-  .use(
-    cors({
-      // Better Auth uses cookies — credentials must be true and origins must
-      // be explicit (not wildcard) so the browser sends cookies cross-origin.
-      credentials: true,
-      origin: (request) => isAllowedOrigin(request.headers.get('Origin')),
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    }),
-  )
-  .use(packratOpenApi)
-  .onError(({ error, code, request }) => {
-    // Only report unexpected server errors — not user-input or routing errors.
-    if (code !== 'VALIDATION' && code !== 'PARSE' && code !== 'NOT_FOUND') {
-      captureApiException({
-        error: error,
-        operation: 'elysia.onError',
-        tags: {
-          error_code: String(code),
-          method: request?.method ?? 'UNKNOWN',
-          path: request ? new URL(request.url).pathname : 'UNKNOWN',
-        },
-        extra: { errorCode: String(code), httpStatus: 500 },
-      });
-    }
-
-    if (code === 'VALIDATION' || code === 'PARSE') {
-      return new Response(JSON.stringify({ error: 'Validation failed' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    if (code === 'NOT_FOUND') {
-      return new Response(JSON.stringify({ error: 'Not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  })
-  .get('/', () => 'PackRat API is running!', {
-    detail: { summary: 'Health check', tags: ['Meta'] },
-  })
-  .get('/health', () => ({ status: 'ok' as const }), {
-    detail: { summary: 'Health status', tags: ['Meta'] },
-  })
-  // Better Auth handles all /api/auth/** requests. Routing it through Elysia
-  // (rather than dispatching before Elysia) means the `cors` plugin above
-  // applies its credentialed-CORS policy and OPTIONS preflight to auth routes
-  // too. `auth` is resolved per-request because it depends on the Cloudflare
-  // env bindings, which are only available at request time.
-  .all(
-    '/api/auth/*',
-    async ({ request }) => {
-      const auth = await getAuth(getEnv());
-      return auth.handler(request);
-    },
-    { parse: 'none', detail: { hide: true } },
-  )
-  .use(routes)
-  .compile();
-
-export type App = typeof app;
+// Runtime instance: same routes as `App` plus the branded OAuth consent page.
+export const app = appBase.use(consentRoute).compile();
 
 export { AppContainer };
 
-// Wrap the workflow class with Sentry instrumentation so each step.do span
-// + any uncaught throw inside a step lands in Sentry with workflow/instance
-// context attached automatically.
 export const CatalogEtlWorkflow = instrumentWorkflowWithSentry(
   sentryOptions,
   RawCatalogEtlWorkflow,
@@ -149,13 +66,6 @@ function enrichEnv(env: Env): Env {
   return env;
 }
 
-// Local-dev hook: route `@neondatabase/serverless` through Neon's official local
-// proxy (`ghcr.io/timowilhelm/local-neon-http-proxy`, see docker-compose.test.yml
-// and https://neon.com/guides/local-development-with-neon) when NEON_DATABASE_URL
-// points at `db.localtest.me`. The proxy serves the HTTP /sql API (neon-http,
-// used by auth) and the WebSocket /v2 endpoint (neon-serverless Pool), so local
-// and prod share the exact same driver path — no node-postgres TCP sockets
-// (which workerd silently drops between requests).
 let neonLocalConfigured = false;
 function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
   if (neonLocalConfigured || !databaseUrl) return;
@@ -168,13 +78,40 @@ function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
     neonConfig.wsProxy = (h) => (h === 'db.localtest.me' ? `${h}:${proxyPort}/v2` : `${h}/v2`);
     neonConfig.useSecureWebSocket = false;
   } catch {
-    // not a valid URL — leave neon defaults in place
+    // not a valid URL - leave neon defaults in place
   } finally {
     neonLocalConfigured = true;
   }
 }
 
-const handler: ExportedHandler<Env> = {
+function flushFetchMetrics({ ctx, response }: { ctx: ExecutionContext; response: Response }): void {
+  const metricsStore = queryMetricsAls.getStore();
+  if (!metricsStore) return;
+
+  metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
+  const contentLength = response.headers.get('content-length');
+  if (contentLength !== null) {
+    metricsStore.estimatedEgressBytes = Number(contentLength);
+    ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+    return;
+  }
+
+  const ct = response.headers.get('content-type') ?? '';
+  if (ct.startsWith('application/json') || ct.startsWith('text/')) {
+    const clone = response.clone();
+    ctx.waitUntil(
+      clone.arrayBuffer().then((buf) => {
+        metricsStore.estimatedEgressBytes = buf.byteLength;
+        return flushQueryMetrics({ store: metricsStore, statusCode: response.status });
+      }),
+    );
+    return;
+  }
+
+  ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+}
+
+const workerHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
@@ -182,29 +119,35 @@ const handler: ExportedHandler<Env> = {
 
     const metricsStore = initQueryMetricsStore(request);
     return queryMetricsAls.run(metricsStore, async () => {
-      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
-      metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
-      // Use Content-Length when available; fall back to cloning only for JSON/text
-      // responses. Skip body buffering for streaming or binary responses to avoid
-      // doubling memory usage.
-      const contentLength = response.headers.get('content-length');
-      if (contentLength !== null) {
-        metricsStore.estimatedEgressBytes = Number(contentLength);
-        ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
-      } else {
-        const ct = response.headers.get('content-type') ?? '';
-        if (ct.startsWith('application/json') || ct.startsWith('text/')) {
-          const clone = response.clone();
-          ctx.waitUntil(
-            clone.arrayBuffer().then((buf) => {
-              metricsStore.estimatedEgressBytes = buf.byteLength;
-              return flushQueryMetrics({ store: metricsStore, statusCode: response.status });
-            }),
-          );
-        } else {
-          ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+      const url = new URL(request.url);
+
+      if (request.method === 'GET') {
+        if (
+          url.pathname === '/.well-known/oauth-authorization-server' ||
+          url.pathname === '/.well-known/openid-configuration'
+        ) {
+          const validatedEnv = getEnv();
+          const auth = await getAuth(validatedEnv);
+          const handler =
+            url.pathname === '/.well-known/openid-configuration'
+              ? oauthProviderOpenIdConfigMetadata(auth)
+              : oauthProviderAuthServerMetadata(auth);
+          const response = await handler(request);
+          flushFetchMetrics({ ctx, response });
+          return response;
         }
       }
+
+      if (url.pathname.startsWith('/api/auth')) {
+        const validatedEnv = getEnv();
+        const auth = await getAuth(validatedEnv);
+        const response = await auth.handler(request);
+        flushFetchMetrics({ ctx, response });
+        return response;
+      }
+
+      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+      flushFetchMetrics({ ctx, response });
       return response;
     });
   },
@@ -231,7 +174,7 @@ const handler: ExportedHandler<Env> = {
         }
       } catch (error) {
         captureApiException({
-          error: error,
+          error,
           operation: 'queue.handler',
           tags: { queue_name: batch.queue },
           extra: { messageCount: batch.messages.length },
@@ -254,7 +197,12 @@ const handler: ExportedHandler<Env> = {
     await queryMetricsAls.run(store, async () => {
       try {
         if (controller.cron === '0 9 * * *') {
-          const result = await sweepInvalidItemLogs({ env });
+          const result = await record({
+            operation: 'sweepInvalidItemLogs',
+            tags: { trigger: 'cron' },
+            extra: { cron: controller.cron },
+            fn: async () => sweepInvalidItemLogs({ env }),
+          });
           console.log(
             `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
               `iterations=${result.iterations} capped=${result.capped} ` +
@@ -275,9 +223,15 @@ const handler: ExportedHandler<Env> = {
       }
     });
   },
-};
+} satisfies ExportedHandler<Env>;
 
-// withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
-// on first invocation and forward uncaught exceptions to Sentry. The
-// instrumented workflow class is exported separately above.
-export default withSentry(sentryOptions, handler);
+export default withSentry<Env>(
+  (env) => ({
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT ?? 'production',
+    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
+    sendDefaultPii: false,
+    release: env.SENTRY_RELEASE,
+  }),
+  workerHandler,
+);

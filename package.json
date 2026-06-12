@@ -35,7 +35,7 @@
     "format": "biome format --write",
     "format:package-json": "bun scripts/format/sort-package-json.ts",
     "preinstall": "bun run configure:deps",
-    "postinstall": "bun run lefthook && bun run env",
+    "postinstall": "bun run lefthook && bun run env && bun run --cwd packages/consent-ui build",
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",

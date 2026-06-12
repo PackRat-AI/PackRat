@@ -1,7 +1,12 @@
 {
+  // Package-scoped tsconfig, extending the shared base. The API is now entirely
+  // JSX-free — all server-rendered HTML moved to the built `@packrat/consent-ui`
+  // package, which the API consumes as plain `renderConsentPage(data): string`.
+  // No more @kitajs/html JSX config / ts-html-plugin / root-tsconfig excludes.
+  // CF Workers types come via src/global.d.ts's
+  // `/// <reference types="@cloudflare/workers-types" />`.
   "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "types": ["./worker-configuration.d.ts", "bun"],
     "paths": {
       "@packrat/api": ["./src/index.ts"],
       "@packrat/api/*": ["./src/*"]

@@ -158,28 +158,33 @@ Sentry.addBreadcrumb({ category: 'feature', message: 'Action started', level: 'i
 - **Better Auth errors** (plain objects with `{ message, status, code }`) are not JS Errors. Use `toAuthError` from `expo-app/features/auth/lib/authErrors` to convert them into an `AuthClientError` that carries `status` and `code`. Capture and throw that — do not create a separate synthetic error for Sentry and another for throwing.
 - Include `httpStatus` and `errorCode` in `extra` for any HTTP error so they're searchable in Sentry.
 
-**API / Cloudflare Workers** — use helpers from `@packrat/api/utils/sentry`:
+**API / Cloudflare Workers** — helpers from `@packrat/api/utils/sentry`. There are **three boundaries by where code runs** — match the tier to the situation instead of wrapping everything in try/catch:
 
-```ts
-import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+1. **Route handlers → do nothing.** Elysia's global `.onError` (`src/app.ts`) is the central sink: it reports unexpected errors (skips `VALIDATION`/`PARSE`/`NOT_FOUND`), tagged by the matched **route template** + `request_id`. Let errors propagate — don't add a try/catch *just* to report. Only catch in a route to **translate** an error into a specific response (and then it's a swallow — see tier 3).
 
-// Breadcrumb before significant async steps
-apiAddBreadcrumb({ category: 'feature', message: 'Fetching external data', level: 'info' });
+2. **Sub-operations you rethrow from → wrap in `record`.** Workflow `step.do` bodies, queue/cron consumers, and services called outside an Elysia request. It opens a Sentry span (OTel-semantic, Workers-native) **and** captures-with-context **and** rethrows:
 
-// In every catch block
-} catch (error) {
-  captureApiException(error, {
-    operation: 'featureName.action',
-    userId,
-    tags: { feature: 'myFeature' },
-    extra: { relevantId },
-  });
-  throw error; // or return an error response
-}
-```
+   ```ts
+   import { record } from '@packrat/api/utils/sentry';
 
-- Use `captureApiException` (not raw `captureException`) — it wraps the call with structured operation context and also logs to console for wrangler dev output.
-- Every route `catch` block and service method that interacts with the DB or an external API must have a `captureApiException` call.
+   await record({ operation: 'etl.processLogsBatch', extra: { jobId } }, async () => {
+     await db.insert(logs).values(rows);
+   });
+   ```
+
+3. **Catches that swallow → call `captureApiException`** (object signature). Fail-closed `return false`, best-effort metrics, per-item loops that continue, route catches that return an error response:
+
+   ```ts
+   } catch (error) {
+     captureApiException({ error, operation: 'verifyAdmin', extra: { userId } });
+     return false; // swallowed — nothing to rethrow
+   }
+   ```
+
+- Capture is **idempotent + deduped** (a marker is stamped on the error), so `record`/`captureApiException` + the outer boundary (`.onError`, `withSentry`, `instrumentWorkflowWithSentry`) never double-report — enrich-and-rethrow is always safe.
+- Every event in a request shares a **`request_id`** tag (`cf-ray`, set in `.onRequest`), echoed in the `X-Request-Id` response header — pivot on it to tie an `.onError` report to the granular `record`/`captureApiException` events. Sentry's automatic `trace_id` correlates them too.
+- Don't use raw `captureException` — the wrappers add operation context + console logging. Include `httpStatus`/`errorCode` in `extra` for HTTP errors; breadcrumb significant steps with `apiAddBreadcrumb`.
+- **Not** `@elysiajs/opentelemetry`: its Node OTel SDK doesn't run on workerd (BatchSpanProcessor, AsyncHooks). `record` gives the same `record(name, fn)` ergonomics on Sentry's Workers-native tracer.
 
 ### API Client (`@packrat/api-client`)
 

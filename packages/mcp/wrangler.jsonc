@@ -1,25 +1,52 @@
 {
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
-  "name": "packrat-mcp",
+  // ───────────────────────────────────────────────────────────────────────────
+  // PackRat MCP Worker
+  //
+  // The top-level config is the dev base. `wrangler dev` and
+  // `wrangler dev -e dev` run against it; `wrangler deploy --env prod` ships
+  // the production worker bound to mcp.packratai.com.
+  //
+  // Post-refactor (2026-05-25): the MCP worker is a pure protected resource.
+  // The OAuth authorization server lives on api.packrat.world via
+  // `@better-auth/oauth-provider`; this worker only validates JWTs via
+  // `verifyMcpToken` against `${PACKRAT_API_URL}/api/auth/jwks`. The previous
+  // `OAUTH_KV` namespaces, the `purgeExpiredData` cron, and the
+  // `MCP_INITIAL_ACCESS_TOKEN` DCR-gate secret are all gone. See
+  // `docs/mcp/runbook.md` § "Post-refactor: AS lives on api.packrat.world" for
+  // the new architecture and the operator-side namespace/secret deprovisioning
+  // steps.
+  //
+  // Required secrets (set per environment via `wrangler secret put <NAME> --env <env>`):
+  //   PACKRAT_API_URL              — base URL of the PackRat API hosting the AS
+  //                                  (e.g. https://api.packrat.world); used by
+  //                                  `token-verify.ts` to fetch JWKS.
+  //
+  // Optional vars:
+  //   MCP_FEATURE_FLAGS            — comma-separated flag names enabled at boot
+  //
+  // The deploy identifier surfaced on /status comes from the
+  // `version_metadata` binding below (CF_VERSION_METADATA) — injected by the
+  // runtime, so no deploy-time `--var` or CI step is needed (works under both
+  // `wrangler deploy` and Cloudflare Workers Builds).
+  //
+  // See docs/mcp/runbook.md for the full deploy + secret-rotation procedure.
+  // ───────────────────────────────────────────────────────────────────────────
+  "name": "packrat-mcp-dev",
   "main": "src/index.ts",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "logpush": true,
+  // Runtime-injected deploy metadata ({ id, tag, timestamp }); surfaced on
+  // /status as `deployId`. No deploy-time --var needed.
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
   },
-  // KV namespace for OAuth token storage (required by @cloudflare/workers-oauth-provider)
-  // Create with: wrangler kv namespace create OAUTH_KV
-  "kv_namespaces": [
-    {
-      "binding": "OAUTH_KV",
-      "id": "__TODO_OAUTH_KV_PROD_ID__",
-      "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
-    }
-  ],
-  // Durable Objects power each MCP session (stateful per client connection)
   "durable_objects": {
     "bindings": [
       {
@@ -28,24 +55,53 @@
       }
     ]
   },
-  // SQLite-backed DO for state persistence and hibernation support
+  // SQLite-backed DO; required for McpAgent state persistence + hibernation.
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": ["PackRatMCP"]
     }
   ],
-  // Environment variables are set via Cloudflare dashboard or .dev.vars locally
-  // Required: PACKRAT_API_URL
-  // Optional: MCP_INITIAL_ACCESS_TOKEN (pre-shared secret for dynamic client registration)
+  // Workers Rate Limiting binding for authenticated tool calls. Keyed per-call
+  // by `${userId}:${toolName}` — `userId` is now sourced from the JWT `sub`
+  // claim (via `verifyMcpToken`) instead of the prior OAuthProvider props
+  // object, but the binding itself and the key shape are unchanged.
+  // successful checks per 60s is a deliberately humane default for interactive
+  // Claude-mediated use; bursts beyond it surface to the model as the U8
+  // `rate_limited` error envelope (retryable=true) so the model can back off
+  // and retry.
+  //
+  // Block-key conventions follow `packages/api/wrangler.jsonc:44`:
+  //   - top-level key is `rate_limiting` (not `ratelimits`)
+  //   - per-binding field is `binding` (not `name`)
+  // `namespace_id` is a free-form Cloudflare identifier (per their docs);
+  // `"1"` matches the API package's convention.
+  //
+  // The binding is wired into `PackRatMCP.installToolRegistrationProxy()`,
+  // which wraps every tool handler. The dev fallback (`env.MCP_TOOLS_RL`
+  // undefined) returns success so local `vitest` and `wrangler dev` don't
+  // break when no binding is bound.
+  "rate_limiting": [
+    {
+      "binding": "MCP_TOOLS_RL",
+      "namespace_id": "1",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
   "env": {
-    "dev": {
-      "name": "packrat-mcp-dev",
-      "kv_namespaces": [
+    // ───── Production ──────────────────────────────────────────────────────
+    // Custom domain: mcp.packratai.com — brand-aligned with the landing site
+    // (packratai.com) so Claude.ai users and connector reviewers see a
+    // consistent brand surface. Provisioned in the Cloudflare dashboard
+    // against the packratai.com zone. `custom_domain: true` expects a bare
+    // hostname pattern (no wildcard), per Cloudflare's worker-domain contract;
+    // the worker handles all paths under the hostname.
+    "prod": {
+      "name": "packrat-mcp",
+      "routes": [
         {
-          "binding": "OAUTH_KV",
-          "id": "__TODO_OAUTH_KV_DEV_ID__",
-          "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
+          "pattern": "mcp.packratai.com",
+          "custom_domain": true
         }
       ],
       "durable_objects": {
@@ -61,7 +117,48 @@
           "tag": "v1",
           "new_sqlite_classes": ["PackRatMCP"]
         }
-      ]
+      ],
+      "rate_limiting": [
+        {
+          "binding": "MCP_TOOLS_RL",
+          "namespace_id": "1",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
+    },
+    // ───── Dev ─────────────────────────────────────────────────────────────
+    // Kept as an explicit env so `wrangler deploy --env dev` ships a
+    // dedicated worker (packrat-mcp-dev) on the *.workers.dev URL for
+    // pre-prod smoke testing without colliding with prod.
+    "dev": {
+      "name": "packrat-mcp-dev",
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "PackRatMCP",
+            "class_name": "PackRatMCP"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["PackRatMCP"]
+        }
+      ],
+      "rate_limiting": [
+        {
+          "binding": "MCP_TOOLS_RL",
+          "namespace_id": "1",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ],
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      }
     }
   }
 }

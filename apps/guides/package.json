@@ -27,7 +27,7 @@
     "@ai-sdk/openai": "catalog:",
     "@elysiajs/eden": "catalog:",
     "@hookform/resolvers": "catalog:",
-    "@packrat/api": "workspace:*",
+    "@packrat/api-client": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@packrat/schemas": "workspace:*",
