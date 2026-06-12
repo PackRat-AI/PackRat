@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
-const vectorSearchApi = async ({ query, limit }: { query: string; limit?: number }) => {
+export const vectorSearchApi = async ({ query, limit }: { query: string; limit?: number }) => {
   const { data, error } = await apiClient.catalog['vector-search'].get({
     query: {
       q: query,
