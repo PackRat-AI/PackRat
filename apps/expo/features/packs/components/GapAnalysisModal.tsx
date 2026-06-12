@@ -1,9 +1,11 @@
 import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
+import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import {
   Modal,
@@ -287,9 +289,16 @@ const DEV_CHIPS: { label: string; state: DevState }[] = __DEV__
 interface DevGapPanelProps {
   active: DevState;
   onSelect: (state: DevState) => void;
+  skipAutoAnalyze: boolean;
+  onToggleSkipAutoAnalyze: () => void;
 }
 
-function DevGapPanel({ active, onSelect }: DevGapPanelProps) {
+function DevGapPanel({
+  active,
+  onSelect,
+  skipAutoAnalyze,
+  onToggleSkipAutoAnalyze,
+}: DevGapPanelProps) {
   const { colors } = useColorScheme();
   return (
     <View
@@ -321,6 +330,25 @@ function DevGapPanel({ active, onSelect }: DevGapPanelProps) {
           );
         })}
       </View>
+      <View className="mt-2 flex-row items-center justify-between">
+        <Text variant="footnote" className="text-muted-foreground">
+          Skip auto-analyze (saves API credits)
+        </Text>
+        <TouchableOpacity
+          className="rounded-lg px-3 py-1"
+          style={{ backgroundColor: skipAutoAnalyze ? colors.primary : colors.grey5 }}
+          onPress={onToggleSkipAutoAnalyze}
+          activeOpacity={0.7}
+        >
+          <Text
+            variant="footnote"
+            className="font-semibold"
+            style={{ color: skipAutoAnalyze ? 'white' : colors.foreground }}
+          >
+            {skipAutoAnalyze ? 'ON' : 'OFF'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -335,7 +363,6 @@ interface GapAnalysisModalProps {
   analysis: GapAnalysisResponse | null;
   isLoading: boolean;
   isError: boolean;
-  onAnalyze: () => void;
   onRetry: () => void;
 }
 
@@ -350,13 +377,13 @@ export function GapAnalysisModal({
   activity,
   isLoading: isLoadingProp,
   isError: isErrorProp,
-  onAnalyze,
   onRetry,
 }: GapAnalysisModalProps) {
   const { t } = useTranslation();
   const { isDarkColorScheme, colors } = useColorScheme();
 
   const [devState, setDevState] = useState<DevState>(null);
+  const [devSkipAutoAnalyze, setDevSkipAutoAnalyze] = useAtom(devSkipAutoAnalyzeAtom);
 
   const isLoading = __DEV__ && devState === 'loading' ? true : isLoadingProp;
   const isError =
@@ -440,8 +467,6 @@ export function GapAnalysisModal({
     swapIndex !== null ? (matchResults[swapIndex]?.data?.items ?? []) : [];
   const swapLoading = swapIndex !== null ? (matchResults[swapIndex]?.isLoading ?? false) : false;
 
-  const isIdle = !isLoading && !isError && analysis === null;
-
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View className="flex-1 bg-background">
@@ -485,32 +510,19 @@ export function GapAnalysisModal({
 
         {/* Content */}
         <ScrollView contentContainerClassName={cn('p-4', !analysis && 'flex-1')}>
-          {__DEV__ && <DevGapPanel active={devState} onSelect={setDevState} />}
+          {__DEV__ && (
+            <DevGapPanel
+              active={devState}
+              onSelect={setDevState}
+              skipAutoAnalyze={devSkipAutoAnalyze}
+              onToggleSkipAutoAnalyze={() => setDevSkipAutoAnalyze((v) => !v)}
+            />
+          )}
 
-          {isLoading ? (
+          {isLoading || (!isError && analysis === null) ? (
             <View className="flex-1 items-center justify-center py-8">
               <ActivityIndicator size="large" />
               <Text className="mt-4 text-muted-foreground">{t('packs.analyzing')}</Text>
-            </View>
-          ) : isIdle ? (
-            <View className="flex-1 items-center justify-center py-8 mt-24">
-              <View className="mb-6 h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                <Icon
-                  materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
-                  ios={{ name: 'sparkle.magnifyingglass' }}
-                  size={32}
-                  color={colors.primary}
-                />
-              </View>
-              <Text className="text-center text-lg font-semibold text-foreground">
-                Ready to Analyze
-              </Text>
-              <Text className="mt-2 mb-8 text-center text-sm text-muted-foreground mx-8">
-                AI will scan your pack and suggest gear you might be missing for this trip.
-              </Text>
-              <Button onPress={onAnalyze} className="px-8">
-                <Text className="font-semibold">Analyze Pack</Text>
-              </Button>
             </View>
           ) : analysis ? (
             gaps.length > 0 ? (

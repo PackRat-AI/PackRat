@@ -3,6 +3,7 @@ import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
+import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -19,6 +20,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import { useMemo, useState } from 'react';
 import { Image, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,6 +51,8 @@ export function PackDetailScreen() {
 
   const [location, setLocation] = useState<WeatherLocation>();
   const [selectedActivity, setSelectedActivity] = useState<PackCategory>();
+
+  const devSkipAutoAnalyze = useAtomValue(devSkipAutoAnalyzeAtom);
 
   const {
     mutate: analyzeGaps,
@@ -217,9 +221,20 @@ export function PackDetailScreen() {
 
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
+    if (!(__DEV__ && devSkipAutoAnalyze)) {
+      analyzeGaps({
+        packId: id,
+        context: {
+          destination: selectedLocation?.name,
+          tripType: selectedActivity || pack.category,
+          startDate: new Date().toISOString().split('T')[0],
+        },
+      });
+    }
   };
 
-  const runAnalysis = () => {
+  const handleRetryAnalysis = () => {
+    resetAnalysis();
     analyzeGaps({
       packId: id,
       context: {
@@ -228,11 +243,6 @@ export function PackDetailScreen() {
         startDate: new Date().toISOString().split('T')[0],
       },
     });
-  };
-
-  const handleRetryAnalysis = () => {
-    resetAnalysis();
-    runAnalysis();
   };
 
   const getFilteredItems = () => {
@@ -732,7 +742,6 @@ export function PackDetailScreen() {
         analysis={gapAnalysis ?? null}
         isLoading={isAnalyzing}
         isError={isAnalysisError}
-        onAnalyze={runAnalysis}
         onRetry={handleRetryAnalysis}
       />
     </SafeAreaView>
