@@ -296,10 +296,34 @@ export function PackDetailScreen() {
   };
   const handleSharePack = async () => {
     try {
-      const lines: string[] = [`${pack.name}`];
+      const lines: string[] = [pack.name];
       if (pack.category) lines.push(pack.category);
       if (pack.description) lines.push(`\n${pack.description}`);
       lines.push(`\n${pack.items?.length || 0} items · ${pack.totalWeight || 0}g`);
+
+      const items = pack.items ?? [];
+      if (items.length > 0) {
+        const byCategory = items.reduce<Record<string, typeof items>>((acc, item) => {
+          const cat = item.category || 'Other';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(item);
+          return acc;
+        }, {});
+
+        for (const [cat, catItems] of Object.entries(byCategory)) {
+          lines.push(`\n${cat}`);
+          for (const item of catItems) {
+            const flags = [item.worn && 'worn', item.consumable && 'consumable']
+              .filter(Boolean)
+              .join(', ');
+            const flagSuffix = flags ? ` (${flags})` : '';
+            lines.push(
+              `  • ${item.quantity}x ${item.name} — ${item.weight}${item.weightUnit}${flagSuffix}`,
+            );
+          }
+        }
+      }
+
       await Share.share({ message: lines.join('\n') });
     } catch {
       // ignore
