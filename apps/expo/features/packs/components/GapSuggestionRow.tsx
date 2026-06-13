@@ -250,7 +250,7 @@ export function GapSuggestionRow({
         </View>
       </View>
 
-      <View className="mx-3 mb-3 rounded-lg bg-background">
+      <View className={`mx-3 mb-3 rounded-lg ${isLoadingMatch ? 'bg-card' : 'bg-background'}`}>
         <View className="px-3 py-3 flex-row items-center gap-3" style={{ minHeight: 56 }}>
           {isLoadingMatch ? (
             <ShimmerFindingText suggestion={gap.suggestion} />

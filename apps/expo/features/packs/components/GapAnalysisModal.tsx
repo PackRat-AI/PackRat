@@ -425,7 +425,7 @@ export function GapAnalysisModal({
 
   const selectedCount = Object.keys(selections).length;
 
-  const handleSelect = (gapIndex: number, item: CatalogItem) => {
+  const handleSelect = ({ gapIndex, item }: { gapIndex: number; item: CatalogItem }) => {
     setSelections((prev) => ({ ...prev, [gapIndex]: { item, quantity: 1 } }));
   };
 
@@ -437,7 +437,7 @@ export function GapAnalysisModal({
     });
   };
 
-  const handleQuantityChange = (gapIndex: number, delta: number) => {
+  const handleQuantityChange = ({ gapIndex, delta }: { gapIndex: number; delta: number }) => {
     setSelections((prev) => {
       const current = prev[gapIndex];
       if (!current) return prev;
@@ -567,9 +567,9 @@ export function GapAnalysisModal({
                       selectedItem={selections[i]?.item}
                       quantity={selections[i]?.quantity ?? 1}
                       showControls={activeControlIndex === i}
-                      onSelect={(item) => handleSelect(i, item)}
+                      onSelect={(item) => handleSelect({ gapIndex: i, item })}
                       onDeselect={() => handleDeselect(i)}
-                      onQuantityChange={(delta) => handleQuantityChange(i, delta)}
+                      onQuantityChange={(delta) => handleQuantityChange({ gapIndex: i, delta })}
                       onControlsOpen={() => setActiveControlIndex(i)}
                       onControlsDismiss={() => setActiveControlIndex(null)}
                       onSwapPress={() => {
