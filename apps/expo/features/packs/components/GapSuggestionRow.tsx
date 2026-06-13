@@ -149,15 +149,16 @@ export function GapSuggestionRow({
     });
   }, [showControls]);
 
-  // Icon slots grow from 0 → 28 and fade in after pill is half-open
+  // Icon slots grow from 0 → 36 and fade in after pill is half-open
   const iconWrapStyle = useAnimatedStyle(() => ({
-    width: interpolate(controlsProgress.value, [0, 1], [0, 28]),
+    width: interpolate(controlsProgress.value, [0, 1], [0, 36]),
     opacity: interpolate(controlsProgress.value, [0, 0.5, 1], [0, 0, 1]),
   }));
 
-  // Pill padding breathes slightly wider when controls are open
+  // Pill padding breathes wider + taller when controls are open
   const pillPaddingStyle = useAnimatedStyle(() => ({
-    paddingHorizontal: interpolate(controlsProgress.value, [0, 1], [8, 10]),
+    paddingHorizontal: interpolate(controlsProgress.value, [0, 1], [10, 14]),
+    paddingVertical: interpolate(controlsProgress.value, [0, 1], [5, 8]),
   }));
 
   useEffect(() => {
@@ -279,35 +280,23 @@ export function GapSuggestionRow({
                 </View>
               </View>
 
-              {/* Right side: base row always rendered; overlay morphs in on top */}
+              {/* Right side: base row always in flow; overlay morphs in on top */}
               <View
                 style={{
-                  width: 104,
+                  width: 120,
                   minHeight: 34,
                   alignItems: 'flex-end',
                   justifyContent: 'center',
                   position: 'relative',
                 }}
               >
-                {/* Base row — always in flow */}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
+                {/* Base row */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <ScalePress
                     onPress={onSwapPress}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 6 }}
                   >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: '600',
-                        color: colors.grey,
-                      }}
-                    >
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.grey }}>
                       Swap
                     </Text>
                   </ScalePress>
@@ -355,13 +344,7 @@ export function GapSuggestionRow({
                         onPress={() => displayItem && handleAdd(displayItem)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 10 }}
                       >
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: '600',
-                            color: colors.primary,
-                          }}
-                        >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
                           Add
                         </Text>
                       </ScalePress>
@@ -369,12 +352,11 @@ export function GapSuggestionRow({
                   )}
                 </View>
 
-                {/* Morphing expanded pill — covers base row while controls are open.
-                  No Pressable wrapper; minus/qty/plus are sibling Pressables inside. */}
+                {/* Container-transform overlay — no entering animation so controlsProgress
+                    is the sole driver of the expansion; exiting fades out to reveal base row */}
                 {selected && showControls && (
                   <Animated.View
                     key="expanded-pill"
-                    entering={FadeIn.duration(120)}
                     exiting={FadeOut.duration(180)}
                     style={{
                       position: 'absolute',
@@ -395,7 +377,6 @@ export function GapSuggestionRow({
                           alignItems: 'center',
                           backgroundColor: colors.primary,
                           borderRadius: 100,
-                          paddingVertical: 8,
                         },
                         pillPaddingStyle,
                       ]}
@@ -408,7 +389,7 @@ export function GapSuggestionRow({
                           onPress={handleDecrement}
                           hitSlop={{ top: 20, bottom: 20, left: 20, right: 8 }}
                         >
-                          <Icon name="minus" size={12} color="#fff" />
+                          <Icon name="minus" size={16} color="#fff" />
                         </Pressable>
                       </Animated.View>
 
@@ -419,12 +400,12 @@ export function GapSuggestionRow({
                       >
                         <Text
                           style={{
-                            fontSize: 13,
+                            fontSize: 16,
                             fontWeight: '700',
                             color: '#fff',
-                            minWidth: 16,
+                            minWidth: 20,
                             textAlign: 'center',
-                            lineHeight: 16,
+                            lineHeight: 20,
                           }}
                         >
                           {quantity}
@@ -439,7 +420,7 @@ export function GapSuggestionRow({
                           onPress={handleIncrement}
                           hitSlop={{ top: 20, bottom: 20, left: 8, right: 20 }}
                         >
-                          <Icon name="plus" size={12} color="#fff" />
+                          <Icon name="plus" size={16} color="#fff" />
                         </Pressable>
                       </Animated.View>
                     </Animated.View>
