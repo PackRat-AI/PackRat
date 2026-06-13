@@ -17,6 +17,7 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  ZoomIn,
 } from 'react-native-reanimated';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
 
@@ -155,9 +156,10 @@ export function GapSuggestionRow({
     opacity: interpolate(controlsProgress.value, [0, 0.5, 1], [0, 0, 1]),
   }));
 
-  // Pill padding breathes slightly wider when controls are open
+  // Pill padding breathes wider + taller when controls are open
   const pillPaddingStyle = useAnimatedStyle(() => ({
     paddingHorizontal: interpolate(controlsProgress.value, [0, 1], [10, 14]),
+    paddingVertical: interpolate(controlsProgress.value, [0, 1], [5, 8]),
   }));
 
   useEffect(() => {
@@ -279,128 +281,33 @@ export function GapSuggestionRow({
                 </View>
               </View>
 
-              {/* Right side: base row always rendered; overlay morphs in on top */}
-              <View
-                style={{
-                  width: 104,
-                  minHeight: 34,
-                  alignItems: 'flex-end',
-                  justifyContent: 'center',
-                  position: 'relative',
-                }}
-              >
-                {/* Base row — always in flow */}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
+              {/* Right side: Swap + single morphing pill (no layout shift — fixed slot) */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <ScalePress
+                  onPress={onSwapPress}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 6 }}
                 >
-                  <ScalePress
-                    onPress={onSwapPress}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 6 }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: '600',
-                        color: colors.grey,
-                      }}
-                    >
-                      Swap
-                    </Text>
-                  </ScalePress>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.grey }}>Swap</Text>
+                </ScalePress>
 
+                {/* Fixed-width slot reserves space so pill growth doesn't shift the row */}
+                <View style={{ width: 120, alignItems: 'flex-end', justifyContent: 'center' }}>
                   {selected ? (
                     <Animated.View
-                      key="compact-pill"
-                      entering={FadeIn.duration(180)}
-                      exiting={FadeOut.duration(120)}
-                    >
-                      <ScalePress
-                        onPress={handleQtyPillPress}
-                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 10 }}
-                      >
-                        <View
-                          style={{
-                            backgroundColor: colors.primary,
-                            borderRadius: 100,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                            minWidth: 30,
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 13,
-                              fontWeight: '700',
-                              color: '#fff',
-                              lineHeight: 16,
-                            }}
-                          >
-                            {quantity}
-                          </Text>
-                        </View>
-                      </ScalePress>
-                    </Animated.View>
-                  ) : (
-                    <Animated.View
-                      key="add"
-                      entering={FadeIn.duration(180)}
-                      exiting={FadeOut.duration(120)}
-                    >
-                      <ScalePress
-                        onPress={() => displayItem && handleAdd(displayItem)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 10 }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: '600',
-                            color: colors.primary,
-                          }}
-                        >
-                          Add
-                        </Text>
-                      </ScalePress>
-                    </Animated.View>
-                  )}
-                </View>
-
-                {/* Morphing expanded pill — covers base row while controls are open.
-                  No Pressable wrapper; minus/qty/plus are sibling Pressables inside. */}
-                {selected && showControls && (
-                  <Animated.View
-                    key="expanded-pill"
-                    entering={FadeIn.duration(120)}
-                    exiting={FadeOut.duration(180)}
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      justifyContent: 'center',
-                      alignItems: 'flex-end',
-                      zIndex: 10,
-                      backgroundColor: colors.background,
-                    }}
-                  >
-                    <Animated.View
+                      key="pill"
+                      entering={ZoomIn.springify().damping(18).stiffness(220)}
+                      exiting={FadeOut.duration(150)}
                       style={[
                         {
                           flexDirection: 'row',
                           alignItems: 'center',
                           backgroundColor: colors.primary,
                           borderRadius: 100,
-                          paddingVertical: 8,
                         },
                         pillPaddingStyle,
                       ]}
                     >
-                      {/* Minus — grows from left outer edge inward */}
+                      {/* Minus — expands from left as controls open */}
                       <Animated.View
                         style={[{ overflow: 'hidden', alignItems: 'flex-start' }, iconWrapStyle]}
                       >
@@ -431,7 +338,7 @@ export function GapSuggestionRow({
                         </Text>
                       </Pressable>
 
-                      {/* Plus — grows from right outer edge inward */}
+                      {/* Plus — expands from right as controls open */}
                       <Animated.View
                         style={[{ overflow: 'hidden', alignItems: 'flex-end' }, iconWrapStyle]}
                       >
@@ -443,8 +350,23 @@ export function GapSuggestionRow({
                         </Pressable>
                       </Animated.View>
                     </Animated.View>
-                  </Animated.View>
-                )}
+                  ) : (
+                    <Animated.View
+                      key="add"
+                      entering={FadeIn.duration(180)}
+                      exiting={FadeOut.duration(120)}
+                    >
+                      <ScalePress
+                        onPress={() => displayItem && handleAdd(displayItem)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 10 }}
+                      >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
+                          Add
+                        </Text>
+                      </ScalePress>
+                    </Animated.View>
+                  )}
+                </View>
               </View>
             </>
           ) : (
