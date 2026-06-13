@@ -12,11 +12,11 @@ import Animated, {
   Easing,
   FadeIn,
   FadeOut,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-  ZoomOut,
 } from 'react-native-reanimated';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
 
@@ -36,7 +36,7 @@ function ShimmerFindingText({ suggestion }: { suggestion: string }) {
   }));
 
   const highlight = isDarkColorScheme
-    ? (['transparent', 'rgba(255,255,255,0.25)', 'transparent'] as const)
+    ? (['transparent', 'rgba(255,255,255,0.65)', 'transparent'] as const)
     : (['transparent', 'rgba(255,255,255,0.85)', 'transparent'] as const);
 
   return (
@@ -139,7 +139,27 @@ export function GapSuggestionRow({
   const { isDarkColorScheme, colors } = useColorScheme();
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clear the dismiss timer when deselected externally
+  // Drives the pill morph: 0 = compact (qty only), 1 = full (+/− controls)
+  const controlsProgress = useSharedValue(showControls ? 1 : 0);
+
+  useEffect(() => {
+    controlsProgress.value = withTiming(showControls ? 1 : 0, {
+      duration: showControls ? 200 : 220,
+      easing: showControls ? Easing.out(Easing.back(1.1)) : Easing.in(Easing.quad),
+    });
+  }, [showControls]);
+
+  // Icon slots grow from 0 → 28 and fade in after pill is half-open
+  const iconWrapStyle = useAnimatedStyle(() => ({
+    width: interpolate(controlsProgress.value, [0, 1], [0, 28]),
+    opacity: interpolate(controlsProgress.value, [0, 0.5, 1], [0, 0, 1]),
+  }));
+
+  // Pill padding breathes slightly wider when controls are open
+  const pillPaddingStyle = useAnimatedStyle(() => ({
+    paddingHorizontal: interpolate(controlsProgress.value, [0, 1], [8, 10]),
+  }));
+
   useEffect(() => {
     if (!selected && dismissTimer.current) {
       clearTimeout(dismissTimer.current);
@@ -154,7 +174,7 @@ export function GapSuggestionRow({
 
   const scheduleDismiss = () => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
-    dismissTimer.current = setTimeout(() => onControlsDismiss(), 900);
+    dismissTimer.current = setTimeout(() => onControlsDismiss(), 2500);
   };
 
   const handleAdd = (item: CatalogItem) => {
@@ -164,22 +184,28 @@ export function GapSuggestionRow({
   };
 
   const handleIncrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onControlsOpen();
     onQuantityChange(1);
     scheduleDismiss();
   };
 
   const handleDecrement = () => {
     if (quantity <= 1) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onDeselect();
       onControlsDismiss();
       if (dismissTimer.current) clearTimeout(dismissTimer.current);
     } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onControlsOpen();
       onQuantityChange(-1);
       scheduleDismiss();
     }
   };
 
   const handleQtyPillPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onControlsOpen();
     scheduleDismiss();
   };
@@ -206,52 +232,32 @@ export function GapSuggestionRow({
   };
 
   return (
-    <View
-      className="mb-3 rounded-lg"
-      style={{
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: isDarkColorScheme ? 0.22 : 0.14,
-        shadowRadius: 8,
-        elevation: 4,
-      }}
-    >
-      <View className="rounded-lg border border-border bg-card overflow-hidden">
-        {/* Gap info */}
-        <View className="p-4 pb-3">
-          <View className="flex-row items-start gap-2">
-            <View className="flex-1">
-              {priorityConfig && (
-                <Text className="mb-1 text-xs font-semibold" style={{ color: priorityColor }}>
-                  {priorityConfig.label}
-                </Text>
-              )}
-              <Text className="font-semibold text-foreground">{gap.suggestion}</Text>
-              <Text className="mt-0.5 text-xs text-muted-foreground" numberOfLines={2}>
-                {gap.reason}
+    <View className="mb-3 rounded-lg bg-card overflow-hidden">
+      {/* Gap info */}
+      <View className="p-4 pb-3">
+        <View className="flex-row items-start gap-2">
+          <View className="flex-1">
+            {priorityConfig && (
+              <Text className="mb-1 text-xs font-semibold" style={{ color: priorityColor }}>
+                {priorityConfig.label}
               </Text>
-            </View>
+            )}
+            <Text className="font-semibold text-foreground">{gap.suggestion}</Text>
+            <Text className="mt-0.5 text-xs text-muted-foreground" numberOfLines={2}>
+              {gap.reason}
+            </Text>
           </View>
         </View>
+      </View>
 
-        {/* Divider — full width for the depth effect */}
-        <View className="h-px bg-border" />
-
-        {/* Catalog match row — tinted to feel like a distinct layer */}
-        <View
-          className="px-4 py-3 flex-row items-center gap-3"
-          style={{
-            minHeight: 64,
-            backgroundColor: isDarkColorScheme ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.055)',
-          }}
-        >
+      <View className="mx-3 mb-3 rounded-lg bg-background">
+        <View className="px-3 py-3 flex-row items-center gap-3" style={{ minHeight: 56 }}>
           {isLoadingMatch ? (
             <ShimmerFindingText suggestion={gap.suggestion} />
           ) : displayItem ? (
             <>
-              {/* Tappable item area — opens the swap sheet */}
-              <Pressable
-                onPress={onSwapPress}
+              {/* Item info — non-tappable; swap via the Swap button */}
+              <View
                 style={{
                   flex: 1,
                   flexDirection: 'row',
@@ -271,100 +277,172 @@ export function GapSuggestionRow({
                   </Text>
                   <Text className="text-xs text-muted-foreground">{formatMeta(displayItem)}</Text>
                 </View>
-              </Pressable>
+              </View>
 
-              {/* Add / transient controls / qty pill — fixed width so the item area never shifts */}
-              <View style={{ width: 84, alignItems: 'flex-end', justifyContent: 'center' }}>
-                {selected && showControls ? (
-                  /* Transient qty controls — auto-dismisses after 1.5 s of inactivity */
-                  <Animated.View
-                    key="controls"
-                    entering={FadeIn.duration(180)}
-                    exiting={ZoomOut.duration(160)}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      backgroundColor: colors.primary,
-                      borderRadius: 100,
-                      paddingHorizontal: 10,
-                      paddingVertical: 5,
-                      gap: 10,
-                    }}
+              {/* Right side: base row always rendered; overlay morphs in on top */}
+              <View
+                style={{
+                  width: 104,
+                  minHeight: 34,
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  position: 'relative',
+                }}
+              >
+                {/* Base row — always in flow */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <ScalePress
+                    onPress={onSwapPress}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 6 }}
                   >
-                    <ScalePress
-                      onPress={handleDecrement}
-                      hitSlop={{ top: 6, bottom: 6, left: 8, right: 4 }}
-                    >
-                      <Icon name="minus" size={12} color="#fff" />
-                    </ScalePress>
                     <Text
                       style={{
                         fontSize: 13,
-                        fontWeight: '700',
-                        color: '#fff',
-                        minWidth: 16,
-                        textAlign: 'center',
-                        lineHeight: 16,
+                        fontWeight: '600',
+                        color: colors.grey,
                       }}
                     >
-                      {quantity}
+                      Swap
                     </Text>
-                    <ScalePress
-                      onPress={handleIncrement}
-                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 8 }}
+                  </ScalePress>
+
+                  {selected ? (
+                    <Animated.View
+                      key="compact-pill"
+                      entering={FadeIn.duration(180)}
+                      exiting={FadeOut.duration(120)}
                     >
-                      <Icon name="plus" size={12} color="#fff" />
-                    </ScalePress>
-                  </Animated.View>
-                ) : selected ? (
-                  /* Qty pill — tappable to reopen controls */
+                      <ScalePress
+                        onPress={handleQtyPillPress}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 10 }}
+                      >
+                        <View
+                          style={{
+                            backgroundColor: colors.primary,
+                            borderRadius: 100,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            minWidth: 30,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontWeight: '700',
+                              color: '#fff',
+                              lineHeight: 16,
+                            }}
+                          >
+                            {quantity}
+                          </Text>
+                        </View>
+                      </ScalePress>
+                    </Animated.View>
+                  ) : (
+                    <Animated.View
+                      key="add"
+                      entering={FadeIn.duration(180)}
+                      exiting={FadeOut.duration(120)}
+                    >
+                      <ScalePress
+                        onPress={() => displayItem && handleAdd(displayItem)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 10 }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: '600',
+                            color: colors.primary,
+                          }}
+                        >
+                          Add
+                        </Text>
+                      </ScalePress>
+                    </Animated.View>
+                  )}
+                </View>
+
+                {/* Morphing expanded pill — covers base row while controls are open.
+                  No Pressable wrapper; minus/qty/plus are sibling Pressables inside. */}
+                {selected && showControls && (
                   <Animated.View
-                    key="qty-pill"
-                    entering={FadeIn.duration(180)}
-                    exiting={FadeOut.duration(120)}
+                    key="expanded-pill"
+                    entering={FadeIn.duration(120)}
+                    exiting={FadeOut.duration(180)}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      justifyContent: 'center',
+                      alignItems: 'flex-end',
+                      zIndex: 10,
+                      backgroundColor: colors.background,
+                    }}
                   >
-                    <ScalePress
-                      onPress={handleQtyPillPress}
-                      hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
-                    >
-                      <View
-                        style={{
+                    <Animated.View
+                      style={[
+                        {
+                          flexDirection: 'row',
+                          alignItems: 'center',
                           backgroundColor: colors.primary,
                           borderRadius: 100,
-                          minWidth: 32,
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          alignItems: 'center',
-                        }}
+                          paddingVertical: 8,
+                        },
+                        pillPaddingStyle,
+                      ]}
+                    >
+                      {/* Minus — grows from left outer edge inward */}
+                      <Animated.View
+                        style={[{ overflow: 'hidden', alignItems: 'flex-start' }, iconWrapStyle]}
+                      >
+                        <Pressable
+                          onPress={handleDecrement}
+                          hitSlop={{ top: 20, bottom: 20, left: 20, right: 8 }}
+                        >
+                          <Icon name="minus" size={12} color="#fff" />
+                        </Pressable>
+                      </Animated.View>
+
+                      {/* Qty — tappable to reset dismiss timer */}
+                      <Pressable
+                        onPress={handleQtyPillPress}
+                        hitSlop={{ top: 20, bottom: 20, left: 12, right: 12 }}
                       >
                         <Text
                           style={{
                             fontSize: 13,
                             fontWeight: '700',
                             color: '#fff',
+                            minWidth: 16,
+                            textAlign: 'center',
                             lineHeight: 16,
                           }}
                         >
                           {quantity}
                         </Text>
-                      </View>
-                    </ScalePress>
-                  </Animated.View>
-                ) : (
-                  /* "Add" text */
-                  <Animated.View
-                    key="add"
-                    entering={FadeIn.duration(180)}
-                    exiting={FadeOut.duration(120)}
-                  >
-                    <ScalePress
-                      onPress={() => displayItem && handleAdd(displayItem)}
-                      hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
-                    >
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
-                        Add
-                      </Text>
-                    </ScalePress>
+                      </Pressable>
+
+                      {/* Plus — grows from right outer edge inward */}
+                      <Animated.View
+                        style={[{ overflow: 'hidden', alignItems: 'flex-end' }, iconWrapStyle]}
+                      >
+                        <Pressable
+                          onPress={handleIncrement}
+                          hitSlop={{ top: 20, bottom: 20, left: 8, right: 20 }}
+                        >
+                          <Icon name="plus" size={12} color="#fff" />
+                        </Pressable>
+                      </Animated.View>
+                    </Animated.View>
                   </Animated.View>
                 )}
               </View>

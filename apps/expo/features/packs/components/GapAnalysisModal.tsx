@@ -415,6 +415,8 @@ export function GapAnalysisModal({
   const matchResults = useGapCatalogMatches(gaps);
 
   const [selections, setSelections] = useState<Record<number, Selection>>({});
+  // Preview overrides: change the displayed item without affecting selection/quantity
+  const [previewOverrides, setPreviewOverrides] = useState<Record<number, CatalogItem>>({});
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [swapVisible, setSwapVisible] = useState(false);
   const [activeControlIndex, setActiveControlIndex] = useState<number | null>(null);
@@ -451,9 +453,13 @@ export function GapAnalysisModal({
 
   const handleSwapItem = (item: CatalogItem) => {
     if (swapIndex === null) return;
+    // Always update the displayed item — never touch quantity
+    setPreviewOverrides((prev) => ({ ...prev, [swapIndex]: item }));
+    // If already selected, also update the selection's item while keeping qty intact
     setSelections((prev) => {
       const current = prev[swapIndex];
-      return { ...prev, [swapIndex]: { item, quantity: current?.quantity ?? 1 } };
+      if (!current) return prev;
+      return { ...prev, [swapIndex]: { ...current, item } };
     });
   };
 
@@ -555,7 +561,7 @@ export function GapAnalysisModal({
                     <GapSuggestionRow
                       key={gap.suggestion}
                       gap={gap}
-                      topMatch={matchResults[i]?.data?.items?.[0]}
+                      topMatch={previewOverrides[i] ?? matchResults[i]?.data?.items?.[0]}
                       isLoadingMatch={matchResults[i]?.isLoading ?? false}
                       selected={i in selections}
                       selectedItem={selections[i]?.item}
@@ -614,11 +620,6 @@ export function GapAnalysisModal({
             className="border-t border-border px-4 pt-3"
             style={{ paddingBottom: Math.max(safeBottom, 16) }}
           >
-            <View className="mb-3">
-              <Text className="text-xs" style={{ color: colors.grey2 }}>
-                Tap any item to swap
-              </Text>
-            </View>
             <Button
               onPress={handleAddAll}
               disabled={selectedCount === 0 || isAdding}

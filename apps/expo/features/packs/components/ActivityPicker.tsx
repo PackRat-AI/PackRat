@@ -131,7 +131,7 @@ export function ActivityPicker({
           </View>
         </ScrollView>
         <View
-          className="px-4 flex-row self-end items-center gap-2 justify-between"
+          className="px-4 pt-2 flex-row self-end items-center gap-2 justify-between"
           style={{ paddingBottom: Math.max(safeBottom, 8) }}
         >
           {onSkip && (
