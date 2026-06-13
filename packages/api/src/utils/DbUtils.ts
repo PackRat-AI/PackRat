@@ -8,14 +8,28 @@ export async function getPackDetails({ packId }: { packId: string }) {
 
   const packData = await db.tag('utils.getPackDetails').query.packs.findFirst({
     where: eq(packs.id, packId),
+    columns: {
+      id: true,
+      name: true,
+      category: true,
+      description: true,
+      tags: true,
+      userId: true,
+    },
     with: {
       items: {
-        with: {
-          // lint:allow-unprojected-fat-table reason: DbUtils helper used by /item-suggestions + /gap-analysis (need item embeddings) and others; Tier-2 #11 — defer to pivot migration to touch all callsites once
-          catalogItem: true,
+        columns: {
+          id: true,
+          name: true,
+          category: true,
+          weight: true,
+          weightUnit: true,
+          quantity: true,
+          worn: true,
+          consumable: true,
+          embedding: true,
         },
       },
-      user: true,
     },
   });
 
