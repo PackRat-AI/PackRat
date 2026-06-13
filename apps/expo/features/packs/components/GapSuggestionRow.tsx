@@ -149,15 +149,15 @@ export function GapSuggestionRow({
     });
   }, [showControls]);
 
-  // Icon slots grow from 0 → 28 and fade in after pill is half-open
+  // Icon slots grow from 0 → 36 and fade in after pill is half-open
   const iconWrapStyle = useAnimatedStyle(() => ({
-    width: interpolate(controlsProgress.value, [0, 1], [0, 28]),
+    width: interpolate(controlsProgress.value, [0, 1], [0, 36]),
     opacity: interpolate(controlsProgress.value, [0, 0.5, 1], [0, 0, 1]),
   }));
 
   // Pill padding breathes slightly wider when controls are open
   const pillPaddingStyle = useAnimatedStyle(() => ({
-    paddingHorizontal: interpolate(controlsProgress.value, [0, 1], [8, 10]),
+    paddingHorizontal: interpolate(controlsProgress.value, [0, 1], [10, 14]),
   }));
 
   useEffect(() => {
@@ -408,7 +408,7 @@ export function GapSuggestionRow({
                           onPress={handleDecrement}
                           hitSlop={{ top: 20, bottom: 20, left: 20, right: 8 }}
                         >
-                          <Icon name="minus" size={12} color="#fff" />
+                          <Icon name="minus" size={16} color="#fff" />
                         </Pressable>
                       </Animated.View>
 
@@ -419,12 +419,12 @@ export function GapSuggestionRow({
                       >
                         <Text
                           style={{
-                            fontSize: 13,
+                            fontSize: 16,
                             fontWeight: '700',
                             color: '#fff',
-                            minWidth: 16,
+                            minWidth: 20,
                             textAlign: 'center',
-                            lineHeight: 16,
+                            lineHeight: 20,
                           }}
                         >
                           {quantity}
@@ -439,7 +439,7 @@ export function GapSuggestionRow({
                           onPress={handleIncrement}
                           hitSlop={{ top: 20, bottom: 20, left: 8, right: 20 }}
                         >
-                          <Icon name="plus" size={12} color="#fff" />
+                          <Icon name="plus" size={16} color="#fff" />
                         </Pressable>
                       </Animated.View>
                     </Animated.View>
