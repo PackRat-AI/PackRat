@@ -131,7 +131,7 @@ function SwapSheet({
 
       <Animated.View
         className="bg-card rounded-t-3xl overflow-hidden"
-        style={[{ maxHeight: '72%' }, sheetStyle]}
+        style={[{ maxHeight: '40%' }, sheetStyle]}
       >
         <GestureDetector gesture={pan}>
           <View>
@@ -528,9 +528,9 @@ export function GapAnalysisModal({
             gaps.length > 0 ? (
               <View>
                 {analysis.summary && (
-                  <View className="mb-4 rounded-lg bg-muted/30 p-3">
-                    <Text className="text-sm text-muted-foreground">{analysis.summary}</Text>
-                  </View>
+                  <Text className="mb-4 px-1 text-sm text-muted-foreground">
+                    {analysis.summary}
+                  </Text>
                 )}
                 {gaps.map((gap, i) => (
                   <GapSuggestionRow

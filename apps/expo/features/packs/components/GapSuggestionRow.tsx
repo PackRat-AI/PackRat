@@ -1,9 +1,12 @@
 import { Text } from '@packrat/ui/nativewindui';
+import MaskedView from '@react-native-masked-view/masked-view';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
 import { Pressable, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
@@ -11,9 +14,56 @@ import Animated, {
   FadeOut,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
+
+const SHIMMER_STRIP = 120;
+
+function ShimmerFindingText({ suggestion }: { suggestion: string }) {
+  const { isDarkColorScheme } = useColorScheme();
+  const text = `Finding "${suggestion}" from catalog…`;
+  const translateX = useSharedValue(-SHIMMER_STRIP);
+
+  useEffect(() => {
+    translateX.value = withRepeat(withTiming(400, { duration: 1100, easing: Easing.linear }), -1);
+  }, []);
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const highlight = isDarkColorScheme
+    ? (['transparent', 'rgba(255,255,255,0.25)', 'transparent'] as const)
+    : (['transparent', 'rgba(255,255,255,0.85)', 'transparent'] as const);
+
+  return (
+    <MaskedView
+      style={{ flex: 1 }}
+      maskElement={
+        <Text style={{ fontSize: 12, fontStyle: 'italic' }} className="text-foreground">
+          {text}
+        </Text>
+      }
+    >
+      <Text style={{ fontSize: 12, fontStyle: 'italic' }} className="text-muted-foreground">
+        {text}
+      </Text>
+      <Animated.View
+        style={[shimmerStyle, { position: 'absolute', top: 0, bottom: 0, width: SHIMMER_STRIP }]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={highlight}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
+    </MaskedView>
+  );
+}
 
 interface GapSuggestionRowProps {
   gap: GapAnalysisItem;
@@ -62,21 +112,9 @@ function ScalePress({
 }
 
 const PRIORITY_CONFIGS = Object.freeze({
-  'must-have': {
-    label: 'Must-Have',
-    ios: { name: 'exclamationmark.triangle.fill' as const },
-    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'alert-circle' as const },
-  },
-  'nice-to-have': {
-    label: 'Nice-to-Have',
-    ios: { name: 'star.fill' as const },
-    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'star' as const },
-  },
-  optional: {
-    label: 'Optional',
-    ios: { name: 'circle.fill' as const },
-    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'circle' as const },
-  },
+  'must-have': { label: 'Must-Have' },
+  'nice-to-have': { label: 'Nice-to-Have' },
+  optional: { label: 'Optional' },
 } as const);
 
 export function GapSuggestionRow({
@@ -121,17 +159,9 @@ export function GapSuggestionRow({
         <View className="flex-row items-start gap-2">
           <View className="flex-1">
             {priorityConfig && (
-              <View className="mb-1.5 flex-row items-center gap-1.5 self-start rounded-full border border-border px-2 py-0.5">
-                <Icon
-                  ios={priorityConfig.ios}
-                  materialIcon={priorityConfig.materialIcon}
-                  size={11}
-                  color={priorityColor}
-                />
-                <Text className="text-xs font-medium" style={{ color: priorityColor }}>
-                  {priorityConfig.label}
-                </Text>
-              </View>
+              <Text className="mb-1 text-xs font-semibold" style={{ color: priorityColor }}>
+                {priorityConfig.label}
+              </Text>
             )}
             <Text className="font-semibold text-foreground">{gap.suggestion}</Text>
             <Text className="mt-0.5 text-xs text-muted-foreground" numberOfLines={2}>
@@ -145,15 +175,9 @@ export function GapSuggestionRow({
       <View className="h-px bg-border mx-4" />
 
       {/* Catalog match row */}
-      <View className="px-4 py-3 flex-row items-center gap-3">
+      <View className="px-4 py-3 flex-row items-center gap-3" style={{ minHeight: 64 }}>
         {isLoadingMatch ? (
-          <>
-            <View className="h-10 w-10 rounded-md bg-muted animate-pulse" />
-            <View className="flex-1 gap-1.5">
-              <View className="h-3 w-32 rounded bg-muted animate-pulse" />
-              <View className="h-2.5 w-20 rounded bg-muted animate-pulse" />
-            </View>
-          </>
+          <ShimmerFindingText suggestion={gap.suggestion} />
         ) : displayItem ? (
           <>
             <CatalogItemImage
@@ -176,26 +200,45 @@ export function GapSuggestionRow({
               <Text className="text-xs font-medium text-primary">Swap</Text>
             </TouchableOpacity>
 
-            {/* Select / qty control */}
-            <View className="items-center justify-center ml-1">
+            {/* Select / qty — fixed h-10 matches image so the row never grows */}
+            <View
+              style={{
+                width: 32,
+                height: 40,
+                marginLeft: 4,
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
               {selected ? (
                 <Animated.View
                   key="qty"
                   entering={FadeIn.duration(160)}
                   exiting={FadeOut.duration(100)}
-                  className="items-center"
-                  style={{ gap: 2 }}
+                  style={{
+                    height: 40,
+                    width: 32,
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 4,
+                  }}
                 >
                   <ScalePress
                     onPress={() => onQuantityChange(1)}
-                    hitSlop={{ top: 10, bottom: 4, left: 10, right: 10 }}
-                    className="h-6 w-6 items-center justify-center"
+                    hitSlop={{ top: 6, bottom: 4, left: 12, right: 12 }}
                   >
-                    <Icon name="plus" size={13} color={colors.grey2} />
+                    <Icon name="plus" size={11} color={colors.grey2} />
                   </ScalePress>
                   <Text
-                    className="text-xl font-bold text-foreground text-center"
-                    style={{ minWidth: 28 }}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '700',
+                      minWidth: 20,
+                      textAlign: 'center',
+                      lineHeight: 15,
+                    }}
+                    className="text-foreground"
                   >
                     {quantity}
                   </Text>
@@ -207,10 +250,9 @@ export function GapSuggestionRow({
                         onQuantityChange(-1);
                       }
                     }}
-                    hitSlop={{ top: 4, bottom: 10, left: 10, right: 10 }}
-                    className="h-6 w-6 items-center justify-center"
+                    hitSlop={{ top: 4, bottom: 6, left: 12, right: 12 }}
                   >
-                    <Icon name="minus" size={13} color={colors.grey2} />
+                    <Icon name="minus" size={11} color={colors.grey2} />
                   </ScalePress>
                 </Animated.View>
               ) : (
@@ -222,9 +264,9 @@ export function GapSuggestionRow({
                   <ScalePress
                     onPress={() => onSelect(displayItem)}
                     hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                    className="h-9 w-9 items-center justify-center rounded-full bg-muted/25"
+                    className="h-8 w-8 items-center justify-center rounded-full bg-muted/25"
                   >
-                    <Icon name="plus" size={18} color={colors.grey2} />
+                    <Icon name="plus" size={16} color={colors.grey2} />
                   </ScalePress>
                 </Animated.View>
               )}
