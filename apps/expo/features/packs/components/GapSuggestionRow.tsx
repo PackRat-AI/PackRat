@@ -6,7 +6,7 @@ import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
@@ -130,6 +130,55 @@ export function GapSuggestionRow({
   selectedItem,
 }: GapSuggestionRowProps) {
   const { isDarkColorScheme, colors } = useColorScheme();
+  const [showControls, setShowControls] = useState(false);
+  const [addWidth, setAddWidth] = useState(0);
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset controls when item is deselected externally
+  useEffect(() => {
+    if (!selected) {
+      setShowControls(false);
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    }
+  }, [selected]);
+
+  useEffect(() => {
+    return () => {
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    };
+  }, []);
+
+  const scheduleDismiss = () => {
+    if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    dismissTimer.current = setTimeout(() => setShowControls(false), 1500);
+  };
+
+  const handleAdd = (item: CatalogItem) => {
+    onSelect(item);
+    setShowControls(true);
+    scheduleDismiss();
+  };
+
+  const handleIncrement = () => {
+    onQuantityChange(1);
+    scheduleDismiss();
+  };
+
+  const handleDecrement = () => {
+    if (quantity <= 1) {
+      onDeselect();
+      setShowControls(false);
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    } else {
+      onQuantityChange(-1);
+      scheduleDismiss();
+    }
+  };
+
+  const handleQtyPillPress = () => {
+    setShowControls(true);
+    scheduleDismiss();
+  };
 
   const priorityColor =
     gap.priority === 'must-have'
@@ -192,9 +241,10 @@ export function GapSuggestionRow({
               <Text className="text-xs text-muted-foreground">{formatMeta(displayItem)}</Text>
             </View>
 
-            {/* Swap + Add/qty pill */}
+            {/* Swap + Add / transient controls / qty pill */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              {!selected && (
+              {/* Swap — hidden while controls are open */}
+              {!(selected && showControls) && (
                 <TouchableOpacity
                   onPress={onSwapPress}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -203,9 +253,10 @@ export function GapSuggestionRow({
                 </TouchableOpacity>
               )}
 
-              {selected ? (
+              {selected && showControls ? (
+                /* Transient qty controls — auto-dismisses after 1.5 s of inactivity */
                 <Animated.View
-                  key="qty"
+                  key="controls"
                   entering={FadeIn.duration(180)}
                   exiting={FadeOut.duration(120)}
                   style={{
@@ -219,13 +270,7 @@ export function GapSuggestionRow({
                   }}
                 >
                   <ScalePress
-                    onPress={() => {
-                      if (quantity <= 1) {
-                        onDeselect();
-                      } else {
-                        onQuantityChange(-1);
-                      }
-                    }}
+                    onPress={handleDecrement}
                     hitSlop={{ top: 6, bottom: 6, left: 8, right: 4 }}
                   >
                     <Icon name="minus" size={12} color="#fff" />
@@ -243,28 +288,62 @@ export function GapSuggestionRow({
                     {quantity}
                   </Text>
                   <ScalePress
-                    onPress={() => onQuantityChange(1)}
+                    onPress={handleIncrement}
                     hitSlop={{ top: 6, bottom: 6, left: 4, right: 8 }}
                   >
                     <Icon name="plus" size={12} color="#fff" />
                   </ScalePress>
                 </Animated.View>
+              ) : selected ? (
+                /* Qty pill — tappable to reopen controls; min-width anchored to "Add" */
+                <Animated.View
+                  key="qty-pill"
+                  entering={FadeIn.duration(180)}
+                  exiting={FadeOut.duration(120)}
+                >
+                  <ScalePress
+                    onPress={handleQtyPillPress}
+                    hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: colors.primary,
+                        borderRadius: 100,
+                        minWidth: addWidth || 32,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: '700',
+                          color: '#fff',
+                          lineHeight: 16,
+                        }}
+                      >
+                        {quantity}
+                      </Text>
+                    </View>
+                  </ScalePress>
+                </Animated.View>
               ) : (
+                /* "Add" plain text — captures its layout width for the pill's minWidth */
                 <Animated.View
                   key="add"
                   entering={FadeIn.duration(180)}
                   exiting={FadeOut.duration(120)}
                 >
                   <ScalePress
-                    onPress={() => onSelect(displayItem)}
+                    onPress={() => displayItem && handleAdd(displayItem)}
                     hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
                   >
                     <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: '600',
-                        color: colors.primary,
+                      onLayout={(e) => {
+                        if (addWidth === 0) setAddWidth(e.nativeEvent.layout.width);
                       }}
+                      style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}
                     >
                       Add
                     </Text>
