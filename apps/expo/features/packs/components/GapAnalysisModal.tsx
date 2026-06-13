@@ -41,6 +41,7 @@ function SwapSheet({
   matches,
   isLoading,
   onSelect,
+  currentItemId,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -48,6 +49,7 @@ function SwapSheet({
   matches: (CatalogItem & { similarity?: number })[];
   isLoading: boolean;
   onSelect: (item: CatalogItem) => void;
+  currentItemId?: number;
 }) {
   const { colors } = useColorScheme();
   const { bottom } = useSafeAreaInsets();
@@ -167,48 +169,58 @@ function SwapSheet({
               <ActivityIndicator size="large" />
             </View>
           ) : matches.length > 0 ? (
-            matches.map((item) => (
-              <View
-                key={item.id}
-                className="flex-row items-center gap-3 border border-border rounded-lg bg-card p-3"
-              >
-                <CatalogItemImage
-                  imageUrl={item.images?.[0]}
-                  className="h-12 w-12 rounded-md shrink-0"
-                  resizeMode="cover"
-                />
-                <View className="flex-1 min-w-0">
-                  <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  {item.brand && (
-                    <Text className="text-xs text-muted-foreground">{item.brand}</Text>
+            matches.map((item) => {
+              const isCurrent = item.id === currentItemId;
+              return (
+                <View
+                  key={item.id}
+                  className={cn(
+                    'flex-row items-center gap-3 border rounded-lg p-3',
+                    isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-card',
                   )}
-                  {item.similarity != null && (
-                    <Text
-                      className={`text-xs font-medium mt-1 ${
-                        item.similarity >= 0.8
-                          ? 'text-primary'
-                          : item.similarity >= 0.5
-                            ? 'text-foreground'
-                            : 'text-muted-foreground'
-                      }`}
+                >
+                  <CatalogItemImage
+                    imageUrl={item.images?.[0]}
+                    className="h-12 w-12 rounded-md shrink-0"
+                    resizeMode="cover"
+                  />
+                  <View className="flex-1 min-w-0">
+                    <Text className="text-sm font-medium text-foreground">{item.name}</Text>
+                    {item.brand && (
+                      <Text className="text-xs text-muted-foreground">{item.brand}</Text>
+                    )}
+                    {item.similarity != null && (
+                      <Text
+                        className={`text-xs font-medium mt-1 ${
+                          item.similarity >= 0.8
+                            ? 'text-primary'
+                            : item.similarity >= 0.5
+                              ? 'text-foreground'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {Math.round(item.similarity * 100)}% match
+                      </Text>
+                    )}
+                  </View>
+                  {isCurrent ? (
+                    <View className="rounded-full bg-muted px-3 py-1.5 opacity-50">
+                      <Text className="text-xs font-semibold text-foreground">Current</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => {
+                        onSelect(item);
+                        onClose();
+                      }}
+                      className="rounded-full bg-primary px-3 py-1.5"
                     >
-                      {Math.round(item.similarity * 100)}% match
-                    </Text>
+                      <Text className="text-xs font-semibold text-white">Select</Text>
+                    </TouchableOpacity>
                   )}
                 </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    onSelect(item);
-                    onClose();
-                  }}
-                  className="rounded-full bg-primary px-3 py-1.5"
-                >
-                  <Text className="text-xs font-semibold text-white">Select</Text>
-                </TouchableOpacity>
-              </View>
-            ))
+              );
+            })
           ) : (
             <View className="items-center py-8">
               <Text className="text-muted-foreground">No gear found for this suggestion.</Text>
@@ -381,6 +393,7 @@ export function GapAnalysisModal({
 }: GapAnalysisModalProps) {
   const { t } = useTranslation();
   const { isDarkColorScheme, colors } = useColorScheme();
+  const { bottom: safeBottom } = useSafeAreaInsets();
 
   const [devState, setDevState] = useState<DevState>(null);
   const [devSkipAutoAnalyze, setDevSkipAutoAnalyze] = useAtom(devSkipAutoAnalyzeAtom);
@@ -404,6 +417,7 @@ export function GapAnalysisModal({
   const [selections, setSelections] = useState<Record<number, Selection>>({});
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
   const [swapVisible, setSwapVisible] = useState(false);
+  const [activeControlIndex, setActiveControlIndex] = useState<number | null>(null);
 
   const { addItemToPack, isLoading: isAdding } = useAddCatalogItem();
 
@@ -466,6 +480,10 @@ export function GapAnalysisModal({
   const swapMatches: (CatalogItem & { similarity?: number })[] =
     swapIndex !== null ? (matchResults[swapIndex]?.data?.items ?? []) : [];
   const swapLoading = swapIndex !== null ? (matchResults[swapIndex]?.isLoading ?? false) : false;
+  const swapCurrentItemId =
+    swapIndex !== null
+      ? (selections[swapIndex]?.item ?? matchResults[swapIndex]?.data?.items?.[0])?.id
+      : undefined;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
@@ -526,31 +544,37 @@ export function GapAnalysisModal({
             </View>
           ) : analysis ? (
             gaps.length > 0 ? (
-              <View>
-                {analysis.summary && (
-                  <Text className="mb-4 px-1 text-sm text-muted-foreground">
-                    {analysis.summary}
-                  </Text>
-                )}
-                {gaps.map((gap, i) => (
-                  <GapSuggestionRow
-                    key={gap.suggestion}
-                    gap={gap}
-                    topMatch={matchResults[i]?.data?.items?.[0]}
-                    isLoadingMatch={matchResults[i]?.isLoading ?? false}
-                    selected={i in selections}
-                    selectedItem={selections[i]?.item}
-                    quantity={selections[i]?.quantity ?? 1}
-                    onSelect={(item) => handleSelect(i, item)}
-                    onDeselect={() => handleDeselect(i)}
-                    onQuantityChange={(delta) => handleQuantityChange(i, delta)}
-                    onSwapPress={() => {
-                      setSwapIndex(i);
-                      setSwapVisible(true);
-                    }}
-                  />
-                ))}
-              </View>
+              <Pressable onPress={() => setActiveControlIndex(null)}>
+                <View>
+                  {analysis.summary && (
+                    <Text className="mb-4 px-1 text-sm text-muted-foreground">
+                      {analysis.summary}
+                    </Text>
+                  )}
+                  {gaps.map((gap, i) => (
+                    <GapSuggestionRow
+                      key={gap.suggestion}
+                      gap={gap}
+                      topMatch={matchResults[i]?.data?.items?.[0]}
+                      isLoadingMatch={matchResults[i]?.isLoading ?? false}
+                      selected={i in selections}
+                      selectedItem={selections[i]?.item}
+                      quantity={selections[i]?.quantity ?? 1}
+                      showControls={activeControlIndex === i}
+                      onSelect={(item) => handleSelect(i, item)}
+                      onDeselect={() => handleDeselect(i)}
+                      onQuantityChange={(delta) => handleQuantityChange(i, delta)}
+                      onControlsOpen={() => setActiveControlIndex(i)}
+                      onControlsDismiss={() => setActiveControlIndex(null)}
+                      onSwapPress={() => {
+                        setActiveControlIndex(null);
+                        setSwapIndex(i);
+                        setSwapVisible(true);
+                      }}
+                    />
+                  ))}
+                </View>
+              </Pressable>
             ) : (
               <View className="items-center py-8 mt-32">
                 <Icon name="check-circle" size={48} color={colors.primary} />
@@ -586,7 +610,15 @@ export function GapAnalysisModal({
 
         {/* Footer */}
         {gaps.length > 0 && (
-          <View className="border-t border-border p-4">
+          <View
+            className="border-t border-border px-4 pt-3"
+            style={{ paddingBottom: Math.max(safeBottom, 16) }}
+          >
+            <View className="mb-3">
+              <Text className="text-xs" style={{ color: colors.grey2 }}>
+                Tap any item to swap
+              </Text>
+            </View>
             <Button
               onPress={handleAddAll}
               disabled={selectedCount === 0 || isAdding}
@@ -612,6 +644,7 @@ export function GapAnalysisModal({
           matches={swapMatches}
           isLoading={swapLoading}
           onSelect={handleSwapItem}
+          currentItemId={swapCurrentItemId}
         />
       </View>
     </Modal>

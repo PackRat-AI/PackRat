@@ -4,6 +4,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PackCategory } from '../types';
 
 type ActivityPickerProps = {
@@ -82,6 +83,7 @@ export function ActivityPicker({
   defaultActivity,
 }: ActivityPickerProps) {
   const { colors } = useColorScheme();
+  const { bottom: safeBottom } = useSafeAreaInsets();
   const [selectedActivity, setSelectedActivity] = useState<PackCategory | null>(
     defaultActivity || null,
   );
@@ -128,7 +130,10 @@ export function ActivityPicker({
             ))}
           </View>
         </ScrollView>
-        <View className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between">
+        <View
+          className="px-4 flex-row self-end items-center gap-2 justify-between"
+          style={{ paddingBottom: Math.max(safeBottom, 8) }}
+        >
           {onSkip && (
             <Button
               onPress={() => {
