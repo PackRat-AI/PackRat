@@ -192,56 +192,32 @@ export function GapSuggestionRow({
               <Text className="text-xs text-muted-foreground">{formatMeta(displayItem)}</Text>
             </View>
 
-            {/* Swap link */}
-            <TouchableOpacity
-              onPress={onSwapPress}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text className="text-xs font-medium text-primary">Swap</Text>
-            </TouchableOpacity>
+            {/* Swap + Add/qty pill */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              {!selected && (
+                <TouchableOpacity
+                  onPress={onSwapPress}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text className="text-xs font-medium text-muted-foreground">Swap</Text>
+                </TouchableOpacity>
+              )}
 
-            {/* Select / qty — fixed h-10 matches image so the row never grows */}
-            <View
-              style={{
-                width: 32,
-                height: 40,
-                marginLeft: 4,
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
               {selected ? (
                 <Animated.View
                   key="qty"
-                  entering={FadeIn.duration(160)}
-                  exiting={FadeOut.duration(100)}
+                  entering={FadeIn.duration(180)}
+                  exiting={FadeOut.duration(120)}
                   style={{
-                    height: 40,
-                    width: 32,
+                    flexDirection: 'row',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: 4,
+                    backgroundColor: colors.primary,
+                    borderRadius: 100,
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    gap: 10,
                   }}
                 >
-                  <ScalePress
-                    onPress={() => onQuantityChange(1)}
-                    hitSlop={{ top: 6, bottom: 4, left: 12, right: 12 }}
-                  >
-                    <Icon name="plus" size={11} color={colors.grey2} />
-                  </ScalePress>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: '700',
-                      minWidth: 20,
-                      textAlign: 'center',
-                      lineHeight: 15,
-                    }}
-                    className="text-foreground"
-                  >
-                    {quantity}
-                  </Text>
                   <ScalePress
                     onPress={() => {
                       if (quantity <= 1) {
@@ -250,23 +226,48 @@ export function GapSuggestionRow({
                         onQuantityChange(-1);
                       }
                     }}
-                    hitSlop={{ top: 4, bottom: 6, left: 12, right: 12 }}
+                    hitSlop={{ top: 6, bottom: 6, left: 8, right: 4 }}
                   >
-                    <Icon name="minus" size={11} color={colors.grey2} />
+                    <Icon name="minus" size={12} color="#fff" />
+                  </ScalePress>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '700',
+                      color: '#fff',
+                      minWidth: 16,
+                      textAlign: 'center',
+                      lineHeight: 16,
+                    }}
+                  >
+                    {quantity}
+                  </Text>
+                  <ScalePress
+                    onPress={() => onQuantityChange(1)}
+                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 8 }}
+                  >
+                    <Icon name="plus" size={12} color="#fff" />
                   </ScalePress>
                 </Animated.View>
               ) : (
                 <Animated.View
                   key="add"
-                  entering={FadeIn.duration(160)}
-                  exiting={FadeOut.duration(100)}
+                  entering={FadeIn.duration(180)}
+                  exiting={FadeOut.duration(120)}
                 >
                   <ScalePress
                     onPress={() => onSelect(displayItem)}
-                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                    className="h-8 w-8 items-center justify-center rounded-full bg-muted/25"
+                    hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
                   >
-                    <Icon name="plus" size={16} color={colors.grey2} />
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: '600',
+                        color: colors.primary,
+                      }}
+                    >
+                      Add
+                    </Text>
                   </ScalePress>
                 </Animated.View>
               )}
