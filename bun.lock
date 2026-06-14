@@ -79,7 +79,7 @@
         "@expo/vector-icons": "^15.0.3",
         "@gorhom/bottom-sheet": "^5.1.2",
         "@legendapp/state": "^3.0.0-beta.30",
-        "@packrat-ai/nativewindui": "2.2.0",
+        "@packrat-ai/nativewindui": "2.2.1",
         "@packrat/api": "workspace:*",
         "@packrat/api-client": "workspace:*",
         "@packrat/config": "workspace:*",
@@ -713,7 +713,7 @@
       "name": "@packrat/ui",
       "version": "2.0.28",
       "dependencies": {
-        "@packrat-ai/nativewindui": "2.2.0",
+        "@packrat-ai/nativewindui": "2.2.1",
       },
     },
     "packages/units": {
@@ -794,7 +794,7 @@
     "@sentry/cli",
   ],
   "overrides": {
-    "@packrat-ai/nativewindui": "2.2.0",
+    "@packrat-ai/nativewindui": "2.2.1",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-sqlite": "~56.0.4",
@@ -1589,7 +1589,7 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.130.0", "", {}, "sha512-ibD2usx9JRu7f5pu2tMKMI4cpA4NgXJQoYRP4pQ7Pxmn1l6k/53qWtQWZayhYy3X4QZkt90Ot+mJEaeXouio6Q=="],
 
-    "@packrat-ai/nativewindui": ["@packrat-ai/nativewindui@2.2.0", "https://npm.pkg.github.com/download/@packrat-ai/nativewindui/2.2.0/7f5179317625e16962e69e423fb1d08de5a07697", { "peerDependencies": { "@expo/vector-icons": ">=15.0.0", "@gorhom/bottom-sheet": ">=5.1.2", "@react-native-community/datetimepicker": ">=8.4.0", "@react-native-community/slider": ">=5.0.0", "@react-native-picker/picker": ">=2.11.0", "@react-native-segmented-control/segmented-control": ">=2.5.0", "@react-navigation/drawer": ">=7.1.1", "@react-navigation/native": ">=7.0.14", "@rn-primitives/alert-dialog": ">=1.1.0", "@rn-primitives/avatar": ">=1.0.4", "@rn-primitives/checkbox": ">=1.1.0", "@rn-primitives/context-menu": ">=1.1.0", "@rn-primitives/dropdown-menu": ">=1.1.0", "@rn-primitives/hooks": ">=1.1.0", "@rn-primitives/portal": ">=1.1.0", "@rn-primitives/slot": ">=1.1.0", "@shopify/flash-list": ">=2.0.0", "class-variance-authority": ">=0.7.0", "clsx": ">=2.1.0", "expo-blur": ">=56.0.0", "expo-glass-effect": ">=56.0.0", "expo-haptics": ">=56.0.0", "expo-image": ">=56.0.0", "expo-linear-gradient": ">=56.0.0", "expo-router": ">=56.0.0", "expo-symbols": ">=56.0.0", "nativewind": ">=4.2.5", "react": ">=19.2.7", "react-native": ">=0.86.0", "react-native-keyboard-controller": ">=1.21.0", "react-native-reanimated": ">=4.4.0", "react-native-safe-area-context": ">=5.8.0", "react-native-screens": ">=4.25.0", "react-native-uitextview": ">=1.1.4", "rn-icon-mapper": ">=0.0.1", "tailwind-merge": ">=2.2.1" } }, "sha512-s15qwJUfr/ANINNZaTcfFsnyVVqx9XNnGAPY7RtLj1GxTvk9rKZhdQUehpv6poVVnN/VcDGUAqq81MWreJCIPg=="],
+    "@packrat-ai/nativewindui": ["@packrat-ai/nativewindui@2.2.1", "https://npm.pkg.github.com/download/@packrat-ai/nativewindui/2.2.1/e0c0f9c09b511aef5d8a3ae585258a4e6f710399", { "peerDependencies": { "@expo/vector-icons": ">=15.0.0", "@gorhom/bottom-sheet": ">=5.1.2", "@react-native-community/datetimepicker": ">=8.4.0", "@react-native-community/slider": ">=5.0.0", "@react-native-picker/picker": ">=2.11.0", "@react-native-segmented-control/segmented-control": ">=2.5.0", "@react-navigation/drawer": ">=7.1.1", "@react-navigation/native": ">=7.0.14", "@rn-primitives/alert-dialog": ">=1.1.0", "@rn-primitives/avatar": ">=1.0.4", "@rn-primitives/checkbox": ">=1.1.0", "@rn-primitives/context-menu": ">=1.1.0", "@rn-primitives/dropdown-menu": ">=1.1.0", "@rn-primitives/hooks": ">=1.1.0", "@rn-primitives/portal": ">=1.1.0", "@rn-primitives/slot": ">=1.1.0", "@shopify/flash-list": ">=2.0.0", "class-variance-authority": ">=0.7.0", "clsx": ">=2.1.0", "expo-blur": ">=56.0.0", "expo-glass-effect": ">=56.0.0", "expo-haptics": ">=56.0.0", "expo-image": ">=56.0.0", "expo-linear-gradient": ">=56.0.0", "expo-router": ">=56.0.0", "expo-symbols": ">=56.0.0", "nativewind": ">=4.2.5", "react": ">=19.2.7", "react-native": ">=0.86.0", "react-native-keyboard-controller": ">=1.21.0", "react-native-reanimated": ">=4.4.0", "react-native-safe-area-context": ">=5.8.0", "react-native-screens": ">=4.25.0", "react-native-uitextview": ">=1.1.4", "rn-icon-mapper": ">=0.0.1", "tailwind-merge": ">=2.2.1" } }, "sha512-SR5sW5A/KwlJTAMdgI73hEs5ldZpkfu3+Eg+UxKcoqYnkNhWquI8IDbGBNyhr52XqYx60LMDzQNKHCVEop8BFQ=="],
 
     "@packrat/analytics": ["@packrat/analytics@workspace:packages/analytics"],
 

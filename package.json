@@ -58,7 +58,7 @@
     "web": "bun run --cwd apps/web dev"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.2.0",
+    "@packrat-ai/nativewindui": "2.2.1",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
     "expo-sqlite": "~56.0.4",
@@ -182,5 +182,6 @@
   },
   "trustedDependencies": [
     "@sentry/cli"
-  ]
+  ],
+  "patchedDependencies": {}
 }
