@@ -1,6 +1,8 @@
 'use client';
 
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Stack } from 'expo-router';
+
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -32,7 +34,7 @@ export default function ReportedContentScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <LargeTitleHeader title={t('ai.reportedContent.title')} />
+      <Stack.Screen options={{ title: t('ai.reportedContent.title'), headerLargeTitle: true }} />
 
       <FlatList
         data={filteredData}

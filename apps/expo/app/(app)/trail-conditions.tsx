@@ -1,4 +1,4 @@
-import { ActivityIndicator, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
@@ -6,6 +6,7 @@ import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hoo
 import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail-conditions/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useMemo, useState } from 'react';
+import { Stack } from 'expo-router';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -160,20 +161,23 @@ export default function TrailConditionsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader
-        title={t('trailConditions.title')}
-        rightView={() => (
-          <Pressable
-            onPress={() => setShowSubmitForm(true)}
-            className="mr-2 rounded-full bg-primary px-3 py-1.5"
-            accessibilityLabel={t('trailConditions.reportConditionsTitle')}
-            accessibilityRole="button"
-          >
-            <Text variant="footnote" className="font-semibold text-primary-foreground">
-              {t('trailConditions.reportButton')}
-            </Text>
-          </Pressable>
-        )}
+      <Stack.Screen
+        options={{
+          title: t('trailConditions.title'),
+          headerLargeTitle: true,
+          headerRight: () => (
+            <Pressable
+              onPress={() => setShowSubmitForm(true)}
+              className="mr-2 rounded-full bg-primary px-3 py-1.5"
+              accessibilityLabel={t('trailConditions.reportConditionsTitle')}
+              accessibilityRole="button"
+            >
+              <Text variant="footnote" className="font-semibold text-primary-foreground">
+                {t('trailConditions.reportButton')}
+              </Text>
+            </Pressable>
+          ),
+        }}
       />
 
       <FlatList<TrailConditionReport>

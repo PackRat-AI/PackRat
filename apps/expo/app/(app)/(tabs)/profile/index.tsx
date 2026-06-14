@@ -6,7 +6,6 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
-  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -82,7 +81,15 @@ function Profile() {
 
   const SCREEN_OPTIONS = {
     title: t('profile.profile'),
-    headerShown: false,
+    headerLargeTitle: true,
+    headerBackVisible: false,
+    headerRight: () => (
+      <View className="flex-row items-center gap-2 pr-2 pl-2">
+        <DemoIcon />
+
+        <SettingsIcon />
+      </View>
+    ),
   } as const;
 
   // Generate display data based on user information
@@ -114,17 +121,7 @@ function Profile() {
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
 
-      <LargeTitleHeader
-        title={t('profile.profile')}
-        backVisible={false}
-        rightView={() => (
-          <View className="flex-row items-center gap-2 pr-2 pl-2">
-            <DemoIcon />
 
-            <SettingsIcon />
-          </View>
-        )}
-      />
 
       <List
         contentContainerClassName="pt-8"

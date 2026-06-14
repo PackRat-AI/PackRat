@@ -1,12 +1,9 @@
-import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { Stack, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
@@ -20,7 +17,6 @@ export const GuidesListScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
   const [isManualRefresh, setIsManualRefresh] = useState(false);
 
-  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const {
     data: categories,
@@ -184,7 +180,6 @@ export const GuidesListScreen = () => {
 
     return (
       <>
-        <LargeTitleHeaderOverlapFixIOS />
         <CategoriesFilter
           data={categories}
           onFilter={handleCategoryChange}
@@ -199,20 +194,18 @@ export const GuidesListScreen = () => {
 
   return (
     <>
-      <LargeTitleHeader
-        title={t('guides.guides')}
-        searchBar={{
-          iosHideWhenScrolling: false,
-          ref: asNonNullableRef(searchBarRef),
-          onChangeText: handleSearch,
-          placeholder: t('guides.searchPlaceholder'),
-          content: (
-            <LargeTitleHeaderSearchContentContainer>
-              {renderSearchContent()}
-            </LargeTitleHeaderSearchContentContainer>
-          ),
+      <Stack.Screen
+        options={{
+          title: t('guides.guides'),
+          headerLargeTitle: true,
+          headerSearchBarOptions: {
+            hideWhenScrolling: false,
+            onChangeText: (e) => handleSearch(e.nativeEvent.text),
+            placeholder: t('guides.searchPlaceholder'),
+          },
         }}
       />
+      {renderSearchContent()}
 
       <FlatList
         data={guides}

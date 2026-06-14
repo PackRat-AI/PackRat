@@ -1,10 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { useWeatherAlerts } from 'expo-app/features/weather/hooks/useWeatherAlert';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -134,7 +134,7 @@ export default function WeatherAlertsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />
+      <Stack.Screen options={{ title: t('weather.weatherAlertsTitle'), headerLargeTitle: true }} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
           <Text

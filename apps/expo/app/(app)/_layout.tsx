@@ -161,7 +161,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="recent-packs"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -176,7 +175,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="weight-analysis/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -184,7 +182,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -201,7 +198,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="weather-alerts"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'default',
           }}
@@ -217,7 +213,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="trail-conditions"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'slide_from_bottom',
           }}
@@ -225,7 +220,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="gear-inventory"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'slide_from_bottom',
           }}
@@ -233,7 +227,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="shopping-list"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -241,7 +234,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="shared-packs"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}

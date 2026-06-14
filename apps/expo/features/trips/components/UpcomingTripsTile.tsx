@@ -1,5 +1,6 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
-import { Alert, ListItem, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';

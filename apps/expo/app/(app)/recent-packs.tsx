@@ -1,10 +1,11 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
+import { Stack } from 'expo-router';
 import { Image, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -65,7 +66,7 @@ export default function RecentPacksScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.recentPacks')} />
+      <Stack.Screen options={{ title: t('packs.recentPacks'), headerLargeTitle: true }} />
       {recentPacks.length ? (
         <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
           <View className="p-4">

@@ -1,4 +1,4 @@
-import { useColorScheme } from '@packrat/ui/nativewindui';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Icon } from 'expo-app/components/Icon';
 import { Image, type ImageProps, View } from 'react-native';
 

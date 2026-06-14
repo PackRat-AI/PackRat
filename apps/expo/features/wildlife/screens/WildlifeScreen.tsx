@@ -1,8 +1,8 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, SafeAreaView, View } from 'react-native';
 import { useWildlifeHistory } from '../hooks/useWildlifeHistory';
 import type { WildlifeIdentification } from '../types';
@@ -65,7 +65,7 @@ export function WildlifeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <LargeTitleHeader title={t('wildlife.wildlife')} backVisible={false} />
+      <Stack.Screen options={{ title: t('wildlife.wildlife'), headerLargeTitle: true, headerBackVisible: false }} />
 
       {/* Identify FAB */}
       <View className="px-4 mb-4">

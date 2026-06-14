@@ -1,9 +1,9 @@
-import { ActivityIndicator, Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 import { PostCard } from '../components/PostCard';
@@ -85,15 +85,18 @@ export const FeedScreen = () => {
 
   return (
     <View className="flex-1 bg-background">
-      <LargeTitleHeader
-        title={t('feed.feed')}
-        rightView={() => (
-          <View className="px-4">
-            <Button variant="plain" onPress={handleCreatePost}>
-              <Icon name="plus" size={24} color={colors.primary} />
-            </Button>
-          </View>
-        )}
+      <Stack.Screen
+        options={{
+          title: t('feed.feed'),
+          headerLargeTitle: true,
+          headerRight: () => (
+            <View className="px-4">
+              <Button variant="plain" onPress={handleCreatePost}>
+                <Icon name="plus" size={24} color={colors.primary} />
+              </Button>
+            </View>
+          ),
+        }}
       />
 
       {isLoading ? (

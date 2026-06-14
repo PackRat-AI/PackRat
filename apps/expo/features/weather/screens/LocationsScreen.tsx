@@ -1,11 +1,10 @@
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { router, useNavigation } from 'expo-router';
+import { Stack, router, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -17,6 +16,7 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
+  TextInput,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,7 +35,7 @@ function LocationsScreen() {
   const { setActiveLocation } = useActiveLocation();
   const { isRefreshing, refreshAllLocations } = useLocationRefresh();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchInputRef = useRef(null);
+  const searchInputRef = useRef<TextInput>(null);
   const { removeLocation } = useLocations();
 
   // Determine if we're loading
@@ -118,15 +118,17 @@ function LocationsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeaderOverlapFixIOS>
-        <LargeTitleHeader
-          title={t('weather.weather')}
-          rightView={() => (
+      <Stack.Screen
+        options={{
+          title: t('weather.weather'),
+          headerLargeTitle: true,
+          headerRight: () => (
             <Pressable onPress={handleAddLocation} className="mx-2">
               <Icon name="plus" color={colors.foreground} />
             </Pressable>
-          )}
-        />
+          ),
+        }}
+      />
 
         <View className="p-4">
           <SearchInput
@@ -134,7 +136,6 @@ function LocationsScreen() {
             placeholder={t('weather.searchSavedLocations')}
             value={searchQuery}
             onChangeText={handleSearchChange}
-            containerClassName="border border-border"
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => {
               // Only unfocus if search is empty
@@ -246,7 +247,6 @@ function LocationsScreen() {
             )}
           </ScrollView>
         )}
-      </LargeTitleHeaderOverlapFixIOS>
     </SafeAreaView>
   );
 }

@@ -1,4 +1,4 @@
-import { cn } from '@packrat/ui/nativewindui';
+import { cn } from 'expo-app/lib/cn';
 import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 

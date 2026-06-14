@@ -2,16 +2,10 @@
 
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
-import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
-import {
-  LargeTitleHeader,
-  List,
-  type ListRenderItemInfo,
-  ListSectionHeader,
-} from '@packrat/ui/nativewindui';
+import type { ListDataItem } from '@packrat/ui/nativewindui';
+import { List, type ListRenderItemInfo, ListSectionHeader } from '@packrat/ui/nativewindui';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { appConfig, featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
@@ -38,8 +32,7 @@ import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useIsFocused } from 'expo-router/react-navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
@@ -165,7 +158,6 @@ const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
-  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const unlockSheetRef = useRef<BottomSheetModal>(null);
   const { t } = useTranslation();
   const router = useRouter();
@@ -249,71 +241,62 @@ export default function DashboardScreen() {
 
   return (
     <>
-      <LargeTitleHeader
-        title={t('dashboard.title')}
-        searchBar={{
-          ref: asNonNullableRef(searchBarRef),
-          onChangeText: setSearchValue,
-          placeholder: appConfig.dashboard.strings.searchPlaceholder,
-          content: (
-            <LargeTitleHeaderSearchContentContainer>
-              {searchValue ? (
-                <FlatList
-                  data={filteredTiles}
-                  keyExtractor={keyExtractor}
-                  contentContainerClassName="gap-4 px-4 pb-4"
-                  renderItem={({ item }) => {
-                    assertIsString(item);
-                    if (!item.startsWith(DASHBOARD_GAP_PREFIX) && arrayIncludes(TILE_NAMES, item)) {
-                      const Component = tileInfo[item].component;
-                      return (
-                        <Pressable
-                          key={item}
-                          className="rounded-2xl overflow-hidden "
-                          onPress={() => {
-                            setSearchValue('');
-                            searchBarRef.current?.clearText();
-                          }}
-                        >
-                          <Component />
-                        </Pressable>
-                      );
-                    }
-                    return null;
-                  }}
-                  ListHeaderComponent={() =>
-                    filteredTiles.length > 0 ? (
-                      <Text className="px-4 py-2 text-sm text-muted-foreground">
-                        {filteredTiles.length}{' '}
-                        {filteredTiles.length === 1
-                          ? appConfig.dashboard.strings.resultSingular
-                          : appConfig.dashboard.strings.resultPlural}
-                      </Text>
-                    ) : null
-                  }
-                  ListEmptyComponent={() => (
-                    <View className="items-center justify-center p-6">
-                      <Icon name="file-search-outline" size={48} color="#9ca3af" />
-                      <View className="h-4" />
-                      <Text className="text-lg font-medium text-muted-foreground">
-                        {t('dashboard.noResults')}
-                      </Text>
-                      <Text className="mt-1 text-center text-sm text-muted-foreground">
-                        {t('dashboard.tryDifferent')}
-                      </Text>
-                    </View>
-                  )}
-                />
-              ) : (
-                <View className="flex-1 items-center justify-center p-4">
-                  <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
-                </View>
-              )}
-            </LargeTitleHeaderSearchContentContainer>
-          ),
+      <Stack.Screen
+        options={{
+          title: t('dashboard.title'),
+          headerLargeTitle: true,
+          headerBackVisible: false,
+          headerSearchBarOptions: {
+            placeholder: appConfig.dashboard.strings.searchPlaceholder,
+            onChangeText: (e) => setSearchValue(e.nativeEvent.text),
+          },
         }}
-        backVisible={false}
       />
+      {searchValue ? (
+        <FlatList
+          data={filteredTiles}
+          keyExtractor={keyExtractor}
+          contentContainerClassName="gap-4 px-4 pb-4"
+          renderItem={({ item }) => {
+            assertIsString(item);
+            if (!item.startsWith(DASHBOARD_GAP_PREFIX) && arrayIncludes(TILE_NAMES, item)) {
+              const Component = tileInfo[item].component;
+              return (
+                <Pressable
+                  key={item}
+                  className="rounded-2xl overflow-hidden "
+                  onPress={() => setSearchValue('')}
+                >
+                  <Component />
+                </Pressable>
+              );
+            }
+            return null;
+          }}
+          ListHeaderComponent={() =>
+            filteredTiles.length > 0 ? (
+              <Text className="px-4 py-2 text-sm text-muted-foreground">
+                {filteredTiles.length}{' '}
+                {filteredTiles.length === 1
+                  ? appConfig.dashboard.strings.resultSingular
+                  : appConfig.dashboard.strings.resultPlural}
+              </Text>
+            ) : null
+          }
+          ListEmptyComponent={() => (
+            <View className="items-center justify-center p-6">
+              <Icon name="file-search-outline" size={48} color="#9ca3af" />
+              <View className="h-4" />
+              <Text className="text-lg font-medium text-muted-foreground">
+                {t('dashboard.noResults')}
+              </Text>
+              <Text className="mt-1 text-center text-sm text-muted-foreground">
+                {t('dashboard.tryDifferent')}
+              </Text>
+            </View>
+          )}
+        />
+      ) : null}
 
       <List
         contentContainerClassName="pt-4"

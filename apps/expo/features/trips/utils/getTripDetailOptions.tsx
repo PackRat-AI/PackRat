@@ -1,4 +1,5 @@
-import { Button, useColorScheme } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';

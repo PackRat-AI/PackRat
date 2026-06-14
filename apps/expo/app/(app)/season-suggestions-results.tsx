@@ -1,4 +1,4 @@
-import { LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
@@ -8,9 +8,10 @@ import {
   SeasonSuggestionsError,
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
@@ -376,7 +377,7 @@ export default function SeasonSuggestionsResultsScreen() {
 
   return (
     <>
-      <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
+      <Stack.Screen options={{ title: t('seasons.seasonSuggestions'), headerLargeTitle: true }} />
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="pt-6">

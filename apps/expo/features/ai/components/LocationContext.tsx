@@ -1,4 +1,5 @@
-import { Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

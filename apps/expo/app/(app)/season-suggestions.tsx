@@ -1,6 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
@@ -8,7 +8,7 @@ import { LocationSourceSheet } from 'expo-app/features/packs/components/Location
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, ScrollView, View } from 'react-native';
 
@@ -112,7 +112,7 @@ export default function SeasonSuggestionsScreen() {
 
   return (
     <>
-      <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
+      <Stack.Screen options={{ title: t('seasons.seasonSuggestions'), headerLargeTitle: true }} />
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">

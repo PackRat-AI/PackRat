@@ -1,5 +1,5 @@
 import { isRemoteUrl } from '@packrat/guards';
-import { useColorScheme } from '@packrat/ui/nativewindui';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';

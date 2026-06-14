@@ -2,9 +2,9 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-  LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { Stack } from 'expo-router';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
@@ -181,7 +181,7 @@ export default function SharedPacksScreen() {
   const { t } = useTranslation();
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.sharedPacks')} />
+      <Stack.Screen options={{ title: t('packs.sharedPacks'), headerLargeTitle: true }} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
