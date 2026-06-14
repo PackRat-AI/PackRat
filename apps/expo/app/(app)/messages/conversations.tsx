@@ -31,6 +31,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  type AnimatedStyle,
   clamp,
   FadeIn,
   FadeOut,
@@ -252,7 +253,7 @@ function MessageRow({
   selectedMessages: string[];
   setSelectedMessages: React.Dispatch<React.SetStateAction<string[]>>;
   isSelecting: boolean;
-  checkboxContainerStyle: ViewStyle;
+  checkboxContainerStyle: AnimatedStyle<ViewStyle>;
 }) {
   const { colors } = useColorScheme();
 

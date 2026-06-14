@@ -112,8 +112,11 @@ test('add item from catalog to a pack', async ({ authedPage: page }) => {
   await firstCard.click();
 
   // Confirm "Add N item(s)" panel appears and click it
-  await expect(page.getByText(/Add \d+ item/i)).toBeVisible({ timeout: 5_000 });
-  await page.getByText(/Add \d+ item/i).click();
+  await expect(page.getByText(/Add \d+ item/i).first()).toBeVisible({ timeout: 5_000 });
+  await page
+    .getByText(/Add \d+ item/i)
+    .first()
+    .click();
 
   // Local store updates synchronously; the pack detail (behind the modal) re-renders.
   // A non-zero weight confirms the catalog item was added.
