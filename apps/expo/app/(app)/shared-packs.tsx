@@ -1,12 +1,7 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Text,
-} from '@packrat/ui/nativewindui';
-import { Stack } from 'expo-router';
+import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Stack } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

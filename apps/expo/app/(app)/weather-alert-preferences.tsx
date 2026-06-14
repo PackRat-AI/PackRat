@@ -65,7 +65,9 @@ export default function WeatherAlertPreferencesScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('weather.alertPreferencesTitle'), headerLargeTitle: true }} />
+      <Stack.Screen
+        options={{ title: t('weather.alertPreferencesTitle'), headerLargeTitle: true }}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}

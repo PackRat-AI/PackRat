@@ -5,8 +5,8 @@ import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/com
 import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
 import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail-conditions/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useMemo, useState } from 'react';
 import { Stack } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

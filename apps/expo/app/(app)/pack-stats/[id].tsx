@@ -33,7 +33,9 @@ export default function PackStatsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ title: pack?.name ?? t('packs.packStats'), headerLargeTitle: true }} />
+      <Stack.Screen
+        options={{ title: pack?.name ?? t('packs.packStats'), headerLargeTitle: true }}
+      />
       <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
         {/* Weight History Section */}
         <View className="my-4 rounded-lg bg-card p-4">

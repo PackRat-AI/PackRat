@@ -65,7 +65,13 @@ export function WildlifeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <Stack.Screen options={{ title: t('wildlife.wildlife'), headerLargeTitle: true, headerBackVisible: false }} />
+      <Stack.Screen
+        options={{
+          title: t('wildlife.wildlife'),
+          headerLargeTitle: true,
+          headerBackVisible: false,
+        }}
+      />
 
       {/* Identify FAB */}
       <View className="px-4 mb-4">

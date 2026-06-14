@@ -1,8 +1,8 @@
 import { assertPresent } from '@packrat/guards';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type * as React from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { TextInput } from 'react-native';
 
 /**

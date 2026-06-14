@@ -1,12 +1,11 @@
 'use client';
 
-import { Stack } from 'expo-router';
-
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
 import { useReportedContent } from '../hooks/useReportedContent';

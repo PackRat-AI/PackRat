@@ -17,7 +17,6 @@ export const GuidesListScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
   const [isManualRefresh, setIsManualRefresh] = useState(false);
 
-
   const {
     data: categories,
     error: categoriesError,

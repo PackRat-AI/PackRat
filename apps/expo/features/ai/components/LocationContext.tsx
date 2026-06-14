@@ -1,7 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import { useState } from 'react';

@@ -52,7 +52,6 @@ export function PackTemplateListScreen() {
   const { t } = useTranslation();
   const templateOptionsRef = useRef<BottomSheetModal>(null);
 
-
   // Filter options with translations
   const filterOptions: FilterOption[] = [
     { label: t('packTemplates.all'), value: 'all' },

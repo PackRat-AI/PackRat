@@ -4,7 +4,7 @@ import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { Stack, router, useNavigation } from 'expo-router';
+import { router, Stack, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -14,9 +14,9 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  type TextInput,
   TouchableOpacity,
   View,
-  TextInput,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -130,123 +130,123 @@ function LocationsScreen() {
         }}
       />
 
-        <View className="p-4">
-          <SearchInput
-            ref={searchInputRef}
-            placeholder={t('weather.searchSavedLocations')}
-            value={searchQuery}
-            onChangeText={handleSearchChange}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => {
-              // Only unfocus if search is empty
-              if (searchQuery.length === 0) {
-                setIsSearchFocused(false);
-              }
-            }}
-          />
-        </View>
-
-        {showNoSearchResults && (
-          <Animated.View
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(200)}
-            className="px-4 py-2"
-          >
-            <Text className="mb-2 text-xs uppercase text-muted-foreground">
-              {t('weather.searchResults')}
-            </Text>
-            <View className="bg-muted/30 items-center rounded-lg p-4">
-              <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-              <Text className="mt-2 text-muted-foreground">
-                {t('weather.noLocationsMatch', { query: searchQuery })}
-              </Text>
-              <View className="mt-4 flex-row">
-                <TouchableOpacity
-                  className="bg-primary/10 mr-2 rounded-full px-4 py-2"
-                  onPress={clearSearch}
-                >
-                  <Text className="text-primary">{t('weather.clearSearch')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className="rounded-full bg-primary px-4 py-2"
-                  onPress={handleAddLocation}
-                >
-                  <Text className="text-white">{t('weather.addNewLocation')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Animated.View>
-        )}
-
-        {isLoading ? (
-          <View className="flex-1 items-center justify-center py-12">
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text className="mt-4 text-muted-foreground">{t('weather.loadingWeatherData')}</Text>
-          </View>
-        ) : (
-          <ScrollView
-            // className="flex-1"
-            contentContainerStyle={{
-              paddingHorizontal: 16,
-              paddingTop: 8,
-              paddingBottom: insets.bottom + 16,
-              flexGrow: showEmptyState ? 1 : undefined,
-            }}
-            contentInsetAdjustmentBehavior="automatic"
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={refreshAllLocations}
-                tintColor={colors.primary}
-              />
+      <View className="p-4">
+        <SearchInput
+          ref={searchInputRef}
+          placeholder={t('weather.searchSavedLocations')}
+          value={searchQuery}
+          onChangeText={handleSearchChange}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => {
+            // Only unfocus if search is empty
+            if (searchQuery.length === 0) {
+              setIsSearchFocused(false);
             }
-            keyboardShouldPersistTaps="handled"
-          >
-            {showLocationsList && (
-              <>
-                {showSearchResults && (
-                  <View className="mb-2">
-                    <Text className="text-xs uppercase text-muted-foreground">
-                      {filteredLocations.length}{' '}
-                      {filteredLocations.length === 1 ? t('weather.result') : t('weather.results')}
-                    </Text>
-                  </View>
-                )}
+          }}
+        />
+      </View>
 
+      {showNoSearchResults && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(200)}
+          className="px-4 py-2"
+        >
+          <Text className="mb-2 text-xs uppercase text-muted-foreground">
+            {t('weather.searchResults')}
+          </Text>
+          <View className="bg-muted/30 items-center rounded-lg p-4">
+            <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
+            <Text className="mt-2 text-muted-foreground">
+              {t('weather.noLocationsMatch', { query: searchQuery })}
+            </Text>
+            <View className="mt-4 flex-row">
+              <TouchableOpacity
+                className="bg-primary/10 mr-2 rounded-full px-4 py-2"
+                onPress={clearSearch}
+              >
+                <Text className="text-primary">{t('weather.clearSearch')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="rounded-full bg-primary px-4 py-2"
+                onPress={handleAddLocation}
+              >
+                <Text className="text-white">{t('weather.addNewLocation')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      )}
+
+      {isLoading ? (
+        <View className="flex-1 items-center justify-center py-12">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text className="mt-4 text-muted-foreground">{t('weather.loadingWeatherData')}</Text>
+        </View>
+      ) : (
+        <ScrollView
+          // className="flex-1"
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: insets.bottom + 16,
+            flexGrow: showEmptyState ? 1 : undefined,
+          }}
+          contentInsetAdjustmentBehavior="automatic"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={refreshAllLocations}
+              tintColor={colors.primary}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+        >
+          {showLocationsList && (
+            <>
+              {showSearchResults && (
                 <View className="mb-2">
-                  <Text className="text-xs text-muted-foreground">
-                    {t('weather.longPressForOptions')}
+                  <Text className="text-xs uppercase text-muted-foreground">
+                    {filteredLocations.length}{' '}
+                    {filteredLocations.length === 1 ? t('weather.result') : t('weather.results')}
                   </Text>
                 </View>
+              )}
 
-                {filteredLocations.map((location) => (
-                  <LocationCard
-                    key={location.id}
-                    location={location}
-                    onPress={() => handleLocationPress(location.id)}
-                    onSetActive={() => handleSetActive(location.id)}
-                    onRemove={() => handleRemoveLocation(location.id)}
-                  />
-                ))}
-              </>
-            )}
-
-            {showEmptyState && (
-              <View className="flex-1 items-center mt-16">
-                <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
-                <Text className="mt-4 text-center text-lg font-medium">
-                  {t('weather.noSavedLocations')}
+              <View className="mb-2">
+                <Text className="text-xs text-muted-foreground">
+                  {t('weather.longPressForOptions')}
                 </Text>
-                <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
-                  {t('weather.noSavedLocationsDesc')}
-                </Text>
-                <Button variant="primary" onPress={handleAddLocation}>
-                  <Text className="font-medium text-white">{t('weather.addLocation')}</Text>
-                </Button>
               </View>
-            )}
-          </ScrollView>
-        )}
+
+              {filteredLocations.map((location) => (
+                <LocationCard
+                  key={location.id}
+                  location={location}
+                  onPress={() => handleLocationPress(location.id)}
+                  onSetActive={() => handleSetActive(location.id)}
+                  onRemove={() => handleRemoveLocation(location.id)}
+                />
+              ))}
+            </>
+          )}
+
+          {showEmptyState && (
+            <View className="flex-1 items-center mt-16">
+              <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
+              <Text className="mt-4 text-center text-lg font-medium">
+                {t('weather.noSavedLocations')}
+              </Text>
+              <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
+                {t('weather.noSavedLocationsDesc')}
+              </Text>
+              <Button variant="primary" onPress={handleAddLocation}>
+                <Text className="font-medium text-white">{t('weather.addLocation')}</Text>
+              </Button>
+            </View>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
