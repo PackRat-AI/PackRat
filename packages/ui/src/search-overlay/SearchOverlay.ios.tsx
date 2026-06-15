@@ -27,7 +27,7 @@ export function SearchOverlay({ placeholder, value, onChangeText, children }: Se
           style={StyleSheet.absoluteFill}
           className="bg-background z-50"
         >
-          <SafeAreaView className="flex-1 bg-background">{children}</SafeAreaView>
+          <SafeAreaView style={{ flex: 1 }}>{children}</SafeAreaView>
         </Animated.View>
       )}
     </>

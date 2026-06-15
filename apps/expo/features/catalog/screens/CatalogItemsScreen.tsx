@@ -133,7 +133,11 @@ function CatalogItemsScreen() {
         value={searchValue}
         onChangeText={setSearchValue}
       >
-        {isVectorLoading || !isQueryReady ? (
+        {!isSearching ? (
+          <View className="flex-1 items-center justify-center p-4">
+            <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
+          </View>
+        ) : isVectorLoading || !isQueryReady ? (
           <View className="flex-1 items-center justify-center p-6">
             <ActivityIndicator className="text-primary" size="large" />
           </View>
@@ -167,7 +171,7 @@ function CatalogItemsScreen() {
                       {t('catalog.unableToSearch')}
                     </Text>
                   </>
-                ) : isSearching ? (
+                ) : (
                   <>
                     <View className="mb-4 rounded-full bg-muted p-4">
                       <Icon name="magnify" size={32} color="text-muted-foreground" />
@@ -179,10 +183,6 @@ function CatalogItemsScreen() {
                       {t('catalog.tryAdjustingFilters')}
                     </Text>
                   </>
-                ) : (
-                  <Text className="text-center text-muted-foreground">
-                    {t('catalog.searchPlaceholder')}
-                  </Text>
                 )}
               </View>
             )}
