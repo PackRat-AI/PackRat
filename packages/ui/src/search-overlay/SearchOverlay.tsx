@@ -69,7 +69,7 @@ export function SearchOverlay({
               <View style={styles.inputRow}>
                 <Animated.View entering={FadeIn} exiting={FadeOut}>
                   <Pressable onPress={close} hitSlop={8} style={styles.backButton}>
-                    <Icon name="arrow-left" size={26} color={colors.grey} />
+                    <Icon name="arrow-left" size={26} color={colors.grey3} />
                   </Pressable>
                 </Animated.View>
                 <Animated.View
@@ -98,7 +98,7 @@ export function SearchOverlay({
                       hitSlop={8}
                       style={styles.clearButton}
                     >
-                      <Icon name="close" size={20} color={colors.foreground} />
+                      <Icon name="close" size={26} color={colors.grey3} />
                     </Pressable>
                   </Animated.View>
                 )}
