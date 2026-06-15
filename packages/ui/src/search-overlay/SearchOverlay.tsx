@@ -69,7 +69,7 @@ export function SearchOverlay({
               <View style={styles.inputRow}>
                 <Animated.View entering={FadeIn} exiting={FadeOut}>
                   <Pressable onPress={close} hitSlop={8} style={styles.backButton}>
-                    <Icon name="arrow-left" size={22} color={colors.foreground} />
+                    <Icon name="arrow-left" size={26} color={colors.grey} />
                   </Pressable>
                 </Animated.View>
                 <Animated.View
@@ -123,15 +123,14 @@ const styles = StyleSheet.create({
   headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   searchButton: { padding: 14 },
   inputRow: {
-    height: 56,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingBottom: 10,
   },
-  backButton: { padding: 8 },
+  backButton: { padding: 12 },
   inputFlex: { flex: 1 },
-  input: { flex: 1, fontSize: 17, paddingHorizontal: 8 },
+  input: { flex: 1, fontSize: 20, paddingHorizontal: 8 },
   clearButton: { padding: 8 },
   content: { flex: 1 },
 });
