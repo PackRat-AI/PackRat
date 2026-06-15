@@ -1,10 +1,9 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from 'expo-app/components/Icon';
-import { SearchInput } from 'expo-app/components/SearchInput';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack } from 'expo-router';
 import { useCallback, useEffect, useId, useState } from 'react';
-import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInRight,
@@ -78,7 +77,7 @@ export function SearchOverlay({
                   exiting={FadeOutRight}
                   style={styles.inputFlex}
                 >
-                  <SearchInput
+                  <TextInput
                     autoFocus
                     placeholder={placeholder ?? 'Search...'}
                     value={value}
@@ -88,13 +87,27 @@ export function SearchOverlay({
                     }}
                     autoCapitalize="none"
                     returnKeyType="search"
-                    containerClassName="bg-muted w-full"
+                    style={[styles.input, { color: colors.foreground }]}
                     placeholderTextColor={colors.grey2}
                   />
                 </Animated.View>
+                {!!value && (
+                  <Animated.View entering={FadeIn} exiting={FadeOut}>
+                    <Pressable
+                      onPress={() => onChangeText('')}
+                      hitSlop={8}
+                      style={styles.clearButton}
+                    >
+                      <Icon name="close" size={20} color={colors.foreground} />
+                    </Pressable>
+                  </Animated.View>
+                )}
               </View>
             </View>
-            <Animated.View entering={FadeInUp} style={styles.content} className="bg-background">
+            <Animated.View
+              entering={FadeInUp}
+              style={[styles.content, { backgroundColor: colors.background }]}
+            >
               {children}
             </Animated.View>
           </Animated.View>
@@ -113,10 +126,12 @@ const styles = StyleSheet.create({
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 10,
   },
   backButton: { padding: 8 },
   inputFlex: { flex: 1 },
+  input: { flex: 1, fontSize: 17, paddingHorizontal: 8 },
+  clearButton: { padding: 8 },
   content: { flex: 1 },
 });
