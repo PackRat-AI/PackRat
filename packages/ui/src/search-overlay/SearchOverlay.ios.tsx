@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import type { SearchOverlayProps } from './types';
@@ -27,7 +27,7 @@ export function SearchOverlay({ placeholder, value, onChangeText, children }: Se
           style={StyleSheet.absoluteFill}
           className="bg-background z-50"
         >
-          {children}
+          <SafeAreaView className="flex-1 bg-background">{children}</SafeAreaView>
         </Animated.View>
       )}
     </>

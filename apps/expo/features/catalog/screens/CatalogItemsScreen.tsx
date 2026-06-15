@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
@@ -104,6 +105,7 @@ function CatalogItemsScreen() {
 
     return (
       <>
+        <LargeTitleHeaderOverlapFixIOS />
         <CategoriesFilter
           data={categories}
           onFilter={setActiveFilter}

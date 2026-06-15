@@ -71,7 +71,7 @@ Everything here is either replaced by `@expo/ui` via `packages/ui` or moved to a
 | `Markdown.tsx` | Move to `packages/ui/src/markdown.tsx` |
 | `Icon/` | Move to `packages/ui/src/icon/` — wraps `@expo/ui` Universal `Icon` |
 | `LargeTitleHeaderOverlapFixIOS.tsx` | Move to `packages/ui/src/large-title-header-overlap-fix-ios.tsx` — still needed |
-| `LargeTitleHeaderSearchContentContainer.tsx` | Move to `packages/ui/src/large-title-header-search-content-container.tsx` — still needed |
+| `LargeTitleHeaderSearchContentContainer.tsx` | Absorbed into platform SearchOverlay components — delete |
 | `AndroidTabBarInsetFix.tsx` | Move to `packages/ui/src/android-tab-bar-inset-fix.android.tsx` |
 | `BackButton.tsx` | Move to `packages/ui/src/back-button.tsx` |
 | `HeaderButton.tsx` | Move to `packages/ui/src/header-button.tsx` |
