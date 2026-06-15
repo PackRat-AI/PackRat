@@ -8,18 +8,18 @@ import {
   createContextItem,
   createDropdownItem,
   DropdownMenu,
-  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
   Text,
   Toolbar,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
   Dimensions,
@@ -45,7 +45,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 export default function ConversationsIosScreen() {
-  const { colors, isDarkColorScheme } = useColorScheme();
   const [isSelecting, setIsSelecting] = React.useState(false);
   const isSelectingDerived = useDerivedValue(() => isSelecting);
   const [selectedMessages, setSelectedMessages] = React.useState<string[]>([]);
@@ -80,13 +79,20 @@ export default function ConversationsIosScreen() {
 
   return (
     <>
-      <LargeTitleHeader
-        title="Messages"
-        leftView={() => <LeftView isSelecting={isSelecting} setIsSelecting={onIsSelectingChange} />}
-        rightView={rightView}
-        backgroundColor={isDarkColorScheme ? colors.background : colors.card}
-        searchBar={SEARCH_BAR}
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: 'Messages',
+          headerLeft: () => (
+            <LeftView isSelecting={isSelecting} setIsSelecting={onIsSelectingChange} />
+          ),
+          headerRight: rightView,
+          headerSearchBarOptions: {
+            hideWhenScrolling: true,
+          },
+        }}
       />
+      <SearchBarContent />
       <List
         data={ITEMS}
         extraData={[isSelecting, selectedMessages]}
@@ -190,9 +196,8 @@ function RightView() {
 
 const RE_WHITESPACE = /\s+/;
 
-const SEARCH_BAR = {
-  iosHideWhenScrolling: true,
-  content: (
+function SearchBarContent() {
+  return (
     <View className={cn('flex-1', Platform.OS === 'ios' && 'bg-card dark:bg-background')}>
       <Animated.View
         entering={FadeIn.delay(150)}
@@ -215,8 +220,8 @@ const SEARCH_BAR = {
         </View>
       </Animated.View>
     </View>
-  ),
-};
+  );
+}
 
 const CONTEXT_MENU_ITEMS = [
   createContextItem({
