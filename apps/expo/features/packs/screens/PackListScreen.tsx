@@ -1,6 +1,7 @@
 import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
+import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -188,19 +189,26 @@ export function PackListScreen() {
           headerLargeTitle: true,
           headerBackVisible: false,
           headerRight: () => <CreatePackIconButton />,
-          headerSearchBarOptions: {
-            onChangeText: (e) => setSearchValue(e.nativeEvent.text),
-          },
         }}
       />
-      {searchValue ? (
-        <SearchResults
-          // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
-          results={(filteredPacks || []) as any}
-          searchValue={searchValue}
-          onResultPress={handleSearchResultPress}
-        />
-      ) : null}
+      <SearchOverlay
+        value={searchValue}
+        onChangeText={setSearchValue}
+        androidHeaderRightActions={<CreatePackIconButton />}
+      >
+        {searchValue ? (
+          <SearchResults
+            // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
+            results={(filteredPacks || []) as any}
+            searchValue={searchValue}
+            onResultPress={handleSearchResultPress}
+          />
+        ) : (
+          <View className="flex-1 items-center justify-center p-4">
+            <Text className="text-muted-foreground">{t('packs.searchPacks')}</Text>
+          </View>
+        )}
+      </SearchOverlay>
 
       <FlatList
         data={filteredPacks}

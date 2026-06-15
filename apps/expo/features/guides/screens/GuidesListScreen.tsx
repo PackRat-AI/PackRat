@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
@@ -197,14 +198,15 @@ export const GuidesListScreen = () => {
         options={{
           title: t('guides.guides'),
           headerLargeTitle: true,
-          headerSearchBarOptions: {
-            hideWhenScrolling: false,
-            onChangeText: (e) => handleSearch(e.nativeEvent.text),
-            placeholder: t('guides.searchPlaceholder'),
-          },
         }}
       />
-      {renderSearchContent()}
+      <SearchOverlay
+        placeholder={t('guides.searchPlaceholder')}
+        value={searchQuery}
+        onChangeText={handleSearch}
+      >
+        {renderSearchContent()}
+      </SearchOverlay>
 
       <FlatList
         data={guides}

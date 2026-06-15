@@ -217,7 +217,8 @@
     "title": "Dashboard",
     "searchPlaceholder": "Search dashboard",
     "noResults": "No matching tiles found",
-    "tryDifferent": "Try different keywords or clear your search"
+    "tryDifferent": "Try different keywords or clear your search",
+    "searchPrompt": "Type to find tiles on your dashboard"
   },
   "packs": {
     "currentPack": "Current Pack",

@@ -1,5 +1,6 @@
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
+import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
@@ -157,14 +158,16 @@ export function TripsListScreen() {
           headerLargeTitle: true,
           headerBackVisible: false,
           headerRight: () => <CreateTripIconButton />,
-          headerSearchBarOptions: {
-            hideWhenScrolling: false,
-            onChangeText: (e) => setSearchValue(e.nativeEvent.text),
-            placeholder: t('trips.searchPlaceholder'),
-          },
         }}
       />
-      {renderSearchContent()}
+      <SearchOverlay
+        placeholder={t('trips.searchPlaceholder')}
+        value={searchValue}
+        onChangeText={setSearchValue}
+        androidHeaderRightActions={<CreateTripIconButton />}
+      >
+        {renderSearchContent()}
+      </SearchOverlay>
 
       <FlatList
         data={filteredTrips}

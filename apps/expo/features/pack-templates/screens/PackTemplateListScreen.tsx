@@ -1,6 +1,7 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
@@ -186,18 +187,20 @@ export function PackTemplateListScreen() {
           title: t('packTemplates.packTemplates'),
           headerLargeTitle: true,
           headerRight: () => (
-            <View className="flex-row items-center">
-              <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
-            </View>
+            <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
           ),
-          headerSearchBarOptions: {
-            hideWhenScrolling: false,
-            onChangeText: (e) => setSearchValue(e.nativeEvent.text),
-            placeholder: t('packTemplates.searchPlaceholder'),
-          },
         }}
       />
-      {renderSearchContent()}
+      <SearchOverlay
+        placeholder={t('packTemplates.searchPlaceholder')}
+        value={searchValue}
+        onChangeText={setSearchValue}
+        androidHeaderRightActions={
+          <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
+        }
+      >
+        {renderSearchContent()}
+      </SearchOverlay>
 
       <View className="bg-background gap-2 px-4 pb-2">
         <SegmentedControl

@@ -6,6 +6,7 @@ import type { ListDataItem } from '@packrat/ui/nativewindui';
 import { List, type ListRenderItemInfo, ListSectionHeader } from '@packrat/ui/nativewindui';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
+import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { appConfig, featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
@@ -246,13 +247,13 @@ export default function DashboardScreen() {
           title: t('dashboard.title'),
           headerLargeTitle: true,
           headerBackVisible: false,
-          headerSearchBarOptions: {
-            placeholder: appConfig.dashboard.strings.searchPlaceholder,
-            onChangeText: (e) => setSearchValue(e.nativeEvent.text),
-          },
         }}
       />
-      {searchValue ? (
+      <SearchOverlay
+        placeholder={appConfig.dashboard.strings.searchPlaceholder}
+        value={searchValue}
+        onChangeText={setSearchValue}
+      >
         <FlatList
           data={filteredTiles}
           keyExtractor={keyExtractor}
@@ -264,7 +265,7 @@ export default function DashboardScreen() {
               return (
                 <Pressable
                   key={item}
-                  className="rounded-2xl overflow-hidden "
+                  className="overflow-hidden rounded-2xl"
                   onPress={() => setSearchValue('')}
                 >
                   <Component />
@@ -283,20 +284,30 @@ export default function DashboardScreen() {
               </Text>
             ) : null
           }
-          ListEmptyComponent={() => (
-            <View className="items-center justify-center p-6">
-              <Icon name="file-search-outline" size={48} color="#9ca3af" />
-              <View className="h-4" />
-              <Text className="text-lg font-medium text-muted-foreground">
-                {t('dashboard.noResults')}
-              </Text>
-              <Text className="mt-1 text-center text-sm text-muted-foreground">
-                {t('dashboard.tryDifferent')}
-              </Text>
-            </View>
-          )}
+          ListEmptyComponent={() =>
+            searchValue.trim() ? (
+              <View className="items-center justify-center p-6">
+                <Icon name="file-search-outline" size={48} color="#9ca3af" />
+                <View className="h-4" />
+                <Text className="text-lg font-medium text-muted-foreground">
+                  {t('dashboard.noResults')}
+                </Text>
+                <Text className="mt-1 text-center text-sm text-muted-foreground">
+                  {t('dashboard.tryDifferent')}
+                </Text>
+              </View>
+            ) : (
+              <View className="items-center justify-center p-6">
+                <Icon name="magnify" size={48} color="#9ca3af" />
+                <View className="h-4" />
+                <Text className="text-center text-sm text-muted-foreground">
+                  {t('dashboard.searchPrompt')}
+                </Text>
+              </View>
+            )
+          }
         />
-      ) : null}
+      </SearchOverlay>
 
       <List
         contentContainerClassName="pt-4"

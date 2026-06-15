@@ -4,6 +4,7 @@ import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
+import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -123,15 +124,14 @@ function CatalogItemsScreen() {
           title: t('catalog.title'),
           headerLargeTitle: true,
           headerBackVisible: false,
-          headerSearchBarOptions: {
-            hideWhenScrolling: false,
-            onChangeText: (e) => setSearchValue(e.nativeEvent.text),
-            placeholder: t('catalog.searchPlaceholder'),
-          },
         }}
       />
-      {isSearching ? (
-        isVectorLoading || !isQueryReady ? (
+      <SearchOverlay
+        placeholder={t('catalog.searchPlaceholder')}
+        value={searchValue}
+        onChangeText={setSearchValue}
+      >
+        {isVectorLoading || !isQueryReady ? (
           <View className="flex-1 items-center justify-center p-6">
             <ActivityIndicator className="text-primary" size="large" />
           </View>
@@ -165,7 +165,7 @@ function CatalogItemsScreen() {
                       {t('catalog.unableToSearch')}
                     </Text>
                   </>
-                ) : (
+                ) : isSearching ? (
                   <>
                     <View className="mb-4 rounded-full bg-muted p-4">
                       <Icon name="magnify" size={32} color="text-muted-foreground" />
@@ -177,12 +177,16 @@ function CatalogItemsScreen() {
                       {t('catalog.tryAdjustingFilters')}
                     </Text>
                   </>
+                ) : (
+                  <Text className="text-center text-muted-foreground">
+                    {t('catalog.searchPlaceholder')}
+                  </Text>
                 )}
               </View>
             )}
           </ScrollView>
-        )
-      ) : null}
+        )}
+      </SearchOverlay>
 
       <FlatList
         data={groupedItems}
