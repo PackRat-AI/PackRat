@@ -50,7 +50,11 @@ export {
   CardSubtitle,
 } from '@packrat-ai/nativewindui'; //   8 uses → JC Card (Android) + custom View (iOS)
 export { SegmentedControl } from '@packrat-ai/nativewindui'; //   3 uses → @expo/ui community SegmentedControl
-export type { ContextMenuMethods } from '@packrat-ai/nativewindui'; //   1 use  → SwiftUI ContextMenu + JC DropdownMenu
+export { Checkbox } from '@packrat-ai/nativewindui'; //   3 uses → @expo/ui Universal Checkbox
+export { ContextMenu, createContextItem, createContextSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → SwiftUI ContextMenu + JC DropdownMenu
+export type { ContextMenuMethods } from '@packrat-ai/nativewindui';
+export { DropdownMenu, createDropdownItem, createDropdownSubMenu } from '@packrat-ai/nativewindui'; //   multiple uses → @expo/ui DropdownMenu
+export { Toolbar, ToolbarCTA, ToolbarIcon } from '@packrat-ai/nativewindui'; //   multiple uses → platform-specific Toolbar
 //
 // Phase 5 — no @expo/ui equivalent
 export { Avatar, AvatarFallback, AvatarImage } from '@packrat-ai/nativewindui'; //   6 uses → @rn-primitives/avatar
