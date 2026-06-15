@@ -106,7 +106,7 @@ export function SearchOverlay({
             </View>
             <Animated.View
               entering={FadeInUp}
-              style={[styles.content, { backgroundColor: colors.background }]}
+              style={[styles.content, { backgroundColor: colors.card }]}
             >
               {children}
             </Animated.View>
