@@ -11,7 +11,6 @@ import Animated, {
   FadeInUp,
   FadeOut,
   FadeOutRight,
-  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,7 +24,7 @@ export function SearchOverlay({
   androidHeaderRightActions,
 }: SearchOverlayProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { colors } = useColorScheme();
+  const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const id = useId();
 
@@ -45,6 +44,8 @@ export function SearchOverlay({
     return () => handler.remove();
   }, [isOpen, close]);
 
+  const pillBg = isDarkColorScheme ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+
   return (
     <>
       <Stack.Screen
@@ -63,25 +64,23 @@ export function SearchOverlay({
         <Portal name={`search-overlay:${id}`}>
           <Animated.View exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.portal]}>
             <View
-              style={[styles.header, { paddingTop: insets.top + 6 }]}
-              className="bg-background relative overflow-hidden"
+              style={[
+                styles.header,
+                { paddingTop: insets.top + 6, backgroundColor: colors.background },
+              ]}
             >
-              <Animated.View
-                entering={pillEntering}
-                exiting={pillExiting}
-                className="bg-muted/25 dark:bg-card absolute bottom-2.5 left-4 right-4 h-14 rounded-full"
-              />
               <View style={styles.inputRow}>
                 <Animated.View entering={FadeIn} exiting={FadeOut}>
-                  <Pressable onPress={close} hitSlop={8} className="p-2">
+                  <Pressable onPress={close} hitSlop={8} style={styles.backButton}>
                     <Icon name="arrow-left" size={22} color={colors.foreground} />
                   </Pressable>
                 </Animated.View>
                 <Animated.View
                   entering={FadeInRight}
                   exiting={FadeOutRight}
-                  style={styles.inputFlex}
+                  style={[styles.pill, { backgroundColor: pillBg }]}
                 >
+                  <Icon name="magnify" size={20} color={colors.grey2} />
                   <SearchInput
                     autoFocus
                     placeholder={placeholder ?? 'Search...'}
@@ -95,14 +94,16 @@ export function SearchOverlay({
                     style={[styles.input, { color: colors.foreground }]}
                     placeholderTextColor={colors.grey2}
                   />
-                </Animated.View>
-                {!!value && (
-                  <Animated.View entering={FadeIn} exiting={FadeOut}>
-                    <Pressable onPress={() => onChangeText('')} hitSlop={8} className="p-2">
-                      <Icon name="close" size={20} color={colors.foreground} />
+                  {!!value && (
+                    <Pressable
+                      onPress={() => onChangeText('')}
+                      hitSlop={8}
+                      style={styles.clearButton}
+                    >
+                      <Icon name="close" size={18} color={colors.foreground} />
                     </Pressable>
-                  </Animated.View>
-                )}
+                  )}
+                </Animated.View>
               </View>
             </View>
             <Animated.View entering={FadeInUp} style={styles.content} className="bg-background">
@@ -124,26 +125,21 @@ const styles = StyleSheet.create({
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingBottom: 10,
+    gap: 8,
   },
-  inputFlex: { flex: 1 },
-  input: { flex: 1, fontSize: 17, paddingHorizontal: 8 },
+  backButton: { padding: 8 },
+  pill: {
+    flex: 1,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 22,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  input: { flex: 1, fontSize: 17 },
+  clearButton: { padding: 4 },
   content: { flex: 1 },
 });
-
-const pillEntering = () => {
-  'worklet';
-  return {
-    initialValues: { transform: [{ scale: 1 }] },
-    animations: { transform: [{ scale: withTiming(3, { duration: 400 }) }] },
-  };
-};
-
-const pillExiting = () => {
-  'worklet';
-  return {
-    initialValues: { transform: [{ scale: 3 }], opacity: 1 },
-    animations: { transform: [{ scale: withTiming(1) }], opacity: withTiming(0) },
-  };
-};
