@@ -4,6 +4,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
 import type { ListDataItem } from '@packrat/ui/nativewindui';
 import { List, type ListRenderItemInfo, ListSectionHeader } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -165,7 +166,6 @@ export default function DashboardScreen() {
   const isFocused = useIsFocused();
   const { hasMinimumItems } = useHasMinimumInventory(20);
   const { announcementSeen } = useSeasonSuggestionsPrefs();
-
   useEffect(() => {
     if (!isFocused || !hasMinimumItems || announcementSeen) return;
     const timer = setTimeout(() => {
@@ -244,8 +244,8 @@ export default function DashboardScreen() {
     <>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('dashboard.title'),
-          headerLargeTitle: true,
           headerBackVisible: false,
         }}
       />

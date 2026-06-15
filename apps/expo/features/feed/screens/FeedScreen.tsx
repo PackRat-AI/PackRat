@@ -1,4 +1,5 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -87,8 +88,8 @@ export const FeedScreen = () => {
     <View className="flex-1 bg-background">
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('feed.feed'),
-          headerLargeTitle: true,
           headerRight: () => (
             <View className="px-4">
               <Button variant="plain" onPress={handleCreatePost}>

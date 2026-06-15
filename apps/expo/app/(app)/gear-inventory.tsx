@@ -1,5 +1,6 @@
 import { assertDefined } from '@packrat/guards';
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
@@ -65,7 +66,7 @@ export default function GearInventoryScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ title: t('packs.gearInventory'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.gearInventory') }} />
       <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">

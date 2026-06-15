@@ -1,3 +1,4 @@
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
@@ -154,8 +155,8 @@ export function TripsListScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('trips.trips'),
-          headerLargeTitle: true,
           headerBackVisible: false,
           headerRight: () => <CreateTripIconButton />,
         }}

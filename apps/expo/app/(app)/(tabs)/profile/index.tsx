@@ -12,6 +12,7 @@ import {
   ListSectionHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
@@ -80,8 +81,8 @@ function Profile() {
   const { t } = useTranslation();
 
   const SCREEN_OPTIONS = {
+    ...getAppBarOptions(),
     title: t('profile.profile'),
-    headerLargeTitle: true,
     headerBackVisible: false,
     headerRight: () => (
       <View className="flex-row items-center gap-2 pr-2 pl-2">

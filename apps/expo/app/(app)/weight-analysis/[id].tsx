@@ -1,6 +1,7 @@
 'use client';
 
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';
@@ -48,7 +49,7 @@ export default function WeightAnalysisScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ title: t('packs.weightAnalysis'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.weightAnalysis') }} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}

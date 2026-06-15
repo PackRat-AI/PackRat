@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
@@ -123,8 +124,8 @@ function CatalogItemsScreen() {
     <>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('catalog.title'),
-          headerLargeTitle: true,
           headerBackVisible: false,
         }}
       />

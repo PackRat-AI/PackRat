@@ -1,4 +1,5 @@
 import { Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -66,7 +67,7 @@ export default function WeatherAlertPreferencesScreen() {
   return (
     <>
       <Stack.Screen
-        options={{ title: t('weather.alertPreferencesTitle'), headerLargeTitle: true }}
+        options={{ ...getAppBarOptions(), title: t('weather.alertPreferencesTitle') }}
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"

@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
@@ -198,8 +199,8 @@ export const GuidesListScreen = () => {
     <>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('guides.guides'),
-          headerLargeTitle: true,
         }}
       />
       <SearchOverlay

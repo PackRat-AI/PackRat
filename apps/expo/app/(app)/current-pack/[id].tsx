@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import type { PackItem } from 'expo-app/features/packs/types';
@@ -129,7 +130,7 @@ export default function CurrentPackScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ title: t('packs.currentPack'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.currentPack') }} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}

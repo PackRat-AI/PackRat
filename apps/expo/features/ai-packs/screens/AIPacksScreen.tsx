@@ -5,6 +5,7 @@ import {
   Button,
   Text,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -91,8 +92,7 @@ export function AIPacksScreen() {
 
   return (
     <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
-      <Stack.Screen options={{ title: t('ai.aiPacksAdmin'), headerLargeTitle: true }} />
-
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('ai.aiPacksAdmin') }} />
       <View
         className="px-4 py-6 space-y-6"
         style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}

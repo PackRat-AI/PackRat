@@ -1,4 +1,5 @@
 import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
@@ -186,8 +187,8 @@ export function PackListScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('navigation.packs'),
-          headerLargeTitle: true,
           headerBackVisible: false,
           headerRight: () => <CreatePackIconButton />,
         }}

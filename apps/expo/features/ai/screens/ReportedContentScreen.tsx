@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -33,7 +34,7 @@ export default function ReportedContentScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: t('ai.reportedContent.title'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('ai.reportedContent.title') }} />
 
       <FlatList
         data={filteredData}

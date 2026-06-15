@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
@@ -66,7 +67,7 @@ export default function RecentPacksScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ title: t('packs.recentPacks'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.recentPacks') }} />
       {recentPacks.length ? (
         <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
           <View className="p-4">

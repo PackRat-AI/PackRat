@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
@@ -176,7 +177,7 @@ export default function SharedPacksScreen() {
   const { t } = useTranslation();
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen options={{ title: t('packs.sharedPacks'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.sharedPacks') }} />
       <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">

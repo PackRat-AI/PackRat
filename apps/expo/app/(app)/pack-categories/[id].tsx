@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
@@ -63,7 +64,7 @@ export default function PackCategoriesScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('packs.packCategories'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.packCategories') }} />
       {categories.length ? (
         <ScrollView className="flex-1">
           <View className="p-4">

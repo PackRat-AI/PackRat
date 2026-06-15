@@ -1,4 +1,5 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
@@ -163,8 +164,8 @@ export default function TrailConditionsScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('trailConditions.title'),
-          headerLargeTitle: true,
           headerRight: () => (
             <Pressable
               onPress={() => setShowSubmitForm(true)}

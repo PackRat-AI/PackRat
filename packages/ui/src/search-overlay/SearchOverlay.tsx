@@ -52,8 +52,8 @@ export function SearchOverlay({
           headerRight: () => (
             <View style={styles.headerRightRow}>
               {androidHeaderRightActions}
-              <Pressable onPress={() => setIsOpen(true)} hitSlop={8}>
-                <Icon name="magnify" size={24} color={colors.foreground} />
+              <Pressable onPress={() => setIsOpen(true)} style={styles.searchButton}>
+                <Icon name="magnify" size={28} color={colors.foreground} />
               </Pressable>
             </View>
           ),
@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
   portal: { backgroundColor: 'transparent' },
   header: {},
   headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  searchButton: { padding: 14 },
   inputRow: {
     height: 56,
     flexDirection: 'row',

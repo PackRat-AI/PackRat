@@ -14,6 +14,7 @@ import {
   Text,
   Toolbar,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -80,8 +81,8 @@ export default function ConversationsIosScreen() {
     <>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: 'Messages',
-          headerLargeTitle: true,
           headerLeft: () => (
             <LeftView isSelecting={isSelecting} setIsSelecting={onIsSelectingChange} />
           ),

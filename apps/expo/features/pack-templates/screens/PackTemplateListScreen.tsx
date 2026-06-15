@@ -1,5 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { SegmentedControl } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -184,8 +185,8 @@ export function PackTemplateListScreen() {
     <SafeAreaView className="flex-1">
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('packTemplates.packTemplates'),
-          headerLargeTitle: true,
           headerRight: () => (
             <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
           ),

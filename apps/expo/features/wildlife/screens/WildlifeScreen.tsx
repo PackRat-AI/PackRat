@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -67,8 +68,8 @@ export function WildlifeScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: t('wildlife.wildlife'),
-          headerLargeTitle: true,
           headerBackVisible: false,
         }}
       />

@@ -1,4 +1,5 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { Icon } from 'expo-app/components/Icon';
@@ -38,8 +39,8 @@ export default function Screen() {
     <>
       <Stack.Screen
         options={{
+          ...getAppBarOptions(),
           title: 'Demo',
-          headerLargeTitle: true,
           headerBackVisible: false,
           headerRight: () => <ThemeToggle />,
         }}

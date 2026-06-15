@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import * as Burnt from 'burnt';
 import { Icon } from 'expo-app/components/Icon';
 import { PackItemImage } from 'expo-app/features/packs/components/PackItemImage';
@@ -377,7 +378,7 @@ export default function SeasonSuggestionsResultsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('seasons.seasonSuggestions'), headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('seasons.seasonSuggestions') }} />
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="pt-6">
