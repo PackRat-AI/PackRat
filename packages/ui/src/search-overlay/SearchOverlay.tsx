@@ -24,7 +24,7 @@ export function SearchOverlay({
   androidHeaderRightActions,
 }: SearchOverlayProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { colors, isDarkColorScheme } = useColorScheme();
+  const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
   const id = useId();
 
@@ -43,8 +43,6 @@ export function SearchOverlay({
     });
     return () => handler.remove();
   }, [isOpen, close]);
-
-  const pillBg = isDarkColorScheme ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
   return (
     <>
@@ -78,9 +76,8 @@ export function SearchOverlay({
                 <Animated.View
                   entering={FadeInRight}
                   exiting={FadeOutRight}
-                  style={[styles.pill, { backgroundColor: pillBg }]}
+                  style={styles.inputFlex}
                 >
-                  <Icon name="magnify" size={20} color={colors.grey2} />
                   <SearchInput
                     autoFocus
                     placeholder={placeholder ?? 'Search...'}
@@ -91,18 +88,9 @@ export function SearchOverlay({
                     }}
                     autoCapitalize="none"
                     returnKeyType="search"
-                    style={[styles.input, { color: colors.foreground }]}
+                    containerClassName="bg-muted w-full"
                     placeholderTextColor={colors.grey2}
                   />
-                  {!!value && (
-                    <Pressable
-                      onPress={() => onChangeText('')}
-                      hitSlop={8}
-                      style={styles.clearButton}
-                    >
-                      <Icon name="close" size={18} color={colors.foreground} />
-                    </Pressable>
-                  )}
                 </Animated.View>
               </View>
             </View>
@@ -126,20 +114,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingBottom: 10,
     gap: 8,
   },
   backButton: { padding: 8 },
-  pill: {
-    flex: 1,
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 22,
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  input: { flex: 1, fontSize: 17 },
-  clearButton: { padding: 4 },
+  inputFlex: { flex: 1 },
   content: { flex: 1 },
 });
