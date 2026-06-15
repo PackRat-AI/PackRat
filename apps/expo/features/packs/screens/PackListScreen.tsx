@@ -1,7 +1,7 @@
 import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';

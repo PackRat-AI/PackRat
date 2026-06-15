@@ -1,7 +1,7 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { SegmentedControl } from '@packrat/ui/nativewindui';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { Icon } from 'expo-app/components/Icon';
-import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';

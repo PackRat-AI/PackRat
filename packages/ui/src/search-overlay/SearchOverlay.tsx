@@ -61,7 +61,7 @@ export function SearchOverlay({
       />
       {isOpen && (
         <Portal name={`search-overlay:${id}`}>
-          <Animated.View exiting={FadeOut} style={StyleSheet.absoluteFill}>
+          <Animated.View exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.portal]}>
             <View
               style={[styles.header, { paddingTop: insets.top + 6 }]}
               className="bg-background relative overflow-hidden"
@@ -116,6 +116,7 @@ export function SearchOverlay({
 }
 
 const styles = StyleSheet.create({
+  portal: { backgroundColor: 'transparent' },
   header: {},
   headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   inputRow: {

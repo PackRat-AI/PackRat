@@ -1,6 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';

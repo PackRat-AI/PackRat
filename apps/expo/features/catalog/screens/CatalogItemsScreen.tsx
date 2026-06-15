@@ -1,10 +1,10 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
-import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

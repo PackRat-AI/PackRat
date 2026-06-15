@@ -4,9 +4,9 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { arrayIncludes, assertIsString, objectKeys } from '@packrat/guards';
 import type { ListDataItem } from '@packrat/ui/nativewindui';
 import { List, type ListRenderItemInfo, ListSectionHeader } from '@packrat/ui/nativewindui';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { appConfig, featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
@@ -301,7 +301,7 @@ export default function DashboardScreen() {
                 <Icon name="magnify" size={48} color="#9ca3af" />
                 <View className="h-4" />
                 <Text className="text-center text-sm text-muted-foreground">
-                  {t('dashboard.searchPrompt')}
+                  {t('dashboard.searchPlaceholder')}
                 </Text>
               </View>
             )

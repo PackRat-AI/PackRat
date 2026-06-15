@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import type { SearchOverlayProps } from './types';
@@ -25,9 +25,9 @@ export function SearchOverlay({ placeholder, value, onChangeText, children }: Se
         <Animated.View
           entering={FadeIn.duration(200)}
           style={StyleSheet.absoluteFill}
-          className="z-50"
+          className="bg-background z-50"
         >
-          <View style={StyleSheet.absoluteFill}>{children}</View>
+          {children}
         </Animated.View>
       )}
     </>

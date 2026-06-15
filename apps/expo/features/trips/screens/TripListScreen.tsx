@@ -1,6 +1,6 @@
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { SearchOverlay } from 'expo-app/components/SearchOverlay';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';

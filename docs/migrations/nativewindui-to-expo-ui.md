@@ -70,8 +70,8 @@ Everything here is either replaced by `@expo/ui` via `packages/ui` or moved to a
 | `ScreenContent.tsx` | Move to `packages/ui/src/screen-content.tsx` |
 | `Markdown.tsx` | Move to `packages/ui/src/markdown.tsx` |
 | `Icon/` | Move to `packages/ui/src/icon/` — wraps `@expo/ui` Universal `Icon` |
-| `LargeTitleHeaderOverlapFixIOS.tsx` | Delete — workaround no longer needed after Phase 2 |
-| `LargeTitleHeaderSearchContentContainer.tsx` | Delete — same |
+| `LargeTitleHeaderOverlapFixIOS.tsx` | Move to `packages/ui/src/large-title-header-overlap-fix-ios.tsx` — still needed |
+| `LargeTitleHeaderSearchContentContainer.tsx` | Move to `packages/ui/src/large-title-header-search-content-container.tsx` — still needed |
 | `AndroidTabBarInsetFix.tsx` | Move to `packages/ui/src/android-tab-bar-inset-fix.android.tsx` |
 | `BackButton.tsx` | Move to `packages/ui/src/back-button.tsx` |
 | `HeaderButton.tsx` | Move to `packages/ui/src/header-button.tsx` |
@@ -97,7 +97,7 @@ Replace ref-based imperative navigation APIs.
 - `LargeTitleHeader` → restructure each screen to use `Stack.Screen.Title`, `Stack.SearchBar`, `Stack.Toolbar`. Each screen group (home, packs, catalog, trips, profile) is one sub-PR.
 - `Sheet` + `useSheetRef` → replace `ref.current.present()` calls with `router.push('/sheet-route')` + `presentation: 'formSheet'` in the Stack layout. New route files replace old modal components.
 - `SearchInput` / `AdaptiveSearchHeader` → `Stack.SearchBar` or `headerSearchBarOptions`.
-- Delete `LargeTitleHeaderOverlapFixIOS.tsx` and `LargeTitleHeaderSearchContentContainer.tsx` once their screens are migrated.
+- `LargeTitleHeaderOverlapFixIOS` and `LargeTitleHeaderSearchContentContainer` are moved to `packages/ui/src/` and remain available for screens that need them.
 
 Estimated effort: 3–5 days. One PR per tab section.
 
