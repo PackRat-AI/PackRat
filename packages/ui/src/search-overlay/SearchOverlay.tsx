@@ -23,9 +23,13 @@ export function SearchOverlay({
   androidHeaderRightActions,
 }: SearchOverlayProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { colors } = useColorScheme();
+  const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const id = useId();
+
+  const headerBg = isDarkColorScheme ? colors.card : colors.background;
+  const contentBg = isDarkColorScheme ? colors.background : colors.card;
+  const iconColor = isDarkColorScheme ? colors.grey2 : colors.grey3;
 
   const close = useCallback(() => {
     setIsOpen(false);
@@ -61,15 +65,12 @@ export function SearchOverlay({
         <Portal name={`search-overlay:${id}`}>
           <Animated.View exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.portal]}>
             <View
-              style={[
-                styles.header,
-                { paddingTop: insets.top + 6, backgroundColor: colors.background },
-              ]}
+              style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: headerBg }]}
             >
               <View style={styles.inputRow}>
                 <Animated.View entering={FadeIn} exiting={FadeOut}>
                   <Pressable onPress={close} hitSlop={8} style={styles.backButton}>
-                    <Icon name="arrow-left" size={26} color={colors.grey3} />
+                    <Icon name="arrow-left" size={26} color={iconColor} />
                   </Pressable>
                 </Animated.View>
                 <Animated.View
@@ -98,7 +99,7 @@ export function SearchOverlay({
                       hitSlop={8}
                       style={styles.clearButton}
                     >
-                      <Icon name="close" size={26} color={colors.grey3} />
+                      <Icon name="close" size={26} color={iconColor} />
                     </Pressable>
                   </Animated.View>
                 )}
@@ -106,7 +107,7 @@ export function SearchOverlay({
             </View>
             <Animated.View
               entering={FadeInUp}
-              style={[styles.content, { backgroundColor: colors.card }]}
+              style={[styles.content, { backgroundColor: contentBg }]}
             >
               {children}
             </Animated.View>
