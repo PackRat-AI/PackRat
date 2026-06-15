@@ -119,25 +119,26 @@ function LocationsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <Stack.Screen
-        options={{
-          title: t('weather.weather'),
-          headerLargeTitle: true,
-          headerRight: () => (
-            <Pressable onPress={handleAddLocation} className="mx-2">
-              <Icon name="plus" color={colors.foreground} />
-            </Pressable>
-          ),
-        }}
-      />
-
       <LargeTitleHeaderOverlapFixIOS>
+        <Stack.Screen
+          options={{
+            title: t('weather.weather'),
+            headerLargeTitle: true,
+            headerRight: () => (
+              <Pressable onPress={handleAddLocation} className="mx-2">
+                <Icon name="plus" color={colors.foreground} />
+              </Pressable>
+            ),
+          }}
+        />
+
         <View className="p-4">
           <SearchInput
             ref={searchInputRef}
             placeholder={t('weather.searchSavedLocations')}
             value={searchQuery}
             onChangeText={handleSearchChange}
+            containerClassName="border border-border"
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => {
               // Only unfocus if search is empty

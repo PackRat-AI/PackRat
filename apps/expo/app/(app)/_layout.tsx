@@ -122,7 +122,6 @@ export default function AppLayout() {
         />
         <Stack.Screen name="ai-chat" />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
-        <Stack.Screen name="weather/index" options={{ headerShown: false }} />
         <Stack.Screen
           name="weather/search"
           options={{

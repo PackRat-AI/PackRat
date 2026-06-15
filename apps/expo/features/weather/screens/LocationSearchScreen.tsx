@@ -411,6 +411,7 @@ export default function LocationSearchScreen() {
           placeholder={t('weather.searchForCity')}
           value={query}
           onChangeText={handleSearchChange}
+          containerClassName="border border-border"
           clearButtonMode="while-editing"
         />
       </View>

@@ -254,38 +254,38 @@ export default function DashboardScreen() {
         value={searchValue}
         onChangeText={setSearchValue}
       >
-        <FlatList
-          data={filteredTiles}
-          keyExtractor={keyExtractor}
-          contentContainerClassName="gap-4 px-4 pb-4"
-          renderItem={({ item }) => {
-            assertIsString(item);
-            if (!item.startsWith(DASHBOARD_GAP_PREFIX) && arrayIncludes(TILE_NAMES, item)) {
-              const Component = tileInfo[item].component;
-              return (
-                <Pressable
-                  key={item}
-                  className="overflow-hidden rounded-2xl"
-                  onPress={() => setSearchValue('')}
-                >
-                  <Component />
-                </Pressable>
-              );
+        {searchValue ? (
+          <FlatList
+            data={filteredTiles}
+            keyExtractor={keyExtractor}
+            contentContainerClassName="gap-4 px-4 pb-4"
+            renderItem={({ item }) => {
+              assertIsString(item);
+              if (!item.startsWith(DASHBOARD_GAP_PREFIX) && arrayIncludes(TILE_NAMES, item)) {
+                const Component = tileInfo[item].component;
+                return (
+                  <Pressable
+                    key={item}
+                    className="overflow-hidden rounded-2xl"
+                    onPress={() => setSearchValue('')}
+                  >
+                    <Component />
+                  </Pressable>
+                );
+              }
+              return null;
+            }}
+            ListHeaderComponent={() =>
+              filteredTiles.length > 0 ? (
+                <Text className="px-4 py-2 text-sm text-muted-foreground">
+                  {filteredTiles.length}{' '}
+                  {filteredTiles.length === 1
+                    ? appConfig.dashboard.strings.resultSingular
+                    : appConfig.dashboard.strings.resultPlural}
+                </Text>
+              ) : null
             }
-            return null;
-          }}
-          ListHeaderComponent={() =>
-            filteredTiles.length > 0 ? (
-              <Text className="px-4 py-2 text-sm text-muted-foreground">
-                {filteredTiles.length}{' '}
-                {filteredTiles.length === 1
-                  ? appConfig.dashboard.strings.resultSingular
-                  : appConfig.dashboard.strings.resultPlural}
-              </Text>
-            ) : null
-          }
-          ListEmptyComponent={() =>
-            searchValue.trim() ? (
+            ListEmptyComponent={() => (
               <View className="items-center justify-center p-6">
                 <Icon name="file-search-outline" size={48} color="#9ca3af" />
                 <View className="h-4" />
@@ -296,17 +296,13 @@ export default function DashboardScreen() {
                   {t('dashboard.tryDifferent')}
                 </Text>
               </View>
-            ) : (
-              <View className="items-center justify-center p-6">
-                <Icon name="magnify" size={48} color="#9ca3af" />
-                <View className="h-4" />
-                <Text className="text-center text-sm text-muted-foreground">
-                  {t('dashboard.searchPlaceholder')}
-                </Text>
-              </View>
-            )
-          }
-        />
+            )}
+          />
+        ) : (
+          <View className="flex-1 items-center justify-center p-4">
+            <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
+          </View>
+        )}
       </SearchOverlay>
 
       <List
