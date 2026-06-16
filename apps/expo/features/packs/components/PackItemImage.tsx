@@ -1,7 +1,7 @@
 import { isRemoteUrl } from '@packrat/guards';
-import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';

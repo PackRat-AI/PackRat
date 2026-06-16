@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
@@ -16,7 +17,14 @@ export const useAddComment = () => {
         content,
         ...(parentCommentId !== undefined ? { parentCommentId } : {}),
       });
-      if (error) throw new Error(`Failed to add comment: ${error.value}`);
+      if (error) {
+        const err = new Error(String(error.value ?? 'Failed to add comment'));
+        Sentry.captureException(err, {
+          tags: { feature: 'feed', action: 'addComment' },
+          extra: { postId, parentCommentId, apiError: error.value, httpStatus: error.status },
+        });
+        throw err;
+      }
       return data;
     },
     onSuccess: (_data, variables) => {

@@ -7,6 +7,7 @@
  *
  * testIds source: apps/expo/lib/testIds.ts
  */
+import { testIds } from '../../lib/testIds';
 import { BASE_URL, expect, test } from './fixtures';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -79,7 +80,6 @@ async function createTrip(
 
 test.describe('Trip CRUD', () => {
   test('create a trip with dates → appears in list', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const tripName = `E2E-Trip-${Date.now()}`;
 
     await createTrip(page, {
@@ -96,7 +96,6 @@ test.describe('Trip CRUD', () => {
   test('create a trip with a description → description visible on detail', async ({
     authedPage: page,
   }) => {
-    test.setTimeout(60_000);
     const tripName = `E2E-TripDesc-${Date.now()}`;
     const description = 'A scenic Pacific Crest Trail section.';
 
@@ -184,16 +183,22 @@ test.describe('Trip CRUD', () => {
     // Accept the Alert.alert confirmation dialog automatically
     page.on('dialog', (dialog) => dialog.accept());
 
+    const deletePromise = page.waitForResponse(
+      (r) =>
+        r.url().includes(`/api/trips/${tripId}`) &&
+        (r.request().method() === 'DELETE' ||
+          r.request().method() === 'PUT' ||
+          r.request().method() === 'PATCH'),
+      { timeout: 20_000 },
+    );
+
     // Click the delete button in the trip detail header
-    const deleteButton = page.getByTestId('trips:delete');
+    const deleteButton = page.getByTestId(testIds.trips.deleteBtn);
     await deleteButton.waitFor({ timeout: 10_000 });
     await deleteButton.click();
 
-    // react-native Alert.alert is a no-op on web; the app uses NativeWindUI Alert (DOM modal).
-    // Use exact:true so "E2E-DeleteTrip-..." trip names don't match as false positives.
-    const deleteConfirmBtn = page.getByText('Delete', { exact: true });
-    await deleteConfirmBtn.waitFor({ state: 'visible', timeout: 10_000 });
-    await deleteConfirmBtn.click();
+    const deleteResponse = await deletePromise;
+    expect(deleteResponse.ok()).toBeTruthy();
 
     // router.back() SPA-navigates away from the trip detail.
     // Wait for URL to change (either to /trips or /)
@@ -299,7 +304,6 @@ test.describe('Trips list', () => {
   });
 
   test('trip list item links to correct trip detail', async ({ authedPage: page }) => {
-    test.setTimeout(60_000);
     const tripName = `E2E-ListItem-${Date.now()}`;
 
     const tripId = await createTrip(page, {

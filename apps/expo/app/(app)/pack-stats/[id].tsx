@@ -1,11 +1,12 @@
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { featureFlags } from 'expo-app/config';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,7 +34,9 @@ export default function PackStatsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={pack?.name ?? t('packs.packStats')} />
+      <Stack.Screen
+        options={{ ...getAppBarOptions(), title: pack?.name ?? t('packs.packStats') }}
+      />
       <ScrollView className="flex-1 px-4" contentInsetAdjustmentBehavior="automatic">
         {/* Weight History Section */}
         <View className="my-4 rounded-lg bg-card p-4">

@@ -1,6 +1,6 @@
 {
   "name": "packrat-trails-app",
-  "version": "2.0.26",
+  "version": "2.0.28",
   "private": true,
   "scripts": {
     "build": "bun run generate-og-images && next build",
@@ -9,7 +9,6 @@
     "dev": "next dev",
     "doctor:react": "bunx react-doctor",
     "generate-og-images": "bun run scripts/generate-og-images.ts",
-    "lint": "next lint",
     "start": "next start",
     "test": "vitest run --config vitest.config.ts",
     "test:og-meta": "vitest run --config vitest.config.ts __tests__/og-meta.test.ts"

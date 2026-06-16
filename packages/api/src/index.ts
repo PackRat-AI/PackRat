@@ -6,7 +6,7 @@
  * Elysia-native so Eden Treaty gets full end-to-end type safety.
  */
 
-import type { MessageBatch } from '@cloudflare/workers-types';
+import type { MessageBatch, ScheduledController } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
 import { neonConfig } from '@neondatabase/serverless';
 import { getAuth } from '@packrat/api/auth';
@@ -14,11 +14,19 @@ import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
+import { sweepInvalidItemLogs } from '@packrat/api/services/retention/invalidLogRetention';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv, setWorkerEnv } from '@packrat/api/utils/env-validation';
 import { packratOpenApi } from '@packrat/api/utils/openapi';
+import {
+  createQueryMetricsStore,
+  flushQueryMetrics,
+  initQueryMetricsStore,
+  queryMetricsAls,
+} from '@packrat/api/utils/queryMetrics';
 import { captureApiException } from '@packrat/api/utils/sentry';
-import { withSentry } from '@sentry/cloudflare';
+import { CatalogEtlWorkflow as RawCatalogEtlWorkflow } from '@packrat/api/workflows/catalog-etl-workflow';
+import { instrumentWorkflowWithSentry, withSentry } from '@sentry/cloudflare';
 import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
@@ -35,6 +43,19 @@ const ALLOWED_ORIGIN_PATTERNS = [
 
 function isAllowedOrigin(origin: string | null): origin is string {
   return !!origin && ALLOWED_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+
+// Sentry options for both the Worker handlers and the workflow class.
+// Reads SENTRY_DSN + ENVIRONMENT from the validated env. tracesSampleRate
+// defaults to 10% — observable enough for prod debugging without
+// overwhelming the Sentry quota.
+function sentryOptions(env: Env) {
+  return {
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT,
+    tracesSampleRate: 0.1,
+    release: env.CF_VERSION_METADATA?.id,
+  };
 }
 
 export const app = new Elysia({ adapter: CloudflareAdapter })
@@ -107,6 +128,14 @@ export type App = typeof app;
 
 export { AppContainer };
 
+// Wrap the workflow class with Sentry instrumentation so each step.do span
+// + any uncaught throw inside a step lands in Sentry with workflow/instance
+// context attached automatically.
+export const CatalogEtlWorkflow = instrumentWorkflowWithSentry(
+  sentryOptions,
+  RawCatalogEtlWorkflow,
+);
+
 type CfFetchFn = (
   request: Request,
   env: Env,
@@ -145,52 +174,110 @@ function maybeConfigureLocalNeon(databaseUrl: string | undefined): void {
   }
 }
 
-const workerHandler = {
+const handler: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const e = enrichEnv(env);
     maybeConfigureLocalNeon(e.NEON_DATABASE_URL);
     setWorkerEnv(e as unknown as Record<string, unknown>); // safe-cast: setWorkerEnv accepts Record; ValidatedEnv has no index signature by design
 
-    return (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+    const metricsStore = initQueryMetricsStore(request);
+    return queryMetricsAls.run(metricsStore, async () => {
+      const response = await (app.fetch as unknown as CfFetchFn)(request, e, ctx); // safe-cast: Elysia's fetch has Cloudflare-specific env/ctx params not in the standard type
+      metricsStore.totalDurationMs = Date.now() - metricsStore.startTimeMs;
+      // Use Content-Length when available; fall back to cloning only for JSON/text
+      // responses. Skip body buffering for streaming or binary responses to avoid
+      // doubling memory usage.
+      const contentLength = response.headers.get('content-length');
+      if (contentLength !== null) {
+        metricsStore.estimatedEgressBytes = Number(contentLength);
+        ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+      } else {
+        const ct = response.headers.get('content-type') ?? '';
+        if (ct.startsWith('application/json') || ct.startsWith('text/')) {
+          const clone = response.clone();
+          ctx.waitUntil(
+            clone.arrayBuffer().then((buf) => {
+              metricsStore.estimatedEgressBytes = buf.byteLength;
+              return flushQueryMetrics({ store: metricsStore, statusCode: response.status });
+            }),
+          );
+        } else {
+          ctx.waitUntil(flushQueryMetrics({ store: metricsStore, statusCode: response.status }));
+        }
+      }
+      return response;
+    });
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
 
-    try {
-      if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
-        if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
-        await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
-      } else if (
-        batch.queue === 'packrat-embeddings-queue' ||
-        batch.queue === 'packrat-embeddings-queue-dev'
-      ) {
-        if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
-        await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
-          batch,
-        );
-      } else {
-        throw new Error(`Unknown queue: ${batch.queue}`);
+    const store = createQueryMetricsStore({ route: `queue/${batch.queue}`, method: 'QUEUE' });
+    await queryMetricsAls.run(store, async () => {
+      try {
+        if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
+          if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
+          await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env }); // safe-cast: batch queue name checked above; MessageBatch<unknown> is compatible at runtime
+        } else if (
+          batch.queue === 'packrat-embeddings-queue' ||
+          batch.queue === 'packrat-embeddings-queue-dev'
+        ) {
+          if (!env.EMBEDDINGS_QUEUE) throw new Error('EMBEDDINGS_QUEUE is not configured');
+          await new CatalogService({ explicitEnv: env, useHttpDriver: true }).handleEmbeddingsBatch(
+            batch,
+          );
+        } else {
+          throw new Error(`Unknown queue: ${batch.queue}`);
+        }
+      } catch (error) {
+        captureApiException({
+          error: error,
+          operation: 'queue.handler',
+          tags: { queue_name: batch.queue },
+          extra: { messageCount: batch.messages.length },
+        });
+        throw error;
+      } finally {
+        store.totalDurationMs = Date.now() - store.startTimeMs;
+        await flushQueryMetrics({ store }).catch(() => {});
       }
-    } catch (error) {
-      captureApiException({
-        error: error,
-        operation: 'queue.handler',
-        tags: { queue_name: batch.queue },
-        extra: { messageCount: batch.messages.length },
-      });
-      throw error;
-    }
+    });
   },
-} satisfies ExportedHandler<Env>;
 
-export default withSentry<Env>(
-  (env) => ({
-    dsn: env.SENTRY_DSN,
-    environment: env.ENVIRONMENT ?? 'production',
-    tracesSampleRate: env.ENVIRONMENT === 'production' ? 0.1 : 1.0,
-    sendDefaultPii: false,
-    release: env.SENTRY_RELEASE,
-  }),
-  workerHandler,
-);
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    setWorkerEnv(enrichEnv(env) as unknown as Record<string, unknown>); // safe-cast: same as fetch handler above
+
+    const store = createQueryMetricsStore({
+      route: `scheduled/${controller.cron}`,
+      method: 'CRON',
+    });
+    await queryMetricsAls.run(store, async () => {
+      try {
+        if (controller.cron === '0 9 * * *') {
+          const result = await sweepInvalidItemLogs({ env });
+          console.log(
+            `[retention] invalid_item_logs sweep: deleted=${result.deleted} ` +
+              `iterations=${result.iterations} capped=${result.capped} ` +
+              `retentionDays=${result.retentionDays}`,
+          );
+          if (result.capped) {
+            console.warn(
+              `[retention] invalid_item_logs sweep hit max-iterations cap; ` +
+                `remaining expired rows will be swept on the next run`,
+            );
+          }
+          return;
+        }
+        throw new Error(`Unknown cron: ${controller.cron}`);
+      } finally {
+        store.totalDurationMs = Date.now() - store.startTimeMs;
+        await flushQueryMetrics({ store }).catch(() => {});
+      }
+    });
+  },
+};
+
+// withSentry wraps the fetch/queue/scheduled handlers to initialize Sentry
+// on first invocation and forward uncaught exceptions to Sentry. The
+// instrumented workflow class is exported separately above.
+export default withSentry(sentryOptions, handler);

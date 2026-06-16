@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.26',
+      version: '2.0.28',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -58,6 +58,13 @@ export default (): ExpoConfig =>
         ],
         'expo-secure-store',
         'expo-web-browser',
+        [
+          'expo-dev-client',
+          {
+            android: { toolsButton: false },
+            ios: { toolsButton: false },
+          },
+        ],
         'expo-apple-authentication',
         'expo-localization',
         [
@@ -71,6 +78,8 @@ export default (): ExpoConfig =>
         ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
+        'expo-status-bar',
+        ['expo-splash-screen', { image: './assets/splash.png' }],
       ],
       experiments: {
         typedRoutes: true,
@@ -79,9 +88,6 @@ export default (): ExpoConfig =>
       orientation: 'portrait',
       icon: getIcon(),
       userInterfaceStyle: 'automatic',
-      splash: {
-        image: './assets/splash.png',
-      },
       assetBundlePatterns: ['**/*'],
       ios: {
         supportsTablet: true,

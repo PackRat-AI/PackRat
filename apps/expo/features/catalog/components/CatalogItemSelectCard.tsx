@@ -10,6 +10,7 @@ import {
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import type { CatalogItem } from '../types';
 import { CatalogItemImage } from './CatalogItemImage';
@@ -24,7 +25,7 @@ export function CatalogItemSelectCard({ item, isSelected, onToggle }: CatalogIte
   const { colors } = useColorScheme();
 
   return (
-    <TouchableWithoutFeedback onPress={onToggle}>
+    <TouchableWithoutFeedback onPress={onToggle} testID={testIds.items.catalogCard(item.id)}>
       <Card className={cn('overflow-hidden mb-3', isSelected && 'border-primary bg-primary/5')}>
         <View className="relative">
           <CatalogItemImage
