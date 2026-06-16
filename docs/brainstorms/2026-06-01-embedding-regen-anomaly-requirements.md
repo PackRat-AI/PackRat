@@ -102,3 +102,77 @@ The investigation should distinguish these contributions rather than assume the 
 Recommended next step: assign a small `/ce-plan` to investigate (1-2 hours of code reading + SQL + AI Gateway log inspection). The plan's first unit is "confirm or refute F4 via observability + code re-read"; if confirmed, subsequent units are the fix + the bloat-cleanup VACUUM consideration.
 
 If F4 is confirmed and the AI Gateway logs show 5M+ embedding calls, this is likely a non-trivial OpenAI cost recovery in addition to the Neon side — worth prioritizing.
+
+---
+
+## Refined understanding (2026-06-05 investigation, post-merge)
+
+**Hypothesis confirmed at the code level. The bug shape is different than first framed.** Reading the merged `catalogService.ts:451-495`:
+
+The UPSERT `set` clause uses `excluded.<col>` for the embedding-watched columns (name/description/categories/brand). After UPSERT runs, the returned row's values exactly equal the input's values. Therefore `inputItem[field] !== item[field]` is **structurally always false**, `itemsToUpdate` is always empty, and the regen branch on line 497 **never fires**. The diff is dead code.
+
+**So where do the embeddings actually come from?** Upstream, in `processValidItemsBatch`:
+
+```ts
+const embeddings = await generateManyEmbeddings({ ... });  // ALWAYS called for every batch row
+const itemsWithEmbeddings = mergedItems.map((item, index) => ({
+  ...item,
+  embedding: embeddings[index],
+}));
+const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);
+```
+
+Every ETL row gets a fresh OpenAI text-embedding-3 call, regardless of whether the catalog row already exists with a byte-identical embedding from unchanged source text. The UPSERT then writes `embedding = excluded.embedding` for every row.
+
+**`pg_stat_user_tables` delta Jun 1 → Jun 5 confirms the steady-state hypothesis:**
+- `catalog_items.n_tup_ins`: 1,789,703 → 1,789,703 (no change)
+- `catalog_items.n_tup_upd`: 5,556,406 → 5,556,406 (no change in 4 days)
+
+Zero updates during 4 days of live traffic. The runaway only fires during ETL ingest. 5.56M lifetime updates ÷ 1.79M rows ≈ 3.1 lifetime ETL re-runs touching every row — matches "we did a lot of data loading this month for catalog."
+
+## Real cost lines, in priority
+
+1. **OpenAI text-embedding-3 API spend** — biggest hit, real $. Every ETL row × every run.
+2. **Cloudflare AI Gateway hit count** — likely caching identical embedding requests automatically. If caching is enabled with reasonable TTL, may already absorb most of the OpenAI cost. **Verify before designing the fix.**
+3. **Postgres n_tup_upd churn** — every UPSERT conflict counts. Bytes are likely identical (text-embedding-3 is deterministic on identical input), so HOT-update suppression may avoid HNSW index churn. Needs `pg_stat_user_indexes.embedding_idx.idx_tup_read` delta after next ETL run to verify.
+4. **Network + Worker compute** — round trip + serialization on every redundant call.
+
+## Fix shape
+
+**Move the diff upstream into `processValidItemsBatch`.** Before calling `generateManyEmbeddings`:
+
+```ts
+// 1. Bulk-fetch existing rows by SKU, projecting only the fields getEmbeddingText reads
+const existingBySku = await catalogService.fetchExistingForRegen(skus);  // new method
+
+// 2. Partition: needs-fresh-embedding vs reuse-existing
+const itemsNeedingEmbedding = mergedItems.filter(item => {
+  const existing = existingBySku.get(item.sku);
+  if (!existing) return true;
+  return getEmbeddingText({ item }) !== getEmbeddingText({ item: existing });
+});
+
+// 3. Generate only for the partition
+const freshEmbeddings = itemsNeedingEmbedding.length > 0
+  ? await generateManyEmbeddings({ values: itemsNeedingEmbedding.map(getEmbeddingText), ... })
+  : [];
+
+// 4. Upsert all items; only carry embedding for those that got fresh ones
+const embeddingBySku = new Map(itemsNeedingEmbedding.map((item, i) => [item.sku, freshEmbeddings[i]]));
+const itemsToUpsert = mergedItems.map(item => ({
+  ...item,
+  embedding: embeddingBySku.get(item.sku) ?? undefined,
+}));
+```
+
+UPSERT `set` clause needs modification so `embedding` column is only written when explicitly provided (e.g., `embedding = COALESCE(excluded.embedding, catalog_items.embedding)`).
+
+**Also delete the dead diff in `upsertCatalogItems`** — confusing and never-firing.
+
+**Optional durable safeguard:** add an `embedding_source_hash` column (sha256 of `getEmbeddingText` output). Compare hashes instead of re-running `getEmbeddingText` on existing rows. Faster, and avoids fetching JSONB columns for the diff.
+
+## Open questions for the fix
+
+- **Is Cloudflare AI Gateway already deduplicating identical embedding requests?** If yes, the OpenAI $ cost is already minimal; the fix recovers Worker compute + Postgres writes only. If no, the fix recovers full OpenAI $.
+- **Should we add the `embedding_source_hash` column** for durable dedup, or rely on per-call `getEmbeddingText` comparison? Hash column needs migration + backfill; comparison is simpler but recomputes text every time.
+- **What's `processValidItemsBatch`'s typical N per batch?** If small (<100), the existence-check round-trip cost matters less; if large (~30K), batch the SKU lookup with reasonable IN-clause limits.

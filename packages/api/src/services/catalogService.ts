@@ -116,28 +116,36 @@ export class CatalogService {
     let orderBy = [desc(sql`COALESCE(pack_item_counts.count, 0)`), desc(catalogItems.id)]; // default ordering by usage
     if (sort) {
       const { field, order } = sort;
+      // All branches include `desc(catalogItems.id)` as a tiebreaker so that
+      // LIMIT/OFFSET pagination is stable. Without it, rows sharing the same
+      // sort-key value (e.g. all ETL-imported items have identical created_at)
+      // are ordered non-deterministically by the planner, causing the same item
+      // to appear on multiple pages and other items to be skipped entirely.
       if (field === 'category') {
         orderBy = [
           order === 'desc'
             ? desc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`)
             : asc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`),
+          desc(catalogItems.id),
         ];
       } else if (field === 'usage') {
         orderBy = [
           order === 'desc'
             ? desc(sql`COALESCE(pack_item_counts.count, 0)`)
             : asc(sql`COALESCE(pack_item_counts.count, 0)`),
+          desc(catalogItems.id),
         ];
       } else {
         const sortColumn = catalogItems[field];
         if (sortColumn) {
-          orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
+          orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn), desc(catalogItems.id)];
         }
       }
     }
 
     if (!limit) {
       const items = await this.db
+        .tag('catalog.getCatalogItems')
         .select({
           // List-context projection: scalar fields callers actually need for
           // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
@@ -195,6 +203,7 @@ export class CatalogService {
 
     const [itemsWithCounts, totalCountResult] = await Promise.all([
       this.db
+        .tag('catalog.getCatalogItems')
         .select({
           // List-context projection: scalar fields callers actually need for
           // browsing + filtering. Drops embedding (1536-dim, ~6KB JSON-encoded
@@ -242,7 +251,11 @@ export class CatalogService {
         .orderBy(...orderBy)
         .limit(limit)
         .offset(offset),
-      this.db.select({ totalCount: count() }).from(catalogItems).where(where),
+      this.db
+        .tag('catalog.getCatalogItemsCount')
+        .select({ totalCount: count() })
+        .from(catalogItems)
+        .where(where),
     ]);
     const totalCount = totalCountResult[0]?.totalCount ?? 0;
 
@@ -319,6 +332,7 @@ export class CatalogService {
 
     const [items, vectorTotalCountResult] = await Promise.all([
       this.db
+        .tag('catalog.vectorSearch')
         .select({
           ...columnsToSelect,
           similarity,
@@ -329,6 +343,7 @@ export class CatalogService {
         .limit(limit)
         .offset(offset),
       this.db
+        .tag('catalog.vectorSearchCount')
         .select({
           totalCount: count(),
         })
@@ -382,6 +397,7 @@ export class CatalogService {
       const similarity = sql<number>`1 - (${distance})`;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db
+        .tag('catalog.batchVectorSearch')
         .select({
           ...columnsToSelect,
           similarity,
@@ -401,6 +417,7 @@ export class CatalogService {
 
   async getCategories(limit = 10) {
     const rows = await this.db
+      .tag('catalog.getCategories')
       .select({
         category: sql<string>`jsonb_array_elements_text(${catalogItems.categories})`,
       })
@@ -444,6 +461,7 @@ export class CatalogService {
     };
 
     const upsertQuery = this.db
+      .tag('catalog.upsertItem')
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
@@ -460,6 +478,16 @@ export class CatalogService {
             // weight_unit stays in sync with weight validity
             acc[col.name] =
               sql`CASE WHEN excluded.${sql.identifier('weight')} IS NOT NULL AND excluded.${sql.identifier('weight')} > 0 THEN excluded.${sql.identifier('weight_unit')} ELSE COALESCE(${catalogItems.weightUnit}, excluded.${sql.identifier('weight_unit')}) END`;
+          } else if (col.name === 'embedding') {
+            // Preserve existing embedding when input doesn't provide one.
+            // processValidItemsBatch passes embedding: undefined (→ NULL in
+            // INSERT) for the "reuse existing" partition; COALESCE keeps the
+            // stored vector, avoiding a redundant write that would count as
+            // n_tup_upd + dirty the HNSW page even when bytes are identical.
+            // Fresh items always carry a non-null embedding so this branch
+            // doesn't affect them.
+            acc[col.name] =
+              sql`COALESCE(excluded.${sql.identifier(col.name)}, ${catalogItems.embedding})`;
           } else {
             acc[col.name] = sql`excluded.${sql.identifier(col.name)}`;
           }
@@ -479,51 +507,14 @@ export class CatalogService {
       }
     ).returning(returningFields);
 
-    // Check if any embedding-related fields have changed. Scope to the keys
-    // present in the narrowed `.returning(...)` projection above so TS can
-    // index both `inputItem[field]` and `item[field]` without complaint.
-    const embeddingFields = ['name', 'description', 'categories', 'brand'] as const;
-
-    const itemsToUpdate = upsertedItems.filter((item) => {
-      const inputItem = items.find((i) => i.sku === item.sku);
-      if (!inputItem) return false;
-
-      return embeddingFields.some(
-        (field) =>
-          inputItem[field] && JSON.stringify(inputItem[field]) !== JSON.stringify(item[field]),
-      );
-    });
-
-    if (itemsToUpdate.length > 0) {
-      // Regenerate embeddings for updated items. Use the INPUT items as the
-      // source text — they have every field getEmbeddingText reads
-      // (model, variants, techs, color, size, material, reviews, qas, faqs).
-      // The narrow `.returning(...)` projection above does not include those,
-      // so the returned rows can't feed the helper.
-      const embeddingTexts = itemsToUpdate.map((item) => {
-        const inputItem = items.find((i) => i.sku === item.sku);
-        return getEmbeddingText({ item: inputItem ?? item });
-      });
-      const embeddings = await generateManyEmbeddings({
-        openAiApiKey: this.env.OPENAI_API_KEY,
-        values: embeddingTexts,
-        cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
-        cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
-        provider: this.env.AI_PROVIDER,
-        cloudflareAiBinding: this.env.AI,
-      });
-
-      // Update items with new embeddings
-      const updatePromises = itemsToUpdate.map((item, index) =>
-        this.db
-          .update(catalogItems)
-          .set({ embedding: embeddings[index] })
-          .where(eq(catalogItems.sku, item.sku)),
-      );
-
-      await Promise.all(updatePromises);
-    }
+    // F4: an embedding-regen diff loop previously lived here. It was dead
+    // code — the UPSERT `set` clause uses `excluded.<col>` for the
+    // embedding-watched columns, so the returned row's values were always
+    // equal to the input's values, making `inputItem[field] !== item[field]`
+    // structurally always-false. The actual source-text diff now lives
+    // upstream in `processValidItemsBatch` (where it can run BEFORE
+    // generateManyEmbeddings, avoiding redundant OpenAI calls entirely).
+    // See docs/brainstorms/2026-06-01-embedding-regen-anomaly-requirements.md.
 
     return upsertedItems;
   }
@@ -535,12 +526,80 @@ export class CatalogService {
     itemIds: Pick<CatalogItem, 'id'>[];
     jobId: string;
   }): Promise<void> {
-    await this.db.insert(catalogItemEtlJobs).values(
-      itemIds.map((item) => ({
-        catalogItemId: item.id,
-        etlJobId: jobId,
-      })),
-    );
+    await this.db
+      .tag('catalog.createEtlJob')
+      .insert(catalogItemEtlJobs)
+      .values(
+        itemIds.map((item) => ({
+          catalogItemId: item.id,
+          etlJobId: jobId,
+        })),
+      );
+  }
+
+  /**
+   * Bulk-fetch existing catalog rows by SKU, projecting only the columns the
+   * ETL embedding-regen diff needs: the existing embedding (so unchanged
+   * source-text items can reuse it instead of re-calling OpenAI) plus every
+   * field `getEmbeddingText` reads.
+   *
+   * Used by `processValidItemsBatch` to skip redundant OpenAI embedding calls
+   * when the upserted row's source text hasn't changed — fixes the F4
+   * embedding-regen anomaly captured in
+   * `docs/brainstorms/2026-06-01-embedding-regen-anomaly-requirements.md`.
+   *
+   * Projection is explicit (not getTableColumns) per the U9 lint discipline.
+   */
+  async fetchExistingForRegen(
+    skus: string[],
+  ): Promise<
+    Map<
+      string,
+      Pick<
+        CatalogItem,
+        | 'id'
+        | 'sku'
+        | 'embedding'
+        | 'name'
+        | 'description'
+        | 'brand'
+        | 'model'
+        | 'categories'
+        | 'variants'
+        | 'techs'
+        | 'color'
+        | 'size'
+        | 'material'
+        | 'reviews'
+        | 'qas'
+        | 'faqs'
+      >
+    >
+  > {
+    if (skus.length === 0) return new Map();
+    const rows = await this.db
+      .tag('catalog.fetchForEmbeddingRegen')
+      .select({
+        id: catalogItems.id,
+        sku: catalogItems.sku,
+        embedding: catalogItems.embedding,
+        name: catalogItems.name,
+        description: catalogItems.description,
+        brand: catalogItems.brand,
+        model: catalogItems.model,
+        categories: catalogItems.categories,
+        variants: catalogItems.variants,
+        techs: catalogItems.techs,
+        color: catalogItems.color,
+        size: catalogItems.size,
+        material: catalogItems.material,
+        reviews: catalogItems.reviews,
+        qas: catalogItems.qas,
+        faqs: catalogItems.faqs,
+      })
+      .from(catalogItems)
+      .where(inArray(catalogItems.sku, skus));
+    return new Map(rows.map((r) => [r.sku, r]));
   }
 
   async queueEmbeddingJobs(): Promise<{ count: number }> {
@@ -548,6 +607,7 @@ export class CatalogService {
 
     // Get count of items without embeddings
     const queueTotalCountResult = await this.db
+      .tag('catalog.countForEmbeddingQueue')
       .select({ totalCount: count() })
       .from(catalogItems)
       .where(isNull(catalogItems.embedding));
@@ -561,6 +621,7 @@ export class CatalogService {
 
     // Get items without embeddings
     const itemsWithoutEmbeddings = await this.db
+      .tag('catalog.getIdsForEmbeddingQueue')
       .select({ id: catalogItems.id })
       .from(catalogItems)
       .where(isNull(catalogItems.embedding));
@@ -598,6 +659,7 @@ export class CatalogService {
     // qas, faqs, variants, techs) ARE pulled because getEmbeddingText uses
     // them — that's unavoidable for embedding regen.
     const itemsToEmbed = await this.db
+      .tag('catalog.getItemsForEmbeddingBatch')
       .select({
         id: catalogItems.id,
         name: catalogItems.name,
@@ -643,6 +705,7 @@ export class CatalogService {
         const embedding = embeddings[i];
         if (!item || embedding === undefined) continue;
         await this.db
+          .tag('catalog.updateEmbedding')
           .update(catalogItems)
           .set({ embedding, updatedAt: new Date() })
           .where(eq(catalogItems.id, item.id));

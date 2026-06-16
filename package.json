@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -21,6 +21,7 @@
     "check:coverage:update": "bun run scripts/lint/coverage-baseline-update.ts",
     "check:deps": "manypkg check",
     "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
+    "check:migration": "bun scripts/lint/nativewindui-migration.ts",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
     "check-types": "bun scripts/check-types.ts",
@@ -58,11 +59,11 @@
     "web": "bun run --cwd apps/web dev"
   },
   "overrides": {
-    "@packrat-ai/nativewindui": "2.0.3-2",
+    "@packrat-ai/nativewindui": "2.2.1",
     "@sinclair/typebox": "^0.34.15",
     "elysia": "^1.4.0",
-    "expo-sqlite": "~55.0.15",
-    "react": "19.2.6"
+    "expo-sqlite": "~56.0.4",
+    "react": "19.2.3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
@@ -160,9 +161,9 @@
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",
     "radash": "^12.1.1",
-    "react": "19.2.6",
+    "react": "19.2.3",
     "react-day-picker": "9.14.0",
-    "react-dom": "19.2.6",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.58.1",
     "react-leaflet": "^5.0.0",
     "react-resizable-panels": "^4.10.0",
@@ -180,6 +181,7 @@
     "ws": "^8.18.1",
     "zod": "^3.24.2"
   },
+  "patchedDependencies": {},
   "trustedDependencies": [
     "@sentry/cli"
   ]

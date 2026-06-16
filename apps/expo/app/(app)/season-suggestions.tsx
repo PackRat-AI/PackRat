@@ -1,62 +1,119 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { assertDefined } from '@packrat/guards';
-import { Button, LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
-import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
-import {
-  type PackSuggestion,
-  useSeasonSuggestions,
-} from 'expo-app/features/packs/hooks/useSeasonSuggestions';
-import { LocationPicker } from 'expo-app/features/weather/components';
-import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
+import { LocationSourceSheet } from 'expo-app/features/packs/components/LocationSourceSheet';
+import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import * as Location from 'expo-location';
+import { Stack, useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Platform, ScrollView, View } from 'react-native';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
-  const seasonSuggestionsMutation = useSeasonSuggestions();
-  const createPackWithItems = useCreatePackWithItems();
-  const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
-  const { colors } = useColorScheme();
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const locationSourceSheetRef = useRef<BottomSheetModal>(null);
+  const locationSearchSheetRef = useRef<BottomSheetModal>(null);
+  const { run: runSourceAction, handleDismiss: handleSourceDismiss } =
+    useBottomSheetAction(locationSourceSheetRef);
+  const { run: runSearchAction, handleDismiss: handleSearchDismiss } =
+    useBottomSheetAction(locationSearchSheetRef);
 
-  const handleGenerateSuggestions = (location: WeatherLocation) => {
-    setIsLocationPickerOpen(false);
-
-    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  const navigateWithLocation = (locationName: string) => {
+    const currentDate = new Date().toISOString().split('T')[0];
     assertDefined(currentDate);
-
-    seasonSuggestionsMutation.mutate({
-      location: location.name,
-      date: currentDate,
+    router.push({
+      pathname: '/season-suggestions-results',
+      params: { location: locationName, date: currentDate },
     });
   };
 
-  const handleCreatePack = ({
-    suggestion,
-    index,
-  }: {
-    suggestion: PackSuggestion;
-    index: number;
-  }) => {
-    setCreatingPackIndex(index);
+  const fetchLocationAndNavigate = async () => {
+    setIsGettingLocation(true);
+    try {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
 
-    // Add a short delay to show the loading state
-    setTimeout(() => {
-      const packId = createPackWithItems(suggestion);
+      const [geocode] = await Location.reverseGeocodeAsync({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
 
-      setCreatingPackIndex(null);
+      const locationName =
+        geocode?.city ??
+        geocode?.region ??
+        geocode?.country ??
+        `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`;
 
-      // Navigate to the created pack
-      router.push(`/pack/${packId}`);
-    }, 500);
+      navigateWithLocation(locationName);
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { feature: 'seasons', action: 'fetchLocationAndNavigate' },
+      });
+      Alert.alert(t('weather.locationError'), t('weather.locationErrorMessage'));
+    } finally {
+      setIsGettingLocation(false);
+    }
+  };
+
+  const requestLocationAndFetch = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      await fetchLocationAndNavigate();
+    } else {
+      Alert.alert(t('weather.permissionDenied'), t('weather.permissionDeniedMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('weather.openSettings'),
+          onPress: () => {
+            if (Platform.OS === 'ios') {
+              Linking.openURL('app-settings:');
+            } else {
+              Linking.openSettings();
+            }
+          },
+        },
+      ]);
+    }
+  };
+
+  const handleGeneratePress = () => {
+    locationSourceSheetRef.current?.present();
+  };
+
+  const handleSourceSearchPress = () => {
+    runSourceAction(() => {
+      locationSearchSheetRef.current?.present();
+    });
+  };
+
+  const handleSourceCurrentLocationPress = () => {
+    runSourceAction(() => {
+      requestLocationAndFetch();
+    });
+  };
+
+  const handleSearchBack = () => {
+    runSearchAction(() => {
+      locationSourceSheetRef.current?.present();
+    });
+  };
+
+  const handleLocationSelected = (location: string) => {
+    runSearchAction(() => {
+      navigateWithLocation(location);
+    });
   };
 
   return (
     <>
-      <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('seasons.seasonSuggestions') }} />
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" className="flex-1 px-4">
         <View className="py-6">
@@ -66,15 +123,11 @@ export default function SeasonSuggestionsScreen() {
             </Text>
           </View>
 
-          <Button
-            onPress={() => setIsLocationPickerOpen(true)}
-            disabled={seasonSuggestionsMutation.isPending}
-            className="w-full"
-          >
-            {seasonSuggestionsMutation.isPending ? (
+          <Button onPress={handleGeneratePress} disabled={isGettingLocation} className="w-full">
+            {isGettingLocation ? (
               <View className="flex-row items-center">
                 <ActivityIndicator size="small" color="white" />
-                <Text className="ml-2 text-white">{t('seasons.generatingSuggestions')}</Text>
+                <Text className="ml-2 text-white">{t('weather.gettingLocation')}</Text>
               </View>
             ) : (
               <View className="flex-row items-center">
@@ -89,105 +142,21 @@ export default function SeasonSuggestionsScreen() {
               </View>
             )}
           </Button>
-
-          {seasonSuggestionsMutation.error && (
-            <View className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
-              <Text variant="callout" className="font-medium text-red-800">
-                {t('errors.error')}
-              </Text>
-              <Text variant="body" className="text-red-700">
-                {seasonSuggestionsMutation.error.message}
-              </Text>
-            </View>
-          )}
-
-          {seasonSuggestionsMutation.data && (
-            <View className="mt-6 gap-4">
-              <View className="flex-row items-center gap-2 mb-4">
-                <View className="flex-row items-center gap-1">
-                  <Icon
-                    namingScheme="sfSymbol"
-                    name="leaf"
-                    materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
-                    size={16}
-                    color={colors.grey}
-                  />
-                  <Text className="text-base text-muted-foreground">
-                    {seasonSuggestionsMutation.data.season}
-                  </Text>
-                </View>
-                <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                <View className="flex-row items-center gap-1">
-                  <Icon
-                    namingScheme="sfSymbol"
-                    name="mappin"
-                    materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
-                    size={16}
-                    color={colors.grey}
-                  />
-                  <Text className="text-base text-muted-foreground">
-                    {seasonSuggestionsMutation.data.location}
-                  </Text>
-                </View>
-              </View>
-
-              {seasonSuggestionsMutation.data.suggestions.map((suggestion, index) => (
-                <View key={suggestion.name} className="rounded-xl border border-border bg-card p-4">
-                  <View className="mb-3">
-                    <Text variant="heading" className="mb-1">
-                      {suggestion.name}
-                    </Text>
-                    <Text variant="caption1" className="text-primary font-medium">
-                      {suggestion.category}
-                    </Text>
-                    <Text variant="body" className="mt-2 text-muted-foreground">
-                      {suggestion.description}
-                    </Text>
-                  </View>
-
-                  <View className="mb-4">
-                    <Text variant="subhead" className="mb-2 font-medium">
-                      {t('seasons.recommendedItems', { count: suggestion.items.length })}
-                    </Text>
-                    {suggestion.items.map((item) => (
-                      <View key={item.name} className="flex-row items-start py-1">
-                        <Text variant="body" className="flex-1">
-                          • {item.name} {item.quantity > 1 && `(${item.quantity})`}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  <Button
-                    variant="secondary"
-                    onPress={() => handleCreatePack({ suggestion, index })}
-                    disabled={creatingPackIndex === index}
-                    className="w-full"
-                  >
-                    {creatingPackIndex === index ? (
-                      <View className="flex-row items-center">
-                        <ActivityIndicator size="small" />
-                        <Text className="ml-2">{t('seasons.creatingPack')}</Text>
-                      </View>
-                    ) : (
-                      <View className="flex-row items-center">
-                        <Text className="ml-2">{t('seasons.createThisPack')}</Text>
-                      </View>
-                    )}
-                  </Button>
-                </View>
-              ))}
-            </View>
-          )}
         </View>
       </ScrollView>
 
-      <LocationPicker
-        open={isLocationPickerOpen}
-        onClose={() => setIsLocationPickerOpen(false)}
-        title={t('location.selectLocation')}
-        onSelect={handleGenerateSuggestions}
-        selectText={t('auth.next')}
+      <LocationSourceSheet
+        ref={locationSourceSheetRef}
+        onSearchPress={handleSourceSearchPress}
+        onCurrentLocationPress={handleSourceCurrentLocationPress}
+        onDismiss={handleSourceDismiss}
+      />
+
+      <LocationSearchSheet
+        ref={locationSearchSheetRef}
+        onBack={handleSearchBack}
+        onLocationSelected={handleLocationSelected}
+        onDismiss={handleSearchDismiss}
       />
     </>
   );

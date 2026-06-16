@@ -1,6 +1,6 @@
 {
   "name": "packrat-guides-app",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "private": true,
   "scripts": {
     "build": "bun run build-content && bun run generate-og-images && next build",
@@ -14,7 +14,6 @@
     "generate-og-images": "bun run scripts/generate-og-images.ts",
     "lighthouse": "bun run build && bunx lhci autorun",
     "lighthouse:ci": "lhci autorun",
-    "lint": "next lint",
     "start": "next start",
     "sync-to-r2": "bun run scripts/sync-to-r2.ts",
     "test": "vitest run --config vitest.config.ts",

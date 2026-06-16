@@ -1,6 +1,6 @@
 import '../polyfills';
 
-import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as NavThemeProvider } from 'expo-router/react-navigation';
 import 'expo-app/lib/devClient';
 import Constants from 'expo-constants';
 import { Stack } from 'expo-router';
@@ -14,6 +14,11 @@ import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/use
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
 import { useEffect, useRef } from 'react';
+import { LogBox } from 'react-native';
+
+if (__DEV__ && clientEnvs.EXPO_PUBLIC_DISABLE_LOGBOX === 'true') {
+  LogBox.ignoreAllLogs(true);
+}
 
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,

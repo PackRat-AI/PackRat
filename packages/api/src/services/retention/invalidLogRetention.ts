@@ -70,12 +70,14 @@ export async function sweepInvalidItemLogs({
     iterations++;
 
     const selectExpired = db
+      .tag('retention.selectExpiredLogs')
       .select({ id: invalidItemLogs.id })
       .from(invalidItemLogs)
       .where(lt(invalidItemLogs.createdAt, cutoff))
       .limit(batchSize);
 
     const removed = await db
+      .tag('retention.deleteInvalidLogs')
       .delete(invalidItemLogs)
       .where(inArray(invalidItemLogs.id, selectExpired))
       .returning();

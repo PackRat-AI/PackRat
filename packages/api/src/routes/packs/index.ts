@@ -48,6 +48,33 @@ import {
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
+type PackItemEmbeddingParams = {
+  value: string;
+  env: ReturnType<typeof getEnv>;
+};
+
+async function generatePackItemEmbedding({
+  value,
+  env,
+}: PackItemEmbeddingParams): Promise<number[] | null> {
+  try {
+    return await generateEmbedding({
+      openAiApiKey: env.OPENAI_API_KEY,
+      value,
+      provider: env.AI_PROVIDER,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: env.CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: env.AI,
+    });
+  } catch (error) {
+    console.warn('pack_items.embedding.fallback', {
+      error: error instanceof Error ? error.message : 'Unknown embedding error',
+    });
+    return null;
+  }
+}
+
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
   .use(adminAuthPlugin)
@@ -90,7 +117,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         updatedAt: true,
       } as const);
 
-      const result = await db.query.packs.findMany({
+      const result = await db.tag('packs.list').query.packs.findMany({
         where,
         with: {
           items: includePublic
@@ -122,6 +149,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
       const [newPack] = await db
+        .tag('packs.create')
         .insert(packs)
         .values({
           id: data.id,
@@ -155,7 +183,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/weight-history',
     async ({ user }) => {
       const db = createDb();
-      const histories = await db.query.packWeightHistory.findMany({
+      const histories = await db.tag('packs.weightHistory').query.packWeightHistory.findMany({
         where: eq(packWeightHistory.userId, user.userId),
       });
 
@@ -263,7 +291,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       // closes the DB→Worker egress + compute leak on the detail endpoint.
       // Same pattern as the list endpoint above — the audit missed this
       // callsite; folded in here for parity.
-      const pack = await db.query.packs.findFirst({
+      const pack = await db.tag('packs.getById').query.packs.findFirst({
         where: eq(packs.id, params.packId),
         with: {
           items: {
@@ -317,7 +345,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         // `name` is required — `byCategory[].items[]` formats each item as
         // `<name> (<weight><unit> × <quantity>)`; without it, every entry
         // renders as `undefined (1200g × 1)`.
-        const pack = await db.query.packs.findFirst({
+        const pack = await db.tag('packs.getById').query.packs.findFirst({
           where: eq(packs.id, params.packId),
           with: {
             items: {
@@ -385,14 +413,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         updateData.updatedAt = new Date();
 
         await db
+          .tag('packs.update')
           .update(packs)
           .set(updateData)
           .where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
 
-        const updatedPack: PackWithItems | undefined = await db.query.packs.findFirst({
-          where: and(eq(packs.id, params.packId), eq(packs.userId, user.userId)),
-          with: { items: true },
-        });
+        const updatedPack: PackWithItems | undefined = await db
+          .tag('packs.getById')
+          .query.packs.findFirst({
+            where: and(eq(packs.id, params.packId), eq(packs.userId, user.userId)),
+            with: { items: true },
+          });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
         return computePackWeights({ pack: updatedPack });
@@ -427,13 +458,16 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     async ({ params, user }) => {
       const db = createDb();
 
-      const pack = await db.query.packs.findFirst({
+      const pack = await db.tag('packs.getById').query.packs.findFirst({
         where: and(eq(packs.id, params.packId), eq(packs.userId, user.userId)),
       });
 
       if (!pack) return status(404, { error: 'Pack not found' });
 
-      await db.delete(packs).where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
+      await db
+        .tag('packs.delete')
+        .delete(packs)
+        .where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
       return { success: true };
     },
     {
@@ -480,6 +514,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       }
 
       const similarItems = await db
+        .tag('packs.getSimilarItems')
         .select({
           id: catalogItems.id,
           name: catalogItems.name,
@@ -516,6 +551,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       try {
         const data = body;
         const packWeightHistoryEntry = await db
+          .tag('packs.insertWeightHistory')
           .insert(packWeightHistory)
           .values({
             id: data.id,
@@ -671,10 +707,10 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
                 reason: z.string(),
                 consumable: z.boolean(),
                 worn: z.boolean(),
-                priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
+                priority: z.enum(['must-have', 'nice-to-have', 'optional']),
               }),
             ),
-            summary: z.string().optional(),
+            summary: z.string(),
           }),
           temperature: 0.3,
         });
@@ -703,7 +739,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     async ({ params, user }) => {
       const db = createDb();
 
-      const pack = await db.query.packs.findFirst({
+      const pack = await db.tag('packs.getById').query.packs.findFirst({
         where: eq(packs.id, params.packId),
         columns: { id: true, userId: true, isPublic: true },
       });
@@ -724,7 +760,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       // `...item` below at .map), so any column missing from these whitelists
       // leaks to mobile as undefined — enumerate every packItems column
       // explicitly except embedding, and a list-friendly catalogItem subset.
-      const items = await db.query.packItems.findMany({
+      const items = await db.tag('packs.listItems').query.packItems.findMany({
         where: and(...conditions),
         columns: {
           id: true,
@@ -789,28 +825,14 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const packId = params.packId;
       const data = body;
-      const {
-        OPENAI_API_KEY,
-        AI_PROVIDER,
-        CLOUDFLARE_ACCOUNT_ID,
-        CLOUDFLARE_AI_GATEWAY_ID,
-        CLOUDFLARE_API_TOKEN,
-        AI,
-      } = getEnv();
+      const env = getEnv();
       const itemId = data.id;
 
       const embeddingText = getEmbeddingText({ item: data });
-      const embedding = await generateEmbedding({
-        openAiApiKey: OPENAI_API_KEY,
-        value: embeddingText,
-        provider: AI_PROVIDER,
-        cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
-        cloudflareAiBinding: AI,
-      });
+      const embedding = await generatePackItemEmbedding({ value: embeddingText, env });
 
       const [newItem] = await db
+        .tag('packs.addItem')
         .insert(packItems)
         .values({
           id: itemId,
@@ -831,7 +853,11 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         } as NewPackItem) // safe-cast: object literal matches NewPackItem shape; cast required because embedding field type is narrower in the inferred type
         .returning(); // lint:allow-unprojected-fat-table reason: POST returns full newItem to client (route spreads ...newItem at 201); defer narrowing to Tier-3 #13 (response-schema split)
 
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+      await db
+        .tag('packs.update')
+        .update(packs)
+        .set({ updatedAt: new Date() })
+        .where(eq(packs.id, packId));
 
       if (!newItem) return status(400, { error: 'Failed to create item' });
 
@@ -859,7 +885,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     '/items/:itemId',
     async ({ params, user }) => {
       const db = createDb();
-      const item = await db.query.packItems.findFirst({
+      const item = await db.tag('packs.getItem').query.packItems.findFirst({
         // lint:allow-unprojected-fat-table reason: detail endpoint returns full item to client via PackItemSchema; defer narrowing to Tier-3 #13 (response-schema split)
         where: eq(packItems.id, params.itemId),
         with: { pack: true },
@@ -892,16 +918,9 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
       const data = body;
-      const {
-        OPENAI_API_KEY,
-        AI_PROVIDER,
-        CLOUDFLARE_ACCOUNT_ID,
-        CLOUDFLARE_AI_GATEWAY_ID,
-        CLOUDFLARE_API_TOKEN,
-        AI,
-      } = getEnv();
+      const env = getEnv();
 
-      const existingItem = await db.query.packItems.findFirst({
+      const existingItem = await db.tag('packs.getItem').query.packItems.findFirst({
         // lint:allow-unprojected-fat-table reason: PATCH path reads existingItem for getEmbeddingText diff (needs name/description/etc.); defer to pivot migration where embedding regen source can be sourced explicitly
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
@@ -925,15 +944,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if ('deleted' in data) updateData.deleted = data.deleted;
 
       if (newEmbeddingText !== oldEmbeddingText) {
-        updateData.embedding = await generateEmbedding({
-          openAiApiKey: OPENAI_API_KEY,
-          value: newEmbeddingText,
-          provider: AI_PROVIDER,
-          cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-          cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
-          cloudflareAiBinding: AI,
-        });
+        updateData.embedding = await generatePackItemEmbedding({ value: newEmbeddingText, env });
       }
 
       updateData.updatedAt = new Date();
@@ -941,7 +952,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       // Delete old image from R2 if changing image
       if ('image' in data) {
         try {
-          const item = await db.query.packItems.findFirst({
+          const item = await db.tag('packs.getItem').query.packItems.findFirst({
             // lint:allow-unprojected-fat-table reason: image-cleanup helper reads only .image; could narrow to columns: { image: true } in Tier-2 cleanup pass
             where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
           });
@@ -956,6 +967,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       }
 
       const [updatedItem] = await db
+        .tag('packs.updateItem')
         .update(packItems)
         .set(updateData)
         .where(and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)))
@@ -963,7 +975,11 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!updatedItem) throw new NotFoundError('Pack item not found');
 
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
+      await db
+        .tag('packs.update')
+        .update(packs)
+        .set({ updatedAt: new Date() })
+        .where(eq(packs.id, updatedItem.packId));
 
       updatedItem.embedding = null;
       return PackItemSchema.parse(updatedItem);
@@ -988,7 +1004,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
 
-      const item = await db.query.packItems.findFirst({
+      const item = await db.tag('packs.getItem').query.packItems.findFirst({
         // lint:allow-unprojected-fat-table reason: DELETE existence check + reads .packId; could narrow but defer to pivot-migration cleanup
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
@@ -996,8 +1012,12 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if (!item) return status(404, { error: 'Pack item not found' });
 
       const packId = item.packId;
-      await db.delete(packItems).where(eq(packItems.id, itemId));
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+      await db.tag('packs.deleteItem').delete(packItems).where(eq(packItems.id, itemId));
+      await db
+        .tag('packs.update')
+        .update(packs)
+        .set({ updatedAt: new Date() })
+        .where(eq(packs.id, packId));
 
       return { success: true, itemId };
     },
@@ -1023,7 +1043,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
-      const sourceItem = await db.query.packItems.findFirst({
+      const sourceItem = await db.tag('packs.getItem').query.packItems.findFirst({
         // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer to pivot migration (separate pack_item_embeddings table)
         where: eq(packItems.id, itemId),
         with: { pack: true },
@@ -1045,6 +1065,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
 
       const similarCatalogItems = await db
+        .tag('packs.getSimilarItems')
         .select({ ...catalogColumns, similarity: catalogSimilarity })
         .from(catalogItems)
         .where(

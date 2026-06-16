@@ -33,17 +33,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # The web app is served here; the local wrangler dev API is served on :8787.
-  WEB_URL: http://localhost:8081
-  E2E_API_URL: http://localhost:8787
-  # Migrations + seed run in Node and connect to the raw Postgres port directly
-  # (node-postgres driver). The wrangler dev worker instead talks to the same
-  # database through the Neon HTTP proxy at db.localtest.me:4444 (see .dev.vars
-  # below) so it exercises the exact prod code path with no node-postgres TCP
-  # sockets in workerd. Both URLs point at the same underlying database.
-  E2E_DB_DIRECT_URL: postgres://test_user:test_password@127.0.0.1:5433/packrat_test
-
 jobs:
   e2e-gate:
     name: Check E2E prerequisites
@@ -56,17 +45,14 @@ jobs:
         name: Verify E2E secrets are available
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
         run: |
-          # The stack is fully local (Dockerized Postgres + wrangler dev), so the
-          # only secrets needed are the seeded test user's credentials and the
-          # Better Auth signing secret. No cloud DB dependency.
-          if [ -n "$E2E_TEST_EMAIL" ] && [ -n "$E2E_TEST_PASSWORD" ] && [ -n "$E2E_BETTER_AUTH_SECRET" ]; then
+          # The local stack supplies its own DB; only the seeded test-user
+          # credentials are required from secrets.
+          if [ -n "$E2E_TEST_EMAIL" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::E2E secrets not configured — skipping Web E2E tests (need E2E_TEST_EMAIL + E2E_TEST_PASSWORD + E2E_BETTER_AUTH_SECRET)"
+            echo "::notice::E2E secrets not configured — skipping Web E2E tests"
           fi
 
   web-e2e:
@@ -77,10 +63,17 @@ jobs:
     timeout-minutes: 30
 
     env:
-      # The E2E user is upserted into the local DB by the seed step below,
-      # so both email and password are driven entirely by repo secrets.
+      # The seeded e2e user. The local stack auths against the local DB, so there
+      # is no dependency on the deployed API being reachable / CORS-open.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      # The whole stack runs on localhost: a local Neon HTTP proxy in front of a
+      # Docker Postgres, a `wrangler dev` API worker, and the served web SPA.
+      # db.localtest.me resolves to 127.0.0.1 via public wildcard DNS; the API's
+      # maybeConfigureLocalNeon() routes the neon driver to the proxy on :4444.
+      NEON_DATABASE_URL: postgres://test_user:test_password@db.localtest.me/packrat_test
+      NEON_DATABASE_URL_READONLY: postgres://test_user:test_password@db.localtest.me/packrat_test
+      API_PORT: "8787"
 
     steps:
       - name: Checkout repository
@@ -105,175 +98,129 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
 
-      - name: Add node_modules bin to PATH
-        run: echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
-
       - name: Install Playwright browsers
         run: bunx playwright install chromium --with-deps
 
-      # ── Local API stack ──────────────────────────────────────────────────────
-      # Postgres (pgvector) + the Neon HTTP proxy run as Docker containers from
-      # packages/api/docker-compose.test.yml. The proxy lets wrangler dev's
-      # @neondatabase/serverless HTTP driver hit local Postgres on :4444 — the
-      # same driver path as prod, which is far more reliable under the web flow's
-      # query load than node-postgres-in-workerd.
-
-      - name: Map db.localtest.me to loopback
-        # localtest.me already resolves to 127.0.0.1 publicly; pinning it in
-        # /etc/hosts removes the external-DNS dependency from CI.
-        run: echo "127.0.0.1 db.localtest.me" | sudo tee -a /etc/hosts
-
-      - name: Start Postgres + Neon HTTP proxy
+      # ── Local DB stack: Postgres + Neon HTTP/WS proxy on :4444 ──────────────
+      - name: Start local Neon proxy + Postgres
+        working-directory: packages/api
+        env:
+          POSTGRES_TEST_HOST_PORT: "5433"
+          NEON_PROXY_HOST_PORT: "4444"
         run: |
-          docker compose -f packages/api/docker-compose.test.yml up -d --build \
-            postgres-test neon-proxy
+          docker compose -p packrat-e2e -f docker-compose.test.yml up -d --wait
+          echo "Stack up. Containers:"
+          docker compose -p packrat-e2e -f docker-compose.test.yml ps
 
-          echo "Waiting for Postgres to be ready..."
-          for i in $(seq 1 30); do
-            if docker compose -f packages/api/docker-compose.test.yml exec -T \
-                 postgres-test pg_isready -U test_user -d packrat_test > /dev/null 2>&1; then
-              echo "Postgres ready."
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "::error::Postgres did not become ready in time"
-              docker compose -f packages/api/docker-compose.test.yml logs postgres-test
-              exit 1
-            fi
-            sleep 2
-          done
-
-          echo "Waiting for Neon HTTP proxy on :4444..."
-          for i in $(seq 1 30); do
-            # The proxy answers /sql to POSTs; any HTTP response means it is up.
-            if curl -s -o /dev/null "http://db.localtest.me:4444/sql"; then
-              echo "Neon proxy ready."
-              break
-            fi
-            if [ "$i" -eq 30 ]; then
-              echo "::error::Neon HTTP proxy did not become ready in time"
-              docker compose -f packages/api/docker-compose.test.yml logs neon-proxy
-              exit 1
-            fi
-            sleep 2
-          done
-
-      - name: Write wrangler .dev.vars
+      # Node-side scripts (migrate/seed) can't use the worker-only
+      # db.localtest.me neon-proxy routing, so they hit raw Postgres on :5433.
+      # The worker (.dev.vars below) uses db.localtest.me → proxy :4444.
+      - name: Run migrations + seed e2e user (local DB)
         env:
-          E2E_BETTER_AUTH_SECRET: ${{ secrets.E2E_BETTER_AUTH_SECRET }}
-          # Optional: real weather keys improve trip-detail test fidelity.
-          # Fall back to schema-valid stubs — weather errors are non-fatal.
-          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
-          OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
-        run: |
-          # Static (non-secret) vars first. ENVIRONMENT=development makes Better
-          # Auth trust http://localhost:* origins (the web app is served from a
-          # different origin than the API), and NEON_DATABASE_URL points at the
-          # Neon HTTP proxy so the worker uses the prod driver path. Schema-valid
-          # stubs cover APIs not exercised by the web flow so env-validation
-          # does not throw.
-          cat > packages/api/.dev.vars << 'DEVVARS'
-          ENVIRONMENT=development
-          NEON_DATABASE_URL=postgres://test_user:test_password@db.localtest.me:4444/packrat_test
-          NEON_DATABASE_URL_READONLY=postgres://test_user:test_password@db.localtest.me:4444/packrat_test
-          BETTER_AUTH_URL=http://localhost:8787
-          EXPO_PUBLIC_API_URL=http://localhost:8787
-          ADMIN_USERNAME=admin
-          ADMIN_PASSWORD=gobuffs
-          PACKRAT_API_KEY=secret
-          EMAIL_PROVIDER=resend
-          RESEND_API_KEY=re_e2e_stub_not_used_in_web_flows
-          EMAIL_FROM=no-reply@e2e.packrattest.local
-          AI_PROVIDER=openai
-          OPENAI_API_KEY=sk-e2e-stub-not-used-in-web-flow
-          GOOGLE_GENERATIVE_AI_API_KEY=e2e-stub-not-used
-          PERPLEXITY_API_KEY=pplx-e2e-stub-not-used-in-web-flow
-          GOOGLE_CLIENT_ID=e2e-google-client-id
-          GOOGLE_CLIENT_SECRET=e2e-google-client-secret
-          APPLE_CLIENT_ID=com.packratai.e2e
-          APPLE_PRIVATE_KEY=e2e-apple-private-key-stub
-          APPLE_KEY_ID=E2EAPLKEY1
-          APPLE_TEAM_ID=E2ETEAMID1
-          CLOUDFLARE_ACCOUNT_ID=e2eaccountid
-          CLOUDFLARE_AI_GATEWAY_ID=ai-chat-gateway
-          R2_ACCESS_KEY_ID=e2er2accesskey
-          R2_SECRET_ACCESS_KEY=e2er2secretkey1234567890abcdefghij
-          PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-e2e
-          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides-e2e
-          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-e2e
-          R2_PUBLIC_URL=https://pub-e2estub.r2.dev
-          PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
-          PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
-          DEVVARS
-
-          # Inject secrets separately (printf avoids shell expansion on special chars).
-          printf 'BETTER_AUTH_SECRET=%s\n' "${E2E_BETTER_AUTH_SECRET}" \
-            >> packages/api/.dev.vars
-          printf 'WEATHER_API_KEY=%s\n' \
-            "${WEATHER_API_KEY:-e2e-fake-weather-key}" \
-            >> packages/api/.dev.vars
-          printf 'OPENWEATHER_KEY=%s\n' \
-            "${OPENWEATHER_KEY:-e2e-fake-weather-key}" \
-            >> packages/api/.dev.vars
-
-      - name: Run DB migrations
-        env:
-          # Direct raw-Postgres connection: migrate.ts uses the node-postgres
-          # driver for non-Neon hosts. (db.localtest.me:4444 is the HTTP proxy,
-          # not the pg wire protocol, so migrations must use the raw port.)
-          NEON_DATABASE_URL: ${{ env.E2E_DB_DIRECT_URL }}
-        run: bun run --filter @packrat/api db:migrate
-
-      - name: Seed E2E test user
-        env:
-          NEON_DATABASE_URL: ${{ env.E2E_DB_DIRECT_URL }}
+          NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
           E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
-        run: bun run --filter @packrat/api db:seed:e2e-user
+        run: |
+          bun run --filter @packrat/api db:migrate
+          bun run --filter @packrat/api db:seed:e2e-user
 
-      - name: Start wrangler dev (background)
+      # ── Write the worker's .dev.vars: real URLs + dummy-but-valid stand-ins ──
+      # env-validation.ts requires ~25 keys to boot; sign-in only exercises the
+      # DB + Better Auth, so AI/email/maps/storage keys are placeholder values
+      # that satisfy the schema's format constraints (sk-/pplx- prefixes, urls,
+      # emails) without calling those services.
+      - name: Write API .dev.vars for E2E
         working-directory: packages/api
         run: |
-          WRANGLER_LOG=warn \
-          WRANGLER_SEND_METRICS=false \
-            wrangler dev -e dev --ip 0.0.0.0 --local --enable-containers=false \
-              > /tmp/wrangler-dev.log 2>&1 &
-          echo "WRANGLER_PID=$!" >> "$GITHUB_ENV"
+          cat > .dev.vars <<EOF
+          ENVIRONMENT=development
+          NEON_DATABASE_URL=${NEON_DATABASE_URL}
+          NEON_DATABASE_URL_READONLY=${NEON_DATABASE_URL_READONLY}
+          BETTER_AUTH_URL=http://localhost:${API_PORT}
+          BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:8081
+          BETTER_AUTH_SECRET=${{ secrets.E2E_BETTER_AUTH_SECRET || 'e2e-better-auth-secret-32chars-minimum-xx' }}
+          JWT_SECRET=${{ secrets.E2E_JWT_SECRET || 'e2e-jwt-secret-placeholder' }}
+          GOOGLE_CLIENT_ID=e2e-google-client-id
+          GOOGLE_CLIENT_SECRET=e2e-google-client-secret
+          APPLE_CLIENT_ID=world.packrat.app
+          APPLE_PRIVATE_KEY=e2e-apple-private-key
+          APPLE_KEY_ID=e2e-apple-key-id
+          APPLE_TEAM_ID=e2e-apple-team-id
+          ADMIN_USERNAME=admin
+          ADMIN_PASSWORD=e2e-admin
+          PACKRAT_API_KEY=e2e-api-key
+          EMAIL_PROVIDER=resend
+          RESEND_API_KEY=e2e-resend-key
+          EMAIL_FROM=no-reply@packrattest.local
+          AI_PROVIDER=openai
+          OPENAI_API_KEY=sk-e2e-stub-placeholder
+          GOOGLE_GENERATIVE_AI_API_KEY=e2e-google-ai
+          PERPLEXITY_API_KEY=pplx-e2e-placeholder
+          OPENWEATHER_KEY=e2e-openweather
+          WEATHER_API_KEY=e2e-weather
+          CLOUDFLARE_ACCOUNT_ID=e2e-account
+          R2_ACCESS_KEY_ID=e2e-r2-access
+          R2_SECRET_ACCESS_KEY=e2e-r2-secret
+          PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-preview
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-bucket
+          R2_PUBLIC_URL=https://example.r2.dev
+          PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
+          PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
+          EXPO_PUBLIC_API_URL=http://localhost:${API_PORT}
+          EOF
+          echo "Wrote .dev.vars ($(wc -l < .dev.vars) keys)"
 
-          echo "Waiting for API to be ready on ${E2E_API_URL}/health ..."
-          RETRIES=30
-          until curl -sf "${E2E_API_URL}/health" > /dev/null; do
-            RETRIES=$((RETRIES - 1))
-            if [ "$RETRIES" -le 0 ]; then
-              echo "::error::wrangler dev did not become ready in time"
-              cat /tmp/wrangler-dev.log
-              exit 1
+      # The Workers AI binding has no local emulator, so `wrangler dev` opens a
+      # remote-proxy session (needs CF login) at boot — which fails in CI. Sign-in
+      # doesn't use AI, and env-validation's `AI: z.unknown()` tolerates it being
+      # absent, so strip the AI binding for the E2E run → fully-local, no auth.
+      - name: Generate E2E wrangler config (no remote AI binding)
+        working-directory: packages/api
+        run: |
+          bun -e "
+            const c = require('./wrangler.jsonc');
+            delete c.ai;
+            if (c.env && c.env.dev) delete c.env.dev.ai;
+            require('node:fs').writeFileSync('./wrangler.e2e.json', JSON.stringify(c, null, 2));
+          "
+          echo "Generated wrangler.e2e.json (AI binding removed)"
+
+      # ── Start the API worker (wrangler dev) and wait for health ─────────────
+      - name: Start API (wrangler dev) on localhost
+        working-directory: packages/api
+        run: |
+          # Background the worker; capture logs so failures are debuggable.
+          bunx wrangler dev --config wrangler.e2e.json -e dev \
+            --port "${API_PORT}" --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
+          echo "Waiting for API on http://localhost:${API_PORT} ..."
+          for i in $(seq 1 60); do
+            if curl -sf "http://localhost:${API_PORT}/api/health" >/dev/null 2>&1 \
+               || curl -sf "http://localhost:${API_PORT}/" >/dev/null 2>&1; then
+              echo "API ready"; exit 0
             fi
             sleep 2
           done
-          echo "API ready."
+          echo "::error::API did not become ready — wrangler log:"; cat /tmp/wrangler.log; exit 1
 
-      - name: Build Expo web app
+      - name: Build Expo web app (against local API)
         working-directory: apps/expo
         env:
-          # Bake the local wrangler dev URL into the bundle so the browser app
-          # calls the API stood up above (not a remote deployment).
-          EXPO_PUBLIC_API_URL: ${{ env.E2E_API_URL }}
+          EXPO_PUBLIC_API_URL: http://localhost:8787
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
-          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL }}
+          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://example.r2.dev' }}
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
         run: bunx expo export -p web --output-dir dist
 
       - name: Serve web app (SPA mode, port 8081)
         working-directory: apps/expo
-        # -s routes all 404s to index.html for client-side routing
         run: npx serve -s dist -l 8081 &
 
       - name: Wait for web server
         run: |
           for i in $(seq 1 30); do
-            curl -sf "${WEB_URL}" > /dev/null && echo "Server ready" && break
+            curl -sf http://localhost:8081 && echo "Server ready" && break
             echo "Waiting... ($i/30)"
             sleep 2
           done
@@ -281,10 +228,14 @@ jobs:
       - name: Run Playwright E2E tests
         working-directory: apps/expo
         env:
-          BASE_URL: ${{ env.WEB_URL }}
-          API_URL: ${{ env.E2E_API_URL }}
+          BASE_URL: http://localhost:8081
+          API_URL: http://localhost:8787
           CI: "true"
         run: bun test:web
+
+      - name: Dump API log on failure
+        if: failure()
+        run: tail -200 /tmp/wrangler.log || true
 
       - name: Upload Playwright report on failure
         if: failure()
@@ -301,24 +252,3 @@ jobs:
           name: playwright-traces
           path: apps/expo/test-results/
           retention-days: 7
-
-      - name: Upload wrangler dev log on failure
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: web-wrangler-dev-log
-          path: /tmp/wrangler-dev.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Dump container logs on failure
-        if: failure()
-        run: docker compose -f packages/api/docker-compose.test.yml logs --no-color || true
-
-      - name: Stop wrangler dev
-        if: always()
-        run: kill "${WRANGLER_PID:-}" 2>/dev/null || true
-
-      - name: Tear down Docker stack
-        if: always()
-        run: docker compose -f packages/api/docker-compose.test.yml down -v || true

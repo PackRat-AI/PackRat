@@ -3,9 +3,9 @@ import {
   Alert,
   type AlertMethods,
   Button,
-  LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
@@ -13,7 +13,7 @@ import { TextInput } from 'expo-app/components/TextInput';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -92,8 +92,7 @@ export function AIPacksScreen() {
 
   return (
     <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
-      <LargeTitleHeader title={t('ai.aiPacksAdmin')} backVisible={true} />
-
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('ai.aiPacksAdmin') }} />
       <View
         className="px-4 py-6 space-y-6"
         style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
