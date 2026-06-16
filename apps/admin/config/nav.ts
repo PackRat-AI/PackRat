@@ -2,6 +2,7 @@ import {
   Activity,
   Backpack,
   BarChart2,
+  Database,
   LayoutDashboard,
   type LucideIcon,
   Map as MapIcon,
@@ -51,5 +52,10 @@ export const navItems: NavItem[] = [
     title: 'Gear Catalog Analytics',
     href: '/dashboard/analytics/catalog',
     icon: BarChart2,
+  },
+  {
+    title: 'Query Metrics',
+    href: '/dashboard/analytics/query-metrics',
+    icon: Database,
   },
 ];

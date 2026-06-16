@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
 import { nanoid } from 'nanoid';
@@ -8,12 +9,16 @@ export async function cacheCatalogItemImage(imageUrl?: string): Promise<string |
   }
 
   try {
-    const extension = await getImageExtension(imageUrl);
+    const extension = await getImageExtension({ url: imageUrl });
     const filename = `${nanoid()}.${extension}`;
-    await ImageCacheManager.cacheRemoteImage(filename, imageUrl);
+    await ImageCacheManager.cacheRemoteImage({ fileName: filename, remoteUrl: imageUrl });
     return filename;
   } catch (err) {
     console.log('caching remote image failed', err);
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'cacheCatalogItemImage' },
+      extra: { imageUrl },
+    });
     return null;
   }
 }

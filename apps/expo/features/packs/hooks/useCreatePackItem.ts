@@ -28,8 +28,8 @@ export function useCreatePackItem() {
         deleted: false,
       };
 
-      obs(packItemsStore, id).set(newItem);
-      obs(packsStore, packId).localUpdatedAt.set(new Date().toISOString());
+      obs({ store: packItemsStore, id: id }).set(newItem);
+      obs({ store: packsStore, id: packId }).localUpdatedAt.set(new Date().toISOString());
       recordPackWeight(packId);
     },
     [],

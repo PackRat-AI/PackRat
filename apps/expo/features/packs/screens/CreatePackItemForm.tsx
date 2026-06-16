@@ -1,13 +1,14 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import type { WeightUnit } from '@packrat/constants';
 import { safeIndexOf } from '@packrat/guards';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { useForm } from '@tanstack/react-form';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
@@ -140,6 +141,10 @@ export const CreatePackItemForm = ({
         }
       } catch (err) {
         console.error('Error submitting form:', err);
+        Sentry.captureException(err, {
+          tags: { feature: 'packs', action: 'createPackItem' },
+          extra: { packId, isEditing },
+        });
         Alert.alert('Error', 'Failed to save item. Please try again.');
       }
     },
@@ -178,6 +183,9 @@ export const CreatePackItemForm = ({
           }
         } catch (err) {
           console.error('Error handling image:', err);
+          Sentry.captureException(err, {
+            tags: { feature: 'packs', action: 'handleAddImage' },
+          });
           Alert.alert('Error', 'Failed to process image. Please try again.');
         }
       },
@@ -228,6 +236,7 @@ export const CreatePackItemForm = ({
               <FormItem>
                 <TextField
                   testID={testIds.items.nameInput}
+                  containerTestID={testIds.items.nameInputContainer}
                   placeholder={t('packs.itemName')}
                   autoFocus
                   value={field.state.value}
@@ -248,6 +257,8 @@ export const CreatePackItemForm = ({
             {(field) => (
               <FormItem>
                 <TextField
+                  testID={testIds.items.descriptionInput}
+                  containerTestID={testIds.items.descriptionInputContainer}
                   placeholder={t('packs.description')}
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -299,6 +310,7 @@ export const CreatePackItemForm = ({
               <FormItem>
                 <TextField
                   testID={testIds.items.weightInput}
+                  containerTestID={testIds.items.weightInputContainer}
                   placeholder={t('packs.weight')}
                   value={weightText}
                   onBlur={field.handleBlur}
@@ -326,7 +338,7 @@ export const CreatePackItemForm = ({
                   <Text className="text-foreground/70 mb-2 text-sm">{t('packs.unit')}</Text>
                   <SegmentedControl
                     values={WEIGHT_UNITS}
-                    selectedIndex={safeIndexOf(WEIGHT_UNITS, field.state.value)}
+                    selectedIndex={safeIndexOf({ array: WEIGHT_UNITS, value: field.state.value })}
                     onIndexChange={(index) => {
                       const selectedUnit = WEIGHT_UNITS[index];
                       if (selectedUnit) {

@@ -2,34 +2,73 @@ appId: ${APP_ID}
 ---
 # Create Pack Flow: Navigate to packs tab and create a new pack
 - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible:
+        text: "Pack Details"
+    commands:
+      - back
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible:
+        id: "submit-pack-button"
+    commands:
+      - back
+      - waitForAnimationToEnd
 
-# Navigate to the Packs tab
+# Navigate to the Packs tab and wait until the header create button is visible.
+# Use extendedWaitUntil rather than a bare tap+wait to handle cases where the
+# animation from the previous flow hasn't fully settled.
 - tapOn:
     text: "Packs"
+- extendedWaitUntil:
+    visible:
+      id: "create-pack-button"
+    timeout: 10000
 
-- waitForAnimationToEnd
-
-# Tap the header "+" button (testID: create-pack-button) to open the pack creation form
-- tapOn:
-    id: "create-pack-button"
+# Open the pack creation form. Prefer the empty-state CTA when present because
+# Expo dev client's floating tools trigger can overlap the top-right header
+# button on physical Android devices.
+- runFlow:
+    when:
+      visible:
+        text: "create-pack-empty-button"
+    commands:
+      - tapOn:
+          text: "create-pack-empty-button"
+- runFlow:
+    when:
+      visible:
+        id: "create-pack-button"
+    commands:
+      - tapOn:
+          id: "create-pack-button"
 
 - waitForAnimationToEnd
 
 # Fill in Pack Name
+# iOS: tap the container Pressable (pack-name-container) which is the
+# accessibility leaf and focuses the inner TextInput on press.
+# Android: match by placeholder text (no container wrapper needed).
 - runFlow:
     when:
       platform: iOS
     commands:
       - tapOn:
-          text: "move, Pack Name"
+          id: "packs:name-input"
+      - waitForAnimationToEnd
       - inputText: ${PACK_NAME}
 - runFlow:
     when:
       platform: Android
     commands:
       - tapOn:
-          text: "Pack Name"
+          id: "packs:name-input"
       - inputText: ${PACK_NAME}
+
+- assertVisible:
+    text: ${PACK_NAME}
 
 # Fill in Description
 - runFlow:
@@ -37,14 +76,14 @@ appId: ${APP_ID}
       platform: iOS
     commands:
       - tapOn:
-          text: "newspaper, Description"
+          id: "packs:description-input"
       - inputText: "Created by Maestro E2E test"
 - runFlow:
     when:
       platform: Android
     commands:
       - tapOn:
-          text: "Description"
+          id: "packs:description-input"
       - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
@@ -61,16 +100,29 @@ appId: ${APP_ID}
     notVisible:
       id: "submit-pack-button"
     timeout: 15000
+- runFlow:
+    when:
+      visible:
+        text: "Pack Details"
+    commands:
+      - assertVisible:
+          text: ${PACK_NAME}
+      - back
+      - waitForAnimationToEnd
 
 # Assert the pack was created - we should see the pack name in the list/details
 # Also confirm we are on the packs list by checking for the create button
-- assertVisible:
-    id: "create-pack-button"
+- extendedWaitUntil:
+    visible:
+      id: "create-pack-button"
+    timeout: 15000
 - scrollUntilVisible:
     element:
       id: "packs:list-item-${PACK_NAME}"
     direction: DOWN
-    timeout: 60000
-    speed: 99
+    timeout: 15000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - assertVisible:
     id: "packs:list-item-${PACK_NAME}"

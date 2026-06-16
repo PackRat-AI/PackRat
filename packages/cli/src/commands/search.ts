@@ -13,18 +13,26 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const limit = parsePositiveIntArg(args.limit, '--limit');
-    const rows = await cache.search(args.keyword, {
-      maxPrice: parseOptionalNumberArg(args['max-price'], '--max-price'),
-      minPrice: parseOptionalNumberArg(args['min-price'], '--min-price'),
-      sites: parseCsvArg(args.sites),
-      limit,
+    const limit = parsePositiveIntArg({ value: args.limit, argName: '--limit' });
+    const rows = await cache.search({
+      keyword: args.keyword,
+      options: {
+        maxPrice: parseOptionalNumberArg({ value: args['max-price'], argName: '--max-price' }),
+        minPrice: parseOptionalNumberArg({ value: args['min-price'], argName: '--min-price' }),
+        sites: parseCsvArg(args.sites),
+        limit,
+      },
     });
-    printTable(
-      rows.map(({ site, name, brand, price }) => ({ site, name: name.slice(0, 50), brand, price })),
-      {
+    printTable({
+      rows: rows.map(({ site, name, brand, price }) => ({
+        site,
+        name: name.slice(0, 50),
+        brand,
+        price,
+      })),
+      options: {
         title: `Search: "${args.keyword}"`,
       },
-    );
+    });
   },
 });

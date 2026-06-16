@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  dbPath,
   loadMetadata,
   metadataPath,
   needsUpdate,
@@ -35,7 +36,7 @@ describe('cache metadata', () => {
       sites: ['rei', 'backcountry'],
     };
 
-    saveMetadata(TEST_DIR, data);
+    saveMetadata({ cacheDir: TEST_DIR, data });
     expect(loadMetadata(TEST_DIR)).toEqual(data);
   });
 
@@ -45,6 +46,15 @@ describe('cache metadata', () => {
     expect(result).not.toBeNull();
     expect(result?.record_count).toBe(5);
     expect(result?.sites).toEqual([]);
+  });
+
+  it('returns null when the metadata file is not valid JSON', () => {
+    writeFileSync(metadataPath(TEST_DIR), 'not valid json{');
+    expect(loadMetadata(TEST_DIR)).toBeNull();
+  });
+
+  it('dbPath resolves the duckdb file inside the cache dir', () => {
+    expect(dbPath(TEST_DIR)).toBe(join(TEST_DIR, 'packrat_cache.duckdb'));
   });
 
   describe('needsUpdate', () => {

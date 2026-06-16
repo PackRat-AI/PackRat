@@ -1,9 +1,9 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import * as schema from '@packrat/db/schema';
 import { isFunction, isObject } from '@packrat/guards';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
-import * as schema from '../src/db/schema';
 import { clearCurrentTestUsers } from './utils/test-helpers';
 
 // ── Setup regex constants ──
@@ -50,6 +50,7 @@ const testEnv = {
 
   CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
   CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway-id',
+  CLOUDFLARE_API_TOKEN: 'test-cloudflare-token',
   R2_ACCESS_KEY_ID: 'test-access-key',
   R2_SECRET_ACCESS_KEY: 'test-secret-key',
   PACKRAT_BUCKET_R2_BUCKET_NAME: 'test-bucket',
@@ -342,10 +343,13 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      async batchVectorSearch(
-        queries: string[],
-        _limit?: number,
-      ): Promise<BatchVectorSearchResult> {
+      async batchVectorSearch({
+        queries,
+        limit: _limit,
+      }: {
+        queries: string[];
+        limit?: number;
+      }): Promise<BatchVectorSearchResult> {
         return {
           items: queries.map(() => [
             {

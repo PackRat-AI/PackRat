@@ -1,4 +1,4 @@
-import type { CatalogItemSchema } from '@packrat/api/schemas/catalog';
+import type { CatalogItemSchema } from '@packrat/schemas/catalog';
 import type { z } from 'zod';
 import type { PackItemInput } from '../packs/input';
 
@@ -49,4 +49,5 @@ export interface CatalogItemInput {
   }>;
 }
 
-export type CatalogItemWithPackItemFields = CatalogItem & Partial<PackItemInput>;
+export type CatalogItemWithPackItemFields = CatalogItem &
+  Partial<Omit<PackItemInput, 'weight' | 'weightUnit'>>;

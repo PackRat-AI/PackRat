@@ -1,0 +1,7 @@
+{
+  "extends": "@packrat/typescript-config/base.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src"]
+}

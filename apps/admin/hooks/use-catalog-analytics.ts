@@ -54,11 +54,17 @@ export function useEtlFailureSummary(limit = 20) {
   });
 }
 
-export function useEtlJobFailures(jobId: string, opts: { enabled?: boolean; limit?: number } = {}) {
+export function useEtlJobFailures({
+  jobId,
+  opts = {},
+}: {
+  jobId: string;
+  opts?: { enabled?: boolean; limit?: number };
+}) {
   const { enabled = false, limit = 50 } = opts;
   return useQuery({
-    queryKey: queryKeys.catalogAnalytics.etl.jobFailures(jobId, limit),
-    queryFn: () => getEtlJobFailures(jobId, limit),
+    queryKey: queryKeys.catalogAnalytics.etl.jobFailures({ jobId, limit }),
+    queryFn: () => getEtlJobFailures({ jobId, limit }),
     enabled,
   });
 }

@@ -1,11 +1,19 @@
-import { PackWithWeightsSchema } from '@packrat/api/schemas/packs';
+import { PackWithWeightsSchema } from '@packrat/schemas/packs';
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 const fetchPackById = async (id: string) => {
   const { data, error } = await apiClient.packs({ packId: id }).get();
-  if (error) throw new Error(`Failed to fetch pack: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch pack'));
+    Sentry.captureException(err, {
+      tags: { feature: 'packs', action: 'fetchPackById' },
+      extra: { packId: id, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   return PackWithWeightsSchema.parse(data);
 };
 

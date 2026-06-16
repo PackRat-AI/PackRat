@@ -44,7 +44,15 @@
       "@packrat/cli/*": ["./packages/cli/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
-      "nativewindui/*": ["./apps/expo/components/ui/*"]
+      "nativewindui/*": ["./apps/expo/components/ui/*"],
+      "@packrat/constants": ["./packages/constants/src/index.ts"],
+      "@packrat/constants/*": ["./packages/constants/src/*"],
+      "@packrat/db": ["./packages/db/src/index.ts"],
+      "@packrat/db/*": ["./packages/db/src/*"],
+      "@packrat/schemas": ["./packages/schemas/src/index.ts"],
+      "@packrat/schemas/*": ["./packages/schemas/src/*"],
+      "@packrat/types": ["./packages/types/src/index.ts"],
+      "@packrat/types/*": ["./packages/types/src/*"]
     }
   },
   "include": [

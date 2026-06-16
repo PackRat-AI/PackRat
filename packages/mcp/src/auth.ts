@@ -65,7 +65,7 @@ function escapeHtml(s: string): string {
     .replace(QUOT_RE, '&quot;');
 }
 
-function loginPage(state: string, error?: string): string {
+function loginPage({ state, error }: { state: string; error?: string }): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,7 +105,13 @@ function loginPage(state: string, error?: string): string {
 }
 
 /** FormData.get() returns FormDataEntryValue | null (string | File | null). Extract string only. */
-function getFormString(data: { get(name: string): string | File | null }, key: string): string {
+function getFormString({
+  data,
+  key,
+}: {
+  data: { get(name: string): string | File | null };
+  key: string;
+}): string {
   const val = data.get(key);
   return isString(val) ? val : '';
 }
@@ -129,15 +135,17 @@ export const PackRatAuthHandler = {
     }
 
     if (url.pathname === '/authorize') {
-      return handleAuthorize(request, env);
+      return handleAuthorize({ request, env });
     }
 
     if (url.pathname === '/login') {
-      return request.method === 'POST' ? handleLoginPost(request, env) : handleLoginGet(request);
+      return request.method === 'POST'
+        ? handleLoginPost({ request, env })
+        : handleLoginGet(request);
     }
 
     if (url.pathname === '/callback') {
-      return handleCallback(request, env);
+      return handleCallback({ request, env });
     }
 
     return Response.json({ error: 'Not Found' }, { status: 404 });
@@ -146,7 +154,13 @@ export const PackRatAuthHandler = {
 
 // ── /authorize ────────────────────────────────────────────────────────────────
 
-async function handleAuthorize(request: Request, env: Env): Promise<Response> {
+async function handleAuthorize({
+  request,
+  env,
+}: {
+  request: Request;
+  env: Env;
+}): Promise<Response> {
   let oauthReq: z.infer<typeof OAuthStateSchema>;
   try {
     const parsed = await env.OAUTH_PROVIDER.parseAuthRequest(request);
@@ -174,32 +188,38 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
 
 function handleLoginGet(request: Request): Response {
   const state = new URL(request.url).searchParams.get('state') ?? '';
-  return new Response(loginPage(state), {
+  return new Response(loginPage({ state }), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
 }
 
 // ── /login POST ───────────────────────────────────────────────────────────────
 
-async function handleLoginPost(request: Request, env: Env): Promise<Response> {
+async function handleLoginPost({
+  request,
+  env,
+}: {
+  request: Request;
+  env: Env;
+}): Promise<Response> {
   let email: string;
   let password: string;
   let state: string;
 
   try {
     const form = await request.formData();
-    email = getFormString(form, 'email');
-    password = getFormString(form, 'password');
-    state = getFormString(form, 'state');
+    email = getFormString({ data: form, key: 'email' });
+    password = getFormString({ data: form, key: 'password' });
+    state = getFormString({ data: form, key: 'state' });
   } catch {
-    return new Response(loginPage('', 'Invalid form submission.'), {
+    return new Response(loginPage({ state: '', error: 'Invalid form submission.' }), {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
   if (!email || !password || !state) {
-    return new Response(loginPage(state, 'Email and password are required.'), {
+    return new Response(loginPage({ state, error: 'Email and password are required.' }), {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -207,7 +227,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
   const oauthReqStr = await env.OAUTH_KV.get(oauthStateKey(state));
   if (!oauthReqStr) {
-    return new Response(loginPage(state, 'Session expired. Please start over.'), {
+    return new Response(loginPage({ state, error: 'Session expired. Please start over.' }), {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -221,14 +241,14 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
       body: JSON.stringify({ email, password }),
     });
   } catch {
-    return new Response(loginPage(state, 'Could not reach PackRat. Try again.'), {
+    return new Response(loginPage({ state, error: 'Could not reach PackRat. Try again.' }), {
       status: 502,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
 
   if (!signInRes.ok) {
-    return new Response(loginPage(state, 'Invalid email or password.'), {
+    return new Response(loginPage({ state, error: 'Invalid email or password.' }), {
       status: 401,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -239,10 +259,13 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
   const userId = signInResult.success ? signInResult.data.user?.id : undefined;
 
   if (!betterAuthToken || !userId) {
-    return new Response(loginPage(state, 'Sign-in succeeded but session data was missing.'), {
-      status: 502,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+    return new Response(
+      loginPage({ state, error: 'Sign-in succeeded but session data was missing.' }),
+      {
+        status: 502,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      },
+    );
   }
 
   await env.OAUTH_KV.put(sessionKey(state), JSON.stringify({ token: betterAuthToken, userId }), {
@@ -256,7 +279,7 @@ async function handleLoginPost(request: Request, env: Env): Promise<Response> {
 
 // ── /callback ─────────────────────────────────────────────────────────────────
 
-async function handleCallback(request: Request, env: Env): Promise<Response> {
+async function handleCallback({ request, env }: { request: Request; env: Env }): Promise<Response> {
   const state = new URL(request.url).searchParams.get('state') ?? '';
 
   const [oauthReqStr, sessionStr] = await Promise.all([

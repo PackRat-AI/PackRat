@@ -6,8 +6,9 @@ import { Icon } from 'expo-app/components/Icon';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
-import { Image, Pressable, View } from 'react-native';
+import { Image, Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
 import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
@@ -67,7 +68,10 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
             onPress(template);
             break;
           case editIndex:
-            router.push({ pathname: '/pack-templates/[id]/edit', params: { id: template.id } });
+            router.push({
+              pathname: '/pack-templates/[id]/edit',
+              params: { id: template.id },
+            });
             break;
           case destructiveButtonIndex:
             appAlert.current?.alert({
@@ -75,7 +79,10 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
               message: t('packTemplates.deletePackTemplateMessage'),
               buttons: [
                 { text: t('common.cancel'), style: 'cancel' },
-                { text: t('common.ok'), onPress: () => deleteTemplate(template.id) },
+                {
+                  text: t('common.ok'),
+                  onPress: () => deleteTemplate(template.id),
+                },
               ],
             });
             break;
@@ -88,9 +95,15 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
       onPress={() => onPress(template)}
+      testID={testIds.packTemplates.card(template.id)}
     >
       {template.image && (
-        <Image source={{ uri: template.image }} className="h-40 w-full" resizeMode="cover" />
+        <Image
+          source={{ uri: template.image }}
+          className="h-40 w-full"
+          resizeMode="cover"
+          style={Platform.select({ web: { width: '100%', height: 160 } })}
+        />
       )}
       <View className="p-4">
         <View className="mb-2 flex-row items-start justify-between">

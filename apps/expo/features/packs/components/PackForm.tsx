@@ -1,5 +1,5 @@
-import { PackCategorySchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
+import { PackCategorySchema } from '@packrat/schemas/constants';
 import {
   Button,
   createDropdownItem,
@@ -150,6 +150,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                 <FormItem>
                   <TextField
                     testID={testIds.packs.nameInput}
+                    containerTestID={testIds.packs.nameInputContainer}
                     placeholder={t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -169,6 +170,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packs.descriptionInput}
+                    containerTestID={testIds.packs.descriptionInputContainer}
                     placeholder={t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}

@@ -10,7 +10,7 @@ export default defineCommand({
     const conn = cache.getConnection();
 
     consola.start('Building spec table...');
-    const parser = new SpecParser(conn);
+    const parser = new SpecParser({ conn });
     const stats = await parser.build();
     consola.success(
       `Parsed ${stats.parsed.toLocaleString()} / ${stats.total.toLocaleString()} products`,

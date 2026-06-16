@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
-import { type User, users } from '@packrat/api/db/schema';
 import { hashPassword } from '@packrat/api/utils/auth';
+import { type User, users } from '@packrat/db';
 import { eq } from 'drizzle-orm';
 
 export type CreateUserInput = {
@@ -21,6 +21,7 @@ export class UserService {
 
   async findByEmail(email: string): Promise<User | null> {
     const [user] = await this.db
+      .tag('user.findByEmail')
       .select()
       .from(users)
       .where(eq(users.email, email.toLowerCase()))
@@ -31,11 +32,18 @@ export class UserService {
   async create(input: CreateUserInput): Promise<User> {
     const passwordHash = input.password ? await hashPassword(input.password) : null;
 
+    // Better Auth's users schema requires a non-null `name`; derive from first/
+    // last, fall back to email. Per-package tsc surfaces this as a missing-field
+    // error against the Drizzle insert type — root tsc misses it but Postgres
+    // would reject the insert at runtime.
+    const fullName = [input.firstName, input.lastName].filter(Boolean).join(' ').trim();
     const [user] = await this.db
+      .tag('user.create')
       .insert(users)
       .values({
         id: crypto.randomUUID(),
         email: input.email.toLowerCase(),
+        name: fullName || input.email.toLowerCase(),
         passwordHash,
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,

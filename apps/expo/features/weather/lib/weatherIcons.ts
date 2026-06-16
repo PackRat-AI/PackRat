@@ -7,7 +7,13 @@ import type { MaterialIconName } from 'expo-app/components/Icon';
  * @returns The icon name to use
  */
 
-export function getWeatherIconName(code: number, isDay = 1): MaterialIconName {
+export function getWeatherIconName({
+  code,
+  isDay = 1,
+}: {
+  code: number;
+  isDay?: number;
+}): MaterialIconName {
   // Clear conditions
   if (code === 1000) {
     return isDay ? 'weather-sunny' : 'weather-night';
@@ -83,7 +89,14 @@ export function getWeatherIconName(code: number, isDay = 1): MaterialIconName {
  * @returns The icon name to use
  */
 
-export function getWeatherIconByCondition(condition: string, isDay = 1): MaterialIconName {
+export function getWeatherIconByCondition({
+  condition,
+  isDay = 1,
+}: {
+  condition: string;
+  isDay?: number;
+}): MaterialIconName {
+  if (!condition) return isDay ? 'weather-sunny' : 'weather-night';
   const conditionLower = condition.toLowerCase();
 
   // Clear, sunny
@@ -151,7 +164,13 @@ export function getWeatherIconByCondition(condition: string, isDay = 1): Materia
  * Get background gradient colors based on weather condition
  */
 
-export function getWeatherBackgroundColors(code: number, isNight: boolean): string[] {
+export function getWeatherBackgroundColors({
+  code,
+  isNight,
+}: {
+  code: number;
+  isNight: boolean;
+}): string[] {
   if (isNight) {
     // Night gradients
     if (code === 1000) return ['#1a2a3a', '#0c1824', '#05101a']; // Clear night

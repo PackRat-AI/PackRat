@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
-import { users } from '@packrat/api/db/schema';
 import { hashPassword } from '@packrat/api/utils/auth';
+import { users } from '@packrat/db';
 import type { InferInsertModel } from 'drizzle-orm';
 
 /**

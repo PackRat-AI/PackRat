@@ -6,17 +6,22 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
-  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { isLoadingAtom, suppressSignOutNavAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  isSignOutRedirectingAtom,
+  suppressSignOutNavAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -76,8 +81,16 @@ function Profile() {
   const { t } = useTranslation();
 
   const SCREEN_OPTIONS = {
+    ...getAppBarOptions(),
     title: t('profile.profile'),
-    headerShown: false,
+    headerBackVisible: false,
+    headerRight: () => (
+      <View className="flex-row items-center gap-2 pr-2 pl-2">
+        <DemoIcon />
+
+        <SettingsIcon />
+      </View>
+    ),
   } as const;
 
   // Generate display data based on user information
@@ -94,6 +107,7 @@ function Profile() {
     {
       id: 'name',
       title: t('common.name'),
+      testID: testIds.profile.nameEditBtn,
       onPress: () => router.push('/(app)/(tabs)/profile/name'),
       ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
     },
@@ -108,18 +122,6 @@ function Profile() {
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
 
-      <LargeTitleHeader
-        title={t('profile.profile')}
-        backVisible={false}
-        rightView={() => (
-          <View className="flex-row items-center gap-2 pr-2 pl-2">
-            <DemoIcon />
-
-            <SettingsIcon />
-          </View>
-        )}
-      />
-
       <List
         contentContainerClassName="pt-8"
         variant="insets"
@@ -133,7 +135,7 @@ function Profile() {
   );
 }
 
-export default withAuthWall(Profile, ProfileAuthWall);
+export default withAuthWall({ Component: Profile, AuthWall: ProfileAuthWall });
 
 function renderItem(info: ListRenderItemInfo<DataItem>) {
   return <Item info={info} />;
@@ -146,6 +148,7 @@ function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
   return (
     <ListItem
       titleClassName="text-lg"
+      testID={info.item.testID}
       onPress={info.item.onPress}
       rightView={
         <View className="flex-1 flex-row items-center gap-0.5 px-2">
@@ -192,7 +195,7 @@ function ListHeaderComponent() {
       }
 
       setIsUploading(true);
-      const remoteFileName = await uploadImage(image.fileName, image.uri);
+      const remoteFileName = await uploadImage({ fileName: image.fileName, uri: image.uri });
       if (remoteFileName) {
         const success = await updateProfile({ avatarUrl: remoteFileName });
         if (!success) {
@@ -206,6 +209,9 @@ function ListHeaderComponent() {
           { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
         ]);
       } else {
+        Sentry.captureException(err, {
+          tags: { feature: 'profile', action: 'handleAvatarPress' },
+        });
         Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
       }
     } finally {
@@ -247,6 +253,7 @@ function ListFooterComponent() {
   const { signOut } = useAuth();
   const { t } = useTranslation();
   const setIsLoading = useSetAtom(isLoadingAtom);
+  const setIsSignOutRedirecting = useSetAtom(isSignOutRedirectingAtom);
   const setSuppressSignOutNav = useSetAtom(suppressSignOutNavAtom);
 
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -268,6 +275,7 @@ function ListFooterComponent() {
             // Clear spinner first so AppLayout doesn't show auth screen,
             // then release the suppress flag and navigate home as guest.
             setIsLoading(false);
+            setIsSignOutRedirecting(false);
             setSuppressSignOutNav(false);
             await AsyncStorage.setItem('skipped_login', 'true');
             router.replace('/');
@@ -301,7 +309,7 @@ function ListFooterComponent() {
               // dialogs are not surfaced in XCTest/UIAutomator accessibility trees).
               Alert.alert(t('profile.syncInProgress'), t('profile.syncMessage'), [
                 { text: t('common.cancel'), style: 'cancel' },
-                { text: t('auth.logOut'), style: 'destructive', onPress: handleSignOut },
+                { text: t('auth.proceedLogOut'), style: 'destructive', onPress: handleSignOut },
               ]);
               return;
             }
@@ -331,4 +339,5 @@ type DataItem =
       value?: string;
       subTitle?: string;
       onPress?: () => void;
+      testID?: string;
     };

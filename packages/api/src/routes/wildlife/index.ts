@@ -3,16 +3,13 @@ import { authPlugin } from '@packrat/api/middleware/auth';
 import { WildlifeIdentificationService } from '@packrat/api/services/wildlifeIdentificationService';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { captureApiException } from '@packrat/api/utils/sentry';
+import { WildlifeIdentifyRequestSchema } from '@packrat/schemas/wildlife';
 import { Elysia, status } from 'elysia';
-import { z } from 'zod';
 
 // ── Slug normalization patterns ───────────────────────────────────────
 const SPACES_AND_DOTS = /[\s.]+/g;
 const NON_SLUG_CHARS = /[^a-z0-9-]/g;
-
-const IdentifyRequestSchema = z.object({
-  image: z.string().describe('Uploaded image key in R2'),
-});
 
 export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' }).use(authPlugin).post(
   '/identify',
@@ -38,8 +35,6 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' }).use(authPlugin
     try {
       identification = await service.identifySpecies(imageUrl);
     } catch (error) {
-      console.error('Error identifying wildlife:', error);
-
       // Clean up temp upload on error
       await PACKRAT_BUCKET.delete(image).catch((err: unknown) => {
         console.error('Failed to delete temp upload from R2:', err);
@@ -54,6 +49,12 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' }).use(authPlugin
         }
       }
 
+      captureApiException({
+        error: error,
+        operation: 'wildlife.identify',
+        userId: user.userId,
+        tags: { feature: 'wildlife' },
+      });
       return status(500, { error: 'Failed to identify species' });
     }
 
@@ -93,7 +94,7 @@ export const wildlifeRoutes = new Elysia({ prefix: '/wildlife' }).use(authPlugin
     return { results };
   },
   {
-    body: IdentifyRequestSchema,
+    body: WildlifeIdentifyRequestSchema,
     isAuthenticated: true,
     detail: {
       tags: ['Wildlife'],

@@ -1,10 +1,11 @@
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
 export interface GapAnalysisRequest {
   destination?: string;
   tripType?: string;
-  duration?: string;
+  duration?: number;
   startDate?: string;
   endDate?: string;
 }
@@ -22,12 +23,22 @@ export interface GapAnalysisResponse {
   summary?: string;
 }
 
-export const analyzePackGaps = async (
-  packId: string,
-  context?: GapAnalysisRequest,
-): Promise<GapAnalysisResponse> => {
+export const analyzePackGaps = async ({
+  packId,
+  context,
+}: {
+  packId: string;
+  context?: GapAnalysisRequest;
+}): Promise<GapAnalysisResponse> => {
   const { data, error } = await apiClient.packs({ packId })['gap-analysis'].post(context ?? {});
-  if (error) throw new Error(`Failed to analyze pack gaps: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to analyze pack gaps'));
+    Sentry.captureException(err, {
+      tags: { feature: 'packs', action: 'analyzePackGaps' },
+      extra: { packId, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   // safe-cast: treaty response shape matches GapAnalysisResponse as validated by the API schema
   return data as unknown as GapAnalysisResponse;
 };
@@ -35,6 +46,6 @@ export const analyzePackGaps = async (
 export function usePackGapAnalysis() {
   return useMutation({
     mutationFn: ({ packId, context }: { packId: string; context?: GapAnalysisRequest }) =>
-      analyzePackGaps(packId, context),
+      analyzePackGaps({ packId, context }),
   });
 }

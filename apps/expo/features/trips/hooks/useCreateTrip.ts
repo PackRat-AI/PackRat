@@ -17,7 +17,7 @@ export function useCreateTrip() {
       localUpdatedAt: timestamp,
       deleted: false,
     };
-    obs(tripsStore, id).set(newTrip);
+    obs({ store: tripsStore, id: id }).set(newTrip);
 
     return id;
   }, []);

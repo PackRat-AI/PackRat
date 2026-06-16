@@ -1,7 +1,10 @@
 import { cors } from '@elysiajs/cors';
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { verifyCFAccessRequest } from '@packrat/api/middleware/cfAccess';
+import { timingSafeEqual } from '@packrat/api/utils/auth';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { catalogItems, packs, users } from '@packrat/db';
+import { assertAllDefined, queryBoolean } from '@packrat/guards';
 import {
   AdminCatalogListSchema,
   AdminErrorResponses,
@@ -11,10 +14,7 @@ import {
   CatalogUpdateSchema,
   HardDeleteSuccessSchema,
   SuccessSchema,
-} from '@packrat/api/schemas/admin';
-import { timingSafeEqual } from '@packrat/api/utils/auth';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertAllDefined } from '@packrat/guards';
+} from '@packrat/schemas/admin';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
@@ -26,6 +26,19 @@ const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 const ADMIN_JWT_ISSUER = 'packrat-api';
 const ADMIN_JWT_AUDIENCE = 'packrat-admin';
 
+function checkAdminCredentials({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}): boolean {
+  const env = getEnv();
+  const userOk = timingSafeEqual({ a: username, b: env.ADMIN_USERNAME });
+  const passOk = timingSafeEqual({ a: password, b: env.ADMIN_PASSWORD });
+  return userOk && passOk;
+}
+
 function basicAuthGuard(request: Request): { authorized: true } | { authorized: false } {
   const header = request.headers.get('authorization') ?? '';
   if (!header.startsWith('Basic ')) return { authorized: false };
@@ -36,10 +49,7 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
     if (sep === -1) return { authorized: false };
     const username = decoded.slice(0, sep);
     const password = decoded.slice(sep + 1);
-    const env = getEnv();
-    const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
-    const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
-    if (userOk && passOk) return { authorized: true };
+    if (checkAdminCredentials({ username, password })) return { authorized: true };
   } catch {
     return { authorized: false };
   }
@@ -86,9 +96,12 @@ async function adminAuthGuard(request: Request): Promise<boolean> {
 
   // When CF Access is configured, verify the CF JWT injected by the CF edge.
   if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-    const cfIdentity = await verifyCFAccessRequest(request, {
-      teamDomain: CF_ACCESS_TEAM_DOMAIN,
-      aud: CF_ACCESS_AUD,
+    const cfIdentity = await verifyCFAccessRequest({
+      request,
+      opts: {
+        teamDomain: CF_ACCESS_TEAM_DOMAIN,
+        aud: CF_ACCESS_AUD,
+      },
     });
     if (cfIdentity) return true;
   }
@@ -131,6 +144,53 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       allowedHeaders: ['Authorization', 'Content-Type'],
     }),
   )
+  // Login (body-credential variant) — same credential semantics as /token,
+  // but takes `{ username, password }` in the JSON body. Typed clients (MCP,
+  // CLI, Eden Treaty) can hit this without overriding the Authorization
+  // header. The Basic-auth /token route remains for the admin SPA.
+  .post(
+    '/login',
+    async ({ body, request }) => {
+      const env = getEnv();
+      if (env.TOKEN_RATE_LIMITER) {
+        const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+        const { success } = await env.TOKEN_RATE_LIMITER.limit({ key: ip });
+        if (!success) return status(429, { error: 'Too many requests' });
+      }
+      const { CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD } = env;
+      if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
+        const cfIdentity = await verifyCFAccessRequest({
+          request,
+          opts: {
+            teamDomain: CF_ACCESS_TEAM_DOMAIN,
+            aud: CF_ACCESS_AUD,
+          },
+        });
+        if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
+      }
+      if (!checkAdminCredentials({ username: body.username, password: body.password })) {
+        return status(401, { error: 'Invalid username or password' });
+      }
+      const token = await issueAdminJwt(body.username);
+      return { token, expiresIn: ADMIN_TOKEN_TTL_SECONDS };
+    },
+    {
+      body: z.object({
+        username: z.string().min(1),
+        password: z.string().min(1),
+      }),
+      response: {
+        200: z.object({ token: z.string(), expiresIn: z.number() }),
+        401: z.object({ error: z.string() }),
+        429: z.object({ error: z.string() }),
+      },
+      detail: {
+        tags: ['Admin'],
+        summary: 'Exchange JSON credentials for a short-lived admin JWT',
+      },
+    },
+  )
+
   // Token exchange — must be registered BEFORE the auth guard so the admin
   // SPA can exchange Basic credentials for a short-lived JWT.
   .post(
@@ -150,9 +210,12 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       // travels cross-origin; the CF edge then injects Cf-Access-Jwt-Assertion.
       // Basic credentials are always required and remain the primary gate.
       if (CF_ACCESS_TEAM_DOMAIN && CF_ACCESS_AUD) {
-        const cfIdentity = await verifyCFAccessRequest(request, {
-          teamDomain: CF_ACCESS_TEAM_DOMAIN,
-          aud: CF_ACCESS_AUD,
+        const cfIdentity = await verifyCFAccessRequest({
+          request,
+          opts: {
+            teamDomain: CF_ACCESS_TEAM_DOMAIN,
+            aud: CF_ACCESS_AUD,
+          },
         });
         if (!cfIdentity) return status(401, { error: 'CF Access authentication required' });
       }
@@ -180,7 +243,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     },
   )
   .onBeforeHandle(async ({ request, path }) => {
-    if (path === '/api/admin/token') return;
+    // Credential-exchange routes own their own auth gating (Basic for /token,
+    // JSON body for /login). Skip the bearer guard for both.
+    if (path === '/api/admin/token' || path === '/api/admin/login') return;
     if (request.method === 'OPTIONS') return;
     const ok = await adminAuthGuard(request);
     if (!ok) return status(401, { error: 'Unauthorized' });
@@ -192,14 +257,18 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     async () => {
       const db = createDb();
       try {
-        const [userCount] = await db.select({ count: count() }).from(users);
+        const [userCount] = await db.tag('admin.getStats').select({ count: count() }).from(users);
         const [packCount] = await db
+          .tag('admin.getStats')
           .select({ count: count() })
           .from(packs)
           .where(eq(packs.deleted, false));
-        const [itemCount] = await db.select({ count: count() }).from(catalogItems);
+        const [itemCount] = await db
+          .tag('admin.getStats')
+          .select({ count: count() })
+          .from(catalogItems);
 
-        assertAllDefined([userCount, packCount, itemCount]);
+        assertAllDefined({ values: [userCount, packCount, itemCount] });
 
         return {
           users: userCount?.count ?? 0,
@@ -236,6 +305,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         const [usersList, [totalRow]] = await Promise.all([
           db
+            .tag('admin.getUsers')
             .select({
               id: users.id,
               email: users.email,
@@ -252,7 +322,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .orderBy(desc(users.createdAt))
             .limit(limit)
             .offset(offset),
-          db.select({ count: count() }).from(users).where(searchFilter),
+          db.tag('admin.getUsersCount').select({ count: count() }).from(users).where(searchFilter),
         ]);
 
         return {
@@ -275,7 +345,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
-        includeDeleted: z.string().optional(),
       }),
       response: { 200: AdminUsersListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List users' },
@@ -291,6 +360,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         const limit = Number(query.limit ?? 100);
         const offset = Number(query.offset ?? 0);
         const search = query.q;
+        const includeDeleted = query.includeDeleted ?? false;
         const searchFilter = search
           ? or(
               ilike(packs.name, `%${search}%`),
@@ -299,10 +369,13 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
               ilike(users.email, `%${search}%`),
             )
           : undefined;
-        const whereClause = and(eq(packs.deleted, false), searchFilter);
+        const whereClause = includeDeleted
+          ? searchFilter
+          : and(eq(packs.deleted, false), searchFilter);
 
         const [packsList, [totalRow]] = await Promise.all([
           db
+            .tag('admin.getPacks')
             .select({
               id: packs.id,
               name: packs.name,
@@ -323,6 +396,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .limit(limit)
             .offset(offset),
           db
+            .tag('admin.getPacksCount')
             .select({ count: count() })
             .from(packs)
             .leftJoin(users, eq(packs.userId, users.id))
@@ -349,7 +423,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         limit: z.coerce.number().int().positive().max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
         q: z.string().optional(),
-        includeDeleted: z.string().optional(),
+        // queryBoolean() instead of z.coerce.boolean() — the latter treats
+        // any non-empty string as truthy, so ?includeDeleted=false would
+        // wrongly include soft-deleted rows.
+        includeDeleted: queryBoolean(),
       }),
       response: { 200: AdminPacksListSchema, ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'List packs' },
@@ -375,6 +452,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
 
         const [itemsList, [totalRow]] = await Promise.all([
           db
+            .tag('admin.getCatalogItems')
             .select({
               id: catalogItems.id,
               name: catalogItems.name,
@@ -406,7 +484,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             .orderBy(desc(catalogItems.id))
             .limit(limit)
             .offset(offset),
-          db.select({ count: count() }).from(catalogItems).where(whereClause),
+          db
+            .tag('admin.getCatalogItemsCount')
+            .select({ count: count() })
+            .from(catalogItems)
+            .where(whereClause),
         ]);
 
         return {
@@ -462,7 +544,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       try {
         // Cascading FKs handle deletion of all related user data.
         // Caller must supply a compliance reason for the audit log.
-        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
+        const deleted = await db
+          .tag('admin.deleteUser')
+          .delete(users)
+          .where(eq(users.id, id))
+          .returning();
         if (!deleted.length) return status(404, { error: 'User not found' });
         console.info(`[COMPLIANCE] Hard-deleted user ${id}. Reason: ${body.reason}`);
         return { success: true as const, purged: true as const };
@@ -510,6 +596,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       const db = createDb();
       try {
         const updated = await db
+          .tag('admin.deletePack')
           .update(packs)
           .set({ deleted: true })
           .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
@@ -536,7 +623,11 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
       const db = createDb();
       try {
-        const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
+        const deleted = await db
+          .tag('admin.deleteCatalogItem')
+          .delete(catalogItems)
+          .where(eq(catalogItems.id, id))
+          .returning(); // lint:allow-unprojected-fat-table reason: admin delete only checks .length; could narrow to .returning({id}) but defer to pivot-migration cleanup pass
         if (!deleted.length) return status(404, { error: 'Catalog item not found' });
         return { success: true as const };
       } catch (error) {
@@ -563,6 +654,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       const db = createDb();
       try {
         const updated = await db
+          .tag('admin.updateCatalogItem')
           .update(catalogItems)
           .set({
             updatedAt: new Date(),
@@ -577,7 +669,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             ...(body.description !== undefined && { description: body.description }),
           })
           .where(eq(catalogItems.id, id))
-          .returning();
+          .returning(); // lint:allow-unprojected-fat-table reason: admin update reads only first.id + first.name; could narrow to .returning({id, name}) but defer to pivot-migration cleanup pass
         const first = updated[0];
         if (!first) return status(404, { error: 'Catalog item not found' });
         return { id: first.id, name: first.name };

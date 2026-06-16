@@ -6,7 +6,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { Keyboard, TouchableOpacity } from 'react-native';
 import { aiModeAtom, localModelStatusAtom } from '../atoms/aiModeAtoms';
 import { AIModeSheet } from './AIModeSheet';
 
@@ -26,7 +26,10 @@ export function AIModeSelector() {
   return (
     <>
       <TouchableOpacity
-        onPress={() => sheetRef.current?.present()}
+        onPress={() => {
+          Keyboard.dismiss();
+          sheetRef.current?.present();
+        }}
         className="flex-row items-center gap-1"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >

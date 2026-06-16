@@ -14,21 +14,21 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const conn = cache.getConnection();
-    const limit = parsePositiveIntArg(args.limit, '--limit');
+    const limit = parsePositiveIntArg({ value: args.limit, argName: '--limit' });
 
-    const enrichment = new Enrichment(conn);
+    const enrichment = new Enrichment({ conn });
 
     if (args.build) {
       consola.start('Building image aggregation...');
       const stats = await enrichment.buildImages();
-      printSummary(
-        {
+      printSummary({
+        data: {
           'Total images': stats.total_images,
           'Products with images': stats.products_with_images,
           'Unique URLs': stats.unique_urls,
         },
-        'Image Aggregation Complete',
-      );
+        title: 'Image Aggregation Complete',
+      });
       return;
     }
 
@@ -37,19 +37,19 @@ export default defineCommand({
       return;
     }
 
-    const images = await enrichment.getProductImages(args.product, limit);
+    const images = await enrichment.getProductImages({ query: args.product, limit });
     if (images.length === 0) {
       consola.warn('No images found. Run `packrat images --build` first.');
       return;
     }
 
-    printTable(
-      images.map((img) => ({
+    printTable({
+      rows: images.map((img) => ({
         Site: img.site,
         Name: String(img.name).slice(0, 40),
         URL: String(img.url).slice(0, 60),
       })),
-      { title: `Images: "${args.product}"` },
-    );
+      options: { title: `Images: "${args.product}"` },
+    });
   },
 });

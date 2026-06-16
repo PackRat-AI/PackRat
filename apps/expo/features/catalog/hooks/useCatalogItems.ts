@@ -1,4 +1,5 @@
-import { CatalogItemsResponseSchema } from '@packrat/api/schemas/catalog';
+import { CatalogItemsResponseSchema } from '@packrat/schemas/catalog';
+import * as Sentry from '@sentry/react-native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 
@@ -36,7 +37,14 @@ export const getCatalogItems = async ({
       ...(sort ? { sort } : {}),
     },
   });
-  if (error) throw new Error(`Failed to fetch catalog items: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch catalog items'));
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'getCatalogItems' },
+      extra: { pageParam, query, category, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   const parseResult = CatalogItemsResponseSchema.safeParse(data);
   if (parseResult.success) return parseResult.data;
   // Fallback: strict per-field validation failed (e.g., live DB has weightUnit values outside the

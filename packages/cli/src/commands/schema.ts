@@ -57,6 +57,6 @@ export default defineCommand({
       return;
     }
 
-    printTable(rows, { title: 'Field Coverage by Site (%)' });
+    printTable({ rows, options: { title: 'Field Coverage by Site (%)' } });
   },
 });

@@ -5,7 +5,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, TouchableOpacity, View } from 'react-native';
 import type { CatalogItem } from '../types';
 
 type ItemReviewsProps = {
@@ -44,17 +44,21 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
         </Text>
       </View>
 
-      {reviews.map((review, i) => {
-        const reviewKey = review.title ?? String(i);
+      {reviews.map((review, idx) => {
+        const reviewKey = review.title ?? String(idx);
         const isExpanded = expandedReviews[reviewKey] || false;
-        const shouldTruncate = (review.text ?? '').length > 150;
+        const shouldTruncate = (review.text?.length ?? 0) > 150;
 
         return (
           <View key={reviewKey} className="mb-3 rounded-lg bg-card p-3 shadow-sm">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
                 {review.user_avatar ? (
-                  <Image source={{ uri: review.user_avatar }} className="h-8 w-8 rounded-full" />
+                  <Image
+                    source={{ uri: review.user_avatar }}
+                    className="h-8 w-8 rounded-full"
+                    style={Platform.select({ web: { width: 32, height: 32 } })}
+                  />
                 ) : (
                   <View className="h-8 w-8 items-center justify-center rounded-full bg-muted">
                     <Icon name="person-outline" size={16} color="text-muted-foreground" />
@@ -64,9 +68,9 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   <Text className="font-medium text-foreground">
                     {review.user_name || t('catalog.anonymous')}
                   </Text>
-                  <Text className="text-xs text-muted-foreground">
-                    {review.date ? formatDate(review.date) : ''}
-                  </Text>
+                  {review.date && (
+                    <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
+                  )}
                 </View>
               </View>
               <View className="flex-row items-center">

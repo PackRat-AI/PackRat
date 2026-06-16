@@ -1,0 +1,4 @@
+{
+  "extends": "@packrat/typescript-config/react-native.json",
+  "include": ["nativewindui/**/*.ts", "nativewindui/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
+}

@@ -1,12 +1,15 @@
 import { createDbClient } from '@packrat/api/db';
-import { etlJobs } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { etlJobs } from '@packrat/db';
 import { eq, sql } from 'drizzle-orm';
 
-export async function updateEtlJobProgress(
-  env: Env,
-  params: { jobId: string; valid?: number; invalid?: number; processed?: number },
-): Promise<void> {
+export async function updateEtlJobProgress({
+  env,
+  params,
+}: {
+  env: Env;
+  params: { jobId: string; valid?: number; invalid?: number; processed?: number };
+}): Promise<void> {
   const db = createDbClient(env);
 
   const valid = params?.valid ?? 0;
@@ -14,6 +17,7 @@ export async function updateEtlJobProgress(
   const processed = params?.processed ?? 0;
 
   await db
+    .tag('etl.updateJobProgress')
     .update(etlJobs)
     .set({
       totalValid: sql`COALESCE(${etlJobs.totalValid}, 0) + ${valid}`,

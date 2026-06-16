@@ -1,5 +1,18 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createDb } from '@packrat/api/db';
+import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
+import { ImageDetectionService, PackService } from '@packrat/api/services';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import {
+  computePackBreakdown,
+  computePacksWeights,
+  computePackWeights,
+} from '@packrat/api/utils/compute-pack';
+import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+import { captureApiException } from '@packrat/api/utils/sentry';
 import {
   catalogItems,
   type NewPack,
@@ -8,47 +21,59 @@ import {
   packItems,
   packs,
   packWeightHistory,
-} from '@packrat/api/db/schema';
-import { adminAuthPlugin, authPlugin } from '@packrat/api/middleware/auth';
-import { AnalyzeImageRequestSchema } from '@packrat/api/schemas/imageDetection';
+} from '@packrat/db';
+import { AnalyzeImageRequestSchema } from '@packrat/schemas/imageDetection';
 import {
-  CreatePackItemRequestSchema,
-  CreatePackRequestSchema,
+  AddPackItemBodySchema,
+  CreatePackBodySchema,
+  CreatePackWeightHistoryBodySchema,
   GapAnalysisRequestSchema,
+  PackItemSchema,
+  PackWithWeightsSchema,
   UpdatePackItemRequestSchema,
   UpdatePackRequestSchema,
-} from '@packrat/api/schemas/packs';
-import { ImageDetectionService, PackService } from '@packrat/api/services';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
-import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
+} from '@packrat/schemas/packs';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
 import {
   and,
   cosineDistance,
-  desc,
   eq,
   getTableColumns,
-  gt,
   isNotNull,
   notInArray,
   or,
+  type SQL,
   sql,
 } from 'drizzle-orm';
-import { Elysia, status } from 'elysia';
+import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 
-const CreatePackBodySchema = CreatePackRequestSchema.extend({
-  id: z.string(),
-  localCreatedAt: z.string(),
-  localUpdatedAt: z.string(),
-});
+type PackItemEmbeddingParams = {
+  value: string;
+  env: ReturnType<typeof getEnv>;
+};
 
-const AddPackItemBodySchema = CreatePackItemRequestSchema.extend({
-  id: z.string(),
-});
+async function generatePackItemEmbedding({
+  value,
+  env,
+}: PackItemEmbeddingParams): Promise<number[] | null> {
+  try {
+    return await generateEmbedding({
+      openAiApiKey: env.OPENAI_API_KEY,
+      value,
+      provider: env.AI_PROVIDER,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: env.CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: env.AI,
+    });
+  } catch (error) {
+    console.warn('pack_items.embedding.fallback', {
+      error: error instanceof Error ? error.message : 'Unknown embedding error',
+    });
+    return null;
+  }
+}
 
 export const packsRoutes = new Elysia({ prefix: '/packs' })
   .use(authPlugin)
@@ -65,19 +90,50 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         ? and(or(eq(packs.userId, user.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
         : eq(packs.userId, user.userId);
 
-      const result = await db.query.packs.findMany({
+      // Drop packItems.embedding (1536-dim) from list payload. Mobile hot
+      // path — 5 packs × 20 items × ~6KB embedding = 600KB minimum DB→Worker
+      // bytes per call. Wire-shape was already clean (PackItemSchema doesn't
+      // declare embedding so Zod strips downstream), but the bytes were still
+      // crossing the wire from Neon.
+      const PACK_ITEM_LIST_COLUMNS = Object.freeze({
+        id: true,
+        name: true,
+        description: true,
+        weight: true,
+        weightUnit: true,
+        quantity: true,
+        category: true,
+        consumable: true,
+        worn: true,
+        image: true,
+        notes: true,
+        packId: true,
+        catalogItemId: true,
+        userId: true,
+        deleted: true,
+        isAIGenerated: true,
+        templateItemId: true,
+        createdAt: true,
+        updatedAt: true,
+      } as const);
+
+      const result = await db.tag('packs.list').query.packs.findMany({
         where,
         with: {
-          items: includePublic ? { where: eq(packItems.deleted, false) } : true,
+          items: includePublic
+            ? { columns: PACK_ITEM_LIST_COLUMNS, where: eq(packItems.deleted, false) }
+            : { columns: PACK_ITEM_LIST_COLUMNS },
         },
       });
 
-      return computePacksWeights(result);
+      return z.array(PackWithWeightsSchema).parse(computePacksWeights({ packs: result }));
     },
     {
       query: z.object({
-        includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+        // Handler defaults this to 0; keep schema truly optional for clients.
+        includePublic: z.coerce.number().int().min(0).max(1).optional(),
       }),
+      response: { 200: z.array(PackWithWeightsSchema) },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'List user packs', security: [{ bearerAuth: [] }] },
     },
@@ -90,20 +146,18 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
-      const packId = data.id as string;
-      if (!packId) return status(400, { error: 'Pack ID is required' });
-
       // Zod validates all fields at runtime; cast through the Standard Schema
       // inference gap so drizzle's insert accepts the values.
       const [newPack] = await db
+        .tag('packs.create')
         .insert(packs)
         .values({
-          id: packId,
+          id: data.id,
           userId: user.userId,
           name: data.name,
           description: data.description,
           category: data.category,
-          isPublic: data.isPublic,
+          isPublic: data.isPublic ?? false,
           image: data.image,
           tags: data.tags,
           localCreatedAt: new Date(data.localCreatedAt as string),
@@ -111,13 +165,14 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         } as typeof packs.$inferInsert)
         .returning();
 
-      if (!newPack) return status(400, { error: 'Failed to create pack' });
+      if (!newPack) return status(500, { error: 'Failed to create pack' });
 
       const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return computePacksWeights([packWithItems])[0];
+      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
     },
     {
       body: CreatePackBodySchema,
+      response: { 200: PackWithWeightsSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Packs'], summary: 'Create new pack', security: [{ bearerAuth: [] }] },
     },
@@ -128,7 +183,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/weight-history',
     async ({ user }) => {
       const db = createDb();
-      const histories = await db.query.packWeightHistory.findMany({
+      const histories = await db.tag('packs.weightHistory').query.packWeightHistory.findMany({
         where: eq(packWeightHistory.userId, user.userId),
       });
 
@@ -191,13 +246,12 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         });
 
         const imageDetectionService = new ImageDetectionService();
-        const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
+        const result = await imageDetectionService.detectAndMatchItems({ imageUrl, matchLimit });
 
         await PACKRAT_BUCKET.delete(image);
 
         return result;
       } catch (error) {
-        console.error('Error analyzing image:', error);
         if (error instanceof Error) {
           if (
             error.message.includes('Invalid image') ||
@@ -206,8 +260,13 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           ) {
             return status(400, { error: error.message });
           }
-          return status(500, { error: `Failed to analyze image: ${error.message}` });
         }
+        captureApiException({
+          error: error,
+          operation: 'packs.analyzeImage',
+          tags: { feature: 'packs' },
+          extra: { httpStatus: 500, errorCode: 'PACKS_ANALYZE_IMAGE_ERROR' },
+        });
         return status(500, { error: 'Failed to analyze image' });
       }
     },
@@ -227,23 +286,108 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/:packId',
     async ({ params }) => {
       const db = createDb();
-      try {
-        const pack = await db.query.packs.findFirst({
-          where: eq(packs.id, params.packId),
-          with: { items: { where: eq(packItems.deleted, false) } },
-        });
+      // Drop packItems.embedding (1536-dim). Wire-shape was already clean via
+      // Zod strip (PackWithWeightsSchema doesn't declare embedding); this
+      // closes the DB→Worker egress + compute leak on the detail endpoint.
+      // Same pattern as the list endpoint above — the audit missed this
+      // callsite; folded in here for parity.
+      const pack = await db.tag('packs.getById').query.packs.findFirst({
+        where: eq(packs.id, params.packId),
+        with: {
+          items: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+              weight: true,
+              weightUnit: true,
+              quantity: true,
+              category: true,
+              consumable: true,
+              worn: true,
+              image: true,
+              notes: true,
+              packId: true,
+              catalogItemId: true,
+              userId: true,
+              deleted: true,
+              isAIGenerated: true,
+              templateItemId: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            where: eq(packItems.deleted, false),
+          },
+        },
+      });
 
+      if (!pack) throw new NotFoundError('Pack not found');
+      return PackWithWeightsSchema.parse(computePackWeights({ pack }));
+    },
+    {
+      params: z.object({ packId: z.string() }),
+      response: { 200: PackWithWeightsSchema },
+      isAuthenticated: true,
+      detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Weight breakdown — total/base/worn/consumable + per-category aggregation.
+  // Edge apps were computing this by walking pack.items locally; centralising
+  // here keeps MCP/CLI tools as one-line passthroughs. Matches the
+  // owner-or-public access pattern used by GET /:packId/items.
+  .get(
+    '/:packId/weight-breakdown',
+    async ({ params, user }) => {
+      const db = createDb();
+      try {
+        // Minimal projection: only what computePackBreakdown reads.
+        // `name` is required — `byCategory[].items[]` formats each item as
+        // `<name> (<weight><unit> × <quantity>)`; without it, every entry
+        // renders as `undefined (1200g × 1)`.
+        const pack = await db.tag('packs.getById').query.packs.findFirst({
+          where: eq(packs.id, params.packId),
+          with: {
+            items: {
+              columns: {
+                name: true,
+                weight: true,
+                weightUnit: true,
+                category: true,
+                quantity: true,
+                worn: true,
+                consumable: true,
+              },
+              where: eq(packItems.deleted, false),
+            },
+          },
+        });
         if (!pack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(pack);
+        const canAccess = pack.isPublic || pack.userId === user.userId;
+        if (!canAccess) return status(403, { error: 'Unauthorized' });
+        return computePackBreakdown(pack);
       } catch (error) {
-        console.error('Error fetching pack:', error);
-        return status(500, { error: 'Failed to fetch pack' });
+        captureApiException({
+          error: error,
+          operation: 'packs.weightBreakdown',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_BREAKDOWN_ERROR',
+          },
+        });
+        return status(500, { error: 'Failed to compute breakdown' });
       }
     },
     {
       params: z.object({ packId: z.string() }),
       isAuthenticated: true,
-      detail: { tags: ['Packs'], summary: 'Get pack by ID', security: [{ bearerAuth: [] }] },
+      detail: {
+        tags: ['Packs'],
+        summary: 'Per-category weight breakdown',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
@@ -269,19 +413,32 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         updateData.updatedAt = new Date();
 
         await db
+          .tag('packs.update')
           .update(packs)
           .set(updateData)
           .where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
 
-        const updatedPack: PackWithItems | undefined = await db.query.packs.findFirst({
-          where: and(eq(packs.id, params.packId), eq(packs.userId, user.userId)),
-          with: { items: true },
-        });
+        const updatedPack: PackWithItems | undefined = await db
+          .tag('packs.getById')
+          .query.packs.findFirst({
+            where: and(eq(packs.id, params.packId), eq(packs.userId, user.userId)),
+            with: { items: true },
+          });
 
         if (!updatedPack) return status(404, { error: 'Pack not found' });
-        return computePackWeights(updatedPack);
+        return computePackWeights({ pack: updatedPack });
       } catch (error) {
-        console.error('Error updating pack:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.update',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_UPDATE_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to update pack' });
       }
     },
@@ -301,13 +458,16 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     async ({ params, user }) => {
       const db = createDb();
 
-      const pack = await db.query.packs.findFirst({
+      const pack = await db.tag('packs.getById').query.packs.findFirst({
         where: and(eq(packs.id, params.packId), eq(packs.userId, user.userId)),
       });
 
       if (!pack) return status(404, { error: 'Pack not found' });
 
-      await db.delete(packs).where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
+      await db
+        .tag('packs.delete')
+        .delete(packs)
+        .where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
       return { success: true };
     },
     {
@@ -344,13 +504,17 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           existingEmbeddings.length,
       );
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
-      const whereConditions = [gt(similarity, 0.1)];
+      // HNSW-eligible: ORDER BY raw distance ASC. See catalogService.vectorSearch
+      // for the full rationale on why `1 - (...)` wrapping defeats HNSW.
+      const distance = cosineDistance(catalogItems.embedding, avgEmbedding);
+      const similarity = sql<number>`1 - (${distance})`;
+      const whereConditions: SQL[] = [sql`${distance} < 0.9`];
       if (existingCatalogItemIds.length > 0) {
         whereConditions.push(notInArray(catalogItems.id, existingCatalogItemIds));
       }
 
       const similarItems = await db
+        .tag('packs.getSimilarItems')
         .select({
           id: catalogItems.id,
           name: catalogItems.name,
@@ -362,7 +526,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         })
         .from(catalogItems)
         .where(and(...whereConditions))
-        .orderBy(desc(similarity))
+        .orderBy(distance)
         .limit(5);
 
       return similarItems;
@@ -387,6 +551,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       try {
         const data = body;
         const packWeightHistoryEntry = await db
+          .tag('packs.insertWeightHistory')
           .insert(packWeightHistory)
           .values({
             id: data.id,
@@ -402,17 +567,23 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
           updatedAt: entry.createdAt,
         }));
       } catch (error) {
-        console.error('Pack weight history API error:', error);
+        captureApiException({
+          error: error,
+          operation: 'packs.createWeightHistory',
+          tags: { feature: 'packs' },
+          extra: {
+            packId: params.packId,
+            userId: user.userId,
+            httpStatus: 500,
+            errorCode: 'PACKS_WEIGHT_HISTORY_ERROR',
+          },
+        });
         return status(500, { error: 'Failed to create weight history entry' });
       }
     },
     {
       params: z.object({ packId: z.string() }),
-      body: z.object({
-        id: z.string(),
-        weight: z.number(),
-        localCreatedAt: z.string().datetime(),
-      }),
+      body: CreatePackWeightHistoryBodySchema,
       isAuthenticated: true,
       detail: {
         tags: ['Packs'],
@@ -435,7 +606,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packDetails = await getPackDetails({ packId: params.packId });
         if (!packDetails) return status(404, { error: 'Pack not found' });
 
-        const pack = computePackWeights(packDetails);
+        const pack = computePackWeights({ pack: packDetails });
 
         if (pack.userId !== user.userId) {
           return status(403, { error: 'Forbidden' });
@@ -506,14 +677,21 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         const { generateObject } = await import('ai');
         const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
 
-        const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-          getEnv();
+        const {
+          AI_PROVIDER,
+          OPENAI_API_KEY,
+          CLOUDFLARE_ACCOUNT_ID,
+          CLOUDFLARE_AI_GATEWAY_ID,
+          CLOUDFLARE_API_TOKEN,
+          AI,
+        } = getEnv();
 
         const aiProvider = createAIProvider({
           openAiApiKey: OPENAI_API_KEY,
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
 
@@ -529,10 +707,10 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
                 reason: z.string(),
                 consumable: z.boolean(),
                 worn: z.boolean(),
-                priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
+                priority: z.enum(['must-have', 'nice-to-have', 'optional']),
               }),
             ),
-            summary: z.string().optional(),
+            summary: z.string(),
           }),
           temperature: 0.3,
         });
@@ -561,7 +739,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     async ({ params, user }) => {
       const db = createDb();
 
-      const pack = await db.query.packs.findFirst({
+      const pack = await db.tag('packs.getById').query.packs.findFirst({
         where: eq(packs.id, params.packId),
         columns: { id: true, userId: true, isPublic: true },
       });
@@ -576,9 +754,52 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         conditions.push(eq(packItems.deleted, false));
       }
 
-      const items = await db.query.packItems.findMany({
+      // Worst single endpoint pre-projection — packItems with embedding +
+      // FULL catalogItem (embedding + fat JSONB) for each item. Pack with 20
+      // items = 2 MB+ per call. No response Zod schema on this route (spreads
+      // `...item` below at .map), so any column missing from these whitelists
+      // leaks to mobile as undefined — enumerate every packItems column
+      // explicitly except embedding, and a list-friendly catalogItem subset.
+      const items = await db.tag('packs.listItems').query.packItems.findMany({
         where: and(...conditions),
-        with: { catalogItem: true },
+        columns: {
+          id: true,
+          name: true,
+          description: true,
+          weight: true,
+          weightUnit: true,
+          quantity: true,
+          category: true,
+          consumable: true,
+          worn: true,
+          image: true,
+          notes: true,
+          packId: true,
+          catalogItemId: true,
+          userId: true,
+          deleted: true,
+          isAIGenerated: true,
+          templateItemId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        with: {
+          catalogItem: {
+            columns: {
+              id: true,
+              name: true,
+              brand: true,
+              weight: true,
+              weightUnit: true,
+              images: true,
+              categories: true,
+              productUrl: true,
+              sku: true,
+              price: true,
+              ratingValue: true,
+            },
+          },
+        },
       });
 
       return items.map((item) => ({
@@ -604,26 +825,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const packId = params.packId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
+      const env = getEnv();
+      const itemId = data.id;
 
-      if (!OPENAI_API_KEY) return status(400, { error: 'OpenAI API key not configured' });
-      if (!data.id) return status(400, { error: 'Item ID is required' });
-
-      const embeddingText = getEmbeddingText(data);
-      const embedding = await generateEmbedding({
-        openAiApiKey: OPENAI_API_KEY,
-        value: embeddingText,
-        provider: AI_PROVIDER,
-        cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-        cloudflareAiBinding: AI,
-      });
+      const embeddingText = getEmbeddingText({ item: data });
+      const embedding = await generatePackItemEmbedding({ value: embeddingText, env });
 
       const [newItem] = await db
+        .tag('packs.addItem')
         .insert(packItems)
         .values({
-          id: data.id,
+          id: itemId,
           packId,
           catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
           name: data.name,
@@ -639,9 +851,13 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           userId: user.userId,
           embedding,
         } as NewPackItem) // safe-cast: object literal matches NewPackItem shape; cast required because embedding field type is narrower in the inferred type
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: POST returns full newItem to client (route spreads ...newItem at 201); defer narrowing to Tier-3 #13 (response-schema split)
 
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+      await db
+        .tag('packs.update')
+        .update(packs)
+        .set({ updatedAt: new Date() })
+        .where(eq(packs.id, packId));
 
       if (!newItem) return status(400, { error: 'Failed to create item' });
 
@@ -669,19 +885,20 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     '/items/:itemId',
     async ({ params, user }) => {
       const db = createDb();
-      const item = await db.query.packItems.findFirst({
+      const item = await db.tag('packs.getItem').query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: detail endpoint returns full item to client via PackItemSchema; defer narrowing to Tier-3 #13 (response-schema split)
         where: eq(packItems.id, params.itemId),
-        with: { catalogItem: true, pack: true },
+        with: { pack: true },
       });
 
-      if (!item) return status(404, { error: 'Item not found' });
+      if (!item) throw new NotFoundError('Item not found');
 
       const isOwner = item.userId === user.userId;
       const isPublic = item.pack.isPublic;
 
-      if (!isOwner && !isPublic) return status(403, { error: 'Unauthorized' });
+      if (!isOwner && !isPublic) return status(403, { error: 'Forbidden' });
 
-      return item;
+      return PackItemSchema.parse(item);
     },
     {
       params: z.object({ itemId: z.string() }),
@@ -701,19 +918,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
+      const env = getEnv();
 
-      if (!OPENAI_API_KEY) return status(500, { error: 'OpenAI API key not configured' });
-
-      const existingItem = await db.query.packItems.findFirst({
+      const existingItem = await db.tag('packs.getItem').query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: PATCH path reads existingItem for getEmbeddingText diff (needs name/description/etc.); defer to pivot migration where embedding regen source can be sourced explicitly
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
-      if (!existingItem) return status(404, { error: 'Pack item not found' });
+      if (!existingItem) throw new NotFoundError('Pack item not found');
 
-      const newEmbeddingText = getEmbeddingText(data, existingItem);
-      const oldEmbeddingText = getEmbeddingText(existingItem);
+      const newEmbeddingText = getEmbeddingText({ item: data, existingItem });
+      const oldEmbeddingText = getEmbeddingText({ item: existingItem });
 
       const updateData: Partial<typeof packItems.$inferInsert> = {};
       if ('name' in data) updateData.name = data.name;
@@ -729,14 +944,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       if ('deleted' in data) updateData.deleted = data.deleted;
 
       if (newEmbeddingText !== oldEmbeddingText) {
-        updateData.embedding = await generateEmbedding({
-          openAiApiKey: OPENAI_API_KEY,
-          value: newEmbeddingText,
-          provider: AI_PROVIDER,
-          cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-          cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-          cloudflareAiBinding: AI,
-        });
+        updateData.embedding = await generatePackItemEmbedding({ value: newEmbeddingText, env });
       }
 
       updateData.updatedAt = new Date();
@@ -744,7 +952,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       // Delete old image from R2 if changing image
       if ('image' in data) {
         try {
-          const item = await db.query.packItems.findFirst({
+          const item = await db.tag('packs.getItem').query.packItems.findFirst({
+            // lint:allow-unprojected-fat-table reason: image-cleanup helper reads only .image; could narrow to columns: { image: true } in Tier-2 cleanup pass
             where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
           });
           const oldImage = item?.image ?? null;
@@ -758,21 +967,27 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       }
 
       const [updatedItem] = await db
+        .tag('packs.updateItem')
         .update(packItems)
         .set(updateData)
         .where(and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)))
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: PATCH returns full updatedItem to client via PackItemSchema; defer narrowing to Tier-3 #13 (response-schema split)
 
-      if (!updatedItem) return status(404, { error: 'Pack item not found' });
+      if (!updatedItem) throw new NotFoundError('Pack item not found');
 
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
+      await db
+        .tag('packs.update')
+        .update(packs)
+        .set({ updatedAt: new Date() })
+        .where(eq(packs.id, updatedItem.packId));
 
       updatedItem.embedding = null;
-      return updatedItem;
+      return PackItemSchema.parse(updatedItem);
     },
     {
       params: z.object({ itemId: z.string() }),
       body: UpdatePackItemRequestSchema,
+      response: { 200: PackItemSchema, 500: ErrorResponseSchema },
       isAuthenticated: true,
       detail: {
         tags: ['Pack Items'],
@@ -789,15 +1004,20 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
       const db = createDb();
       const itemId = params.itemId;
 
-      const item = await db.query.packItems.findFirst({
+      const item = await db.tag('packs.getItem').query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: DELETE existence check + reads .packId; could narrow but defer to pivot-migration cleanup
         where: and(eq(packItems.id, itemId), eq(packItems.userId, user.userId)),
       });
 
       if (!item) return status(404, { error: 'Pack item not found' });
 
       const packId = item.packId;
-      await db.delete(packItems).where(eq(packItems.id, itemId));
-      await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+      await db.tag('packs.deleteItem').delete(packItems).where(eq(packItems.id, itemId));
+      await db
+        .tag('packs.update')
+        .update(packs)
+        .set({ updatedAt: new Date() })
+        .where(eq(packs.id, packId));
 
       return { success: true, itemId };
     },
@@ -823,7 +1043,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
-      const sourceItem = await db.query.packItems.findFirst({
+      const sourceItem = await db.tag('packs.getItem').query.packItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer to pivot migration (separate pack_item_embeddings table)
         where: eq(packItems.id, itemId),
         with: { pack: true },
       });
@@ -836,14 +1057,21 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         return status(403, { error: 'Access denied to private pack' });
       }
 
-      const catalogSimilarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+      // HNSW-eligible: ORDER BY raw distance ASC. The `similarity` field is
+      // preserved in the response (1 - distance) for caller compatibility.
+      const catalogDistance = cosineDistance(catalogItems.embedding, sourceItem.embedding);
+      const catalogSimilarity = sql<number>`1 - (${catalogDistance})`;
+      const maxCatalogDistance = 1 - threshold;
       const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
 
       const similarCatalogItems = await db
+        .tag('packs.getSimilarItems')
         .select({ ...catalogColumns, similarity: catalogSimilarity })
         .from(catalogItems)
-        .where(and(gt(catalogSimilarity, threshold), isNotNull(catalogItems.embedding)))
-        .orderBy(desc(catalogSimilarity))
+        .where(
+          and(sql`${catalogDistance} < ${maxCatalogDistance}`, isNotNull(catalogItems.embedding)),
+        )
+        .orderBy(catalogDistance)
         .limit(validLimit);
 
       const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;

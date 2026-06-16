@@ -1,9 +1,9 @@
+import { assertDefined } from '@packrat/guards';
 import {
   LocationSearchResponseSchema,
   type WeatherAPIForecastResponse,
   WeatherAPIForecastResponseSchema,
-} from '@packrat/api/schemas/weather';
-import { assertDefined } from '@packrat/guards';
+} from '@packrat/schemas/weather';
 import * as Sentry from '@sentry/react-native';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
@@ -12,14 +12,21 @@ import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
  * Search for locations by name
  */
 export async function searchLocations(query: string) {
+  Sentry.addBreadcrumb({
+    category: 'weather',
+    message: 'Searching locations',
+    level: 'info',
+    data: { query },
+  });
   const { data, error } = await apiClient.weather.search.get({ query: { q: query } });
 
   if (error) {
     console.error('Error searching locations:', error.value);
-    const err = new Error('Failed to search locations');
+    const err = new Error(String(error.value ?? 'Failed to search locations'));
     Sentry.captureException(err, {
       contexts: { weather: { query, apiError: error.value } },
       tags: { weather_operation: 'searchLocations' },
+      extra: { httpStatus: error.status },
     });
     throw err;
   }
@@ -29,16 +36,29 @@ export async function searchLocations(query: string) {
 /**
  * Search for locations by coordinates
  */
-export async function searchLocationsByCoordinates(latitude: number, longitude: number) {
+export async function searchLocationsByCoordinates({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}) {
+  Sentry.addBreadcrumb({
+    category: 'weather',
+    message: 'Searching locations by coordinates',
+    level: 'info',
+    data: { latitude, longitude },
+  });
   const { data, error } = await apiClient.weather['search-by-coordinates'].get({
     query: { lat: latitude.toFixed(6), lon: longitude.toFixed(6) },
   });
   if (error) {
     console.error('Error searching locations by coordinates:', error.value);
-    const err = new Error('Failed to find locations near you');
+    const err = new Error(String(error.value ?? 'Failed to find locations near you'));
     Sentry.captureException(err, {
       contexts: { weather: { latitude, longitude, apiError: error.value } },
       tags: { weather_operation: 'searchLocationsByCoordinates' },
+      extra: { httpStatus: error.status },
     });
     throw err;
   }
@@ -49,13 +69,20 @@ export async function searchLocationsByCoordinates(latitude: number, longitude: 
  * Get detailed weather data for a location
  */
 export async function getWeatherData(id: number) {
+  Sentry.addBreadcrumb({
+    category: 'weather',
+    message: 'Fetching weather forecast',
+    level: 'info',
+    data: { locationId: id },
+  });
   const { data, error } = await apiClient.weather.forecast.get({ query: { id: String(id) } });
   if (error) {
     console.error('Error getting weather data:', error.value);
-    const err = new Error('Failed to get weather data');
+    const err = new Error(String(error.value ?? 'Failed to get weather data'));
     Sentry.captureException(err, {
       contexts: { weather: { locationId: id, apiError: error.value } },
       tags: { weather_operation: 'getWeatherData' },
+      extra: { httpStatus: error.status },
     });
     throw err;
   }
@@ -99,7 +126,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
           hour12: true,
         }),
         temp: Math.round(hour.temp_f),
-        icon: getIconNameFromCode(hour.condition.code, hour.is_day) as string,
+        icon: getIconNameFromCode({ code: hour.condition.code, isDay: hour.is_day }) as string,
         weatherCode: hour.condition.code,
         isDay: hour.is_day,
       };
@@ -112,7 +139,7 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
       high: Math.round(day.day.maxtemp_f),
       low: Math.round(day.day.mintemp_f),
-      icon: getIconNameFromCode(day.day.condition.code, 1) as string, // Always use day icon for daily forecast
+      icon: getIconNameFromCode({ code: day.day.condition.code, isDay: 1 }) as string, // Always use day icon for daily forecast
       weatherCode: day.day.condition.code,
     };
   });
@@ -151,10 +178,13 @@ export function formatWeatherData(data: WeatherAPIForecastResponse) {
 /**
  * Get background gradient colors based on weather condition
  */
-export function getWeatherBackgroundColors(
-  code: number,
-  isNight: boolean,
-): [string, string, string] {
+export function getWeatherBackgroundColors({
+  code,
+  isNight,
+}: {
+  code: number;
+  isNight: boolean;
+}): [string, string, string] {
   if (isNight) {
     if (code === 1000) return ['#1a2a3a', '#0c1824', '#05101a'];
     if (code >= 1003 && code <= 1009) return ['#2c3e50', '#1a2a3a', '#0c1824'];

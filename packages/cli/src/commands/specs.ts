@@ -13,13 +13,13 @@ export default defineCommand({
     const cache = await ensureCache();
     const conn = cache.getConnection();
 
-    const parser = new SpecParser(conn);
-    const rows = await parser.getProductSpecs(
-      args.product,
-      parsePositiveIntArg(args.limit, '--limit'),
-    );
-    printTable(
-      rows.map(
+    const parser = new SpecParser({ conn });
+    const rows = await parser.getProductSpecs({
+      query: args.product,
+      limit: parsePositiveIntArg({ value: args.limit, argName: '--limit' }),
+    });
+    printTable({
+      rows: rows.map(
         ({
           name,
           brand,
@@ -42,7 +42,7 @@ export default defineCommand({
           fabric,
         }),
       ),
-      { title: `Specs: "${args.product}"` },
-    );
+      options: { title: `Specs: "${args.product}"` },
+    });
   },
 });

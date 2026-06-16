@@ -51,7 +51,7 @@ const mainNav: NavItem[] = [
 ];
 
 interface AppShellProps {
-  children: (screen: Screen, navigate: (s: Screen) => void) => React.ReactNode;
+  children: (args: { screen: Screen; navigate: (s: Screen) => void }) => React.ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
@@ -144,7 +144,7 @@ export function AppShell({ children }: AppShellProps) {
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto">{children(screen, setScreen)}</div>
+        <div className="flex-1 overflow-y-auto">{children({ screen, navigate: setScreen })}</div>
 
         {/* Notifications Panel */}
         <NotificationsPanel open={showNotifications} onClose={() => setShowNotifications(false)} />

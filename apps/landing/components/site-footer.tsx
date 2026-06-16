@@ -7,7 +7,13 @@ import Link from 'next/link';
 import type React from 'react';
 
 export default function SiteFooter() {
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const scrollToSection = ({
+    e,
+    href,
+  }: {
+    e: React.MouseEvent<HTMLAnchorElement>;
+    href: string;
+  }) => {
     e.preventDefault();
     const targetId = href.substring(1);
     const element = document.getElementById(targetId);
@@ -58,7 +64,9 @@ export default function SiteFooter() {
                 <li key={item.title}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
+                    onClick={(e) =>
+                      item.href.startsWith('#') && scrollToSection({ e, href: item.href })
+                    }
                     className="text-sm text-muted-foreground hover:text-apple-blue transition-colors"
                   >
                     {item.title}
@@ -76,7 +84,9 @@ export default function SiteFooter() {
                 <li key={item.title}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
+                    onClick={(e) =>
+                      item.href.startsWith('#') && scrollToSection({ e, href: item.href })
+                    }
                     className="text-sm text-muted-foreground hover:text-apple-blue transition-colors"
                   >
                     {item.title}
@@ -94,7 +104,9 @@ export default function SiteFooter() {
                 <li key={item.title}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
+                    onClick={(e) =>
+                      item.href.startsWith('#') && scrollToSection({ e, href: item.href })
+                    }
                     className="text-sm text-muted-foreground hover:text-apple-blue transition-colors"
                   >
                     {item.title}

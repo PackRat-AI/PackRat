@@ -19,8 +19,10 @@ export function useCreatePackTemplateItem() {
         deleted: false,
       };
 
-      obs(packTemplateItemsStore, id).set(newItem);
-      obs(packTemplatesStore, packTemplateId).localUpdatedAt.set(new Date().toISOString());
+      obs({ store: packTemplateItemsStore, id: id }).set(newItem);
+      obs({ store: packTemplatesStore, id: packTemplateId }).localUpdatedAt.set(
+        new Date().toISOString(),
+      );
     },
     [],
   );

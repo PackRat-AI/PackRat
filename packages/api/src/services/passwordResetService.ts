@@ -1,8 +1,8 @@
 import { hashPassword } from '@better-auth/utils/password';
 import { createDb } from '@packrat/api/db';
-import { account, users, verification } from '@packrat/api/db/schema';
 import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail } from '@packrat/api/utils/email';
+import { account, users, verification } from '@packrat/db';
 import { and, eq, gt } from 'drizzle-orm';
 
 const OTP_LENGTH = 6;
@@ -16,7 +16,9 @@ function generateOtp(): string {
 export async function requestPasswordReset(email: string): Promise<void> {
   const db = createDb();
 
-  const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+  const user = await db
+    .tag('passwordReset.findUserByEmail')
+    .query.users.findFirst({ where: eq(users.email, email) });
   if (!user) return; // Don't reveal whether the email is registered
 
   const code = generateOtp();
@@ -24,8 +26,11 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + OTP_TTL_MS);
 
-  await db.delete(verification).where(eq(verification.identifier, identifier));
-  await db.insert(verification).values({
+  await db
+    .tag('passwordReset.deleteExistingVerification')
+    .delete(verification)
+    .where(eq(verification.identifier, identifier));
+  await db.tag('passwordReset.insertVerification').insert(verification).values({
     id: crypto.randomUUID(),
     identifier,
     value: code,
@@ -49,15 +54,17 @@ export async function verifyOtpAndResetPassword({
   const db = createDb();
   const identifier = `${IDENTIFIER_PREFIX}${email}`;
 
-  const record = await db.query.verification.findFirst({
+  const record = await db.tag('passwordReset.findVerification').query.verification.findFirst({
     where: and(eq(verification.identifier, identifier), gt(verification.expiresAt, new Date())),
   });
 
-  if (!record || !timingSafeEqual(record.value, code)) {
+  if (!record || !timingSafeEqual({ a: record.value, b: code })) {
     throw new Error('Invalid or expired reset code');
   }
 
-  const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+  const user = await db
+    .tag('passwordReset.findUserForReset')
+    .query.users.findFirst({ where: eq(users.email, email) });
   if (!user) throw new Error('User not found');
 
   const hashedPassword = await hashPassword(newPassword);
@@ -65,6 +72,7 @@ export async function verifyOtpAndResetPassword({
 
   // Update the credential account record (Better Auth email/password users)
   const updated = await db
+    .tag('passwordReset.updateAccountPassword')
     .update(account)
     .set({ password: hashedPassword, updatedAt: now })
     .where(and(eq(account.userId, user.id), eq(account.providerId, 'credential')))
@@ -73,10 +81,14 @@ export async function verifyOtpAndResetPassword({
   // Fallback for legacy users whose password lives on the users row
   if (updated.length === 0) {
     await db
+      .tag('passwordReset.updateUserPasswordHash')
       .update(users)
       .set({ passwordHash: hashedPassword, updatedAt: now })
       .where(eq(users.id, user.id));
   }
 
-  await db.delete(verification).where(eq(verification.identifier, identifier));
+  await db
+    .tag('passwordReset.deleteVerification')
+    .delete(verification)
+    .where(eq(verification.identifier, identifier));
 }

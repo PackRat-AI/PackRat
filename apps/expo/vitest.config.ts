@@ -32,10 +32,21 @@ export default defineConfig({
         'utils/**/*.test.ts',
         'lib/utils/**/*.test.ts',
         'features/**/utils/**/*.test.ts',
-        'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
+        'utils/polyfills.ts',
+        '**/*.web.ts', // Browser-API files; not runnable in Node vitest environment
+        // React Native file-system APIs — not runnable in Node environment
+        'features/**/utils/uploadImage.ts',
+        // UI helper files that depend on React Native navigation primitives
+        'features/**/utils/getPackDetailOptions.tsx',
+        'features/**/utils/getPackItemDetailOptions.tsx',
+        // Barrel files (just re-exports, no business logic)
+        'features/**/utils/index.ts',
       ],
       thresholds: {
-        statements: 75,
+        statements: 95,
+        branches: 92,
+        functions: 97,
+        lines: 95,
       },
     },
   },

@@ -37,3 +37,12 @@ android
 .env
 .env.*
 !.env.example
+
+# Playwright E2E — cached auth state (written by globalSetup, contains real credentials)
+playwright/.auth/
+playwright/.auth-tokens.json
+playwright/.auth-state.json
+playwright/playwright-report/
+playwright/test-results/
+playwright-report/
+test-results/

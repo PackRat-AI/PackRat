@@ -1,13 +1,13 @@
 import { observable, syncState } from '@legendapp/state';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import { TrailConditionReportSchema } from '@packrat/api/schemas/trailConditions';
+import { TrailConditionReportSchema } from '@packrat/schemas/trailConditions';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { TrailConditionReportInStore } from '../types';
 
-const listMyReports = async (_params: unknown, { lastSync }: { lastSync?: number } = {}) => {
+const _listMyReportsImpl = async ({ lastSync }: { lastSync?: number } = {}) => {
   const { data, error } = await apiClient['trail-conditions'].mine.get({
     query: lastSync != null ? { updatedAt: new Date(lastSync + 1).toISOString() } : {},
   });
@@ -86,7 +86,7 @@ syncObservable(
       backoff: 'exponential',
       maxDelay: 30000,
     },
-    list: listMyReports,
+    list: (_params: unknown, opts?: { lastSync?: number }) => _listMyReportsImpl(opts),
     create: createReport,
     update: updateReport,
     changesSince: 'last-sync',

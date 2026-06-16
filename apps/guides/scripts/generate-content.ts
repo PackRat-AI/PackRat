@@ -176,10 +176,13 @@ function getExistingContent(): ContentMetadata[] {
 }
 
 // Generate topic ideas based on categories and existing content
-async function generateTopicIdeas(
-  count: number,
-  opts: { categories?: ContentCategory[]; existingContent?: ContentMetadata[] } = {},
-): Promise<ContentMetadata[]> {
+async function generateTopicIdeas({
+  count,
+  opts = {},
+}: {
+  count: number;
+  opts?: { categories?: ContentCategory[]; existingContent?: ContentMetadata[] };
+}): Promise<ContentMetadata[]> {
   const { categories, existingContent = [] } = opts;
   console.log(chalk.blue(`Generating ${count} topic ideas...`));
 
@@ -300,10 +303,13 @@ async function generateTopicIdeas(
 }
 
 // Generate full MDX content for a topic with awareness of existing content
-async function generateMdxContent(
-  metadata: ContentMetadata,
-  existingContent: ContentMetadata[] = [],
-): Promise<string> {
+async function generateMdxContent({
+  metadata,
+  existingContent = [],
+}: {
+  metadata: ContentMetadata;
+  existingContent?: ContentMetadata[];
+}): Promise<string> {
   console.log(chalk.blue(`Generating content for: ${metadata.title}`));
 
   const categoryNames = metadata.categories.map((c) => CATEGORY_DISPLAY_NAMES[c]);
@@ -367,10 +373,13 @@ async function generateMdxContent(
 }
 
 // Generate a single post
-async function generatePost(
-  request: ContentRequest,
-  existingContent: ContentMetadata[] = [],
-): Promise<string> {
+async function generatePost({
+  request,
+  existingContent = [],
+}: {
+  request: ContentRequest;
+  existingContent?: ContentMetadata[];
+}): Promise<string> {
   try {
     // Set defaults for missing fields
     const metadata: ContentMetadata = {
@@ -388,11 +397,11 @@ async function generatePost(
     // Generate content if requested
     let content = '';
     if (request.generateFullContent) {
-      content = await generateMdxContent(metadata, existingContent);
+      content = await generateMdxContent({ metadata, existingContent });
 
       try {
         console.log(chalk.blue(`🔗 Enhancing ${metadata.title} with catalog items...`));
-        const enhancementResult = await enhanceGuideContent(content);
+        const enhancementResult = await enhanceGuideContent({ content });
         content = enhancementResult.content;
 
         if (enhancementResult.productsUsed.length > 0) {
@@ -426,14 +435,20 @@ async function generatePost(
 }
 
 // Generate multiple posts
-async function generatePosts(count: number, categories?: ContentCategory[]): Promise<string[]> {
+async function generatePosts({
+  count,
+  categories,
+}: {
+  count: number;
+  categories?: ContentCategory[];
+}): Promise<string[]> {
   try {
     // Get existing content first
     const existingContent = getExistingContent();
     console.log(chalk.blue(`Found ${existingContent.length} existing articles`));
 
     // Generate topic ideas with awareness of existing content
-    const topics = await generateTopicIdeas(count, { categories, existingContent });
+    const topics = await generateTopicIdeas({ count, opts: { categories, existingContent } });
     console.log(chalk.green(`✓ Generated ${topics.length} topic ideas`));
 
     // Generate content for each topic
@@ -453,7 +468,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
       };
 
       // Pass existing content to generatePost for context
-      const filePath = await generatePost(request, existingContent);
+      const filePath = await generatePost({ request, existingContent });
       if (filePath) {
         filePaths.push(filePath);
 
@@ -573,7 +588,7 @@ if (require.main === module) {
     );
   }
 
-  generatePosts(count, categoryArgs.length > 0 ? categoryArgs : undefined)
+  generatePosts({ count, categories: categoryArgs.length > 0 ? categoryArgs : undefined })
     .then(() => console.log(chalk.green('Generation complete!')))
     .catch((err) => console.error(chalk.red('Generation failed:'), err));
 }

@@ -49,24 +49,20 @@ const DefaultFallback = () => {
 };
 
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
-  const handleError = (error: unknown, info: { componentStack: string }) => {
-    // Log the error to your preferred logging service
-    console.error('Error caught by ErrorBoundary:', error);
-    console.error('Component stack:', info.componentStack);
-
-    // Call the custom error handler if provided
-    if (onError) {
-      onError(error, info);
-    }
-  };
-
   return (
     <Sentry.ErrorBoundary
       fallback={fallback ? fallback : DefaultFallback}
       onReset={onReset}
-      onError={(error: unknown, componentStack: ErrorInfo['componentStack']) =>
-        handleError(error, { componentStack: componentStack || '' })
-      }
+      beforeCapture={(scope) => {
+        scope.setTag('error_source', 'error_boundary');
+      }}
+      onError={(error: unknown, componentStack: ErrorInfo['componentStack']) => {
+        console.error('Error caught by ErrorBoundary:', error);
+        console.error('Component stack:', componentStack);
+        if (onError) {
+          onError(error, { componentStack: componentStack || '' });
+        }
+      }}
     >
       {children}
     </Sentry.ErrorBoundary>

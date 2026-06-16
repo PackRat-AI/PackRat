@@ -1,11 +1,12 @@
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
 import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
 import { SearchInput } from 'expo-app/components/SearchInput';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { router, useNavigation } from 'expo-router';
+import { router, Stack, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -15,6 +16,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -35,9 +37,8 @@ function LocationsScreen() {
   const { setActiveLocation } = useActiveLocation();
   const { isRefreshing, refreshAllLocations } = useLocationRefresh();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchInputRef = useRef(null);
+  const searchInputRef = useRef<TextInput>(null);
   const { removeLocation } = useLocations();
-
   // Determine if we're loading
   const isLoading = locationsState.state === 'loading';
 
@@ -119,13 +120,16 @@ function LocationsScreen() {
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <LargeTitleHeaderOverlapFixIOS>
-        <LargeTitleHeader
-          title={t('weather.weather')}
-          rightView={() => (
-            <Pressable onPress={handleAddLocation} className="mx-2">
-              <Icon name="plus" color={colors.foreground} />
-            </Pressable>
-          )}
+        <Stack.Screen
+          options={{
+            ...getAppBarOptions(),
+            title: t('weather.weather'),
+            headerRight: () => (
+              <Pressable onPress={handleAddLocation} style={{ padding: 14 }}>
+                <Icon name="plus" size={28} color={colors.foreground} />
+              </Pressable>
+            ),
+          }}
         />
 
         <View className="p-4">
@@ -251,4 +255,4 @@ function LocationsScreen() {
   );
 }
 
-export default withAuthWall(LocationsScreen, WeatherAuthWall);
+export default withAuthWall({ Component: LocationsScreen, AuthWall: WeatherAuthWall });

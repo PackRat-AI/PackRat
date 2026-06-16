@@ -1,4 +1,5 @@
 import { guideEnv } from '@packrat/env/next';
+import { GeneratePostRequestSchema } from '@packrat/schemas/guides';
 import { generatePost } from 'guides-app/scripts/generate-content';
 import { NextResponse } from 'next/server';
 
@@ -20,26 +21,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const requestData = await request.json();
-
-    // Validate request
-    if (!requestData.title) {
-      return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
-    }
-
-    if (
-      !requestData.categories ||
-      !Array.isArray(requestData.categories) ||
-      requestData.categories.length === 0
-    ) {
+    const parsed = GeneratePostRequestSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'At least one category is required' },
+        { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid request' },
         { status: 400 },
       );
     }
+    const requestData = parsed.data;
 
     // Generate the post
-    const filePath = await generatePost(requestData);
+    const filePath = await generatePost({ request: requestData });
 
     if (!filePath) {
       throw new Error('Failed to generate post');

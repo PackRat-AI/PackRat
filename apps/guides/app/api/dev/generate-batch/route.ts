@@ -1,4 +1,5 @@
 import { guideEnv } from '@packrat/env/next';
+import { GenerateBatchRequestSchema } from '@packrat/schemas/guides';
 import { generatePosts } from 'guides-app/scripts/generate-content';
 import { NextResponse } from 'next/server';
 
@@ -20,20 +21,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const requestData = await request.json();
-
-    // Validate request
-    const count = Number.parseInt(requestData.count, 10) || 5;
-
-    if (count <= 0 || count > 20) {
+    const parsed = GenerateBatchRequestSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'Count must be between 1 and 20' },
+        { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid request' },
         { status: 400 },
       );
     }
+    const { count, categories } = parsed.data;
 
     // Generate the posts
-    const filePaths = await generatePosts(count, requestData.categories);
+    const filePaths = await generatePosts({ count, categories });
 
     if (!filePaths.length) {
       throw new Error('Failed to generate posts');

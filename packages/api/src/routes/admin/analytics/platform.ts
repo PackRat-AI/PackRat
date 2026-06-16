@@ -1,29 +1,24 @@
 import { createDb } from '@packrat/api/db';
-import {
-  catalogItems,
-  packs,
-  posts,
-  trailConditionReports,
-  trips,
-  users,
-} from '@packrat/api/db/schema';
+import { catalogItems, packs, posts, trailConditionReports, trips, users } from '@packrat/db';
 import {
   ActiveUsersSchema,
   ActivityPointSchema,
   AdminErrorResponses,
+  AnalyticsPeriodSchema,
   BreakdownItemSchema,
   GrowthPointSchema,
-} from '@packrat/api/schemas/admin';
+} from '@packrat/schemas/admin';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-import { Elysia, status, t } from 'elysia';
+import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-const PeriodSchema = z.object({
-  period: z.enum(['day', 'week', 'month']).optional().default('month'),
-  range: z.coerce.number().int().min(1).max(365).optional().default(12),
-});
-
-function getStartDate(period: 'day' | 'week' | 'month', range: number): Date {
+function getStartDate({
+  period,
+  range,
+}: {
+  period: 'day' | 'week' | 'month';
+  range: number;
+}): Date {
   const d = new Date();
   if (period === 'day') d.setDate(d.getDate() - range);
   else if (period === 'week') d.setDate(d.getDate() - range * 7);
@@ -46,11 +41,12 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     async ({ query }) => {
       const db = createDb();
       const { period = 'month', range = 12 } = query;
-      const startDate = getStartDate(period, range);
+      const startDate = getStartDate({ period, range });
 
       try {
         const [userGrowth, packGrowth, catalogGrowth] = await Promise.all([
           db
+            .tag('adminAnalytics.userGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})::date::text`,
               count: count(),
@@ -60,6 +56,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
+            .tag('adminAnalytics.packGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})::date::text`,
               count: count(),
@@ -69,6 +66,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`),
           db
+            .tag('adminAnalytics.catalogGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${catalogItems.createdAt})::date::text`,
               count: count(),
@@ -105,8 +103,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
-      response: { 200: t.Array(GrowthPointSchema), ...AdminErrorResponses },
+      query: AnalyticsPeriodSchema,
+      response: { 200: z.array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
   )
@@ -116,11 +114,12 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     async ({ query }) => {
       const db = createDb();
       const { period = 'month', range = 12 } = query;
-      const startDate = getStartDate(period, range);
+      const startDate = getStartDate({ period, range });
 
       try {
         const [tripActivity, trailActivity, postActivity] = await Promise.all([
           db
+            .tag('adminAnalytics.tripActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})::date::text`,
               count: count(),
@@ -130,6 +129,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`),
           db
+            .tag('adminAnalytics.trailActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})::date::text`,
               count: count(),
@@ -146,6 +146,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
               sql`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})`,
             ),
           db
+            .tag('adminAnalytics.postActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${posts.createdAt})::date::text`,
               count: count(),
@@ -182,8 +183,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
-      response: { 200: t.Array(ActivityPointSchema), ...AdminErrorResponses },
+      query: AnalyticsPeriodSchema,
+      response: { 200: z.array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
     },
   )
@@ -219,6 +220,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
 
       try {
         const packsByCategory = await db
+          .tag('adminAnalytics.packsBreakdown')
           .select({ category: packs.category, count: count() })
           .from(packs)
           .where(eq(packs.deleted, false))
@@ -238,7 +240,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      response: { 200: t.Array(BreakdownItemSchema), ...AdminErrorResponses },
+      response: { 200: z.array(BreakdownItemSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' },
     },
   );

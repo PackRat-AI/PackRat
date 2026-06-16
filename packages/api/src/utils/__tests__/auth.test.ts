@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { hashPassword, isValidApiKey, verifyPassword } from '../auth';
+import { hashPassword, isValidApiKey, timingSafeEqual, verifyPassword } from '../auth';
 
 vi.mock('bcryptjs', () => ({
   hash: vi.fn((password: string) => Promise.resolve(`hashed_${password}`)),
@@ -22,11 +22,13 @@ describe('auth utilities', () => {
     });
 
     it('verifies a matching password', async () => {
-      expect(await verifyPassword('password123', 'hashed_password123')).toBe(true);
+      expect(await verifyPassword({ password: 'password123', hash: 'hashed_password123' })).toBe(
+        true,
+      );
     });
 
     it('rejects a non-matching password', async () => {
-      expect(await verifyPassword('password123', 'hashed_wrong')).toBe(false);
+      expect(await verifyPassword({ password: 'password123', hash: 'hashed_wrong' })).toBe(false);
     });
   });
 
@@ -55,6 +57,16 @@ describe('auth utilities', () => {
         PACKRAT_API_KEY: undefined,
       } as never);
       expect(isValidApiKey(new Headers({ 'x-api-key': 'anything' }))).toBe(false);
+    });
+
+    it('accepts a plain header map with uppercase X-API-Key', () => {
+      expect(isValidApiKey({ 'X-API-Key': 'test-api-key' })).toBe(true);
+    });
+  });
+
+  describe('timingSafeEqual', () => {
+    it('rejects when the first value is longer than the second', () => {
+      expect(timingSafeEqual({ a: 'test-api-key-extra', b: 'test-api-key' })).toBe(false);
     });
   });
 });

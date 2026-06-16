@@ -1,12 +1,12 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as React from 'react';
 import {
   Alert,
@@ -135,7 +135,7 @@ export default function OneTimePasswordScreen() {
           params: { email, code },
         });
       } else {
-        await verifyEmail(email, code); // Navigation is handled in the function
+        await verifyEmail({ _email: email, token: code }); // Navigation is handled in the function
       }
     } catch (error) {
       Alert.alert(
@@ -158,7 +158,12 @@ export default function OneTimePasswordScreen() {
       >
         <View className="flex-1 justify-center gap-3">
           <View className="items-center pb-1">
-            <Image source={LOGO_SOURCE} className="h-10 w-10 rounded-md" resizeMode="contain" />
+            <Image
+              source={LOGO_SOURCE}
+              className="h-10 w-10 rounded-md"
+              resizeMode="contain"
+              style={Platform.select({ web: { width: 40, height: 40 } })}
+            />
           </View>
           <View className="gap-1">
             <Text variant="title1" className="text-center font-semibold">
@@ -254,7 +259,7 @@ function OTPField({
   const inputRef = React.useRef<TextInput>(null);
 
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(asNonNullableRef(inputRef));
+  useKeyboardHideBlur({ textInputRef: asNonNullableRef(inputRef) });
 
   function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     if (nativeEvent.key === 'Backspace' && value === '') {

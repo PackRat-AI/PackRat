@@ -1,9 +1,5 @@
 import { createDb } from '@packrat/api/db';
 import { hashPassword } from '@packrat/api/utils/auth';
-import { assertDefined } from '@packrat/guards';
-import type { InferInsertModel } from 'drizzle-orm';
-
-import * as schema from '../../src/db/schema';
 import {
   catalogItems,
   packItems,
@@ -11,8 +7,11 @@ import {
   packTemplateItems,
   packTemplates,
   type users,
-} from '../../src/db/schema';
-import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
+} from '@packrat/db';
+import * as schema from '@packrat/db/schema';
+import { assertDefined } from '@packrat/guards';
+import type { InferInsertModel } from 'drizzle-orm';
+import { createFatCatalogItem, createTestCatalogItem } from '../fixtures/catalog-fixtures';
 import { createTestPack, createTestPackItem } from '../fixtures/pack-fixtures';
 import {
   createTestPackTemplate,
@@ -104,6 +103,33 @@ export async function seedCatalogItem(overrides?: Partial<InferInsertModel<typeo
     sku: overrides?.sku ?? generateUniqueSku(),
   });
   // Add a mock embedding if not provided
+  const dataWithEmbedding = {
+    ...itemData,
+    embedding: overrides?.embedding ?? generateMockEmbedding(),
+  };
+
+  const [item] = await db.insert(catalogItems).values(dataWithEmbedding).returning();
+
+  assertDefined(item);
+
+  return item;
+}
+
+/**
+ * Seeds a catalog item with all heavy JSONB columns populated (variants, techs,
+ * links, reviews, qas, faqs) plus an embedding. Use for tests that need to
+ * confirm whether a query path actually selects these heavy columns — without
+ * them populated, the path's select behavior is indistinguishable from a NULL.
+ */
+export async function seedFatCatalogItem(
+  overrides?: Partial<InferInsertModel<typeof catalogItems>>,
+) {
+  const db = createDb();
+
+  const itemData = createFatCatalogItem({
+    ...overrides,
+    sku: overrides?.sku ?? generateUniqueSku(),
+  });
   const dataWithEmbedding = {
     ...itemData,
     embedding: overrides?.embedding ?? generateMockEmbedding(),

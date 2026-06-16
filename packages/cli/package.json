@@ -1,6 +1,6 @@
 {
   "name": "@packrat/cli",
-  "version": "2.0.25",
+  "version": "2.0.28",
   "private": true,
   "type": "module",
   "bin": {
@@ -13,15 +13,18 @@
   "dependencies": {
     "@duckdb/node-api": "catalog:",
     "@packrat/analytics": "workspace:*",
+    "@packrat/api-client": "workspace:*",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "chalk": "catalog:",
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",
     "consola": "catalog:",
+    "uuid": "^11.0.5",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "catalog:"
+    "@types/bun": "catalog:",
+    "@types/uuid": "^11.0.0"
   }
 }

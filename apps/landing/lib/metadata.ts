@@ -18,14 +18,21 @@ export const landingMetadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: siteConfig.name }],
+    images: [
+      {
+        url: new URL('/og-image.png', siteConfig.url).toString(),
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: siteConfig.name,
     description: siteConfig.description,
     creator: siteConfig.twitterHandle,
-    images: ['/og-image.png'],
+    images: [new URL('/og-image.png', siteConfig.url).toString()],
   },
   icons: {
     icon: '/PackRat.ico',

@@ -2,7 +2,7 @@ import { isFunction } from '@packrat/guards';
 import Storage from 'expo-sqlite/kv-store';
 import { atom } from 'jotai';
 
-export const atomWithKvStorage = <T>(key: string, initialValue: T) => {
+export const atomWithKvStorage = <T>({ key, initialValue }: { key: string; initialValue: T }) => {
   const baseAtom = atom(initialValue);
 
   baseAtom.onMount = (setValue) => {

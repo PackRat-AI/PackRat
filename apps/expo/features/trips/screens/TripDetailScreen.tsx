@@ -7,7 +7,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Modal, ScrollView, Share, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -52,20 +52,6 @@ export function TripDetailScreen() {
     return new Date(dateString).toISOString().split('T')[0];
   };
 
-  const handleShareTrip = async () => {
-    try {
-      const lines: string[] = [`${trip.name}`];
-      if (trip.location?.name) lines.push(` ${trip.location.name.split(',')[0]}`);
-      if (trip.startDate || trip.endDate) {
-        lines.push(`${formatDate(trip.startDate)} – ${formatDate(trip.endDate)}`);
-      }
-      if (trip.description) lines.push(`\n${trip.description}`);
-      await Share.share({ message: lines.join('\n') });
-    } catch {
-      // ignore
-    }
-  };
-
   const handleWeatherPress = () => {
     if (!trip.location) return;
 
@@ -78,24 +64,14 @@ export function TripDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['bottom']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="p-4">
-          {/* Header */}
-          <View className="mb-3 flex-row items-start justify-between">
-            <Text className="flex-1 text-3xl font-bold text-foreground">{trip.name}</Text>
-            <Button variant="plain" size="icon" onPress={handleShareTrip}>
-              <Icon
-                materialIcon={{ type: 'MaterialIcons', name: 'share' }}
-                ios={{ name: 'square.and.arrow.up' }}
-                size={22}
-                color={colors.grey2}
-              />
-            </Button>
-          </View>
+          {/* Trip name */}
+          <Text className="mb-3 text-3xl font-bold text-foreground">{trip.name}</Text>
 
           {/* Dates */}
           <View className="mb-6">

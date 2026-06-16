@@ -26,24 +26,24 @@ export default defineCommand({
       temp: 'temp_rating_f',
     };
 
-    const parser = new SpecParser(conn);
+    const parser = new SpecParser({ conn });
     const rows = await parser.filterProducts({
       category: args.category,
       maxWeightG: args['max-weight']
-        ? parseNonNegativeNumberArg(args['max-weight'], '--max-weight')
+        ? parseNonNegativeNumberArg({ value: args['max-weight'], argName: '--max-weight' })
         : undefined,
       maxTempF: args['max-temp']
-        ? parseOptionalNumberArg(args['max-temp'], '--max-temp')
+        ? parseOptionalNumberArg({ value: args['max-temp'], argName: '--max-temp' })
         : undefined,
-      maxPrice: parseOptionalNumberArg(args['max-price'], '--max-price'),
-      minPrice: parseOptionalNumberArg(args['min-price'], '--min-price'),
+      maxPrice: parseOptionalNumberArg({ value: args['max-price'], argName: '--max-price' }),
+      minPrice: parseOptionalNumberArg({ value: args['min-price'], argName: '--min-price' }),
       gender: args.gender,
       seasons: args.seasons,
       sortBy: sortMap[args.sort] ?? 'price',
-      limit: parsePositiveIntArg(args.limit, '--limit'),
+      limit: parsePositiveIntArg({ value: args.limit, argName: '--limit' }),
     });
-    printTable(
-      rows.map(({ name, brand, price, weight_grams, temp_rating_f, seasons, gender }) => ({
+    printTable({
+      rows: rows.map(({ name, brand, price, weight_grams, temp_rating_f, seasons, gender }) => ({
         name: String(name).slice(0, 40),
         brand,
         price,
@@ -52,7 +52,7 @@ export default defineCommand({
         seasons,
         gender,
       })),
-      { title: 'Filtered Products' },
-    );
+      options: { title: 'Filtered Products' },
+    });
   },
 });

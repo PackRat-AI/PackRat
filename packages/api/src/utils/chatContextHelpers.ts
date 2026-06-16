@@ -6,7 +6,13 @@ type ChatContext = {
   contextType: 'item' | 'pack' | 'general';
 };
 
-export function generatePromptWithContext(userMessage: string, context?: ChatContext): string {
+export function generatePromptWithContext({
+  userMessage,
+  context,
+}: {
+  userMessage: string;
+  context?: ChatContext;
+}): string {
   if (!context || context.contextType === 'general') {
     return userMessage;
   }

@@ -1,7 +1,16 @@
 import { createDb } from '@packrat/api/db';
-import { users } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
-import { UpdateUserRequestSchema } from '@packrat/api/schemas/users';
+import { captureApiException } from '@packrat/api/utils/sentry';
+import { users } from '@packrat/db';
+import { ErrorResponseSchema } from '@packrat/schemas/shared';
+import {
+  GetPreferencesResponseSchema,
+  PatchPreferencesResponseSchema,
+  UpdateUserRequestSchema,
+  UpdateUserResponseSchema,
+  UserPreferencesSchema,
+  UserProfileSchema,
+} from '@packrat/schemas/users';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 
@@ -15,6 +24,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
       try {
         const db = createDb();
         const [userRecord] = await db
+          .tag('user.getProfile')
           .select({
             id: users.id,
             email: users.email,
@@ -34,20 +44,26 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
         }
 
-        return {
+        return UserProfileSchema.parse({
           success: true,
           user: {
             ...userRecord,
             createdAt: userRecord.createdAt?.toISOString() || null,
             updatedAt: userRecord.updatedAt?.toISOString() || null,
           },
-        };
+        });
       } catch (error) {
-        console.error('Error fetching user profile:', error);
-        return status(500, { error: 'Failed to fetch user profile', code: 'FETCH_ERROR' });
+        captureApiException({
+          error: error,
+          operation: 'user.getProfile',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
+        throw error;
       }
     },
     {
+      response: { 200: UserProfileSchema, 404: ErrorResponseSchema },
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Get user profile', security: [{ bearerAuth: [] }] },
     },
@@ -63,16 +79,14 @@ export const userRoutes = new Elysia({ prefix: '/user' })
 
         if (email) {
           const [existingUser] = await db
+            .tag('user.checkEmail')
             .select({ id: users.id })
             .from(users)
             .where(eq(users.email, email.toLowerCase()))
             .limit(1);
 
           if (existingUser && existingUser.id !== user.userId) {
-            return status(409, {
-              error: 'Email already in use by another user',
-              code: 'EMAIL_CONFLICT',
-            });
+            return status(409, { error: 'Email already in use by another user' });
           }
         }
 
@@ -88,6 +102,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
         }
 
         const [updatedUser] = await db
+          .tag('user.updateProfile')
           .update(users)
           .set(updateData)
           .where(eq(users.id, user.userId))
@@ -101,7 +116,7 @@ export const userRoutes = new Elysia({ prefix: '/user' })
           ? 'Profile updated successfully. Please verify your new email address.'
           : 'Profile updated successfully';
 
-        return {
+        return UpdateUserResponseSchema.parse({
           success: true,
           message,
           user: {
@@ -115,15 +130,95 @@ export const userRoutes = new Elysia({ prefix: '/user' })
             createdAt: updatedUser.createdAt?.toISOString() || null,
             updatedAt: updatedUser.updatedAt?.toISOString() || null,
           },
-        };
+        });
       } catch (error) {
-        console.error('Error updating user profile:', error);
-        return status(500, { error: 'Failed to update user profile', code: 'UPDATE_ERROR' });
+        captureApiException({
+          error: error,
+          operation: 'user.updateProfile',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
+        throw error;
       }
     },
     {
       body: UpdateUserRequestSchema,
       isAuthenticated: true,
       detail: { tags: ['Users'], summary: 'Update user profile', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Get preferences
+  .get(
+    '/preferences',
+    async ({ user }) => {
+      try {
+        const db = createDb();
+        const [row] = await db
+          .tag('user.getPreferences')
+          .select({ preferences: users.preferences })
+          .from(users)
+          .where(eq(users.id, user.userId))
+          .limit(1);
+
+        if (!row) return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
+
+        return GetPreferencesResponseSchema.parse({
+          preferences: UserPreferencesSchema.parse(row.preferences ?? {}),
+        });
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'user.getPreferences',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
+        throw error;
+      }
+    },
+    {
+      response: { 200: GetPreferencesResponseSchema, 404: ErrorResponseSchema },
+      isAuthenticated: true,
+      detail: { tags: ['Users'], summary: 'Get user preferences', security: [{ bearerAuth: [] }] },
+    },
+  )
+
+  // Update preferences (full replace — client always sends complete state)
+  .patch(
+    '/preferences',
+    async ({ body, user }) => {
+      try {
+        const db = createDb();
+        const [row] = await db
+          .tag('user.updatePreferences')
+          .update(users)
+          .set({ preferences: body, updatedAt: new Date() })
+          .where(eq(users.id, user.userId))
+          .returning();
+
+        if (!row) return status(404, { error: 'User not found', code: 'USER_NOT_FOUND' });
+
+        return PatchPreferencesResponseSchema.parse({
+          preferences: UserPreferencesSchema.parse(row.preferences ?? {}),
+        });
+      } catch (error) {
+        captureApiException({
+          error,
+          operation: 'user.updatePreferences',
+          userId: user.userId,
+          tags: { feature: 'user' },
+        });
+        throw error;
+      }
+    },
+    {
+      body: UserPreferencesSchema,
+      response: { 200: PatchPreferencesResponseSchema, 404: ErrorResponseSchema },
+      isAuthenticated: true,
+      detail: {
+        tags: ['Users'],
+        summary: 'Update user preferences',
+        security: [{ bearerAuth: [] }],
+      },
     },
   );

@@ -1,6 +1,6 @@
+import type { NewCatalogItem } from '@packrat/db';
 import { isString } from '@packrat/guards';
-import type { NewCatalogItem } from '../db/schema';
-import { AvailabilitySchema, WeightUnitSchema } from '../types';
+import { AvailabilitySchema, WeightUnitSchema } from '@packrat/schemas/constants';
 
 // ── CSV sanitization regex constants ──
 const NEWLINE_CHARS = /[\r\n]+/g;
@@ -96,7 +96,7 @@ export function mapCsvRowToItem({
   const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
   const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
   if (weightStr && parseFloat(weightStr) > 0) {
-    const { weight, unit } = parseWeight(weightStr, unitStr);
+    const { weight, unit } = parseWeight({ weightStr, unitStr });
     item.weight = weight || undefined;
     const parsedUnit = WeightUnitSchema.safeParse(unit);
     item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
@@ -161,7 +161,7 @@ export function mapCsvRowToItem({
       if (!item.weight && !Array.isArray(parsed)) {
         const claimedWeight = parsed['Claimed Weight'] || parsed.weight;
         if (claimedWeight) {
-          const { weight, unit } = parseWeight(claimedWeight);
+          const { weight, unit } = parseWeight({ weightStr: claimedWeight });
           item.weight = weight || undefined;
           const parsedUnit = WeightUnitSchema.safeParse(unit);
           item.weightUnit = parsedUnit.success ? parsedUnit.data : undefined;
@@ -207,10 +207,10 @@ export function mapCsvRowToItem({
   return item;
 }
 
-export function parseWeight(
-  weightStr: string,
-  unitStr?: string,
-): { weight: number | null; unit: string | null } {
+export function parseWeight({ weightStr, unitStr }: { weightStr: string; unitStr?: string }): {
+  weight: number | null;
+  unit: string | null;
+} {
   if (!weightStr) return { weight: null, unit: null };
 
   const weightVal = parseFloat(weightStr);

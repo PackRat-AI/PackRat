@@ -2,15 +2,19 @@
  * Singleton manager for the on-device AI model.
  *
  * - On iOS 26+: uses @react-native-ai/apple (Apple Foundation Models, no download needed)
- * - On other devices: uses @react-native-ai/llama with SmolLM3-3B-GGUF
+ * - On other devices: uses @react-native-ai/llama with Qwen2.5-3B-Instruct Q3_K_M
  *
  * Updates Jotai atoms via the global store so download progress is visible
  * from any component, even while the bottom sheet is closed.
  */
 
 import { isString } from '@packrat/guards';
-import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
+import type { LlamaLanguageModel } from '@react-native-ai/llama';
+import { llama } from '@react-native-ai/llama';
+import * as Sentry from '@sentry/react-native';
+import type { LanguageModel } from 'ai';
 import { store } from 'expo-app/atoms/store';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Platform } from 'react-native';
 import RNBlobUtil from 'react-native-blob-util';
 import {
@@ -19,12 +23,14 @@ import {
   localModelProgressAtom,
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
-
+import { AppleModelWrapper } from './appleModelWrapper';
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
+import { LlamaToolsWrapper } from './llamaToolsWrapper';
 import { createLocalTools } from './tools';
 
-const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
+const LLAMA_MODEL_FILENAME = LLAMA_MODEL_ID.split('/').at(-1) ?? 'model.gguf';
 const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
+const KEEP_AWAKE_TAG = 'model-download';
 
 function _getLlamaModelPath(): string {
   return `${LLAMA_MODELS_DIR}/${LLAMA_MODEL_FILENAME}`;
@@ -58,9 +64,12 @@ function getAppleModule() {
   if (appleModule) return appleModule;
 
   try {
-    appleModule = import('@react-native-ai/apple');
+    // require() is synchronous — import() returns a Promise, which breaks
+    // the synchronous callers (isAppleIntelligenceAvailable, etc.)
+    appleModule = require('@react-native-ai/apple');
     return appleModule;
-  } catch {
+  } catch (err) {
+    console.error('Failed to load Apple module:', err);
     return null;
   }
 }
@@ -68,6 +77,7 @@ function getAppleModule() {
 // ─── Singletons ─────────────────────────────────────────────────────────────
 
 let llamaModel: LlamaLanguageModel | null = null;
+let llamaModelWrapper: LlamaToolsWrapper | null = null;
 // biome-ignore lint/suspicious/noExplicitAny: Apple module type unknown
 let appleModel: any = null;
 // biome-ignore lint/suspicious/noExplicitAny: download task type unknown
@@ -97,10 +107,21 @@ export function isAppleIntelligenceAvailable(): boolean {
   }
 }
 
+/**
+ * Returns true when the device will run local inference via llama (not Apple
+ * Foundation Models). llama inference speed is highly variable and can be
+ * noticeably slow on older or memory-constrained hardware, so callers use
+ * this to surface a heads-up to the user before they start a session.
+ */
+export function isSlowInferenceDevice(): boolean {
+  return !isAppleIntelligenceAvailable();
+}
+
 /** Returns the ready model instance, or null if not prepared yet. */
-export function getLocalModel(): LlamaLanguageModel | null {
+export function getLocalModel(): LanguageModel | null {
   if (isAppleIntelligenceAvailable()) return appleModel;
-  return llamaModel;
+  // safe-cast: LlamaToolsWrapper is structurally a LanguageModel; double-cast through unknown is required because two incompatible @ai-sdk/provider versions are installed
+  return llamaModelWrapper as unknown as LanguageModel;
 }
 
 /** Check if the local model file is fully present on disk (existence + size). */
@@ -112,7 +133,7 @@ export async function isLlamaModelDownloaded(): Promise<boolean> {
  * Initialise the local model. For Apple this is instant; for llama this
  * only prepares an already-downloaded model — call `downloadLocalModel` first.
  */
-export async function initLocalModel(): Promise<void> {
+export async function initLocalModel(isAuthenticated = false): Promise<void> {
   const status = store.get(localModelStatusAtom);
   if (status === 'downloading' || status === 'preparing' || status === 'ready') return;
 
@@ -120,7 +141,7 @@ export async function initLocalModel(): Promise<void> {
   store.set(localModelErrorAtom, null);
 
   if (isAppleIntelligenceAvailable()) {
-    await _initAppleModel();
+    await _initAppleModel(isAuthenticated);
   } else {
     await _initLlamaModel();
   }
@@ -130,10 +151,10 @@ export async function initLocalModel(): Promise<void> {
  * Download the llama model (no-op on Apple). Safe to call if already downloaded;
  * will fast-path to prepare().
  */
-export async function downloadLocalModel(): Promise<void> {
+export async function downloadLocalModel(isAuthenticated = false): Promise<void> {
   if (isAppleIntelligenceAvailable()) {
     // Apple model needs no download — just init
-    await _initAppleModel();
+    await _initAppleModel(isAuthenticated);
     return;
   }
 
@@ -144,7 +165,7 @@ export async function downloadLocalModel(): Promise<void> {
   store.set(localModelErrorAtom, null);
 
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
   }
 
   const isAvailable = await _isLlamaModelAvailable();
@@ -159,11 +180,30 @@ export async function downloadLocalModel(): Promise<void> {
 
     store.set(localModelStatusAtom, 'downloading');
     store.set(localModelProgressAtom, 0);
+    console.log('[KeepAwake] activating');
+    await activateKeepAwakeAsync(KEEP_AWAKE_TAG);
+    console.log('[KeepAwake] activated, _isCancellingDownload=', _isCancellingDownload);
+    // Guard against cancel arriving during the activateKeepAwakeAsync await
+    if (_isCancellingDownload) {
+      console.log('[KeepAwake] early cancel detected — deactivating');
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+      return;
+    }
     try {
       const dirExists = await RNBlobUtil.fs.exists(LLAMA_MODELS_DIR);
       if (!dirExists) {
         await RNBlobUtil.fs.mkdir(LLAMA_MODELS_DIR);
       }
+      Sentry.addBreadcrumb({
+        category: 'localModel',
+        message: 'Model download started',
+        level: 'info',
+        data: {
+          modelId: LLAMA_MODEL_ID,
+          platform: Platform.OS,
+          osVersion: String(Platform.Version),
+        },
+      });
       activeDownloadTask = RNBlobUtil.config({ path: _getLlamaModelPath(), fileCache: true }).fetch(
         'GET',
         _getLlamaDownloadUrl(),
@@ -171,14 +211,35 @@ export async function downloadLocalModel(): Promise<void> {
       activeDownloadTask.progress((received: number, total: number) => {
         store.set(localModelProgressAtom, Math.round((Number(received) / Number(total)) * 100));
       });
-      await activeDownloadTask;
+      const downloadRes = await activeDownloadTask;
       activeDownloadTask = null;
+      const httpStatus = downloadRes.respInfo?.status ?? 0;
+      console.log('[KeepAwake] download finished, httpStatus=', httpStatus);
+      if (httpStatus < 200 || httpStatus >= 300) {
+        await RNBlobUtil.fs.unlink(_getLlamaModelPath()).catch(() => {});
+        Sentry.captureException(new Error(`Model download failed: HTTP ${httpStatus}`), {
+          tags: { feature: 'localModel', action: 'download' },
+          extra: { httpStatus, modelId: LLAMA_MODEL_ID, osVersion: String(Platform.Version) },
+        });
+        store.set(localModelStatusAtom, 'error');
+        store.set(localModelErrorAtom, `Download failed: HTTP ${httpStatus}`);
+        return;
+      }
     } catch (err) {
       activeDownloadTask = null;
-      if (_isCancellingDownload) return;
-      store.set(localModelStatusAtom, 'error');
-      store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
+      console.log('[KeepAwake] catch, _isCancellingDownload=', _isCancellingDownload, 'err=', err);
+      if (!_isCancellingDownload) {
+        Sentry.captureException(err, {
+          tags: { feature: 'localModel', action: 'download' },
+          extra: { modelId: LLAMA_MODEL_ID, osVersion: String(Platform.Version) },
+        });
+        store.set(localModelStatusAtom, 'error');
+        store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
+      }
       return;
+    } finally {
+      console.log('[KeepAwake] deactivating (finally)');
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
     }
   }
 
@@ -187,6 +248,10 @@ export async function downloadLocalModel(): Promise<void> {
 
 /** Cancel an in-progress llama model download and reset state to idle. */
 export async function cancelLocalModelDownload(): Promise<void> {
+  console.log(
+    '[KeepAwake] cancelLocalModelDownload called, activeDownloadTask=',
+    !!activeDownloadTask,
+  );
   _isCancellingDownload = true;
   if (activeDownloadTask) {
     activeDownloadTask.cancel();
@@ -208,6 +273,32 @@ export async function cancelLocalModelDownload(): Promise<void> {
   _isCancellingDownload = false;
 }
 
+/**
+ * Unload the active model from memory without deleting the file.
+ * Use when backgrounding the app or before hot-reload, so native modules
+ * are cleanly invalidated. Call `initLocalModel` to reload after.
+ */
+export async function releaseLocalModel(): Promise<void> {
+  if (appleModel) {
+    try {
+      await appleModel.unload?.();
+    } catch {
+      // ignore
+    }
+    appleModel = null;
+  }
+  if (llamaModel) {
+    try {
+      await llamaModel.unload();
+    } catch {
+      // ignore
+    }
+    llamaModel = null;
+    llamaModelWrapper = null;
+  }
+  store.set(localModelStatusAtom, 'idle');
+}
+
 /** Delete the downloaded llama model from disk. */
 export async function deleteLocalModel(): Promise<void> {
   if (llamaModel) {
@@ -217,6 +308,7 @@ export async function deleteLocalModel(): Promise<void> {
       // ignore unload errors
     }
     llamaModel = null;
+    llamaModelWrapper = null;
   }
 
   // Direct filesystem deletion — more reliable than the library's remove()
@@ -237,7 +329,7 @@ export async function deleteLocalModel(): Promise<void> {
 
 // ─── private helpers ───────────────────────────────────────────────────────
 
-async function _initAppleModel(): Promise<void> {
+async function _initAppleModel(isAuthenticated = false): Promise<void> {
   // isAppleIntelligenceAvailable() has already confirmed availability — just init.
   store.set(localModelStatusAtom, 'preparing');
 
@@ -245,8 +337,11 @@ async function _initAppleModel(): Promise<void> {
     const mod = await getAppleModule();
     if (!mod) throw new Error('Apple module not available');
 
-    appleModel = mod.apple();
-    appleModel.updateTools(createLocalTools());
+    const apple = mod.createAppleProvider({
+      availableTools: createLocalTools(isAuthenticated),
+    });
+
+    appleModel = new AppleModelWrapper(apple());
     store.set(localModelStatusAtom, 'ready');
   } catch {
     store.set(localModelStatusAtom, 'error');
@@ -256,7 +351,7 @@ async function _initAppleModel(): Promise<void> {
 
 async function _initLlamaModel(): Promise<void> {
   if (!llamaModel) {
-    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
+    llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 4096, n_gpu_layers: 99 });
   }
   const isAvailable = await _isLlamaModelAvailable();
   store.set(localModelFileAvailableAtom, isAvailable);
@@ -270,12 +365,23 @@ async function _initLlamaModel(): Promise<void> {
 
 async function _prepareLlamaModel(): Promise<void> {
   store.set(localModelStatusAtom, 'preparing');
+  Sentry.addBreadcrumb({
+    category: 'localModel',
+    message: 'Model prepare started',
+    level: 'info',
+    data: { modelId: LLAMA_MODEL_ID, platform: Platform.OS, osVersion: String(Platform.Version) },
+  });
   try {
     if (!llamaModel) throw new Error('llamaModel is not initialised');
     await llamaModel.prepare();
+    llamaModelWrapper = new LlamaToolsWrapper(llamaModel);
     store.set(localModelFileAvailableAtom, true);
     store.set(localModelStatusAtom, 'ready');
   } catch (err) {
+    Sentry.captureException(err, {
+      tags: { feature: 'localModel', action: 'prepare' },
+      extra: { modelId: LLAMA_MODEL_ID, osVersion: String(Platform.Version) },
+    });
     store.set(localModelStatusAtom, 'error');
     store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
   }
