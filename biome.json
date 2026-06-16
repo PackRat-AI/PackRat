@@ -63,6 +63,16 @@
   },
   "overrides": [
     {
+      "includes": ["packages/ui/nativewindui/index.ts"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": [
         "apps/expo/atoms/atomWith*.ts",
         "apps/expo/features/weather/atoms/locationsAtoms.ts",

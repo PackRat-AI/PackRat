@@ -78,6 +78,8 @@ export default (): ExpoConfig =>
         ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
+        'expo-status-bar',
+        ['expo-splash-screen', { image: './assets/splash.png' }],
       ],
       experiments: {
         typedRoutes: true,
@@ -86,9 +88,6 @@ export default (): ExpoConfig =>
       orientation: 'portrait',
       icon: getIcon(),
       userInterfaceStyle: 'automatic',
-      splash: {
-        image: './assets/splash.png',
-      },
       assetBundlePatterns: ['**/*'],
       ios: {
         supportsTablet: true,

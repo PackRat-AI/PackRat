@@ -1,6 +1,6 @@
 import '../polyfills';
 
-import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as NavThemeProvider } from 'expo-router/react-navigation';
 import 'expo-app/lib/devClient';
 import Constants from 'expo-constants';
 import { Stack } from 'expo-router';

@@ -6,13 +6,13 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
-  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
@@ -81,8 +81,16 @@ function Profile() {
   const { t } = useTranslation();
 
   const SCREEN_OPTIONS = {
+    ...getAppBarOptions(),
     title: t('profile.profile'),
-    headerShown: false,
+    headerBackVisible: false,
+    headerRight: () => (
+      <View className="flex-row items-center gap-2 pr-2 pl-2">
+        <DemoIcon />
+
+        <SettingsIcon />
+      </View>
+    ),
   } as const;
 
   // Generate display data based on user information
@@ -113,18 +121,6 @@ function Profile() {
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-
-      <LargeTitleHeader
-        title={t('profile.profile')}
-        backVisible={false}
-        rightView={() => (
-          <View className="flex-row items-center gap-2 pr-2 pl-2">
-            <DemoIcon />
-
-            <SettingsIcon />
-          </View>
-        )}
-      />
 
       <List
         contentContainerClassName="pt-8"
