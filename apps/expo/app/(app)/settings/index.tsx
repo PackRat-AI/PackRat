@@ -153,7 +153,7 @@ export default function SettingsScreen() {
                   {t('settings.windDistanceSubtitle')}
                 </Text>
               </View>
-              <View className="w-28">
+              <View className="w-36">
                 <SegmentedControl
                   testID={testIds.settings.speedUnitControl}
                   values={['km/h', 'mph']}

@@ -109,35 +109,38 @@ export default function LocationPreviewScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: '' }} />
-      <Stack.Header transparent style={{ shadowColor: 'transparent' }} />
-      <Stack.Screen.BackButton hidden />
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.View>
-          <TouchableOpacity onPress={() => router.back()}>
-            <View className="rounded-full bg-black/25 p-2">
-              <Icon name="arrow-left" color="white" size={20} />
-            </View>
-          </TouchableOpacity>
-        </Stack.Toolbar.View>
-      </Stack.Toolbar>
-      {!isLoading && !error && weatherData && (
-        <Stack.Toolbar placement="right">
-          <Stack.Toolbar.View>
-            <TouchableOpacity
-              className="rounded-full px-4 py-2"
-              onPress={handleSaveLocation}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text className="text-white">{t('weather.saveLocation')}</Text>
-              )}
-            </TouchableOpacity>
-          </Stack.Toolbar.View>
-        </Stack.Toolbar>
-      )}
+      <Stack.Screen
+        options={{
+          title: '',
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerTintColor: 'white',
+          headerLeft:
+            Platform.OS === 'ios'
+              ? () => (
+                  <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+                    <Icon name="chevron-left" color="white" size={28} />
+                  </TouchableOpacity>
+                )
+              : undefined,
+          headerRight:
+            !isLoading && !error && weatherData
+              ? () => (
+                  <TouchableOpacity
+                    className="rounded-full px-4 py-2"
+                    onPress={handleSaveLocation}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator size="small" color="white" />
+                    ) : (
+                      <Text className="text-white text-base">{t('weather.saveLocation')}</Text>
+                    )}
+                  </TouchableOpacity>
+                )
+              : undefined,
+        }}
+      />
 
       <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
         <ScrollView
