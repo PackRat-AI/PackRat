@@ -116,7 +116,7 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Weight</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  Shown on all weight displays
+                  For gear and pack weights
                 </Text>
               </View>
               <View className="w-28">
@@ -133,7 +133,7 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Temperature</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  Shown on all temperature displays
+                  For weather and forecasts
                 </Text>
               </View>
               <View className="w-28">
@@ -150,7 +150,7 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Wind & Distance</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  Shown on all speed and distance displays
+                  For routes and weather data
                 </Text>
               </View>
               <View className="w-28">
