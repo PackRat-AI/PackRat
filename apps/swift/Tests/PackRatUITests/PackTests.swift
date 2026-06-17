@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// End-to-end tests for Pack CRUD and item management.
 /// Each test creates data with a unique timestamped name and deletes it on teardown.
 final class PackTests: AppUITestCase {
@@ -259,3 +262,5 @@ final class PackTests: AppUITestCase {
         deleteButton.tap()
     }
 }
+
+#endif

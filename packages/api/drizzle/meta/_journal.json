@@ -271,8 +271,85 @@
     {
       "idx": 37,
       "version": "7",
-      "when": 1778135555239,
-      "tag": "0037_big_archangel",
+      "when": 1777170392780,
+      "tag": "0037_trips_trail_osm_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1777256400000,
+      "tag": "0040_uuid_pk_better_auth_migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1777256460000,
+      "tag": "0041_continue_uuid_migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1777256520000,
+      "tag": "0042_migrate_auth_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1777256580000,
+      "tag": "0043_finalize_uuid_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1777256640000,
+      "tag": "0044_complete_uuid_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1777256700000,
+      "tag": "0045_finalize_users_uuid_pk",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1777717813481,
+      "tag": "0044_absurd_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1777803600000,
+      "tag": "0046_social_feed_tables_uuid",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1778594728740,
+      "tag": "0047_cute_bloodscream",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1779334995277,
+      "tag": "0047_clear_monster_badoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1780945594870,
+      "tag": "0048_sturdy_felicia_hardy",
       "breakpoints": true
     }
   ]

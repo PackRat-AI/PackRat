@@ -13,6 +13,7 @@ const FeatureFlag = Object.freeze({
   EnableFeed: 'enableFeed',
   EnableWildlifeIdentification: 'enableWildlifeIdentification',
   EnableLocalAI: 'enableLocalAI',
+  EnableTrails: 'enableTrails',
 });
 
 const DashboardTileId = Object.freeze({
@@ -67,10 +68,11 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableShoppingList]: false,
     [FeatureFlag.EnableSharedPacks]: false,
     [FeatureFlag.EnablePackTemplates]: true,
-    [FeatureFlag.EnableTrailConditions]: false,
+    [FeatureFlag.EnableTrailConditions]: true,
     [FeatureFlag.EnableFeed]: false,
     [FeatureFlag.EnableWildlifeIdentification]: false,
-    [FeatureFlag.EnableLocalAI]: false,
+    [FeatureFlag.EnableLocalAI]: true,
+    [FeatureFlag.EnableTrails]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

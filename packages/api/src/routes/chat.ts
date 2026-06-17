@@ -1,28 +1,44 @@
 import { createDb } from '@packrat/api/db';
-import { reportedContent } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
+import { createTools } from '@packrat/api/utils/ai/tools';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+import { reportedContent } from '@packrat/db';
 import {
   ChatRequestSchema,
   CreateReportRequestSchema,
   UpdateReportStatusRequestSchema,
-} from '@packrat/api/schemas/chat';
-import { createAIProvider } from '@packrat/api/utils/ai/provider';
-import { createTools } from '@packrat/api/utils/ai/tools';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
+} from '@packrat/schemas/chat';
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import { eq } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
+const isE2EStubOpenAiKey = (openAiApiKey: string | undefined) =>
+  openAiApiKey?.startsWith('sk-e2e-stub-') === true;
+
 export const chatRoutes = new Elysia({ prefix: '/chat' })
+  .model({
+    'chat.ChatRequest': ChatRequestSchema,
+    'chat.CreateReportRequest': CreateReportRequestSchema,
+    'chat.UpdateReportStatusRequest': UpdateReportStatusRequestSchema,
+  })
   .use(authPlugin)
 
   // Chat streaming
   .post(
     '/',
-    async ({ body, user }) => {
+    async ({ body, user, request }) => {
       const typedBody = body as {
         messages?: UIMessage[] | undefined;
         contextType?: string;
@@ -57,29 +73,86 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       - Current date is ${date}`;
 
       if (contextType === 'pack' && packId) {
-        systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}.`;
+        systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}. Use the getPackDetails tool to fetch its contents.`;
       } else if (contextType === 'item' && itemId) {
-        systemPrompt += `\n- You are currently helping with an item with ID: ${itemId}.`;
+        systemPrompt += `\n- You are currently helping with an item with ID: ${itemId}. Use the getPackItemDetails tool to fetch its details.`;
       }
 
       if (location) {
         systemPrompt += `\n- The current location of the user is: ${location}.`;
       }
 
-      const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
+      const {
+        AI_PROVIDER,
+        OPENAI_API_KEY,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+        TOKEN_RATE_LIMITER,
+      } = getEnv();
+
+      if (TOKEN_RATE_LIMITER) {
+        const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+        const rateLimitKey = `chat:${user.userId}:${ip}`;
+        const { success } = await TOKEN_RATE_LIMITER.limit({ key: rateLimitKey });
+        if (!success) {
+          return status(429, { error: 'Too many chat requests, please try again shortly.' });
+        }
+      }
+
+      if (isE2EStubOpenAiKey(OPENAI_API_KEY)) {
+        return createUIMessageStreamResponse({
+          stream: createUIMessageStream({
+            originalMessages: messages,
+            execute: ({ writer }) => {
+              const id = 'e2e-chat-response';
+              writer.write({ type: 'text-start', id });
+              writer.write({
+                type: 'text-delta',
+                id,
+                delta:
+                  'For this e2e pack, three essential items are a shelter, a sleep system, and water treatment.',
+              });
+              writer.write({ type: 'text-end', id });
+              writer.write({ type: 'finish', finishReason: 'stop' });
+            },
+          }),
+        });
+      }
 
       const aiProvider = createAIProvider({
         openAiApiKey: OPENAI_API_KEY,
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
       if (!aiProvider) {
+        captureApiException({
+          error: new Error('AI provider not configured'),
+          operation: 'chat.stream',
+          userId: user.userId,
+          tags: { ai_provider: AI_PROVIDER },
+          extra: { httpStatus: 500, errorCode: 'AI_PROVIDER_NOT_CONFIGURED' },
+        });
         return status(500, { error: 'AI provider not configured' });
       }
+
+      apiAddBreadcrumb({
+        category: 'ai.chat',
+        message: 'Starting AI chat stream',
+        level: 'info',
+        data: {
+          userId: user.userId,
+          contextType,
+          packId,
+          itemId,
+          messageCount: messages?.length ?? 0,
+        },
+      });
 
       const result = streamText({
         model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
@@ -90,7 +163,13 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         temperature: 0.7,
         stopWhen: stepCountIs(5),
         onError: ({ error }) => {
-          console.error('streaming error', error);
+          captureApiException({
+            error: error,
+            operation: 'chat.stream.onError',
+            userId: user.userId,
+            tags: { ai_provider: AI_PROVIDER, context_type: contextType ?? 'none' },
+            extra: { packId, itemId, messageCount: messages?.length ?? 0 },
+          });
         },
       });
 
@@ -105,7 +184,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return response;
     },
     {
-      body: ChatRequestSchema,
+      body: 'chat.ChatRequest',
       isAuthenticated: true,
       detail: { tags: ['Chat'], summary: 'Chat with AI assistant', security: [{ bearerAuth: [] }] },
     },
@@ -118,7 +197,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const db = createDb();
       const { userQuery, aiResponse, reason, userComment } = body;
 
-      await db.insert(reportedContent).values({
+      await db.tag('chat.createReport').insert(reportedContent).values({
         userId: user.userId,
         userQuery,
         aiResponse,
@@ -129,7 +208,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return { success: true };
     },
     {
-      body: CreateReportRequestSchema,
+      body: 'chat.CreateReportRequest',
       isAuthenticated: true,
       detail: { tags: ['Chat'], summary: 'Report AI content', security: [{ bearerAuth: [] }] },
     },
@@ -145,7 +224,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         return status(403, { error: 'Unauthorized' });
       }
 
-      const reportedItems = await db.query.reportedContent.findMany({
+      const reportedItems = await db.tag('chat.getReports').query.reportedContent.findMany({
         orderBy: (rc, { desc }) => [desc(rc.createdAt)],
         with: { user: true },
       });
@@ -181,6 +260,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       const { status: reportStatus } = body;
 
       await db
+        .tag('chat.updateReportStatus')
         .update(reportedContent)
         .set({
           status: reportStatus,
@@ -194,7 +274,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
     },
     {
       params: z.object({ id: z.string() }),
-      body: UpdateReportStatusRequestSchema,
+      body: 'chat.UpdateReportStatusRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Chat'],

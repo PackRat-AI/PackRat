@@ -24,6 +24,10 @@ function isCI(): boolean {
   );
 }
 
+function isCFPages(): boolean {
+  return process.env.CF_PAGES === '1';
+}
+
 function printLocalFix(): void {
   console.error(`\n❌ ${TOKEN_VAR} is not exported in your shell.`);
   console.error('\nBun reads bunfig.toml before the preinstall hook runs, so the token');
@@ -47,8 +51,18 @@ async function configureDeps() {
   }
 
   if (isCI()) {
-    console.error(`❌ ${TOKEN_VAR} not found in CI environment`);
-    console.error(`Set ${TOKEN_VAR} in your CI secrets and expose it to this job.`);
+    if (isCFPages()) {
+      console.error(`❌ ${TOKEN_VAR} not found in Cloudflare Pages build environment.`);
+      console.error('Add it as an environment variable in the CF Pages project settings:');
+      console.error(
+        '  dash.cloudflare.com → Pages → packrat-guides → Settings → Environment variables',
+      );
+      console.error(`  Variable name: ${TOKEN_VAR}`);
+      console.error('  Value: a GitHub PAT with read:packages scope');
+    } else {
+      console.error(`❌ ${TOKEN_VAR} not found in CI environment`);
+      console.error(`Set ${TOKEN_VAR} in your CI secrets and expose it to this job.`);
+    }
     process.exit(1);
   }
 

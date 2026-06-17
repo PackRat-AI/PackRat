@@ -1,12 +1,12 @@
-import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { Stack, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
@@ -18,7 +18,7 @@ export const GuidesListScreen = () => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
-  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
 
   const {
     data: categories,
@@ -29,7 +29,6 @@ export const GuidesListScreen = () => {
   const {
     data: guidesData,
     isLoading: isLoadingGuides,
-    isRefetching: isRefetchingGuides,
     refetch: refetchGuides,
     fetchNextPage: fetchNextPageGuides,
     hasNextPage: hasNextPageGuides,
@@ -44,7 +43,6 @@ export const GuidesListScreen = () => {
   const {
     data: searchData,
     isLoading: isSearching,
-    isRefetching: isRefetchingSearch,
     refetch: refetchSearch,
     fetchNextPage: fetchNextPageSearch,
     hasNextPage: hasNextPageSearch,
@@ -60,7 +58,6 @@ export const GuidesListScreen = () => {
   const isSearchMode = searchQuery.length > 0;
   const data = isSearchMode ? searchData : guidesData;
   const isLoading = isSearchMode ? isSearching : isLoadingGuides;
-  const isRefetching = isSearchMode ? isRefetchingSearch : isRefetchingGuides;
   const refetch = isSearchMode ? refetchSearch : refetchGuides;
   const fetchNextPage = isSearchMode ? fetchNextPageSearch : fetchNextPageGuides;
   const hasNextPage = isSearchMode ? hasNextPageSearch : hasNextPageGuides;
@@ -81,6 +78,11 @@ export const GuidesListScreen = () => {
   const handleSearch = useCallback((text: string) => {
     setSearchQuery(text);
   }, []);
+  const handleRefresh = async () => {
+    setIsManualRefresh(true);
+    await refetch();
+    setIsManualRefresh(false);
+  };
 
   const handleCategoryChange = useCallback((category: string) => {
     setSelectedCategory(category);
@@ -195,20 +197,19 @@ export const GuidesListScreen = () => {
 
   return (
     <>
-      <LargeTitleHeader
-        title={t('guides.guides')}
-        searchBar={{
-          iosHideWhenScrolling: false,
-          ref: asNonNullableRef(searchBarRef),
-          onChangeText: handleSearch,
-          placeholder: t('guides.searchPlaceholder'),
-          content: (
-            <LargeTitleHeaderSearchContentContainer>
-              {renderSearchContent()}
-            </LargeTitleHeaderSearchContentContainer>
-          ),
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: t('guides.guides'),
         }}
       />
+      <SearchOverlay
+        placeholder={t('guides.searchPlaceholder')}
+        value={searchQuery}
+        onChangeText={handleSearch}
+      >
+        {renderSearchContent()}
+      </SearchOverlay>
 
       <FlatList
         data={guides}
@@ -219,8 +220,8 @@ export const GuidesListScreen = () => {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={isManualRefresh}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
         }

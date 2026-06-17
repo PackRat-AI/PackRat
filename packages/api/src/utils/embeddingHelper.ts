@@ -1,11 +1,14 @@
-import type { CatalogItem, PackItem } from '../db/schema';
+import type { CatalogItem, PackItem } from '@packrat/db';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
 
-export const getEmbeddingText = (
-  item: ItemForEmbedding,
-  existingItem?: Partial<CatalogItem> | Partial<PackItem>,
-): string => {
+export const getEmbeddingText = ({
+  item,
+  existingItem,
+}: {
+  item: ItemForEmbedding;
+  existingItem?: Partial<CatalogItem> | Partial<PackItem>;
+}): string => {
   const embeddingInput = [
     item.name,
     item.description,
@@ -18,10 +21,20 @@ export const getEmbeddingText = (
     ('category' in item && item.category) ||
       (existingItem && 'category' in existingItem && existingItem.category),
     ('variants' in item &&
-      item.variants?.map((v) => `${v.attribute}: ${v.values.join(', ')}`).join('; ')) ||
+      item.variants
+        ?.map((v) => {
+          const vals = Array.isArray(v.values) ? v.values : [v.values].filter(Boolean);
+          return `${v.attribute}: ${vals.join(', ')}`;
+        })
+        .join('; ')) ||
       (existingItem &&
         'variants' in existingItem &&
-        existingItem.variants?.map((v) => `${v.attribute}: ${v.values.join(', ')}`).join('; ')),
+        existingItem.variants
+          ?.map((v) => {
+            const vals = Array.isArray(v.values) ? v.values : [v.values].filter(Boolean);
+            return `${v.attribute}: ${vals.join(', ')}`;
+          })
+          .join('; ')),
     ('techs' in item && item.techs
       ? Object.entries(item.techs)
           .map(([k, v]) => `${k}: ${v}`)

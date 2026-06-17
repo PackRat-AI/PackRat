@@ -1,7 +1,14 @@
+import { use$ } from '@legendapp/state/react';
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  isSignOutRedirectingAtom,
+  needsReauthAtom,
+  suppressSignOutNavAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
@@ -10,9 +17,11 @@ import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackI
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import 'expo-dev-client';
-import { Stack } from 'expo-router';
+import 'expo-app/lib/devClient';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { type Href, router, Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,11 +32,51 @@ export {
 
 export default function AppLayout() {
   const isLoading = useAuthInit();
+  const isAuthedValue = use$(isAuthed);
   const { t } = useTranslation();
   const needsReauth = useAtomValue(needsReauthAtom);
+  const isLoadingGlobal = useAtomValue(isLoadingAtom);
+  const isSignOutRedirecting = useAtomValue(isSignOutRedirectingAtom);
+  const suppressSignOutNav = useAtomValue(suppressSignOutNavAtom);
   const insets = useSafeAreaInsets();
+  // Latches true once we dispatch router.replace('/auth') on sign-out.
+  // Keeps the spinner rendered until AppLayout unmounts so that
+  // auth/index.tsx resetting isLoadingAtom=false never causes AppLayout
+  // to re-render its Stack mid-transition. If the Stack re-initialized
+  // while the root navigator was still committing the replace, it would
+  // re-register with React Navigation and override the in-flight navigation,
+  // landing the user back on the Trips/Profile screen instead of auth.
+  const hasNavigatedToAuthRef = useRef(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    // suppressSignOutNav is true while profile/handleSignOut is showing the
+    // post-sign-out prompt; skip auto-navigation until the user picks an option.
+    if (isSignOutRedirecting && isLoadingGlobal && !isAuthedValue && !suppressSignOutNav) {
+      hasNavigatedToAuthRef.current = true;
+      // safe-cast: '/auth' is a compile-time string literal recognised by expo-router
+      router.replace('/auth' as Href);
+    }
+  }, [isSignOutRedirecting, isLoadingGlobal, isAuthedValue, suppressSignOutNav]);
+
+  // If the user has re-authenticated while AppLayout stayed mounted (Expo Router
+  // keeps the (app) screen in the stack during the auth transition), clear the
+  // sign-out latch so the spinner doesn't stay on indefinitely.
+  if (isAuthedValue && hasNavigatedToAuthRef.current) {
+    hasNavigatedToAuthRef.current = false;
+  }
+
+  // Show spinner when: (a) auth initialising on cold start, OR (b) a sign-out
+  // redirect is in progress and the user is no longer authenticated.
+  // Generic isLoadingAtom also covers sign-in/profile updates; do not use it to
+  // unmount this Stack or React Navigation's linking container can resolve after
+  // unmount and warn about state updates on unmounted components.
+  // hasNavigatedToAuthRef keeps the spinner until AppLayout actually unmounts
+  // after the router.replace('/auth') transition completes.
+  if (
+    isLoading ||
+    (isSignOutRedirecting && isLoadingGlobal && !isAuthedValue) ||
+    hasNavigatedToAuthRef.current
+  ) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -73,9 +122,7 @@ export default function AppLayout() {
           options={getCatalogAddToPackItemDetailsOptions(t)}
         />
         <Stack.Screen name="ai-chat" />
-        <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
-        <Stack.Screen name="weather/index" options={{ headerShown: false }} />
         <Stack.Screen
           name="weather/search"
           options={{
@@ -104,7 +151,7 @@ export default function AppLayout() {
         />
 
         <Stack.Screen
-          name="current-pack"
+          name="current-pack/[id]"
           options={{
             headerShown: false,
             presentation: 'modal',
@@ -114,7 +161,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="recent-packs"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -122,15 +168,13 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-stats/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
-          name="weight-analysis"
+          name="weight-analysis/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -138,7 +182,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -155,15 +198,14 @@ export default function AppLayout() {
         <Stack.Screen
           name="weather-alerts"
           options={{
-            headerShown: false,
             presentation: 'card',
-            animation: 'slide_from_bottom',
+            animation: 'default',
           }}
         />
         <Stack.Screen
           name="weather-alert-preferences"
           options={{
-            headerShown: false,
+            ...getAppBarOptions(),
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -171,7 +213,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="trail-conditions"
           options={{
-            headerShown: false,
             presentation: 'card',
             animation: 'slide_from_bottom',
           }}
@@ -179,15 +220,13 @@ export default function AppLayout() {
         <Stack.Screen
           name="gear-inventory"
           options={{
-            headerShown: false,
-            presentation: 'modal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
           name="shopping-list"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -195,7 +234,6 @@ export default function AppLayout() {
         <Stack.Screen
           name="shared-packs"
           options={{
-            headerShown: false,
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
@@ -203,8 +241,8 @@ export default function AppLayout() {
         <Stack.Screen
           name="guides/index"
           options={{
+            ...getAppBarOptions(),
             title: 'Guides',
-            headerLargeTitle: true,
           }}
         />
         <Stack.Screen
@@ -286,12 +324,11 @@ const getSettingsOptions = (t: TranslationFunction) =>
     headerRight: () => <ThemeToggle />,
   }) as const;
 
-const getTripNewOptions = (t: TranslationFunction) =>
-  ({
-    title: t('trips.createTrip'),
-    presentation: 'modal',
-    animation: 'slide_from_bottom',
-  }) as const;
+const getTripNewOptions = (t: TranslationFunction) => ({
+  title: t('trips.createTrip'),
+  presentation: 'modal' as const,
+  animation: 'slide_from_bottom' as const,
+});
 
 const getTripEditOptions = (t: TranslationFunction) =>
   ({
@@ -312,12 +349,11 @@ const CONSENT_MODAL_OPTIONS = {
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const getPackNewOptions = (t: TranslationFunction) =>
-  ({
-    title: t('packs.createPack'),
-    presentation: 'modal',
-    animation: 'fade_from_bottom', // for android
-  }) as const;
+const getPackNewOptions = (t: TranslationFunction) => ({
+  title: t('packs.createPack'),
+  presentation: 'modal' as const,
+  animation: 'fade_from_bottom' as const,
+});
 
 const getItemNewOptions = (t: TranslationFunction) =>
   ({
@@ -349,12 +385,6 @@ const getPackEditOptions = (t: TranslationFunction) =>
 const getItemEditOptions = (t: TranslationFunction) =>
   ({
     title: t('common.edit'),
-  }) as const;
-
-const getCatalogListOptions = (t: TranslationFunction) =>
-  ({
-    title: t('catalog.itemsCatalog'),
-    headerLargeTitle: true,
   }) as const;
 
 const getCatalogItemDetailOptions = (t: TranslationFunction) =>

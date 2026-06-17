@@ -6,8 +6,8 @@ export default defineCommand({
   async run() {
     const cache = await ensureCache();
     const data = await cache.getMarketSummary();
-    printSummary(
-      {
+    printSummary({
+      data: {
         'Total Items': data.totalItems.toLocaleString(),
         Sites: data.totalSites,
         Brands: data.totalBrands.toLocaleString(),
@@ -15,7 +15,7 @@ export default defineCommand({
         'Avg Price': `$${data.avgPrice.toFixed(2)}`,
         'In Stock': `${data.inStockPct}%`,
       },
-      'Market Summary',
-    );
+      title: 'Market Summary',
+    });
   },
 });

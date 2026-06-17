@@ -1,13 +1,12 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import { PackItemSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import { isRemoteUrl } from '@packrat/guards';
+import { PackItemSchema, PackWithWeightsSchema } from '@packrat/schemas/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import Storage from 'expo-sqlite/kv-store';
 import type { PackItem } from '../types';
 import { uploadImage } from '../utils';
 
@@ -24,7 +23,10 @@ const listAllPackItems = async (): Promise<PackItem[] | null> => {
 
 const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem | null> => {
   if (data.image && !isRemoteUrl(data.image)) {
-    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
+    await uploadImage({
+      fileName: data.image,
+      uri: `${ImageCacheManager.cacheDirectory}${data.image}`,
+    });
   }
   const { data: result, error } = await apiClient
     .packs({ packId: String(packId) })
@@ -36,7 +38,10 @@ const createPackItem = async ({ packId, ...data }: PackItem): Promise<PackItem |
 
 const updatePackItem = async ({ id, ...data }: PackItem): Promise<PackItem | null> => {
   if (data.image && !isRemoteUrl(data.image)) {
-    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
+    await uploadImage({
+      fileName: data.image,
+      uri: `${ImageCacheManager.cacheDirectory}${data.image}`,
+    });
   }
   const { data: result, error } = await apiClient.packs.items({ itemId: String(id) }).patch(data);
   if (error) throw new Error(`Failed to update pack item: ${error.value}`);
@@ -55,7 +60,7 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'packItems',
     },

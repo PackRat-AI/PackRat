@@ -8,21 +8,24 @@ final class KeychainService: Sendable {
     private let service = "com.andrewbierman.packrat"
 
     enum Key: String {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
+        // Better Auth issues a single long-lived session token returned via the
+        // `set-auth-token` response header and used as `Authorization: Bearer …`
+        // on subsequent calls. There is no separate refresh token — when the
+        // session expires the user re-authenticates.
+        case sessionToken = "session_token"
     }
 
-    var accessToken: String? { read(.accessToken) }
-    var refreshToken: String? { read(.refreshToken) }
+    var sessionToken: String? { read(.sessionToken) }
 
-    func saveTokens(accessToken: String, refreshToken: String) {
-        save(accessToken, for: .accessToken)
-        save(refreshToken, for: .refreshToken)
+    func saveSessionToken(_ token: String) {
+        save(token, for: .sessionToken)
     }
 
+    /// Removes any persisted auth material. Used on logout and by the
+    /// `--reset-auth` XCUITest launch argument to land each run on the
+    /// login screen.
     func clearTokens() {
-        delete(.accessToken)
-        delete(.refreshToken)
+        delete(.sessionToken)
     }
 
     private func save(_ value: String, for key: Key) {

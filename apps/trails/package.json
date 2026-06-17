@@ -1,0 +1,53 @@
+{
+  "name": "packrat-trails-app",
+  "version": "2.0.28",
+  "private": true,
+  "scripts": {
+    "build": "bun run generate-og-images && next build",
+    "check-types": "tsc --noEmit",
+    "clean": "bunx rimraf node_modules .next out",
+    "dev": "next dev",
+    "doctor:react": "bunx react-doctor",
+    "generate-og-images": "bun run scripts/generate-og-images.ts",
+    "start": "next start",
+    "test": "vitest run --config vitest.config.ts",
+    "test:og-meta": "vitest run --config vitest.config.ts __tests__/og-meta.test.ts"
+  },
+  "dependencies": {
+    "@packrat/api-client": "workspace:*",
+    "@packrat/app": "workspace:*",
+    "@packrat/guards": "workspace:*",
+    "@packrat/overpass": "workspace:*",
+    "@packrat/web-ui": "workspace:*",
+    "@radix-ui/react-dialog": "catalog:",
+    "@radix-ui/react-label": "catalog:",
+    "@radix-ui/react-separator": "catalog:",
+    "@radix-ui/react-tabs": "catalog:",
+    "@radix-ui/react-toast": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "input-otp": "catalog:",
+    "leaflet": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-leaflet": "catalog:",
+    "sonner": "catalog:",
+    "tailwind-merge": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/leaflet": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "cheerio": "^1.0.0",
+    "open-graph-scraper": "^6.10.0",
+    "postcss": "catalog:",
+    "postcss-import": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

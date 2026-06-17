@@ -1,10 +1,10 @@
+import type { WeightUnit } from '@packrat/constants';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
-import type { WeightUnit } from 'expo-app/types';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, Platform, ScrollView, Text, View } from 'react-native';
 
 export interface PackTemplateItem {
   id: string;
@@ -32,7 +32,7 @@ interface TemplateItemsSectionProps {
 }
 
 // Helper function to format weight
-const formatWeight = (weight: number, unit: string) => {
+const formatWeight = ({ weight, unit }: { weight: number; unit: string }) => {
   if (weight < 1 && unit === 'kg') {
     return `${(weight * 1000).toFixed(0)}g`;
   }
@@ -52,7 +52,12 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
     <View className="mr-3 w-48 rounded-xl border border-border bg-card p-4 shadow-sm">
       <View className="mb-3 h-20 w-full overflow-hidden rounded-lg bg-muted">
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
+          <Image
+            source={{ uri: imageUrl }}
+            className="h-full w-full"
+            resizeMode="cover"
+            style={Platform.select({ web: { width: '100%', height: '100%' } })}
+          />
         ) : (
           <View className="h-full w-full items-center justify-center">
             <Text className="text-muted-foreground">{t('packs.noImage')}</Text>
@@ -78,7 +83,7 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
         <View className="flex-row items-center">
           <Icon name="dumbbell" size={12} color={colors.grey2} />
           <Text className="ml-1 text-xs font-medium text-foreground">
-            {formatWeight(item.weight, item.weightUnit)}
+            {formatWeight({ weight: item.weight, unit: item.weightUnit })}
           </Text>
         </View>
         <View className="flex-row items-center">
@@ -122,7 +127,8 @@ export const TemplateItemsSection = ({ templateItems }: TemplateItemsSectionProp
       <View className="mb-4">
         <Text className="text-lg font-bold text-foreground">Items</Text>
         <Text className="text-sm text-muted-foreground">
-          {templateStats.totalItems} items • {formatWeight(templateStats.totalWeight, 'kg')} •{' '}
+          {templateStats.totalItems} items •{' '}
+          {formatWeight({ weight: templateStats.totalWeight, unit: 'kg' })} •{' '}
           {templateStats.categories.size} categories
         </Text>
       </View>

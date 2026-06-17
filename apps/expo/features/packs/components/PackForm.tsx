@@ -1,5 +1,5 @@
-import { PackCategorySchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
+import { PackCategorySchema } from '@packrat/schemas/constants';
 import {
   Button,
   createDropdownItem,
@@ -16,7 +16,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -149,6 +149,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packs.nameInput}
+                    containerTestID={testIds.packs.nameInputContainer}
                     placeholder={t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -168,6 +170,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem>
                   <TextField
+                    testID={testIds.packs.descriptionInput}
+                    containerTestID={testIds.packs.descriptionInputContainer}
                     placeholder={t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -261,7 +265,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
-              testID={TestIds.SubmitPackButton}
+              testID={testIds.packs.submitBtn}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

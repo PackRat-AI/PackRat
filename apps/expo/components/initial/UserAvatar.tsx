@@ -1,8 +1,8 @@
-import type { User } from 'expo-app/types';
-import { Image, Text, View } from 'react-native';
+import type { MockUser } from 'expo-app/data/mockData';
+import { Image, Platform, Text, View } from 'react-native';
 
 type UserAvatarProps = {
-  user: User;
+  user: Pick<MockUser, 'name' | 'avatarUrl'>;
   size?: 'sm' | 'md' | 'lg';
   showName?: boolean;
 };
@@ -20,11 +20,18 @@ export function UserAvatar({ user, size = 'md', showName = false }: UserAvatarPr
     lg: 'text-base',
   }[size];
 
+  const avatarUri = user.avatarUrl || null;
+
   return (
     <View className="flex-row items-center">
       <View className={`${sizeClass} overflow-hidden rounded-full bg-gray-200`}>
-        {user.avatar ? (
-          <Image source={{ uri: user.avatar }} className="h-full w-full" resizeMode="cover" />
+        {avatarUri ? (
+          <Image
+            source={{ uri: avatarUri }}
+            className="h-full w-full"
+            resizeMode="cover"
+            style={Platform.select({ web: { width: '100%', height: '100%' } })}
+          />
         ) : (
           <View className="h-full w-full items-center justify-center bg-blue-500">
             <Text className="font-bold text-white">{user.name.substring(0, 2).toUpperCase()}</Text>

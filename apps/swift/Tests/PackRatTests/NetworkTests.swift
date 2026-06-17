@@ -4,31 +4,37 @@ import Foundation
 
 // MARK: - Keychain
 
-@Suite("KeychainService")
+// Swift Testing parallelises tests across a suite by default, but the keychain
+// is a process-wide singleton. Two tests mutating `.shared` at the same time
+// flake (one test reads the other's value). Serialise.
+@Suite("KeychainService", .serialized)
 struct KeychainServiceTests {
     let keychain = KeychainService.shared
 
-    @Test("saves and reads access token")
-    func saveAndReadAccessToken() {
-        keychain.saveTokens(accessToken: "test-access", refreshToken: "test-refresh")
-        #expect(keychain.accessToken == "test-access")
-        #expect(keychain.refreshToken == "test-refresh")
+    init() {
+        // Defensive: ensure no leaked state from a prior suite or aborted run.
         keychain.clearTokens()
     }
 
-    @Test("clearTokens removes both tokens")
-    func clearTokens() {
-        keychain.saveTokens(accessToken: "a", refreshToken: "b")
+    @Test("saves and reads session token")
+    func saveAndReadSessionToken() {
+        keychain.saveSessionToken("test-session")
+        #expect(keychain.sessionToken == "test-session")
         keychain.clearTokens()
-        #expect(keychain.accessToken == nil)
-        #expect(keychain.refreshToken == nil)
+    }
+
+    @Test("clearTokens removes the session token")
+    func clearTokens() {
+        keychain.saveSessionToken("abc")
+        keychain.clearTokens()
+        #expect(keychain.sessionToken == nil)
     }
 
     @Test("overwriting a token replaces the old value")
     func overwriteToken() {
-        keychain.saveTokens(accessToken: "first", refreshToken: "r")
-        keychain.saveTokens(accessToken: "second", refreshToken: "r2")
-        #expect(keychain.accessToken == "second")
+        keychain.saveSessionToken("first")
+        keychain.saveSessionToken("second")
+        #expect(keychain.sessionToken == "second")
         keychain.clearTokens()
     }
 }
@@ -71,10 +77,9 @@ struct EndpointTests {
         #expect(ep.queryItems?.count == 1)
     }
 
-    @Test("isRefresh endpoint bypasses auth")
-    func refreshEndpoint() {
-        let ep = Endpoint(.post, "/api/auth/refresh", requiresAuth: false, isRefresh: true)
+    @Test("unauthenticated endpoint opts out via requiresAuth: false")
+    func unauthenticatedEndpoint() {
+        let ep = Endpoint(.post, "/api/auth/sign-in/email", requiresAuth: false)
         #expect(ep.requiresAuth == false)
-        #expect(ep.isRefresh == true)
     }
 }

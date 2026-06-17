@@ -1,0 +1,22 @@
+{
+  "extends": "@packrat/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "web-app/*": ["./*"],
+      "@packrat/api/*": ["../../packages/api/src/*"],
+      "@packrat/api-client": ["../../packages/api-client/src/index.ts"],
+      "@packrat/app": ["../../packages/app/index.ts"],
+      "@packrat/app/*": ["../../packages/app/src/*"],
+      "@packrat/web-ui": ["../../packages/web-ui/src"],
+      "@packrat/web-ui/*": ["../../packages/web-ui/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../packages/typescript-config/cloudflare-types.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}

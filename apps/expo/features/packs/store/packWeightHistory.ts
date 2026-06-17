@@ -1,12 +1,11 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import { PackWeightHistoryResponseSchema } from '@packrat/api/schemas/packs';
+import { PackWeightHistoryResponseSchema } from '@packrat/schemas/packs';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import { obs } from 'expo-app/lib/store';
-import Storage from 'expo-sqlite/kv-store';
 import { nanoid } from 'nanoid';
 import type { PackWeightHistoryEntry } from '../types';
 import { computePackWeights } from '../utils';
@@ -40,7 +39,7 @@ syncObservable(
     fieldCreatedAt: 'createdAt',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'packWeigthHistory',
     },
@@ -67,14 +66,14 @@ syncObservable(
 );
 
 export function recordPackWeight(packId: string) {
-  const pack = obs(packsStore, packId).peek();
+  const pack = obs({ store: packsStore, id: packId }).peek();
   const packItems = Object.values(packItemsStore.peek()).filter(
     (item) => item.packId === packId && !item.deleted,
   );
-  const { totalWeight } = computePackWeights({ ...pack, items: packItems });
+  const { totalWeight } = computePackWeights({ pack: { ...pack, items: packItems } });
   const id = nanoid();
 
-  obs(packWeigthHistoryStore, id).set({
+  obs({ store: packWeigthHistoryStore, id: id }).set({
     id,
     packId,
     weight: totalWeight,

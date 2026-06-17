@@ -5,15 +5,27 @@ appId: ${APP_ID}
 # This test verifies the form renders correctly (passes) even though save fails (known bug)
 - launchApp
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Packs"
+    timeout: 30000
 
 # Navigate to Packs tab
 - tapOn:
     text: "Packs"
 - waitForAnimationToEnd
 
-# Tap into the Maestro Test Pack
+# Tap into the pack created earlier in this run
+- scrollUntilVisible:
+    element:
+      id: "packs:list-item-${PACK_NAME}"
+    direction: DOWN
+    timeout: 15000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - tapOn:
-    text: "Maestro Test Pack"
+    id: "packs:list-item-${PACK_NAME}"
 - waitForAnimationToEnd
 
 # Assert pack detail loaded
@@ -22,33 +34,65 @@ appId: ${APP_ID}
 
 # Tap Add Item
 - tapOn:
-    text: "Add Item"
+    id: "add-item-button"
 - waitForAnimationToEnd
 
 # Assert bottom sheet with options
 - assertVisible:
-    text: "Add Manually"
+    id: "add-manually-option"
 - assertVisible:
-    text: "Add from Catalog"
+    id: "add-from-catalog-option"
 
 # Select Add Manually
 - tapOn:
-    text: "Add Manually"
+    id: "add-manually-option"
 - waitForAnimationToEnd
 
 # Assert add item form loaded
-- assertVisible:
-    text: "Item Name"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          id: "items:name-input"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: "items:name-input"
 
 # Fill in Item Name
-- tapOn:
-    text: "Item Name"
-- inputText: "Test Headlamp"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "items:name-input"
+      - inputText: "Test Headlamp"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "items:name-input"
+      - inputText: "Test Headlamp"
 
 # Fill in Description
-- tapOn:
-    text: "Description"
-- inputText: "Lightweight headlamp for hiking"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "items:description-input"
+      - inputText: "Lightweight headlamp for hiking"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "items:description-input"
+      - inputText: "Lightweight headlamp for hiking"
 
 # Dismiss keyboard
 - hideKeyboard

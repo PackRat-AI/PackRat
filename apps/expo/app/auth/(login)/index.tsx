@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
@@ -47,7 +47,7 @@ export default function LoginScreen() {
     onSubmit: async ({ value }) => {
       try {
         setIsLoading(true);
-        await signIn(value.email, value.password);
+        await signIn({ email: value.email, password: value.password });
         // Navigation is handled in function after successful login
       } catch (error) {
         setIsLoading(false);
@@ -68,19 +68,7 @@ export default function LoginScreen() {
         options={{
           title: t('auth.signIn'),
           headerShadowVisible: false,
-          headerLeft() {
-            return (
-              <Button
-                variant="plain"
-                className="ios:px-0"
-                onPress={() => {
-                  router.back();
-                }}
-              >
-                <Text className="text-primary">{t('common.cancel')}</Text>
-              </Button>
-            );
-          },
+          headerShown: false,
         }}
       />
       <KeyboardAwareScrollView
@@ -94,8 +82,9 @@ export default function LoginScreen() {
           <View className="items-center pb-1">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
               resizeMode="contain"
+              style={Platform.select({ web: { width: 32, height: 32 } })}
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
@@ -110,48 +99,48 @@ export default function LoginScreen() {
             )}
           </View>
           <View className="ios:pt-4 pt-6">
-            <Form className="gap-2" accessible={Platform.OS === 'ios' ? false : undefined}>
-              <FormSection
-                className="ios:bg-background"
-                accessible={Platform.OS === 'ios' ? false : undefined}
-              >
-                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
-                  <form.Field name="email">
-                    {(field) => (
-                      <TextField
-                        testID={TestIds.EmailInput}
-                        accessible={Platform.OS === 'ios' ? true : undefined}
-                        placeholder={Platform.select({
-                          ios: 'Email',
-                          default: '',
-                        })}
-                        label={Platform.select({
-                          ios: undefined,
-                          default: 'Email',
-                        })}
-                        onSubmitEditing={() => KeyboardController.setFocusTo('next')}
-                        submitBehavior="submit"
-                        autoFocus
-                        onFocus={() => setFocusedTextField('email')}
-                        onBlur={() => {
-                          setFocusedTextField(null);
-                          field.handleBlur();
-                        }}
-                        keyboardType="email-address"
-                        textContentType="emailAddress"
-                        returnKeyType="next"
-                        value={field.state.value}
-                        onChangeText={field.handleChange}
-                        errorMessage={field.state.meta.errors[0]?.message}
-                      />
-                    )}
-                  </form.Field>
+            <Form className="gap-2">
+              <FormSection className="ios:bg-background">
+                <FormItem>
+                  <View testID={testIds.auth.emailInputContainer}>
+                    <form.Field name="email">
+                      {(field) => (
+                        <TextField
+                          testID={testIds.auth.emailInput}
+                          containerTestID={testIds.auth.emailInputContainer}
+                          placeholder={Platform.select({
+                            ios: 'Email',
+                            default: '',
+                          })}
+                          label={Platform.select({
+                            ios: undefined,
+                            default: 'Email',
+                          })}
+                          onSubmitEditing={() => KeyboardController.setFocusTo('next')}
+                          submitBehavior="submit"
+                          autoFocus
+                          onFocus={() => setFocusedTextField('email')}
+                          onBlur={() => {
+                            setFocusedTextField(null);
+                            field.handleBlur();
+                          }}
+                          keyboardType="email-address"
+                          textContentType="emailAddress"
+                          returnKeyType="next"
+                          value={field.state.value}
+                          onChangeText={field.handleChange}
+                          errorMessage={field.state.meta.errors[0]?.message}
+                        />
+                      )}
+                    </form.Field>
+                  </View>
                 </FormItem>
-                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
+                <FormItem>
                   <form.Field name="password">
                     {(field) => (
                       <TextField
-                        testID={TestIds.PasswordInput}
+                        testID={testIds.auth.passwordInput}
+                        containerTestID={testIds.auth.passwordInputContainer}
                         accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Password',
@@ -190,7 +179,6 @@ export default function LoginScreen() {
         </View>
       </KeyboardAwareScrollView>
       <KeyboardStickyView
-        accessible={Platform.OS === 'ios' ? false : undefined}
         offset={{
           closed: 0,
           opened: Platform.select({
@@ -200,11 +188,11 @@ export default function LoginScreen() {
         }}
       >
         {Platform.OS === 'ios' ? (
-          <View className="px-12 py-4" accessible={false}>
+          <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
-                  testID={TestIds.ContinueButton}
+                  testID={testIds.auth.continueBtn}
                   accessible={true}
                   size="lg"
                   disabled={!canSubmit || loading}
@@ -216,7 +204,7 @@ export default function LoginScreen() {
             </form.Subscribe>
           </View>
         ) : (
-          <View className="flex-row justify-between py-4 pl-6 pr-8" accessible={false}>
+          <View className="flex-row justify-between py-4 pl-6 pr-8">
             {!needsReauth && (
               <Button
                 variant="plain"
@@ -228,15 +216,15 @@ export default function LoginScreen() {
                 <Text className="px-0.5 text-sm text-primary">{t('auth.createAccount')}</Text>
               </Button>
             )}
-            <View className="ml-auto" accessible={false}>
+            <View className="ml-auto">
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, _isSubmitting]) => (
                   <Button
-                    testID={TestIds.ContinueButton}
+                    testID={testIds.auth.continueBtn}
                     accessible={true}
                     disabled={!canSubmit || loading}
                     onPress={() => {
-                      if (focusedTextField === 'email') {
+                      if (Platform.OS !== 'web' && focusedTextField === 'email') {
                         KeyboardController.setFocusTo('next');
                         return;
                       }

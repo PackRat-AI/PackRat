@@ -37,16 +37,18 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.24',
+      version: '2.0.28',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
-        output: 'static',
+        output: 'single',
         favicon: './assets/favicon.png',
       },
       plugins: [
         'expo-router',
         'expo-sqlite',
+        'expo-font',
+        'expo-image',
         [
           '@react-native-google-signin/google-signin',
           {
@@ -56,18 +58,28 @@ export default (): ExpoConfig =>
         ],
         'expo-secure-store',
         'expo-web-browser',
+        [
+          'expo-dev-client',
+          {
+            android: { toolsButton: false },
+            ios: { toolsButton: false },
+          },
+        ],
         'expo-apple-authentication',
         'expo-localization',
         [
           'llama.rn',
           {
-            enableEntitlements: false,
+            enableEntitlements: true,
             forceCxx20: true,
             enableOpenCLAndHexagon: false,
           },
         ],
+        ['react-native-maps', { iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
+        'expo-status-bar',
+        ['expo-splash-screen', { image: './assets/splash.png' }],
       ],
       experiments: {
         typedRoutes: true,
@@ -76,9 +88,6 @@ export default (): ExpoConfig =>
       orientation: 'portrait',
       icon: getIcon(),
       userInterfaceStyle: 'automatic',
-      splash: {
-        image: './assets/splash.png',
-      },
       assetBundlePatterns: ['**/*'],
       ios: {
         supportsTablet: true,
@@ -143,6 +152,10 @@ export default (): ExpoConfig =>
             },
           ],
         },
+        entitlements: {
+          'com.apple.developer.kernel.extended-virtual-addressing': true,
+          'com.apple.developer.kernel.increased-memory-limit': true,
+        },
       },
       android: {
         adaptiveIcon: {
@@ -160,6 +173,7 @@ export default (): ExpoConfig =>
         eas: {
           projectId: '267945b1-d9ac-4621-8541-826a2c70576d',
         },
+        appVariant: IS_DEV ? 'development' : IS_PREVIEW ? 'preview' : 'production',
       },
       updates: {
         url: 'https://u.expo.dev/267945b1-d9ac-4621-8541-826a2c70576d',

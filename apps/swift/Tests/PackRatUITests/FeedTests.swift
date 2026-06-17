@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// E2E tests for Community Feed: browsing, composing, deleting posts.
 final class FeedTests: AppUITestCase {
 
@@ -70,3 +73,5 @@ final class FeedTests: AppUITestCase {
         app.buttons["Cancel"].tap()
     }
 }
+
+#endif

@@ -1,28 +1,31 @@
 {
   "name": "@packrat/mcp",
-  "version": "2.0.24",
+  "version": "2.0.28",
   "private": true,
   "description": "PackRat MCP Server — outdoor adventure planning via Model Context Protocol",
   "scripts": {
-    "check-types": "tsc --noEmit",
+    "_disabled-check-types-reason": "Renamed from check-types so turbo skips this workspace. Strict tsc OOMs (>12 GB heap) on ~50 McpServer.registerTool calls × Eden Treaty's deep App type × strict null analysis. Tracked in #2533. Mcp is still type-checked at deploy via wrangler.",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e dev",
     "dev": "wrangler dev -e dev",
+    "disabled-check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@cloudflare/workers-oauth-provider": "^0.4.0",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "@packrat/api-client": "workspace:*",
     "agents": "^0.11.0",
+    "magic-regexp": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250405.0",
-    "@vitest/coverage-v8": "~3.1.4",
+    "@cloudflare/workers-types": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "partyserver": "^0.4.1",
     "typescript": "catalog:",
-    "vitest": "~3.1.4",
-    "wrangler": "^4.21.2"
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   }
 }

@@ -6,7 +6,13 @@ type ChatContext = {
   contextType: 'item' | 'pack' | 'general';
 };
 
-export function generatePromptWithContext(userMessage: string, context?: ChatContext): string {
+export function generatePromptWithContext({
+  userMessage,
+  context,
+}: {
+  userMessage: string;
+  context?: ChatContext;
+}): string {
   if (!context || context.contextType === 'general') {
     return userMessage;
   }
@@ -22,8 +28,23 @@ export function generatePromptWithContext(userMessage: string, context?: ChatCon
   return userMessage;
 }
 
-export function getContextualSuggestions(context?: ChatContext): string[] {
+export function getContextualSuggestions({
+  context,
+  isAuthenticated = false,
+}: {
+  context?: ChatContext;
+  isAuthenticated?: boolean;
+} = {}): string[] {
   if (!context || context.contextType === 'general') {
+    if (!isAuthenticated) {
+      return [
+        'What are ultralight hiking principles?',
+        'How do I organize my backpack efficiently?',
+        'What essential gear do I need for a day hike?',
+        'How can I reduce my pack weight?',
+        "What's the best way to layer clothing for cold weather?",
+      ];
+    }
     return [
       'What is the weather in London this weekend?', // Primes AI to invoke weather tool
       'Are there any deals on highly rated rain jackets right now?', // Primes AI to invoke web search tool

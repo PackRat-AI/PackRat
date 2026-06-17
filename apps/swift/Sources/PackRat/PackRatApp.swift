@@ -20,6 +20,12 @@ struct PackRatApp: App {
         #endif
     }
 
+    init() {
+        // Telemetry has to start before any view is mounted so launch-time
+        // errors are captured. A missing DSN silently disables the SDK.
+        SentryConfig.start()
+    }
+
     var body: some Scene {
         WindowGroup {
             AuthGateView()

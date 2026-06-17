@@ -1,11 +1,13 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
-import { Image, ScrollView, View } from 'react-native';
+import { Stack } from 'expo-router';
+import { Image, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function RecentPackCard({ pack }: { pack: Pack }) {
@@ -15,7 +17,12 @@ function RecentPackCard({ pack }: { pack: Pack }) {
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
       {pack.image && (
-        <Image source={{ uri: pack.image }} className="h-40 w-full bg-red-950" resizeMode="cover" />
+        <Image
+          source={{ uri: pack.image }}
+          className="h-40 w-full bg-red-950"
+          resizeMode="cover"
+          style={Platform.select({ web: { width: '100%', height: 160 } })}
+        />
       )}
       <View className="p-4">
         <View className="flex-row items-start justify-between">
@@ -34,7 +41,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
               {pack.totalWeight ?? 0} g
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {getRelativeTime(pack.localCreatedAt ?? pack.createdAt, t)}
+              {getRelativeTime({ dateValue: pack.localCreatedAt ?? pack.createdAt, t })}
             </Text>
           </View>
         </View>
@@ -45,7 +52,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
           </View>
           <Text variant="caption1" className="text-muted-foreground">
             {t('packs.lastUpdated', {
-              time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+              time: getRelativeTime({ dateValue: pack.localUpdatedAt ?? pack.updatedAt, t }),
             })}
           </Text>
         </View>
@@ -60,7 +67,7 @@ export default function RecentPacksScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.recentPacks')} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.recentPacks') }} />
       {recentPacks.length ? (
         <ScrollView className="flex-1" contentInsetAdjustmentBehavior="automatic">
           <View className="p-4">

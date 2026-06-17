@@ -11,7 +11,8 @@ vi.mock('@packrat/env/expo-client', () => ({
 // Also mock getRelativeTime so that formatRelativeDate has a predictable
 // alias target that does not depend on the current clock.
 vi.mock('expo-app/lib/utils/getRelativeTime', () => ({
-  getRelativeTime: (input: string | Date) => `relative(${String(input)})`,
+  getRelativeTime: ({ dateValue }: { dateValue: string | Date }) =>
+    `relative(${String(dateValue)})`,
 }));
 
 import type { Comment, Post } from '../../types';
@@ -19,7 +20,7 @@ import { buildPostImageUrl, formatAuthorName, formatRelativeDate } from '../inde
 
 const basePost: Post = {
   id: 1,
-  userId: 42,
+  userId: 'user-42',
   caption: 'hello',
   images: [],
   createdAt: '2024-01-01T00:00:00.000Z',
@@ -32,7 +33,7 @@ const basePost: Post = {
 const baseComment: Comment = {
   id: 1,
   postId: 1,
-  userId: 42,
+  userId: 'user-42',
   content: 'nice',
   parentCommentId: null,
   createdAt: '2024-01-01T00:00:00.000Z',
@@ -73,7 +74,7 @@ describe('feed/utils', () => {
     it('returns "first last" when both names are present', () => {
       const post: Post = {
         ...basePost,
-        author: { id: 1, firstName: 'Ada', lastName: 'Lovelace' },
+        author: { id: 'author-1', firstName: 'Ada', lastName: 'Lovelace' },
       };
       expect(formatAuthorName(post)).toBe('Ada Lovelace');
     });
@@ -81,7 +82,7 @@ describe('feed/utils', () => {
     it('returns just the first name when only firstName is present', () => {
       const post: Post = {
         ...basePost,
-        author: { id: 1, firstName: 'Ada', lastName: null },
+        author: { id: 'author-1', firstName: 'Ada', lastName: null },
       };
       expect(formatAuthorName(post)).toBe('Ada');
     });
@@ -89,7 +90,7 @@ describe('feed/utils', () => {
     it('returns just the last name when only lastName is present', () => {
       const post: Post = {
         ...basePost,
-        author: { id: 1, firstName: null, lastName: 'Lovelace' },
+        author: { id: 'author-1', firstName: null, lastName: 'Lovelace' },
       };
       expect(formatAuthorName(post)).toBe('Lovelace');
     });
@@ -97,7 +98,7 @@ describe('feed/utils', () => {
     it('returns "User" when the author exists but both names are null', () => {
       const post: Post = {
         ...basePost,
-        author: { id: 1, firstName: null, lastName: null },
+        author: { id: 'author-1', firstName: null, lastName: null },
       };
       expect(formatAuthorName(post)).toBe('User');
     });
@@ -105,7 +106,7 @@ describe('feed/utils', () => {
     it('also works for Comment entities', () => {
       const comment: Comment = {
         ...baseComment,
-        author: { id: 1, firstName: 'Grace', lastName: 'Hopper' },
+        author: { id: 'author-1', firstName: 'Grace', lastName: 'Hopper' },
       };
       expect(formatAuthorName(comment)).toBe('Grace Hopper');
     });
@@ -116,7 +117,7 @@ describe('feed/utils', () => {
   // ---------------------------------------------------------------------------
   describe('formatRelativeDate', () => {
     it('delegates to getRelativeTime', () => {
-      expect(formatRelativeDate('2024-01-01T00:00:00.000Z')).toBe(
+      expect(formatRelativeDate({ dateValue: '2024-01-01T00:00:00.000Z' })).toBe(
         'relative(2024-01-01T00:00:00.000Z)',
       );
     });

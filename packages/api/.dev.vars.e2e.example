@@ -1,0 +1,73 @@
+# E2E local overrides — copy to .dev.vars.e2e and fill in real secret values.
+# The DB, API URL, and Auth URL are pre-configured for local Docker Postgres.
+# All other keys should match your main packages/api/.dev.vars.
+
+# ── Database (local Docker, port 5435) ─────────────────────────────────────
+NEON_DATABASE_URL=postgres://test_user:test_password@db.localtest.me/packrat_test
+NEON_DATABASE_URL_READONLY=postgres://test_user:test_password@db.localtest.me/packrat_test
+
+# ── API & Auth URLs (wrangler dev on localhost) ─────────────────────────────
+EXPO_PUBLIC_API_URL=http://localhost:8787
+BETTER_AUTH_URL=http://localhost:8787
+BETTER_AUTH_SECRET=dev-better-auth-secret-32-characters-long-minimum
+
+# ── E2E credentials (set these to match the seeded test user) ───────────────
+E2E_TEST_EMAIL=e2e@packrattest.local
+E2E_TEST_PASSWORD=E2eTestPass123!
+
+# ── JWT ─────────────────────────────────────────────────────────────────────
+JWT_SECRET=<your-jwt-secret>
+
+# ── AI ──────────────────────────────────────────────────────────────────────
+OPENAI_API_KEY=<your-openai-key>
+GOOGLE_GENERATIVE_AI_API_KEY=<your-google-ai-key>
+PERPLEXITY_API_KEY=<your-perplexity-key>
+CLOUDFLARE_AI_GATEWAY_ID=ai-chat-gateway
+AI_PROVIDER=openai
+
+# ── Email ────────────────────────────────────────────────────────────────────
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=<your-resend-key>
+EMAIL_FROM=no-reply@transactional.packratai.com
+
+# ── Password reset ───────────────────────────────────────────────────────────
+PASSWORD_RESET_SECRET=<your-password-reset-secret>
+
+# ── Weather ──────────────────────────────────────────────────────────────────
+WEATHER_API_KEY=<your-weather-api-key>
+OPENWEATHER_KEY=<your-openweather-key>
+
+# ── Cloudflare R2 Storage ────────────────────────────────────────────────────
+CLOUDFLARE_ACCOUNT_ID=<your-cf-account-id>
+R2_ACCESS_KEY_ID=<your-r2-access-key>
+R2_SECRET_ACCESS_KEY=<your-r2-secret-key>
+PACKRAT_BUCKET_R2_BUCKET_NAME=packrat-bucket-preview
+PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME=packrat-scrapy-bucket
+PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME=packrat-guides
+EXPO_PUBLIC_R2_PUBLIC_URL=https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev
+R2_PUBLIC_URL=https://pub-c3852b07b730407889986338ca3ef0e5.r2.dev
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+PACKRAT_API_KEY=secret
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=gobuffs
+PACKRAT_GUIDES_RAG_NAME=packrat-guides-rag
+PACKRAT_GUIDES_BASE_URL=https://guides.packratai.com/
+
+# ── Google OAuth ─────────────────────────────────────────────────────────────
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<your-google-ios-client-id>
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<your-google-web-client-id>
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+
+# ── Maps ─────────────────────────────────────────────────────────────────────
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=<your-google-maps-key>
+
+# ── Sentry ───────────────────────────────────────────────────────────────────
+SENTRY_DSN=<your-sentry-dsn>
+
+# ── Apple Sign In ─────────────────────────────────────────────────────────────
+APPLE_CLIENT_ID=<your-apple-client-id>
+APPLE_PRIVATE_KEY=<your-apple-private-key>
+APPLE_KEY_ID=<your-apple-key-id>
+APPLE_TEAM_ID=<your-apple-team-id>

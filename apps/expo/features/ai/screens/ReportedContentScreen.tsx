@@ -1,10 +1,12 @@
 'use client';
 
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
 import { useReportedContent } from '../hooks/useReportedContent';
@@ -26,13 +28,13 @@ export default function ReportedContentScreen() {
     return item.status === selectedFilter;
   });
 
-  const handleReview = (id: string, status: 'reviewed' | 'dismissed') => {
+  const handleReview = ({ id, status }: { id: string; status: 'reviewed' | 'dismissed' }) => {
     updateMutation.mutate({ id, status });
   };
 
   return (
     <View className="flex-1 bg-background">
-      <LargeTitleHeader title={t('ai.reportedContent.title')} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('ai.reportedContent.title') }} />
 
       <FlatList
         data={filteredData}
@@ -144,7 +146,7 @@ export default function ReportedContentScreen() {
                 <Button
                   variant="tonal"
                   size="sm"
-                  onPress={() => handleReview(item.id, 'dismissed')}
+                  onPress={() => handleReview({ id: item.id, status: 'dismissed' })}
                   disabled={updateMutation.isPending}
                 >
                   <Text>{t('ai.reportedContent.dismiss')}</Text>
@@ -152,7 +154,7 @@ export default function ReportedContentScreen() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onPress={() => handleReview(item.id, 'reviewed')}
+                  onPress={() => handleReview({ id: item.id, status: 'reviewed' })}
                   disabled={updateMutation.isPending}
                 >
                   <Text>{t('ai.reportedContent.resolve')}</Text>

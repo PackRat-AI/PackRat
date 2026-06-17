@@ -126,7 +126,13 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
  * @returns A promise resolving to the extension
  */
 
-export const getImageExtension = async (url: string, defaultExt = 'jpg'): Promise<string> => {
+export const getImageExtension = async ({
+  url,
+  defaultExt = 'jpg',
+}: {
+  url: string;
+  defaultExt?: string;
+}): Promise<string> => {
   // First check if URL already has an extension
   const inferredExt = inferImageExtension(url);
   if (inferredExt) return inferredExt;

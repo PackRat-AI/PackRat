@@ -58,10 +58,13 @@ const TikTokImportSchema = z.object({
 /**
  * Detect media content type and file extension from response headers or buffer
  */
-function detectMediaTypeAndExtension(
-  response: Response,
-  opts: { buffer?: ArrayBuffer; isVideo?: boolean } = {},
-): {
+function detectMediaTypeAndExtension({
+  response,
+  opts = {},
+}: {
+  response: Response;
+  opts?: { buffer?: ArrayBuffer; isVideo?: boolean };
+}): {
   contentType: string;
   extension: string;
 } {
@@ -132,10 +135,13 @@ function detectMediaTypeAndExtension(
 /**
  * Download image and rehost to R2 with 5-minute expiration
  */
-async function downloadAndRehostImage(
-  imageUrl: string,
-  opts: { contentId: string; index: number },
-): Promise<string | null> {
+async function downloadAndRehostImage({
+  imageUrl,
+  opts,
+}: {
+  imageUrl: string;
+  opts: { contentId: string; index: number };
+}): Promise<string | null> {
   const { contentId, index } = opts;
   if (!s3Client || !env) {
     console.warn('R2 client not available, skipping image rehosting');
@@ -164,8 +170,11 @@ async function downloadAndRehostImage(
     }
 
     const imageBuffer = await response.arrayBuffer();
-    const { contentType, extension } = detectMediaTypeAndExtension(response, {
-      buffer: imageBuffer,
+    const { contentType, extension } = detectMediaTypeAndExtension({
+      response,
+      opts: {
+        buffer: imageBuffer,
+      },
     });
 
     const timestamp = Date.now();
@@ -224,7 +233,7 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
     });
     console.log(`Video uploaded to Google AI. File URI: ${myfile.uri}, name: ${myfile.name}`);
     if (!myfile.name) throw new Error('Google AI upload did not return a file name');
-    await waitForFileToBeActiveGoogle(googleAi, { fileName: myfile.name });
+    await waitForFileToBeActiveGoogle({ ai: googleAi, opts: { fileName: myfile.name } });
     return myfile.uri || null;
   } catch (error) {
     console.error('Failed to upload video to Google:', error);
@@ -235,10 +244,13 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
 /**
  * Wait for uploaded file to become ACTIVE before using it for inference
  */
-async function waitForFileToBeActiveGoogle(
-  ai: GoogleGenAI,
-  opts: { fileName: string; maxWaitTimeMs?: number },
-): Promise<void> {
+async function waitForFileToBeActiveGoogle({
+  ai,
+  opts,
+}: {
+  ai: GoogleGenAI;
+  opts: { fileName: string; maxWaitTimeMs?: number };
+}): Promise<void> {
   const { fileName, maxWaitTimeMs = 300000 } = opts;
   const startTime = Date.now();
   while (Date.now() - startTime < maxWaitTimeMs) {
@@ -265,10 +277,13 @@ async function waitForFileToBeActiveGoogle(
 /**
  * Download and rehost multiple images with best effort approach
  */
-async function downloadAndRehostImages(
-  imageUrls: string[],
-  contentId: string,
-): Promise<{ rehostedUrls: string[]; failedCount: number; expiresAt: string }> {
+async function downloadAndRehostImages({
+  imageUrls,
+  contentId,
+}: {
+  imageUrls: string[];
+  contentId: string;
+}): Promise<{ rehostedUrls: string[]; failedCount: number; expiresAt: string }> {
   if (!s3Client || !env) {
     console.warn('R2 client not available, returning empty results');
     return {
@@ -281,7 +296,9 @@ async function downloadAndRehostImages(
   console.log(`Starting rehosting of ${imageUrls.length} images`);
 
   const results = await Promise.allSettled(
-    imageUrls.map((url, index) => downloadAndRehostImage(url, { contentId, index })),
+    imageUrls.map((url, index) =>
+      downloadAndRehostImage({ imageUrl: url, opts: { contentId, index } }),
+    ),
   );
 
   const rehostedUrls: string[] = [];
@@ -406,7 +423,10 @@ const app = new Elysia()
 
       const [imageResult, videoResult] = await Promise.allSettled([
         hasImages
-          ? downloadAndRehostImages(fetchedData.imageUrls, fetchedData.contentId || 'unknown')
+          ? downloadAndRehostImages({
+              imageUrls: fetchedData.imageUrls,
+              contentId: fetchedData.contentId || 'unknown',
+            })
           : Promise.resolve({ rehostedUrls: [], failedCount: 0, expiresAt: '' }),
         hasVideo && fetchedData.videoUrl
           ? uploadVideoToGoogle(fetchedData.videoUrl)

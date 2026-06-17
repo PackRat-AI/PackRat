@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { apiClient } from 'expo-app/lib/api/packrat';
@@ -29,7 +30,7 @@ export function useImageDetection() {
     { selectedImage: SelectedImage; matchLimit?: number }
   >({
     mutationFn: async ({ selectedImage, matchLimit = 3 }) => {
-      const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
+      const image = await uploadImage({ fileName: selectedImage.fileName, uri: selectedImage.uri });
       if (!image) {
         throw new Error("Couldn't upload image");
       }
@@ -37,7 +38,14 @@ export function useImageDetection() {
         image,
         matchLimit,
       });
-      if (error) throw new Error(`Failed to analyze image: ${error.value}`);
+      if (error) {
+        const err = new Error(String(error.value ?? 'Failed to analyze image'));
+        Sentry.captureException(err, {
+          tags: { feature: 'packs', action: 'analyzeImage' },
+          extra: { matchLimit, apiError: error.value, httpStatus: error.status },
+        });
+        throw err;
+      }
       // safe-cast: treaty response shape matches AnalyzeImageResponse as validated by the API schema
       return data as unknown as AnalyzeImageResponse;
     },

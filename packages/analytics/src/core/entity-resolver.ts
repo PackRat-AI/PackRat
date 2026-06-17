@@ -47,7 +47,7 @@ function normalizeBrand(brand: string): string {
   return brand.toLowerCase().replace(NON_ALPHANUMERIC, '').trim();
 }
 
-function canonicalId(brand: string, name: string): string {
+function canonicalId({ brand, name }: { brand: string; name: string }): string {
   const key = `${normalizeBrand(brand)}:${normalizeName(name)}`;
   return createHash('sha256').update(key).digest('hex').slice(0, 16);
 }
@@ -65,7 +65,7 @@ function extractSlug(url: string): string {
  * Sorts tokens alphabetically then computes char-level similarity.
  * Good enough for product name matching without a heavy dep.
  */
-function tokenSortRatio(a: string, b: string): number {
+function tokenSortRatio({ a, b }: { a: string; b: string }): number {
   const sortTokens = (s: string) =>
     s.toLowerCase().split(WHITESPACE_SPLIT_PATTERN).sort().join(' ');
   const sa = sortTokens(a);
@@ -76,11 +76,11 @@ function tokenSortRatio(a: string, b: string): number {
 
   // Levenshtein-based ratio
   const len = Math.max(sa.length, sb.length);
-  const dist = levenshtein(sa, sb);
+  const dist = levenshtein({ a: sa, b: sb });
   return Math.round(((len - dist) / len) * 100);
 }
 
-function levenshtein(a: string, b: string): number {
+function levenshtein({ a, b }: { a: string; b: string }): number {
   const m = a.length;
   const n = b.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => Array<number>(n + 1).fill(0));
@@ -141,7 +141,7 @@ class UnionFind {
     return root;
   }
 
-  union(a: number, b: number): void {
+  union({ a, b }: { a: number; b: number }): void {
     const ra = this.find(a);
     const rb = this.find(b);
     if (ra !== rb) this.parent.set(rb, ra);
@@ -191,10 +191,15 @@ interface EntityRow {
 const ENTITIES_TABLE = 'product_entities';
 
 export class EntityResolver {
-  constructor(
-    private readonly conn: DuckDBConnection,
-    private readonly sourceTable = 'gear_data',
-  ) {}
+  constructor({
+    conn,
+    sourceTable = 'gear_data',
+  }: { conn: DuckDBConnection; sourceTable?: string }) {
+    this.conn = conn;
+    this.sourceTable = sourceTable;
+  }
+  private readonly conn: DuckDBConnection;
+  private readonly sourceTable: string;
 
   /** Run full entity resolution pipeline. */
   async build(
@@ -206,10 +211,10 @@ export class EntityResolver {
 
     for (const block of blocks.values()) {
       if (block.length > MAX_BLOCK_SIZE) continue;
-      matches.push(...this.matchWithinBlock(block, minConfidence));
+      matches.push(...this.matchWithinBlock({ block, minConfidence }));
     }
 
-    const entities = this.buildEntities(candidates, matches);
+    const entities = this.buildEntities({ candidates, matches });
     await this.writeEntities(entities);
 
     const uniqueEntities = new Set(entities.map((e) => e.canonical_id)).size;
@@ -258,10 +263,13 @@ export class EntityResolver {
     return blocks;
   }
 
-  private matchWithinBlock(
-    block: Candidate[],
-    minConfidence: number,
-  ): [number, number, number, string][] {
+  private matchWithinBlock({
+    block,
+    minConfidence,
+  }: {
+    block: Candidate[];
+    minConfidence: number;
+  }): [number, number, number, string][] {
     const matches: [number, number, number, string][] = [];
 
     for (let i = 0; i < block.length; i++) {
@@ -281,14 +289,14 @@ export class EntityResolver {
         }
 
         // Token-sort fuzzy
-        const nameScore = tokenSortRatio(a.normalized_name, b.normalized_name);
+        const nameScore = tokenSortRatio({ a: a.normalized_name, b: b.normalized_name });
         let confidence = nameScore / 100;
 
         // URL slug boost
         const slugA = extractSlug(a.product_url);
         const slugB = extractSlug(b.product_url);
         if (slugA && slugB && slugA.length > 5) {
-          const slugScore = tokenSortRatio(slugA, slugB);
+          const slugScore = tokenSortRatio({ a: slugA, b: slugB });
           if (slugScore > 70) {
             confidence = confidence * 0.1 + (slugScore / 100) * 0.9;
           }
@@ -309,10 +317,13 @@ export class EntityResolver {
     return matches;
   }
 
-  private buildEntities(
-    candidates: Candidate[],
-    matches: [number, number, number, string][],
-  ): EntityRow[] {
+  private buildEntities({
+    candidates,
+    matches,
+  }: {
+    candidates: Candidate[];
+    matches: [number, number, number, string][];
+  }): EntityRow[] {
     const uf = new UnionFind();
     const matchMap = new Map<number, { confidence: number; method: string }>();
 
@@ -321,7 +332,7 @@ export class EntityResolver {
 
     // Union matched pairs
     for (const [a, b, confidence, method] of matches) {
-      uf.union(a, b);
+      uf.union({ a, b });
       // Track highest confidence per candidate
       const existing = matchMap.get(a);
       if (!existing || confidence > existing.confidence) matchMap.set(a, { confidence, method });
@@ -336,7 +347,7 @@ export class EntityResolver {
     for (const [root, members] of groups) {
       const rootCandidate = candidates[root];
       assertDefined(rootCandidate);
-      const cid = canonicalId(rootCandidate.brand, rootCandidate.name);
+      const cid = canonicalId({ brand: rootCandidate.brand, name: rootCandidate.name });
 
       for (const idx of members) {
         const c = candidates[idx];
@@ -396,7 +407,13 @@ export class EntityResolver {
   }
 
   /** Find all retailer listings for a product. */
-  async identifyProduct(query: string, limit = 20): Promise<EntityRow[]> {
+  async identifyProduct({
+    query,
+    limit = 20,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<EntityRow[]> {
     const kw = SQLFragments.escapeSql(query.toLowerCase());
     const result = await this.conn.runAndReadAll(`
       SELECT * FROM ${ENTITIES_TABLE}

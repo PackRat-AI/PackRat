@@ -1,4 +1,5 @@
 import { isObject, zodGuard } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import type { SelectedImage } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils';
@@ -10,7 +11,7 @@ import type { IdentificationResult } from '../types';
 const isIdentifyResponse = zodGuard(z.object({ results: z.array(z.unknown()) }));
 
 async function identifyOnline(selectedImage: SelectedImage): Promise<IdentificationResult[]> {
-  const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
+  const image = await uploadImage({ fileName: selectedImage.fileName, uri: selectedImage.uri });
   if (!image) {
     throw new Error(
       `Couldn't upload image${selectedImage.fileName ? ` "${selectedImage.fileName}"` : ' (no filename provided)'}`,
@@ -18,10 +19,18 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
   }
   const { data, error } = await apiClient.wildlife.identify.post({ image });
   if (error) {
-    const wrapped = new Error(`Wildlife identification failed: ${error.value}`) as Error & {
+    const wrapped = new Error(`Wildlife identification failed: ${String(error.value)}`) as Error & {
       isApiError?: boolean;
     };
     wrapped.isApiError = true;
+    Sentry.captureException(wrapped, {
+      tags: { feature: 'wildlife', action: 'identify' },
+      extra: {
+        apiError: error.value,
+        httpStatus: error.status,
+        imageFileName: selectedImage.fileName,
+      },
+    });
     throw wrapped;
   }
   if (!isIdentifyResponse(data))

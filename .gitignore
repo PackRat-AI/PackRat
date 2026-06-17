@@ -21,6 +21,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.test.local
 .env.production.local
 .env.local
+.envrc
 
 # caches
 .eslintcache
@@ -41,7 +42,16 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .claude/scheduled_tasks.lock
 .dev.vars
 
+# Generated OG images (produced at build time by scripts/generate-og-images.ts)
+apps/landing/public/og-image.png
+apps/guides/public/og-image.png
+apps/guides/public/og/
+
+# Lighthouse CI output (produced by `lhci autorun`)
+.lighthouseci/
+
 # Git worktrees
+.worktrees
 .worktrees/
 
 # Xcode (apps/swift)
@@ -55,3 +65,10 @@ apps/swift/.swiftpm/
 apps/swift/Package.resolved
 apps/swift/PackRatAPIClient/.build/
 apps/swift/PackRatAPIClient/.swiftpm/
+apps/swift/TestResults/
+
+apps/swift/build/
+
+# Quicktype reference output — generated for inspection, not compiled into the app.
+apps/swift/Generated/
+.turbo/

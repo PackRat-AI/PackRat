@@ -1,6 +1,6 @@
-import { createPerplexity } from '@ai-sdk/perplexity';
-import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createPerplexityAIProvider } from '@packrat/api/utils/ai/provider';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { isFunction } from '@packrat/guards';
 import { generateText } from 'ai';
@@ -26,8 +26,12 @@ export class AIService {
   }
 
   async perplexitySearch(query: string): Promise<SearchResult> {
-    const perplexity = createPerplexity({
-      apiKey: this.env.PERPLEXITY_API_KEY,
+    const perplexity = createPerplexityAIProvider({
+      perplexityApiKey: this.env.PERPLEXITY_API_KEY,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: this.env.CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: this.env.AI,
     });
 
     try {
@@ -44,10 +48,13 @@ export class AIService {
     }
   }
 
-  async searchPackratOutdoorGuidesRAG(
-    query: string,
-    limit: number = 5,
-  ): Promise<
+  async searchPackratOutdoorGuidesRAG({
+    query,
+    limit = 5,
+  }: {
+    query: string;
+    limit?: number;
+  }): Promise<
     Omit<AutoRagSearchResponse, 'data'> & {
       data: (AutoRagSearchResponse['data'][0] & { url: string })[];
     }

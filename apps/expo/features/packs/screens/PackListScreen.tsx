@@ -1,14 +1,9 @@
-import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
-import {
-  ActivityIndicator,
-  Button,
-  LargeTitleHeader,
-  SegmentedControl,
-} from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, SegmentedControl } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { LargeTitleHeaderOverlapFixIOS } from '@packrat/ui/src/large-title-header-overlap-fix-ios';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderOverlapFixIOS } from 'expo-app/components/LargeTitleHeaderOverlapFixIOS';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -16,11 +11,10 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { testIds } from 'expo-app/lib/testIds';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -46,7 +40,7 @@ function CreatePackIconButton() {
   return (
     <Link href="/pack/new" asChild>
       <Pressable
-        testID={TestIds.CreatePackButton}
+        testID={testIds.packs.createBtn}
         accessibilityLabel={t('packs.createNewPack')}
         className="mx-2"
       >
@@ -72,8 +66,6 @@ export function PackListScreen() {
     isAllPacksView ? ALL_PACKS_INDEX : USER_PACKS_INDEX,
   );
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
-
-  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const { colors } = useColorScheme();
 
@@ -179,44 +171,48 @@ export function PackListScreen() {
             ? 'No public packs are available at the moment.'
             : `No public ${activeFilter} packs are available.`}
         </Text>
-        <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreatePack}>
+        <Pressable
+          testID={testIds.packs.emptyCreateBtn}
+          accessibilityLabel={testIds.packs.emptyCreateBtn}
+          className="rounded-lg bg-primary px-4 py-2"
+          onPress={handleCreatePack}
+        >
           <Text className="font-medium text-primary-foreground">{t('packs.createNewPack')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeaderOverlapFixIOS>
-        <LargeTitleHeader
-          title={t('navigation.packs')}
-          backVisible={false}
-          searchBar={{
-            ref: asNonNullableRef(searchBarRef),
-            onChangeText(text) {
-              setSearchValue(text);
-            },
-            content: (
-              <LargeTitleHeaderSearchContentContainer>
-                {searchValue ? (
-                  <SearchResults
-                    // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
-                    results={(filteredPacks || []) as any}
-                    searchValue={searchValue}
-                    onResultPress={handleSearchResultPress}
-                  />
-                ) : (
-                  <View className="flex-1 items-center justify-center">
-                    <Text>{t('packs.searchPacks')}</Text>
-                  </View>
-                )}
-              </LargeTitleHeaderSearchContentContainer>
-            ),
-          }}
-          rightView={() => <CreatePackIconButton />}
-        />
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: t('navigation.packs'),
+          headerBackVisible: false,
+          headerRight: () => <CreatePackIconButton />,
+        }}
+      />
+      <SearchOverlay
+        value={searchValue}
+        onChangeText={setSearchValue}
+        androidHeaderRightActions={<CreatePackIconButton />}
+      >
+        {searchValue ? (
+          <SearchResults
+            // biome-ignore lint/suspicious/noExplicitAny: Treaty type divergence
+            results={(filteredPacks || []) as any}
+            searchValue={searchValue}
+            onResultPress={handleSearchResultPress}
+          />
+        ) : (
+          <View className="flex-1 items-center justify-center p-4">
+            <Text className="text-muted-foreground">{t('packs.searchPacks')}</Text>
+          </View>
+        )}
+      </SearchOverlay>
 
+      <LargeTitleHeaderOverlapFixIOS>
         <FlatList
           data={filteredPacks}
           keyExtractor={(pack) => pack.id}

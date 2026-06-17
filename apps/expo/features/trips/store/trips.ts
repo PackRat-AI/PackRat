@@ -1,11 +1,10 @@
 import { observable, syncState } from '@legendapp/state';
-import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import { TripSchema } from '@packrat/api/schemas/trips';
+import { TripSchema } from '@packrat/schemas/trips';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
-import Storage from 'expo-sqlite/kv-store';
+import { persistPlugin } from 'expo-app/lib/persist-plugin';
 import type { TripInStore } from '../types';
 
 const listTrips = async () => {
@@ -15,13 +14,10 @@ const listTrips = async () => {
 };
 
 const createTrip = async (tripData: TripInStore) => {
-  if (!tripData.location) {
-    throw new Error('Trip location is required before sync');
-  }
   const { data, error } = await apiClient.trips.post({
     id: tripData.id,
     name: tripData.name,
-    location: tripData.location,
+    location: tripData.location ?? null,
     description: tripData.description ?? null,
     notes: tripData.notes ?? null,
     packId: tripData.packId ?? null,
@@ -44,6 +40,7 @@ const updateTrip = async ({ id, ...data }: Partial<TripInStore>) => {
     ...(data.startDate !== undefined ? { startDate: data.startDate ?? null } : {}),
     ...(data.endDate !== undefined ? { endDate: data.endDate ?? null } : {}),
     ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
   });
   if (error) throw new Error(`Failed to update trip: ${error.value}`);
   return TripSchema.parse(result);
@@ -61,7 +58,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: persistPlugin,
       retrySync: true,
       name: 'trips',
     },

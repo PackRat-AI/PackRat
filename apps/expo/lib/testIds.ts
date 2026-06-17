@@ -1,40 +1,155 @@
 /**
- * Stable testID identifiers used by Maestro E2E flows.
+ * Centralized test-ID registry — single source of truth for every `testID`
+ * used in components, Playwright web specs, and Maestro iOS flows.
  *
- * On iOS these map to `accessibilityIdentifier` (set via React Native `testID`).
- * On Android they map to the `resource-id` content descriptor.
+ * `testIds` is the primary API, organised by domain.
+ * - Static IDs: plain string values.
+ * - Dynamic IDs: factory functions (`testIds.packs.listItem(id)`) so callers
+ *   never hand-interpolate strings.
  *
- * Keep the string values in sync with the `id:` selectors in `.maestro/flows/`.
+ * `TestIds` is a backward-compat alias that maps the old PascalCase enum keys
+ * to the same underlying strings. Maestro flows reference these values via
+ * `id:` selectors — keep the string values stable.
+ *
+ * Usage in components:
+ *   import { testIds } from 'expo-app/lib/testIds';
+ *   <TextInput testID={testIds.packs.nameInput} />
+ *
+ * Usage in Playwright specs:
+ *   import { testIds } from '../../../lib/testIds';
+ *   page.getByTestId(testIds.packs.nameInput)
  */
-export enum TestIds {
-  // Auth screens
-  SignInEmailButton = 'sign-in-email-button',
-  EmailInput = 'email-input',
-  PasswordInput = 'password-input',
-  ContinueButton = 'continue-button',
+export const testIds = Object.freeze({
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  auth: Object.freeze({
+    signInEmailBtn: 'sign-in-email-button', // keep Maestro value
+    emailInput: 'email-input',
+    emailInputContainer: 'email-input-container',
+    passwordInput: 'password-input',
+    passwordInputContainer: 'password-input-container',
+    continueBtn: 'continue-button',
+    signOutBtn: 'sign-out-button', // keep Maestro value
+  }),
 
-  // Trips
-  CreateTripButton = 'create-trip-button',
-  SubmitTripButton = 'submit-trip-button',
+  // ── Packs ─────────────────────────────────────────────────────────────────
+  packs: Object.freeze({
+    createBtn: 'create-pack-button', // keep Maestro value
+    emptyCreateBtn: 'create-pack-empty-button',
+    cancelBtn: 'cancel-pack-form-button', // keep Maestro value
+    nameInput: 'packs:name-input',
+    nameInputContainer: 'packs:name-input-container',
+    descriptionInput: 'packs:description-input',
+    descriptionInputContainer: 'packs:description-input-container',
+    submitBtn: 'submit-pack-button', // keep Maestro value
+    deleteBtn: 'packs:delete',
+    deleteConfirmBtn: 'packs:delete-confirm',
+    editBtn: 'packs:edit',
+    addItemBtn: 'add-item-button', // keep Maestro value
+    askAIBtn: 'ask-ai-button', // keep Maestro value
+    moreActionsBtn: 'pack-more-actions', // keep Maestro value
+    listItem: (id: string | number) => `packs:list-item-${id}`,
+  }),
 
-  // Packs
-  CreatePackButton = 'create-pack-button',
-  SubmitPackButton = 'submit-pack-button',
+  // ── Pack items ────────────────────────────────────────────────────────────
+  items: Object.freeze({
+    addManuallyOption: 'add-manually-option', // keep Maestro value
+    scanPhotoOption: 'scan-from-photo-option', // keep Maestro value
+    addFromCatalogOption: 'add-from-catalog-option', // keep Maestro value
+    nameInput: 'items:name-input',
+    nameInputContainer: 'items:name-input-container',
+    descriptionInput: 'items:description-input',
+    descriptionInputContainer: 'items:description-input-container',
+    weightInput: 'items:weight-input',
+    weightInputContainer: 'items:weight-input-container',
+    weightUnitControl: 'items:weight-unit',
+    quantityInput: 'items:quantity-input',
+    categoryInput: 'items:category-input',
+    submitBtn: 'items:submit',
+    deleteBtn: 'items:delete',
+    editBtn: 'items:edit',
+    moreActionsBtn: (id: string | number) => `items:more-actions-${id}`,
+    card: (id: string | number) => `items:card-${id}`,
+    catalogCard: (id: string | number) => `catalog-item-card-${id}`, // keep existing value
+    catalogConfirmAddBtn: 'items:catalog-confirm-add',
+    catalogClearBtn: 'items:catalog-clear',
+  }),
 
-  // Pack detail
-  AskAIButton = 'ask-ai-button',
-  AddItemButton = 'add-item-button',
-  PackMoreActions = 'pack-more-actions',
+  // ── Trips ─────────────────────────────────────────────────────────────────
+  trips: Object.freeze({
+    createBtn: 'create-trip-button', // keep Maestro value
+    emptyCreateBtn: 'create-trip-empty-button',
+    cancelBtn: 'cancel-trip-form-button', // keep Maestro value
+    nameInput: 'trips:name-input',
+    nameInputContainer: 'trips:name-input-container',
+    descriptionInput: 'trips:description-input',
+    descriptionInputContainer: 'trips:description-input-container',
+    submitBtn: 'submit-trip-button', // keep Maestro value
+    deleteBtn: 'trips:delete',
+    deleteConfirmBtn: 'trips:delete-confirm',
+    editBtn: 'trips:edit',
+    inlineDeleteBtn: 'trips:inline-delete',
+    inlineEditBtn: 'trips:inline-edit',
+    datesSection: 'trips:dates-section',
+    startDateBtn: 'trips:start-date-btn',
+    endDateBtn: 'trips:end-date-btn',
+    startDateInput: 'trips:start-date-input',
+    endDateInput: 'trips:end-date-input',
+    listItem: (id: string | number) => `trips:list-item-${id}`,
+  }),
 
-  // Add item modal
-  AddManuallyOption = 'add-manually-option',
-  ScanFromPhotoOption = 'scan-from-photo-option',
-  AddFromCatalogOption = 'add-from-catalog-option',
+  // ── Catalog ───────────────────────────────────────────────────────────────
+  catalog: Object.freeze({
+    searchBtn: 'catalog:search-btn',
+    searchInput: 'catalog:search-input',
+    totalItemsCount: 'catalog:total-items-count',
+    addToPackBtn: 'add-to-pack-button', // keep Maestro value
+    packSelectionScreen: 'catalog:pack-selection-screen',
+    packSelectionSearch: 'catalog:pack-selection-search',
+    viewRetailerBtn: 'view-retailer-button', // keep Maestro value
+    packOption: (id: string | number) => `catalog:pack-option-${id}`,
+    item: (id: string | number) => `catalog:item-${id}`,
+  }),
 
-  // Profile
-  SignOutButton = 'sign-out-button',
+  // ── Guides ────────────────────────────────────────────────────────────────
+  guides: Object.freeze({
+    card: (id: string | number) => `guides:card-${id}`,
+  }),
 
-  // Catalog item detail
-  AddToPackButton = 'add-to-pack-button',
-  ViewRetailerButton = 'view-retailer-button',
-}
+  // ── Pack templates ────────────────────────────────────────────────────────
+  packTemplates: Object.freeze({
+    dashboardTile: 'dashboard-tile-pack-templates',
+    card: (id: string | number) => `pack-templates:card-${id}`,
+  }),
+
+  // ── Profile ───────────────────────────────────────────────────────────────
+  profile: Object.freeze({
+    signOutBtn: 'sign-out-button', // keep Maestro value
+    firstNameInput: 'profile:first-name-input',
+    lastNameInput: 'profile:last-name-input',
+    usernameInput: 'profile:username-input',
+    saveBtn: 'profile:save',
+    nameEditBtn: 'profile:name-edit',
+  }),
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+  settings: Object.freeze({
+    aiModelsSection: 'settings:ai-models',
+    dangerZone: 'settings:danger-zone',
+    deleteAccountBtn: 'settings:delete-account',
+  }),
+
+  // ── AI Chat ───────────────────────────────────────────────────────────────
+  aiChat: Object.freeze({
+    input: 'ai-chat:input',
+    sendBtn: 'ai-chat:send',
+    stopBtn: 'ai-chat:stop',
+    assistantMessage: (id: string | number) => `ai-chat:assistant-message-${id}`,
+  }),
+
+  // ── Weather ───────────────────────────────────────────────────────────────
+  weather: Object.freeze({
+    searchInput: 'weather:search-input',
+    addLocationBtn: 'weather:add-location',
+    location: (id: string | number) => `weather:location-${id}`,
+  }),
+});

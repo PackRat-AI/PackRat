@@ -14,22 +14,22 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const conn = cache.getConnection();
-    const limit = parsePositiveIntArg(args.limit, '--limit');
+    const limit = parsePositiveIntArg({ value: args.limit, argName: '--limit' });
 
-    const enrichment = new Enrichment(conn);
+    const enrichment = new Enrichment({ conn });
 
     if (args.build) {
       consola.start('Building review aggregation...');
       const stats = await enrichment.buildReviews();
-      printSummary(
-        {
+      printSummary({
+        data: {
           'Total review entries': stats.total_reviews,
           'Products with reviews': stats.products_with_reviews,
           'Sites with reviews': stats.sites_with_reviews,
           'Average rating': stats.avg_rating,
         },
-        'Review Aggregation Complete',
-      );
+        title: 'Review Aggregation Complete',
+      });
       return;
     }
 
@@ -38,14 +38,14 @@ export default defineCommand({
       return;
     }
 
-    const reviews = await enrichment.getProductReviews(args.product, limit);
+    const reviews = await enrichment.getProductReviews({ query: args.product, limit });
     if (reviews.length === 0) {
       consola.warn('No reviews found. Run `packrat reviews --build` first.');
       return;
     }
 
-    printTable(
-      reviews.map((r) => ({
+    printTable({
+      rows: reviews.map((r) => ({
         Site: r.site,
         Name: String(r.name).slice(0, 40),
         Brand: r.brand,
@@ -55,7 +55,7 @@ export default defineCommand({
         'Wtd Avg': r.weighted_avg_rating,
         'Total Reviews': r.total_reviews,
       })),
-      { title: `Reviews: "${args.product}"` },
-    );
+      options: { title: `Reviews: "${args.product}"` },
+    });
   },
 });

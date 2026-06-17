@@ -51,14 +51,14 @@ describe('parseArgs', () => {
 describe('loadDotEnv', () => {
   test('loads quoted values and preserves existing environment values', () => {
     const env = { E2E_EMAIL: 'already-set@example.com' };
-    loadDotEnv(
-      tempFile(`
+    loadDotEnv({
+      path: tempFile(`
 E2E_EMAIL="from-file@example.com"
 E2E_PASSWORD='secret-password'
 EMPTY_LINE_TEST=value
 `),
       env,
-    );
+    });
 
     expect(env.E2E_EMAIL).toBe('already-set@example.com');
     expect(env.E2E_PASSWORD).toBe('secret-password');
@@ -105,7 +105,7 @@ describe('redactSecrets', () => {
       NORMAL_VALUE: 'visible',
     };
 
-    expect(redactSecrets('person@example.com super-secret visible', env)).toBe(
+    expect(redactSecrets({ value: 'person@example.com super-secret visible', env })).toBe(
       '<redacted> <redacted> visible',
     );
   });

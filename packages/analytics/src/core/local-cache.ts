@@ -129,13 +129,16 @@ export class LocalCacheManager {
     const sites = sitesResult.getRows().map((r) => String(r[0]));
 
     const now = new Date().toISOString();
-    saveMetadata(this.cacheDir, {
-      version: DBConfig.CACHE_VERSION,
-      schema_version: DBConfig.SCHEMA_VERSION,
-      created_at: this.metadata?.created_at ?? now,
-      updated_at: now,
-      record_count: recordCount,
-      sites,
+    saveMetadata({
+      cacheDir: this.cacheDir,
+      data: {
+        version: DBConfig.CACHE_VERSION,
+        schema_version: DBConfig.SCHEMA_VERSION,
+        created_at: this.metadata?.created_at ?? now,
+        updated_at: now,
+        record_count: recordCount,
+        sites,
+      },
     });
     this.metadata = loadMetadata(this.cacheDir);
   }
@@ -168,10 +171,13 @@ export class LocalCacheManager {
 
   // ── Search ──────────────────────────────────────────────────────────
 
-  async search(
-    keyword: string,
-    options: { sites?: string[]; minPrice?: number; maxPrice?: number; limit?: number } = {},
-  ): Promise<CatalogRow[]> {
+  async search({
+    keyword,
+    options = {},
+  }: {
+    keyword: string;
+    options?: { sites?: string[]; minPrice?: number; maxPrice?: number; limit?: number };
+  }): Promise<CatalogRow[]> {
     const { sites, minPrice, maxPrice, limit = DBConfig.DEFAULT_LIMIT } = options;
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
 
@@ -195,7 +201,13 @@ export class LocalCacheManager {
 
   // ── Price Comparison ────────────────────────────────────────────────
 
-  async comparePrices(keyword: string, sites?: string[]): Promise<PriceComparison[]> {
+  async comparePrices({
+    keyword,
+    sites,
+  }: {
+    keyword: string;
+    sites?: string[];
+  }): Promise<PriceComparison[]> {
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
 
     const conditions = [`(LOWER(name) LIKE '%${kw}%' OR LOWER(brand) LIKE '%${kw}%')`];
@@ -220,7 +232,13 @@ export class LocalCacheManager {
 
   // ── Brand Analysis ──────────────────────────────────────────────────
 
-  async analyzeBrand(brandName: string, sites?: string[]): Promise<BrandAnalysis[]> {
+  async analyzeBrand({
+    brandName,
+    sites,
+  }: {
+    brandName: string;
+    sites?: string[];
+  }): Promise<BrandAnalysis[]> {
     const brand = SQLFragments.escapeSql(brandName.toLowerCase());
 
     const conditions = [`LOWER(brand) LIKE '%${brand}%'`];
@@ -246,7 +264,13 @@ export class LocalCacheManager {
 
   // ── Category Insights ───────────────────────────────────────────────
 
-  async categoryInsights(categoryKeyword: string, sites?: string[]): Promise<CategoryInsights[]> {
+  async categoryInsights({
+    categoryKeyword,
+    sites,
+  }: {
+    categoryKeyword: string;
+    sites?: string[];
+  }): Promise<CategoryInsights[]> {
     const cat = SQLFragments.escapeSql(categoryKeyword.toLowerCase());
 
     const conditions = [`LOWER(category) LIKE '%${cat}%'`];
@@ -272,10 +296,13 @@ export class LocalCacheManager {
 
   // ── Deals ───────────────────────────────────────────────────────────
 
-  async findDeals(
-    maxPrice: number,
-    options: { category?: string; sites?: string[]; limit?: number } = {},
-  ): Promise<CatalogRow[]> {
+  async findDeals({
+    maxPrice,
+    options = {},
+  }: {
+    maxPrice: number;
+    options?: { category?: string; sites?: string[]; limit?: number };
+  }): Promise<CatalogRow[]> {
     const { category, sites, limit = DBConfig.DEFAULT_LIMIT } = options;
 
     const conditions = [`price <= ${maxPrice}`, `price > 0`];
@@ -296,10 +323,13 @@ export class LocalCacheManager {
 
   // ── Trends ──────────────────────────────────────────────────────────
 
-  async searchTrends(
-    keyword: string,
-    options: { site?: string; days?: number; limit?: number } = {},
-  ): Promise<PriceTrend[]> {
+  async searchTrends({
+    keyword,
+    options = {},
+  }: {
+    keyword: string;
+    options?: { site?: string; days?: number; limit?: number };
+  }): Promise<PriceTrend[]> {
     const { site, days = 90 } = options;
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
 
@@ -350,10 +380,13 @@ export class LocalCacheManager {
 
   // ── Top Brands ──────────────────────────────────────────────────────
 
-  async getTopBrands(
+  async getTopBrands({
     limit = 20,
-    site?: string,
-  ): Promise<{ brand: string; product_count: number; avg_price: number }[]> {
+    site,
+  }: {
+    limit?: number;
+    site?: string;
+  } = {}): Promise<{ brand: string; product_count: number; avg_price: number }[]> {
     const conditions = ["brand != 'Unknown'"];
     if (site) conditions.push(`site = '${SQLFragments.escapeSql(site)}'`);
 

@@ -1,6 +1,9 @@
 import XCTest
 
+#if os(iOS)
 /// Covers top-level navigation — every tab must be reachable and show its title.
+/// macOS uses a different navigation idiom (NavigationSplitView sidebar); the
+/// equivalent suite lives in `NavigationMacOSTests` and is gated separately.
 final class NavigationTests: AppUITestCase {
 
     // Each entry: (tab bar label, expected navigation title or landmark text)
@@ -97,3 +100,4 @@ final class NavigationTests: AppUITestCase {
         }
     }
 }
+#endif

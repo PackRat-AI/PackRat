@@ -4,8 +4,9 @@ import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Platform, Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useDeletePackItem,
@@ -93,10 +94,16 @@ export function PackItemCard({
             });
             break;
           case destructiveButtonIndex:
-            Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
-            ]);
+            if (Platform.OS === 'web') {
+              if (window.confirm('Are you sure you want to delete this item?')) {
+                deleteItem(item.id);
+              }
+            } else {
+              Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
+              ]);
+            }
             break;
         }
       },
@@ -109,6 +116,7 @@ export function PackItemCard({
       onPress={() => (isSelectable ? restProps.onSelect(item) : onPress?.(item))}
     >
       <View
+        testID={testIds.items.card(item.id)}
         className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
           isSelectable && restProps.selected
             ? cn(
@@ -119,7 +127,12 @@ export function PackItemCard({
         }`}
       >
         {/* Image */}
-        <PackItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
+        <PackItemImage
+          item={item}
+          className="h-16 w-16 rounded-md"
+          resizeMode="cover"
+          style={Platform.select({ web: { width: 64, height: 64 } })}
+        />
 
         {/* Content */}
         <View className="flex-1">
@@ -128,7 +141,10 @@ export function PackItemCard({
               {item.name}
             </Text>
             {!isSelectable && (
-              <Pressable onPress={handleActionsPress}>
+              <Pressable
+                testID={testIds.items.moreActionsBtn(item.id)}
+                onPress={handleActionsPress}
+              >
                 <Icon name="dots-horizontal" size={20} color={colors.grey2} />
               </Pressable>
             )}

@@ -14,9 +14,9 @@ import { computePackWeights } from '../utils/computePackWeights';
  */
 export function usePackDetailsFromStore(id: string) {
   const pack = use$(() => {
-    const pack_ = obs(packsStore, id).get();
+    const pack_ = obs({ store: packsStore, id: id }).get();
     const items = getPackItems(id);
-    const packWithWeights = computePackWeights({ ...pack_, items });
+    const packWithWeights = computePackWeights({ pack: { ...pack_, items } });
     return packWithWeights;
   });
 

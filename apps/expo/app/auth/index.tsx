@@ -2,10 +2,14 @@ import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
+import { testIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
@@ -41,10 +45,19 @@ export default function AuthIndexScreen() {
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
+  const setIsLoadingGlobal = useSetAtom(isLoadingAtom);
 
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
   }, [redirectTo, setRedirectTo]);
+
+  // After a sign-out via "Sign-in again", isLoadingAtom is left true by the
+  // profile screen so AppLayout can detect the unauthenticated state and
+  // navigate here. Once this screen mounts, loading is done — clear the atom
+  // so the Sign In button renders instead of the spinner.
+  React.useEffect(() => {
+    setIsLoadingGlobal(false);
+  }, [setIsLoadingGlobal]);
 
   if (isLoading) {
     return (
@@ -61,7 +74,8 @@ export default function AuthIndexScreen() {
           <View className="items-center">
             <Image
               source={LOGO_SOURCE}
-              className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
+              className="ios:h-12 ios:w-12 web:h-8 web:w-8 h-8 w-8 rounded-md"
+              style={Platform.select({ web: { width: 32, height: 32 } })}
               resizeMode="contain"
             />
           </View>
@@ -119,7 +133,7 @@ export default function AuthIndexScreen() {
                   size={Platform.select({ ios: 'lg', default: 'md' })}
                   onPress={signInWithApple}
                 >
-                  <Text className="ios:text-foreground absolute left-4 text-[22px]"></Text>
+                  <Text className="ios:text-foreground absolute left-4 text-[22px]">{''}</Text>
                   <Text className="ios:text-foreground">{t('auth.continueWithApple')}</Text>
                 </Button>
               )}
@@ -127,7 +141,7 @@ export default function AuthIndexScreen() {
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
-              testID={TestIds.SignInEmailButton}
+              testID={testIds.auth.signInEmailBtn}
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >

@@ -1,4 +1,6 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { captureApiException } from '@packrat/api/utils/sentry';
+import { OpenWeatherResponseSchema } from '@packrat/schemas/weather';
 
 type WeatherData = {
   location: string;
@@ -22,13 +24,32 @@ export class WeatherService {
       )}&units=imperial&appid=${this.env.OPENWEATHER_KEY}`,
     );
 
-    if (!response.ok) throw new Error('Weather API request failed');
+    if (!response.ok) {
+      let apiMessage = response.statusText;
+      try {
+        const body = (await response.json()) as { message?: string };
+        if (body.message) apiMessage = body.message;
+      } catch {
+        // response body not parseable — fall back to statusText
+      }
+      const error = new Error(
+        `Weather API error ${response.status}: ${apiMessage} (location: "${location}")`,
+      );
+      captureApiException({
+        error: error,
+        operation: 'weatherService.getWeatherForLocation',
+        tags: { weather_api: 'openweathermap' },
+        extra: {
+          location,
+          apiMessage,
+          httpStatus: response.status,
+          errorCode: 'OPENWEATHERMAP_HTTP_ERROR',
+        },
+      });
+      throw error;
+    }
 
-    const data = (await response.json()) as {
-      main: { temp: number; humidity: number };
-      weather: Array<{ main: string }>;
-      wind: { speed: number };
-    };
+    const data = OpenWeatherResponseSchema.parse(await response.json());
 
     return {
       location,

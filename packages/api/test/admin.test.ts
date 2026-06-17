@@ -1,6 +1,3 @@
-import { createDb } from '@packrat/api/db';
-import { refreshTokens } from '@packrat/api/db/schema';
-
 import { describe, expect, it } from 'vitest';
 import { seedCatalogItem, seedPack, seedTestUser } from './utils/db-helpers';
 import {
@@ -51,6 +48,38 @@ describe('Admin Routes', () => {
       expect(after.users).toBeGreaterThanOrEqual(before.users + 1);
       expect(after.packs).toBeGreaterThanOrEqual(before.packs + 1);
       expect(after.items).toBeGreaterThanOrEqual(before.items + 1);
+    });
+  });
+
+  describe('GET /admin/analytics/db/snapshot', () => {
+    it('returns DB sizing + activity snapshot', async () => {
+      const res = await apiWithBasicAuth('/analytics/db/snapshot');
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['generatedAt', 'database', 'tables', 'indexes']);
+
+      expect(typeof data.generatedAt).toBe('string');
+      expect(typeof data.database.name).toBe('string');
+      expect(typeof data.database.sizeBytes).toBe('number');
+      expect(Array.isArray(data.tables)).toBe(true);
+      expect(Array.isArray(data.indexes)).toBe(true);
+
+      // catalog_items is always present in the schema; spot-check shape.
+      const catalogItemsRow = data.tables.find((t: { name: string }) => t.name === 'catalog_items');
+      expect(catalogItemsRow).toBeDefined();
+      expect(typeof catalogItemsRow.estimatedRows).toBe('number');
+      expect(typeof catalogItemsRow.heapBytes).toBe('number');
+      expect(typeof catalogItemsRow.toastBytes).toBe('number');
+      expect(typeof catalogItemsRow.indexBytes).toBe('number');
+      expect(typeof catalogItemsRow.totalBytes).toBe('number');
+      expect(typeof catalogItemsRow.seqScans).toBe('number');
+      expect(typeof catalogItemsRow.inserts).toBe('number');
+      expect(typeof catalogItemsRow.updates).toBe('number');
+    });
+
+    it('requires admin auth', async () => {
+      // Unauthenticated request via raw api()
+      const res = await api('/admin/analytics/db/snapshot');
+      expect(res.status).toBe(401);
     });
   });
 
@@ -108,22 +137,6 @@ describe('Admin Routes', () => {
     it('returns 404 for a non-existent user', async () => {
       const res = await apiWithBasicAuth('/users/999999', { method: 'DELETE' });
       expect(res.status).toBe(404);
-    });
-
-    it('returns 409 when the user has dependent data (e.g. refresh token)', async () => {
-      // refresh_tokens.user_id uses ON DELETE RESTRICT (schema.ts:48), so a
-      // row here triggers Postgres 23503 → 409 in the admin delete handler.
-      // packs/pack_items cascade, so they can't be used to verify this path.
-      const user = await seedTestUser({ email: 'admin-del-conflict@example.com' });
-      const db = createDb();
-      await db.insert(refreshTokens).values({
-        userId: user.id,
-        token: `test-${Date.now()}-${Math.random()}`,
-        expiresAt: new Date(Date.now() + 86_400_000),
-      });
-
-      const res = await apiWithBasicAuth(`/users/${user.id}`, { method: 'DELETE' });
-      expect(res.status).toBe(409);
     });
   });
 

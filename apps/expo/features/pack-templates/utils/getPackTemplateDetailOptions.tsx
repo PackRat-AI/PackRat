@@ -1,5 +1,6 @@
-import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
+import { Alert, Button, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
@@ -51,7 +52,12 @@ export function getPackTemplateDetailOptions(id: string) {
           <Button
             variant="plain"
             size="icon"
-            onPress={() => router.push({ pathname: '/pack-templates/[id]/edit', params: { id } })}
+            onPress={() =>
+              router.push({
+                pathname: '/pack-templates/[id]/edit',
+                params: { id },
+              })
+            }
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>

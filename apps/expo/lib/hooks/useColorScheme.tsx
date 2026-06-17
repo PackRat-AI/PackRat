@@ -11,14 +11,14 @@ function useColorScheme() {
     setNativeWindColorScheme(colorScheme);
     if (Platform.OS !== 'android') return;
     try {
-      await setNavigationBar(colorScheme);
+      setNavigationBar(colorScheme);
     } catch (error) {
       console.error('useColorScheme.tsx", "setColorScheme', error);
     }
   }
 
   function toggleColorScheme() {
-    return setColorScheme(colorScheme === 'light' ? 'dark' : 'light');
+    return setColorScheme((colorScheme ?? 'light') === 'light' ? 'dark' : 'light');
   }
 
   return {
@@ -44,11 +44,9 @@ function useInitialAndroidBarSync() {
 export { useColorScheme, useInitialAndroidBarSync };
 
 function setNavigationBar(colorScheme: 'light' | 'dark') {
-  return Promise.all([
-    NavigationBar.setButtonStyleAsync(colorScheme === 'dark' ? 'light' : 'dark'),
-    NavigationBar.setPositionAsync('absolute'),
-    NavigationBar.setBackgroundColorAsync(colorScheme === 'dark' ? '#00000030' : '#ffffff80'),
-  ]).catch((error) => {
+  try {
+    NavigationBar.setStyle(colorScheme === 'dark' ? 'light' : 'dark');
+  } catch (error) {
     console.error('useColorScheme.tsx', 'setNavigationBar', error);
-  });
+  }
 }

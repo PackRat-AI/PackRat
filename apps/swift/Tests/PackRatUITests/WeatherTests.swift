@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// End-to-end tests for Weather: location search, forecast display, saved locations.
 final class WeatherTests: AppUITestCase {
     private let testCity = "Denver"
@@ -149,3 +152,5 @@ final class WeatherTests: AppUITestCase {
         )
     }
 }
+
+#endif

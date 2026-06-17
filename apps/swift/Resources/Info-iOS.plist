@@ -21,6 +21,16 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLName</key>
+			<string>world.packrat.deeplinks</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>packrat</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>world.packrat.oauth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.andrewbierman.packrat</string>
@@ -42,6 +52,8 @@
 	<string>This app needs access to your location while you are using it.</string>
 	<key>PACKRAT_ENV</key>
 	<string>$(PACKRAT_ENV)</string>
+	<key>SENTRY_DSN</key>
+	<string>$(SENTRY_DSN)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -1,4 +1,5 @@
 import { isObject } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
@@ -72,6 +73,15 @@ export function useGenerateTemplateFromOnlineContent() {
           importError.code = value.code;
           importError.existingTemplateId = value.existingTemplateId;
         }
+        Sentry.captureException(importError, {
+          tags: { feature: 'packTemplates', action: 'generateFromOnlineContent' },
+          extra: {
+            contentUrl: input.contentUrl,
+            apiError: value,
+            httpStatus: error.status,
+            errorCode: importError.code,
+          },
+        });
         throw importError;
       }
       // safe-cast: treaty response shape matches GeneratedTemplate as validated by the API schema
@@ -79,7 +89,7 @@ export function useGenerateTemplateFromOnlineContent() {
     },
     onSuccess: (data) => {
       const { items, ...template } = data;
-      obs(packTemplatesStore, template.id).set(template);
+      obs({ store: packTemplatesStore, id: template.id }).set(template);
       for (const item of items) {
         if (!isWeightUnit(item.weightUnit)) {
           throw new Error(`Unsupported weightUnit "${item.weightUnit}" for item ${item.id}`);
@@ -103,7 +113,7 @@ export function useGenerateTemplateFromOnlineContent() {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         };
-        obs(packTemplateItemsStore, item.id).set(storeItem);
+        obs({ store: packTemplateItemsStore, id: item.id }).set(storeItem);
       }
     },
   });

@@ -8,15 +8,33 @@ appId: ${APP_ID}
     text: "Trips"
 - waitForAnimationToEnd
 
-# Tap the test trip
+# Tap the trip created earlier in this run
+- scrollUntilVisible:
+    element:
+      id: "trips:list-item-${TRIP_NAME}"
+    direction: DOWN
+    timeout: 15000
+    speed: 40
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 500
 - tapOn:
-    text: ${TRIP_NAME}
+    id: "trips:list-item-${TRIP_NAME}"
 - waitForAnimationToEnd
 
 # Verify trip name is shown
 - assertVisible:
     text: ${TRIP_NAME}
 
-# Go back to trips list
-- back
+# Go back to trips list - platform specific
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: ".*Back.*"
 - waitForAnimationToEnd

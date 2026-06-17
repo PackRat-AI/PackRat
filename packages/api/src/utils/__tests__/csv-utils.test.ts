@@ -291,6 +291,15 @@ describe('csv-utils', () => {
       expect(result?.categories).toBeUndefined();
     });
 
+    it('handles blank categories gracefully', () => {
+      const values = ['   '];
+      const fieldMap = { categories: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.categories).toBeUndefined();
+    });
+
     it('handles empty images gracefully', () => {
       const values = [''];
       const fieldMap = { images: 0 };
@@ -307,6 +316,42 @@ describe('csv-utils', () => {
       const result = mapCsvRowToItem({ values, fieldMap });
 
       expect(result?.categories).toEqual(['invalid json']);
+    });
+
+    it('wraps malformed JSON array categories in an array', () => {
+      const values = ['["Electronics",'];
+      const fieldMap = { categories: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.categories).toEqual(['["Electronics",']);
+    });
+
+    it('ignores malformed JSON array images', () => {
+      const values = ['["img1.jpg",'];
+      const fieldMap = { images: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.images).toBeUndefined();
+    });
+
+    it('maps array-shaped techs to an empty object', () => {
+      const values = ['["unexpected"]'];
+      const fieldMap = { techs: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.techs).toEqual({});
+    });
+
+    it('ignores invalid availability values', () => {
+      const values = ['not_available'];
+      const fieldMap = { availability: 0 };
+
+      const result = mapCsvRowToItem({ values, fieldMap });
+
+      expect(result?.availability).toBeUndefined();
     });
 
     it('processes description with newlines correctly', () => {
@@ -419,38 +464,41 @@ describe('csv-utils', () => {
 
   describe('parseWeight', () => {
     it('parses grams correctly', () => {
-      expect(parseWeight('100')).toEqual({ weight: 100, unit: 'g' });
-      expect(parseWeight('150', 'g')).toEqual({ weight: 150, unit: 'g' });
+      expect(parseWeight({ weightStr: '100' })).toEqual({ weight: 100, unit: 'g' });
+      expect(parseWeight({ weightStr: '150', unitStr: 'g' })).toEqual({ weight: 150, unit: 'g' });
     });
 
     it('parses ounces correctly', () => {
-      expect(parseWeight('10', 'oz')).toEqual({ weight: 284, unit: 'oz' });
-      expect(parseWeight('5 oz')).toEqual({ weight: 142, unit: 'oz' });
+      expect(parseWeight({ weightStr: '10', unitStr: 'oz' })).toEqual({ weight: 284, unit: 'oz' });
+      expect(parseWeight({ weightStr: '5 oz' })).toEqual({ weight: 142, unit: 'oz' });
     });
 
     it('parses pounds correctly', () => {
-      expect(parseWeight('2', 'lb')).toEqual({ weight: 907, unit: 'lb' });
-      expect(parseWeight('3 lbs')).toEqual({ weight: 1361, unit: 'lb' });
+      expect(parseWeight({ weightStr: '2', unitStr: 'lb' })).toEqual({ weight: 907, unit: 'lb' });
+      expect(parseWeight({ weightStr: '3 lbs' })).toEqual({ weight: 1361, unit: 'lb' });
     });
 
     it('parses kilograms correctly', () => {
-      expect(parseWeight('1.5', 'kg')).toEqual({ weight: 1500, unit: 'kg' });
-      expect(parseWeight('2 kg')).toEqual({ weight: 2000, unit: 'kg' });
+      expect(parseWeight({ weightStr: '1.5', unitStr: 'kg' })).toEqual({
+        weight: 1500,
+        unit: 'kg',
+      });
+      expect(parseWeight({ weightStr: '2 kg' })).toEqual({ weight: 2000, unit: 'kg' });
     });
 
     it('handles empty or invalid input', () => {
-      expect(parseWeight('')).toEqual({ weight: null, unit: null });
-      expect(parseWeight('invalid')).toEqual({ weight: null, unit: null });
-      expect(parseWeight('-10')).toEqual({ weight: null, unit: null });
+      expect(parseWeight({ weightStr: '' })).toEqual({ weight: null, unit: null });
+      expect(parseWeight({ weightStr: 'invalid' })).toEqual({ weight: null, unit: null });
+      expect(parseWeight({ weightStr: '-10' })).toEqual({ weight: null, unit: null });
     });
 
     it('defaults to grams when no unit is specified', () => {
-      expect(parseWeight('250')).toEqual({ weight: 250, unit: 'g' });
+      expect(parseWeight({ weightStr: '250' })).toEqual({ weight: 250, unit: 'g' });
     });
 
     it('is case-insensitive for units', () => {
-      expect(parseWeight('10', 'OZ')).toEqual({ weight: 284, unit: 'oz' });
-      expect(parseWeight('1', 'KG')).toEqual({ weight: 1000, unit: 'kg' });
+      expect(parseWeight({ weightStr: '10', unitStr: 'OZ' })).toEqual({ weight: 284, unit: 'oz' });
+      expect(parseWeight({ weightStr: '1', unitStr: 'KG' })).toEqual({ weight: 1000, unit: 'kg' });
     });
   });
 

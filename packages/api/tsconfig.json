@@ -1,12 +1,10 @@
 {
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
+    "types": ["./worker-configuration.d.ts", "bun"],
     "paths": {
-      "@packrat/api": ["src/index.ts"],
-      "@packrat/api/*": ["src/*"]
+      "@packrat/api": ["./src/index.ts"],
+      "@packrat/api/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -101,6 +101,31 @@ type UITestEnvOptions = {
   env?: NodeJS.ProcessEnv;
 };
 
+type DotEnvOptions = {
+  path: string;
+  env?: NodeJS.ProcessEnv;
+};
+
+type RedactSecretsOptions = {
+  value: string;
+  env?: NodeJS.ProcessEnv;
+};
+
+type InjectSchemeEnvOptions = {
+  schemePath: string;
+  values: Record<string, string>;
+};
+
+type PreflightOptions = {
+  mode: SwiftTestMode;
+  destination: string | null;
+};
+
+type XcodeArgsOptions = {
+  mode: SwiftTestMode;
+  passthrough: string[];
+};
+
 function isSwiftTestMode(value: string): value is SwiftTestMode {
   return KNOWN_SWIFT_TEST_MODES.has(value);
 }
@@ -113,7 +138,7 @@ export function parseArgs(args: string[]): ParsedArgs {
   return { mode: 'ios-ui', passthrough: args };
 }
 
-export function loadDotEnv(path: string, env: NodeJS.ProcessEnv = process.env): void {
+export function loadDotEnv({ path, env = process.env }: DotEnvOptions): void {
   if (!existsSync(path)) return;
   for (const line of readFileSync(path, 'utf8').split('\n')) {
     const trimmed = line.trim();
@@ -129,7 +154,7 @@ export function loadDotEnv(path: string, env: NodeJS.ProcessEnv = process.env): 
   }
 }
 
-export function redactSecrets(value: string, env: NodeJS.ProcessEnv = process.env): string {
+export function redactSecrets({ value, env = process.env }: RedactSecretsOptions): string {
   let redacted = value;
   for (const key of Object.keys(env)) {
     if (!CREDENTIAL_KEY_RE.test(key)) continue;
@@ -203,7 +228,7 @@ function escapeXml(s: string): string {
     .replace(SQUOTE_RE, '&apos;');
 }
 
-export function injectSchemeEnv(schemePath: string, values: Record<string, string>): void {
+export function injectSchemeEnv({ schemePath, values }: InjectSchemeEnvOptions): void {
   let content = readFileSync(schemePath, 'utf8');
 
   content = content.replace(ENV_BLOCK_RE, '');
@@ -275,7 +300,7 @@ function resultBundlePath(mode: SwiftTestMode): string {
   return path;
 }
 
-function printPreflight(mode: SwiftTestMode, destination: string | null): void {
+function printPreflight({ mode, destination }: PreflightOptions): void {
   const git = getGitInfo();
   console.log(`Swift test mode: ${mode}`);
   console.log(`Git branch: ${git.branch}`);
@@ -295,7 +320,7 @@ function printPreflight(mode: SwiftTestMode, destination: string | null): void {
   if (destination) console.log(`Destination: ${destination}`);
 }
 
-function buildXcodeArgs(mode: SwiftTestMode, passthrough: string[]): string[] {
+function buildXcodeArgs({ mode, passthrough }: XcodeArgsOptions): string[] {
   if (mode === 'mac-build') {
     return [
       'build',
@@ -400,21 +425,21 @@ async function runXcodebuild(args: string[]): Promise<number> {
     });
 
     child.stdout.on('data', (chunk: Buffer) =>
-      process.stdout.write(redactSecrets(chunk.toString())),
+      process.stdout.write(redactSecrets({ value: chunk.toString() })),
     );
     child.stderr.on('data', (chunk: Buffer) =>
-      process.stderr.write(redactSecrets(chunk.toString())),
+      process.stderr.write(redactSecrets({ value: chunk.toString() })),
     );
     child.on('close', (code) => resolve(code ?? 1));
     child.on('error', (error) => {
-      console.error(redactSecrets(String(error)));
+      console.error(redactSecrets({ value: String(error) }));
       resolve(1);
     });
   });
 }
 
 async function main(): Promise<never> {
-  loadDotEnv(resolve(REPO_ROOT, '.env.local'));
+  loadDotEnv({ path: resolve(REPO_ROOT, '.env.local') });
   const { mode, passthrough } = parseArgs(process.argv.slice(2));
   requireGeneratedProject(mode);
 
@@ -422,22 +447,22 @@ async function main(): Promise<never> {
     const { email, password } = requireE2ECredentials();
     const uiEnv = buildUITestEnv({ email, password });
     mkdirSync(uiEnv.E2E_SCREENSHOT_DIR, { recursive: true });
-    injectSchemeEnv(schemePathForMode(mode), uiEnv);
+    injectSchemeEnv({ schemePath: schemePathForMode(mode), values: uiEnv });
     const baseURLStatus = process.env.E2E_API_BASE_URL ? ', E2E_API_BASE_URL=<set>' : '';
     console.log(
       `Injected UI test environment into generated scheme: E2E_EMAIL=<set>, E2E_PASSWORD=<set>${baseURLStatus}, E2E_SCREENSHOT_DIR=${uiEnv.E2E_SCREENSHOT_DIR}`,
     );
   }
 
-  const args = buildXcodeArgs(mode, passthrough);
+  const args = buildXcodeArgs({ mode, passthrough });
   const destinationIndex = args.indexOf('-destination');
   const destination = destinationIndex === -1 ? null : args[destinationIndex + 1];
-  printPreflight(mode, destination);
+  printPreflight({ mode, destination });
 
   const bundleIndex = args.indexOf('-resultBundlePath');
   if (bundleIndex !== -1) console.log(`Result bundle: ${args[bundleIndex + 1]}`);
 
-  console.log(`Running: xcodebuild ${redactSecrets(args.join(' '))}`);
+  console.log(`Running: xcodebuild ${redactSecrets({ value: args.join(' ') })}`);
 
   process.exit(await runXcodebuild(args));
 }

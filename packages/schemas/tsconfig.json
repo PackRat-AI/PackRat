@@ -1,0 +1,13 @@
+{
+  "extends": "@packrat/typescript-config/base.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@packrat/db": ["../db/src/index.ts"],
+      "@packrat/db/*": ["../db/src/*"],
+      "@packrat/guards": ["../guards/src/index.ts"],
+      "@packrat/guards/*": ["../guards/src/*"]
+    }
+  },
+  "include": ["src"]
+}

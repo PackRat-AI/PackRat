@@ -88,10 +88,14 @@ cd apps/guides && bun dev
 - NEVER CANCEL: Takes ~1.4 seconds to start, set timeout to 30+ seconds
 - Runs on `http://localhost:3001` (if 3000 is taken)
 
-#### **Testing**
-- **API Unit Tests**: `bun test:api:unit` -- NEVER CANCEL: Takes ~5 seconds
-- **Expo Tests**: `bun test:expo` -- runs Expo/React Native unit tests
-- Tests run sequentially (`fileParallelism: false` in `packages/api/vitest.unit.config.ts`) to avoid database deadlocks
+#### **Testing** — see `docs/testing.md` for the full policy
+- **API Unit Tests**: `bun test:api:unit` -- Node env, deps mocked. Runtime varies with suite size
+- **Expo Tests**: `bun test:expo` -- Vitest, pure-TS modules only (no native imports)
+- **MCP Tests**: `bun test:mcp`
+- **Scripts Tests**: `bun test:scripts` -- analyzer tests for the coverage ratchet and assertion lint
+- **Coverage ratchet**: `bun check:coverage` -- compares each tracked workspace's `coverage/[unit/]coverage-summary.json` against `coverage-baselines.json` at the repo root. Fails CI on regression
+- **Assertion-strength lint**: `bun lint:weak-assertions` -- catches assertion-free tests, bare `.toBeDefined()`, bare `.toHaveBeenCalled()`, oversized inline snapshots
+- **Integration tests** (`bun run --cwd packages/api test`): require Docker (Postgres + neon-wsproxy), run sequentially (`fileParallelism: false`) to avoid database deadlocks. NOT coverage-counted (V8 unsupported under Cloudflare Workers pool)
 - Tests expect environment variables to be configured (see `.env.example`)
 
 #### **Build Commands**
@@ -211,6 +215,54 @@ Always add new features behind a flag and default to `false` until the feature i
 - Use `<Button asChild>` with a `<Link>` child for button-styled links (do NOT wrap `<Button>` inside `<Link>`)
 - Tailwind CSS for all styling — no inline styles
 - Radix UI for accessible components
+
+### Monitoring (Sentry)
+
+All new code that performs async operations or calls external services must include Sentry instrumentation. Sentry is already initialised per-platform — you only need to import and call the helpers.
+
+**Expo / React Native** — import from `@sentry/react-native`:
+
+```ts
+import * as Sentry from '@sentry/react-native';
+
+// Breadcrumb before async operations
+Sentry.addBreadcrumb({ category: 'feature', message: 'Action started', level: 'info', data: { ... } });
+
+// Every catch block must capture the original error
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { feature: 'myFeature', action: 'doThing' },
+    extra: { userId, relevantId },
+  });
+  throw error;
+}
+```
+
+Rules:
+- **Never wrap the root error** in `new Error(...)` before passing to `captureException` — wrapping loses the original stack trace and drops properties like HTTP status and error codes.
+- **Better Auth client errors** are plain objects `{ message, status, code }`, not JS Errors. Use `toAuthError` from `expo-app/features/auth/lib/authErrors` to convert them into an `AuthClientError` carrying `.status` and `.code`. Capture that single error — do not create two separate `new Error()` objects (one to capture, one to throw).
+- Include `httpStatus` and `errorCode` in `extra` for any HTTP error.
+
+**API / Cloudflare Workers** — use helpers from `@packrat/api/utils/sentry`:
+
+```ts
+import { apiAddBreadcrumb, captureApiException } from '@packrat/api/utils/sentry';
+
+apiAddBreadcrumb({ category: 'feature', message: 'Calling external service', level: 'info' });
+
+} catch (error) {
+  captureApiException(error, {
+    operation: 'featureName.action',
+    userId,
+    tags: { feature: 'myFeature' },
+    extra: { relevantId },
+  });
+  throw error;
+}
+```
+
+- Use `captureApiException` (not the raw `captureException`) — it adds structured operation context and also logs to console for `wrangler dev` output.
+- Every route `catch` block and service method touching the DB or an external API needs a `captureApiException` call.
 
 ## Repository Structure
 

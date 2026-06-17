@@ -35,10 +35,22 @@ struct PreferencesView: View {
                 .tabItem { Label("Units", systemImage: "scalemass") }
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
+            #if DEBUG
+            debugTab
+                .tabItem { Label("Debug", systemImage: "ladybug") }
+            #endif
         }
         .padding(20)
-        .frame(width: 460, height: 280)
+        .frame(width: 460, height: 320)
     }
+
+    #if DEBUG
+    private var debugTab: some View {
+        NavigationStack {
+            OfflineAIView()
+        }
+    }
+    #endif
 
     private var generalTab: some View {
         Form {

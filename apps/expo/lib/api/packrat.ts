@@ -1,39 +1,23 @@
 import { createApiClient } from '@packrat/api-client';
-import { clientEnvs } from '@packrat/env/expo-client';
 import { store } from 'expo-app/atoms/store';
-import {
-  needsReauthAtom,
-  refreshTokenAtom,
-  tokenAtom,
-} from 'expo-app/features/auth/atoms/authAtoms';
-import Storage from 'expo-sqlite/kv-store';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { getApiBaseUrl } from 'expo-app/lib/api/getBaseUrl';
+import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
 
-/**
- * Typed Treaty-backed PackRat API client for the Expo app.
- *
- * Session state (token persistence, reauth signal) lives here — the
- * `@packrat/api-client` package is transport-only and accepts injected
- * auth hooks so guides and landing can reuse it with their own storage
- * layers.
- *
- * Usage:
- * ```ts
- * import { apiClient } from 'expo-app/lib/api/packrat';
- * const { data, error } = await apiClient.catalog.get({ query: { limit: 10 } });
- * ```
- */
 export const apiClient = createApiClient({
-  baseUrl: clientEnvs.EXPO_PUBLIC_API_URL,
+  baseUrl: getApiBaseUrl(),
   auth: {
-    getAccessToken: () => Storage.getItem('access_token'),
-    getRefreshToken: () => Storage.getItem('refresh_token'),
-    onAccessTokenRefreshed: async (accessToken) => {
-      await store.set(tokenAtom, accessToken);
-    },
-    onRefreshTokenRefreshed: async (refreshToken) => {
-      await store.set(refreshTokenAtom, refreshToken);
-    },
-    onNeedsReauth: () => {
+    // Read the token from SecureStore — no network call on every API request.
+    getAccessToken: getStoredSessionToken,
+    // Better Auth has no separate refresh-token endpoint; the 7-day session
+    // token is the only credential. Returning null here is intentional.
+    getRefreshToken: () => null,
+    onAccessTokenRefreshed: () => {},
+    onNeedsReauth: async () => {
+      // A 401 can be transient (e.g. the server briefly returned an error).
+      // Verify the session is actually gone before alarming the user.
+      const { data } = await authClient.getSession();
+      if (data?.session) return;
       store.set(needsReauthAtom, true);
     },
   },

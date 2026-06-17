@@ -1,5 +1,5 @@
-import { useColorScheme } from '@packrat-ai/nativewindui';
 import RNMarkdown from '@ronradtke/react-native-markdown-display';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 
 export function Markdown({ children }: { children: string }) {
   const { colors } = useColorScheme();

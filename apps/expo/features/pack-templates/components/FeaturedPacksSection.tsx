@@ -4,7 +4,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { isArray } from 'radash';
 import { useMemo } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, View } from 'react-native';
 import { usePackTemplates } from '../hooks';
 import { usePackTemplateSummaries } from '../hooks/usePackTemplateSummary';
 import type { PackTemplate, PackTemplateInStore } from '../types';
@@ -39,7 +39,12 @@ function FeaturedPackCard({
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
     >
       {template.image ? (
-        <Image source={{ uri: template.image }} className="h-32 w-full" resizeMode="cover" />
+        <Image
+          source={{ uri: template.image }}
+          className="h-32 w-full"
+          resizeMode="cover"
+          style={Platform.select({ web: { width: '100%', height: 128 } })}
+        />
       ) : (
         <View className="h-32 w-full items-center justify-center bg-primary/10">
           <Text className="text-4xl">🎒</Text>
@@ -104,7 +109,7 @@ export function FeaturedPacksSection({ onTemplatePress }: FeaturedPacksSectionPr
   // Single pass over the items store computes item count + base weight for all
   // featured templates at once, instead of each card subscribing to the full
   // details hook and iterating every item in the store on its own.
-  const summaries = usePackTemplateSummaries(featuredIds);
+  const summaries = usePackTemplateSummaries({ templateIds: featuredIds });
 
   if (featuredTemplates.length === 0) return null;
 

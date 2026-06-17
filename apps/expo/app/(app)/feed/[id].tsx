@@ -8,7 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 export default function PostDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const currentUserId = userStore.id.peek() as number | undefined;
+  const currentUserId = userStore.id.peek() as string | undefined;
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['feed', Number(id)],

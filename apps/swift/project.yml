@@ -43,6 +43,9 @@ packages:
   Defaults:
     url: https://github.com/sindresorhus/Defaults
     from: "9.0.0"
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: "8.40.0"
 
 targets:
   PackRat-iOS:
@@ -70,10 +73,19 @@ targets:
         NSLocationWhenInUseUsageDescription: "This app needs access to your location while you are using it."
         ITSAppUsesNonExemptEncryption: false
         PACKRAT_ENV: $(PACKRAT_ENV)
+        SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         CFBundleURLTypes:
-          - CFBundleURLSchemes:
+          # Primary deep-link scheme — matches Expo's `scheme: 'packrat'` in app.config.ts
+          # so deep links survive an iOS-to-Swift swap without re-issuing existing universal
+          # links / partner-shared URLs.
+          - CFBundleURLName: world.packrat.deeplinks
+            CFBundleURLSchemes:
+              - packrat
+          # Reverse-DNS scheme retained for Google Sign-In OAuth callback parity with Expo.
+          - CFBundleURLName: world.packrat.oauth
+            CFBundleURLSchemes:
               - com.andrewbierman.packrat
     dependencies:
       - package: Nuke
@@ -92,6 +104,8 @@ targets:
         product: Collections
       - package: Defaults
         product: Defaults
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -124,6 +138,7 @@ targets:
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
         PACKRAT_ENV: $(PACKRAT_ENV)
+        SENTRY_DSN: $(SENTRY_DSN)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     dependencies:
@@ -143,6 +158,8 @@ targets:
         product: Collections
       - package: Defaults
         product: Defaults
+      - package: Sentry
+        product: Sentry
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -151,6 +168,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 666HGMV2LU
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac
+        # Match iOS target so @testable import PackRat resolves on both platforms.
+        PRODUCT_MODULE_NAME: PackRat
 
   PackRatTests:
     type: bundle.unit-test
@@ -171,6 +190,37 @@ targets:
       - Tests/PackRatUITests
     dependencies:
       - target: PackRat-iOS
+    # Static Info.plist (xcodegen-rendered from `info.properties`) instead of
+    # GENERATE_INFOPLIST_FILE. xcodebuild substitutes $(PACKRAT_E2E_*) build
+    # settings into the file at build time; the values arrive via the xcodebuild
+    # CLI from run-e2e.ts. INFOPLIST_KEY_* silently drops non-Apple-defined
+    # keys, which is why this target uses a static plist instead.
+    info:
+      path: Tests/PackRatUITests/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundlePackageType: BNDL
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        PACKRAT_E2E_EMAIL: $(PACKRAT_E2E_EMAIL)
+        PACKRAT_E2E_PASSWORD: $(PACKRAT_E2E_PASSWORD)
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PACKRAT_E2E_EMAIL: ""
+        PACKRAT_E2E_PASSWORD: ""
+
+  PackRatMacOSTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/PackRatTests
+    dependencies:
+      - target: PackRat-macOS
     settings:
       base:
         SWIFT_VERSION: "5.9"
@@ -191,6 +241,33 @@ targets:
         DEVELOPMENT_TEAM: 666HGMV2LU
         PRODUCT_BUNDLE_IDENTIFIER: com.andrewbierman.packrat.mac.uitests
 
+  PackRatMacOSUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - Tests/PackRatUITests
+    dependencies:
+      - target: PackRat-macOS
+    # Same static-plist + build-setting-substitution pattern as PackRatUITests.
+    info:
+      path: Tests/PackRatMacOSUITests/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundlePackageType: BNDL
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        PACKRAT_E2E_EMAIL: $(PACKRAT_E2E_EMAIL)
+        PACKRAT_E2E_PASSWORD: $(PACKRAT_E2E_PASSWORD)
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        PACKRAT_E2E_EMAIL: ""
+        PACKRAT_E2E_PASSWORD: ""
+
 schemes:
   PackRat-iOS:
     build:
@@ -199,6 +276,10 @@ schemes:
         PackRatTests: [test]
         PackRatUITests: [test]
     test:
+      testPlans:
+        - path: TestPlans/iOS-Full.xctestplan
+          defaultPlan: true
+        - path: TestPlans/iOS-Smoke.xctestplan
       targets:
         - PackRatTests
         - PackRatUITests
@@ -211,9 +292,17 @@ schemes:
       targets:
         PackRat-macOS: all
         PackRatMacUITests: [test]
+        PackRatMacOSTests: [test]
+        PackRatMacOSUITests: [test]
     test:
+      testPlans:
+        - path: TestPlans/macOS-Full.xctestplan
+          defaultPlan: true
+        - path: TestPlans/macOS-Smoke.xctestplan
       targets:
         - PackRatMacUITests
+        - PackRatMacOSTests
+        - PackRatMacOSUITests
     run:
       config: Debug
     archive:

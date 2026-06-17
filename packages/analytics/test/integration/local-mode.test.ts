@@ -51,7 +51,7 @@ describe.skipIf(!canRun)('local mode integration', () => {
   });
 
   it('search returns results for broad keyword', async () => {
-    const results = await cache.search('jacket', { limit: 5 });
+    const results = await cache.search({ keyword: 'jacket', options: { limit: 5 } });
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]).toHaveProperty('name');
     expect(results[0]).toHaveProperty('price');
@@ -59,7 +59,7 @@ describe.skipIf(!canRun)('local mode integration', () => {
   });
 
   it('comparePrices returns site-level aggregates', async () => {
-    const results = await cache.comparePrices('tent');
+    const results = await cache.comparePrices({ keyword: 'tent' });
     if (results.length > 0) {
       expect(results[0]).toHaveProperty('site');
       expect(results[0]).toHaveProperty('avg_price');
@@ -89,7 +89,7 @@ describe.skipIf(!canRun)('local mode integration', () => {
   });
 
   it('getTopBrands returns brand rankings', async () => {
-    const brands = await cache.getTopBrands(5);
+    const brands = await cache.getTopBrands({ limit: 5 });
     expect(brands.length).toBeGreaterThan(0);
     const first = brands[0];
     expect(first).toBeDefined();
@@ -107,7 +107,7 @@ describe.skipIf(!canRun)('local mode integration', () => {
   });
 
   it('findDeals returns items under price threshold', async () => {
-    const deals = await cache.findDeals(50, { limit: 5 });
+    const deals = await cache.findDeals({ maxPrice: 50, options: { limit: 5 } });
     expect(deals.length).toBeGreaterThan(0);
     for (const deal of deals) {
       expect(Number(deal.price)).toBeLessThanOrEqual(50);
@@ -121,19 +121,19 @@ describe.skipIf(!canRun)('local mode integration', () => {
 
     const site = stats.sites[0];
     if (site === undefined) return;
-    const results = await cache.search('gear', { sites: [site], limit: 10 });
+    const results = await cache.search({ keyword: 'gear', options: { sites: [site], limit: 10 } });
     for (const r of results) {
       expect(r.site).toBe(site);
     }
   });
 
   it('analyzeBrand returns category breakdown', async () => {
-    const brands = await cache.getTopBrands(1);
+    const brands = await cache.getTopBrands({ limit: 1 });
     if (brands.length === 0) return;
 
     const firstBrand = brands[0];
     if (firstBrand === undefined) return;
-    const analysis = await cache.analyzeBrand(firstBrand.brand);
+    const analysis = await cache.analyzeBrand({ brandName: firstBrand.brand });
     if (analysis.length > 0) {
       expect(analysis[0]).toHaveProperty('site');
       expect(analysis[0]).toHaveProperty('category');
@@ -142,7 +142,7 @@ describe.skipIf(!canRun)('local mode integration', () => {
   });
 
   it('categoryInsights returns category-level stats', async () => {
-    const results = await cache.categoryInsights('tent');
+    const results = await cache.categoryInsights({ categoryKeyword: 'tent' });
     if (results.length > 0) {
       expect(results[0]).toHaveProperty('site');
       expect(results[0]).toHaveProperty('product_count');

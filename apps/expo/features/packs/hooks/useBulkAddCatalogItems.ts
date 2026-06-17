@@ -1,5 +1,6 @@
-import { WeightUnitSchema } from '@packrat/api/types';
 import { fromZod } from '@packrat/guards';
+import { WeightUnitSchema } from '@packrat/schemas/constants';
+import * as Sentry from '@sentry/react-native';
 import { useState } from 'react';
 import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
 import type { CatalogItemWithPackItemFields } from '../../catalog/types';
@@ -9,7 +10,13 @@ export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  const addItemsToPack = async (packId: string, catalogItems: CatalogItemWithPackItemFields[]) => {
+  const addItemsToPack = async ({
+    packId,
+    catalogItems,
+  }: {
+    packId: string;
+    catalogItems: CatalogItemWithPackItemFields[];
+  }) => {
     if (catalogItems.length === 0) return;
 
     setIsLoading(true);
@@ -40,6 +47,10 @@ export function useBulkAddCatalogItems() {
       }
     } catch (error) {
       console.error('Error adding items to pack:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'packs', action: 'bulkAddCatalogItems' },
+        extra: { packId, itemCount: catalogItems.length },
+      });
       throw error;
     } finally {
       setIsLoading(false);

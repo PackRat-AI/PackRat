@@ -1,3 +1,5 @@
+import { Text } from '@packrat/ui/nativewindui';
+import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -8,7 +10,6 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   ScrollView,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -81,7 +82,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
       .join(' ');
   };
 
-  const truncateText = (text: string, maxLength = 120) => {
+  const truncateText = ({ text, maxLength = 120 }: { text: string; maxLength?: number }) => {
     if (text.length <= maxLength) return text;
     return `${text.substring(0, maxLength).trim()}...`;
   };
@@ -91,13 +92,17 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
       await Linking.openURL(url);
     } catch (error) {
       console.error('Failed to open URL:', error);
+      Sentry.captureException(error, {
+        tags: { feature: 'ai.guidesRAG', action: 'openGuide' },
+        extra: { url },
+      });
     }
   };
 
   const getRelevanceColor = (score: number) => {
-    if (score >= 0.7) return 'text-green-600';
-    if (score >= 0.5) return 'text-yellow-600';
-    return 'text-gray-500';
+    if (score >= 0.7) return 'text-green-600 dark:text-green-400';
+    if (score >= 0.5) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-gray-500 dark:text-gray-400';
   };
 
   const getRelevanceText = (score: number) => {
@@ -107,9 +112,11 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
   };
 
   const getRelevanceBadgeColor = (score: number) => {
-    if (score >= 0.7) return 'bg-green-100 border-green-200';
-    if (score >= 0.5) return 'bg-yellow-100 border-yellow-200';
-    return 'bg-gray-100 border-gray-200';
+    if (score >= 0.7)
+      return 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-700';
+    if (score >= 0.5)
+      return 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-700';
+    return 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -145,11 +152,11 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
             <View className="mb-4 px-4">
               <View className="flex-row items-center gap-2">
                 <Icon name="magnify" size={16} color={colors.primary} />
-                <Text className="text-sm font-medium text-gray-900">
+                <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {t('ai.tools.guideSearchResults')}
                 </Text>
               </View>
-              <Text className="mt-1 text-xs text-gray-600">
+              <Text className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                 {t('ai.tools.foundGuides', {
                   count: toolInvocation.output.data.data.length,
                   query: toolInvocation.input.query,
@@ -182,7 +189,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
                     width: CARD_WIDTH,
                     marginRight: CARD_SPACING,
                   }}
-                  className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm active:scale-[0.98]"
+                  className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm active:scale-[0.98]"
                 >
                   {/* Relevance Badge */}
                   <View className="mb-3 flex-row items-center justify-between">
@@ -201,7 +208,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
 
                   {/* Guide Title */}
                   <Text
-                    className="mb-3 text-lg font-bold leading-6 text-gray-900"
+                    className="mb-3 text-lg font-bold leading-6 text-gray-900 dark:text-gray-100"
                     numberOfLines={2}
                   >
                     {formatGuideTitle(guide.filename)}
@@ -209,8 +216,11 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
 
                   {/* Content Preview */}
                   {guide.content[0] && (
-                    <Text className="mb-4 text-sm leading-5 text-gray-700" numberOfLines={4}>
-                      {truncateText(guide.content[0].text.trim())}
+                    <Text
+                      className="mb-4 text-sm leading-5 text-gray-700 dark:text-gray-300"
+                      numberOfLines={4}
+                    >
+                      {truncateText({ text: guide.content[0].text.trim() })}
                     </Text>
                   )}
 
@@ -218,10 +228,12 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
                   <View className="mt-auto flex-row items-center justify-between">
                     <View className="flex-row items-center gap-1">
                       <Icon name="book-open-outline" size={12} color={colors.grey2} />
-                      <Text className="text-xs text-gray-500">{t('ai.tools.packratGuides')}</Text>
+                      <Text className="text-xs text-gray-500 dark:text-gray-400">
+                        {t('ai.tools.packratGuides')}
+                      </Text>
                     </View>
                     <View className="flex-row items-center gap-1">
-                      <Text className="text-xs font-medium text-blue-600">
+                      <Text className="text-xs font-medium text-blue-600 dark:text-blue-400">
                         {t('ai.tools.readMore')}
                       </Text>
                       <Icon name="chevron-right" size={12} color={colors.primary} />
@@ -239,7 +251,9 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
                     key={item.file_id}
                     onPress={() => scrollToIndex(index)}
                     className={`h-2 rounded-full transition-all duration-200 ${
-                      index === currentIndex ? 'w-6 bg-blue-600' : 'w-2 bg-gray-300'
+                      index === currentIndex
+                        ? 'w-6 bg-blue-600 dark:bg-blue-400'
+                        : 'w-2 bg-gray-300 dark:bg-gray-600'
                     }`}
                     activeOpacity={0.7}
                   />

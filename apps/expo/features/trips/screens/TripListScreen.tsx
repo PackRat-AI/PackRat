@@ -1,14 +1,13 @@
-import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { SearchOverlay } from '@packrat/ui/src/search-overlay';
 import { AndroidTabBarInsetFix } from 'expo-app/components/AndroidTabBarInsetFix';
 import { Icon } from 'expo-app/components/Icon';
-import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { TestIds } from 'expo-app/lib/testIds';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { testIds } from 'expo-app/lib/testIds';
+import { Link, Stack, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
@@ -43,7 +42,7 @@ function CreateTripIconButton() {
   return (
     <Link href="/trip/new" asChild>
       <Pressable
-        testID={TestIds.CreateTripButton}
+        testID={testIds.trips.createBtn}
         accessibilityLabel={t('trips.createNewTrip')}
         className="mx-2"
       >
@@ -57,7 +56,6 @@ export function TripsListScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const trips = useTrips();
-  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const [searchValue, setSearchValue] = useState('');
 
   const filteredTrips = useMemo(() => {
@@ -98,9 +96,14 @@ export function TripsListScreen() {
         </View>
         <Text className="mb-1 text-lg font-medium text-foreground">{t('trips.noTripsFound')}</Text>
         <Text className="mb-6 text-center text-muted-foreground">{t('trips.noTripsYet')}</Text>
-        <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreateTrip}>
+        <Pressable
+          testID={testIds.trips.emptyCreateBtn}
+          accessibilityLabel={testIds.trips.emptyCreateBtn}
+          className="rounded-lg bg-primary px-4 py-2"
+          onPress={handleCreateTrip}
+        >
           <Text className="font-medium text-primary-foreground">{t('trips.createNewTrip')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
@@ -150,22 +153,22 @@ export function TripsListScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader
-        title={t('trips.trips')}
-        backVisible={false}
-        searchBar={{
-          iosHideWhenScrolling: false,
-          ref: asNonNullableRef(searchBarRef),
-          onChangeText: setSearchValue,
-          placeholder: t('trips.searchPlaceholder'),
-          content: (
-            <LargeTitleHeaderSearchContentContainer>
-              {renderSearchContent()}
-            </LargeTitleHeaderSearchContentContainer>
-          ),
+      <Stack.Screen
+        options={{
+          ...getAppBarOptions(),
+          title: t('trips.trips'),
+          headerBackVisible: false,
+          headerRight: () => <CreateTripIconButton />,
         }}
-        rightView={() => <CreateTripIconButton />}
       />
+      <SearchOverlay
+        placeholder={t('trips.searchPlaceholder')}
+        value={searchValue}
+        onChangeText={setSearchValue}
+        androidHeaderRightActions={<CreateTripIconButton />}
+      >
+        {renderSearchContent()}
+      </SearchOverlay>
 
       <FlatList
         data={filteredTrips}

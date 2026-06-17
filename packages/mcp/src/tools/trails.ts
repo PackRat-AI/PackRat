@@ -1,120 +1,65 @@
 import { z } from 'zod';
-import { err, ok } from '../client';
+import { call } from '../client';
 import type { AgentContext } from '../types';
 
 export function registerTrailTools(agent: AgentContext): void {
+  // ── Search trails ─────────────────────────────────────────────────────────
+
   agent.server.registerTool(
     'search_trails',
     {
       description:
-        'Search for hiking, cycling, skiing, or other outdoor trails via OpenStreetMap. ' +
-        'Filter by name and/or location. Requires either q (text) or lat+lon (spatial search).',
+        'Search outdoor trails and routes from OpenStreetMap. Filter by name, sport type, and/or proximity to a location. Returns { trails, hasMore } — paginate via offset.',
       inputSchema: {
-        q: z
-          .string()
-          .optional()
-          .describe('Trail or route name to search for (e.g. "John Muir Trail")'),
-        lat: z.number().optional().describe('Latitude of the center point for spatial search'),
-        lon: z.number().optional().describe('Longitude of the center point for spatial search'),
-        radius: z
-          .number()
-          .min(0)
-          .max(500)
-          .optional()
-          .describe('Search radius in kilometres (default 50, max 500)'),
-        sport: z
-          .enum(['hiking', 'cycling', 'skiing', 'running', 'horse_riding'])
-          .optional()
-          .describe('Filter by sport/activity type'),
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(200)
-          .default(50)
-          .describe('Maximum results to return (default 50)'),
-        offset: z
-          .number()
-          .int()
-          .min(0)
-          .default(0)
-          .describe('Offset for client-side pagination (default 0)'),
+        q: z.string().optional(),
+        lat: z.number().min(-90).max(90).optional(),
+        lon: z.number().min(-180).max(180).optional(),
+        radius: z.number().positive().max(500).optional().describe('Radius in km (default 50)'),
+        sport: z.string().optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+        offset: z.number().int().min(0).optional(),
       },
     },
-    async ({ q, lat, lon, radius, sport, limit, offset }) => {
-      try {
-        const data = await agent.api.get('/trails/search', {
-          q,
-          lat,
-          lon,
-          radius,
-          sport,
-          limit,
-          offset,
-        });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ q, lat, lon, radius, sport, limit, offset }) =>
+      call({
+        promise: agent.api.user.trails.search.get({
+          query: { q, lat, lon, radius, sport, limit, offset },
+        }),
+        action: 'search trails',
+      }),
   );
+
+  // ── Get trail metadata ────────────────────────────────────────────────────
 
   agent.server.registerTool(
     'get_trail',
     {
       description:
-        'Get metadata for a specific trail by its OpenStreetMap relation ID. ' +
-        'Returns name, sport, network, distance, difficulty, and bounding box.',
-      inputSchema: {
-        osmId: z.string().describe('OSM relation ID of the trail (e.g. "1243746")'),
-      },
+        'Get metadata for a specific trail by its OSM relation ID. Returns name, sport, difficulty, distance, and bounding box.',
+      inputSchema: { osm_id: z.string() },
     },
-    async ({ osmId }) => {
-      try {
-        const data = await agent.api.get(`/trails/${osmId}`);
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ osm_id }) =>
+      call({
+        promise: agent.api.user.trails({ osmId: osm_id }).get(),
+        action: 'get trail',
+        resourceHint: `trail ${osm_id}`,
+      }),
   );
+
+  // ── Get trail geometry ────────────────────────────────────────────────────
 
   agent.server.registerTool(
     'get_trail_geometry',
     {
       description:
-        'Get full GeoJSON geometry for a trail by its OpenStreetMap relation ID. ' +
-        'Returns all trail metadata plus a GeoJSON LineString or MultiLineString.',
-      inputSchema: {
-        osmId: z.string().describe('OSM relation ID of the trail (e.g. "1243746")'),
-      },
+        'Get full GeoJSON geometry for a trail. May be slow for large routes with many segments.',
+      inputSchema: { osm_id: z.string() },
     },
-    async ({ osmId }) => {
-      try {
-        const data = await agent.api.get(`/trails/${osmId}/geometry`);
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
-  );
-
-  agent.server.registerTool(
-    'preview_alltrails_url',
-    {
-      description:
-        'Fetch trail metadata (title, description, image) from an AllTrails URL using OpenGraph tags. Use this to enrich a trip or pack with information from an AllTrails link a user shares.',
-      inputSchema: {
-        url: z.string().url().describe('Full AllTrails URL (must be https://alltrails.com/...)'),
-      },
-    },
-    async ({ url }) => {
-      try {
-        const data = await agent.api.post('/alltrails/preview', { url });
-        return ok(data);
-      } catch (e) {
-        return err(e);
-      }
-    },
+    async ({ osm_id }) =>
+      call({
+        promise: agent.api.user.trails({ osmId: osm_id }).geometry.get(),
+        action: 'get trail geometry',
+        resourceHint: `trail ${osm_id}`,
+      }),
   );
 }

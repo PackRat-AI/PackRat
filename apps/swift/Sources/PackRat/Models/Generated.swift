@@ -37,7 +37,9 @@ struct PackItem: Codable, Identifiable, Sendable {
     let image: String?
     let notes: String?
     let catalogItemId: Int?
-    let userId: Int?
+    // Better Auth migrated users.id to text/UUID — every user-FK column on the
+    // DB side is `text` now. See packages/db/src/schema.ts.
+    let userId: String?
     let deleted: Bool
     let isAIGenerated: Bool?
     let templateItemId: String?
@@ -47,7 +49,7 @@ struct PackItem: Codable, Identifiable, Sendable {
 
 struct Pack: Codable, Identifiable, Sendable {
     let id: String
-    let userId: Int?
+    let userId: String?
     let name: String
     let description: String?
     let category: PackCategory?
@@ -80,7 +82,7 @@ struct Trip: Codable, Identifiable, Sendable {
     let location: TripLocation?
     let startDate: String?
     let endDate: String?
-    let userId: Int?
+    let userId: String?
     let packId: String?
     let deleted: Bool
     let createdAt: String?
@@ -88,8 +90,12 @@ struct Trip: Codable, Identifiable, Sendable {
 }
 
 struct User: Codable, Identifiable, Sendable {
-    let id: Int
+    // Better Auth issues UUID-formatted text ids.
+    let id: String
     let email: String
+    // Better Auth requires a `name` column; firstName/lastName are exposed via
+    // the auth config's `additionalFields` and stay optional for legacy users.
+    let name: String?
     let firstName: String?
     let lastName: String?
     let role: String?
@@ -100,14 +106,17 @@ struct User: Codable, Identifiable, Sendable {
 }
 
 struct PostAuthor: Codable, Identifiable, Sendable {
-    let id: Int
+    // Authors are users — string UUID id post-better-auth migration.
+    let id: String
     let firstName: String?
     let lastName: String?
 }
 
 struct Post: Codable, Identifiable, Sendable {
+    // posts table still uses a serial integer id.
     let id: Int
-    let userId: Int
+    // posts.userId is a text FK → users.id after the better-auth migration.
+    let userId: String
     let caption: String?
     let images: [String]
     let createdAt: String
@@ -127,9 +136,11 @@ struct FeedResponse: Codable, Sendable {
 }
 
 struct Comment: Codable, Identifiable, Sendable {
+    // post_comments still uses serial Int for id, postId, and parentCommentId.
     let id: Int
     let postId: Int
-    let userId: Int
+    // post_comments.userId is text post-better-auth migration.
+    let userId: String
     let content: String
     let parentCommentId: Int?
     let createdAt: String
@@ -184,7 +195,7 @@ struct TrailConditionReport: Codable, Identifiable, Sendable {
     let waterCrossingDifficulty: String?
     let notes: String?
     let photos: [String]
-    let userId: Int?
+    let userId: String?
     let tripId: String?
     let deleted: Bool
     let createdAt: String?

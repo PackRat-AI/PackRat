@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// Sub-flows reachable from Weather: Alert Preferences, Alerts sheet.
 final class WeatherSubFlowTests: AppUITestCase {
 
@@ -104,3 +107,5 @@ final class WeatherSubFlowTests: AppUITestCase {
         highWinds.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
     }
 }
+
+#endif

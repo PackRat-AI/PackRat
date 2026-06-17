@@ -8,10 +8,13 @@ export interface OverpassClientConfig {
   endpoint?: string;
 }
 
-export async function queryOverpass(
-  ql: string,
-  config?: OverpassClientConfig,
-): Promise<OverpassResponse> {
+export async function queryOverpass({
+  ql,
+  config,
+}: {
+  ql: string;
+  config?: OverpassClientConfig;
+}): Promise<OverpassResponse> {
   const endpoint = config?.endpoint ?? DEFAULT_ENDPOINT;
 
   const response = await fetch(endpoint, {

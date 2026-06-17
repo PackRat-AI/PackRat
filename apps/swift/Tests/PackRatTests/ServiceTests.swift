@@ -155,7 +155,7 @@ struct PackDecodingTests {
     private let packJSON = """
     {
         "id": "pack-1",
-        "userId": 1,
+        "userId": "u1",
         "name": "Three-Season Hiking",
         "category": "hiking",
         "isPublic": true,
@@ -197,7 +197,7 @@ struct PackDecodingTests {
         let json = """
         {
             "id": "pack-2",
-            "userId": 1,
+            "userId": "u1",
             "name": "Old Pack",
             "category": "travel",
             "isPublic": false,

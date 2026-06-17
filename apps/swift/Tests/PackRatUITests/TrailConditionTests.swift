@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// E2E tests for Trail Conditions: submitting reports, viewing list, viewing detail.
 final class TrailConditionTests: AppUITestCase {
     private var createdReportTrail: String?
@@ -119,3 +122,5 @@ final class TrailConditionTests: AppUITestCase {
         deleteButton.tap()
     }
 }
+
+#endif

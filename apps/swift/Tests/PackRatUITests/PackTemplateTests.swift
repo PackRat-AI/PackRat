@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// E2E tests for Pack Templates: browse, create, delete.
 final class PackTemplateTests: AppUITestCase {
     private var createdTemplateName: String?
@@ -135,3 +138,5 @@ final class PackTemplateTests: AppUITestCase {
         deleteButton.tap()
     }
 }
+
+#endif

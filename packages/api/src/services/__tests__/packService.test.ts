@@ -1,3 +1,5 @@
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
+import { generateObject } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PackService } from '../packService';
 
@@ -8,6 +10,7 @@ import { PackService } from '../packService';
 // Mock the DB – we inject a mock that the service obtains via createDb(c)
 const mockFindFirst = vi.fn();
 const mockDb = {
+  tag: (_label: string) => mockDb,
   query: {
     packs: {
       findFirst: mockFindFirst,
@@ -22,8 +25,8 @@ vi.mock('@packrat/api/db', () => ({
 }));
 
 // Prevent real AI calls
-vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: vi.fn(() => vi.fn((modelName) => ({ name: modelName }))),
+vi.mock('@packrat/api/utils/ai/provider', () => ({
+  createAIProvider: vi.fn(() => vi.fn((modelName) => ({ name: modelName }))),
 }));
 
 vi.mock('ai', () => ({
@@ -44,6 +47,10 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
   getEnv: vi.fn(() => ({
     OPENAI_API_KEY: 'test-key',
     AI_PROVIDER: 'openai',
+    CLOUDFLARE_ACCOUNT_ID: 'test-account',
+    CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway',
+    CLOUDFLARE_API_TOKEN: 'cf-token',
+    AI: {},
   })),
 }));
 
@@ -80,7 +87,7 @@ describe('PackService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new PackService(1);
+    service = new PackService('user-test-id-1');
   });
 
   // -------------------------------------------------------------------------
@@ -145,6 +152,35 @@ describe('PackService', () => {
 
     it('throws for negative count', async () => {
       await expect(service.generatePacks(-1)).rejects.toThrow('Count must be a positive integer');
+    });
+
+    it('creates the AI provider with Cloudflare gateway configuration', async () => {
+      vi.mocked(generateObject).mockResolvedValue({
+        object: [
+          {
+            name: 'Weekend Hiking Kit',
+            description: 'A compact day-hike setup',
+            category: 'hiking',
+            tags: ['hiking'],
+            items: [],
+          },
+        ],
+      } as Awaited<ReturnType<typeof generateObject>>);
+
+      await (
+        service as unknown as {
+          generatePackConcepts(count: number): Promise<unknown>;
+        }
+      ).generatePackConcepts(1);
+
+      expect(createAIProvider).toHaveBeenCalledWith({
+        openAiApiKey: 'test-key',
+        provider: 'openai',
+        cloudflareAccountId: 'test-account',
+        cloudflareGatewayId: 'test-gateway',
+        cloudflareApiToken: 'cf-token',
+        cloudflareAiBinding: {},
+      });
     });
   });
 });

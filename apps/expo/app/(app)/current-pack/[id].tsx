@@ -1,19 +1,14 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  LargeTitleHeader,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
+import type { PackItem } from 'expo-app/features/packs/types';
 import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
-import type { PackItem } from 'expo-app/types';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -135,7 +130,7 @@ export default function CurrentPackScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
-      <LargeTitleHeader title={t('packs.currentPack')} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.currentPack') }} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
@@ -155,7 +150,7 @@ export default function CurrentPackScreen() {
             </Text>
             <Text variant="subhead" className="mt-1 text-muted-foreground">
               {t('packs.lastUpdated', {
-                time: getRelativeTime(pack.localUpdatedAt ?? pack.updatedAt, t),
+                time: getRelativeTime({ dateValue: pack.localUpdatedAt ?? pack.updatedAt, t }),
               })}
             </Text>
           </View>
@@ -192,10 +187,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => (
-              // safe-cast: Treaty response type has createdAt?: string but PackItem schema requires string
-              <ItemRow item={item as unknown as PackItem} index={index} />
-            )}
+            renderItem={(item, index) => <ItemRow item={item} index={index} />}
           />
         </View>
       </ScrollView>

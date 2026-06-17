@@ -1,15 +1,10 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import {
-  type NewPack,
-  type NewPackItem,
-  type PackWithItems,
-  packItems,
-  packs,
-} from '@packrat/api/db/schema';
-import { PACK_CATEGORIES } from '@packrat/api/types';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { setQueryTag } from '@packrat/api/utils/queryMetrics';
+import { PACK_CATEGORIES } from '@packrat/constants';
+import { type NewPack, type NewPackItem, packItems, packs } from '@packrat/db';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -40,28 +35,50 @@ type PackItemConceptSchema = z.infer<typeof packItemConceptSchema>;
 
 export class PackService {
   private db;
-  private userId: number;
+  private userId: string;
 
-  constructor(userId: number) {
+  constructor(userId: string) {
     this.userId = userId;
     this.db = createDb();
   }
 
-  async getPackDetails(packId: string): Promise<PackWithItems | null> {
-    const pack = await this.db.query.packs.findFirst({
+  // Return type is inferred to preserve the narrow `catalogItem` projection
+  // declared in the `with:` block below. Explicitly typing as
+  // `Promise<PackWithItems | null>` would erase the joined-relation shape and
+  // force consumers to assert it back (and tools like tsgo correctly reject
+  // that as accessing a non-existent field).
+  async getPackDetails(packId: string) {
+    const pack = await this.db.tag('pack.getPackDetails').query.packs.findFirst({
       where: and(eq(packs.id, packId), eq(packs.userId, this.userId), eq(packs.deleted, false)),
       with: {
         items: {
           where: eq(packItems.deleted, false),
           with: {
-            catalogItem: true,
+            // Drop embedding + fat JSONB on the joined catalog row. computePackWeights
+            // and downstream pack-detail callers only need scalars for rendering.
+            // /catalog/:id remains the source of truth when the heavy JSONB is needed.
+            catalogItem: {
+              columns: {
+                id: true,
+                name: true,
+                brand: true,
+                weight: true,
+                weightUnit: true,
+                images: true,
+                categories: true,
+                productUrl: true,
+                sku: true,
+                price: true,
+                ratingValue: true,
+              },
+            },
           },
         },
       },
     });
 
     if (!pack) return null;
-    return computePackWeights(pack);
+    return computePackWeights({ pack });
   }
 
   async generatePacks(count: number) {
@@ -107,7 +124,9 @@ export class PackService {
         );
       }
 
+      setQueryTag('pack.generatePacksInsertPacks');
       const createdPacks = await tx.insert(packs).values(packsToInsert).returning();
+      setQueryTag('pack.generatePacksInsertItems');
       await tx.insert(packItems).values(itemsToInsert);
       return createdPacks;
     });
@@ -116,11 +135,25 @@ export class PackService {
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
-    const { OPENAI_API_KEY } = getEnv();
-    const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_AI_GATEWAY_ID,
+      CLOUDFLARE_API_TOKEN,
+      AI,
+    } = getEnv();
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: AI,
+    });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
@@ -135,10 +168,10 @@ export class PackService {
     packItemConcepts: PackItemConceptSchema[],
   ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
     const catalogService = new CatalogService();
-    const searchResults = await catalogService.batchVectorSearch(
-      packItemConcepts.map((item) => item.item),
-      1,
-    );
+    const searchResults = await catalogService.batchVectorSearch({
+      queries: packItemConcepts.map((item) => item.item),
+      limit: 1,
+    });
 
     return packItemConcepts
       .map((item, idx) => {
@@ -150,8 +183,8 @@ export class PackService {
           catalogItemId: catalogItem.id,
           name: catalogItem.name,
           description: catalogItem.description,
-          weight: catalogItem.weight,
-          weightUnit: catalogItem.weightUnit,
+          weight: catalogItem.weight ?? 0,
+          weightUnit: catalogItem.weightUnit ?? 'g',
           image: catalogItem.images?.[0],
         };
       })

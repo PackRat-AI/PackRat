@@ -3,27 +3,40 @@ import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
 import { SearchInput } from 'expo-app/components/SearchInput';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import * as Haptics from 'expo-haptics';
 import { useAtom } from 'jotai';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Pressable,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDebounce } from 'use-debounce';
 import { useCatalogItemsInfinite } from '../hooks';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { usePopularCatalogItems } from '../hooks/usePopularCatalogItems';
 import { useRecentlyUsedCatalogItems } from '../hooks/useRecentlyUsedCatalogItems';
 import { useVectorSearch } from '../hooks/useVectorSearch';
+import { groupCatalogItems } from '../lib/groupCatalogItems';
 import type { CatalogItem } from '../types';
 
 type CatalogBrowserModalProps = {
@@ -36,20 +49,26 @@ function QuickAccessSection({
   title,
   items,
   selectedItems,
+  itemQuantities,
   onItemToggle,
+  onQuantityChange,
   emptyMessage,
 }: {
   title: string;
   items: CatalogItem[];
   selectedItems: Set<number>;
+  itemQuantities: Map<number, number>;
   onItemToggle: (item: CatalogItem) => void;
+  onQuantityChange: (itemId: number, delta: number) => void;
   emptyMessage?: string;
 }) {
   if (items.length === 0) {
     if (!emptyMessage) return null;
     return (
       <View className="mb-4">
-        <Text className="mb-2 text-sm font-semibold text-foreground">{title}</Text>
+        <Text className="mb-2 text-sm font-semibold text-foreground" numberOfLines={1}>
+          {title}
+        </Text>
         <Text className="text-xs text-muted-foreground">{emptyMessage}</Text>
       </View>
     );
@@ -57,18 +76,22 @@ function QuickAccessSection({
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-semibold text-foreground">{title}</Text>
+      <Text className="mb-2 text-sm font-semibold text-foreground" numberOfLines={1}>
+        {title}
+      </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 8 }}
       >
         {items.map((item) => (
-          <View key={item.id} className="w-56">
+          <View key={item.id} style={{ width: 288 }}>
             <HorizontalCatalogItemCard
               item={item}
               selected={selectedItems.has(item.id)}
               onSelect={onItemToggle}
+              quantity={itemQuantities.get(item.id) ?? 1}
+              onQuantityChange={onQuantityChange}
             />
           </View>
         ))}
@@ -77,69 +100,236 @@ function QuickAccessSection({
   );
 }
 
-function SelectedItemsQuantityPanel({
+function QtyButton({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        scale.value = withTiming(0.82, { duration: 80, easing: Easing.out(Easing.quad) });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.quad) });
+      }}
+      onPress={onPress}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Animated.View
+        style={animStyle}
+        className="h-7 w-7 items-center justify-center rounded-full border border-border"
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function CartSheet({
+  visible,
+  onClose,
   items,
   quantities,
   onQuantityChange,
+  onRemoveItem,
   onClear,
   onAdd,
 }: {
+  visible: boolean;
+  onClose: () => void;
   items: CatalogItem[];
   quantities: Map<number, number>;
   onQuantityChange: (itemId: number, delta: number) => void;
+  onRemoveItem: (itemId: number) => void;
   onClear: () => void;
   onAdd: () => void;
 }) {
-  const { t } = useTranslation();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
+
+  const translateY = useSharedValue(screenHeight);
+  const dragY = useSharedValue(0);
+  const backdropOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      backdropOpacity.value = withTiming(1, { duration: 300 });
+      translateY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
+    } else {
+      // Instant reset — no animation that fights the gesture dismiss path
+      dragY.value = 0;
+      backdropOpacity.value = withTiming(0, { duration: 280 });
+      translateY.value = withTiming(screenHeight, {
+        duration: 360,
+        easing: Easing.in(Easing.quad),
+      });
+    }
+  }, [visible]);
+
+  const pan = Gesture.Pan()
+    .activeOffsetY(5)
+    .failOffsetY(-5)
+    .onUpdate((e) => {
+      dragY.value = Math.max(0, e.translationY);
+    })
+    .onEnd((e) => {
+      if (e.translationY > 80 || e.velocityY > 600) {
+        // Absorb the drag offset into translateY so the animation starts from the dragged position,
+        // then call onClose only after the sheet has finished sliding off-screen.
+        const captured = dragY.value;
+        dragY.value = 0;
+        translateY.value = captured;
+        backdropOpacity.value = withTiming(0, { duration: 280 });
+        translateY.value = withTiming(
+          screenHeight,
+          { duration: 340, easing: Easing.in(Easing.quad) },
+          (finished) => {
+            if (finished) runOnJS(onClose)();
+          },
+        );
+      } else {
+        dragY.value = withTiming(0, { duration: 320, easing: Easing.out(Easing.cubic) });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value + dragY.value }],
+  }));
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
 
   return (
-    <View className="border-t border-border bg-card">
-      <ScrollView style={{ maxHeight: 180 }} contentContainerStyle={{ padding: 12, gap: 8 }}>
-        {items.map((item) => {
-          const qty = quantities.get(item.id) ?? 1;
-          return (
-            <View key={item.id} className="flex-row items-center justify-between">
-              <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
-                {item.name}
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',
+        zIndex: 10,
+      }}
+      pointerEvents={visible ? 'auto' : 'none'}
+    >
+      {/* Animated backdrop */}
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          },
+          backdropStyle,
+        ]}
+      >
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+      </Animated.View>
+
+      {/* Animated sheet */}
+      <Animated.View
+        className="bg-card rounded-t-3xl overflow-hidden"
+        style={[{ maxHeight: '78%' }, sheetStyle]}
+      >
+        {/* Drag handle — pan gesture lives here so it doesn't fight the ScrollView */}
+        <GestureDetector gesture={pan}>
+          <View>
+            <View className="items-center pt-3 pb-1">
+              <View className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </View>
+
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-4 pt-2 pb-3 border-b border-border">
+              <Text className="text-base font-semibold text-foreground">
+                {t('catalog.cartTitle', { count: items.length })}
               </Text>
-              <View className="flex-row items-center gap-2 ml-2">
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Icon name="close" size={20} color={colors.grey2} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </GestureDetector>
+
+        {/* Items list */}
+        <ScrollView>
+          {items.map((item) => {
+            const qty = quantities.get(item.id) ?? 1;
+            return (
+              <View
+                key={item.id}
+                className="flex-row items-center gap-3 px-4 py-3 border-b border-border"
+              >
+                <CatalogItemImage
+                  imageUrl={item.images?.[0]}
+                  className="h-11 w-11 rounded-lg shrink-0"
+                  resizeMode="cover"
+                />
+                <View className="flex-1 min-w-0">
+                  <Text className="text-sm font-medium text-foreground" numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {item.brand && (
+                    <Text className="text-xs text-muted-foreground">{item.brand}</Text>
+                  )}
+                </View>
+
+                {/* Qty controls */}
+                <View className="flex-row items-center gap-2">
+                  <QtyButton
+                    onPress={() => {
+                      if (qty <= 1) onRemoveItem(item.id);
+                      else onQuantityChange(item.id, -1);
+                    }}
+                  >
+                    <Icon name="minus" size={13} color={colors.grey2} />
+                  </QtyButton>
+                  <Text className="text-base font-semibold text-foreground text-center w-7">
+                    {qty}
+                  </Text>
+                  <QtyButton onPress={() => onQuantityChange(item.id, 1)}>
+                    <Icon name="plus" size={13} color={colors.foreground} />
+                  </QtyButton>
+                </View>
+
+                {/* Remove */}
                 <TouchableOpacity
-                  onPress={() => onQuantityChange(item.id, -1)}
-                  disabled={qty <= 1}
-                  className="h-7 w-7 items-center justify-center rounded-full border border-border"
+                  onPress={() => onRemoveItem(item.id)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Icon
-                    name="minus"
-                    size={14}
-                    color={qty <= 1 ? colors.grey2 : colors.foreground}
-                  />
-                </TouchableOpacity>
-                <Text className="w-6 text-center text-sm font-medium text-foreground">{qty}</Text>
-                <TouchableOpacity
-                  onPress={() => onQuantityChange(item.id, 1)}
-                  className="h-7 w-7 items-center justify-center rounded-full border border-border"
-                >
-                  <Icon name="plus" size={14} color={colors.foreground} />
+                  <Icon name="trash-can-outline" size={18} color={colors.grey2} />
                 </TouchableOpacity>
               </View>
-            </View>
-          );
-        })}
-      </ScrollView>
-      <View className="flex-row gap-3 items-center justify-end border-t border-border px-4 py-3">
-        <Button variant="secondary" className="mb-1" onPress={onClear}>
-          <Text>{t('catalog.clearSelection')}</Text>
-        </Button>
-        <Button onPress={onAdd} className="mb-1" variant="tonal">
-          <Text>
-            {t('catalog.addItems', {
-              count: items.length,
-              unit: items.length > 1 ? t('catalog.items') : t('catalog.item'),
-            })}
-          </Text>
-        </Button>
-      </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Footer */}
+        <View
+          className="flex-row gap-2 px-4 pt-3 border-t border-border"
+          style={{ paddingBottom: Math.max(bottom, 16) + 8 }}
+        >
+          <Button variant="secondary" className="flex-1" onPress={onClear}>
+            <Text>{t('catalog.clearSelection')}</Text>
+          </Button>
+          <Button onPress={onAdd} variant="primary" className="flex-1">
+            <Text>
+              {t('catalog.addItems', {
+                count: items.length,
+                unit: items.length > 1 ? t('catalog.items') : t('catalog.item'),
+              })}
+            </Text>
+          </Button>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -155,17 +345,26 @@ export function CatalogBrowserModal({
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [itemQuantities, setItemQuantities] = useState<Map<number, number>>(new Map());
+  const [isCartVisible, setIsCartVisible] = useState(false);
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
+  // Persists item data across category switches so the cart never loses items
+  const itemCacheRef = useRef<Map<number, CatalogItem>>(new Map());
 
   const isSearching = debouncedSearchValue.length > 0;
   const isDefaultView = !isSearching && activeFilter === 'All';
 
   const { data: categories } = useCatalogItemsCategories();
-  const { recentItems } = useRecentlyUsedCatalogItems();
+  const { recentItems: recentItemsRaw } = useRecentlyUsedCatalogItems();
+  const recentItems = useMemo(
+    () => groupCatalogItems(recentItemsRaw).map((g) => g.representative),
+    [recentItemsRaw],
+  );
   const { data: popularData, isLoading: isPopularLoading } = usePopularCatalogItems(8);
 
-  // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
-  const popularItems = (popularData?.items ?? []) as CatalogItem[];
+  const popularItems = useMemo(
+    () => groupCatalogItems(popularData?.items ?? []).map((g) => g.representative),
+    [popularData],
+  );
 
   const {
     data: paginatedData,
@@ -178,7 +377,7 @@ export function CatalogBrowserModal({
     error: paginatedError,
   } = useCatalogItemsInfinite({
     category: activeFilter === 'All' ? undefined : activeFilter,
-    limit: 20,
+    limit: 80,
     sort: { field: 'createdAt', order: 'desc' },
   });
 
@@ -188,26 +387,29 @@ export function CatalogBrowserModal({
     error: searchError,
   } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
-  // safe-cast: treaty response shape matches CatalogItem[] as validated by the API schema
-  const items = (
-    isSearching
-      ? searchResult?.items || []
-      : paginatedData?.pages.flatMap((page) => page.items) || []
-  ) as CatalogItem[]; // safe-cast: treaty response shape matches CatalogItem[]
+  const paginatedRawItems = paginatedData?.pages.flatMap((page) => page.items) ?? [];
+  const groupedPaginatedItems = useMemo(
+    () => groupCatalogItems(paginatedRawItems),
+    [paginatedRawItems],
+  );
+
+  const items = isSearching
+    ? searchResult?.items || []
+    : groupedPaginatedItems.map((g) => g.representative);
   const isLoading = isSearching ? isSearchLoading : isPaginatedLoading;
   const error = isSearching ? searchError : paginatedError;
 
-  // All unique items available (main list + popular + recent) for lookup
-  const allAvailableItems = useMemo(() => {
-    const map = new Map<number, CatalogItem>();
-    for (const item of items) map.set(item.id, item);
-    for (const item of popularItems) map.set(item.id, item);
-    for (const item of recentItems) map.set(item.id, item);
-    return map;
-  }, [items, popularItems, recentItems]);
+  // Auto-close cart when all items are removed
+  useEffect(() => {
+    if (selectedItems.size === 0 && isCartVisible) {
+      setIsCartVisible(false);
+    }
+  }, [selectedItems.size, isCartVisible]);
 
   const handleItemToggle = useCallback(
     (item: CatalogItem) => {
+      // Always cache item data so it survives category/search switches
+      itemCacheRef.current.set(item.id, item);
       const newSelected = new Set(selectedItems);
       if (newSelected.has(item.id)) {
         newSelected.delete(item.id);
@@ -233,9 +435,22 @@ export function CatalogBrowserModal({
     });
   }, []);
 
+  const handleRemoveItem = useCallback((itemId: number) => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
+    });
+    setItemQuantities((prev) => {
+      const next = new Map(prev);
+      next.delete(itemId);
+      return next;
+    });
+  }, []);
+
   const handleAddSelected = () => {
     const selectedCatalogItems = Array.from(selectedItems)
-      .map((id) => allAvailableItems.get(id))
+      .map((id) => itemCacheRef.current.get(id))
       .filter((item): item is CatalogItem => item !== undefined)
       .map((item) => ({ ...item, quantity: itemQuantities.get(item.id) ?? 1 }));
     onItemsSelected(selectedCatalogItems);
@@ -247,6 +462,7 @@ export function CatalogBrowserModal({
   const resetSelection = () => {
     setSelectedItems(new Set());
     setItemQuantities(new Map());
+    setIsCartVisible(false);
   };
 
   const handleClose = () => {
@@ -272,9 +488,9 @@ export function CatalogBrowserModal({
   const selectedItemsList = useMemo(
     () =>
       Array.from(selectedItems)
-        .map((id) => allAvailableItems.get(id))
+        .map((id) => itemCacheRef.current.get(id))
         .filter((item): item is CatalogItem => item !== undefined),
-    [selectedItems, allAvailableItems],
+    [selectedItems],
   );
 
   const renderItem = ({ item }: { item: CatalogItem }) => (
@@ -282,6 +498,8 @@ export function CatalogBrowserModal({
       item={item}
       selected={selectedItems.has(item.id)}
       onSelect={handleItemToggle}
+      quantity={itemQuantities.get(item.id) ?? 1}
+      onQuantityChange={handleQuantityChange}
     />
   );
 
@@ -299,7 +517,9 @@ export function CatalogBrowserModal({
             title={t('catalog.recentlyUsed')}
             items={recentItems}
             selectedItems={selectedItems}
+            itemQuantities={itemQuantities}
             onItemToggle={handleItemToggle}
+            onQuantityChange={handleQuantityChange}
           />
         )}
         {showPopular && (
@@ -307,7 +527,9 @@ export function CatalogBrowserModal({
             title={t('catalog.popularItems')}
             items={isPopularLoading ? [] : popularItems}
             selectedItems={selectedItems}
+            itemQuantities={itemQuantities}
             onItemToggle={handleItemToggle}
+            onQuantityChange={handleQuantityChange}
           />
         )}
         <Text className="mb-2 text-sm font-semibold text-foreground">
@@ -321,7 +543,9 @@ export function CatalogBrowserModal({
     isPopularLoading,
     recentItems,
     selectedItems,
+    itemQuantities,
     handleItemToggle,
+    handleQuantityChange,
     t,
   ]);
 
@@ -388,7 +612,7 @@ export function CatalogBrowserModal({
           ) : (
             <FlatList
               data={items}
-              keyExtractor={(item, index) => `${item.id}-${index}`}
+              keyExtractor={(item) => String(item.id)}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}
               ItemSeparatorComponent={ItemSeparatorComponent}
@@ -413,16 +637,34 @@ export function CatalogBrowserModal({
           )}
         </View>
 
-        {/* Bottom Actions with per-item quantity */}
+        {/* Cart CTA bar */}
         {selectedItems.size > 0 && (
-          <SelectedItemsQuantityPanel
-            items={selectedItemsList}
-            quantities={itemQuantities}
-            onQuantityChange={handleQuantityChange}
-            onClear={resetSelection}
-            onAdd={handleAddSelected}
-          />
+          <View className="flex-row gap-2 px-4 py-3 border-t border-border bg-card">
+            <Button variant="secondary" className="flex-1" onPress={() => setIsCartVisible(true)}>
+              <Text>{t('catalog.viewCart', { count: selectedItems.size })}</Text>
+            </Button>
+            <Button variant="primary" className="flex-1" onPress={handleAddSelected}>
+              <Text>
+                {t('catalog.addItems', {
+                  count: selectedItems.size,
+                  unit: selectedItems.size > 1 ? t('catalog.items') : t('catalog.item'),
+                })}
+              </Text>
+            </Button>
+          </View>
         )}
+
+        {/* Cart sheet overlay */}
+        <CartSheet
+          visible={isCartVisible}
+          onClose={() => setIsCartVisible(false)}
+          items={selectedItemsList}
+          quantities={itemQuantities}
+          onQuantityChange={handleQuantityChange}
+          onRemoveItem={handleRemoveItem}
+          onClear={resetSelection}
+          onAdd={handleAddSelected}
+        />
       </SafeAreaView>
     </Modal>
   );

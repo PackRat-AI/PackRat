@@ -23,5 +23,6 @@ pre-push:
         bun scripts/lint/no-duplicate-guards.ts &&
         bun scripts/lint/no-unauth-routes.ts &&
         bun scripts/format/sort-package-json.ts --check &&
+        bun run --cwd packages/checks check:route-schemas:strict &&
         bun check:casts:strict
       fail_text: "Pre-push checks failed! Run `bun check:all` for the full picture."

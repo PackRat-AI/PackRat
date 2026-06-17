@@ -11,7 +11,7 @@ import { obs } from 'expo-app/lib/store';
  */
 export function useTripDetailsFromStore(id: string) {
   const trip = use$(() => {
-    const trip_ = obs(tripsStore, id).get();
+    const trip_ = obs({ store: tripsStore, id: id }).get();
 
     return trip_;
   });

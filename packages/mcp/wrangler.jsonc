@@ -10,6 +10,15 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  // KV namespace for OAuth token storage (required by @cloudflare/workers-oauth-provider)
+  // Create with: wrangler kv namespace create OAUTH_KV
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "__TODO_OAUTH_KV_PROD_ID__",
+      "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
+    }
+  ],
   // Durable Objects power each MCP session (stateful per client connection)
   "durable_objects": {
     "bindings": [
@@ -28,9 +37,17 @@
   ],
   // Environment variables are set via Cloudflare dashboard or .dev.vars locally
   // Required: PACKRAT_API_URL
+  // Optional: MCP_INITIAL_ACCESS_TOKEN (pre-shared secret for dynamic client registration)
   "env": {
     "dev": {
       "name": "packrat-mcp-dev",
+      "kv_namespaces": [
+        {
+          "binding": "OAUTH_KV",
+          "id": "__TODO_OAUTH_KV_DEV_ID__",
+          "preview_id": "__TODO_OAUTH_KV_DEV_ID__"
+        }
+      ],
       "durable_objects": {
         "bindings": [
           {

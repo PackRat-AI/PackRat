@@ -12,8 +12,8 @@ export default defineCommand({
     const cache = await ensureCache();
     const rows = await cache.getMarketShare({
       category: args.category,
-      topN: parsePositiveIntArg(args.top, '--top'),
+      topN: parsePositiveIntArg({ value: args.top, argName: '--top' }),
     });
-    printTable(rows, { title: 'Market Share' });
+    printTable({ rows, options: { title: 'Market Share' } });
   },
 });

@@ -5,8 +5,6 @@ import Observation
 final class AuthManager {
     var currentUser: User?
     var isAuthenticated: Bool { currentUser != nil }
-    var needsEmailVerification = false
-    var pendingVerificationEmail: String?
 
     private let apiClient: APIClient
 
@@ -22,56 +20,86 @@ final class AuthManager {
 
     // MARK: - Auth Actions
 
+    /// Signs in via Better Auth's email/password endpoint.
+    /// The session token is captured by `APIClient` from the `set-auth-token`
+    /// response header; we also stash it from the JSON body as a belt-and-
+    /// braces guarantee for tests / mock transports.
     func login(email: String, password: String) async throws {
         struct LoginBody: Encodable { let email: String; let password: String }
-        struct LoginResponse: Decodable { let success: Bool; let accessToken: String; let refreshToken: String; let user: User }
-
-        let endpoint = Endpoint(.post, "/api/auth/login", body: LoginBody(email: email, password: password), requiresAuth: false)
-        let response: LoginResponse = try await apiClient.send(endpoint)
-
-        KeychainService.shared.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
-        await MainActor.run { currentUser = response.user }
-        persistUser(response.user)
-    }
-
-    func register(email: String, password: String, firstName: String, lastName: String) async throws {
-        struct RegisterBody: Encodable {
-            let email: String; let password: String
-            let firstName: String; let lastName: String
+        struct LoginResponse: Decodable {
+            let token: String?
+            let user: User
         }
 
         let endpoint = Endpoint(
-            .post, "/api/auth/register",
-            body: RegisterBody(email: email, password: password, firstName: firstName, lastName: lastName),
+            .post,
+            "/api/auth/sign-in/email",
+            body: LoginBody(email: email, password: password),
             requiresAuth: false
         )
-        try await apiClient.sendDiscarding(endpoint)
-        await MainActor.run {
-            needsEmailVerification = true
-            pendingVerificationEmail = email
+        let response: LoginResponse = try await apiClient.send(endpoint)
+
+        if let token = response.token, !token.isEmpty {
+            KeychainService.shared.saveSessionToken(token)
         }
-    }
-
-    func verifyEmail(email: String, code: String) async throws {
-        struct VerifyBody: Encodable { let email: String; let code: String }
-        struct VerifyResponse: Decodable { let success: Bool; let accessToken: String; let refreshToken: String; let user: User }
-
-        let endpoint = Endpoint(.post, "/api/auth/verify-email", body: VerifyBody(email: email, code: code), requiresAuth: false)
-        let response: VerifyResponse = try await apiClient.send(endpoint)
-
-        KeychainService.shared.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
-        await MainActor.run {
-            currentUser = response.user
-            needsEmailVerification = false
-            pendingVerificationEmail = nil
-        }
+        await MainActor.run { currentUser = response.user }
         persistUser(response.user)
+        SentryConfig.setUser(id: response.user.id, email: response.user.email)
     }
 
+    /// Creates a new account via Better Auth's email/password sign-up.
+    /// Better Auth requires a `name` field; we synthesize it from
+    /// firstName + lastName and also pass each piece through the
+    /// `additionalFields` config exposed by `auth.config.ts`.
+    /// `requireEmailVerification` is `false`, so this returns a session
+    /// immediately and the user is signed in.
+    func register(email: String, password: String, firstName: String, lastName: String) async throws {
+        struct RegisterBody: Encodable {
+            let email: String
+            let password: String
+            let name: String
+            let firstName: String
+            let lastName: String
+        }
+        struct RegisterResponse: Decodable {
+            let token: String?
+            let user: User
+        }
+
+        let combinedName = [firstName, lastName]
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        // Fallback so Better Auth's name field is never empty — it's required.
+        let name = combinedName.isEmpty ? email : combinedName
+
+        let endpoint = Endpoint(
+            .post,
+            "/api/auth/sign-up/email",
+            body: RegisterBody(
+                email: email,
+                password: password,
+                name: name,
+                firstName: firstName,
+                lastName: lastName
+            ),
+            requiresAuth: false
+        )
+        let response: RegisterResponse = try await apiClient.send(endpoint)
+
+        if let token = response.token, !token.isEmpty {
+            KeychainService.shared.saveSessionToken(token)
+        }
+        await MainActor.run { currentUser = response.user }
+        persistUser(response.user)
+        SentryConfig.setUser(id: response.user.id, email: response.user.email)
+    }
+
+    /// Signs out via Better Auth. We ignore failures so a stale/expired
+    /// session token still clears local state.
     func logout() async throws {
-        if let refreshToken = KeychainService.shared.refreshToken {
-            struct LogoutBody: Encodable { let refreshToken: String }
-            let endpoint = Endpoint(.post, "/api/auth/logout", body: LogoutBody(refreshToken: refreshToken))
+        if KeychainService.shared.sessionToken != nil {
+            let endpoint = Endpoint(.post, "/api/auth/sign-out")
             try? await apiClient.sendDiscarding(endpoint)
         }
         await MainActor.run { signOut() }
@@ -96,6 +124,7 @@ final class AuthManager {
         KeychainService.shared.clearTokens()
         UserDefaults.standard.removeObject(forKey: "current_user")
         currentUser = nil
+        SentryConfig.clearUser()
     }
 
     // MARK: - Persistence
@@ -107,10 +136,11 @@ final class AuthManager {
     }
 
     private func loadStoredUser() {
-        guard KeychainService.shared.accessToken != nil,
+        guard KeychainService.shared.sessionToken != nil,
               let data = UserDefaults.standard.data(forKey: "current_user"),
               let user = try? JSONDecoder().decode(User.self, from: data)
         else { return }
         currentUser = user
+        SentryConfig.setUser(id: user.id, email: user.email)
     }
 }

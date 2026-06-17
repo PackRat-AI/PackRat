@@ -3,6 +3,7 @@ import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import { formatLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
@@ -16,7 +17,13 @@ interface TripCardProps {
   onPress?: (trip: Trip) => void;
 }
 
-function getTripDurationDays(startDate?: string, endDate?: string): number | null {
+function getTripDurationDays({
+  startDate,
+  endDate,
+}: {
+  startDate?: string;
+  endDate?: string;
+}): number | null {
   if (!startDate || !endDate) return null;
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -40,7 +47,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   const alertRef = useRef<AlertMethods>(null);
   const insets = useSafeAreaInsets();
 
-  const durationDays = getTripDurationDays(trip.startDate, trip.endDate);
+  const durationDays = getTripDurationDays({ startDate: trip.startDate, endDate: trip.endDate });
 
   const handleActionsPress = () => {
     const options = [
@@ -91,6 +98,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card border border-border"
+      testID={testIds.trips.listItem(trip.name)}
       onPress={() => onPress?.(trip)}
     >
       <View className="p-4">

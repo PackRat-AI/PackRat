@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
@@ -18,25 +19,38 @@ export interface SimilarItemsResponse {
   sourceItem: CatalogItem;
 }
 
-export const getSimilarCatalogItems = async (
-  id: string,
-  params?: SimilarItemsParams,
-): Promise<SimilarItemsResponse> => {
+export const getSimilarCatalogItems = async ({
+  id,
+  params,
+}: {
+  id: string;
+  params?: SimilarItemsParams;
+}): Promise<SimilarItemsResponse> => {
   const { data, error } = await apiClient.catalog({ id }).similar.get({
     query: {
       ...(params?.limit !== undefined ? { limit: String(params.limit) } : {}),
       ...(params?.threshold !== undefined ? { threshold: String(params.threshold) } : {}),
     },
   });
-  if (error) throw new Error(`Failed to fetch similar catalog items: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch similar catalog items'));
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'getSimilarCatalogItems' },
+      extra: { id, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   // safe-cast: treaty response shape matches SimilarItemsResponse as validated by the API schema
   return data as unknown as SimilarItemsResponse;
 };
 
-export const getSimilarPackItems = async (
-  packId: string,
-  opts: { itemId: string; params?: SimilarItemsParams },
-) => {
+export const getSimilarPackItems = async ({
+  packId,
+  opts,
+}: {
+  packId: string;
+  opts: { itemId: string; params?: SimilarItemsParams };
+}) => {
   const { itemId, params } = opts;
   const { data, error } = await apiClient
     .packs({ packId })
@@ -47,31 +61,47 @@ export const getSimilarPackItems = async (
         ...(params?.threshold !== undefined ? { threshold: String(params.threshold) } : {}),
       },
     });
-  if (error) throw new Error(`Failed to fetch similar pack items: ${error.value}`);
+  if (error) {
+    const err = new Error(String(error.value ?? 'Failed to fetch similar pack items'));
+    Sentry.captureException(err, {
+      tags: { feature: 'catalog', action: 'getSimilarPackItems' },
+      extra: { packId, itemId, apiError: error.value, httpStatus: error.status },
+    });
+    throw err;
+  }
   return data;
 };
 
-export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) {
+export function useSimilarCatalogItems({
+  id,
+  params,
+}: {
+  id: string;
+  params?: SimilarItemsParams;
+}) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
     queryKey: ['similarCatalogItems', id, params],
-    queryFn: () => getSimilarCatalogItems(id, params),
+    queryFn: () => getSimilarCatalogItems({ id, params }),
     enabled: isQueryEnabledWithAccessToken && !!id,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useSimilarPackItems(
-  packId: string,
-  opts: { itemId: string; params?: SimilarItemsParams },
-) {
+export function useSimilarPackItems({
+  packId,
+  opts,
+}: {
+  packId: string;
+  opts: { itemId: string; params?: SimilarItemsParams };
+}) {
   const { itemId, params } = opts;
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
     queryKey: ['similarPackItems', packId, itemId, params],
-    queryFn: () => getSimilarPackItems(packId, { itemId, params }),
+    queryFn: () => getSimilarPackItems({ packId, opts: { itemId, params } }),
     enabled: isQueryEnabledWithAccessToken && !!packId && !!itemId,
     staleTime: 5 * 60 * 1000,
   });

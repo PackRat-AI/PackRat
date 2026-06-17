@@ -2,8 +2,10 @@ import {
   Activity,
   Backpack,
   BarChart2,
+  Database,
   LayoutDashboard,
   type LucideIcon,
+  Map as MapIcon,
   Package,
   Users,
 } from 'lucide-react';
@@ -37,6 +39,11 @@ export const navItems: NavItem[] = [
     icon: Package,
   },
   {
+    title: 'Trail Viewer',
+    href: '/dashboard/trails',
+    icon: MapIcon,
+  },
+  {
     title: 'Platform Analytics',
     href: '/dashboard/analytics/platform',
     icon: Activity,
@@ -45,5 +52,10 @@ export const navItems: NavItem[] = [
     title: 'Gear Catalog Analytics',
     href: '/dashboard/analytics/catalog',
     icon: BarChart2,
+  },
+  {
+    title: 'Query Metrics',
+    href: '/dashboard/analytics/query-metrics',
+    icon: Database,
   },
 ];

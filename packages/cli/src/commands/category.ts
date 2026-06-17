@@ -10,7 +10,10 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const rows = await cache.categoryInsights(args.name, parseCsvArg(args.sites));
-    printTable(rows, { title: `Category: "${args.name}"` });
+    const rows = await cache.categoryInsights({
+      categoryKeyword: args.name,
+      sites: parseCsvArg(args.sites),
+    });
+    printTable({ rows, options: { title: `Category: "${args.name}"` } });
   },
 });

@@ -23,7 +23,7 @@ expect.extend({
   },
 });
 
-type AuthSubject = { id: number; role: 'USER' | 'ADMIN' };
+type AuthSubject = { id: string; role: 'USER' | 'ADMIN' };
 
 // Current test user for JWT signing. Set by seedTestUser (#2180) — no hardcoded id.
 let currentTestUser: AuthSubject | null = null;
@@ -65,8 +65,8 @@ const fetchWithUser = async (path: string, opts: { user: AuthSubject; init?: Req
 // Synthetic JWT subject for tests that sign a JWT but never touch users in DB
 // (e.g. catalog, guides, upload). Tests that need the user to exist in DB must
 // call seedTestUser() in beforeEach, which sets currentTestUser.
-const SYNTHETIC_USER: AuthSubject = { id: 0, role: 'USER' };
-const SYNTHETIC_ADMIN: AuthSubject = { id: 0, role: 'ADMIN' };
+const SYNTHETIC_USER: AuthSubject = { id: 'synthetic-user-id', role: 'USER' };
+const SYNTHETIC_ADMIN: AuthSubject = { id: 'synthetic-admin-id', role: 'ADMIN' };
 
 export const apiWithAuth = async (path: string, init?: RequestInit) =>
   fetchWithUser(path, { user: currentTestUser ?? SYNTHETIC_USER, init });

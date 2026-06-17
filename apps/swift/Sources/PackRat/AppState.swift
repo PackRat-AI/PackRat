@@ -13,6 +13,7 @@ final class AppState {
     let feedVM = FeedViewModel()
     let templatesVM = PackTemplatesViewModel()
     let trailConditionsVM = TrailConditionsViewModel()
+    let aiPacksVM = AIPacksViewModel()
 
     // Per-feature detail selections
     var selectedPackId: String?

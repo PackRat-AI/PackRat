@@ -1,5 +1,8 @@
 import XCTest
 
+#if os(iOS)
+// iOS-only suite — uses goToTab() (UITabBar) which doesnt exist on macOS.
+
 /// Smoke + interaction tests for the secondary tabs that don't have
 /// their own dedicated suites: Home, Guides, Gear Inventory, Wildlife.
 final class MoreTabsTests: AppUITestCase {
@@ -63,3 +66,5 @@ final class MoreTabsTests: AppUITestCase {
         )
     }
 }
+
+#endif

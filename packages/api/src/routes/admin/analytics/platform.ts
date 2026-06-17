@@ -1,22 +1,24 @@
 import { createDb } from '@packrat/api/db';
+import { catalogItems, packs, posts, trailConditionReports, trips, users } from '@packrat/db';
 import {
-  catalogItems,
-  packs,
-  posts,
-  trailConditionReports,
-  trips,
-  users,
-} from '@packrat/api/db/schema';
+  ActiveUsersSchema,
+  ActivityPointSchema,
+  AdminErrorResponses,
+  AnalyticsPeriodSchema,
+  BreakdownItemSchema,
+  GrowthPointSchema,
+} from '@packrat/schemas/admin';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
-const PeriodSchema = z.object({
-  period: z.enum(['day', 'week', 'month']).optional().default('month'),
-  range: z.coerce.number().int().min(1).max(365).optional().default(12),
-});
-
-function getStartDate(period: 'day' | 'week' | 'month', range: number): Date {
+function getStartDate({
+  period,
+  range,
+}: {
+  period: 'day' | 'week' | 'month';
+  range: number;
+}): Date {
   const d = new Date();
   if (period === 'day') d.setDate(d.getDate() - range);
   else if (period === 'week') d.setDate(d.getDate() - range * 7);
@@ -29,6 +31,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     analytics: {
       growth: '/api/admin/analytics/platform/growth',
       activity: '/api/admin/analytics/platform/activity',
+      activeUsers: '/api/admin/analytics/platform/active-users',
       breakdown: '/api/admin/analytics/platform/breakdown',
     },
   }))
@@ -38,11 +41,12 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     async ({ query }) => {
       const db = createDb();
       const { period = 'month', range = 12 } = query;
-      const startDate = getStartDate(period, range);
+      const startDate = getStartDate({ period, range });
 
       try {
         const [userGrowth, packGrowth, catalogGrowth] = await Promise.all([
           db
+            .tag('adminAnalytics.userGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})::date::text`,
               count: count(),
@@ -52,6 +56,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${users.createdAt})`),
           db
+            .tag('adminAnalytics.packGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})::date::text`,
               count: count(),
@@ -61,6 +66,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${packs.createdAt})`),
           db
+            .tag('adminAnalytics.catalogGrowth')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${catalogItems.createdAt})::date::text`,
               count: count(),
@@ -97,7 +103,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
+      query: AnalyticsPeriodSchema,
+      response: { 200: z.array(GrowthPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'Platform growth metrics' },
     },
   )
@@ -107,11 +114,12 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
     async ({ query }) => {
       const db = createDb();
       const { period = 'month', range = 12 } = query;
-      const startDate = getStartDate(period, range);
+      const startDate = getStartDate({ period, range });
 
       try {
         const [tripActivity, trailActivity, postActivity] = await Promise.all([
           db
+            .tag('adminAnalytics.tripActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})::date::text`,
               count: count(),
@@ -121,6 +129,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
             .groupBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`)
             .orderBy(sql`date_trunc(${sql.raw(`'${period}'`)}, ${trips.createdAt})`),
           db
+            .tag('adminAnalytics.trailActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})::date::text`,
               count: count(),
@@ -137,6 +146,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
               sql`date_trunc(${sql.raw(`'${period}'`)}, ${trailConditionReports.createdAt})`,
             ),
           db
+            .tag('adminAnalytics.postActivity')
             .select({
               date: sql<string>`date_trunc(${sql.raw(`'${period}'`)}, ${posts.createdAt})::date::text`,
               count: count(),
@@ -173,8 +183,33 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
       }
     },
     {
-      query: PeriodSchema,
+      query: AnalyticsPeriodSchema,
+      response: { 200: z.array(ActivityPointSchema), ...AdminErrorResponses },
       detail: { tags: ['Admin'], summary: 'User activity metrics' },
+    },
+  )
+
+  .get(
+    '/active-users',
+    async () => {
+      try {
+        // Note: Better Auth users don't have lastActiveAt field - tracking requires separate implementation
+        return {
+          dau: 0, // Requires lastActiveAt tracking
+          wau: 0, // Requires lastActiveAt tracking
+          mau: 0, // Requires lastActiveAt tracking
+        };
+      } catch (error) {
+        console.error('Analytics active-users error:', error);
+        return status(500, {
+          error: 'Failed to fetch active user counts',
+          code: 'ANALYTICS_ACTIVE_USERS_ERROR',
+        });
+      }
+    },
+    {
+      response: { 200: ActiveUsersSchema, ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'DAU / WAU / MAU based on last_active_at' },
     },
   )
 
@@ -185,6 +220,7 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
 
       try {
         const packsByCategory = await db
+          .tag('adminAnalytics.packsBreakdown')
           .select({ category: packs.category, count: count() })
           .from(packs)
           .where(eq(packs.deleted, false))
@@ -203,5 +239,8 @@ export const platformAnalyticsRoutes = new Elysia({ prefix: '/platform' })
         });
       }
     },
-    { detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' } },
+    {
+      response: { 200: z.array(BreakdownItemSchema), ...AdminErrorResponses },
+      detail: { tags: ['Admin'], summary: 'Categorical distribution metrics' },
+    },
   );

@@ -1,8 +1,8 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { isFunction, nullToUndefined } from '@packrat/guards';
-import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { isFunction } from '@packrat/guards';
+import { Sheet, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon } from 'expo-app/components/Icon';
@@ -11,6 +11,7 @@ import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useImagePicker } from 'expo-app/features/packs';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import React from 'react';
@@ -120,10 +121,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       trackRecentlyUsed(catalogItems);
-      await addItemsToPackTemplate(
-        packTemplateId,
-        catalogItems.map((item) => ({ ...item, description: nullToUndefined(item.description) })),
-      );
+      await addItemsToPackTemplate({ packTemplateId, catalogItems });
       const itemWord =
         catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Burnt.toast({

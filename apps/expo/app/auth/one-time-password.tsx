@@ -1,12 +1,12 @@
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useKeyboardHideBlur } from 'expo-app/lib/hooks/useKeyboardHideBlur';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as React from 'react';
 import {
   Alert,
@@ -15,7 +15,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TargetedEvent,
   type TextInput,
   type TextInputKeyPressEventData,
   View,
@@ -27,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
-const NUM_OF_CODE_CHARACTERS = 5;
+const NUM_OF_CODE_CHARACTERS = 6;
 const SCREEN_OPTIONS = {
   headerBackTitle: 'Back',
   headerTransparent: true,
@@ -136,7 +135,7 @@ export default function OneTimePasswordScreen() {
           params: { email, code },
         });
       } else {
-        await verifyEmail(email, code); // Navigation is handled in the function
+        await verifyEmail({ _email: email, token: code }); // Navigation is handled in the function
       }
     } catch (error) {
       Alert.alert(
@@ -159,7 +158,12 @@ export default function OneTimePasswordScreen() {
       >
         <View className="flex-1 justify-center gap-3">
           <View className="items-center pb-1">
-            <Image source={LOGO_SOURCE} className="h-10 w-10 rounded-md" resizeMode="contain" />
+            <Image
+              source={LOGO_SOURCE}
+              className="h-10 w-10 rounded-md"
+              resizeMode="contain"
+              style={Platform.select({ web: { width: 40, height: 40 } })}
+            />
           </View>
           <View className="gap-1">
             <Text variant="title1" className="text-center font-semibold">
@@ -255,7 +259,7 @@ function OTPField({
   const inputRef = React.useRef<TextInput>(null);
 
   // Apply keyboard hide blur fix
-  useKeyboardHideBlur(asNonNullableRef(inputRef));
+  useKeyboardHideBlur({ textInputRef: asNonNullableRef(inputRef) });
 
   function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     if (nativeEvent.key === 'Backspace' && value === '') {
@@ -264,12 +268,6 @@ function OTPField({
     if (value === nativeEvent.key) {
       KeyboardController.setFocusTo('next');
     }
-  }
-
-  function onFocus(_e: NativeSyntheticEvent<TargetedEvent>) {
-    inputRef.current?.setNativeProps({
-      selection: { start: 0, end: value?.toString().length },
-    });
   }
 
   function onChangeText(text: string) {
@@ -311,7 +309,6 @@ ios:border ios:border-border ios:rounded-lg "
       clearButtonMode="never"
       materialHideActionIcons
       materialRingColor={hasError ? colors.destructive : undefined}
-      onFocus={onFocus}
       onKeyPress={onKeyPress}
       onChangeText={onChangeText}
       onSubmitEditing={

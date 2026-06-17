@@ -10,15 +10,38 @@
  * through authenticated API endpoints.
  */
 
+import { isString } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { tool } from 'ai';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
-import { getWeatherData, searchLocations } from 'expo-app/features/weather/lib/weatherService';
+import {
+  formatWeatherData,
+  getWeatherData,
+  searchLocations,
+} from 'expo-app/features/weather/lib/weatherService';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { z } from 'zod';
 
-export function createLocalTools() {
+function trimCatalogItem(item: unknown) {
+  // safe-cast: items originate from the PackRat API which returns typed JSON objects
+  const obj = item as Record<string, unknown>;
+  const cats = Array.isArray(obj.categories) ? (obj.categories as string[]).slice(0, 2) : [];
   return {
+    id: obj.id,
+    name: obj.name,
+    brand: obj.brand,
+    weight: obj.weight,
+    weightUnit: obj.weightUnit,
+    categories: cats,
+    price: obj.price,
+    ratingValue: obj.ratingValue,
+    description: isString(obj.description) ? obj.description.slice(0, 120) : undefined,
+  };
+}
+
+export function createLocalTools(isAuthenticated = false) {
+  const allTools = {
     getPackDetails: tool({
       description:
         'Get detailed information about a specific pack including all its items, weights, and categories. Use this when the user asks about a specific pack by name or ID.',
@@ -60,6 +83,10 @@ export function createLocalTools() {
             })),
           };
         } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'getPackDetails' },
+            extra: { packId },
+          });
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get pack details',
@@ -82,6 +109,10 @@ export function createLocalTools() {
           }
           return { success: true, data: item };
         } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'getPackItemDetails' },
+            extra: { itemId },
+          });
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get item details',
@@ -99,6 +130,12 @@ export function createLocalTools() {
           .describe('Location to get weather for (city name, state, trail name, etc.)'),
       }),
       execute: async ({ location }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'getWeatherForLocation called',
+          level: 'info',
+          data: { location },
+        });
         try {
           const results = await searchLocations(location);
           if (!results.length) {
@@ -109,8 +146,12 @@ export function createLocalTools() {
             return { success: false, error: `No location found for "${location}"` };
           }
           const weatherData = await getWeatherData(first.id);
-          return { success: true, data: weatherData };
+          return { success: true, data: formatWeatherData(weatherData) };
         } catch (error) {
+          Sentry.captureException(error, {
+            tags: { feature: 'ai.tool', action: 'getWeatherForLocation' },
+            extra: { location },
+          });
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get weather data',
@@ -128,12 +169,19 @@ export function createLocalTools() {
         limit: z
           .number()
           .min(1)
-          .max(50)
+          .max(10)
           .optional()
-          .describe('Number of results to return (default 10)'),
+          .describe('Number of results to return (default 5, max 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, category, limit = 10, offset: _offset = 0 }) => {
+      execute: async ({ query, category, limit = 5, offset: _offset = 0 }) => {
+        console.log('getCatalogItems called with', { query, category, limit, offset: _offset });
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'getCatalogItems called',
+          level: 'info',
+          data: { query, category, limit },
+        });
         const { data, error } = await apiClient.catalog.get({
           query: {
             page: 1,
@@ -143,9 +191,19 @@ export function createLocalTools() {
           },
         });
         if (error) {
+          Sentry.captureException(
+            new Error(String(error.value ?? 'Failed to retrieve catalog items')),
+            {
+              tags: { feature: 'ai.tool', action: 'getCatalogItems' },
+              extra: { query, category, limit, apiError: error.value, httpStatus: error.status },
+            },
+          );
           return { success: false, error: error.value ?? 'Failed to retrieve catalog items' };
         }
-        return { success: true, data };
+        const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
+        const trimmedItems = items.map((item) => trimCatalogItem(item));
+        console.log('getCatalogItems returning', { items: trimmedItems });
+        return { success: true, data: { items: trimmedItems } };
       },
     }),
 
@@ -157,19 +215,36 @@ export function createLocalTools() {
         limit: z
           .number()
           .min(1)
-          .max(100)
+          .max(10)
           .optional()
-          .describe('Number of results to return (default 10)'),
+          .describe('Number of results to return (default 5, max 10)'),
         offset: z.number().min(0).optional().describe('Offset for pagination'),
       }),
-      execute: async ({ query, limit = 10, offset = 0 }) => {
+      execute: async ({ query, limit = 5, offset = 0 }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'catalogVectorSearch called',
+          level: 'info',
+          data: { query, limit, offset },
+        });
         const { data, error } = await apiClient.catalog['vector-search'].get({
           query: { q: query, limit, offset },
         });
         if (error) {
+          Sentry.captureException(
+            new Error(String(error.value ?? 'Failed to perform vector search')),
+            {
+              tags: { feature: 'ai.tool', action: 'catalogVectorSearch' },
+              extra: { query, limit, offset, apiError: error.value, httpStatus: error.status },
+            },
+          );
           return { success: false, error: error.value ?? 'Failed to perform vector search' };
         }
-        return { success: true, data };
+        const items = Array.isArray(data) ? data : ((data as { items?: unknown[] })?.items ?? []);
+        return {
+          success: true,
+          data: { items: items.map((item) => trimCatalogItem(item)) },
+        };
       },
     }),
 
@@ -186,10 +261,23 @@ export function createLocalTools() {
           .describe('Number of results to return (default 5)'),
       }),
       execute: async ({ query, limit = 5 }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'searchPackratOutdoorGuidesRAG called',
+          level: 'info',
+          data: { query, limit },
+        });
         const { data, error } = await apiClient.ai['rag-search'].get({
           query: { q: query, limit },
         });
         if (error) {
+          Sentry.captureException(
+            new Error(String(error.value ?? 'Failed to search outdoor guides')),
+            {
+              tags: { feature: 'ai.tool', action: 'searchPackratOutdoorGuidesRAG' },
+              extra: { query, limit, apiError: error.value, httpStatus: error.status },
+            },
+          );
           return { success: false, error: error.value ?? 'Failed to search outdoor guides' };
         }
         return { success: true, data };
@@ -209,10 +297,20 @@ export function createLocalTools() {
         query: z.string().describe('The search query - be specific and include relevant keywords'),
       }),
       execute: async ({ query }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'webSearchTool called',
+          level: 'info',
+          data: { query },
+        });
         const { data, error } = await apiClient.ai['web-search'].get({
           query: { q: query },
         });
         if (error) {
+          Sentry.captureException(new Error(String(error.value ?? 'Web search failed')), {
+            tags: { feature: 'ai.tool', action: 'webSearchTool' },
+            extra: { query, apiError: error.value, httpStatus: error.status },
+          });
           return { success: false, error: error.value ?? 'Search failed' };
         }
         return { success: true, data };
@@ -235,8 +333,18 @@ export function createLocalTools() {
           .describe('Maximum number of rows to return (default: 100, max: 1000)'),
       }),
       execute: async ({ query, limit = 100 }) => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'executeSql called',
+          level: 'info',
+          data: { limit },
+        });
         const { data, error } = await apiClient.ai['execute-sql'].post({ query, limit });
         if (error) {
+          Sentry.captureException(new Error(String(error.value ?? 'Failed to execute SQL query')), {
+            tags: { feature: 'ai.tool', action: 'executeSql' },
+            extra: { apiError: error.value, httpStatus: error.status },
+          });
           return { success: false, error: error.value ?? 'Failed to execute query' };
         }
         return data;
@@ -248,14 +356,34 @@ export function createLocalTools() {
         'Retrieve the database schema (table names and columns). Call this before executeSql if you are unsure which tables or columns exist.',
       inputSchema: z.object({}),
       execute: async () => {
+        Sentry.addBreadcrumb({
+          category: 'ai.tool',
+          message: 'getDatabaseSchema called',
+          level: 'info',
+        });
         const { data, error } = await apiClient.ai['db-schema'].get();
         if (error) {
+          Sentry.captureException(
+            new Error(String(error.value ?? 'Failed to retrieve database schema')),
+            {
+              tags: { feature: 'ai.tool', action: 'getDatabaseSchema' },
+              extra: { apiError: error.value, httpStatus: error.status },
+            },
+          );
           return { success: false, error: error.value ?? 'Failed to retrieve database schema' };
         }
         return { success: true, data };
       },
     }),
   };
+
+  if (isAuthenticated) {
+    return allTools;
+  }
+
+  // For unauthenticated users, only expose tools that operate on local device data.
+  const { getPackDetails, getPackItemDetails } = allTools;
+  return { getPackDetails, getPackItemDetails };
 }
 
 export type LocalTools = ReturnType<typeof createLocalTools>;

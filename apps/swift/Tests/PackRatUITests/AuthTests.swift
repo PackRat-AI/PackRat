@@ -74,10 +74,17 @@ final class AuthTests: XCTestCase {
     }
 
     func testSuccessfulLogin() throws {
-        let email = ProcessInfo.processInfo.environment["E2E_EMAIL"] ?? ""
-        let password = ProcessInfo.processInfo.environment["E2E_PASSWORD"] ?? ""
+        // Credentials come from this test bundle's Info.plist (populated at build
+        // time from xcodebuild PACKRAT_E2E_* build settings). Same source the
+        // AppUITestCase base class reads from. See AppUITestCase doc-header for
+        // the full pipeline.
+        let bundle = Bundle(for: AppUITestCase.self)
+        let email = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String) ?? ""
+        let password = (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_PASSWORD") as? String) ?? ""
         guard !email.isEmpty, !password.isEmpty else {
-            throw XCTSkip("E2E_EMAIL and E2E_PASSWORD are required for this test")
+            throw XCTSkip(
+                "PACKRAT_E2E_EMAIL / PACKRAT_E2E_PASSWORD must be passed as xcodebuild build settings — `bun e2e:swift` handles this automatically."
+            )
         }
 
         let emailField = app.textFields["login_email"]
@@ -91,10 +98,19 @@ final class AuthTests: XCTestCase {
 
         app.buttons["login_submit"].tap()
 
+        // Logged-in landmark: tab bar on iOS, sidebar Home row on macOS.
+        #if os(iOS)
         XCTAssertTrue(
             app.tabBars.firstMatch.waitForExistence(timeout: 20),
             "Tab bar must appear after successful login"
         )
+        #elseif os(macOS)
+        XCTAssertTrue(
+            app.staticTexts["Home"].waitForExistence(timeout: 20)
+                || app.outlines.firstMatch.waitForExistence(timeout: 1),
+            "Sidebar / outline must appear after successful login"
+        )
+        #endif
         XCTAssertFalse(app.textFields["login_email"].exists, "Login form should be dismissed")
     }
 }

@@ -4,7 +4,7 @@ import { packTemplatesStore } from '../store/packTemplates';
 
 export function useDeletePackTemplate() {
   const del = useCallback((id: string) => {
-    obs(packTemplatesStore, id).deleted.set(true);
+    obs({ store: packTemplatesStore, id: id }).deleted.set(true);
   }, []);
 
   return del;
