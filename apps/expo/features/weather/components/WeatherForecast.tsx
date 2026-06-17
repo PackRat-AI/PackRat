@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -42,7 +43,8 @@ export function WeatherForecast({
   temperature,
 }: WeatherForecastProps) {
   const { t } = useTranslation();
-  const { displayTemperature, toPreferred } = useTemperatureUnit();
+  const { displayTemperature } = useTemperatureUnit();
+  const { displayWindSpeed, displayVisibility } = useSpeedUnit();
 
   return (
     <>
@@ -98,8 +100,12 @@ export function WeatherForecast({
                   />
                 </View>
               </View>
-              <Text className="min-w-[30px] text-right text-white/90">{toPreferred(day.low)}°</Text>
-              <Text className="min-w-[30px] text-right text-white">{toPreferred(day.high)}°</Text>
+              <Text className="min-w-[30px] text-right text-white/90">
+                {displayTemperature(day.low)}
+              </Text>
+              <Text className="min-w-[30px] text-right text-white">
+                {displayTemperature(day.high)}
+              </Text>
             </View>
           ))
         ) : (
@@ -127,7 +133,9 @@ export function WeatherForecast({
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.visibility')}</Text>
-            <Text className="text-xl text-white">{details?.visibility || '10'} mi</Text>
+            <Text className="text-xl text-white">
+              {details?.visibility != null ? displayVisibility(details.visibility) : '—'}
+            </Text>
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.uvIndex')}</Text>
@@ -138,7 +146,9 @@ export function WeatherForecast({
           </View>
           <View className="w-1/2 p-2">
             <Text className="text-white/70">{t('weather.wind')}</Text>
-            <Text className="text-xl text-white">{details?.windSpeed || '5'} mph</Text>
+            <Text className="text-xl text-white">
+              {details?.windSpeed != null ? displayWindSpeed(details.windSpeed) : '—'}
+            </Text>
           </View>
         </View>
       </View>

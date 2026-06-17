@@ -39,8 +39,7 @@ export function WeightBadge({
   return (
     <View className={cn('rounded-full px-2 py-1', getColorClass()[0], containerClassName)}>
       <Text className={cn('text-center text-xs font-medium', getColorClass()[1], textClassName)}>
-        {converted}
-        {displayUnit}
+        {`${converted} ${displayUnit}`}
       </Text>
     </View>
   );

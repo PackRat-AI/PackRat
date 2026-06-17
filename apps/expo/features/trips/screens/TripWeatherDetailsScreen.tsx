@@ -94,7 +94,7 @@ export default function TripWeatherDetailsScreen() {
 
   const location = weather.location;
   const current = weather.current;
-  const { displayTemperature, toPreferred } = useTemperatureUnit();
+  const { displayTemperature } = useTemperatureUnit();
 
   // Use the trip's location name if provided, otherwise fall back to weather API location
   const displayLocationName = tripLocationName || location.name;
@@ -137,8 +137,8 @@ export default function TripWeatherDetailsScreen() {
             <Text className="text-xl text-white">{current.condition.text}</Text>
 
             <Text className="text-white/80 mt-2">
-              H:{toPreferred(weather.forecast.forecastday[0]?.day.maxtemp_c ?? 0)}° L:
-              {toPreferred(weather.forecast.forecastday[0]?.day.mintemp_c ?? 0)}°
+              H:{displayTemperature(weather.forecast.forecastday[0]?.day.maxtemp_c ?? 0)} L:
+              {displayTemperature(weather.forecast.forecastday[0]?.day.mintemp_c ?? 0)}
             </Text>
           </View>
           <WeatherForecast

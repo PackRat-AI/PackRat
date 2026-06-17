@@ -43,10 +43,20 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         date: string;
         weightUnit?: 'kg' | 'lb';
         temperatureUnit?: 'C' | 'F';
+        speedUnit?: 'kmh' | 'mph';
       };
 
-      const { messages, contextType, itemId, packId, location, date, weightUnit, temperatureUnit } =
-        typedBody;
+      const {
+        messages,
+        contextType,
+        itemId,
+        packId,
+        location,
+        date,
+        weightUnit,
+        temperatureUnit,
+        speedUnit,
+      } = typedBody;
 
       const tools = createTools(user.userId);
       const schemaInfo = await getSchemaInfo();
@@ -70,7 +80,8 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       - User id is ${user.userId}
       - Current date is ${date}
       - User's preferred weight unit is ${weightUnit ?? 'kg'} (always display weights in this unit)
-      - User's preferred temperature unit is °${temperatureUnit ?? 'C'} (always display temperatures in this unit)`;
+      - User's preferred temperature unit is °${temperatureUnit ?? 'C'} (always display temperatures in this unit)
+      - User's preferred wind/distance unit is ${speedUnit === 'mph' ? 'mph / miles' : 'km/h / km'} (always display wind speed and distances in this unit)`;
 
       if (contextType === 'pack' && packId) {
         systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}. Use the getPackDetails tool to fetch its contents.`;

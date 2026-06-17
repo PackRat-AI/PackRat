@@ -15,3 +15,9 @@ export function getDefaultTemperatureUnit(): 'C' | 'F' {
   const region = Localization.getLocales()[0]?.regionCode ?? '';
   return FAHRENHEIT_REGIONS.has(region) ? 'F' : 'C';
 }
+
+// mph/miles correlate with the same regions that use Fahrenheit
+export function getDefaultSpeedUnit(): 'mph' | 'kmh' {
+  const region = Localization.getLocales()[0]?.regionCode ?? '';
+  return FAHRENHEIT_REGIONS.has(region) ? 'mph' : 'kmh';
+}

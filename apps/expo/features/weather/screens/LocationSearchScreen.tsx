@@ -405,7 +405,7 @@ export default function LocationSearchScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Search Input */}
-      <View className="px-4">
+      <View className="px-4 pt-4">
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchForCity')}

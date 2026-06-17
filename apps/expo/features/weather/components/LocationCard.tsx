@@ -20,7 +20,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   const { showActionSheetWithOptions } = useActionSheet();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { displayTemperature, toPreferred } = useTemperatureUnit();
+  const { displayTemperature } = useTemperatureUnit();
 
   const handleLongPress = () => {
     const options = location.isActive
@@ -113,7 +113,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
                 {displayTemperature(location.temperature)}
               </Text>
               <Text className="mt-1 text-xs text-white">
-                H:{toPreferred(location.highTemp)}° L:{toPreferred(location.lowTemp)}°
+                H:{displayTemperature(location.highTemp)} L:{displayTemperature(location.lowTemp)}
               </Text>
             </View>
           </View>

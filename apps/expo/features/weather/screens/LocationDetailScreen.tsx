@@ -29,7 +29,7 @@ export default function LocationDetailScreen() {
   ]);
   const { showActionSheetWithOptions } = useActionSheet();
   const { removeLocation } = useLocations();
-  const { displayTemperature, toPreferred } = useTemperatureUnit();
+  const { displayTemperature } = useTemperatureUnit();
 
   const locationId = parseInt(String(id), 10);
   // Get the locations array safely
@@ -238,7 +238,8 @@ export default function LocationDetailScreen() {
                   </Text>
                   <Text className="text-xl text-white">{location.condition}</Text>
                   <Text className="mt-1 text-white/80">
-                    H:{toPreferred(location.highTemp)}° L:{toPreferred(location.lowTemp)}°
+                    H:{displayTemperature(location.highTemp)} L:
+                    {displayTemperature(location.lowTemp)}
                   </Text>
 
                   {!location.isActive && (

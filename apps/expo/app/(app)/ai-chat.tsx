@@ -29,6 +29,7 @@ import {
   releaseLocalModel,
 } from 'expo-app/features/ai/lib/localModelManager';
 import { createLocalTools } from 'expo-app/features/ai/lib/tools';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
@@ -164,6 +165,7 @@ export default function AIChat() {
 
   const { unit: weightUnit } = useWeightUnit();
   const { unit: temperatureUnit } = useTemperatureUnit();
+  const { unit: speedUnit } = useSpeedUnit();
 
   // Keep a ref for context body values so the transport closure stays fresh
   const contextRef = React.useRef(context);
@@ -174,6 +176,8 @@ export default function AIChat() {
   weightUnitRef.current = weightUnit;
   const temperatureUnitRef = React.useRef(temperatureUnit);
   temperatureUnitRef.current = temperatureUnit;
+  const speedUnitRef = React.useRef(speedUnit);
+  speedUnitRef.current = speedUnit;
 
   // Build the right transport based on current AI mode.
   // Recreated when aiMode or modelStatus changes (modelStatus drives local readiness).
@@ -199,7 +203,8 @@ export default function AIChat() {
       - User id is ${userId}
       - Current date is ${new Date().toLocaleString()}
       - User's preferred weight unit is ${weightUnitRef.current} (always display weights in this unit)
-      - User's preferred temperature unit is °${temperatureUnitRef.current} (always display temperatures in this unit)`;
+      - User's preferred temperature unit is °${temperatureUnitRef.current} (always display temperatures in this unit)
+      - User's preferred wind/distance unit is ${speedUnitRef.current === 'mph' ? 'mph / miles' : 'km/h / km'} (always display wind speed and distances in this unit)`;
 
         if (contextRef.current.contextType === 'pack' && contextRef.current.packId) {
           systemPrompt += `\n- You are currently helping with a pack with ID: ${contextRef.current.packId}.`;
@@ -254,6 +259,7 @@ export default function AIChat() {
           date: new Date().toLocaleString(),
           weightUnit: weightUnitRef.current,
           temperatureUnit: temperatureUnitRef.current,
+          speedUnit: speedUnitRef.current,
         }),
       }),
       transportKey: 'remote',

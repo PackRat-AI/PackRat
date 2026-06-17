@@ -34,6 +34,9 @@ export type WeightUnit = (typeof WEIGHT_UNITS)[number];
 export const TEMPERATURE_UNITS = Object.freeze(['C', 'F'] as const);
 export type TemperatureUnit = (typeof TEMPERATURE_UNITS)[number];
 
+export const SPEED_UNITS = Object.freeze(['kmh', 'mph'] as const);
+export type SpeedUnit = (typeof SPEED_UNITS)[number];
+
 export const AVAILABILITY_VALUES = Object.freeze(['in_stock', 'out_of_stock', 'preorder'] as const);
 
 export type Availability = (typeof AVAILABILITY_VALUES)[number];

@@ -1,4 +1,4 @@
-import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, SegmentedControl, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
@@ -17,11 +17,13 @@ import {
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useSpeedUnit } from 'expo-app/features/auth/hooks/useSpeedUnit';
 import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { testIds } from 'expo-app/lib/testIds';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -41,6 +43,7 @@ export default function SettingsScreen() {
   const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
   const { unit: weightUnit, setWeightUnit } = useWeightUnit();
   const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
+  const { unit: speedUnit, setSpeedUnit } = useSpeedUnit();
 
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
@@ -113,32 +116,16 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Weight</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  Shown on pack totals and items
+                  Shown on all weight displays
                 </Text>
               </View>
-              <View className="flex-row overflow-hidden rounded-lg border border-border">
-                <TouchableOpacity
-                  className={`px-4 py-2 ${weightUnit === 'kg' ? 'bg-primary' : 'bg-card'}`}
-                  onPress={() => setWeightUnit('kg')}
-                >
-                  <Text
-                    variant="footnote"
-                    className={`font-medium ${weightUnit === 'kg' ? 'text-primary-foreground' : 'text-foreground'}`}
-                  >
-                    kg
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 ${weightUnit === 'lb' ? 'bg-primary' : 'bg-card'}`}
-                  onPress={() => setWeightUnit('lb')}
-                >
-                  <Text
-                    variant="footnote"
-                    className={`font-medium ${weightUnit === 'lb' ? 'text-primary-foreground' : 'text-foreground'}`}
-                  >
-                    lb
-                  </Text>
-                </TouchableOpacity>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.weightUnitControl}
+                  values={['kg', 'lb']}
+                  selectedIndex={weightUnit === 'kg' ? 0 : 1}
+                  onIndexChange={(index) => setWeightUnit(index === 0 ? 'kg' : 'lb')}
+                />
               </View>
             </View>
             <View className="h-px bg-border mx-4" />
@@ -146,32 +133,33 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Temperature</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  Shown in weather forecasts
+                  Shown on all temperature displays
                 </Text>
               </View>
-              <View className="flex-row overflow-hidden rounded-lg border border-border">
-                <TouchableOpacity
-                  className={`px-4 py-2 ${temperatureUnit === 'C' ? 'bg-primary' : 'bg-card'}`}
-                  onPress={() => setTemperatureUnit('C')}
-                >
-                  <Text
-                    variant="footnote"
-                    className={`font-medium ${temperatureUnit === 'C' ? 'text-primary-foreground' : 'text-foreground'}`}
-                  >
-                    °C
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={`px-4 py-2 ${temperatureUnit === 'F' ? 'bg-primary' : 'bg-card'}`}
-                  onPress={() => setTemperatureUnit('F')}
-                >
-                  <Text
-                    variant="footnote"
-                    className={`font-medium ${temperatureUnit === 'F' ? 'text-primary-foreground' : 'text-foreground'}`}
-                  >
-                    °F
-                  </Text>
-                </TouchableOpacity>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.temperatureUnitControl}
+                  values={['°C', '°F']}
+                  selectedIndex={temperatureUnit === 'C' ? 0 : 1}
+                  onIndexChange={(index) => setTemperatureUnit(index === 0 ? 'C' : 'F')}
+                />
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Wind & Distance</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  Shown on all speed and distance displays
+                </Text>
+              </View>
+              <View className="w-28">
+                <SegmentedControl
+                  testID={testIds.settings.speedUnitControl}
+                  values={['km/h', 'mph']}
+                  selectedIndex={speedUnit === 'kmh' ? 0 : 1}
+                  onIndexChange={(index) => setSpeedUnit(index === 0 ? 'kmh' : 'mph')}
+                />
               </View>
             </View>
           </View>

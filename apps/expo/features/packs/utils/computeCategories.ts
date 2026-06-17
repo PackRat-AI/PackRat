@@ -10,10 +10,7 @@ export type CategorySummary = {
   percentage: number;
 };
 
-export function computeCategorySummaries(
-  pack: Pack,
-  preferredUnit: WeightUnit = 'g',
-): CategorySummary[] {
+export function computeCategorySummaries(pack: Pack, preferredUnit: WeightUnit): CategorySummary[] {
   const categoryMap: Record<string, { weightInGrams: number; items: number }> = {};
 
   let totalWeightGrams = 0;
