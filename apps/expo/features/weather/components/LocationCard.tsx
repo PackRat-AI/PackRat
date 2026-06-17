@@ -1,5 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/nativewindui';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -19,6 +20,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   const { showActionSheetWithOptions } = useActionSheet();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { displayTemperature, toPreferred } = useTemperatureUnit();
 
   const handleLongPress = () => {
     const options = location.isActive
@@ -41,7 +43,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
         cancelButtonIndex,
         destructiveButtonIndex,
         title: location.name,
-        message: `${location.temperature}° - ${location.condition}`,
+        message: `${displayTemperature(location.temperature)} - ${location.condition}`,
         containerStyle: {
           backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
           paddingBottom: insets.bottom,
@@ -107,9 +109,11 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
               )}
             </View>
             <View className="items-end">
-              <Text className="text-4xl text-white">{location.temperature}°</Text>
+              <Text className="text-4xl text-white">
+                {displayTemperature(location.temperature)}
+              </Text>
               <Text className="mt-1 text-xs text-white">
-                H:{location.highTemp}° L:{location.lowTemp}°
+                H:{toPreferred(location.highTemp)}° L:{toPreferred(location.lowTemp)}°
               </Text>
             </View>
           </View>

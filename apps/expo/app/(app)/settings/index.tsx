@@ -17,6 +17,8 @@ import {
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -37,6 +39,8 @@ export default function SettingsScreen() {
 
   const router = useRouter();
   const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
+  const { unit: weightUnit, setWeightUnit } = useWeightUnit();
+  const { unit: temperatureUnit, setTemperatureUnit } = useTemperatureUnit();
 
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
@@ -99,6 +103,79 @@ export default function SettingsScreen() {
         <StatusBar
           style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
         />
+
+        <View>
+          <Text variant="subhead" className="mb-3">
+            Display Units
+          </Text>
+          <View className="rounded-xl border border-border bg-card">
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Weight</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  Shown on pack totals and items
+                </Text>
+              </View>
+              <View className="flex-row overflow-hidden rounded-lg border border-border">
+                <TouchableOpacity
+                  className={`px-4 py-2 ${weightUnit === 'kg' ? 'bg-primary' : 'bg-card'}`}
+                  onPress={() => setWeightUnit('kg')}
+                >
+                  <Text
+                    variant="footnote"
+                    className={`font-medium ${weightUnit === 'kg' ? 'text-primary-foreground' : 'text-foreground'}`}
+                  >
+                    kg
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 ${weightUnit === 'lb' ? 'bg-primary' : 'bg-card'}`}
+                  onPress={() => setWeightUnit('lb')}
+                >
+                  <Text
+                    variant="footnote"
+                    className={`font-medium ${weightUnit === 'lb' ? 'text-primary-foreground' : 'text-foreground'}`}
+                  >
+                    lb
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View className="h-px bg-border mx-4" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-1">
+                <Text className="font-medium">Temperature</Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  Shown in weather forecasts
+                </Text>
+              </View>
+              <View className="flex-row overflow-hidden rounded-lg border border-border">
+                <TouchableOpacity
+                  className={`px-4 py-2 ${temperatureUnit === 'C' ? 'bg-primary' : 'bg-card'}`}
+                  onPress={() => setTemperatureUnit('C')}
+                >
+                  <Text
+                    variant="footnote"
+                    className={`font-medium ${temperatureUnit === 'C' ? 'text-primary-foreground' : 'text-foreground'}`}
+                  >
+                    °C
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`px-4 py-2 ${temperatureUnit === 'F' ? 'bg-primary' : 'bg-card'}`}
+                  onPress={() => setTemperatureUnit('F')}
+                >
+                  <Text
+                    variant="footnote"
+                    className={`font-medium ${temperatureUnit === 'F' ? 'text-primary-foreground' : 'text-foreground'}`}
+                  >
+                    °F
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
 
         <View>
           <Text variant="subhead" className="mb-3">

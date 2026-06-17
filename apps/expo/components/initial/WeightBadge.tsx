@@ -1,7 +1,7 @@
 import type { WeightUnit } from '@packrat/constants';
 import { isString } from '@packrat/guards';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { cn } from 'expo-app/lib/cn';
-import { formatWeight } from 'expo-app/utils/weight';
 import { Text, View } from 'react-native';
 
 type WeightBadgeProps = {
@@ -19,6 +19,8 @@ export function WeightBadge({
   containerClassName,
   textClassName,
 }: WeightBadgeProps) {
+  const { convertWeight, unit: displayUnit } = useWeightUnit();
+
   const getColorClass = () => {
     switch (type) {
       case 'base':
@@ -31,13 +33,14 @@ export function WeightBadge({
   };
 
   const safeWeight = Number(weight) || 0;
-  const safeUnit = isString(unit) ? unit : 'g';
-  const formattedWeight = formatWeight({ weight: safeWeight, unit: safeUnit });
+  const safeUnit: WeightUnit = isString(unit) ? (unit as WeightUnit) : 'g';
+  const converted = convertWeight(safeWeight, safeUnit);
 
   return (
     <View className={cn('rounded-full px-2 py-1', getColorClass()[0], containerClassName)}>
       <Text className={cn('text-center text-xs font-medium', getColorClass()[1], textClassName)}>
-        {formattedWeight}
+        {converted}
+        {displayUnit}
       </Text>
     </View>
   );

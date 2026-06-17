@@ -31,6 +31,9 @@ export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 export const WEIGHT_UNITS = Object.freeze(['g', 'oz', 'kg', 'lb'] as const);
 export type WeightUnit = (typeof WEIGHT_UNITS)[number];
 
+export const TEMPERATURE_UNITS = Object.freeze(['C', 'F'] as const);
+export type TemperatureUnit = (typeof TEMPERATURE_UNITS)[number];
+
 export const AVAILABILITY_VALUES = Object.freeze(['in_stock', 'out_of_stock', 'preorder'] as const);
 
 export type Availability = (typeof AVAILABILITY_VALUES)[number];

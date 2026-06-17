@@ -1,14 +1,6 @@
 import type { Pack, PackItem } from 'expo-app/features/packs/types';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { computeCategorySummaries } from '../computeCategories';
-
-vi.mock('expo-app/features/auth/store', () => ({
-  userStore: {
-    preferredWeightUnit: {
-      peek: vi.fn().mockReturnValue('g'),
-    },
-  },
-}));
 
 function makeItem(
   overrides: Partial<PackItem> & Pick<PackItem, 'weight' | 'weightUnit'>,

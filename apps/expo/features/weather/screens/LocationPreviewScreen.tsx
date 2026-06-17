@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import {
   formatWeatherData,
   getWeatherBackgroundColors,
@@ -29,6 +30,7 @@ export default function LocationPreviewScreen() {
   const { t } = useTranslation();
   // const { colors, colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { displayTemperature, toPreferred } = useTemperatureUnit();
   const { addLocation } = useLocations();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -184,11 +186,11 @@ export default function LocationPreviewScreen() {
                   </View>
                   <Text className="text-lg text-white/80">{weatherData.time}</Text>
                   <Text className="mt-6 text-8xl font-light text-white">
-                    {weatherData.temperature}°
+                    {displayTemperature(weatherData.temperature)}
                   </Text>
                   <Text className="text-xl text-white">{weatherData.condition}</Text>
                   <Text className="mt-1 text-white/80">
-                    H:{weatherData.highTemp}° L:{weatherData.lowTemp}°
+                    H:{toPreferred(weatherData.highTemp)}° L:{toPreferred(weatherData.lowTemp)}°
                   </Text>
 
                   {/* Refresh button */}
@@ -220,7 +222,7 @@ export default function LocationPreviewScreen() {
                             size={24}
                             className="my-2"
                           />
-                          <Text className="text-white">{hour.temp}°</Text>
+                          <Text className="text-white">{displayTemperature(hour.temp)}</Text>
                         </View>
                       ))
                     ) : (
@@ -283,7 +285,9 @@ export default function LocationPreviewScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">{t('weather.feelsLike')}</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.feelsLike || weatherData.temperature}°
+                        {displayTemperature(
+                          weatherData.details?.feelsLike ?? weatherData.temperature,
+                        )}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
