@@ -131,12 +131,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
-        <Stack.Screen
-          name="weather/preview"
-          options={{
-            headerShown: false,
-          }}
-        />
+        <Stack.Screen name="weather/preview" />
         <Stack.Screen
           name="weather/[id]"
           options={{

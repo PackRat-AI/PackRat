@@ -1,6 +1,7 @@
 import type { WeatherAPIForecastResponse } from '@packrat/schemas/weather';
 import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import {
   getWeatherBackgroundColors,
@@ -93,6 +94,7 @@ export default function TripWeatherDetailsScreen() {
 
   const location = weather.location;
   const current = weather.current;
+  const { displayTemperature } = useTemperatureUnit();
 
   // Use the trip's location name if provided, otherwise fall back to weather API location
   const displayLocationName = tripLocationName || location.name;
@@ -130,13 +132,13 @@ export default function TripWeatherDetailsScreen() {
           <View className="items-center">
             <Text className="text-3xl text-white font-semibold">{displayLocationName}</Text>
 
-            <Text className="text-7xl text-white mt-6">{current.temp_c}°</Text>
+            <Text className="text-7xl text-white mt-6">{displayTemperature(current.temp_c)}</Text>
 
             <Text className="text-xl text-white">{current.condition.text}</Text>
 
             <Text className="text-white/80 mt-2">
-              H:{weather.forecast.forecastday[0]?.day.maxtemp_c}° L:
-              {weather.forecast.forecastday[0]?.day.mintemp_c}°
+              H:{displayTemperature(weather.forecast.forecastday[0]?.day.maxtemp_c ?? 0)} L:
+              {displayTemperature(weather.forecast.forecastday[0]?.day.mintemp_c ?? 0)}
             </Text>
           </View>
           <WeatherForecast
@@ -149,7 +151,7 @@ export default function TripWeatherDetailsScreen() {
               uvIndex: current.uv,
               windSpeed: Math.round(current.wind_kph),
             }}
-            temperature={Math.round(current.temp_c)}
+            temperature={current.temp_c}
           />
         </ScrollView>
       </LinearGradient>

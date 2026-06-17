@@ -1,6 +1,6 @@
 import { assertDefined } from '@packrat/guards';
+import type { WeightUnit } from '@packrat/units';
 import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
-import { userStore } from 'expo-app/features/auth/store';
 import type { Pack } from '../types';
 
 export type CategorySummary = {
@@ -10,11 +10,13 @@ export type CategorySummary = {
   percentage: number;
 };
 
-export function computeCategorySummaries(pack: Pack): CategorySummary[] {
-  const preferredUnit = parseWeightUnit({
-    value: userStore.preferredWeightUnit.peek(),
-    fallback: 'g',
-  });
+export function computeCategorySummaries({
+  pack,
+  preferredUnit,
+}: {
+  pack: Pack;
+  preferredUnit: WeightUnit;
+}): CategorySummary[] {
   const categoryMap: Record<string, { weightInGrams: number; items: number }> = {};
 
   let totalWeightGrams = 0;
