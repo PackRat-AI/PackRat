@@ -1,7 +1,8 @@
 import { use$ } from '@legendapp/state/react';
+import { displayWeight, normalize, parseWeightUnit } from '@packrat/units';
 import { preferencesStore } from 'expo-app/features/auth/store/preferences';
 import { getDefaultWeightUnit } from 'expo-app/lib/unitDefaults';
-import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
+import { computeCategorySummaries } from '../utils';
 import { usePackDetailsFromStore } from './usePackDetailsFromStore';
 
 export function usePackWeightAnalysis(packId: string) {
@@ -9,36 +10,25 @@ export function usePackWeightAnalysis(packId: string) {
   const storedUnit = use$(preferencesStore.weightUnit);
   const preferredUnit = storedUnit ?? getDefaultWeightUnit();
 
-  const consumableWeightInGrams = pack.items
-    .filter((item) => item.consumable)
-    .reduce((sum, item) => {
-      const unit = item.weightUnit || 'g';
-      const weight = item.weight || 0;
-      return sum + convertToGrams({ weight: weight * item.quantity, unit: unit });
-    }, 0);
+  const toGrams = (item: { weight: number; weightUnit?: string | null; quantity: number }) =>
+    normalize({
+      weight: (item.weight || 0) * item.quantity,
+      unit: parseWeightUnit({ value: item.weightUnit }),
+    });
 
-  const wornWeightInGrams = pack.items
-    .filter((item) => item.worn)
-    .reduce((sum, item) => {
-      const unit = item.weightUnit || 'g';
-      const weight = item.weight || 0;
-      return sum + convertToGrams({ weight: weight * item.quantity, unit: unit });
-    }, 0);
+  const consumableGrams = pack.items
+    .filter((i) => i.consumable)
+    .reduce((s, i) => s + toGrams(i), 0);
+  const wornGrams = pack.items.filter((i) => i.worn).reduce((s, i) => s + toGrams(i), 0);
 
   const categorySummaries = computeCategorySummaries(pack, preferredUnit);
 
   return {
     data: {
-      baseWeight: convertFromGrams({
-        grams: convertToGrams({ weight: pack.baseWeight, unit: 'g' }),
-        unit: preferredUnit,
-      }),
-      consumableWeight: convertFromGrams({ grams: consumableWeightInGrams, unit: preferredUnit }),
-      wornWeight: convertFromGrams({ grams: wornWeightInGrams, unit: preferredUnit }),
-      totalWeight: convertFromGrams({
-        grams: convertToGrams({ weight: pack.totalWeight, unit: 'g' }),
-        unit: preferredUnit,
-      }),
+      baseWeight: displayWeight({ grams: pack.baseWeight, unit: preferredUnit }),
+      consumableWeight: displayWeight({ grams: consumableGrams, unit: preferredUnit }),
+      wornWeight: displayWeight({ grams: wornGrams, unit: preferredUnit }),
+      totalWeight: displayWeight({ grams: pack.totalWeight, unit: preferredUnit }),
       categories: categorySummaries,
     },
     items: pack.items,

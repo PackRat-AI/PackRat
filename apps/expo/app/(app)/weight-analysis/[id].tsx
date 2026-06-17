@@ -2,6 +2,7 @@
 
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -43,6 +44,7 @@ export default function WeightAnalysisScreen() {
   const { t } = useTranslation();
 
   const { data, items, preferredUnit } = usePackWeightAnalysis(packId as string);
+  const { convertWeight } = useWeightUnit();
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
@@ -120,7 +122,7 @@ export default function WeightAnalysisScreen() {
                       )}
                     </View>
                     <Text variant="subhead" className="text-muted-foreground">
-                      {item.weight} {item.weightUnit}
+                      {convertWeight(item.weight, item.weightUnit || 'g')} {preferredUnit}
                     </Text>
                   </View>
                 ))}

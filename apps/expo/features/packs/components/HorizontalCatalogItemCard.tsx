@@ -37,7 +37,7 @@ const formatPrice = ({ price, currency }: { price?: number | null; currency?: st
 
 const formatWeight = ({ weight, unit }: { weight?: number | null; unit?: string | null }) => {
   if (!weight) return '';
-  return `${weight}${unit || 'g'}`;
+  return `${parseFloat(weight.toFixed(2))}${unit || 'g'}`;
 };
 
 function ScalePress({
