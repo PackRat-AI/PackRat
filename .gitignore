@@ -51,6 +51,23 @@ apps/guides/public/og/
 .lighthouseci/
 
 # Git worktrees
-.worktrees/
 .worktrees
+.worktrees/
+
+# Xcode (apps/swift)
+apps/swift/xcconfig/*.local.xcconfig
+apps/swift/PackRat.xcodeproj/
+apps/swift/*.xcworkspace/xcuserdata/
+apps/swift/DerivedData/
+apps/swift/.build/
+apps/swift/.swiftpm/
+apps/swift/Package.resolved
+apps/swift/PackRatAPIClient/.build/
+apps/swift/PackRatAPIClient/.swiftpm/
+apps/swift/TestResults/
+
+apps/swift/build/
+
+# Quicktype reference output — generated for inspection, not compiled into the app.
+apps/swift/Generated/
 .turbo/

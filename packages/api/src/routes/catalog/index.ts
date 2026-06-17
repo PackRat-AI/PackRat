@@ -40,6 +40,16 @@ import { z } from 'zod';
 const FILE_EXT_RE = /\.[^.]*$/;
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
+  .model({
+    'catalog.CatalogCategoriesResponse': CatalogCategoriesResponseSchema,
+    'catalog.CatalogCompareRequest': CatalogCompareRequestSchema,
+    'catalog.CatalogETL': CatalogETLSchema,
+    'catalog.CatalogItem': CatalogItemSchema,
+    'catalog.CatalogItemsResponse': CatalogItemsResponseSchema,
+    'catalog.CreateCatalogItemRequest': CreateCatalogItemRequestSchema,
+    'catalog.UpdateCatalogItemRequest': UpdateCatalogItemRequestSchema,
+    'catalog.ErrorResponse': ErrorResponseSchema,
+  })
   .use(authPlugin)
   .use(apiKeyAuthPlugin)
 
@@ -80,7 +90,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       query: CatalogItemsQuerySchema,
-      response: { 200: CatalogItemsResponseSchema },
+      response: { 200: 'catalog.CatalogItemsResponse' },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -126,7 +136,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       query: z.object({
         limit: z.coerce.number().int().positive().optional(),
       }),
-      response: { 200: CatalogCategoriesResponseSchema },
+      response: { 200: 'catalog.CatalogCategoriesResponse' },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -198,7 +208,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       };
     },
     {
-      body: CatalogCompareRequestSchema,
+      body: 'catalog.CatalogCompareRequest',
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -387,7 +397,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       };
     },
     {
-      body: CatalogETLSchema,
+      body: 'catalog.CatalogETL',
       query: z.object({
         engine: z.enum(['workflow', 'queue']).optional(),
         chunkMiB: z.coerce.number().int().min(1).max(20).optional(),
@@ -476,8 +486,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       return CatalogItemSchema.parse(newItem);
     },
     {
-      body: CreateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
+      body: 'catalog.CreateCatalogItemRequest',
+      response: {
+        200: 'catalog.CatalogItem',
+        400: 'catalog.ErrorResponse',
+        500: 'catalog.ErrorResponse',
+      },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -522,7 +536,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       params: z.object({ id: z.string() }),
-      response: { 200: CatalogItemSchema },
+      response: { 200: 'catalog.CatalogItem' },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],
@@ -670,8 +684,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
     {
       params: z.object({ id: z.string() }),
-      body: UpdateCatalogItemRequestSchema,
-      response: { 200: CatalogItemSchema, 400: ErrorResponseSchema, 500: ErrorResponseSchema },
+      body: 'catalog.UpdateCatalogItemRequest',
+      response: {
+        200: 'catalog.CatalogItem',
+        400: 'catalog.ErrorResponse',
+        500: 'catalog.ErrorResponse',
+      },
       isAuthenticated: true,
       detail: {
         tags: ['Catalog'],

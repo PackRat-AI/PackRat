@@ -1,0 +1,21 @@
+{
+  "title": "Test - PackRat-iOS",
+  "environmentDescription": "PackRat-iOS · Built with Xcode 26.5 · iPhone 17 Pro - iOS 26.5",
+  "topInsights": [],
+  "result": "Passed",
+  "totalTestCount": 12,
+  "passedTests": 12,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "expectedFailures": 0,
+  "statistics": [],
+  "devicesAndConfigurations": {
+    "device": { "deviceName": "iPhone 17 Pro" },
+    "expectedFailures": 0,
+    "failedTests": 0,
+    "passedTests": 12,
+    "skippedTests": 0,
+    "testPlanConfiguration": { "configurationName": "Test Scheme Action" }
+  },
+  "testFailures": []
+}

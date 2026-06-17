@@ -18,6 +18,9 @@ import { ZodError } from 'zod';
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
 export const weatherRoutes = new Elysia({ prefix: '/weather' })
+  .model({
+    'weather.ForecastResponse': WeatherAPIForecastResponseSchema,
+  })
   .use(authPlugin)
   .get(
     '/search',

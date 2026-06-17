@@ -72,6 +72,7 @@
     "**/coverage",
     "packages/api/container_src",
     "packages/mcp",
+    "apps/swift/scripts",
     "packages/osm-db",
     "packages/osm-import",
     "packages/overpass"

@@ -32,7 +32,14 @@ function getTrustedOrigins(env: ValidatedEnv): string[] {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  return [env.BETTER_AUTH_URL, ...(configured ?? []), 'packrat://'];
+  return [
+    env.BETTER_AUTH_URL,
+    ...(configured ?? []),
+    'packrat://',
+    ...(env.BETTER_AUTH_URL.startsWith('http://localhost')
+      ? ['http://localhost:8787', 'http://localhost:8791']
+      : []),
+  ];
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Better Auth instance type is plugin-specific and can't be expressed at declaration time without duplicating the full config signature
