@@ -1732,6 +1732,774 @@
         ],
         "additionalProperties": false
       },
+      "packs.AddPackItemBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "oz",
+              "kg",
+              "lb"
+            ],
+            "default": "g"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "category": {
+            "type": "string"
+          },
+          "consumable": {
+            "type": "boolean"
+          },
+          "worn": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "catalogItemId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "weight",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "packs.AnalyzeImageRequest": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "matchLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "additionalProperties": false
+      },
+      "packs.CreatePackBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "localCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "localCreatedAt",
+          "localUpdatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "packs.CreatePackWeightHistoryBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "localCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "weight",
+          "localCreatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "packs.ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "packs.GapAnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string"
+          },
+          "tripType": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "packs.PackItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "weight": {
+            "type": "number"
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "oz",
+              "kg",
+              "lb"
+            ]
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "consumable": {
+            "type": "boolean"
+          },
+          "worn": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "packId": {
+            "type": "string"
+          },
+          "catalogItemId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "isAIGenerated": {
+            "type": "boolean"
+          },
+          "templateItemId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "weight",
+          "weightUnit",
+          "quantity",
+          "category",
+          "consumable",
+          "worn",
+          "image",
+          "notes",
+          "packId",
+          "catalogItemId",
+          "userId",
+          "deleted",
+          "isAIGenerated",
+          "templateItemId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "packs.PackWithWeights": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "hiking",
+              "backpacking",
+              "camping",
+              "climbing",
+              "winter",
+              "desert",
+              "custom",
+              "water sports",
+              "skiing"
+            ],
+            "nullable": true
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "templateId": {
+            "type": "string",
+            "nullable": true
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "isAIGenerated": {
+            "type": "boolean"
+          },
+          "localCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "weight": {
+                  "type": "number"
+                },
+                "weightUnit": {
+                  "type": "string",
+                  "enum": [
+                    "g",
+                    "oz",
+                    "kg",
+                    "lb"
+                  ]
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "category": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "consumable": {
+                  "type": "boolean"
+                },
+                "worn": {
+                  "type": "boolean"
+                },
+                "image": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "notes": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "packId": {
+                  "type": "string"
+                },
+                "catalogItemId": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "userId": {
+                  "type": "string"
+                },
+                "deleted": {
+                  "type": "boolean"
+                },
+                "isAIGenerated": {
+                  "type": "boolean"
+                },
+                "templateItemId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "description",
+                "weight",
+                "weightUnit",
+                "quantity",
+                "category",
+                "consumable",
+                "worn",
+                "image",
+                "notes",
+                "packId",
+                "catalogItemId",
+                "userId",
+                "deleted",
+                "isAIGenerated",
+                "templateItemId",
+                "createdAt",
+                "updatedAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "totalWeight": {
+            "type": "number"
+          },
+          "baseWeight": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "description",
+          "isPublic",
+          "image",
+          "tags",
+          "deleted",
+          "isAIGenerated",
+          "createdAt",
+          "updatedAt",
+          "totalWeight",
+          "baseWeight"
+        ],
+        "additionalProperties": false
+      },
+      "packs.UpdatePackItemRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "oz",
+              "kg",
+              "lb"
+            ]
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "category": {
+            "type": "string"
+          },
+          "consumable": {
+            "type": "boolean"
+          },
+          "worn": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "catalogItemId": {
+            "type": "integer",
+            "nullable": true
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "packs.UpdatePackRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "trips.CreateTripBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude"
+            ],
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "packId": {
+            "type": "string",
+            "nullable": true
+          },
+          "localCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "localCreatedAt",
+          "localUpdatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "trips.Trip": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude"
+            ],
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string"
+          },
+          "packId": {
+            "type": "string",
+            "nullable": true
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "localCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "deleted"
+        ],
+        "additionalProperties": false
+      },
+      "trips.UpdateTripBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude"
+            ],
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true
+          },
+          "packId": {
+            "type": "string",
+            "nullable": true
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "chat.ChatRequest": {},
       "chat.CreateReportRequest": {
         "type": "object",
@@ -2440,6 +3208,296 @@
           "location",
           "current",
           "forecast"
+        ],
+        "additionalProperties": false
+      },
+      "packTemplates.AIPackAnalysis": {
+        "type": "object",
+        "properties": {
+          "templateName": {
+            "type": "string"
+          },
+          "templateCategory": {
+            "type": "string",
+            "enum": [
+              "hiking",
+              "backpacking",
+              "camping",
+              "climbing",
+              "winter",
+              "desert",
+              "custom",
+              "water sports",
+              "skiing"
+            ]
+          },
+          "templateDescription": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "default": 1
+                },
+                "category": {
+                  "type": "string"
+                },
+                "weightGrams": {
+                  "type": "number",
+                  "minimum": 0,
+                  "default": 0
+                },
+                "consumable": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "worn": {
+                  "type": "boolean",
+                  "default": false
+                }
+              },
+              "required": [
+                "name",
+                "description",
+                "category"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "templateName",
+          "templateCategory",
+          "templateDescription",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "packTemplates.CreatePackTemplateItemRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "lb",
+              "oz"
+            ]
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "category": {
+            "type": "string"
+          },
+          "consumable": {
+            "type": "boolean"
+          },
+          "worn": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "weight",
+          "weightUnit"
+        ],
+        "additionalProperties": false
+      },
+      "packTemplates.CreatePackTemplateRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "image": {
+            "type": "string",
+            "format": "uri"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isAppTemplate": {
+            "type": "boolean"
+          },
+          "localCreatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "localCreatedAt",
+          "localUpdatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "packTemplates.GenerateFromOnlineContentRequest": {
+        "type": "object",
+        "properties": {
+          "contentUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "isAppTemplate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contentUrl"
+        ],
+        "additionalProperties": false
+      },
+      "packTemplates.UpdatePackTemplateItemRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "lb",
+              "oz"
+            ]
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "category": {
+            "type": "string"
+          },
+          "consumable": {
+            "type": "boolean"
+          },
+          "worn": {
+            "type": "boolean"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "packTemplates.UpdatePackTemplateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "isAppTemplate": {
+            "type": "boolean"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "localUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "description",
+          "image",
+          "tags"
         ],
         "additionalProperties": false
       },
@@ -8951,51 +10009,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "isPublic": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "tags": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "id": {
-                    "type": "string"
-                  },
-                  "localCreatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "localUpdatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "name",
-                  "id",
-                  "localCreatedAt",
-                  "localUpdatedAt"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packs.CreatePackBody"
               }
             }
           }
@@ -9006,201 +10020,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "userId": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "category": {
-                      "type": "string",
-                      "enum": [
-                        "hiking",
-                        "backpacking",
-                        "camping",
-                        "climbing",
-                        "winter",
-                        "desert",
-                        "custom",
-                        "water sports",
-                        "skiing"
-                      ],
-                      "nullable": true
-                    },
-                    "isPublic": {
-                      "type": "boolean"
-                    },
-                    "image": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "nullable": true
-                    },
-                    "templateId": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "deleted": {
-                      "type": "boolean"
-                    },
-                    "isAIGenerated": {
-                      "type": "boolean"
-                    },
-                    "localCreatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "localUpdatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "description": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "weight": {
-                            "type": "number"
-                          },
-                          "weightUnit": {
-                            "type": "string",
-                            "enum": [
-                              "g",
-                              "oz",
-                              "kg",
-                              "lb"
-                            ]
-                          },
-                          "quantity": {
-                            "type": "integer",
-                            "minimum": 1
-                          },
-                          "category": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "consumable": {
-                            "type": "boolean"
-                          },
-                          "worn": {
-                            "type": "boolean"
-                          },
-                          "image": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "notes": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "packId": {
-                            "type": "string"
-                          },
-                          "catalogItemId": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "userId": {
-                            "type": "string"
-                          },
-                          "deleted": {
-                            "type": "boolean"
-                          },
-                          "isAIGenerated": {
-                            "type": "boolean"
-                          },
-                          "templateItemId": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "name",
-                          "description",
-                          "weight",
-                          "weightUnit",
-                          "quantity",
-                          "category",
-                          "consumable",
-                          "worn",
-                          "image",
-                          "notes",
-                          "packId",
-                          "catalogItemId",
-                          "userId",
-                          "deleted",
-                          "isAIGenerated",
-                          "templateItemId",
-                          "createdAt",
-                          "updatedAt"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "totalWeight": {
-                      "type": "number"
-                    },
-                    "baseWeight": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "userId",
-                    "name",
-                    "description",
-                    "isPublic",
-                    "image",
-                    "tags",
-                    "deleted",
-                    "isAIGenerated",
-                    "createdAt",
-                    "updatedAt",
-                    "totalWeight",
-                    "baseWeight"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/packs.PackWithWeights"
                 }
               }
             }
@@ -9210,19 +10030,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "code": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/packs.ErrorResponse"
                 }
               }
             }
@@ -9232,19 +10040,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "code": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/packs.ErrorResponse"
                 }
               }
             }
@@ -9335,21 +10131,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "image": {
-                    "type": "string"
-                  },
-                  "matchLimit": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 10
-                  }
-                },
-                "required": [
-                  "image"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packs.AnalyzeImageRequest"
               }
             }
           }
@@ -9394,201 +10176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "userId": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "category": {
-                      "type": "string",
-                      "enum": [
-                        "hiking",
-                        "backpacking",
-                        "camping",
-                        "climbing",
-                        "winter",
-                        "desert",
-                        "custom",
-                        "water sports",
-                        "skiing"
-                      ],
-                      "nullable": true
-                    },
-                    "isPublic": {
-                      "type": "boolean"
-                    },
-                    "image": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "tags": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "nullable": true
-                    },
-                    "templateId": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "deleted": {
-                      "type": "boolean"
-                    },
-                    "isAIGenerated": {
-                      "type": "boolean"
-                    },
-                    "localCreatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "localUpdatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "description": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "weight": {
-                            "type": "number"
-                          },
-                          "weightUnit": {
-                            "type": "string",
-                            "enum": [
-                              "g",
-                              "oz",
-                              "kg",
-                              "lb"
-                            ]
-                          },
-                          "quantity": {
-                            "type": "integer",
-                            "minimum": 1
-                          },
-                          "category": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "consumable": {
-                            "type": "boolean"
-                          },
-                          "worn": {
-                            "type": "boolean"
-                          },
-                          "image": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "notes": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "packId": {
-                            "type": "string"
-                          },
-                          "catalogItemId": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "userId": {
-                            "type": "string"
-                          },
-                          "deleted": {
-                            "type": "boolean"
-                          },
-                          "isAIGenerated": {
-                            "type": "boolean"
-                          },
-                          "templateItemId": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "updatedAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "name",
-                          "description",
-                          "weight",
-                          "weightUnit",
-                          "quantity",
-                          "category",
-                          "consumable",
-                          "worn",
-                          "image",
-                          "notes",
-                          "packId",
-                          "catalogItemId",
-                          "userId",
-                          "deleted",
-                          "isAIGenerated",
-                          "templateItemId",
-                          "createdAt",
-                          "updatedAt"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "totalWeight": {
-                      "type": "number"
-                    },
-                    "baseWeight": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "userId",
-                    "name",
-                    "description",
-                    "isPublic",
-                    "image",
-                    "tags",
-                    "deleted",
-                    "isAIGenerated",
-                    "createdAt",
-                    "updatedAt",
-                    "totalWeight",
-                    "baseWeight"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/packs.PackWithWeights"
                 }
               }
             }
@@ -9821,25 +10409,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "weight": {
-                    "type": "number"
-                  },
-                  "localCreatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "id",
-                  "weight",
-                  "localCreatedAt"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packs.CreatePackWeightHistoryBody"
               }
             }
           }
@@ -9979,65 +10549,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "weight": {
-                    "type": "number"
-                  },
-                  "weightUnit": {
-                    "type": "string",
-                    "enum": [
-                      "g",
-                      "oz",
-                      "kg",
-                      "lb"
-                    ],
-                    "default": "g"
-                  },
-                  "quantity": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "default": 1
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "consumable": {
-                    "type": "boolean"
-                  },
-                  "worn": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "notes": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "catalogItemId": {
-                    "type": "integer",
-                    "nullable": true
-                  },
-                  "id": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "name",
-                  "weight",
-                  "id"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packs.AddPackItemBody"
               }
             }
           }
@@ -10113,58 +10625,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "weight": {
-                    "type": "number"
-                  },
-                  "weightUnit": {
-                    "type": "string",
-                    "enum": [
-                      "g",
-                      "oz",
-                      "kg",
-                      "lb"
-                    ]
-                  },
-                  "quantity": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "consumable": {
-                    "type": "boolean"
-                  },
-                  "worn": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "notes": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "catalogItemId": {
-                    "type": "integer",
-                    "nullable": true
-                  },
-                  "deleted": {
-                    "type": "boolean"
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packs.UpdatePackItemRequest"
               }
             }
           }
@@ -10175,103 +10636,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "weight": {
-                      "type": "number"
-                    },
-                    "weightUnit": {
-                      "type": "string",
-                      "enum": [
-                        "g",
-                        "oz",
-                        "kg",
-                        "lb"
-                      ]
-                    },
-                    "quantity": {
-                      "type": "integer",
-                      "minimum": 1
-                    },
-                    "category": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "consumable": {
-                      "type": "boolean"
-                    },
-                    "worn": {
-                      "type": "boolean"
-                    },
-                    "image": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "packId": {
-                      "type": "string"
-                    },
-                    "catalogItemId": {
-                      "type": "integer",
-                      "nullable": true
-                    },
-                    "userId": {
-                      "type": "string"
-                    },
-                    "deleted": {
-                      "type": "boolean"
-                    },
-                    "isAIGenerated": {
-                      "type": "boolean"
-                    },
-                    "templateItemId": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "description",
-                    "weight",
-                    "weightUnit",
-                    "quantity",
-                    "category",
-                    "consumable",
-                    "worn",
-                    "image",
-                    "notes",
-                    "packId",
-                    "catalogItemId",
-                    "userId",
-                    "deleted",
-                    "isAIGenerated",
-                    "templateItemId",
-                    "createdAt",
-                    "updatedAt"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/packs.PackItem"
                 }
               }
             }
@@ -10281,19 +10646,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "code": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/packs.ErrorResponse"
                 }
               }
             }
@@ -10511,72 +10864,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "notes": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "location": {
-                    "type": "object",
-                    "properties": {
-                      "latitude": {
-                        "type": "number"
-                      },
-                      "longitude": {
-                        "type": "number"
-                      },
-                      "name": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "latitude",
-                      "longitude"
-                    ],
-                    "additionalProperties": false,
-                    "nullable": true
-                  },
-                  "startDate": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "endDate": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "packId": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "localCreatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "localUpdatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "id",
-                  "name",
-                  "localCreatedAt",
-                  "localUpdatedAt"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/trips.CreateTripBody"
               }
             }
           }
@@ -10587,83 +10875,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "location": {
-                      "type": "object",
-                      "properties": {
-                        "latitude": {
-                          "type": "number"
-                        },
-                        "longitude": {
-                          "type": "number"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "latitude",
-                        "longitude"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "startDate": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "endDate": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "userId": {
-                      "type": "string"
-                    },
-                    "packId": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "deleted": {
-                      "type": "boolean"
-                    },
-                    "localCreatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "localUpdatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "deleted"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/trips.Trip"
                 }
               }
             }
@@ -10699,83 +10911,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "location": {
-                      "type": "object",
-                      "properties": {
-                        "latitude": {
-                          "type": "number"
-                        },
-                        "longitude": {
-                          "type": "number"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "latitude",
-                        "longitude"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "startDate": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "endDate": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "userId": {
-                      "type": "string"
-                    },
-                    "packId": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "deleted": {
-                      "type": "boolean"
-                    },
-                    "localCreatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "localUpdatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "deleted"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/trips.Trip"
                 }
               }
             }
@@ -10808,59 +10944,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "notes": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "location": {
-                    "type": "object",
-                    "properties": {
-                      "latitude": {
-                        "type": "number"
-                      },
-                      "longitude": {
-                        "type": "number"
-                      },
-                      "name": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "latitude",
-                      "longitude"
-                    ],
-                    "additionalProperties": false,
-                    "nullable": true
-                  },
-                  "startDate": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "endDate": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "packId": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "localUpdatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/trips.UpdateTripBody"
               }
             }
           }
@@ -10871,83 +10955,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "notes": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "location": {
-                      "type": "object",
-                      "properties": {
-                        "latitude": {
-                          "type": "number"
-                        },
-                        "longitude": {
-                          "type": "number"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "latitude",
-                        "longitude"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "startDate": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "endDate": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "userId": {
-                      "type": "string"
-                    },
-                    "packId": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "deleted": {
-                      "type": "boolean"
-                    },
-                    "localCreatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "localUpdatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "deleted"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/trips.Trip"
                 }
               }
             }
@@ -11462,53 +11470,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "category": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "image": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "tags": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "isAppTemplate": {
-                    "type": "boolean"
-                  },
-                  "localCreatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "localUpdatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "id",
-                  "name",
-                  "category",
-                  "localCreatedAt",
-                  "localUpdatedAt"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packTemplates.CreatePackTemplateRequest"
               }
             }
           }
@@ -11542,20 +11504,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "contentUrl": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "isAppTemplate": {
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "contentUrl"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packTemplates.GenerateFromOnlineContentRequest"
               }
             }
           }
@@ -11599,54 +11548,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "weight": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "weightUnit": {
-                    "type": "string",
-                    "enum": [
-                      "g",
-                      "kg",
-                      "lb",
-                      "oz"
-                    ]
-                  },
-                  "quantity": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "consumable": {
-                    "type": "boolean"
-                  },
-                  "worn": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "notes": {
-                    "type": "string"
-                  },
-                  "deleted": {
-                    "type": "boolean"
-                  }
-                },
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packTemplates.UpdatePackTemplateItemRequest"
               }
             }
           }
@@ -11754,50 +11656,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "category": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "image": {
-                    "type": "string",
-                    "format": "uri",
-                    "nullable": true
-                  },
-                  "tags": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "nullable": true
-                  },
-                  "isAppTemplate": {
-                    "type": "boolean"
-                  },
-                  "deleted": {
-                    "type": "boolean"
-                  },
-                  "localUpdatedAt": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "description",
-                  "image",
-                  "tags"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packTemplates.UpdatePackTemplateRequest"
               }
             }
           }
@@ -11905,60 +11764,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 255
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "weight": {
-                    "type": "number",
-                    "minimum": 0
-                  },
-                  "weightUnit": {
-                    "type": "string",
-                    "enum": [
-                      "g",
-                      "kg",
-                      "lb",
-                      "oz"
-                    ]
-                  },
-                  "quantity": {
-                    "type": "integer",
-                    "minimum": 1
-                  },
-                  "category": {
-                    "type": "string"
-                  },
-                  "consumable": {
-                    "type": "boolean"
-                  },
-                  "worn": {
-                    "type": "boolean"
-                  },
-                  "image": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "notes": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "id",
-                  "name",
-                  "weight",
-                  "weightUnit"
-                ],
-                "additionalProperties": false
+                "$ref": "#/components/schemas/packTemplates.CreatePackTemplateItemRequest"
               }
             }
           }
