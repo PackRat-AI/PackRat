@@ -1,27 +1,106 @@
+diff --git a/node_modules/@packrat-ai/nativewindui/.bun-tag-85507b58e8a01901 b/.bun-tag-85507b58e8a01901
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/package.json b/package.json
+index d8cbd357556aa4e99da8aeb1e80290cb8edad082..a88f91e07aeab9facef841075b4aeb9f49beb879 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@packrat-ai/nativewindui",
+-  "version": "2.0.3",
++  "version": "2.0.3-2",
+   "entry": "src/index.ts",
+   "main": "src/index.ts",
+   "types": "src/index.ts",
+@@ -43,7 +43,7 @@
+     "expo-image": "~3.0.11",
+     "expo-linear-gradient": "~15.0.8",
+     "expo-navigation-bar": "~5.0.10",
+-    "expo-router": "~6.0.23",
++    "expo-router": ">=6.0.23",
+     "expo-symbols": "~1.0.8",
+     "nativewind": "^4.2.3",
+     "react": ">=19.0.0",
 diff --git a/src/components/AdaptiveSearchHeader/AdaptiveSearchHeader.tsx b/src/components/AdaptiveSearchHeader/AdaptiveSearchHeader.tsx
-index 86091777372a04b76c9e866d2951bcfde9f34e05..b4e2b4903d8a5356fe3f2eba46b2e3cb1c691ba7 100644
+index 86091777372a04b76c9e866d2951bcfde9f34e05..deac88175ef8d3b14a4d7ff6a476ab6b7d3a3e71 100644
 --- a/src/components/AdaptiveSearchHeader/AdaptiveSearchHeader.tsx
 +++ b/src/components/AdaptiveSearchHeader/AdaptiveSearchHeader.tsx
-@@ -1,3 +1,4 @@
-+// @ts-nocheck
- import { useAugmentedRef } from '@rn-primitives/hooks';
- import { Portal } from '@rn-primitives/portal';
- import { Stack, useNavigation } from 'expo-router';
+@@ -186,7 +186,12 @@ export function AdaptiveSearchHeader(props: AdaptiveSearchHeaderProps) {
+                       onFocus={props.searchBar?.onFocus}
+                       value={searchValue}
+                       onChangeText={onChangeText}
+-                      autoCapitalize={props.searchBar?.autoCapitalize}
++                      autoCapitalize={
++                        props.searchBar?.autoCapitalize === undefined ||
++                        props.searchBar?.autoCapitalize === 'systemDefault'
++                          ? 'none'
++                          : props.searchBar?.autoCapitalize
++                      }
+                       keyboardType={searchBarInputTypeToKeyboardType(props.searchBar?.inputType)}
+                       returnKeyType="search"
+                       blurOnSubmit={props.searchBar?.materialBlurOnSubmit}
 diff --git a/src/components/Icon/types.ts b/src/components/Icon/types.ts
-index 786b62c4a216c360beb193b96092186319a634cb..741aefba1ddf080c103cfca27b14b10c95cd5cdd 100644
+index 786b62c4a216c360beb193b96092186319a634cb..56b991f34884160c9b5c484415c94c5172b0f25c 100644
 --- a/src/components/Icon/types.ts
 +++ b/src/components/Icon/types.ts
-@@ -1,3 +1,4 @@
-+// @ts-nocheck
+@@ -1,16 +1,18 @@
  import type MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
  import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
- import type { SymbolViewProps } from 'expo-symbols';
+-import type { SymbolViewProps } from 'expo-symbols';
++import type { SymbolViewProps as ExpoSymbolViewProps } from 'expo-symbols';
+ import type { IconMapper } from 'rn-icon-mapper';
+ 
+ type MaterialCommunityIconsProps = React.ComponentProps<typeof MaterialCommunityIcons>;
+ type MaterialIconsProps = React.ComponentProps<typeof MaterialIcons>;
+ 
+-type Style = SymbolViewProps['style'] &
++type SymbolViewPropsWithStringName = Omit<ExpoSymbolViewProps, 'name'> & { name: string };
++
++type Style = SymbolViewPropsWithStringName['style'] &
+   MaterialIconsProps['style'] &
+   MaterialCommunityIconsProps['style'];
+ 
+-type IconProps = IconMapper<SymbolViewProps, MaterialIconsProps, MaterialCommunityIconsProps> & {
++type IconProps = IconMapper<SymbolViewPropsWithStringName, MaterialIconsProps, MaterialCommunityIconsProps> & {
+   style?: Style;
+   className?: string;
+ };
 diff --git a/src/components/LargeTitleHeader/LargeTitleHeader.tsx b/src/components/LargeTitleHeader/LargeTitleHeader.tsx
-index 95c66bbdece307542084c2e510c847543134f63e..d9bf7337f45a9b49f69863a16a24672363a3b8af 100644
+index 95c66bbdece307542084c2e510c847543134f63e..d6cf24dbaf209ea0086cfb05d9203c81585578a2 100644
 --- a/src/components/LargeTitleHeader/LargeTitleHeader.tsx
 +++ b/src/components/LargeTitleHeader/LargeTitleHeader.tsx
-@@ -1,3 +1,4 @@
-+// @ts-nocheck
- import { useRoute } from '@react-navigation/native';
- import { useAugmentedRef } from '@rn-primitives/hooks';
- import { Portal } from '@rn-primitives/portal';
+@@ -157,6 +157,7 @@ export function LargeTitleHeader(props: LargeTitleHeaderProps) {
+           <View className="flex-row justify-center gap-3 pr-2">
+             {!!props.searchBar && (
+               <Button
++                testID={props.searchBar.testID}
+                 onPress={() => {
+                   setShowSearchBar(true);
+                   props.searchBar?.onSearchButtonPress?.();
+@@ -211,7 +212,12 @@ export function LargeTitleHeader(props: LargeTitleHeaderProps) {
+                       onFocus={props.searchBar?.onFocus}
+                       value={searchValue}
+                       onChangeText={onChangeText}
+-                      autoCapitalize={props.searchBar.autoCapitalize}
++                      autoCapitalize={
++                        props.searchBar.autoCapitalize === undefined ||
++                        props.searchBar.autoCapitalize === 'systemDefault'
++                          ? 'none'
++                          : props.searchBar.autoCapitalize
++                      }
+                       keyboardType={searchBarInputTypeToKeyboardType(props.searchBar.inputType)}
+                       returnKeyType="search"
+                       blurOnSubmit={props.searchBar.materialBlurOnSubmit}
+diff --git a/src/components/LargeTitleHeader/types.ts b/src/components/LargeTitleHeader/types.ts
+index 573a8a80bc2718dc126167ed4738a8b66b698f26..df2dbec782c732b62d8017c3083d951047fccff7 100644
+--- a/src/components/LargeTitleHeader/types.ts
++++ b/src/components/LargeTitleHeader/types.ts
+@@ -88,6 +88,7 @@ type LargeTitleHeaderProps = {
+     onSearchButtonPress?: () => void;
+     placeholder?: string;
+     ref?: React.Ref<LargeTitleSearchBarMethods>;
++    testID?: string;
+     textColor?: string;
+     content?: React.ReactNode;
+   };

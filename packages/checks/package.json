@@ -1,6 +1,6 @@
 {
   "name": "@packrat/checks",
-  "version": "2.0.26",
+  "version": "2.0.28",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "check:casts:strict": "bun ./src/check-type-casts.ts --strict",
     "check:magic-strings": "bun ./src/check-magic-strings.ts",
     "check:route-schemas": "bun ./src/check-route-schemas.ts",
-    "check:route-schemas:strict": "bun ./src/check-route-schemas.ts --strict"
+    "check:route-schemas:strict": "bun ./src/check-route-schemas.ts --strict",
+    "check-types": "tsc --noEmit"
   }
 }

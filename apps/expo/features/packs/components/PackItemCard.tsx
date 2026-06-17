@@ -6,7 +6,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { testIds } from 'expo-app/lib/testIds';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Platform, Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useDeletePackItem,
@@ -94,10 +94,16 @@ export function PackItemCard({
             });
             break;
           case destructiveButtonIndex:
-            Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
-            ]);
+            if (Platform.OS === 'web') {
+              if (window.confirm('Are you sure you want to delete this item?')) {
+                deleteItem(item.id);
+              }
+            } else {
+              Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
+              ]);
+            }
             break;
         }
       },
@@ -121,7 +127,12 @@ export function PackItemCard({
         }`}
       >
         {/* Image */}
-        <PackItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
+        <PackItemImage
+          item={item}
+          className="h-16 w-16 rounded-md"
+          resizeMode="cover"
+          style={Platform.select({ web: { width: 64, height: 64 } })}
+        />
 
         {/* Content */}
         <View className="flex-1">

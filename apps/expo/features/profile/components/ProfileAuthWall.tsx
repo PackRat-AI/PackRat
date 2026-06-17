@@ -1,14 +1,16 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { Stack, usePathname, useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Link, Stack, usePathname, useRouter } from 'expo-router';
+import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function ProfileAuthWall() {
   const router = useRouter();
   const currentRoute = usePathname();
   const { t } = useTranslation();
+  const { colors } = useColorScheme();
 
   const SCREEN_OPTIONS = {
     title: t('profile.profile'),
@@ -18,6 +20,14 @@ export function ProfileAuthWall() {
   return (
     <SafeAreaView className="flex-1">
       <Stack.Screen options={SCREEN_OPTIONS} />
+
+      <View className="items-end px-4 pt-2">
+        <Link href="/settings" asChild>
+          <Pressable hitSlop={8}>
+            <Icon name="cog-outline" size={24} color={colors.foreground} />
+          </Pressable>
+        </Link>
+      </View>
 
       <View className="flex-1 px-6 py-8">
         <View className="mb-8 items-center">

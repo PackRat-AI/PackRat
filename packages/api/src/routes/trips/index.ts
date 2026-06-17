@@ -21,7 +21,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
 
       try {
-        const allTrips = await db.query.trips.findMany({
+        const allTrips = await db.tag('trips.list').query.trips.findMany({
           where: and(eq(trips.userId, user.userId), eq(trips.deleted, false)),
           orderBy: (t) => t.createdAt,
         });
@@ -52,6 +52,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
 
       try {
         const [newTrip] = await db
+          .tag('trips.create')
           .insert(trips)
           .values({
             id: data.id,
@@ -96,7 +97,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const db = createDb();
       const tripId = params.tripId;
 
-      const trip = await db.query.trips.findFirst({
+      const trip = await db.tag('trips.getById').query.trips.findFirst({
         where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
       });
       if (!trip) throw new NotFoundError('Trip not found');
@@ -140,11 +141,12 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
         updateData.updatedAt = new Date();
 
         await db
+          .tag('trips.update')
           .update(trips)
           .set(updateData)
           .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)));
 
-        const updatedTrip = await db.query.trips.findFirst({
+        const updatedTrip = await db.tag('trips.getById').query.trips.findFirst({
           where: and(eq(trips.id, tripId), eq(trips.userId, user.userId)),
         });
 
@@ -176,6 +178,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
       const tripId = params.tripId;
 
       const [deleted] = await db
+        .tag('trips.delete')
         .update(trips)
         .set({ deleted: true, updatedAt: new Date() })
         .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)))

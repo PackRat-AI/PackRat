@@ -1,0 +1,58 @@
+{
+  "_comment": "Coverage ratchet baselines — see docs/testing.md and scripts/lint/coverage-ratchet.ts. Each entry is a workspace's floor: a PR that drops any metric below the baseline (modulo epsilon) fails CI. CI on main auto-bumps these numbers upward via scripts/lint/coverage-baseline-update.ts after a green run.",
+  "_epsilon": 0.5,
+  "packages/api": {
+    "summaryPath": "packages/api/coverage/unit/coverage-summary.json",
+    "tier": "B",
+    "lines": 98.31,
+    "branches": 95.43,
+    "functions": 100,
+    "statements": 98.31,
+    "recordedAt": "2026-05-19"
+  },
+  "apps/expo": {
+    "summaryPath": "apps/expo/coverage/unit/coverage-summary.json",
+    "tier": "C",
+    "lines": 97.36,
+    "branches": 95,
+    "functions": 100,
+    "statements": 97.36,
+    "recordedAt": "2026-05-19"
+  },
+  "packages/mcp": {
+    "summaryPath": "packages/mcp/coverage/coverage-summary.json",
+    "tier": "B",
+    "lines": 98.87,
+    "branches": 98.38,
+    "functions": 100,
+    "statements": 98.87,
+    "recordedAt": "2026-05-19"
+  },
+  "packages/analytics": {
+    "summaryPath": "packages/analytics/coverage/coverage-summary.json",
+    "tier": "B",
+    "lines": 84.48,
+    "branches": 83.33,
+    "functions": 89.13,
+    "statements": 84.48,
+    "recordedAt": "2026-05-19"
+  },
+  "packages/overpass": {
+    "summaryPath": "packages/overpass/coverage/coverage-summary.json",
+    "tier": "A",
+    "lines": 100,
+    "branches": 95.65,
+    "functions": 100,
+    "statements": 100,
+    "recordedAt": "2026-05-19"
+  },
+  "packages/units": {
+    "summaryPath": "packages/units/coverage/coverage-summary.json",
+    "tier": "A",
+    "lines": 100,
+    "branches": 100,
+    "functions": 100,
+    "statements": 100,
+    "recordedAt": "2026-05-19"
+  }
+}

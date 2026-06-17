@@ -58,7 +58,6 @@ test.describe('Profile name edit', () => {
   test('editing name and saving navigates back to /profile with updated name', async ({
     authedPage: page,
   }) => {
-    test.setTimeout(60_000);
     const newFirst = `E2E-${Date.now()}`;
 
     // Navigate to profile first so SPA history is established, then click the

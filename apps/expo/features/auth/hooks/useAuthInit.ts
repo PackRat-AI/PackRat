@@ -1,8 +1,10 @@
 import { when } from '@legendapp/state';
+import { WEIGHT_UNITS } from '@packrat/constants';
 import { clientEnvs } from '@packrat/env/expo-client';
 import { asBoolean, asString } from '@packrat/guards';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import * as Sentry from '@sentry/react-native';
 import { userStore, userSyncState } from 'expo-app/features/auth/store';
 import { authClient } from 'expo-app/lib/auth-client';
 import { router } from 'expo-router';
@@ -25,17 +27,46 @@ async function runVersionGateMigration() {
 
 function applySessionUser(sessionUser: Record<string, unknown>) {
   const name = asString(sessionUser.name) ?? '';
+  const userId = asString(sessionUser.id) ?? '';
+  const email = asString(sessionUser.email) ?? '';
+
+  // Keep Sentry user identity in sync with the session.
+  Sentry.setUser({ id: userId, email, username: name });
+
+  // Better Auth's getSession() may not return additionalFields (e.g. avatarUrl,
+  // firstName, lastName) if the session was created before those fields were
+  // added or if the client doesn't request them. Preserve existing persisted
+  // values for those fields rather than overwriting with null.
+  const existingUser = userStore.get();
+
   userStore.set({
     id: asString(sessionUser.id) ?? '',
     email: asString(sessionUser.email) ?? '',
-    firstName: name.split(' ')[0] ?? '',
-    lastName: name.split(' ').slice(1).join(' ') ?? '',
-    role: asString(sessionUser.role) ?? 'USER',
+    firstName:
+      asString(sessionUser.firstName) ??
+      (name.split(' ')[0] || undefined) ??
+      existingUser?.firstName ??
+      '',
+    lastName:
+      asString(sessionUser.lastName) ??
+      (name.split(' ').slice(1).join(' ') || undefined) ??
+      existingUser?.lastName ??
+      '',
+    role: asString(sessionUser.role) ?? existingUser?.role ?? 'USER',
     emailVerified: asBoolean(sessionUser.emailVerified) ?? null,
-    avatarUrl: asString(sessionUser.image) ?? null,
-    createdAt: asString(sessionUser.createdAt) ?? null,
-    updatedAt: asString(sessionUser.updatedAt) ?? null,
-    preferredWeightUnit: 'g',
+    avatarUrl:
+      asString(sessionUser.avatarUrl) ??
+      asString(sessionUser.image) ??
+      existingUser?.avatarUrl ??
+      null,
+    createdAt: asString(sessionUser.createdAt) ?? existingUser?.createdAt ?? null,
+    updatedAt: asString(sessionUser.updatedAt) ?? existingUser?.updatedAt ?? null,
+    preferredWeightUnit:
+      (WEIGHT_UNITS.includes(sessionUser.preferredWeightUnit as never)
+        ? (sessionUser.preferredWeightUnit as import('@packrat/constants').WeightUnit)
+        : undefined) ??
+      existingUser?.preferredWeightUnit ??
+      'g',
   });
 }
 
@@ -60,6 +91,16 @@ export function useAuthInit() {
   }, []);
 
   useEffect(() => {
+    const navigate = (target: Parameters<typeof router.replace>[0]) => {
+      // On web, expo-router's navigationRef may not be ready yet during
+      // Strict Mode double-mount — defer by one event loop tick.
+      if (Platform.OS === 'web') {
+        setTimeout(() => router.replace(target), 0);
+      } else {
+        router.replace(target);
+      }
+    };
+
     const initializeAuth = async () => {
       await runVersionGateMigration();
 
@@ -83,6 +124,13 @@ export function useAuthInit() {
           .then(({ data: session, error }) => {
             if (error) {
               if (isDefinitiveAuthFailure(error)) {
+                Sentry.addBreadcrumb({
+                  category: 'auth',
+                  message: 'Background session refresh: definitive auth failure',
+                  level: 'warning',
+                  data: { status: (error as { status?: number })?.status },
+                });
+                Sentry.setUser(null);
                 userStore.set(null);
                 router.replace('/auth');
               }
@@ -93,12 +141,19 @@ export function useAuthInit() {
               applySessionUser(session.user as Record<string, unknown>);
             } else {
               // Server confirmed the session is gone
+              Sentry.addBreadcrumb({
+                category: 'auth',
+                message: 'Background session refresh: session expired',
+                level: 'info',
+              });
+              Sentry.setUser(null);
               userStore.set(null);
               router.replace('/auth');
             }
           })
           .catch((error) => {
             if (isDefinitiveAuthFailure(error)) {
+              Sentry.setUser(null);
               userStore.set(null);
               router.replace('/auth');
             }
@@ -116,16 +171,18 @@ export function useAuthInit() {
         if (!error && session?.user) {
           // safe-cast: widening Better Auth User to Record<string, unknown> for runtime additional-field access
           applySessionUser(session.user as Record<string, unknown>);
+          setIsLoading(false);
           return;
         }
 
-        router.replace({
+        navigate({
           pathname: '/auth',
           params: { showSkipLoginBtn: 'true', redirectTo: '/' },
         });
       } catch (error) {
+        Sentry.captureException(error, { tags: { auth_action: 'init' } });
         console.error('Failed to initialize auth:', error);
-        router.replace('/auth');
+        navigate('/auth');
       } finally {
         setIsLoading(false);
       }

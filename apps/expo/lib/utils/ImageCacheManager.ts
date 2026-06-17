@@ -61,10 +61,31 @@ export class ImageCacheManager {
           Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
         },
       };
-      const downloadResult = await FileSystem.downloadAsync(remoteUrl, localUri, downloadOptions);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Image download timed out')), 15_000),
+      );
+      const downloadResult = await Promise.race([
+        FileSystem.downloadAsync(remoteUrl, localUri, downloadOptions),
+        timeout,
+      ]);
 
-      if (downloadResult.status !== 200) {
-        throw new Error(`Failed to download image: ${downloadResult.status}`);
+      const contentType =
+        downloadResult.headers?.['content-type'] ?? downloadResult.headers?.['Content-Type'] ?? '';
+      const invalidContent =
+        downloadResult.status !== 200 || (!contentType.startsWith('image/') && contentType !== '');
+
+      if (invalidContent) {
+        // downloadAsync writes the response body to disk even on failure or wrong content type;
+        // delete it so subsequent getCachedImageUri calls don't treat it as a valid cache hit.
+        const partialFile = await FileSystem.getInfoAsync(localUri);
+        if (partialFile.exists) {
+          await FileSystem.deleteAsync(localUri);
+        }
+        throw new Error(
+          downloadResult.status !== 200
+            ? `Failed to download image: ${downloadResult.status}`
+            : `Invalid content type: ${contentType}`,
+        );
       }
     }
 

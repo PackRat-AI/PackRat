@@ -1,4 +1,5 @@
 import { isObject } from '@packrat/guards';
+import * as Sentry from '@sentry/react-native';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
@@ -72,6 +73,15 @@ export function useGenerateTemplateFromOnlineContent() {
           importError.code = value.code;
           importError.existingTemplateId = value.existingTemplateId;
         }
+        Sentry.captureException(importError, {
+          tags: { feature: 'packTemplates', action: 'generateFromOnlineContent' },
+          extra: {
+            contentUrl: input.contentUrl,
+            apiError: value,
+            httpStatus: error.status,
+            errorCode: importError.code,
+          },
+        });
         throw importError;
       }
       // safe-cast: treaty response shape matches GeneratedTemplate as validated by the API schema

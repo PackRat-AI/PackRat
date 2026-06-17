@@ -1,3 +1,6 @@
+import * as Sentry from '@sentry/react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -97,6 +100,7 @@ function waitForSyncDrain(signal: { cancelled: boolean }): Promise<SyncDrainResu
 }
 
 export function useSubmitTrailConditionReport(): SubmitResult {
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
@@ -134,8 +138,10 @@ export function useSubmitTrailConditionReport(): SubmitResult {
       if (cancelRef.current) cancelRef.current.cancelled = true;
       cancelRef.current = signal;
 
-      // @ts-expect-error: Safe because Legend-State uses Proxy
-      trailConditionReportsStore[id].set(newReport);
+      // Write the new entry through the typed `obs()` helper (apps/expo/lib/store.ts)
+      // which routes the cast through one documented place instead of a per-call
+      // suppression.
+      obs({ store: trailConditionReportsStore, id }).set(newReport);
 
       // Yield a microtask so Legend-State finishes marking this change as a
       // pending set before we sample the sync state. Without this, the
@@ -149,11 +155,18 @@ export function useSubmitTrailConditionReport(): SubmitResult {
         // the user's perspective — their data is safely persisted locally.
         await waitForSyncDrain(signal);
         if (!mountedRef.current || signal.cancelled) return id;
+        // Invalidate the list query so the screen reflects the new report
+        // without requiring an app reload.
+        await queryClient.invalidateQueries({ queryKey: ['trailConditionReports'] });
         setIsPending(false);
         options?.onSuccess?.(id);
         return id;
       } catch (err) {
         const asError = err instanceof Error ? err : new Error(String(err));
+        Sentry.captureException(asError, {
+          tags: { feature: 'trailConditions', action: 'submitReport.syncDrain' },
+          extra: { reportId: id },
+        });
         if (mountedRef.current && !signal.cancelled) {
           setError(asError);
           setIsPending(false);
@@ -162,7 +175,7 @@ export function useSubmitTrailConditionReport(): SubmitResult {
         throw asError;
       }
     },
-    [],
+    [queryClient],
   );
 
   const reset = useCallback(() => {

@@ -19,6 +19,9 @@ import type {
   EtlResponse,
   GrowthPoint,
   PriceBucket,
+  QueryMetricsByCallSite,
+  QueryMetricsRecent,
+  QueryMetricsSummary,
   TrailGeometry,
   TrailSearchItem,
   TrailSearchResult as TrailSearchResultList,
@@ -52,7 +55,13 @@ const adminFetcher = async ({
 
 // Pre-drilled into .api.admin so call sites write `adminClient.stats.get()`.
 const adminClient = treaty<App>(API_BASE, {
-  fetcher: ((input, init) => adminFetcher({ input, init })) as unknown as typeof fetch,
+  // Eden Treaty types `fetcher` as the full `typeof fetch` (incl. `preconnect`),
+  // which Treaty never calls — satisfy the shape with a typed no-op instead of
+  // casting through `unknown`.
+  fetcher: Object.assign(
+    (input: RequestInfo | URL, init?: RequestInit) => adminFetcher({ input, init }),
+    { preconnect: (..._args: Parameters<typeof fetch.preconnect>): void => {} },
+  ),
   parseDate: false,
 }).api.admin;
 
@@ -394,4 +403,36 @@ export function retryEtlJob(
     path: `/analytics/catalog/etl/${encodeURIComponent(jobId)}/retry`,
     init: { method: 'POST' },
   });
+}
+
+// ─── Query Metrics ─────────────────────────────────────────────────────────────
+
+export type { QueryMetricsByCallSite, QueryMetricsRecent, QueryMetricsSummary };
+
+export function getQueryMetricsSummary({
+  hours = 24,
+  month,
+}: {
+  hours?: number;
+  month?: string;
+} = {}): Promise<QueryMetricsSummary> {
+  const q = month ? `month=${month}` : `hours=${hours}`;
+  return adminFetch({ path: `/analytics/query-metrics/summary?${q}` });
+}
+
+export function getQueryMetricsRecent(limit = 50): Promise<QueryMetricsRecent> {
+  return adminFetch({ path: `/analytics/query-metrics/recent?limit=${limit}` });
+}
+
+export function getQueryMetricsByCallSite({
+  hours = 24,
+  limit = 50,
+  month,
+}: {
+  hours?: number;
+  limit?: number;
+  month?: string;
+} = {}): Promise<QueryMetricsByCallSite> {
+  const q = month ? `month=${month}&limit=${limit}` : `hours=${hours}&limit=${limit}`;
+  return adminFetch({ path: `/analytics/query-metrics/by-callsite?${q}` });
 }

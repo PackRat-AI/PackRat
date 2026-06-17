@@ -1,4 +1,5 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
@@ -16,9 +17,12 @@ import {
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useSeasonSuggestionsPrefs } from 'expo-app/features/packs/atoms/seasonSuggestionsAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
 import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -31,11 +35,33 @@ export default function SettingsScreen() {
   const progress = useAtomValue(localModelProgressAtom);
   const isDownloaded = useAtomValue(localModelFileAvailableAtom);
 
+  const router = useRouter();
+  const { announcementSeen, setAnnouncementSeen, opened, setOpened } = useSeasonSuggestionsPrefs();
+
   const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
   const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
   const isReady = modelStatus === 'ready';
   const isError = modelStatus === 'error';
+
+  const handleClearAppData = () => {
+    appAlert.current?.alert({
+      title: 'Clear App Data',
+      message:
+        'This will delete the image cache and all locally stored preferences. You will stay logged in.',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await Promise.all([ImageCacheManager.clearCache(), AsyncStorage.clear()]);
+            Burnt.toast({ title: 'App data cleared', preset: 'done' });
+          },
+        },
+      ],
+    });
+  };
 
   const handleDelete = () => {
     appAlert.current?.alert({
@@ -122,7 +148,7 @@ export default function SettingsScreen() {
                         </View>
                       )}
                       {(!isDownloaded || isError) && !isDownloading && !isPreparing && (
-                        <TouchableOpacity onPress={downloadLocalModel}>
+                        <TouchableOpacity onPress={() => downloadLocalModel(isAuthenticated)}>
                           <Text
                             variant="footnote"
                             className="font-medium"
@@ -153,6 +179,51 @@ export default function SettingsScreen() {
               {t('profile.dangerZone')}
             </Text>
             <DeleteAccountButton />
+          </View>
+        )}
+
+        {__DEV__ && (
+          <View>
+            <Text variant="subhead" className="mb-3">
+              Developer
+            </Text>
+            <View className="rounded-xl border border-border bg-card">
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
+                onPress={handleClearAppData}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
+                  <Icon name="delete-sweep" size={22} color="#f97316" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Clear App Data</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                    Wipes image cache and stored preferences
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={20} color={colors.grey} />
+              </TouchableOpacity>
+              <View className="h-px bg-border mx-4" />
+              <TouchableOpacity
+                className="flex-row items-center gap-3 p-4"
+                onPress={() => {
+                  setAnnouncementSeen(false);
+                  setOpened(false);
+                  router.dismissAll();
+                  router.navigate('/');
+                }}
+              >
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                  <Icon name="leaf" size={22} color={colors.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-medium">Reset Season Suggestions State</Text>
+                  <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                    {`seen: ${announcementSeen} · opened: ${opened}`}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>

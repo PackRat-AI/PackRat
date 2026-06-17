@@ -37,6 +37,9 @@ export default defineConfig({
         'src/**/*.spec.ts',
         'src/**/*.d.ts',
         'src/index.ts',
+        // App assembly and local E2E worker are exercised through integration/E2E.
+        'src/app.ts',
+        'src/e2e-worker.ts',
         'src/db/migrations/**',
         // Test infrastructure stubs (not production code)
         'src/__test-stubs__/**',
@@ -58,6 +61,10 @@ export default defineConfig({
         'src/auth/index.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
+        // CatalogEtlWorkflow needs the CF Workflows runtime for end-to-end
+        // execution; covered by integration tests in /test once Docker Postgres
+        // is wired. Sibling chunker (src/workflows/shared/) IS unit-tested.
+        'src/workflows/catalog-etl-workflow.ts',
         'src/utils/ai/**',
         // Complex orchestration services (defer to integration tests)
         'src/services/aiService.ts',

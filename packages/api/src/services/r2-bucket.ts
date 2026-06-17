@@ -265,7 +265,7 @@ export class R2BucketService {
 
         // Check if it's a Node.js stream (like in a local Node environment)
         if (body instanceof Readable) {
-          webStream = new globalThis.ReadableStream({
+          webStream = new ReadableStream({
             start(controller) {
               body.on('data', (chunk) => controller.enqueue(chunk));
               body.on('end', () => controller.close());
@@ -275,7 +275,7 @@ export class R2BucketService {
               body.destroy();
             },
           });
-        } else if (body instanceof globalThis.ReadableStream) {
+        } else if (body instanceof ReadableStream) {
           // Web stream (Cloudflare Workers environment)
           webStream = body as ReadableStream<Uint8Array>; // safe-cast: body is confirmed to be a Web ReadableStream in the Cloudflare Workers environment
         } else {
@@ -340,7 +340,7 @@ export class R2BucketService {
           assertStreamNotConsumed();
           const data = await consumeStream();
           // Uint8Array.buffer is ArrayBufferLike; we allocate via new Uint8Array so it is always ArrayBuffer.
-          return new globalThis.Blob([data.buffer as ArrayBuffer]); // safe-cast: Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer)
+          return new Blob([data.buffer as ArrayBuffer]); // safe-cast: Uint8Array allocated via new Uint8Array, so .buffer is always ArrayBuffer (not SharedArrayBuffer)
         },
       };
 
@@ -563,7 +563,7 @@ export class R2BucketService {
   private async convertBodyToUploadable(
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
   ): Promise<Buffer | Uint8Array | string> {
-    if (value instanceof globalThis.ReadableStream) {
+    if (value instanceof ReadableStream) {
       const reader = value.getReader();
       const chunks: Uint8Array[] = [];
       while (true) {
@@ -582,7 +582,7 @@ export class R2BucketService {
     if (isString(value)) {
       return value;
     }
-    if (value instanceof globalThis.Blob) {
+    if (value instanceof Blob) {
       return new Uint8Array(await value.arrayBuffer());
     }
     throw new Error('Unsupported value type');

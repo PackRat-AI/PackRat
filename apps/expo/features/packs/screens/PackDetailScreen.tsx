@@ -3,6 +3,7 @@ import { isDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
+import { devSkipAutoAnalyzeAtom } from 'expo-app/atoms/devAtoms';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -19,8 +20,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
 import { testIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import { useMemo, useState } from 'react';
-import { Image, ScrollView, Share, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, Share, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
@@ -50,10 +52,13 @@ export function PackDetailScreen() {
   const [location, setLocation] = useState<WeatherLocation>();
   const [selectedActivity, setSelectedActivity] = useState<PackCategory>();
 
+  const devSkipAutoAnalyze = useAtomValue(devSkipAutoAnalyzeAtom);
+
   const {
     mutate: analyzeGaps,
     data: gapAnalysis,
     isPending: isAnalyzing,
+    isError: isAnalysisError,
     reset: resetAnalysis,
   } = usePackGapAnalysis();
 
@@ -208,26 +213,24 @@ export function PackDetailScreen() {
     setIsLocationPickerOpen(true);
   };
 
-  const handleLocationSelect = (location?: WeatherLocation) => {
-    setLocation(location);
+  const handleLocationSelect = (selectedLocation?: WeatherLocation) => {
+    setLocation(selectedLocation);
     setIsLocationPickerOpen(false);
 
-    // Validation: either activity or location must be selected
-    if (!selectedActivity && !location) {
-      // This shouldn't happen due to UI constraints, but handle gracefully
-      return;
-    }
+    if (!selectedActivity && !selectedLocation) return;
 
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
-    analyzeGaps({
-      packId: id,
-      context: {
-        destination: location?.name,
-        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
-        startDate: new Date().toISOString().split('T')[0],
-      },
-    });
+    if (!(__DEV__ && devSkipAutoAnalyze)) {
+      analyzeGaps({
+        packId: id,
+        context: {
+          destination: selectedLocation?.name,
+          tripType: selectedActivity || pack.category,
+          startDate: new Date().toISOString().split('T')[0],
+        },
+      });
+    }
   };
 
   const handleRetryAnalysis = () => {
@@ -236,7 +239,7 @@ export function PackDetailScreen() {
       packId: id,
       context: {
         destination: location?.name,
-        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
+        tripType: selectedActivity || pack.category,
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -281,22 +284,6 @@ export function PackDetailScreen() {
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
   const handleAskAI = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify({
-            pathname: '/ai-chat',
-            params: {
-              packId: id,
-              packName: pack.name,
-              contextType: 'pack',
-            },
-          }),
-          showSignInCopy: 'true',
-        },
-      });
-    }
     router.push({
       pathname: '/ai-chat',
       params: {
@@ -312,10 +299,34 @@ export function PackDetailScreen() {
   };
   const handleSharePack = async () => {
     try {
-      const lines: string[] = [`${pack.name}`];
+      const lines: string[] = [pack.name];
       if (pack.category) lines.push(pack.category);
       if (pack.description) lines.push(`\n${pack.description}`);
       lines.push(`\n${pack.items?.length || 0} items · ${pack.totalWeight || 0}g`);
+
+      const items = pack.items ?? [];
+      if (items.length > 0) {
+        const byCategory = items.reduce<Record<string, typeof items>>((acc, item) => {
+          const cat = item.category || 'Other';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(item);
+          return acc;
+        }, {});
+
+        for (const [cat, catItems] of Object.entries(byCategory)) {
+          lines.push(`\n${cat}`);
+          for (const item of catItems) {
+            const flags = [item.worn && 'worn', item.consumable && 'consumable']
+              .filter(Boolean)
+              .join(', ');
+            const flagSuffix = flags ? ` (${flags})` : '';
+            lines.push(
+              `  • ${item.quantity}x ${item.name} — ${item.weight}${item.weightUnit}${flagSuffix}`,
+            );
+          }
+        }
+      }
+
       await Share.share({ message: lines.join('\n') });
     } catch {
       // ignore
@@ -456,7 +467,12 @@ export function PackDetailScreen() {
     <SafeAreaView className="flex-1" edges={['bottom']}>
       <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
-          <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
+          <Image
+            source={{ uri: pack.image }}
+            className="h-48 w-full"
+            resizeMode="cover"
+            style={Platform.select({ web: { width: '100%', height: 192 } })}
+          />
         )}
 
         {/* Header */}
@@ -747,8 +763,9 @@ export function PackDetailScreen() {
         pack={pack}
         location={location?.name}
         activity={selectedActivity}
-        analysis={gapAnalysis || null}
+        analysis={gapAnalysis ?? null}
         isLoading={isAnalyzing}
+        isError={isAnalysisError}
         onRetry={handleRetryAnalysis}
       />
     </SafeAreaView>

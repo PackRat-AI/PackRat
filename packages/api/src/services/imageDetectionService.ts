@@ -1,5 +1,5 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { CatalogItem } from '@packrat/db';
 import { generateObject } from 'ai';
@@ -24,11 +24,11 @@ const detectedItemSchema = z.object({
   description: z
     .string()
     .describe('Brief description including key characteristics optimized for catalog search'),
-  quantity: z.number().int().positive().default(1).describe('Number of this item visible'),
+  quantity: z.number().int().positive().describe('Number of this item visible'),
   category: z.string().describe('Category of outdoor gear (e.g., Sleep System, Clothing, etc.)'),
-  consumable: z.boolean().default(false).describe('Whether the item is consumable'),
-  worn: z.boolean().default(false).describe('Whether the item is worn'),
-  notes: z.string().nullable().optional(),
+  consumable: z.boolean().describe('Whether the item is consumable'),
+  worn: z.boolean().describe('Whether the item is worn'),
+  notes: z.string().nullable().describe('Additional notes, or null if none'),
   confidence: z.number().min(0).max(1).describe('Confidence level in the identification (0-1)'),
 });
 
@@ -49,13 +49,25 @@ export class ImageDetectionService {
    * Analyze an image to detect outdoor gear items
    */
   async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-    const { OPENAI_API_KEY } = getEnv();
-    const openai = createOpenAI({
-      apiKey: OPENAI_API_KEY,
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID,
+      CLOUDFLARE_AI_GATEWAY_ID,
+      CLOUDFLARE_API_TOKEN,
+      AI,
+    } = getEnv();
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareApiToken: CLOUDFLARE_API_TOKEN,
+      cloudflareAiBinding: AI,
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       schema: imageAnalysisSchema,
       system: ITEM_DETECTION_SYSTEM_PROMPT,
       prompt: [

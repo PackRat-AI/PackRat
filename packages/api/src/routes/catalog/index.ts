@@ -6,6 +6,8 @@ import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
+import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, packItems } from '@packrat/db';
 import { isString } from '@packrat/guards';
 import {
@@ -24,10 +26,8 @@ import {
   and,
   cosineDistance,
   count,
-  desc,
   eq,
   getTableColumns,
-  gt,
   inArray,
   isNotNull,
   isNull,
@@ -36,6 +36,8 @@ import {
 } from 'drizzle-orm';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
+
+const FILE_EXT_RE = /\.[^.]*$/;
 
 export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .model({
@@ -158,6 +160,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(400, { error: 'Compare requires at least 2 distinct catalog IDs' });
       }
       const items = await db
+        .tag('catalog.compare')
         .select({
           id: catalogItems.id,
           name: catalogItems.name,
@@ -221,11 +224,15 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async () => {
       const db = createDb();
       const result = await db
+        .tag('catalog.embeddingsStats')
         .select({ totalCount: count() })
         .from(catalogItems)
         .where(isNull(catalogItems.embedding));
       const withoutEmbeddings = result[0]?.totalCount ?? 0;
-      const totalItemsResult = await db.select({ totalCount: count() }).from(catalogItems);
+      const totalItemsResult = await db
+        .tag('catalog.embeddingsStats')
+        .select({ totalCount: count() })
+        .from(catalogItems);
       const totalItems = totalItemsResult[0]?.totalCount ?? 0;
       return {
         itemsWithoutEmbeddings: Number(withoutEmbeddings),
@@ -238,69 +245,169 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     },
   )
 
-  // -- ETL queue (api-key auth)
+  // -- ETL trigger (api-key auth)
+  //
+  // Default engine is 'workflow' — triggers a CatalogEtlWorkflow instance
+  // per source file. The 'queue' engine routes to the legacy queue path and
+  // remains available during the coexistence window so operators can fall
+  // back if the workflow path misbehaves in production. The queue path will
+  // be removed after the workflow path bakes (per the migration plan).
   .post(
     '/etl',
-    async ({ body }) => {
+    async ({ body, query }) => {
       const { filename, chunks, source, scraperRevision } = body;
+      const engine = query.engine ?? 'workflow';
+      // chunkMiB lets the caller tune chunk size per-source without a deploy.
+      // Both workflow and queue paths default to 2 MiB when omitted.
+      const chunkBytes = query.chunkMiB !== undefined ? query.chunkMiB * 1024 * 1024 : undefined;
       const db = createDb();
       const env = getEnv();
-
-      if (!env.ETL_QUEUE) {
-        return status(400, { message: 'ETL_QUEUE is not configured' });
-      }
-
       const jobId = crypto.randomUUID();
 
-      await db.insert(etlJobs).values({
+      if (engine === 'queue') {
+        if (!env.ETL_QUEUE) {
+          return status(400, { message: 'ETL_QUEUE is not configured' });
+        }
+
+        await db.tag('catalog.etlCreateJob').insert(etlJobs).values({
+          id: jobId,
+          status: 'running',
+          source,
+          filename,
+          scraperRevision,
+          startedAt: new Date(),
+        });
+
+        const CHUNK_BYTES = chunkBytes ?? 2 * 1024 * 1024; // 2 MiB default (matches workflow path)
+        const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+        const queueChunks: Array<{
+          objectKey: string;
+          byteStart?: number;
+          byteEnd?: number;
+        }> = [];
+
+        for (const objectKey of chunks) {
+          const meta = await r2.head(objectKey);
+          if (!meta || meta.size <= CHUNK_BYTES) {
+            queueChunks.push({ objectKey });
+          } else {
+            const n = Math.ceil(meta.size / CHUNK_BYTES);
+            for (let i = 0; i < n; i++) {
+              queueChunks.push({
+                objectKey,
+                byteStart: i * CHUNK_BYTES,
+                byteEnd: Math.min((i + 1) * CHUNK_BYTES - 1, meta.size - 1),
+              });
+            }
+          }
+        }
+
+        await queueCatalogETL({
+          queue: env.ETL_QUEUE,
+          chunks: queueChunks,
+          jobId,
+        });
+
+        return {
+          message: 'Catalog ETL job queued successfully (legacy queue path)',
+          jobId,
+          engine: 'queue' as const,
+        };
+      }
+
+      // Workflow path (default).
+      if (!env.ETL_WORKFLOW) {
+        return status(400, { message: 'ETL_WORKFLOW is not configured' });
+      }
+
+      const r2 = new R2BucketService({ env, bucketType: 'catalog' });
+
+      // Chunk every source object up front so the workflow params carry the
+      // full plan. Single-file is the dominant case in prod (scrapers
+      // produce one CSV per run); multi-object requests bundle into one
+      // workflow instance. ETag from the first object is captured for the
+      // repair-from-scratch fail-closed verification (U5 follow-up).
+      const allChunks: ChunkSpec[] = [];
+      let firstEtag: string | null = null;
+      let firstLastModified: Date | null = null;
+      for (const objectKey of chunks) {
+        const {
+          etag,
+          lastModified,
+          chunks: chunkSpecs,
+        } = await chunkCsvForR2({
+          r2,
+          objectKey,
+          ...(chunkBytes !== undefined && { chunkBytes }),
+        });
+        if (firstEtag === null) {
+          firstEtag = etag;
+          firstLastModified = lastModified;
+        }
+        allChunks.push(...chunkSpecs);
+      }
+
+      // Re-index chunkIndex / chunksTotal across the combined chunk array so
+      // step names in the workflow are globally unique within an instance.
+      const totalChunks = allChunks.length;
+      const indexedChunks: ChunkSpec[] = allChunks.map((c, i) => ({
+        ...c,
+        chunkIndex: i,
+        chunksTotal: totalChunks,
+      }));
+
+      // CF Workflows instance IDs only allow [a-zA-Z0-9_-] — strip the file extension.
+      const instanceId = `${source}-${filename.replace(FILE_EXT_RE, '')}`.slice(0, 64);
+
+      await db.tag('catalog.etlCreateJob').insert(etlJobs).values({
         id: jobId,
         status: 'running',
         source,
         filename,
         scraperRevision,
         startedAt: new Date(),
+        workflowInstanceId: instanceId,
+        sourceEtag: firstEtag,
+        sourceLastModified: firstLastModified,
       });
 
-      // Split large files into 20 MB byte-range chunks so each Worker
-      // invocation stays within the CPU time budget (~30k rows / chunk).
-      const CHUNK_BYTES = 20 * 1024 * 1024;
-      const r2 = new R2BucketService({ env, bucketType: 'catalog' });
-      const queueChunks: Array<{ objectKey: string; byteStart?: number; byteEnd?: number }> = [];
+      const params: CatalogEtlWorkflowParams = {
+        jobId,
+        source,
+        scraperRevision,
+        chunks: indexedChunks,
+      };
 
-      for (const objectKey of chunks) {
-        const meta = await r2.head(objectKey);
-        if (!meta || meta.size <= CHUNK_BYTES) {
-          queueChunks.push({ objectKey });
-        } else {
-          const n = Math.ceil(meta.size / CHUNK_BYTES);
-          for (let i = 0; i < n; i++) {
-            queueChunks.push({
-              objectKey,
-              byteStart: i * CHUNK_BYTES,
-              byteEnd: Math.min((i + 1) * CHUNK_BYTES - 1, meta.size - 1),
-            });
-          }
-        }
+      try {
+        await env.ETL_WORKFLOW.create({ id: instanceId, params });
+      } catch (err) {
+        await db
+          .tag('catalog.etlUpdateJobStatus')
+          .update(etlJobs)
+          .set({ status: 'failed', completedAt: new Date() })
+          .where(eq(etlJobs.id, jobId));
+        throw err;
       }
 
-      await queueCatalogETL({
-        queue: env.ETL_QUEUE,
-        chunks: queueChunks,
-        jobId,
-      });
-
       return {
-        message: 'Catalog ETL job queued successfully',
+        message: 'Catalog ETL workflow triggered',
         jobId,
-        queued: true,
+        engine: 'workflow' as const,
+        workflowInstanceId: instanceId,
       };
     },
     {
       body: 'catalog.CatalogETL',
+      query: z.object({
+        engine: z.enum(['workflow', 'queue']).optional(),
+        chunkMiB: z.coerce.number().int().min(1).max(20).optional(),
+      }),
       isValidApiKey: true,
       detail: {
         tags: ['Catalog'],
-        summary: 'Queue catalog ETL job from R2 CSV chunk files',
+        summary:
+          'Trigger catalog ETL ingest (Workflow by default; ?engine=queue for legacy path). ' +
+          'Pass ?chunkMiB=N to override the default 2 MiB chunk size (1–20 MiB).',
       },
     },
   )
@@ -325,13 +432,14 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
     async ({ body }) => {
       const db = createDb();
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
-
-      if (!OPENAI_API_KEY) {
-        // Configuration error: surface as a 500 with a clear message
-        throw new Error('Service unavailable: OpenAI API key not configured');
-      }
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
       const embeddingText = getEmbeddingText({ item: data });
       const embedding = await generateEmbedding({
@@ -340,10 +448,12 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         provider: AI_PROVIDER,
         cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+        cloudflareApiToken: CLOUDFLARE_API_TOKEN,
         cloudflareAiBinding: AI,
       });
 
       const [newItem] = await db
+        .tag('catalog.create')
         .insert(catalogItems)
         .values({
           name: data.name,
@@ -371,7 +481,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           reviews: data.reviews,
           embedding,
         })
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: POST returns full item to client via CatalogItemSchema.parse; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(newItem);
     },
@@ -406,7 +516,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
 
-      const item = await db.query.catalogItems.findFirst({
+      const item = await db.tag('catalog.getById').query.catalogItems.findFirst({
         where: eq(catalogItems.id, itemId),
         with: {
           packItems: {
@@ -455,7 +565,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
 
       const validLimit = Math.min(Math.max(limit, 1), 20);
 
-      const sourceItem = await db.query.catalogItems.findFirst({
+      const sourceItem = await db.tag('catalog.getSimilarSource').query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs embedding column for vector ORDER BY below; defer narrowing to pivot migration (separate catalog_item_embeddings table)
         where: eq(catalogItems.id, itemId),
       });
 
@@ -463,20 +574,27 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found or has no embedding' });
       }
 
-      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+      // HNSW-eligible: ORDER BY raw distance ASC. The `similarity = 1 - distance`
+      // field is preserved in the response, but the operators see the raw
+      // distance so the planner can use embedding_idx (HNSW). Threshold
+      // mechanically flips from `similarity > T` to `distance < (1 - T)`.
+      const distance = cosineDistance(catalogItems.embedding, sourceItem.embedding);
+      const similarity = sql<number>`1 - (${distance})`;
+      const maxDistance = 1 - threshold;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
 
       const similarItems = await db
+        .tag('catalog.getSimilarItems')
         .select({ ...columnsToSelect, similarity })
         .from(catalogItems)
         .where(
           and(
-            gt(similarity, threshold),
+            sql`${distance} < ${maxDistance}`,
             ne(catalogItems.id, itemId),
             isNotNull(catalogItems.embedding),
           ),
         )
-        .orderBy(desc(similarity))
+        .orderBy(distance)
         .limit(validLimit);
 
       const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
@@ -517,15 +635,17 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         throw new NotFoundError('Catalog item not found');
       }
       const data = body;
-      const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-        getEnv();
+      const {
+        OPENAI_API_KEY,
+        AI_PROVIDER,
+        CLOUDFLARE_ACCOUNT_ID,
+        CLOUDFLARE_AI_GATEWAY_ID,
+        CLOUDFLARE_API_TOKEN,
+        AI,
+      } = getEnv();
 
-      if (!OPENAI_API_KEY) {
-        // Configuration error: surface as a 500 with a clear message
-        throw new Error('Service unavailable: OpenAI API key not configured');
-      }
-
-      const existingItem = await db.query.catalogItems.findFirst({
+      const existingItem = await db.tag('catalog.update').query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: needs full row for getEmbeddingText diff (reads variants/techs/reviews/qas/faqs); defer to pivot migration
         where: eq(catalogItems.id, itemId),
       });
 
@@ -544,6 +664,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
           provider: AI_PROVIDER,
           cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
           cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+          cloudflareApiToken: CLOUDFLARE_API_TOKEN,
           cloudflareAiBinding: AI,
         });
       }
@@ -553,10 +674,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       updateData.updatedAt = new Date();
 
       const [updatedItem] = await db
+        .tag('catalog.update')
         .update(catalogItems)
         .set(updateData)
         .where(eq(catalogItems.id, itemId))
-        .returning();
+        .returning(); // lint:allow-unprojected-fat-table reason: PUT returns full updated item to client; defer narrowing to Tier-3 #13 (response-schema split)
 
       return CatalogItemSchema.parse(updatedItem);
     },
@@ -592,7 +714,8 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found' });
       }
 
-      const existingItem = await db.query.catalogItems.findFirst({
+      const existingItem = await db.tag('catalog.delete').query.catalogItems.findFirst({
+        // lint:allow-unprojected-fat-table reason: existence check only — could narrow to {id} but bundling with pivot migration to touch each callsite once
         where: eq(catalogItems.id, itemId),
       });
 
@@ -600,7 +723,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         return status(404, { error: 'Catalog item not found' });
       }
 
-      await db.delete(catalogItems).where(eq(catalogItems.id, itemId));
+      await db.tag('catalog.delete').delete(catalogItems).where(eq(catalogItems.id, itemId));
       return { success: true };
     },
     {

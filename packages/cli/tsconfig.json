@@ -1,12 +1,6 @@
 {
+  "extends": "@packrat/typescript-config/base.json",
   "compilerOptions": {
-    "strict": true,
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "noEmit": true,
     "types": ["bun", "@cloudflare/workers-types/2022-10-31"],
     "baseUrl": ".",
     "paths": {
@@ -22,6 +16,10 @@
       "@packrat/guards/*": ["../guards/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "../../packages/typescript-config/cloudflare-types.d.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

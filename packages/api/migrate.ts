@@ -1,4 +1,5 @@
 import { dirname, join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { nodeEnv } from '@packrat/env/node';
@@ -15,6 +16,7 @@ neonConfig.webSocketConstructor = WebSocket;
 // Get the directory where this script is located
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const STANDARD_POSTGRES_MIGRATION_ATTEMPTS = 3;
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 // Import the utility function from src/db/index.ts since it's defined there
@@ -33,6 +35,37 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
+async function runPostgresMigrations(url: string) {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= STANDARD_POSTGRES_MIGRATION_ATTEMPTS; attempt += 1) {
+    const client = new Client({ connectionString: url });
+
+    try {
+      await client.connect();
+      const db = drizzlePg(client);
+      await migratePg(db, { migrationsFolder: join(__dirname, 'drizzle') });
+      await client.end();
+      return;
+    } catch (error) {
+      lastError = error;
+      await client.end().catch(() => undefined);
+
+      const message = error instanceof Error ? error.message : String(error);
+      if (attempt === STANDARD_POSTGRES_MIGRATION_ATTEMPTS) {
+        break;
+      }
+
+      console.warn(
+        `PostgreSQL migration attempt ${attempt} failed (${message}); retrying after database startup settles...`,
+      );
+      await sleep(2_000);
+    }
+  }
+
+  throw lastError;
+}
+
 async function runMigrations() {
   const url = nodeEnv.NEON_DATABASE_URL;
   if (!url) throw new Error('NEON_DATABASE_URL is required');
@@ -41,11 +74,7 @@ async function runMigrations() {
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL
     console.log('Using PostgreSQL migrations...');
-    const client = new Client({ connectionString: url });
-    await client.connect();
-    const db = drizzlePg(client);
-    await migratePg(db, { migrationsFolder: join(__dirname, 'drizzle') });
-    await client.end();
+    await runPostgresMigrations(url);
   } else {
     // Use Neon serverless for Neon URLs
     console.log('Using Neon serverless migrations...');

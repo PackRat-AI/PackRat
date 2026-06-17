@@ -1,11 +1,12 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
 function CategoryCard({
@@ -63,7 +64,7 @@ export default function PackCategoriesScreen() {
 
   return (
     <>
-      <LargeTitleHeader title={t('packs.packCategories')} />
+      <Stack.Screen options={{ ...getAppBarOptions(), title: t('packs.packCategories') }} />
       {categories.length ? (
         <ScrollView className="flex-1">
           <View className="p-4">

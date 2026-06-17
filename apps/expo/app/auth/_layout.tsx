@@ -1,34 +1,10 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { router, Stack } from 'expo-router';
-import { Platform } from 'react-native';
+import { Stack } from 'expo-router';
 
 export const unstable_settings = {
   anchor: 'index',
 };
 
 export default function AuthLayout() {
-  const { t } = useTranslation();
-
-  const CREATE_ACCOUNT_MODAL_OPTIONS = {
-    presentation: 'modal',
-    headerShown: Platform.OS === 'ios',
-    headerShadowVisible: false,
-    headerLeft() {
-      return (
-        <Button
-          variant="plain"
-          className="ios:px-0"
-          onPress={() => {
-            router.back();
-          }}
-        >
-          <Text className="text-primary">{t('common.cancel')}</Text>
-        </Button>
-      );
-    },
-  } as const;
-
   return (
     <Stack screenOptions={SCREEN_OPTIONS}>
       <Stack.Screen name="index" />
@@ -37,6 +13,11 @@ export default function AuthLayout() {
     </Stack>
   );
 }
+
+const CREATE_ACCOUNT_MODAL_OPTIONS = {
+  presentation: 'modal',
+  headerShown: false,
+} as const;
 
 const SCREEN_OPTIONS = {
   headerShown: false,

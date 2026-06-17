@@ -107,7 +107,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 
 [![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](/docs/ "Go to project documentation")
 
-[![view - Testing Guide](https://img.shields.io/badge/view-Testing_Guide-green?style=for-the-badge)](/TESTING.md "Go to testing documentation")
+[![view - Testing Guide](https://img.shields.io/badge/view-Testing_Guide-green?style=for-the-badge)](/docs/testing.md "Go to testing documentation")
 
 </div>
 
@@ -324,6 +324,12 @@ cd PackRat
    A .dev.vars file will be automatically generated for development tools.
 
    Run bun install to regenerate .dev.vars whenever environment variables are changed.
+
+   Optional: if you use direnv, copy `.envrc.example` to `.envrc` to auto-load `.env.local` in your shell. `.envrc` is ignored because it is local machine behavior.
+
+   AI-backed API features prefer Cloudflare AI Gateway when `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_GATEWAY_ID`, and `CLOUDFLARE_API_TOKEN` are all present. Direct provider keys such as `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, and `PERPLEXITY_API_KEY` are still required for fallback and rollback.
+
+   See `docs/runbooks/ai-gateway-unified-billing.md` for production setup, fallback behavior, and provider coverage.
 
    Only variables prefixed with PUBLIC\_ will be bundled into the Expo app (e.g., PUBLIC_API_URL). These are safe to expose in the client environment.
 

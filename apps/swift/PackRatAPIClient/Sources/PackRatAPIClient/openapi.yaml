@@ -115,7 +115,8 @@
             "type": "string"
           },
           "weight": {
-            "type": "number"
+            "type": "number",
+            "nullable": true
           },
           "weightUnit": {
             "type": "string",
@@ -124,7 +125,8 @@
               "oz",
               "kg",
               "lb"
-            ]
+            ],
+            "nullable": true
           },
           "description": {
             "type": "string",
@@ -452,7 +454,8 @@
                   "type": "string"
                 },
                 "weight": {
-                  "type": "number"
+                  "type": "number",
+                  "nullable": true
                 },
                 "weightUnit": {
                   "type": "string",
@@ -461,7 +464,8 @@
                     "oz",
                     "kg",
                     "lb"
-                  ]
+                  ],
+                  "nullable": true
                 },
                 "description": {
                   "type": "string",
@@ -2195,7 +2199,6 @@
           "userId",
           "name",
           "description",
-          "category",
           "isPublic",
           "image",
           "tags",
@@ -4340,7 +4343,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "exclusiveMinimum": true,
+              "minimum": 0,
               "maximum": 100
             }
           },
@@ -4518,7 +4522,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "exclusiveMinimum": true,
+              "minimum": 0,
               "maximum": 100
             }
           },
@@ -4715,7 +4720,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "exclusiveMinimum": true,
+              "minimum": 0,
               "maximum": 100
             }
           },
@@ -6569,6 +6575,21 @@
                           "successRate": {
                             "type": "number",
                             "nullable": true
+                          },
+                          "failureRate": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "totalEmbeddingFailures": {
+                            "type": "number"
+                          },
+                          "verifiedRowCount": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "verifiedAt": {
+                            "type": "string",
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -6582,7 +6603,11 @@
                           "totalProcessed",
                           "totalValid",
                           "totalInvalid",
-                          "successRate"
+                          "successRate",
+                          "failureRate",
+                          "totalEmbeddingFailures",
+                          "verifiedRowCount",
+                          "verifiedAt"
                         ],
                         "additionalProperties": false
                       }
@@ -7093,7 +7118,7 @@
         "tags": [
           "Admin"
         ],
-        "summary": "Retry a failed ETL job",
+        "summary": "Retry a failed ETL job via the workflow path",
         "parameters": [
           {
             "name": "jobId",
@@ -7102,6 +7127,14 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -7124,12 +7157,17 @@
                     },
                     "objectKey": {
                       "type": "string"
+                    },
+                    "workflowInstanceId": {
+                      "type": "string",
+                      "nullable": true
                     }
                   },
                   "required": [
                     "success",
                     "newJobId",
-                    "objectKey"
+                    "objectKey",
+                    "workflowInstanceId"
                   ],
                   "additionalProperties": false
                 }
@@ -7194,6 +7232,653 @@
           }
         },
         "operationId": "postApiAdminAnalyticsCatalogEtlByJobIdRetry"
+      }
+    },
+    "/api/admin/analytics/catalog/etl/{jobId}/repair-from-scratch": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Re-ingest a job from scratch via the workflow path (works on completed jobs; always supersedes)",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "newJobId": {
+                      "type": "string"
+                    },
+                    "objectKey": {
+                      "type": "string"
+                    },
+                    "workflowInstanceId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "newJobId",
+                    "objectKey",
+                    "workflowInstanceId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "operationId": "postApiAdminAnalyticsCatalogEtlByJobIdRepair-from-scratch"
+      }
+    },
+    "/api/admin/analytics/catalog/etl/{jobId}/reconcile": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Count R2 source rows and persist verified_row_count on etl_jobs",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "jobId": {
+                      "type": "string"
+                    },
+                    "expectedRowCount": {
+                      "type": "integer"
+                    },
+                    "actualRowCount": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "delta": {
+                      "type": "integer",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "jobId",
+                    "expectedRowCount",
+                    "actualRowCount",
+                    "delta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "operationId": "postApiAdminAnalyticsCatalogEtlByJobIdReconcile"
+      }
+    },
+    "/api/admin/analytics/catalog/etl/audit": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Per-source catalog_items data-quality audit (decimal bugs, NULL rates, staleness)",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generatedAt": {
+                      "type": "string"
+                    },
+                    "thresholds": {
+                      "type": "object",
+                      "properties": {
+                        "decimalBugPriceThreshold": {
+                          "type": "number"
+                        },
+                        "lowMedianPriceThreshold": {
+                          "type": "number"
+                        },
+                        "minFillRate": {
+                          "type": "number"
+                        },
+                        "staleDaysThreshold": {
+                          "type": "number"
+                        },
+                        "weightTooLightGrams": {
+                          "type": "number"
+                        },
+                        "weightTooHeavyGrams": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "decimalBugPriceThreshold",
+                        "lowMedianPriceThreshold",
+                        "minFillRate",
+                        "staleDaysThreshold",
+                        "weightTooLightGrams",
+                        "weightTooHeavyGrams"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string"
+                          },
+                          "totalItems": {
+                            "type": "integer"
+                          },
+                          "lastEtlId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "lastEtlAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "daysStale": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "medianPrice": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "minPrice": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "maxPrice": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "nullRates": {
+                            "type": "object",
+                            "properties": {
+                              "price": {
+                                "type": "number"
+                              },
+                              "brand": {
+                                "type": "number"
+                              },
+                              "description": {
+                                "type": "number"
+                              },
+                              "weight": {
+                                "type": "number"
+                              },
+                              "images": {
+                                "type": "number"
+                              },
+                              "availability": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "price",
+                              "brand",
+                              "description",
+                              "weight",
+                              "images",
+                              "availability"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "suspiciousDecimalCount": {
+                            "type": "integer"
+                          },
+                          "suspiciousWeightCount": {
+                            "type": "integer"
+                          },
+                          "emptyNameCount": {
+                            "type": "integer"
+                          },
+                          "flags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "totalItems",
+                          "lastEtlId",
+                          "lastEtlAt",
+                          "daysStale",
+                          "medianPrice",
+                          "minPrice",
+                          "maxPrice",
+                          "nullRates",
+                          "suspiciousDecimalCount",
+                          "suspiciousWeightCount",
+                          "emptyNameCount",
+                          "flags"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "generatedAt",
+                    "thresholds",
+                    "sources"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Response for status 401",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "429": {
+            "description": "Response for status 429",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "500": {
+            "description": "Response for status 500",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "operationId": "getApiAdminAnalyticsCatalogEtlAudit"
+      }
+    },
+    "/api/admin/analytics/db/": {
+      "get": {
+        "operationId": "getApiAdminAnalyticsDb",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/db/snapshot": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Per-table sizing, activity counters, and index utilization",
+        "description": "Returns a snapshot of pg_class sizes (heap/TOAST/index/total) joined with pg_stat_user_tables counters (seq_scan, idx_scan, n_tup_ins/upd/del, live/dead tuples, last autovacuum) plus pg_stat_user_indexes (per-index size + scan count). Pure metadata; no full-table scans.",
+        "operationId": "getApiAdminAnalyticsDbSnapshot",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/query-metrics/summary": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Query metrics summary — top routes by compute and egress",
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            }
+          }
+        ],
+        "operationId": "getApiAdminAnalyticsQuery-metricsSummary",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/query-metrics/recent": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Recent API requests with query counts and timing",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "getApiAdminAnalyticsQuery-metricsRecent",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/query-metrics/by-callsite": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Per-query compute and egress grouped by call site — exact timing, no approximation",
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "getApiAdminAnalyticsQuery-metricsBy-callsite",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/analytics/query-metrics/by-month": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Monthly rollup of request count, compute, and egress — last N calendar months",
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "getApiAdminAnalyticsQuery-metricsBy-month",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
       }
     },
     "/api/admin/analytics/": {
@@ -7971,7 +8656,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": true,
+              "minimum": 0
             }
           },
           {
@@ -8177,7 +8863,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": true,
+              "minimum": 0
             }
           }
         ],
@@ -8254,7 +8941,31 @@
         "tags": [
           "Catalog"
         ],
-        "summary": "Queue catalog ETL job from R2 CSV chunk files",
+        "summary": "Trigger catalog ETL ingest (Workflow by default; ?engine=queue for legacy path). Pass ?chunkMiB=N to override the default 2 MiB chunk size (1–20 MiB).",
+        "parameters": [
+          {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "workflow",
+                "queue"
+              ]
+            }
+          },
+          {
+            "name": "chunkMiB",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -8497,7 +9208,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": true,
+              "minimum": 0
             }
           },
           {
@@ -8506,7 +9218,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": true,
+              "minimum": 0
             }
           },
           {
@@ -8617,7 +9330,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": true,
+              "minimum": 0
             }
           },
           {
@@ -8626,7 +9340,8 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": true,
+              "minimum": 0
             }
           },
           {
@@ -9260,7 +9975,6 @@
                       "userId",
                       "name",
                       "description",
-                      "category",
                       "isPublic",
                       "image",
                       "tags",
@@ -9749,7 +10463,8 @@
                   },
                   "duration": {
                     "type": "integer",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": true,
+                    "minimum": 0
                   },
                   "startDate": {
                     "type": "string"
@@ -11230,6 +11945,179 @@
         }
       }
     },
+    "/api/user/preferences": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user preferences",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "preferences": {
+                      "type": "object",
+                      "properties": {
+                        "seasonSuggestions": {
+                          "type": "object",
+                          "properties": {
+                            "announcementSeen": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "opened": {
+                              "type": "boolean",
+                              "default": false
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "preferences"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApiUserPreferences"
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update user preferences",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seasonSuggestions": {
+                    "type": "object",
+                    "properties": {
+                      "announcementSeen": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "opened": {
+                        "type": "boolean",
+                        "default": false
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "preferences": {
+                      "type": "object",
+                      "properties": {
+                        "seasonSuggestions": {
+                          "type": "object",
+                          "properties": {
+                            "announcementSeen": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "opened": {
+                              "type": "boolean",
+                              "default": false
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "preferences"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patchApiUserPreferences"
+      }
+    },
     "/api/upload/presigned": {
       "get": {
         "tags": [
@@ -11514,7 +12402,8 @@
             "required": false,
             "schema": {
               "type": "number",
-              "exclusiveMinimum": 0,
+              "exclusiveMinimum": true,
+              "minimum": 0,
               "maximum": 500
             }
           },

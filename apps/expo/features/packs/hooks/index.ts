@@ -10,6 +10,7 @@ export * from './useDeletePack';
 export * from './useDeletePackItem';
 export * from './useDetailedPacks';
 export * from './useDuplicatePack';
+export * from './useGapCatalogMatches';
 export * from './useHasMinimumInventory';
 export * from './useImagePicker';
 export * from './usePackDetailsFromApi';
