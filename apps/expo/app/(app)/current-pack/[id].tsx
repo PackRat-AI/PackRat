@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { parseWeightUnit } from '@packrat/units';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import type { PackItem } from 'expo-app/features/packs/types';
@@ -22,13 +23,14 @@ function WeightCard({
   weight: number;
   className?: string;
 }) {
+  const { unit, convertWeight } = useWeightUnit();
   return (
     <View className={cn('flex-1 rounded-lg bg-card p-4', className)}>
       <Text variant="subhead" className="text-muted-foreground">
         {title}
       </Text>
       <Text variant="title2" className="mt-1 font-semibold">
-        {weight} g
+        {convertWeight(weight, 'g')} {unit}
       </Text>
     </View>
   );
@@ -84,6 +86,7 @@ function CategoryItem({ category, index }: { category: CategorySummary; index: n
 
 function ItemRow({ item, index }: { item: PackItem; index: number }) {
   const { t } = useTranslation();
+  const { unit, convertWeight } = useWeightUnit();
 
   return (
     <View
@@ -114,7 +117,7 @@ function ItemRow({ item, index }: { item: PackItem; index: number }) {
           </View>
         )}
         <Text variant="subhead" className="text-muted-foreground">
-          {item.weight} {item.weightUnit}
+          {convertWeight(item.weight, parseWeightUnit({ value: item.weightUnit }))} {unit}
         </Text>
       </View>
     </View>
