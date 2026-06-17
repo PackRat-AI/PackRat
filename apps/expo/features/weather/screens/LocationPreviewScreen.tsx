@@ -187,7 +187,7 @@ export default function LocationPreviewScreen() {
 
                   {/* Refresh button */}
                   <TouchableOpacity
-                    className="mt-2 flex-row items-center gap-2 rounded-full bg-black/25 px-4 py-2"
+                    className="mt-2 flex-row items-center gap-2 px-4 py-2"
                     onPress={loadWeatherData}
                     disabled={isLoading}
                   >
