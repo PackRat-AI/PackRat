@@ -1,5 +1,5 @@
 import type { WeightUnit } from '@packrat/constants';
-import { isString } from '@packrat/guards';
+import { parseWeightUnit } from '@packrat/units';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { cn } from 'expo-app/lib/cn';
 import { Text, View } from 'react-native';
@@ -33,7 +33,7 @@ export function WeightBadge({
   };
 
   const safeWeight = Number(weight) || 0;
-  const safeUnit: WeightUnit = isString(unit) ? (unit as WeightUnit) : 'g';
+  const safeUnit: WeightUnit = parseWeightUnit({ value: unit });
   const converted = convertWeight(safeWeight, safeUnit);
 
   return (
