@@ -71,7 +71,7 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
             <Icon name="dumbbell" size={14} color={colors.grey} />
             <Text className="ml-1 text-xs text-muted-foreground">
               {item.weight != null
-                ? `${convertWeight(item.weight, item.weightUnit ?? 'g')} ${unit}`
+                ? `${convertWeight({ weight: item.weight, fromUnit: item.weightUnit ?? 'g' })} ${unit}`
                 : ''}
             </Text>
           </View>

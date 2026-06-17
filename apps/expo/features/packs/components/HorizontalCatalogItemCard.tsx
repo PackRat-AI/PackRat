@@ -113,7 +113,10 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
             )}
             {!!item.weight && (
               <Text className="text-sm text-muted-foreground">
-                {convertWeight(item.weight, parseWeightUnit({ value: item.weightUnit }))}{' '}
+                {convertWeight({
+                  weight: item.weight,
+                  fromUnit: parseWeightUnit({ value: item.weightUnit }),
+                })}{' '}
                 {displayUnit}
               </Text>
             )}

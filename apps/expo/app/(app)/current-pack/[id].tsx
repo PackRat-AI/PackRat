@@ -30,7 +30,7 @@ function WeightCard({
         {title}
       </Text>
       <Text variant="title2" className="mt-1 font-semibold">
-        {convertWeight(weight, 'g')} {unit}
+        {convertWeight({ weight, fromUnit: 'g' })} {unit}
       </Text>
     </View>
   );
@@ -117,7 +117,11 @@ function ItemRow({ item, index }: { item: PackItem; index: number }) {
           </View>
         )}
         <Text variant="subhead" className="text-muted-foreground">
-          {convertWeight(item.weight, parseWeightUnit({ value: item.weightUnit }))} {unit}
+          {convertWeight({
+            weight: item.weight,
+            fromUnit: parseWeightUnit({ value: item.weightUnit }),
+          })}{' '}
+          {unit}
         </Text>
       </View>
     </View>
@@ -130,7 +134,7 @@ export default function CurrentPackScreen() {
 
   const pack = usePackDetailsFromStore(params.id as string);
   const { unit: weightUnit } = useWeightUnit();
-  const uniqueCategories = computeCategorySummaries(pack, weightUnit); // pass unit so computed weights match the badge display
+  const uniqueCategories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
 
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>

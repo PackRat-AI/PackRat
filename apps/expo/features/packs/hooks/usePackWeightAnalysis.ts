@@ -21,7 +21,7 @@ export function usePackWeightAnalysis(packId: string) {
     .reduce((s, i) => s + toGrams(i), 0);
   const wornGrams = pack.items.filter((i) => i.worn).reduce((s, i) => s + toGrams(i), 0);
 
-  const categorySummaries = computeCategorySummaries(pack, preferredUnit);
+  const categorySummaries = computeCategorySummaries({ pack, preferredUnit });
 
   return {
     data: {

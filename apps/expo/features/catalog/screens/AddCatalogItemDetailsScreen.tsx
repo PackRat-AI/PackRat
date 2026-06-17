@@ -168,7 +168,7 @@ export function AddCatalogItemDetailsScreen() {
                   <Icon name="dumbbell" size={14} color={colors.grey2} />
                   <Text variant="caption2" className="ml-1">
                     {catalogItem.weight != null
-                      ? `${convertWeight(catalogItem.weight, catalogItem.weightUnit ?? 'g')} ${preferredWeightUnit}`
+                      ? `${convertWeight({ weight: catalogItem.weight, fromUnit: catalogItem.weightUnit ?? 'g' })} ${preferredWeightUnit}`
                       : ''}
                   </Text>
                   {catalogItem.brand && (

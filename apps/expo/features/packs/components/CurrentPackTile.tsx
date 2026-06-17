@@ -42,7 +42,9 @@ export function CurrentPackTile() {
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            {currentPack ? `${convertWeight(currentPack.totalWeight, 'g')} ${unit}` : ''}
+            {currentPack
+              ? `${convertWeight({ weight: currentPack.totalWeight, fromUnit: 'g' })} ${unit}`
+              : ''}
           </Text>
           <ChevronRight />
         </View>

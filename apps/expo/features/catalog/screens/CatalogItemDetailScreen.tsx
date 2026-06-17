@@ -56,7 +56,8 @@ function VariantRow({ variant }: { variant: CatalogItem }) {
           )}
           {variant.weight != null && (
             <Text className="text-xs text-muted-foreground">
-              {convertWeight(variant.weight ?? 0, variant.weightUnit ?? 'g')} {unit}
+              {convertWeight({ weight: variant.weight ?? 0, fromUnit: variant.weightUnit ?? 'g' })}{' '}
+              {unit}
             </Text>
           )}
           {variant.availability && (
@@ -256,7 +257,7 @@ export function CatalogItemDetailScreen() {
               <Chip textClassName="text-center" variant="secondary">
                 <RNText>
                   {item.weight != null
-                    ? `${convertWeight(item.weight, item.weightUnit ?? 'g')} ${unit}`
+                    ? `${convertWeight({ weight: item.weight, fromUnit: item.weightUnit ?? 'g' })} ${unit}`
                     : t('catalog.notSpecified')}
                 </RNText>
               </Chip>

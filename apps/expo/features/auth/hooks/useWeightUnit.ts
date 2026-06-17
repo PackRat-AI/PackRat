@@ -12,8 +12,13 @@ export function useWeightUnit() {
     preferencesStore.weightUnit.set(value);
   };
 
-  // Convert a weight value stored in `fromUnit` to the preferred display unit
-  const convertWeight = (weight: number, fromUnit: WeightUnit): number => {
+  const convertWeight = ({
+    weight,
+    fromUnit,
+  }: {
+    weight: number;
+    fromUnit: WeightUnit;
+  }): number => {
     const grams = normalize({ weight, unit: fromUnit });
     return displayWeight({ grams, unit });
   };

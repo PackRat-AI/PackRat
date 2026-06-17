@@ -58,7 +58,7 @@ const SimilarItemCard: React.FC<SimilarItemCardProps> = ({ item, onPress }) => {
 
         <Text className="mt-1 text-xs text-muted-foreground">
           {item.weight != null
-            ? `${convertWeight(item.weight, item.weightUnit ?? 'g')} ${unit}`
+            ? `${convertWeight({ weight: item.weight, fromUnit: item.weightUnit ?? 'g' })} ${unit}`
             : ''}
         </Text>
       </View>

@@ -16,7 +16,7 @@ export function WeightAnalysisTile() {
   const { unit, convertWeight } = useWeightUnit();
   const alertRef = useRef<AlertMethods>(null);
 
-  const packWeight = convertWeight(currentPack?.totalWeight ?? 0, 'g');
+  const packWeight = convertWeight({ weight: currentPack?.totalWeight ?? 0, fromUnit: 'g' });
   const route: Href | null = currentPack ? `/weight-analysis/${currentPack.id}` : null;
 
   const handlePress = () => {

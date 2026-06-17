@@ -20,7 +20,7 @@ export default function PackStatsScreen() {
   const weightHistory = usePackWeightHistory(packId);
   const { unit: weightUnit, convertWeight } = useWeightUnit();
 
-  const categories = computeCategorySummaries(pack, weightUnit);
+  const categories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
   const CATEGORY_DISTRIBUTION = categories.map((category) => ({
     name: category.name,
     weight: category.weight,
@@ -64,7 +64,7 @@ export default function PackStatsScreen() {
                         {item.month}
                       </Text>
                       <Text variant="caption2" className="text-muted-foreground">
-                        {convertWeight(item.weight, 'g')} {weightUnit}
+                        {convertWeight({ weight: item.weight, fromUnit: 'g' })} {weightUnit}
                       </Text>
                     </View>
                   );

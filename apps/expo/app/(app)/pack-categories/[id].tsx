@@ -63,7 +63,7 @@ export default function PackCategoriesScreen() {
   const { t } = useTranslation();
 
   const { unit: weightUnit } = useWeightUnit();
-  const categories = computeCategorySummaries(pack, weightUnit);
+  const categories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
 
   return (
     <>

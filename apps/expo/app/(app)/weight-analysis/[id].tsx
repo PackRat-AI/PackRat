@@ -122,7 +122,8 @@ export default function WeightAnalysisScreen() {
                       )}
                     </View>
                     <Text variant="subhead" className="text-muted-foreground">
-                      {convertWeight(item.weight, item.weightUnit || 'g')} {preferredUnit}
+                      {convertWeight({ weight: item.weight, fromUnit: item.weightUnit || 'g' })}{' '}
+                      {preferredUnit}
                     </Text>
                   </View>
                 ))}
