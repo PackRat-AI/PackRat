@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { type SimilarItem, useSimilarCatalogItems } from 'expo-app/features/catalog/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -20,6 +21,7 @@ interface SimilarItemCardProps {
 
 const SimilarItemCard: React.FC<SimilarItemCardProps> = ({ item, onPress }) => {
   const { t } = useTranslation();
+  const { unit, convertWeight } = useWeightUnit();
 
   return (
     <Pressable
@@ -55,7 +57,9 @@ const SimilarItemCard: React.FC<SimilarItemCardProps> = ({ item, onPress }) => {
         </View>
 
         <Text className="mt-1 text-xs text-muted-foreground">
-          {item.weight} {item.weightUnit}
+          {item.weight != null
+            ? `${convertWeight(item.weight, item.weightUnit ?? 'g')} ${unit}`
+            : ''}
         </Text>
       </View>
     </Pressable>
