@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ const _LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 export function CurrentPackTile() {
   const { t } = useTranslation();
   const currentPack = useCurrentPack();
+  const { unit, convertWeight } = useWeightUnit();
 
   const router = useRouter();
 
@@ -40,7 +42,7 @@ export function CurrentPackTile() {
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            {currentPack ? `${currentPack.totalWeight} g` : ''}
+            {currentPack ? `${convertWeight(currentPack.totalWeight, 'g')} ${unit}` : ''}
           </Text>
           <ChevronRight />
         </View>
