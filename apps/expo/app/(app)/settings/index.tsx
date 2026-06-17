@@ -109,14 +109,14 @@ export default function SettingsScreen() {
 
         <View>
           <Text variant="subhead" className="mb-3">
-            Display Units
+            {t('settings.displayUnits')}
           </Text>
           <View className="rounded-xl border border-border bg-card">
             <View className="flex-row items-center justify-between p-4">
               <View className="flex-1">
                 <Text className="font-medium">Weight</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  For gear and pack weights
+                  {t('settings.weightSubtitle')}
                 </Text>
               </View>
               <View className="w-28">
@@ -133,7 +133,7 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Temperature</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  For weather and forecasts
+                  {t('settings.temperatureSubtitle')}
                 </Text>
               </View>
               <View className="w-28">
@@ -150,7 +150,7 @@ export default function SettingsScreen() {
               <View className="flex-1">
                 <Text className="font-medium">Wind & Distance</Text>
                 <Text variant="footnote" className="mt-0.5 text-muted-foreground">
-                  For routes and weather data
+                  {t('settings.windDistanceSubtitle')}
                 </Text>
               </View>
               <View className="w-28">
