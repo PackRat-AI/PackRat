@@ -1,0 +1,6 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ x86_64-ios-simulator, arm64-ios-simulator, arm64-ios, arm64e-ios ]
+install-name:    '/System/Library/SubFrameworks/UIUtilities.framework/UIUtilities'
+current-version: 1.0
+...
