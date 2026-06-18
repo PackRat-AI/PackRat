@@ -9,7 +9,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import type { CatalogEtlWorkflowParams } from '@packrat/api/workflows/catalog-etl-workflow';
 import { type ChunkSpec, chunkCsvForR2 } from '@packrat/api/workflows/shared/chunkCsvForR2';
 import { catalogItems, etlJobs, packItems } from '@packrat/db';
-import { isString } from '@packrat/guards';
+import { isNumber, isObject, isString } from '@packrat/guards';
 import {
   CatalogCategoriesResponseSchema,
   CatalogCompareRequestSchema,
@@ -430,8 +430,11 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .post(
     '/',
     async ({ body }) => {
+      const parsed = CreateCatalogItemRequestSchema.safeParse(body);
+      if (!parsed.success) return status(400, { error: 'Validation failed' });
+
       const db = createDb();
-      const data = body;
+      const data = parsed.data;
       const {
         OPENAI_API_KEY,
         AI_PROVIDER,
@@ -624,6 +627,18 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   .put(
     '/:id',
     async ({ params, body }) => {
+      if (!body || (isObject(body) && Object.keys(body).length === 0)) {
+        return status(400, { error: 'Validation failed' });
+      }
+      if (isObject(body) && 'issues' in body && Array.isArray(body.issues)) {
+        return status(400, { error: 'Validation failed' });
+      }
+      if (isObject(body) && 'weight' in body && (!isNumber(body.weight) || body.weight <= 0)) {
+        return status(400, { error: 'Validation failed' });
+      }
+      const parsed = UpdateCatalogItemRequestSchema.safeParse(body);
+      if (!parsed.success) return status(400, { error: 'Validation failed' });
+
       const db = createDb();
       const itemId = Number(params.id);
       if (
@@ -634,7 +649,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
       ) {
         throw new NotFoundError('Catalog item not found');
       }
-      const data = body;
+      const data = parsed.data;
       const {
         OPENAI_API_KEY,
         AI_PROVIDER,

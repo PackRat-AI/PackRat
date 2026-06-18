@@ -96,7 +96,12 @@ export function readSummary(bundlePath: string): TestSummary {
     stdout = execFileSync(
       'xcrun',
       ['xcresulttool', 'get', 'test-results', 'summary', '--path', bundlePath, '--compact'],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      {
+        encoding: 'utf8',
+        maxBuffer: 10 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: 30_000,
+      },
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

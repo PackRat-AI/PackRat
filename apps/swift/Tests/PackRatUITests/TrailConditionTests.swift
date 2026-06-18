@@ -29,8 +29,8 @@ final class TrailConditionTests: AppUITestCase {
         submitButton.tap()
 
         XCTAssertTrue(
-            app.textFields["Trail Name"].waitForExistence(timeout: 5),
-            "Submit Report form must appear with Trail Name field"
+            app.textFields["trail_report_name"].waitForExistence(timeout: 5),
+            "Submit Report form must appear with trail field"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
         app.buttons["Cancel"].tap()
@@ -43,13 +43,13 @@ final class TrailConditionTests: AppUITestCase {
         goToTab("Trail Conditions")
         waitFor(app.buttons["Submit Report"].firstMatch).tap()
 
-        let nameField = app.textFields["Trail Name"]
+        let nameField = app.textFields["trail_report_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(trailName)
 
         // Add region
-        let regionField = app.textFields["Region / Area (optional)"]
+        let regionField = app.textFields["trail_report_region"]
         if regionField.waitForExistence(timeout: 3) {
             regionField.tap()
             regionField.typeText("Test Region")
@@ -89,11 +89,15 @@ final class TrailConditionTests: AppUITestCase {
         waitFor(app.buttons["Submit Report"].firstMatch).tap()
 
         // Hazard section toggles
-        let hazardLabels = ["Downed trees", "Muddy sections", "Ice"]
-        for hazard in hazardLabels {
+        let hazardIdentifiers = ["trail_hazard_downed_trees", "trail_hazard_muddy_sections", "trail_hazard_ice"]
+        for hazardIdentifier in hazardIdentifiers {
+            let toggle = app.switches[hazardIdentifier]
+            for _ in 0..<4 where !toggle.exists {
+                app.swipeUp()
+            }
             XCTAssertTrue(
-                app.switches[hazard].waitForExistence(timeout: 5),
-                "Hazard toggle '\(hazard)' must exist"
+                toggle.waitForExistence(timeout: 5),
+                "Hazard toggle '\(hazardIdentifier)' must exist"
             )
         }
         app.buttons["Cancel"].tap()
@@ -103,7 +107,7 @@ final class TrailConditionTests: AppUITestCase {
         goToTab("Trail Conditions")
         waitFor(app.buttons["Submit Report"].firstMatch).tap()
 
-        let submit = app.buttons["Submit"]
+        let submit = app.buttons["trail_report_submit"]
         waitFor(submit)
         XCTAssertFalse(submit.isEnabled, "Submit must be disabled without trail name")
 

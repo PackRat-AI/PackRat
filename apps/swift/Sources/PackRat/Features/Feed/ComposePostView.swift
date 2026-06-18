@@ -8,22 +8,27 @@ struct ComposePostView: View {
     @State private var caption = ""
     @State private var error: String?
 
-    private var canPost: Bool { !caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    private var canPost: Bool {
+        !caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && caption.count <= 500
+    }
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top, spacing: 12) {
-                    AvatarView(
-                        url: authManager.currentUser?.avatarUrl,
-                        fallbackText: authManager.currentUser?.initials ?? "?",
-                        size: 40
-                    )
-                    TextEditor(text: $caption)
-                        .font(.body)
-                        .frame(minHeight: 120, maxHeight: 240)
-                        .scrollContentBackground(.hidden)
-                        .overlay(alignment: .topLeading) {
+            Form {
+                Section {
+                    HStack(alignment: .top, spacing: 12) {
+                        AvatarView(
+                            url: authManager.currentUser?.avatarUrl,
+                            fallbackText: authManager.currentUser?.initials ?? "?",
+                            size: 36
+                        )
+                        ZStack(alignment: .topLeading) {
+                            TextEditor(text: $caption)
+                                .font(.body)
+                                .frame(minHeight: 140)
+                                .scrollContentBackground(.hidden)
+                                .accessibilityIdentifier("feed_compose_caption")
+
                             if caption.isEmpty {
                                 Text("Share a trip, pack, or gear tip…")
                                     .foregroundStyle(.tertiary)
@@ -32,25 +37,25 @@ struct ComposePostView: View {
                                     .padding(.leading, 4)
                             }
                         }
-                        .accessibilityIdentifier("feed_compose_caption")
+                    }
+                    .padding(.vertical, 4)
+                } footer: {
+                    HStack {
+                        Spacer()
+                        Text("\(caption.count) / 500")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(caption.count > 450 ? .orange : .secondary)
+                            .accessibilityIdentifier("feed_compose_counter")
+                    }
                 }
-                .padding()
 
                 if let error {
-                    InlineErrorView(message: error).padding(.horizontal)
+                    Section {
+                        InlineErrorView(message: error)
+                    }
                 }
-
-                Divider()
-
-                HStack {
-                    Text("\(caption.count) / 500")
-                        .font(.caption)
-                        .foregroundStyle(caption.count > 450 ? .orange : .secondary)
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
             }
+            .packRatFormStyle()
             .navigationTitle("New Post")
             #if os(macOS)
             .navigationSubtitle(authManager.currentUser?.displayName ?? "")
@@ -69,7 +74,7 @@ struct ComposePostView: View {
                 }
             }
         }
-        .frame(minWidth: 400, minHeight: 260)
+        .formSheetSize(minWidth: 500, minHeight: 420)
     }
 
     private func post() async {

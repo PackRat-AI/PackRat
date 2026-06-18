@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - Models
 
@@ -15,6 +16,7 @@ struct GearItem: Identifiable {
 
 struct GearInventoryView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
     @State private var searchText = ""
     @State private var sortOrder: SortOrder = .name
 
@@ -81,8 +83,8 @@ struct GearInventoryView: View {
                 .pickerStyle(.menu)
             }
         }
-        .task { await appState.packsVM.load() }
-        .refreshable { await appState.packsVM.load() }
+        .task { await appState.packsVM.load(context: modelContext) }
+        .refreshable { await appState.packsVM.load(context: modelContext) }
     }
 
     private var inventoryList: some View {

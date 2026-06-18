@@ -3,37 +3,32 @@ import NukeUI
 
 struct FeedView: View {
     let viewModel: FeedViewModel
+    @Environment(AuthManager.self) private var authManager
     @State private var showingCompose = false
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                if viewModel.isLoading && viewModel.posts.isEmpty {
-                    ProgressView("Loading feed…").padding(.top, 40)
-                } else if let error = viewModel.error {
-                    ErrorView(error, retry: { await viewModel.load(refresh: true) }).padding(.top, 20)
-                } else if viewModel.posts.isEmpty {
-                    EmptyStateView(
-                        "Nothing here yet",
-                        subtitle: "Be the first to share a trip or pack",
-                        systemImage: "newspaper",
-                        actionLabel: "Write a Post",
-                        action: { showingCompose = true }
-                    )
-                    .padding(.top, 20)
-                } else {
-                    ForEach(viewModel.posts) { post in
-                        PostCard(post: post, viewModel: viewModel)
-                            .padding(.horizontal)
-                    }
-                    if viewModel.hasMore {
-                        ProgressView()
-                            .padding(.bottom)
-                            .task { await viewModel.loadMore() }
-                    }
-                }
+        Group {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Community Feed Requires an Account",
+                    subtitle: "Posts, comments, and likes sync with your PackRat account.",
+                    systemImage: "person.2"
+                )
+            } else if viewModel.isLoading && viewModel.posts.isEmpty {
+                ProgressView("Loading feed…").frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error = viewModel.error {
+                ErrorView(error, retry: { await viewModel.load(refresh: true) })
+            } else if viewModel.posts.isEmpty {
+                EmptyStateView(
+                    "No Posts Yet",
+                    subtitle: "Be the first to share a trip or pack",
+                    systemImage: "newspaper",
+                    actionLabel: "Write a Post",
+                    action: { showingCompose = true }
+                )
+            } else {
+                feedList
             }
-            .padding(.bottom)
         }
         .navigationTitle("Community Feed")
         .toolbar {
@@ -41,13 +36,32 @@ struct FeedView: View {
                 Button("New Post", systemImage: "square.and.pencil") {
                     showingCompose = true
                 }
+                .accessibilityIdentifier("feed_new_post_button")
+                .disabled(!authManager.isAuthenticated)
                 .keyboardShortcut("n", modifiers: .command)
             }
         }
-        .task { if viewModel.posts.isEmpty { await viewModel.load() } }
-        .refreshable { await viewModel.load(refresh: true) }
+        .task { if authManager.isAuthenticated && viewModel.posts.isEmpty { await viewModel.load() } }
+        .refreshable { if authManager.isAuthenticated { await viewModel.load(refresh: true) } }
         .sheet(isPresented: $showingCompose) {
             ComposePostView(viewModel: viewModel)
+        }
+    }
+
+    private var feedList: some View {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(viewModel.posts) { post in
+                    PostCard(post: post, viewModel: viewModel)
+                        .padding(.horizontal)
+                }
+                if viewModel.hasMore {
+                    ProgressView()
+                        .padding(.bottom)
+                        .task { await viewModel.loadMore() }
+                }
+            }
+            .padding(.bottom)
         }
     }
 }
@@ -136,6 +150,7 @@ struct PostCard: View {
             }
             .buttonStyle(.plain)
             .animation(.spring(response: 0.3), value: isLiked)
+            .accessibilityIdentifier("feed_like_button_\(post.id)")
 
             Button {
                 showingComments = true
@@ -145,6 +160,7 @@ struct PostCard: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("feed_comments_button_\(post.id)")
 
             Spacer()
 

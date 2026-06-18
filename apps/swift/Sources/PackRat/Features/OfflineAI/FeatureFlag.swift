@@ -27,7 +27,7 @@ extension Defaults.Keys {
 /// implementations on the next read.
 public enum LocalLLMProviderFactory {
     public static func makeProvider() -> LocalLLMProvider {
-        if Defaults[.useRealLocalLLM] {
+        if AppFeatureFlags.enableLocalAI && Defaults[.useRealLocalLLM] {
             return MLXLocalLLMProvider()
         }
         return MockLocalLLMProvider()

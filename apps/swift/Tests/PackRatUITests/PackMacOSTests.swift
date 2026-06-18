@@ -81,7 +81,7 @@ final class PackMacOSTests: AppUITestCase {
         waitFor(addButton, message: "Add Item button must be visible")
         addButton.click()
 
-        let itemNameField = app.textFields["Name"]
+        let itemNameField = app.textFields["pack_item_name"]
         waitFor(itemNameField, message: "Item Name field must appear")
         itemNameField.click()
         itemNameField.typeText(itemName)
@@ -95,7 +95,7 @@ final class PackMacOSTests: AppUITestCase {
         app.buttons["Add"].click()
 
         XCTAssertTrue(
-            app.staticTexts[itemName].waitForExistence(timeout: 15),
+            packItemRow(containing: itemName).waitForExistence(timeout: 15),
             "Added item '\(itemName)' must appear in pack detail"
         )
     }
@@ -108,15 +108,17 @@ final class PackMacOSTests: AppUITestCase {
         openPack(named: packName)
 
         let itemNames = ["Sleeping Bag", "Rain Jacket", "Water Filter"]
+        var uniqueItems: [String] = []
         for item in itemNames {
             let uniqueItem = "\(item) \(Int(Date().timeIntervalSince1970))"
+            uniqueItems.append(uniqueItem)
             addItem(named: uniqueItem)
         }
 
-        for item in itemNames {
+        for item in uniqueItems {
             XCTAssertTrue(
-                app.staticTexts.matching(NSPredicate(format: "label CONTAINS '\(item)'")).firstMatch
-                    .waitForExistence(timeout: 5),
+                packItemRow(containing: item)
+                    .waitForExistence(timeout: 10),
                 "Item '\(item)' should appear in pack"
             )
         }
@@ -135,17 +137,19 @@ final class PackMacOSTests: AppUITestCase {
         // Open the detail-column ••• overflow menu. On macOS the toolbar lives
         // in the detail column window chrome; the menu icon is the
         // "ellipsis.circle" image button.
-        let menuButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")
-        ).firstMatch
+        let menuButton = app.menuButtons["pack_detail_more_menu"].exists
+            ? app.menuButtons["pack_detail_more_menu"]
+            : app.menuButtons["ellipsis.circle"]
         waitFor(menuButton, timeout: 5)
         menuButton.click()
 
-        let editButton = app.buttons["Edit Pack"]
+        let editButton = app.menuItems["Edit Pack"].exists
+            ? app.menuItems["Edit Pack"]
+            : app.buttons["pack_detail_edit_pack"]
         waitFor(editButton, timeout: 3)
         editButton.click()
 
-        let nameField = app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.clearAndTypeText(updatedName)
 
@@ -169,7 +173,7 @@ final class PackMacOSTests: AppUITestCase {
         // Right-click invokes the context menu on macOS.
         cell.rightClick()
 
-        let deleteButton = app.buttons["Delete"]
+        let deleteButton = rowDeleteMenuItem()
         waitFor(deleteButton, timeout: 5)
         deleteButton.click()
 
@@ -182,20 +186,10 @@ final class PackMacOSTests: AppUITestCase {
         goToSidebar("Packs")
         waitFor(app.buttons["New Pack"]).click()
 
-        let nameField = app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(name)
-
-        // The API requires a non-null category for create; pick Hiking.
-        let categoryButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'Category' OR label == 'None'")
-        ).firstMatch
-        if categoryButton.waitForExistence(timeout: 3) {
-            categoryButton.click()
-            let hiking = app.buttons["Hiking"].firstMatch
-            if hiking.waitForExistence(timeout: 3) { hiking.click() }
-        }
 
         app.buttons["Create"].click()
         waitFor(app.staticTexts[name], timeout: 15)
@@ -213,7 +207,7 @@ final class PackMacOSTests: AppUITestCase {
         let addButton = app.buttons["Add Item"].firstMatch
         waitFor(addButton).click()
 
-        let nameField = app.textFields["Name"]
+        let nameField = app.textFields["pack_item_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(name)
@@ -229,7 +223,7 @@ final class PackMacOSTests: AppUITestCase {
         // Wait for the form sheet to dismiss (Add Item button visible again).
         waitFor(app.buttons["Add Item"].firstMatch, timeout: 10)
 
-        let target = app.staticTexts[name]
+        let target = packItemRow(containing: name)
         waitFor(target, timeout: 10, message: "Item '\(name)' must appear in pack detail")
     }
 
@@ -238,9 +232,19 @@ final class PackMacOSTests: AppUITestCase {
         let cell = app.staticTexts[name]
         guard cell.waitForExistence(timeout: 5) else { return }
         cell.rightClick()
-        let deleteButton = app.buttons["Delete"]
+        let deleteButton = rowDeleteMenuItem()
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()
+    }
+
+    private func rowDeleteMenuItem() -> XCUIElement {
+        app.menuItems.matching(NSPredicate(format: "identifier == %@", "trash")).firstMatch
+    }
+
+    private func packItemRow(containing text: String) -> XCUIElement {
+        app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "pack_item_row_", text)
+        ).firstMatch
     }
 }
 #endif

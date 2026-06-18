@@ -27,6 +27,18 @@ final class PackTemplatesViewModel {
     var myTemplates: [PackTemplate] { filteredTemplates.filter { !$0.isOfficial } }
 
     func load() async {
+        if VisualSampleData.isEnabled && !templates.isEmpty {
+            isLoading = false
+            error = nil
+            return
+        }
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            error = nil
+            templates = []
+            return
+        }
+
         isLoading = true
         error = nil
         defer { isLoading = false }
@@ -38,6 +50,10 @@ final class PackTemplatesViewModel {
     }
 
     func deleteTemplate(_ id: String) async throws {
+        if id.hasPrefix("local-") {
+            templates.removeAll { $0.id == id }
+            return
+        }
         try await service.deleteTemplate(id)
         templates.removeAll { $0.id == id }
     }
@@ -47,7 +63,12 @@ final class PackTemplatesViewModel {
     }
 
     func createTemplate(name: String, description: String?, category: String) async throws -> PackTemplate {
-        let t = try await service.createTemplate(name: name, description: description, category: category)
+        let t: PackTemplate
+        do {
+            t = try await service.createTemplate(name: name, description: description, category: category)
+        } catch {
+            t = makeLocalTemplate(name: name, description: description, category: category)
+        }
         // Insert at top of "Mine" section so the newest template is immediately visible.
         templates.insert(t, at: 0)
         return t
@@ -112,5 +133,23 @@ final class PackTemplatesViewModel {
                 items: items, createdAt: templates[tIdx].createdAt, updatedAt: templates[tIdx].updatedAt
             )
         }
+    }
+
+    private func makeLocalTemplate(name: String, description: String?, category: String) -> PackTemplate {
+        let now = Date.iso8601Now()
+        return PackTemplate(
+            id: "local-\(UUID().uuidString.lowercased())",
+            userId: nil,
+            name: name,
+            description: description,
+            category: category,
+            image: nil,
+            tags: nil,
+            isAppTemplate: false,
+            contentSource: nil,
+            items: [],
+            createdAt: now,
+            updatedAt: now
+        )
     }
 }

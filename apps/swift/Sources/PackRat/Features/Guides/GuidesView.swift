@@ -78,6 +78,22 @@ final class GuidesViewModel {
     }
 
     func load() async {
+        if VisualSampleData.isEnabled {
+            isLoading = false
+            error = nil
+            guides = VisualSampleData.guides
+            categories = VisualSampleData.guideCategories
+            return
+        }
+
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            error = nil
+            guides = []
+            categories = []
+            return
+        }
+
         isLoading = true
         error = nil
         defer { isLoading = false }
@@ -105,10 +121,17 @@ final class GuidesViewModel {
 struct GuidesView: View {
     @State private var viewModel = GuidesViewModel()
     @State private var selectedGuide: Guide?
+    @Environment(AuthManager.self) private var authManager
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.guides.isEmpty {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Guides Require an Account",
+                    subtitle: "Guides sync with your PackRat account when you are online.",
+                    systemImage: "book"
+                )
+            } else if viewModel.isLoading && viewModel.guides.isEmpty {
                 ProgressView("Loading guides…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.guides.isEmpty {
                 ErrorView(error, retry: { await viewModel.load() })
@@ -126,52 +149,52 @@ struct GuidesView: View {
         }
         .navigationTitle("Guides")
         .searchable(text: $viewModel.searchText, prompt: "Search guides")
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !viewModel.categories.isEmpty { categoryBar }
-        }
-        .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
+        .task { if authManager.isAuthenticated { await viewModel.load() } }
+        .refreshable { if authManager.isAuthenticated { await viewModel.load() } }
         .sheet(item: $selectedGuide) { guide in
             NavigationStack { GuideDetailView(guide: guide) }
         }
     }
 
     private var categoryBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                categoryChip(nil, label: "All")
+        HStack {
+            Picker("Category", selection: $viewModel.selectedCategory) {
+                Label("All", systemImage: "line.3.horizontal.decrease.circle")
+                    .tag(nil as String?)
                 ForEach(viewModel.categories, id: \.self) { cat in
-                    categoryChip(cat, label: cat.capitalized)
+                    Label(cat.capitalized, systemImage: "tag")
+                        .tag(Optional(cat))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-        }
-        .background(.bar)
-    }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("guides_category_filter")
 
-    private func categoryChip(_ cat: String?, label: String) -> some View {
-        let selected = viewModel.selectedCategory == cat
-        return Button {
-            withAnimation(.spring(duration: 0.2)) { viewModel.selectedCategory = cat }
-        } label: {
-            Text(label)
-                .font(.caption.bold())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(selected ? Color.accentColor : Color.accentColor.opacity(0.1), in: Capsule())
-                .foregroundStyle(selected ? .white : Color.accentColor)
+            Spacer()
+
+            Text(viewModel.selectedCategory?.capitalized ?? "All")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 2)
     }
 
     private var guideList: some View {
-        List(viewModel.filteredGuides) { guide in
-            Button { selectedGuide = guide } label: { GuideRowView(guide: guide) }
-                .buttonStyle(.plain)
-                .task {
-                    if guide.id == viewModel.filteredGuides.last?.id { await viewModel.loadMore() }
+        List {
+            if !viewModel.categories.isEmpty {
+                Section {
+                    categoryBar
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .listRowSeparator(.hidden)
                 }
+            }
+
+            ForEach(viewModel.filteredGuides) { guide in
+                Button { selectedGuide = guide } label: { GuideRowView(guide: guide) }
+                    .buttonStyle(.plain)
+                    .task {
+                        if guide.id == viewModel.filteredGuides.last?.id { await viewModel.loadMore() }
+                    }
+            }
         }
     }
 }

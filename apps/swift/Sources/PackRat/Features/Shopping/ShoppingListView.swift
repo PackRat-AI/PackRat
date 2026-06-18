@@ -73,6 +73,7 @@ struct ShoppingListView: View {
                     Button { showingAddSheet = true } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("shopping_add_item_button")
                 }
                 if !items.isEmpty {
                     ToolbarItem(placement: .secondaryAction) {
@@ -92,7 +93,7 @@ struct ShoppingListView: View {
             }
         }
         #if os(macOS)
-        .frame(minWidth: 380, minHeight: 480)
+        .formSheetSize(minWidth: 440, minHeight: 520)
         #endif
     }
 
@@ -180,7 +181,7 @@ private struct AddShoppingItemSheet: View {
         NavigationStack {
             Form {
                 Section("Item") {
-                    TextField("Name (required)", text: $name)
+                    TextField("Name", text: $name)
                     Picker("Category", selection: $category) {
                         Text("None").tag("")
                         ForEach(categories, id: \.self) { cat in
@@ -189,14 +190,19 @@ private struct AddShoppingItemSheet: View {
                     }
                 }
                 Section("Details") {
-                    TextField("Estimated price ($)", text: $priceText)
-                        #if os(iOS)
-                        .keyboardType(.decimalPad)
-                        #endif
+                    LabeledContent("Estimated Price") {
+                        TextField("0.00", text: $priceText)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 96)
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
+                    }
                     TextField("Notes", text: $notes, axis: .vertical)
-                        .lineLimit(3)
+                        .lineLimit(3, reservesSpace: true)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle("Add Item")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -211,9 +217,7 @@ private struct AddShoppingItemSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 340, minHeight: 320)
-        #endif
+        .formSheetSize(minWidth: 460, minHeight: 420)
     }
 
     private func save() {

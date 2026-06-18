@@ -50,7 +50,7 @@ actor APIClient {
 
     func sendDiscarding(_ endpoint: some APIEndpoint) async throws {
         let request = try buildRequest(endpoint, sessionToken: KeychainService.shared.sessionToken)
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await dataWithTransientRetry(for: request)
         captureSessionTokenIfPresent(response)
         try validateStatus(response, data: data)
     }
@@ -104,7 +104,7 @@ actor APIClient {
         }
         #endif
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await dataWithTransientRetry(for: request)
 
         #if DEBUG
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -119,6 +119,32 @@ actor APIClient {
 
         try validateStatus(response, data: data)
         return try decode(data, as: T.self)
+    }
+
+    private func dataWithTransientRetry(for request: URLRequest) async throws -> (Data, URLResponse) {
+        var lastError: Error?
+
+        for attempt in 0..<2 {
+            do {
+                let (data, response) = try await session.data(for: request)
+                if let http = response as? HTTPURLResponse,
+                   (500...599).contains(http.statusCode),
+                   attempt == 0 {
+                    captureSessionTokenIfPresent(response)
+                    try? await Task.sleep(for: .milliseconds(300))
+                    continue
+                }
+                return (data, response)
+            } catch {
+                lastError = error
+                if attempt == 0 {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    continue
+                }
+            }
+        }
+
+        throw lastError ?? PackRatError.unknown
     }
 
     /// Better Auth returns the session token in the `set-auth-token` response

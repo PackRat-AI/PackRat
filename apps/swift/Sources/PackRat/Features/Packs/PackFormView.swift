@@ -1,14 +1,16 @@
 import SwiftUI
+import SwiftData
 
 struct PackFormView: View {
     let viewModel: PacksViewModel
     let existingPack: Pack?
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var name = ""
     @State private var description = ""
-    @State private var category = ""
+    @State private var category = PackCategory.hiking.rawValue
     @State private var isPublic = false
     @State private var isLoading = false
     @State private var error: String?
@@ -25,9 +27,11 @@ struct PackFormView: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    TextField("Pack Name", text: $name)
-                    TextField("Description (optional)", text: $description, axis: .vertical)
+                    TextField("Name", text: $name)
+                        .accessibilityIdentifier("pack_name")
+                    TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .accessibilityIdentifier("pack_description")
                 }
 
                 Section("Category") {
@@ -37,6 +41,7 @@ struct PackFormView: View {
                             Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
                         }
                     }
+                    .accessibilityIdentifier("pack_category")
                     #if os(macOS)
                     .pickerStyle(.menu)
                     #endif
@@ -52,6 +57,7 @@ struct PackFormView: View {
                     }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Pack" : "New Pack")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -67,9 +73,7 @@ struct PackFormView: View {
             }
             .onAppear { prefill() }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 300)
-        #endif
+        .formSheetSize(minWidth: 500, minHeight: 400)
     }
 
     private func prefill() {
@@ -93,14 +97,16 @@ struct PackFormView: View {
                         name: name.trimmingCharacters(in: .whitespaces),
                         description: description.isEmpty ? nil : description,
                         category: category.isEmpty ? nil : category,
-                        isPublic: isPublic
+                        isPublic: isPublic,
+                        context: modelContext
                     )
                 } else {
                     try await viewModel.createPack(
                         name: name.trimmingCharacters(in: .whitespaces),
                         description: description.isEmpty ? nil : description,
                         category: category.isEmpty ? nil : category,
-                        isPublic: isPublic
+                        isPublic: isPublic,
+                        context: modelContext
                     )
                 }
                 dismiss()

@@ -22,7 +22,7 @@ public struct OfflineAIView: View {
             promptSection
             responseSection
         }
-        .formStyle(.grouped)
+        .packRatFormStyle()
         .navigationTitle("Offline AI (Debug)")
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

@@ -16,7 +16,13 @@ struct WeatherAlertPreferencesView: View {
         Form {
             Section("General") {
                 Toggle("Weather Notifications", isOn: $weatherNotifications)
+                    .accessibilityIdentifier("weather_alert_notifications_toggle")
+                    .accessibilityLabel("Weather Notifications")
+                    .accessibilityValue(weatherNotifications ? "on" : "off")
                 Toggle("Location Monitoring", isOn: $locationMonitoring)
+                    .accessibilityIdentifier("weather_alert_location_monitoring_toggle")
+                    .accessibilityLabel("Location Monitoring")
+                    .accessibilityValue(locationMonitoring ? "on" : "off")
             }
 
             Section {
@@ -28,6 +34,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.yellow)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_severe_storms_toggle")
+                .accessibilityLabel("Severe Storms")
+                .accessibilityValue(severeStorms ? "on" : "off")
                 Toggle(isOn: $tornadoWarnings) {
                     Label {
                         Text("Tornado Warnings")
@@ -36,6 +45,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.red)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_tornado_warnings_toggle")
+                .accessibilityLabel("Tornado Warnings")
+                .accessibilityValue(tornadoWarnings ? "on" : "off")
                 Toggle(isOn: $floodAlerts) {
                     Label {
                         Text("Flood Alerts")
@@ -44,6 +56,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.blue)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_flood_alerts_toggle")
+                .accessibilityLabel("Flood Alerts")
+                .accessibilityValue(floodAlerts ? "on" : "off")
                 Toggle(isOn: $fireDanger) {
                     Label {
                         Text("Fire Danger")
@@ -52,6 +67,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.orange)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_fire_danger_toggle")
+                .accessibilityLabel("Fire Danger")
+                .accessibilityValue(fireDanger ? "on" : "off")
                 Toggle(isOn: $winterWeather) {
                     Label {
                         Text("Winter Weather")
@@ -60,6 +78,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.cyan)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_winter_weather_toggle")
+                .accessibilityLabel("Winter Weather")
+                .accessibilityValue(winterWeather ? "on" : "off")
                 Toggle(isOn: $extremeTemperature) {
                     Label {
                         Text("Extreme Temperature")
@@ -68,6 +89,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.red)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_extreme_temperature_toggle")
+                .accessibilityLabel("Extreme Temperature")
+                .accessibilityValue(extremeTemperature ? "on" : "off")
                 Toggle(isOn: $highWinds) {
                     Label {
                         Text("High Winds")
@@ -76,6 +100,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.teal)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_high_winds_toggle")
+                .accessibilityLabel("High Winds")
+                .accessibilityValue(highWinds ? "on" : "off")
                 Toggle(isOn: $fogAlerts) {
                     Label {
                         Text("Fog Alerts")
@@ -84,6 +111,9 @@ struct WeatherAlertPreferencesView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .accessibilityIdentifier("weather_alert_fog_alerts_toggle")
+                .accessibilityLabel("Fog Alerts")
+                .accessibilityValue(fogAlerts ? "on" : "off")
             } header: {
                 Text("Alert Types")
             } footer: {
@@ -91,6 +121,7 @@ struct WeatherAlertPreferencesView: View {
             }
             .disabled(!weatherNotifications)
         }
+        .packRatFormStyle()
         .navigationTitle("Alert Preferences")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

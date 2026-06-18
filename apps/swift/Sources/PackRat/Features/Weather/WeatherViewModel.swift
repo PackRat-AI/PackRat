@@ -21,6 +21,11 @@ final class WeatherViewModel {
 
     init(service: WeatherService = .shared) {
         self.service = service
+        if VisualSampleData.isUITestFixturesEnabled {
+            UserDefaults.standard.removeObject(forKey: savedLocationsKey)
+            UserDefaults.standard.removeObject(forKey: activeLocationKey)
+        }
+        guard !VisualSampleData.isScreenshotCapture else { return }
         loadSavedLocations()
         if let active = savedLocations.first(where: { $0.id == UserDefaults.standard.integer(forKey: activeLocationKey) })
             ?? savedLocations.first {
@@ -79,6 +84,13 @@ final class WeatherViewModel {
     }
 
     func search(query: String) async {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            isSearching = false
+            searchError = nil
+            searchResults = VisualSampleData.weatherLocations(matching: query)
+            return
+        }
+
         isSearching = true
         searchError = nil
         defer { isSearching = false }
@@ -98,6 +110,20 @@ final class WeatherViewModel {
     }
 
     func loadForecast(for locationId: Int) async {
+        if (VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled),
+           let location = selectedLocation ?? VisualSampleData.weatherLocations.first(where: { $0.id == locationId }) {
+            isLoadingForecast = false
+            forecastError = nil
+            forecast = VisualSampleData.weatherForecast(for: location)
+            return
+        }
+
+        guard !VisualSampleData.isScreenshotCapture || VisualSampleData.isEnabled else {
+            forecastError = nil
+            forecast = nil
+            return
+        }
+
         isLoadingForecast = true
         forecastError = nil
         defer { isLoadingForecast = false }

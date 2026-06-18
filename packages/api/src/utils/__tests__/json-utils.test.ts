@@ -70,6 +70,11 @@ describe('json-utils', () => {
       expect(result?.reviewCount).toBe(42);
     });
 
+    it('normalizes NaN reviewCount numbers to zero', () => {
+      const result = mapJsonRowToItem({ reviewCount: Number.NaN });
+      expect(result?.reviewCount).toBe(0);
+    });
+
     it('maps reviewCount from string', () => {
       const result = mapJsonRowToItem({ reviewCount: '128' });
       expect(result?.reviewCount).toBe(128);
@@ -166,9 +171,21 @@ describe('json-utils', () => {
       expect(result?.weightUnit).toBeDefined();
     });
 
+    it('defaults unknown numeric weight units to grams', () => {
+      const result = mapJsonRowToItem({ weight: 12, weightUnit: 'stones' });
+      expect(result?.weight).toBe(12);
+      expect(result?.weightUnit).toBe('g');
+    });
+
     it('maps weight from string', () => {
       const result = mapJsonRowToItem({ weight: '1.5 lbs' });
       expect(result?.weight).toBeGreaterThan(0);
+    });
+
+    it('defaults unknown string weight units to grams', () => {
+      const result = mapJsonRowToItem({ weight: '12 stones', weightUnit: 'stones' });
+      expect(result?.weight).toBe(12);
+      expect(result?.weightUnit).toBe('g');
     });
 
     it('ignores non-positive weight strings', () => {
@@ -218,6 +235,11 @@ describe('json-utils', () => {
       expect(result?.techs).toEqual({});
     });
 
+    it('maps malformed tech strings to an empty object', () => {
+      const result = mapJsonRowToItem({ techs: '{"broken":' });
+      expect(result?.techs).toEqual({});
+    });
+
     it('falls back to weight from techs Claimed Weight field', () => {
       const result = mapJsonRowToItem({ techs: { 'Claimed Weight': '280g' } });
       expect(result?.weight).toBeGreaterThan(0);
@@ -226,6 +248,12 @@ describe('json-utils', () => {
     it('falls back to weight from techs weight field', () => {
       const result = mapJsonRowToItem({ techs: { weight: '1.2 lbs' } });
       expect(result?.weight).toBeGreaterThan(0);
+    });
+
+    it('defaults unknown fallback weight units from techs to grams', () => {
+      const result = mapJsonRowToItem({ techs: { 'Claimed Weight': '12 stones' } });
+      expect(result?.weight).toBe(12);
+      expect(result?.weightUnit).toBe('g');
     });
 
     it('maps availability from valid string', () => {

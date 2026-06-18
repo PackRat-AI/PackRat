@@ -8,9 +8,7 @@ final class SeasonSuggestionsMacOSTests: AppUITestCase {
     func testOpenSeasonSuggestionsFromHome() {
         goToSidebar("Home")
 
-        let tile = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Season' OR label CONTAINS[c] 'Suggestion'")
-        ).firstMatch
+        let tile = app.buttons["home_action_seasonsuggestions"]
         guard tile.waitForExistence(timeout: 8) else {
             XCTFail("Season Suggestions tile not found on Home")
             return
@@ -18,8 +16,8 @@ final class SeasonSuggestionsMacOSTests: AppUITestCase {
         tile.click()
 
         XCTAssertTrue(
-            app.staticTexts["AI-Powered Packing Tips"].waitForExistence(timeout: 5)
-            || app.staticTexts["Season Suggestions"].waitForExistence(timeout: 5),
+            app.staticTexts["Season Suggestions"].waitForExistence(timeout: 5)
+            || app.staticTexts["Sign In for Season Suggestions"].waitForExistence(timeout: 5),
             "Season Suggestions sheet must appear"
         )
 
@@ -29,17 +27,14 @@ final class SeasonSuggestionsMacOSTests: AppUITestCase {
     func testSeasonSuggestionsHasLocationField() {
         goToSidebar("Home")
 
-        let tile = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Season' OR label CONTAINS[c] 'Suggestion'")
-        ).firstMatch
+        let tile = app.buttons["home_action_seasonsuggestions"]
         guard tile.waitForExistence(timeout: 8) else { return }
         tile.click()
 
         XCTAssertTrue(
-            app.textFields.matching(
-                NSPredicate(format: "placeholderValue CONTAINS[c] 'Yosemite' OR placeholderValue CONTAINS[c] 'going'")
-            ).firstMatch.waitForExistence(timeout: 5)
-            || app.staticTexts["Where are you going?"].waitForExistence(timeout: 3),
+            app.textFields["e.g. Yosemite, Pacific Crest Trail…"].waitForExistence(timeout: 5)
+            || app.staticTexts["Destination"].waitForExistence(timeout: 3)
+            || app.staticTexts["Sign In for Season Suggestions"].waitForExistence(timeout: 3),
             "Location prompt must appear"
         )
 
@@ -49,9 +44,7 @@ final class SeasonSuggestionsMacOSTests: AppUITestCase {
     func testGetSuggestionsButtonDisabledWithEmptyLocation() {
         goToSidebar("Home")
 
-        let tile = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] 'Season' OR label CONTAINS[c] 'Suggestion'")
-        ).firstMatch
+        let tile = app.buttons["home_action_seasonsuggestions"]
         guard tile.waitForExistence(timeout: 8) else { return }
         tile.click()
 

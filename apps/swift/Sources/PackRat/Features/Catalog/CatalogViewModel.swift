@@ -31,6 +31,23 @@ final class CatalogViewModel {
     }
 
     func search(reset: Bool = false) async {
+        if VisualSampleData.isEnabled || VisualSampleData.isUITestFixturesEnabled {
+            if reset { currentPage = 1 }
+            isLoading = false
+            error = nil
+            items = VisualSampleData.catalogItems(matching: searchText)
+            hasSearched = true
+            return
+        }
+        if VisualSampleData.isScreenshotCapture && !VisualSampleData.isEnabled {
+            if reset { currentPage = 1 }
+            isLoading = false
+            error = nil
+            items = []
+            hasSearched = !searchText.isEmpty
+            return
+        }
+
         if reset { currentPage = 1 }
         isLoading = true
         error = nil
@@ -49,6 +66,7 @@ final class CatalogViewModel {
     }
 
     func loadMore() async {
+        guard !VisualSampleData.isScreenshotCapture else { return }
         guard !isLoading, !searchText.isEmpty else { return }
         currentPage += 1
         await search(reset: false)

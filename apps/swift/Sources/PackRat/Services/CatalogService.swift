@@ -14,7 +14,7 @@ final class CatalogService: Sendable {
         ])
         // Handle both wrapped and unwrapped responses
         if let wrapped = try? await api.send(endpoint, as: CatalogSearchResponse.self) {
-            return wrapped.items ?? []
+            return wrapped.items
         }
         return try await api.send(endpoint)
     }

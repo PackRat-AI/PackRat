@@ -25,14 +25,13 @@ final class TripTests: AppUITestCase {
 
     func testPlanTripButtonOpensForm() {
         goToTab("Trips")
-        // Either toolbar Plan Trip button or empty-state CTA
-        let planButton = app.buttons["Plan Trip"]
+        let planButton = app.buttons["trips_plan_trip_button"]
         waitFor(planButton)
         planButton.tap()
 
         XCTAssertTrue(
-            app.textFields["Trip Name"].waitForExistence(timeout: 5),
-            "Trip Name field must appear in form"
+            app.textFields["trip_name"].waitForExistence(timeout: 5),
+            "Trip name field must appear in form"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
     }
@@ -42,9 +41,9 @@ final class TripTests: AppUITestCase {
         createdTripName = tripName
 
         goToTab("Trips")
-        waitFor(app.buttons["Plan Trip"]).tap()
+        waitFor(app.buttons["trips_plan_trip_button"]).tap()
 
-        let nameField = app.textFields["Trip Name"]
+        let nameField = app.textFields["trip_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(tripName)
@@ -62,9 +61,9 @@ final class TripTests: AppUITestCase {
         createdTripName = tripName
 
         goToTab("Trips")
-        waitFor(app.buttons["Plan Trip"]).tap()
+        waitFor(app.buttons["trips_plan_trip_button"]).tap()
 
-        let nameField = app.textFields["Trip Name"]
+        let nameField = app.textFields["trip_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(tripName)
@@ -123,8 +122,8 @@ final class TripTests: AppUITestCase {
 
     private func createTrip(named name: String) {
         goToTab("Trips")
-        waitFor(app.buttons["Plan Trip"]).tap()
-        let nameField = app.textFields["Trip Name"]
+        waitFor(app.buttons["trips_plan_trip_button"]).tap()
+        let nameField = app.textFields["trip_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)

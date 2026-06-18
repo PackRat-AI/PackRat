@@ -50,10 +50,14 @@
     "lint-unsafe": "biome check --write --unsafe",
     "mcp": "bun run --cwd packages/mcp dev",
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
-    "swift": "cd apps/swift && xcodegen generate && bun scripts/fix-xcodeproj.ts",
+    "swift": "bun swift:config && cd apps/swift && xcodegen generate && bun scripts/fix-xcodeproj.ts",
     "swift:codegen": "swift package --package-path apps/swift/PackRatAPIClient plugin --allow-writing-to-package-directory generate-code-from-openapi && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Client.swift apps/swift/Sources/PackRat/API/Client.swift && cp apps/swift/PackRatAPIClient/Sources/PackRatAPIClient/GeneratedSources/Types.swift apps/swift/Sources/PackRat/API/Types.swift",
+    "swift:config": "bun run apps/swift/scripts/generate-swift-config.ts",
     "swift:models": "bun run apps/swift/scripts/generate-swift-models.ts",
     "swift:quicktype": "bun run apps/swift/scripts/generate-quicktype-models.ts",
+    "swift:screenshots": "bun run apps/swift/scripts/capture-visual-screenshots.ts",
+    "swift:validate-assets": "bun run apps/swift/scripts/validate-app-store-assets.ts",
+    "swift:watch-sync-smoke": "bun run apps/swift/scripts/watch-sync-smoke.ts",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
@@ -65,7 +69,8 @@
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
     "test:swift:scripts": "vitest run --config apps/swift/vitest.config.ts",
     "trails": "bun run --cwd apps/trails dev",
-    "web": "bun run --cwd apps/web dev"
+    "web": "bun run --cwd apps/web dev",
+    "web:screenshots": "bun run --cwd apps/expo screenshots:web"
   },
   "overrides": {
     "@packrat-ai/nativewindui": "2.2.1",

@@ -38,17 +38,15 @@ struct GapAnalysisSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 480)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 560)
     }
 
     // MARK: - Setup Form
 
     private var setupForm: some View {
         Form {
-            Section("Trip Context (optional)") {
-                TextField("Destination (e.g. Yosemite, Alps)", text: $destination)
+            Section("Trip Context") {
+                TextField("Destination", text: $destination)
                 Picker("Trip Type", selection: $tripType) {
                     Text("Any").tag("")
                     ForEach(tripTypes, id: \.self) { type in
@@ -76,6 +74,7 @@ struct GapAnalysisSheet: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .packRatFormStyle()
     }
 
     // MARK: - Result

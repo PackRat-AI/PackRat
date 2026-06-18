@@ -5,6 +5,12 @@ import XCTest
 
 /// E2E tests for Community Feed: browsing, composing, deleting posts.
 final class FeedTests: AppUITestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        guard UITestFeatureFlags.enableFeed else {
+            throw XCTSkip("Community Feed is hidden while enableFeed is false.")
+        }
+    }
 
     func testFeedTabReachable() {
         goToTab("Feed")

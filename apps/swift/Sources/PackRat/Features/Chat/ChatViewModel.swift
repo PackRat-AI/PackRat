@@ -9,10 +9,10 @@ final class ChatViewModel {
     var isStreaming = false
     var error: String?
 
-    private let service: ChatService
+    private let service: any ChatServicing
     private var streamingTask: Task<Void, Never>?
 
-    init(service: ChatService = .shared) {
+    init(service: any ChatServicing = ChatService.shared) {
         self.service = service
         messages.append(ChatMessage(
             role: .assistant,

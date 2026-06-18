@@ -31,10 +31,12 @@ struct PackTemplateFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Template Info") {
+                Section("Template") {
                     TextField("Name", text: $name)
-                    TextField("Description (optional)", text: $description, axis: .vertical)
+                        .accessibilityIdentifier("template_name")
+                    TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(2...4)
+                        .accessibilityIdentifier("template_description")
                 }
                 Section("Category") {
                     Picker("Category", selection: $category) {
@@ -48,6 +50,7 @@ struct PackTemplateFormView: View {
                     InlineErrorView(message: error).listRowBackground(Color.clear)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Template" : "New Template")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -64,9 +67,7 @@ struct PackTemplateFormView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 360, minHeight: 280)
-        #endif
+        .formSheetSize(minWidth: 500, minHeight: 380)
     }
 
     private func save() async {

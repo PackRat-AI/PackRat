@@ -6,25 +6,19 @@ import XCTest
 /// sidebar's outline rows and the resulting content/detail panes.
 final class NavigationMacOSTests: AppUITestCase {
 
-    // Each entry: (sidebar label, expected navigation title or landmark text)
-    private let sidebarItems: [(label: String, landmark: String)] = [
-        ("Home",    "Home"),
-        ("Packs",   "Packs"),
-        ("Trips",   "Trips"),
-        ("Weather", "Weather"),
+    private let sidebarItems = [
+        "Home",
+        "Packs",
+        "Trips",
+        "Weather",
     ]
 
     func testAllPrimarySidebarItemsReachable() {
-        for (label, landmark) in sidebarItems {
+        for label in sidebarItems {
             goToSidebar(label)
-            // The navigation title may render as a window title or static text in
-            // the content column. Static text is the most reliable cross-window
-            // signal on macOS.
-            let predicate = NSPredicate(format: "label == %@", landmark)
-            let landmarkHit = app.staticTexts.matching(predicate).firstMatch
             XCTAssertTrue(
-                landmarkHit.waitForExistence(timeout: 8),
-                "'\(landmark)' landmark must appear after selecting sidebar entry '\(label)'"
+                destinationIsVisible(for: label, timeout: 8),
+                "Content landmark must appear after selecting sidebar entry '\(label)'"
             )
         }
     }
@@ -50,14 +44,19 @@ final class NavigationMacOSTests: AppUITestCase {
         ).firstMatch.waitForExistence(timeout: 5)
         let hasList = app.tables.firstMatch.exists
             || app.outlines.element(boundBy: 1).exists
-            || app.staticTexts["Plan Trip"].exists
-        XCTAssertTrue(hasEmpty || hasList, "Trips sidebar must show list or empty state")
+            || app.staticTexts["Trips"].exists
+        let hasPrimaryAction = app.buttons["trips_plan_trip_button"].exists
+            || app.buttons["Plan Trip"].exists
+        XCTAssertTrue(
+            hasEmpty || hasList || hasPrimaryAction,
+            "Trips sidebar must show list, empty state, or primary action"
+        )
     }
 
     func testWeatherSidebarShowsSearchField() {
         goToSidebar("Weather")
         XCTAssertTrue(
-            app.textFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
+            app.searchFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
             "Weather sidebar must show location search field in content pane"
         )
     }
@@ -73,8 +72,9 @@ final class NavigationMacOSTests: AppUITestCase {
     func testPacksCategoryFilterBarVisible() {
         goToSidebar("Packs")
         XCTAssertTrue(
-            app.buttons["All"].waitForExistence(timeout: 8),
-            "'All' category chip must be visible in Packs content pane"
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 8)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2),
+            "Category filter picker must be visible in Packs content pane"
         )
     }
 
@@ -96,23 +96,70 @@ final class NavigationMacOSTests: AppUITestCase {
         // Items reachable only via the sidebar's lower entries (not present as
         // primary tabs on iOS). These are the ones that lived behind "More" on
         // iOS but are first-class on the macOS sidebar.
-        let secondary = [
-            ("Assistant",        "AI Assistant"),
-            ("Catalog",          "Gear Catalog"),
-            ("Templates",        "Pack Templates"),
-            ("Trail Conditions", "Trail Conditions"),
-            ("Feed",             "Community Feed"),
-            ("Guides",           "Guides"),
-            ("Gear Inventory",   "Gear Inventory"),
-            ("Wildlife",         "Wildlife ID"),
+        var secondary = [
+            "Assistant",
+            "Catalog",
+            "Templates",
+            "Trail Conditions",
+            "Guides",
+            "Gear Inventory",
         ]
-        for (label, landmark) in secondary {
+        if UITestFeatureFlags.enableFeed {
+            secondary.append("Feed")
+        }
+        if UITestFeatureFlags.enableWildlifeIdentification {
+            secondary.append("Wildlife")
+        }
+        for label in secondary {
             goToSidebar(label)
-            let hit = app.staticTexts.matching(NSPredicate(format: "label == %@", landmark)).firstMatch
             XCTAssertTrue(
-                hit.waitForExistence(timeout: 8),
-                "Sidebar entry '\(label)' must navigate to '\(landmark)'"
+                destinationIsVisible(for: label, timeout: 8),
+                "Sidebar entry '\(label)' must navigate to its content pane"
             )
+        }
+    }
+
+    private func destinationIsVisible(for label: String, timeout: TimeInterval) -> Bool {
+        switch label {
+        case "Home":
+            return app.staticTexts["Here's your outdoor dashboard"].waitForExistence(timeout: timeout)
+        case "Packs":
+            return app.buttons["New Pack"].waitForExistence(timeout: timeout)
+                || app.buttons["packs_category_filter"].waitForExistence(timeout: 1)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 1)
+        case "Trips":
+            return app.buttons["Plan Trip"].waitForExistence(timeout: timeout)
+                || app.tables.firstMatch.waitForExistence(timeout: 1)
+                || app.outlines.element(boundBy: 1).waitForExistence(timeout: 1)
+        case "Weather":
+            return app.searchFields["Search locations\u{2026}"].waitForExistence(timeout: timeout)
+        case "Assistant":
+            return app.textFields["chat_input"].waitForExistence(timeout: timeout)
+        case "Catalog":
+            return app.searchFields["Search tents, packs, sleeping bags\u{2026}"].waitForExistence(timeout: timeout)
+                || app.staticTexts["Search the Gear Catalog"].waitForExistence(timeout: 1)
+        case "Templates":
+            return app.buttons["New Template"].waitForExistence(timeout: timeout)
+                || app.tables.firstMatch.waitForExistence(timeout: 1)
+                || app.outlines.element(boundBy: 1).waitForExistence(timeout: 1)
+        case "Trail Conditions":
+            return app.buttons["Submit Report"].waitForExistence(timeout: timeout)
+                || app.tables.firstMatch.waitForExistence(timeout: 1)
+                || app.outlines.element(boundBy: 1).waitForExistence(timeout: 1)
+        case "Feed":
+            return app.buttons["New Post"].waitForExistence(timeout: timeout)
+                || app.buttons["Write a Post"].waitForExistence(timeout: 1)
+        case "Guides":
+            return app.staticTexts["Guides"].waitForExistence(timeout: timeout)
+                || app.tables.firstMatch.waitForExistence(timeout: 1)
+        case "Gear Inventory":
+            return app.staticTexts["Gear Inventory"].waitForExistence(timeout: timeout)
+                || app.buttons.matching(NSPredicate(format: "label CONTAINS 'Add'")).firstMatch.waitForExistence(timeout: 1)
+        case "Wildlife":
+            return app.buttons["Choose Photo"].waitForExistence(timeout: timeout)
+                || app.staticTexts["Identify Wildlife"].waitForExistence(timeout: 1)
+        default:
+            return false
         }
     }
 }

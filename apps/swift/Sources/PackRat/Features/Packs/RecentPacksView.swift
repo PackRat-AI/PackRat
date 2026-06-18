@@ -12,10 +12,10 @@ struct RecentPacksView: View {
     var body: some View {
         Group {
             if sorted.isEmpty {
-                ContentUnavailableView(
-                    "No Packs",
-                    systemImage: "backpack",
-                    description: Text("Create a pack to get started")
+                UnavailableStateView(
+                    title: "No Packs",
+                    subtitle: "Create a pack to get started",
+                    systemImage: "backpack"
                 )
             } else {
                 List(sorted) { pack in
@@ -25,6 +25,7 @@ struct RecentPacksView: View {
             }
         }
         .navigationTitle("Recent Packs")
+        .accessibilityIdentifier("recent_packs_view")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
         #endif
