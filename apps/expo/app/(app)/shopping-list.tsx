@@ -3,6 +3,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon } from 'expo-app/components/Icon';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -159,7 +160,7 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
   );
 }
 
-export default function ShoppingListScreen() {
+function ShoppingListScreen() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<'all' | 'pending' | 'purchased'>('pending');
 
@@ -255,5 +256,13 @@ export default function ShoppingListScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export default function ShoppingListRoute() {
+  return (
+    <PaywallGate>
+      <ShoppingListScreen />
+    </PaywallGate>
   );
 }

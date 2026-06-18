@@ -22,6 +22,8 @@ export const clientEnvSchema = z.object({
   EXPO_PUBLIC_SENTRY_DSN: z.string().optional(),
   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional(),
   EXPO_PUBLIC_DISABLE_LOGBOX: z.enum(['true', 'false']).optional().default('false'),
+  EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY: z.string().optional(),
+  EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY: z.string().optional(),
 });
 
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
@@ -36,6 +38,8 @@ const processEnv = {
   EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
   EXPO_PUBLIC_DISABLE_LOGBOX: process.env.EXPO_PUBLIC_DISABLE_LOGBOX,
+  EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY,
+  EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_GOOGLE_API_KEY,
 };
 
 /**

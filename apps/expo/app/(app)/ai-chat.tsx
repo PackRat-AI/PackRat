@@ -34,6 +34,7 @@ import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureU
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { getPackItems, packItemsStore } from 'expo-app/features/packs/store/packItems';
 import { packsStore } from 'expo-app/features/packs/store/packs';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { authClient, getStoredSessionToken } from 'expo-app/lib/auth-client';
@@ -78,7 +79,7 @@ const ROOT_STYLE: ViewStyle = {
   minHeight: 2,
 };
 
-export default function AIChat() {
+function AIChat() {
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
@@ -663,5 +664,13 @@ function Composer({
         </View>
       </View>
     </BlurView>
+  );
+}
+
+export default function AIChatRoute() {
+  return (
+    <PaywallGate>
+      <AIChat />
+    </PaywallGate>
   );
 }

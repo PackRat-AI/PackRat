@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JotaiProvider } from './JotaiProvider';
+import { PurchasesProvider } from './PurchasesProvider';
 import { TanstackProvider } from './TanstackProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -14,16 +15,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <JotaiProvider>
         <TanstackProvider>
-          <SafeAreaProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <ActionSheetProvider>
-                  <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
-                </ActionSheetProvider>
-                <PortalHost />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </SafeAreaProvider>
+          <PurchasesProvider>
+            <SafeAreaProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <KeyboardProvider>
+                  <ActionSheetProvider>
+                    <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+                  </ActionSheetProvider>
+                  <PortalHost />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </SafeAreaProvider>
+          </PurchasesProvider>
         </TanstackProvider>
       </JotaiProvider>
     </ErrorBoundary>

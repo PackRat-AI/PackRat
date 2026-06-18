@@ -9,6 +9,7 @@ import {
   SeasonSuggestionsError,
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -330,7 +331,7 @@ function ErrorCard({ error, onRetry, onGoBack, onGoToInventory, onSignIn }: Erro
   );
 }
 
-export default function SeasonSuggestionsResultsScreen() {
+function SeasonSuggestionsResultsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { location, date } = useLocalSearchParams<{ location: string; date: string }>();
@@ -518,5 +519,13 @@ export default function SeasonSuggestionsResultsScreen() {
         </View>
       </ScrollView>
     </>
+  );
+}
+
+export default function SeasonSuggestionsResultsRoute() {
+  return (
+    <PaywallGate>
+      <SeasonSuggestionsResultsScreen />
+    </PaywallGate>
   );
 }

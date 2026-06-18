@@ -1218,5 +1218,11 @@
       "fish": "fish",
       "other": "other"
     }
+  },
+  "purchases": {
+    "upgradeTitle": "PackRat Pro",
+    "upgradeSubtitle": "Unlock the full outdoor adventure experience",
+    "viewPlans": "View Plans",
+    "restorePurchases": "Restore Purchases"
   }
 }

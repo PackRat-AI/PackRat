@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react-native';
 import { Icon } from 'expo-app/components/Icon';
 import { LocationSearchSheet } from 'expo-app/features/packs/components/LocationSearchSheet';
 import { LocationSourceSheet } from 'expo-app/features/packs/components/LocationSourceSheet';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
@@ -13,7 +14,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, ScrollView, View } from 'react-native';
 
-export default function SeasonSuggestionsScreen() {
+function SeasonSuggestionsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -159,5 +160,13 @@ export default function SeasonSuggestionsScreen() {
         onDismiss={handleSearchDismiss}
       />
     </>
+  );
+}
+
+export default function SeasonSuggestionsRoute() {
+  return (
+    <PaywallGate>
+      <SeasonSuggestionsScreen />
+    </PaywallGate>
   );
 }

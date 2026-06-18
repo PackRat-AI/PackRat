@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
@@ -173,7 +174,7 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
   );
 }
 
-export default function SharedPacksScreen() {
+function SharedPacksScreen() {
   const { t } = useTranslation();
   return (
     <SafeAreaView className="flex-1" edges={['bottom']}>
@@ -208,5 +209,13 @@ export default function SharedPacksScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export default function SharedPacksRoute() {
+  return (
+    <PaywallGate>
+      <SharedPacksScreen />
+    </PaywallGate>
   );
 }

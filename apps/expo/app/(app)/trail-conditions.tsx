@@ -1,6 +1,7 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { featureFlags } from 'expo-app/config';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
 import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
@@ -37,7 +38,7 @@ function getSurfaceBadgeColor(surface: TrailSurface): string {
   }
 }
 
-export default function TrailConditionsScreen() {
+function TrailConditionsScreen() {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [selectedSurface, setSelectedSurface] = useState<SurfaceFilter>('all');
   const { data: reports, isLoading, error } = useTrailConditionReports();
@@ -217,5 +218,13 @@ export default function TrailConditionsScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+export default function TrailConditionsRoute() {
+  return (
+    <PaywallGate>
+      <TrailConditionsScreen />
+    </PaywallGate>
   );
 }

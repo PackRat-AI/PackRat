@@ -4,6 +4,7 @@ import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
+import { PaywallGate } from 'expo-app/features/purchases';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -38,7 +39,7 @@ function WeightCard({
   );
 }
 
-export default function WeightAnalysisScreen() {
+function WeightAnalysisScreen() {
   const params = useLocalSearchParams();
   const packId = params.id;
   const { t } = useTranslation();
@@ -136,5 +137,13 @@ export default function WeightAnalysisScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export default function WeightAnalysisRoute() {
+  return (
+    <PaywallGate>
+      <WeightAnalysisScreen />
+    </PaywallGate>
   );
 }
