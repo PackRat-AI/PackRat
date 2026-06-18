@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { isString } from '@packrat/guards';
 import { withSentry } from '@sentry/react-native/expo';
 import type { ExpoConfig } from 'expo/config';
 import { type ConfigPlugin, withDangerousMod, withXcodeProject } from 'expo/config-plugins';
@@ -55,12 +56,12 @@ const withSwiftUICoreFix: ConfigPlugin<void> = (config) => {
     if (!appTarget) return c;
 
     const configList = proj.pbxXCConfigurationList()[appTarget.target.buildConfigurationList];
-    if (!configList || typeof configList === 'string') return c;
+    if (!configList || isString(configList)) return c;
 
     const buildConfigs = proj.pbxXCBuildConfigurationSection();
     for (const ref of configList.buildConfigurations) {
       const bc = buildConfigs[ref.value];
-      if (!bc || typeof bc === 'string') continue;
+      if (!bc || isString(bc)) continue;
 
       // Shims/SwiftUICore.framework/SwiftUICore.tbd is a minimal stub without
       // allowable-clients. It lives at apps/expo/Shims/ (outside ios/, so it
