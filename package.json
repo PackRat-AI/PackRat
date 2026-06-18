@@ -191,7 +191,9 @@
     "ws": "^8.18.1",
     "zod": "^3.24.2"
   },
-  "patchedDependencies": {},
+  "patchedDependencies": {
+    "react-native-ios-utilities@5.2.0": "patches/react-native-ios-utilities@5.2.0.patch"
+  },
   "trustedDependencies": [
     "@sentry/cli"
   ]
