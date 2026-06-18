@@ -42,6 +42,7 @@ struct TripsListView: View {
                 Button("Plan Trip", systemImage: "plus") { showingCreateSheet = true }
                     .accessibilityIdentifier("trips_plan_trip_button")
                     .keyboardShortcut("n", modifiers: [.command, .shift])
+                    .accessibilityIdentifier("plan_trip_button")
             }
         }
         .task { await viewModel.load(context: modelContext) }

@@ -37,6 +37,9 @@ class AppUITestCase: XCTestCase {
         // while still exercising authenticated API routes.
         app.launchArguments.append("--reset-auth")
         app.launchArguments.append(contentsOf: additionalLaunchArguments)
+        if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
+            app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
+        }
         let bundle = Bundle(for: AppUITestCase.self)
         let seededAuthToken =
             (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)

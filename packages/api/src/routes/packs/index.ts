@@ -156,35 +156,36 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
     '/',
     async ({ body, user }) => {
       const db = createDb();
-      const data = body;
+      try {
+        const data = body;
 
-      // Zod validates all fields at runtime; cast through the Standard Schema
-      // inference gap so drizzle's insert accepts the values.
-      const [newPack] = await db
-        .tag('packs.create')
-        .insert(packs)
-        .values({
-          id: data.id,
-          userId: user.userId,
-          name: data.name,
-          description: data.description,
-          // packs.category is notNull in the DB; the request schema makes it
-          // optional so clients without a category picker (or with no
-          // selection) still validate. Default to 'custom' here so the insert
-          // doesn't violate the NOT NULL constraint.
-          category: data.category ?? 'custom',
-          isPublic: data.isPublic ?? false,
-          image: data.image,
-          tags: data.tags,
-          localCreatedAt: new Date(data.localCreatedAt as string),
-          localUpdatedAt: new Date(data.localUpdatedAt as string),
-        } as typeof packs.$inferInsert)
-        .returning();
+        // Zod validates all fields at runtime; cast through the Standard Schema
+        // inference gap so drizzle's insert accepts the values.
+        const [newPack] = await db
+          .tag('packs.create')
+          .insert(packs)
+          .values({
+            id: data.id,
+            userId: user.userId,
+            name: data.name,
+            description: data.description ?? null,
+            category: data.category,
+            isPublic: data.isPublic ?? false,
+            image: data.image ?? null,
+            tags: data.tags ?? null,
+            localCreatedAt: new Date(data.localCreatedAt as string),
+            localUpdatedAt: new Date(data.localUpdatedAt as string),
+          } as typeof packs.$inferInsert)
+          .returning();
 
-      if (!newPack) return status(500, { error: 'Failed to create pack' });
+        if (!newPack) return status(500, { error: 'Failed to create pack' });
 
-      const packWithItems: PackWithItems = { ...newPack, items: [] };
-      return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
+        const packWithItems: PackWithItems = { ...newPack, items: [] };
+        return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
+      } catch (error) {
+        captureApiException({ error, operation: 'packs.create' });
+        return status(500, { error: 'Failed to create pack' });
+      }
     },
     {
       body: 'packs.CreatePackBody',

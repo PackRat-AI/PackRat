@@ -9,6 +9,9 @@ final class AuthTests: AppUITestCase {
         // Force logged-out state so the login screen is reachable.
         app.launchArguments.append("--reset-auth")
         app.launchArguments.append("--allow-e2e-login-seed")
+        if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
+            app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
+        }
         injectE2EAuthEnvironment()
         app.launch()
     }

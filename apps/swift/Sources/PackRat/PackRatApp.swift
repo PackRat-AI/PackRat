@@ -1,9 +1,24 @@
 import SwiftUI
 import SwiftData
+#if os(macOS)
+import AppKit
+#endif
 
 @main
 struct PackRatApp: App {
     @State private var authManager = AuthManager()
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(PackRatMacAppDelegate.self) private var appDelegate
+    #endif
+
+    init() {
+        #if os(macOS)
+        if ProcessInfo.processInfo.arguments.contains("--reset-auth") {
+            UserDefaults.standard.set(true, forKey: "ApplePersistenceIgnoreState")
+            UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
+        }
+        #endif
+    }
 
     init() {
         // Telemetry has to start before any view is mounted so launch-time
@@ -51,3 +66,27 @@ struct PackRatApp: App {
         #endif
     }
 }
+
+#if os(macOS)
+final class PackRatMacAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        guard ProcessInfo.processInfo.arguments.contains("--reset-auth") else { return }
+
+        NSApp.setActivationPolicy(.regular)
+        DispatchQueue.main.async {
+            NSApp.unhide(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            if NSApp.windows.isEmpty {
+                NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
+            }
+        }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
+        }
+        return true
+    }
+}
+#endif

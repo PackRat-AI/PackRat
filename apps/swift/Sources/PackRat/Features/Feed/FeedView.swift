@@ -39,6 +39,7 @@ struct FeedView: View {
                 .accessibilityIdentifier("feed_new_post_button")
                 .disabled(!authManager.isAuthenticated)
                 .keyboardShortcut("n", modifiers: .command)
+                .accessibilityIdentifier("new_post_button")
             }
         }
         .task { if authManager.isAuthenticated && viewModel.posts.isEmpty { await viewModel.load() } }
