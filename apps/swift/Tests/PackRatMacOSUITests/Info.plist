@@ -22,5 +22,11 @@
 	<string>$(PACKRAT_E2E_EMAIL)</string>
 	<key>PACKRAT_E2E_PASSWORD</key>
 	<string>$(PACKRAT_E2E_PASSWORD)</string>
+	<key>PACKRAT_E2E_SESSION_TOKEN</key>
+	<string>$(PACKRAT_E2E_SESSION_TOKEN)</string>
+	<key>PACKRAT_E2E_USER_ID</key>
+	<string>$(PACKRAT_E2E_USER_ID)</string>
+	<key>PACKRAT_SCREENSHOT_DIR</key>
+	<string>$(PACKRAT_SCREENSHOT_DIR)</string>
 </dict>
 </plist>

@@ -37,14 +37,17 @@ struct PackTemplateItemFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Item Info") {
+                Section("Item") {
                     TextField("Name", text: $name)
-                    TextField("Notes (optional)", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(2...3)
                 }
                 Section("Weight & Quantity") {
-                    HStack {
+                    LabeledContent("Weight") {
+                        HStack {
                         TextField("Weight", text: $weightText)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
@@ -53,18 +56,24 @@ struct PackTemplateItemFormView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(maxWidth: 180)
+                        }
                     }
                     Stepper("Quantity: \(quantity)", value: $quantity, in: 1...99)
                 }
-                Section("Details") {
-                    TextField("Category (optional)", text: $category)
+                Section {
+                    TextField("Category", text: $category)
                     Toggle("Worn", isOn: $worn)
                     Toggle("Consumable", isOn: $consumable)
+                } header: {
+                    Text("Details")
+                } footer: {
+                    Text("Worn and consumable items are excluded from base weight totals.")
                 }
                 if let error {
                     InlineErrorView(message: error).listRowBackground(Color.clear)
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Item" : "Add Item")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -81,9 +90,7 @@ struct PackTemplateItemFormView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 360, minHeight: 360)
-        #endif
+        .formSheetSize(minWidth: 540, minHeight: 520)
     }
 
     private func save() async {

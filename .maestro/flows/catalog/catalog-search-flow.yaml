@@ -33,7 +33,7 @@ appId: ${APP_ID}
       - assertVisible:
           text: "All"
       - assertVisible:
-          text: ".*items.*"
+          id: "catalog:item-.*"
       - tapOn:
           text: "Clothing"
       - waitForAnimationToEnd
@@ -43,4 +43,4 @@ appId: ${APP_ID}
           text: "All"
       - waitForAnimationToEnd
       - assertVisible:
-          text: ".*items.*"
+          id: "catalog:item-.*"

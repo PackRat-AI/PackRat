@@ -1,7 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { getAppBarOptions } from '@packrat/ui/src/app-bar';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
-import { userStore } from 'expo-app/features/auth/store';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -11,6 +11,7 @@ import { ScrollView, View } from 'react-native';
 
 function CategoryCard({
   category,
+  weightUnit,
 }: {
   category: {
     name: string;
@@ -19,6 +20,7 @@ function CategoryCard({
     percentage: number;
     icon?: MaterialIconName;
   };
+  weightUnit: string;
 }) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
@@ -45,7 +47,7 @@ function CategoryCard({
             <View className="flex-row items-center gap-1">
               <Icon name="dumbbell" size={14} color={colors.grey3} />
               <Text variant="subhead" className="text-muted-foreground">
-                {category.weight} {userStore.preferredWeightUnit.peek() ?? 'g'}
+                {category.weight} {weightUnit}
               </Text>
             </View>
           </View>
@@ -60,7 +62,8 @@ export default function PackCategoriesScreen() {
   const pack = usePackDetailsFromStore(params.id as string);
   const { t } = useTranslation();
 
-  const categories = computeCategorySummaries(pack);
+  const { unit: weightUnit } = useWeightUnit();
+  const categories = computeCategorySummaries({ pack, preferredUnit: weightUnit });
 
   return (
     <>
@@ -75,7 +78,7 @@ export default function PackCategoriesScreen() {
 
           <View className="pb-4">
             {categories.map((category) => (
-              <CategoryCard key={category.name} category={category} />
+              <CategoryCard key={category.name} category={category} weightUnit={weightUnit} />
             ))}
           </View>
         </ScrollView>

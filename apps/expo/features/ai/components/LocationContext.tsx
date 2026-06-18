@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { useTemperatureUnit } from 'expo-app/features/auth/hooks/useTemperatureUnit';
 import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -17,6 +18,7 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
   const { colors } = useColorScheme();
   const { t } = useTranslation();
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const { displayTemperature } = useTemperatureUnit();
 
   if (!location) {
     return (
@@ -42,7 +44,9 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
         >
           <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
           <Text className="flex-1 text-sm font-medium">{location.name}</Text>
-          <Text className="mr-1 text-sm text-muted-foreground">{location.temperature}°</Text>
+          <Text className="mr-1 text-sm text-muted-foreground">
+            {displayTemperature(location.temperature)}
+          </Text>
           <Icon name="chevron-down" size={16} color={colors.grey2} />
         </TouchableOpacity>
       </View>

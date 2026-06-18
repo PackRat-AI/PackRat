@@ -6,6 +6,10 @@ final class KeychainService: Sendable {
     private init() {}
 
     private let service = "com.andrewbierman.packrat"
+    private let userDefaultsPrefix = "e2e_auth_"
+    private var usesUserDefaultsStorage: Bool {
+        ProcessInfo.processInfo.arguments.contains("--use-userdefaults-auth")
+    }
 
     enum Key: String {
         // Better Auth issues a single long-lived session token returned via the
@@ -29,6 +33,10 @@ final class KeychainService: Sendable {
     }
 
     private func save(_ value: String, for key: Key) {
+        if usesUserDefaultsStorage {
+            UserDefaults.standard.set(value, forKey: userDefaultsKey(key))
+            return
+        }
         let data = Data(value.utf8)
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
@@ -42,6 +50,9 @@ final class KeychainService: Sendable {
     }
 
     private func read(_ key: Key) -> String? {
+        if usesUserDefaultsStorage {
+            return UserDefaults.standard.string(forKey: userDefaultsKey(key))
+        }
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -57,11 +68,19 @@ final class KeychainService: Sendable {
     }
 
     private func delete(_ key: Key) {
+        if usesUserDefaultsStorage {
+            UserDefaults.standard.removeObject(forKey: userDefaultsKey(key))
+            return
+        }
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: key.rawValue,
         ]
         SecItemDelete(query as CFDictionary)
+    }
+
+    private func userDefaultsKey(_ key: Key) -> String {
+        "\(userDefaultsPrefix)\(key.rawValue)"
     }
 }

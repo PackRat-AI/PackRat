@@ -4,7 +4,6 @@ struct GlobalSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
     @State private var query = ""
-    @FocusState private var isFocused: Bool
 
     private var results: [SearchResult] {
         guard query.count >= 2 else { return [] }
@@ -33,69 +32,52 @@ struct GlobalSearchView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            searchBar
-            Divider()
-            resultsList
-        }
-        .frame(width: 560, height: 440)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.25), radius: 20, y: 10)
-        .onAppear { isFocused = true }
-    }
-
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-                .font(.title3)
-            TextField("Search packs, trips, trails…", text: $query)
-                .textFieldStyle(.plain)
-                .font(.title3)
-                .focused($isFocused)
-                .onSubmit { dismiss() }
-            if !query.isEmpty {
-                Button {
-                    query = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+        NavigationStack {
+            content
+                .navigationTitle("Search")
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
+                    }
                 }
-                .buttonStyle(.plain)
-                .keyboardShortcut(.escape, modifiers: [])
-            }
+                .globalSearchField(text: $query)
         }
-        .padding(16)
+        #if os(iOS)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        #else
+        .frame(minWidth: 680, idealWidth: 720, minHeight: 460, idealHeight: 500)
+        #endif
+        .accessibilityIdentifier("global_search_view")
     }
 
     @ViewBuilder
-    private var resultsList: some View {
+    private var content: some View {
+        resultsContent
+    }
+
+    @ViewBuilder
+    private var resultsContent: some View {
         if query.count < 2 {
-            VStack {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.tertiary)
-                    .padding(.bottom, 8)
-                Text("Type at least 2 characters to search")
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            SearchPromptView()
         } else if results.isEmpty {
             ContentUnavailableView.search(text: query)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(results) { result in
-                        SearchResultRow(result: result) {
-                            navigate(to: result)
-                            dismiss()
-                        }
-                        Divider().padding(.leading, 44)
-                    }
+            List(results) { result in
+                Button {
+                    navigate(to: result)
+                    dismiss()
+                } label: {
+                    SearchResultRow(result: result)
                 }
-                .padding(.vertical, 8)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("global_search_result_\(result.id)")
+                .accessibilityLabel("\(result.title), \(result.typeName)")
             }
+            .listStyle(.inset)
         }
     }
 
@@ -114,45 +96,63 @@ struct GlobalSearchView: View {
     }
 }
 
+private extension View {
+    @ViewBuilder
+    func globalSearchField(text: Binding<String>) -> some View {
+        #if os(iOS)
+        self.searchable(
+            text: text,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search packs, trips, trails…"
+        )
+        #else
+        self.searchable(text: text, prompt: "Search packs, trips, trails…")
+        #endif
+    }
+}
+
 // MARK: - Search result row
 
 private struct SearchResultRow: View {
     let result: SearchResult
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: result.symbol)
-                    .font(.callout)
-                    .foregroundStyle(.tint)
-                    .frame(width: 28)
+        Label {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(result.title)
-                        .font(.body)
-                    if let subtitle = result.subtitle {
+                        .lineLimit(1)
+
+                    if let subtitle = result.subtitle, !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                 }
+
                 Spacer()
+
                 Text(result.typeName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.fill.tertiary, in: Capsule())
-                Image(systemName: "arrow.right")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .contentShape(Rectangle())
+        } icon: {
+            Image(systemName: result.symbol)
+                .foregroundStyle(.tint)
         }
-        .buttonStyle(.plain)
-        .background(.clear)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct SearchPromptView: View {
+    var body: some View {
+        ContentUnavailableView(
+            "Search PackRat",
+            systemImage: "magnifyingglass",
+            description: Text("Find packs, trips, and trail condition reports.")
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

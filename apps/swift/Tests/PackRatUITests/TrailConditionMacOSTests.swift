@@ -30,8 +30,8 @@ final class TrailConditionMacOSTests: AppUITestCase {
         submitButton.click()
 
         XCTAssertTrue(
-            app.textFields["Trail Name"].waitForExistence(timeout: 5),
-            "Submit Report form must appear with Trail Name field"
+            app.textFields["trail_report_name"].waitForExistence(timeout: 5),
+            "Submit Report form must appear with trail field"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
         app.buttons["Cancel"].click()
@@ -44,12 +44,12 @@ final class TrailConditionMacOSTests: AppUITestCase {
         goToSidebar("Trail Conditions")
         waitFor(app.buttons["Submit Report"].firstMatch).click()
 
-        let nameField = app.textFields["Trail Name"]
+        let nameField = app.textFields["trail_report_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(trailName)
 
-        let regionField = app.textFields["Region / Area (optional)"]
+        let regionField = app.textFields["trail_report_region"]
         if regionField.waitForExistence(timeout: 3) {
             regionField.click()
             regionField.typeText("Test Region")
@@ -81,8 +81,9 @@ final class TrailConditionMacOSTests: AppUITestCase {
         waitFor(app.buttons["Submit Report"].firstMatch, timeout: 20)
 
         let target = app.staticTexts[trailName]
+        let row = app.descendants(matching: .any)["trail_report_row_\(trailName)"]
         XCTAssertTrue(
-            target.waitForExistence(timeout: 10),
+            target.waitForExistence(timeout: 10) || row.waitForExistence(timeout: 1),
             "Submitted report '\(trailName)' must appear in list"
         )
     }
@@ -93,13 +94,17 @@ final class TrailConditionMacOSTests: AppUITestCase {
 
         // On macOS Toggle is rendered as a checkbox; queryable via `switches`
         // (XCUI maps both UISwitches and NSButton checkboxes there) or
-        // `checkBoxes`. Try switches first, then checkboxes.
+        // `checkBoxes`. Prefer the stable identifier SwiftUI exposes across
+        // label rendering differences, then fall back to control labels.
         let hazardLabels = ["Downed trees", "Muddy sections", "Ice"]
         for hazard in hazardLabels {
+            let byIdentifier = app.descendants(matching: .any)["trail_hazard_\(hazard.uiTestSlug)"]
             let asSwitch = app.switches[hazard]
             let asCheck = app.checkBoxes[hazard]
             XCTAssertTrue(
-                asSwitch.waitForExistence(timeout: 3) || asCheck.waitForExistence(timeout: 2),
+                byIdentifier.waitForExistence(timeout: 3) ||
+                    asSwitch.waitForExistence(timeout: 1) ||
+                    asCheck.waitForExistence(timeout: 1),
                 "Hazard toggle '\(hazard)' must exist"
             )
         }
@@ -121,12 +126,22 @@ final class TrailConditionMacOSTests: AppUITestCase {
 
     private func cleanupReport(forTrail trail: String) {
         goToSidebar("Trail Conditions")
-        let cell = app.staticTexts[trail]
-        guard cell.waitForExistence(timeout: 5) else { return }
-        cell.rightClick()
+        let cell = app.staticTexts[trail].firstMatch
+        let row = app.descendants(matching: .any)["trail_report_row_\(trail)"].firstMatch
+        let target = cell.waitForExistence(timeout: 5) ? cell : row
+        guard target.waitForExistence(timeout: 1) else { return }
+        target.rightClick()
         let deleteButton = app.buttons["Delete"]
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()
     }
 }
 #endif
+
+private extension String {
+    var uiTestSlug: String {
+        lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
+    }
+}

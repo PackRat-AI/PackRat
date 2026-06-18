@@ -2,26 +2,37 @@ import SwiftUI
 import MarkdownUI
 
 struct ChatView: View {
+    @Environment(AuthManager.self) private var authManager
     @Bindable var viewModel: ChatViewModel
 
     private var showSuggestions: Bool {
-        viewModel.messages.count <= 1 && !viewModel.isStreaming
+        authManager.isAuthenticated && viewModel.messages.count <= 1 && !viewModel.isStreaming
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            messageList
-            if showSuggestions {
-                suggestionsBar
+        Group {
+            if authManager.isAuthenticated {
+                VStack(spacing: 0) {
+                    messageList
+                    if showSuggestions {
+                        suggestionsBar
+                    }
+                    Divider()
+                    inputBar
+                }
+            } else {
+                GuestLimitedView(
+                    "Assistant Requires an Account",
+                    subtitle: "PackRat AI uses your account and trip context. Local packs and trips still work in guest mode.",
+                    systemImage: "sparkles"
+                )
             }
-            Divider()
-            inputBar
         }
         .navigationTitle("AI Assistant")
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Button("Clear", systemImage: "trash") { viewModel.clearHistory() }
-                    .disabled(viewModel.messages.count <= 1)
+                    .disabled(!authManager.isAuthenticated || viewModel.messages.count <= 1)
             }
         }
     }
@@ -168,7 +179,7 @@ struct MessageBubble: View {
     private var isUser: Bool { message.role == .user }
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             if isUser {
                 Spacer(minLength: 48)
                 bubbleContent
@@ -191,7 +202,7 @@ struct MessageBubble: View {
             TypingIndicator()
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         } else if isUser {
             Text(message.content)
                 .textSelection(.enabled)
@@ -203,19 +214,14 @@ struct MessageBubble: View {
             VStack(alignment: .leading, spacing: 8) {
                 if !message.toolInvocations.isEmpty {
                     ToolInvocationsView(invocations: message.toolInvocations)
-                        .padding(.horizontal, 14)
-                        .padding(.top, 10)
                 }
                 if !message.content.isEmpty {
                     Markdown(message.content)
                         .markdownTheme(.gitHub)
                         .textSelection(.enabled)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, message.toolInvocations.isEmpty ? 10 : 0)
-                        .padding(.bottom, message.toolInvocations.isEmpty ? 0 : 10)
                 }
             }
-            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .padding(.vertical, 4)
         }
     }
 

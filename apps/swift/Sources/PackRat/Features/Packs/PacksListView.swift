@@ -30,24 +30,27 @@ struct PacksListView: View {
             if viewModel.isLoading && viewModel.packs.isEmpty && !isExplore {
                 ProgressView("Loading packs…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error, viewModel.packs.isEmpty, !isExplore {
-                ErrorView(error, retry: { await viewModel.load() })
+                ErrorView(error, retry: { await viewModel.load(context: modelContext) })
             } else if isLoadingPublic && publicPacks.isEmpty {
                 ProgressView("Loading…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if displayedPacks.isEmpty && !viewModel.searchText.isEmpty {
                 ContentUnavailableView.search(text: viewModel.searchText)
+                    .accessibilityIdentifier("packs_search_empty_state")
             } else if displayedPacks.isEmpty && !isExplore {
                 EmptyStateView(
                     "No Packs Yet",
                     subtitle: "Create your first pack to start tracking gear weight",
                     systemImage: "backpack",
                     actionLabel: "New Pack",
+                    accessibilityIdentifier: "packs_empty_state",
                     action: { showingCreateSheet = true }
                 )
             } else if displayedPacks.isEmpty && isExplore {
                 EmptyStateView(
                     "No Public Packs",
                     subtitle: "No packs match your filter",
-                    systemImage: "globe"
+                    systemImage: "globe",
+                    accessibilityIdentifier: "packs_public_empty_state"
                 )
             } else {
                 packList
@@ -59,6 +62,7 @@ struct PacksListView: View {
             ToolbarItemGroup(placement: .primaryAction) {
                 if !isExplore {
                     Button("New Pack", systemImage: "plus") { showingCreateSheet = true }
+                        .accessibilityIdentifier("packs_new_pack_button")
                         .keyboardShortcut("n", modifiers: .command)
                         .accessibilityIdentifier("new_pack_button")
                 }
@@ -67,16 +71,10 @@ struct PacksListView: View {
                 }
             }
             ToolbarItem(placement: .secondaryAction) {
-                Picker("View", selection: $isExplore) {
-                    Label("My Packs", systemImage: "person.fill").tag(false)
-                    Label("Explore", systemImage: "globe").tag(true)
-                }
-                .pickerStyle(.segmented)
-            }
-            ToolbarItem(placement: .secondaryAction) {
                 Button("Recent", systemImage: "clock") {
                     showingRecentPacks = true
                 }
+                .accessibilityIdentifier("packs_recent_button")
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -107,32 +105,38 @@ struct PacksListView: View {
     // MARK: - Category Filter Bar
 
     private var categoryFilterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                categoryChip(nil, label: "All")
-                ForEach(PackCategory.allCases, id: \.self) { cat in
-                    categoryChip(cat, label: cat.label)
-                }
+        VStack(spacing: 8) {
+            Picker("View", selection: $isExplore) {
+                Label("My Packs", systemImage: "person.fill").tag(false)
+                    .accessibilityIdentifier("packs_mode_my_packs")
+                Label("Explore", systemImage: "globe").tag(true)
+                    .accessibilityIdentifier("packs_mode_explore")
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-        }
-        .background(.bar)
-    }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("packs_mode_picker")
 
-    private func categoryChip(_ cat: PackCategory?, label: String) -> some View {
-        let isSelected = selectedCategory == cat
-        return Button {
-            withAnimation(.spring(duration: 0.2)) { selectedCategory = cat }
-        } label: {
-            Text(label)
-                .font(.caption.bold())
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color.accentColor.opacity(0.1), in: Capsule())
-                .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+            HStack {
+                Picker("Category", selection: $selectedCategory) {
+                    Label("All", systemImage: "line.3.horizontal.decrease.circle")
+                        .tag(nil as PackCategory?)
+                    ForEach(PackCategory.allCases, id: \.self) { cat in
+                        Label(cat.label, systemImage: cat.symbol)
+                            .tag(Optional(cat))
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityIdentifier("packs_category_filter")
+
+                Spacer()
+
+                Text(selectedCategory?.label ?? "All")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.bar)
     }
 
     // MARK: - Pack Row
@@ -170,6 +174,7 @@ struct PacksListView: View {
                     }
                 }
         }
+        .accessibilityIdentifier(isExplore ? "packs_public_list" : "packs_list")
     }
 
     // MARK: - Public Packs

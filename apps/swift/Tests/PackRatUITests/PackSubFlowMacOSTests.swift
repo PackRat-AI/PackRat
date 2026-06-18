@@ -23,7 +23,8 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         recentButton.click()
 
         XCTAssertTrue(
-            app.staticTexts["Recent Packs"].waitForExistence(timeout: 5),
+            app.descendants(matching: .any)["recent_packs_view"].waitForExistence(timeout: 5)
+            || app.staticTexts["Recent Packs"].waitForExistence(timeout: 2),
             "Recent Packs view must appear"
         )
     }
@@ -39,16 +40,14 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         // Wait for detail column to load.
         _ = app.staticTexts["Total"].waitForExistence(timeout: 5)
 
-        let menuButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")
-        ).firstMatch
+        let menuButton = detailMenuButton()
         guard menuButton.waitForExistence(timeout: 5) else {
             XCTFail("Pack detail menu button must be present")
             return
         }
         menuButton.click()
 
-        let weightAnalysis = app.buttons["Weight Analysis"]
+        let weightAnalysis = app.menuItems["Weight Analysis"]
         guard weightAnalysis.waitForExistence(timeout: 3) else {
             // Empty pack — disabled. Not a failure for this smoke test.
             return
@@ -71,14 +70,12 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         cell.click()
         _ = app.staticTexts["Total"].waitForExistence(timeout: 5)
 
-        let menuButton = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")
-        ).firstMatch
+        let menuButton = detailMenuButton()
         guard menuButton.waitForExistence(timeout: 5) else { return }
         menuButton.click()
 
         XCTAssertTrue(
-            app.buttons["Gap Analysis"].waitForExistence(timeout: 3),
+            app.menuItems["Gap Analysis"].waitForExistence(timeout: 3),
             "Gap Analysis must appear in pack menu"
         )
     }
@@ -90,14 +87,17 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         createPack(named: packName)
         goToSidebar("Packs")
 
-        XCTAssertTrue(app.buttons["All"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 5)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2)
+        )
 
         // Right-click triggers context menu on macOS.
         let cell = waitFor(app.staticTexts[packName])
         cell.rightClick()
 
         XCTAssertTrue(
-            app.buttons["Delete"].waitForExistence(timeout: 3),
+            rowDeleteMenuItem().waitForExistence(timeout: 3),
             "Context menu must contain Delete"
         )
 
@@ -110,7 +110,7 @@ final class PackSubFlowMacOSTests: AppUITestCase {
     private func createPack(named name: String) {
         goToSidebar("Packs")
         waitFor(app.buttons["New Pack"]).click()
-        let nameField = app.textFields["Pack Name"]
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(name)
@@ -123,9 +123,21 @@ final class PackSubFlowMacOSTests: AppUITestCase {
         let cell = app.staticTexts[name]
         guard cell.waitForExistence(timeout: 5) else { return }
         cell.rightClick()
-        let deleteButton = app.buttons["Delete"]
+        let deleteButton = rowDeleteMenuItem()
         guard deleteButton.waitForExistence(timeout: 3) else { return }
         deleteButton.click()
+    }
+
+    private func detailMenuButton() -> XCUIElement {
+        let identified = app.menuButtons["pack_detail_more_menu"]
+        if identified.exists { return identified }
+        let fallback = app.menuButtons["ellipsis.circle"]
+        if fallback.exists { return fallback }
+        return app.buttons.matching(NSPredicate(format: "label CONTAINS 'ellipsis' OR label == 'More'")).firstMatch
+    }
+
+    private func rowDeleteMenuItem() -> XCUIElement {
+        app.menuItems.matching(NSPredicate(format: "identifier == %@", "trash")).firstMatch
     }
 }
 #endif

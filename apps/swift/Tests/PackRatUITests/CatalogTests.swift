@@ -5,16 +5,17 @@ import XCTest
 
 /// E2E tests for Gear Catalog search and item detail.
 final class CatalogTests: AppUITestCase {
+    override var additionalLaunchArguments: [String] { ["--ui-test-fixtures"] }
 
     func testCatalogTabReachable() {
-        goToTab("Catalog")
+        goToCatalog()
         XCTAssertTrue(
             app.navigationBars["Gear Catalog"].waitForExistence(timeout: 8)
         )
     }
 
     func testCatalogShowsEmptySearchPrompt() {
-        goToTab("Catalog")
+        goToCatalog()
         // Initial state: empty search prompt
         XCTAssertTrue(
             app.staticTexts["Search the Gear Catalog"].waitForExistence(timeout: 8),
@@ -23,9 +24,9 @@ final class CatalogTests: AppUITestCase {
     }
 
     func testCatalogSearchReturnsResults() {
-        goToTab("Catalog")
+        goToCatalog()
 
-        let searchField = app.textFields["Search tents, packs, sleeping bags…"]
+        let searchField = app.searchFields["Search tents, packs, sleeping bags…"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText("tent")
@@ -40,21 +41,19 @@ final class CatalogTests: AppUITestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: progressIndicator)
         _ = XCTWaiter.wait(for: [expectation], timeout: 15)
 
-        // Results appear OR the no-results state
-        let hasResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] 'tent' OR label CONTAINS 'oz' OR label CONTAINS 'lb'")
-        ).count > 0
-        let noResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS 'No results'")
-        ).firstMatch.exists
+        // Results appear OR the explicit no-results state.
+        let hasResults = app.otherElements["catalog_results_list"].exists
+            || app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'catalog_item_row_'")).count > 0
+        let noResults = app.otherElements["catalog_no_results"].exists
+            || app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'No Results'")).firstMatch.exists
 
         XCTAssertTrue(hasResults || noResults, "Catalog should show results or no-results state")
     }
 
     func testCatalogSearchClearable() {
-        goToTab("Catalog")
+        goToCatalog()
 
-        let searchField = app.textFields["Search tents, packs, sleeping bags…"]
+        let searchField = app.searchFields["Search tents, packs, sleeping bags…"]
         waitFor(searchField)
         searchField.tap()
         searchField.typeText("backpack")
@@ -71,6 +70,10 @@ final class CatalogTests: AppUITestCase {
                 "Empty state should return after clearing search"
             )
         }
+    }
+
+    private func goToCatalog() {
+        goToHomeAction("Catalog")
     }
 }
 

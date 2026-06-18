@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct PackItemFormView: View {
     let packId: String
@@ -6,12 +7,13 @@ struct PackItemFormView: View {
     let existingItem: PackItem?
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var name = ""
     @State private var weightText = ""
     @State private var weightUnit = "g"
-    @State private var quantityText = "1"
     @State private var category = ""
+    @State private var quantity = 1
     @State private var consumable = false
     @State private var worn = false
     @State private var notes = ""
@@ -29,169 +31,94 @@ struct PackItemFormView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                #if os(macOS)
-                macForm
-                #else
-                Form {
-                    Section("Item") {
-                        TextField("Name", text: $name)
-                            .accessibilityIdentifier("item_name")
-                    }
-
-                    Section("Weight") {
-                        HStack {
-                            TextField("0", text: $weightText)
-                                .keyboardType(.decimalPad)
-                                .accessibilityIdentifier("item_weight")
-                            Picker("Unit", selection: $weightUnit) {
-                                ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
-                                    Text(u.label).tag(u.rawValue)
-                                }
-                            }
-                            .labelsHidden()
-                            .frame(width: 60)
-                        }
-                    }
-
-                    Section("Quantity & Category") {
-                        HStack {
-                            Text("Quantity")
-                            Spacer()
-                            TextField("1", text: $quantityText)
-                                .keyboardType(.numberPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(width: 60)
-                        }
-                        Picker("Category", selection: $category) {
-                            Text("None").tag("")
-                            ForEach(PackCategory.allCases, id: \.rawValue) { cat in
-                                Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
-                            }
-                        }
-                    }
-
-                    Section("Flags") {
-                        Toggle("Consumable", isOn: $consumable)
-                        Toggle("Worn on body", isOn: $worn)
-                    }
-
-                    Section("Notes") {
-                        TextField("Optional notes", text: $notes, axis: .vertical)
-                            .lineLimit(3, reservesSpace: true)
-                    }
-
-                    if let error {
-                        Section {
-                            InlineErrorView(message: error)
-                        }
-                    }
-                }
+            formContent
+                .navigationTitle(isEditing ? "Edit Item" : "Add Item")
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
                 #endif
-            }
-            .navigationTitle(isEditing ? "Edit Item" : "Add Item")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(isLoading ? "Saving…" : (isEditing ? "Save" : "Add")) { submit() }
+                            .disabled(!isValid || isLoading)
+                    }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(isEditing ? "Save" : "Add") { submit() }
-                        .disabled(!isValid || isLoading)
-                }
-            }
-            .onAppear { prefill() }
+                .onAppear { prefill() }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 350)
-        #endif
+        .formSheetSize(minWidth: 540, minHeight: 560)
     }
 
-    #if os(macOS)
-    private var macForm: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Name")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("Name", text: $name)
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityIdentifier("item_name")
-                }
+    private var formContent: some View {
+        Form {
+            Section("Item") {
+                TextField("Name", text: $name)
+                    .textContentType(.name)
+                    .accessibilityIdentifier("pack_item_name")
 
-                HStack(alignment: .bottom, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Weight")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                Picker("Category", selection: $category) {
+                    Text("None").tag("")
+                    ForEach(PackCategory.allCases, id: \.rawValue) { cat in
+                        Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
+                    }
+                }
+            }
+
+            Section("Weight") {
+                LabeledContent("Weight") {
+                    HStack {
                         TextField("0", text: $weightText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 120)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 72)
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
                             .accessibilityIdentifier("item_weight")
-                    }
 
-                    Picker("Unit", selection: $weightUnit) {
-                        ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
-                            Text(u.label).tag(u.rawValue)
+                        Picker("Unit", selection: $weightUnit) {
+                            ForEach(AppWeightUnit.allCases, id: \.rawValue) { u in
+                                Text(u.label).tag(u.rawValue)
+                            }
                         }
+                        .labelsHidden()
+                        .frame(width: 76)
                     }
-                    .pickerStyle(.menu)
-                    .frame(width: 90)
                 }
 
-                HStack(alignment: .bottom, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Quantity")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("1", text: $quantityText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 120)
-                    }
+                Stepper("Quantity: \(quantity)", value: $quantity, in: 1...999)
+            }
 
-                    Picker("Category", selection: $category) {
-                        Text("None").tag("")
-                        ForEach(PackCategory.allCases, id: \.rawValue) { cat in
-                            Label(cat.label, systemImage: cat.symbol).tag(cat.rawValue)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
+            Section {
+                Toggle("Worn on body", isOn: $worn)
+                Toggle("Consumable", isOn: $consumable)
+            } header: {
+                Text("Pack Weight")
+            } footer: {
+                Text("Worn and consumable items are tracked separately from base weight.")
+            }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Consumable", isOn: $consumable)
-                    Toggle("Worn on body", isOn: $worn)
-                }
+            Section("Notes") {
+                TextField("Notes", text: $notes, axis: .vertical)
+                    .lineLimit(3, reservesSpace: true)
+                    .accessibilityIdentifier("pack_item_notes")
+            }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Notes")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("Optional notes", text: $notes, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(3, reservesSpace: true)
-                }
-
-                if let error {
+            if let error {
+                Section {
                     InlineErrorView(message: error)
                 }
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .packRatFormStyle()
     }
-    #endif
 
     private func prefill() {
         guard let item = existingItem else { return }
         name = item.name
         weightText = item.weight > 0 ? String(format: "%.0f", item.weight) : ""
         weightUnit = item.weightUnit.rawValue
-        quantityText = String(item.quantity)
+        quantity = item.quantity
         category = item.category ?? ""
         consumable = item.consumable
         worn = item.worn
@@ -203,7 +130,6 @@ struct PackItemFormView: View {
         isLoading = true
         error = nil
         let weight = Double(weightText)
-        let quantity = Int(quantityText) ?? 1
         Task {
             defer { isLoading = false }
             do {
@@ -215,7 +141,8 @@ struct PackItemFormView: View {
                         quantity: quantity,
                         category: category.isEmpty ? nil : category,
                         consumable: consumable, worn: worn,
-                        notes: notes.isEmpty ? nil : notes
+                        notes: notes.isEmpty ? nil : notes,
+                        context: modelContext
                     )
                 } else {
                     try await viewModel.addItem(
@@ -225,7 +152,8 @@ struct PackItemFormView: View {
                         quantity: quantity,
                         category: category.isEmpty ? nil : category,
                         consumable: consumable, worn: worn,
-                        notes: notes.isEmpty ? nil : notes
+                        notes: notes.isEmpty ? nil : notes,
+                        context: modelContext
                     )
                 }
                 dismiss()

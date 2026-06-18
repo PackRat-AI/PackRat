@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 
 // Opened via openWindow(id: "trip", value: tripId)
 // Creates its own AppState so TripDetailView's @Environment(AppState.self) resolves
 struct TripWindowView: View {
     let tripId: String
+    @Environment(\.modelContext) private var modelContext
     @State private var appState = AppState()
 
     private var trip: Trip? {
@@ -24,8 +26,8 @@ struct TripWindowView: View {
         }
         .environment(appState)
         .task {
-            await appState.tripsVM.load()
-            await appState.packsVM.load()
+            await appState.tripsVM.load(context: modelContext)
+            await appState.packsVM.load(context: modelContext)
         }
     }
 }

@@ -24,52 +24,63 @@ struct RegisterView: View {
     var body: some View {
         authContainer {
             VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Image(systemName: "backpack.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.tint)
-                    Text("Create Account")
-                        .font(.largeTitle.bold())
-                    Text("Join the PackRat community")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
+                AuthHeader(title: "Create Account", subtitle: "Save packs, trips, and gear across devices.", symbol: "person.crop.circle.badge.plus")
 
-                VStack(spacing: 12) {
+                VStack(spacing: 0) {
                     HStack(spacing: 10) {
                         TextField("First Name", text: $firstName)
-                            .textFieldStyle(.roundedBorder)
                             .textContentType(.givenName)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .accessibilityIdentifier("register_first_name")
+                        Divider()
                         TextField("Last Name", text: $lastName)
-                            .textFieldStyle(.roundedBorder)
                             .textContentType(.familyName)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .accessibilityIdentifier("register_last_name")
                     }
 
+                    Divider().padding(.leading, 14)
+
                     TextField("Email", text: $email)
-                        .textFieldStyle(.roundedBorder)
                         .textContentType(.emailAddress)
                         #if os(iOS)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         #endif
                         .autocorrectionDisabled()
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .accessibilityIdentifier("register_email")
 
-                    SecureField("Password (min 8 chars)", text: $password)
-                        .textFieldStyle(.roundedBorder)
+                    Divider().padding(.leading, 14)
+
+                    SecureField("Password", text: $password)
                         .textContentType(.newPassword)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .accessibilityIdentifier("register_password")
+
+                    Divider().padding(.leading, 14)
 
                     VStack(alignment: .leading, spacing: 4) {
                         SecureField("Confirm Password", text: $confirmPassword)
-                            .textFieldStyle(.roundedBorder)
                             .textContentType(.newPassword)
                             .onSubmit { if isValid { submit() } }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .accessibilityIdentifier("register_confirm_password")
                         if passwordMismatch {
                             Text("Passwords don't match")
                                 .font(.caption)
                                 .foregroundStyle(.red)
+                                .padding(.horizontal, 14)
+                                .padding(.bottom, 10)
                         }
                     }
                 }
+                .authGroupedSurface()
 
                 if let error {
                     InlineErrorView(message: error)
@@ -89,6 +100,7 @@ struct RegisterView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(!isValid || isLoading)
+                .accessibilityIdentifier("register_submit")
 
                 Divider()
 

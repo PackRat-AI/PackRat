@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import SwiftData
 
 struct TripFormView: View {
     let viewModel: TripsViewModel
@@ -8,6 +9,7 @@ struct TripFormView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
 
     @State private var name = ""
     @State private var description = ""
@@ -37,10 +39,11 @@ struct TripFormView: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    TextField("Trip Name", text: $name)
+                    TextField("Name", text: $name)
                         .accessibilityIdentifier("trip_name")
-                    TextField("Description (optional)", text: $description, axis: .vertical)
+                    TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .accessibilityIdentifier("trip_description")
                 }
 
                 Section("Location") {
@@ -53,19 +56,17 @@ struct TripFormView: View {
                             Text(locationName.isEmpty ? "Search for a location…" : locationName)
                                 .foregroundStyle(locationName.isEmpty ? Color.secondary : Color.primary)
                             Spacer()
-                            if !locationName.isEmpty {
-                                Button {
-                                    locationName = ""; locationLat = 0; locationLon = 0
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-                            }
+                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("trip_location_search_button")
+                    if !locationName.isEmpty {
+                        Button("Clear Location", systemImage: "xmark.circle") {
+                            locationName = ""; locationLat = 0; locationLon = 0
+                        }
+                        .foregroundStyle(.red)
+                    }
                     if locationLat != 0 || locationLon != 0 {
                         Label(String(format: "%.4f, %.4f", locationLat, locationLon),
                               systemImage: "location.fill")
@@ -83,12 +84,17 @@ struct TripFormView: View {
                 }
 
                 Section("Pack") {
-                    Picker("Linked Pack", selection: $selectedPackId) {
+                    Picker("Pack", selection: $selectedPackId) {
                         Text("None").tag(String?.none)
                         ForEach(availablePacks) { pack in
                             Label(pack.name, systemImage: "backpack")
                                 .tag(Optional(pack.id))
                         }
+                    }
+                    if availablePacks.isEmpty {
+                        Text("Create a pack first if you want to connect gear to this trip.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                     if let packId = selectedPackId,
                        let pack = availablePacks.first(where: { $0.id == packId }) {
@@ -106,14 +112,16 @@ struct TripFormView: View {
                 }
 
                 Section("Notes") {
-                    TextField("Additional notes", text: $notes, axis: .vertical)
+                    TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
+                        .accessibilityIdentifier("trip_notes")
                 }
 
                 if let error {
                     Section { InlineErrorView(message: error) }
                 }
             }
+            .packRatFormStyle()
             .navigationTitle(isEditing ? "Edit Trip" : "Plan Trip")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -136,9 +144,7 @@ struct TripFormView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 400, minHeight: 420)
-        #endif
+        .formSheetSize(minWidth: 560, minHeight: 620)
     }
 
     private func prefill() {
@@ -184,7 +190,8 @@ struct TripFormView: View {
                         endDate: hasDates ? endDate : nil,
                         location: location,
                         notes: notes.isEmpty ? nil : notes,
-                        packId: selectedPackId
+                        packId: selectedPackId,
+                        context: modelContext
                     )
                 } else {
                     try await viewModel.createTrip(
@@ -193,7 +200,8 @@ struct TripFormView: View {
                         endDate: hasDates ? endDate : nil,
                         location: location,
                         notes: notes.isEmpty ? nil : notes,
-                        packId: selectedPackId
+                        packId: selectedPackId,
+                        context: modelContext
                     )
                 }
                 dismiss()

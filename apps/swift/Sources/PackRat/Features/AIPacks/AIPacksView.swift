@@ -19,13 +19,19 @@ struct AIPacksView: View {
 
     var body: some View {
         Group {
-            if authManager.currentUser?.isAdmin == true {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "AI Pack Generation Requires an Account",
+                    subtitle: "Create an account to generate packs with PackRat's AI service. Local packs and trips still work in guest mode.",
+                    systemImage: "sparkles"
+                )
+            } else if authManager.currentUser?.isAdmin == true {
                 adminContent
             } else {
-                ContentUnavailableView(
-                    "Admin Only",
-                    systemImage: "lock.shield",
-                    description: Text("The AI Packs generator is restricted to admin accounts. Contact a workspace admin if you need access.")
+                UnavailableStateView(
+                    title: "Admin Only",
+                    subtitle: "The AI Packs generator is restricted to admin accounts. Contact a workspace admin if you need access.",
+                    systemImage: "lock.shield"
                 )
             }
         }
@@ -52,6 +58,76 @@ struct AIPacksView: View {
 
     @ViewBuilder
     private var adminContent: some View {
+        #if os(macOS)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                GroupBox("Generate New Packs") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Count")
+                            Spacer()
+                            Stepper(value: $viewModel.count, in: AIPacksViewModel.minCount...AIPacksViewModel.maxCount) {
+                                Text("\(viewModel.count)")
+                                    .monospacedDigit()
+                                    .frame(minWidth: 30, alignment: .trailing)
+                            }
+                            .accessibilityIdentifier("ai_packs_count_stepper")
+                        }
+
+                        Text("Up to \(AIPacksViewModel.maxCount) packs per request. Each pack is generated independently with a unique theme.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            showingConfirm = true
+                        } label: {
+                            if viewModel.isGenerating {
+                                Label("Generating...", systemImage: "hourglass")
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                Label("Generate \(viewModel.count) Pack\(viewModel.count == 1 ? "" : "s")", systemImage: "sparkles")
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(!viewModel.canGenerate)
+                        .accessibilityIdentifier("ai_packs_generate_button")
+                    }
+                    .padding(4)
+                }
+
+                if let error = viewModel.error {
+                    InlineErrorView(message: error)
+                }
+
+                if !viewModel.generatedPacks.isEmpty {
+                    GroupBox("Last Generation") {
+                        HStack {
+                            Label("\(viewModel.generatedPacks.count) pack\(viewModel.generatedPacks.count == 1 ? "" : "s") ready", systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                            Spacer()
+                            Button("View") { showingResults = true }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("ai_packs_view_results_button")
+                        }
+                        .padding(4)
+                    }
+                }
+
+                Label {
+                    Text("Generated packs are public by default and tagged as AI-generated. They go through the catalog vector search so each item maps to a real product.")
+                } icon: {
+                    Image(systemName: "info.circle")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: 560, alignment: .leading)
+            .padding(24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        #else
         Form {
             generatorSection
             if let error = viewModel.error {
@@ -62,6 +138,8 @@ struct AIPacksView: View {
             }
             tipsSection
         }
+        .packRatFormStyle()
+        #endif
     }
 
     // MARK: - Sections
@@ -113,6 +191,7 @@ struct AIPacksView: View {
                 Spacer()
                 Button("View") { showingResults = true }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("ai_packs_view_results_button")
             }
         }
     }
@@ -158,10 +237,10 @@ private struct GeneratedPacksSheet: View {
         NavigationStack {
             Group {
                 if viewModel.generatedPacks.isEmpty {
-                    ContentUnavailableView(
-                        "No Generated Packs",
-                        systemImage: "sparkles",
-                        description: Text("Generate some packs from the main screen first.")
+                    UnavailableStateView(
+                        title: "No Generated Packs",
+                        subtitle: "Generate some packs from the main screen first.",
+                        systemImage: "sparkles"
                     )
                 } else {
                     List(viewModel.generatedPacks) { pack in
@@ -179,9 +258,7 @@ private struct GeneratedPacksSheet: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 380)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 480)
     }
 }
 

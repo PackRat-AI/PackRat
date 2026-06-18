@@ -93,12 +93,19 @@ final class WildlifeViewModel {
 // MARK: - View
 
 struct WildlifeView: View {
+    @Environment(AuthManager.self) private var authManager
     @State private var viewModel = WildlifeViewModel()
     @State private var photoItem: PhotosPickerItem?
 
     var body: some View {
         Group {
-            if viewModel.isLoading {
+            if !authManager.isAuthenticated {
+                GuestLimitedView(
+                    "Wildlife ID Requires an Account",
+                    subtitle: "Wildlife identification uses PackRat's image service. You can still manage local packs and trips as a guest.",
+                    systemImage: "pawprint"
+                )
+            } else if viewModel.isLoading {
                 ProgressView("Identifying…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.identifications.isEmpty {
                 emptyState
@@ -109,13 +116,15 @@ struct WildlifeView: View {
         .navigationTitle("Wildlife ID")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    Label("Choose Photo", systemImage: "photo.on.rectangle")
+                if authManager.isAuthenticated {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        Label("Choose Photo", systemImage: "photo.on.rectangle")
+                    }
                 }
             }
         }
         .onChange(of: photoItem) { _, item in
-            guard let item else { return }
+            guard authManager.isAuthenticated, let item else { return }
             Task {
                 guard let data = try? await item.loadTransferable(type: Data.self) else { return }
                 await viewModel.identify(imageData: data)
@@ -133,32 +142,16 @@ struct WildlifeView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "pawprint.circle")
-                .font(.system(size: 64))
-                .foregroundStyle(Color.accentColor.opacity(0.7))
-
-            VStack(spacing: 8) {
-                Text("Identify Wildlife")
-                    .font(.title2.bold())
-                Text("Take or select a photo of an animal or plant to identify it using AI.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-
+        UnavailableStateView(
+            title: "Identify Wildlife",
+            subtitle: "Choose a photo of an animal or plant to identify it using AI.",
+            systemImage: "pawprint"
+        ) {
             PhotosPicker(selection: $photoItem, matching: .images) {
                 Label("Choose Photo", systemImage: "photo.on.rectangle")
-                    .font(.headline)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(Color.accentColor, in: Capsule())
-                    .foregroundStyle(.white)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderedProminent)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var resultsList: some View {

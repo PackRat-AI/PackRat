@@ -136,6 +136,9 @@ export const testIds = Object.freeze({
     aiModelsSection: 'settings:ai-models',
     dangerZone: 'settings:danger-zone',
     deleteAccountBtn: 'settings:delete-account',
+    weightUnitControl: 'settings:weight-unit',
+    temperatureUnitControl: 'settings:temperature-unit',
+    speedUnitControl: 'settings:speed-unit',
   }),
 
   // ── AI Chat ───────────────────────────────────────────────────────────────

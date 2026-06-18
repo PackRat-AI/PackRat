@@ -27,7 +27,7 @@ final class PackTemplateMacOSTests: AppUITestCase {
         waitFor(app.buttons["New Template"]).click()
 
         XCTAssertTrue(
-            app.textFields["Name"].waitForExistence(timeout: 5),
+            app.textFields["template_name"].waitForExistence(timeout: 5),
             "Template Name field must appear"
         )
         XCTAssertTrue(app.buttons["Cancel"].exists)
@@ -95,7 +95,7 @@ final class PackTemplateMacOSTests: AppUITestCase {
     private func createTemplate(named name: String) {
         goToSidebar("Templates")
         waitFor(app.buttons["New Template"]).click()
-        let nameField = app.textFields["Name"]
+        let nameField = app.textFields["template_name"]
         waitFor(nameField)
         nameField.click()
         nameField.typeText(name)

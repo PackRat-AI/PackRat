@@ -1,144 +1,67 @@
 #!/usr/bin/env bun
-import { execFileSync, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+/**
+ * Run PackRat Swift XCUITests with credentials loaded from .env.local.
+ *
+ * Usage:  bun e2e:swift                           (run iOS-Full plan — all UI tests)
+ *         bun e2e:swift --plan smoke              (run iOS-Smoke plan — Auth + Navigation)
+ *         bun e2e:swift --plan full               (run iOS-Full plan explicitly)
+ *         bun e2e:swift -only-testing:<id>        (narrow to a specific test)
+ *
+ * Required env vars (in .env.local):
+ *   E2E_EMAIL
+ *   E2E_PASSWORD
+ *
+ * How credentials reach the test runner:
+ *   xcodebuild reads the scheme's TestAction EnvironmentVariables when
+ *   launching XCTRunner. We inject E2E_EMAIL/E2E_PASSWORD into that block
+ *   in the .xcscheme XML before invoking xcodebuild test. The scheme is
+ *   regenerated from project.yml on every `bun swift`, so this edit is
+ *   ephemeral and safe.
+ */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-
-/**
- * Run PackRat Swift tests with credentials loaded from .env.local.
- *
- * Usage:
- *   bun e2e:swift                         # iOS UI tests, matching old behavior
- *   bun e2e:swift unit                    # PackRatTests only
- *   bun e2e:swift ios-ui                  # PackRatUITests only
- *   bun e2e:swift ios-smoke               # focused iOS UI smoke subset
- *   bun e2e:swift all                     # PackRatTests + PackRatUITests
- *   bun e2e:swift mac-build               # macOS app compile check, signing disabled
- *   bun e2e:swift mac-smoke               # focused macOS UI smoke subset
- *   bun e2e:swift mac-ui                  # full PackRatMacUITests suite
- *   bun e2e:swift ios-ui -only-testing:PackRatUITests/AuthTests/testLoginScreenAppears
- *
- * Required for UI modes:
- *   E2E_EMAIL or E2E_TEST_EMAIL
- *   E2E_PASSWORD or E2E_TEST_PASSWORD
- *
- * Optional for UI modes:
- *   E2E_API_BASE_URL
- */
+import {
+  anyOf,
+  caseInsensitive,
+  charIn,
+  createRegExp,
+  global as globalFlag,
+  maybe,
+  oneOrMore,
+} from 'magic-regexp';
+import { ArgsError, parseArgs } from './lib/args';
+import { listBootedIOS } from './lib/simctl';
+import { formatSummaryLine, readSummary, XcResultError } from './lib/xcresult';
 
 const REPO_ROOT = resolve(import.meta.dir, '../../..');
 const SWIFT_DIR = resolve(REPO_ROOT, 'apps/swift');
-const IOS_SCHEME_PATH = resolve(
+const SCHEME_PATH = resolve(
   SWIFT_DIR,
   'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-iOS.xcscheme',
 );
-const MAC_SCHEME_PATH = resolve(
-  SWIFT_DIR,
-  'PackRat.xcodeproj/xcshareddata/xcschemes/PackRat-macOS.xcscheme',
+const RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
+const EMAIL_RE = createRegExp(
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  '@',
+  oneOrMore(charIn('A-Z0-9.-')),
+  '.',
+  oneOrMore(charIn('A-Z')),
+  [globalFlag, caseInsensitive],
 );
-const TEST_RESULTS_DIR = resolve(SWIFT_DIR, 'TestResults');
+const LOOSE_EMAIL_RE = createRegExp(
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  '@',
+  oneOrMore(charIn('A-Z0-9._%+-')),
+  maybe(anyOf('...', oneOrMore(charIn('A-Z0-9.-')))),
+  [globalFlag, caseInsensitive],
+);
+const QUOTE_RE = createRegExp(anyOf('"', "'"), [globalFlag]);
 
-const QUOTE_RE = /^["']|["']$/g;
-const ENV_BLOCK_RE = /\s*<EnvironmentVariables>[\s\S]*?<\/EnvironmentVariables>/g;
-const TEST_ACTION_INHERIT_RE = /(<TestAction[^>]*?)shouldUseLaunchSchemeArgsEnv\s*=\s*"YES"/;
-const BOOTED_IPHONE_RE = /iPhone[^()]+\(([0-9A-F-]{36})\)\s+\(Booted\)/;
-const AVAILABLE_IPHONE_RE = /^\s+(iPhone[^(]+)\s+\(([0-9A-F-]{36})\)\s+\((?:Shutdown|Booted)\)/gm;
-const AMP_RE = /&/g;
-const LT_RE = /</g;
-const GT_RE = />/g;
-const DQUOTE_RE = /"/g;
-const SQUOTE_RE = /'/g;
-const CREDENTIAL_KEY_RE = /(TOKEN|SECRET|PASSWORD|KEY|EMAIL|AUTH|CREDENTIAL)/i;
-const WHITESPACE_RE = /\s+/;
-const IPHONE_17_RE = /iPhone 17\b/;
-const RESULT_BUNDLE_STAMP_RE = /[:.]/g;
+// ── Load .env.local ───────────────────────────────────────────────────────────
 
-export type SwiftTestMode =
-  | 'unit'
-  | 'ios-smoke'
-  | 'ios-ui'
-  | 'all'
-  | 'mac-build'
-  | 'mac-smoke'
-  | 'mac-ui';
-
-const SWIFT_TEST_MODES: readonly SwiftTestMode[] = [
-  'unit',
-  'ios-smoke',
-  'ios-ui',
-  'all',
-  'mac-build',
-  'mac-smoke',
-  'mac-ui',
-];
-const KNOWN_SWIFT_TEST_MODES = new Set<string>(SWIFT_TEST_MODES);
-const IOS_SMOKE_FILTERS = [
-  '-only-testing:PackRatUITests/AuthTests/testSuccessfulLogin',
-  '-only-testing:PackRatUITests/NavigationTests/testAllPrimaryTabsReachable',
-  '-only-testing:PackRatUITests/PackTests/testCreatePack',
-];
-const MAC_SMOKE_FILTERS = [
-  '-only-testing:PackRatMacUITests/MacSmokeTests',
-  '-only-testing:PackRatMacUITests/MacNavigationTests/testEverySidebarDestinationIsReachable',
-  '-only-testing:PackRatMacUITests/MacPackTripTests/testCreateOpenAndAddItemToPack',
-];
-
-type ParsedArgs = {
-  mode: SwiftTestMode;
-  passthrough: string[];
-};
-
-type GitInfo = {
-  branch: string;
-  head: string;
-  upstream: string | null;
-  ahead: number | null;
-  behind: number | null;
-};
-
-type UITestEnvOptions = {
-  email: string;
-  password: string;
-  env?: NodeJS.ProcessEnv;
-};
-
-type DotEnvOptions = {
-  path: string;
-  env?: NodeJS.ProcessEnv;
-};
-
-type RedactSecretsOptions = {
-  value: string;
-  env?: NodeJS.ProcessEnv;
-};
-
-type InjectSchemeEnvOptions = {
-  schemePath: string;
-  values: Record<string, string>;
-};
-
-type PreflightOptions = {
-  mode: SwiftTestMode;
-  destination: string | null;
-};
-
-type XcodeArgsOptions = {
-  mode: SwiftTestMode;
-  passthrough: string[];
-};
-
-function isSwiftTestMode(value: string): value is SwiftTestMode {
-  return KNOWN_SWIFT_TEST_MODES.has(value);
-}
-
-export function parseArgs(args: string[]): ParsedArgs {
-  const [first, ...rest] = args;
-  if (first && isSwiftTestMode(first)) {
-    return { mode: first, passthrough: rest };
-  }
-  return { mode: 'ios-ui', passthrough: args };
-}
-
-export function loadDotEnv({ path, env = process.env }: DotEnvOptions): void {
+function loadEnvFile(path: string, override = false): void {
   if (!existsSync(path)) return;
   for (const line of readFileSync(path, 'utf8').split('\n')) {
     const trimmed = line.trim();
@@ -150,331 +73,248 @@ export function loadDotEnv({ path, env = process.env }: DotEnvOptions): void {
       .slice(eq + 1)
       .trim()
       .replace(QUOTE_RE, '');
-    if (env[key] === undefined) env[key] = value;
+    if (override || process.env[key] === undefined) process.env[key] = value;
   }
 }
 
-export function redactSecrets({ value, env = process.env }: RedactSecretsOptions): string {
-  let redacted = value;
-  for (const key of Object.keys(env)) {
-    if (!CREDENTIAL_KEY_RE.test(key)) continue;
-    const secret = env[key];
-    if (!secret || secret.length < 3) continue;
-    redacted = redacted.split(secret).join('<redacted>');
-  }
-  return redacted;
+loadEnvFile(resolve(REPO_ROOT, '.env.local'));
+loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars'), true);
+loadEnvFile(resolve(REPO_ROOT, 'packages/api/.dev.vars.e2e'), true);
+
+const { E2E_EMAIL, E2E_PASSWORD } = process.env;
+if (!E2E_EMAIL || !E2E_PASSWORD) {
+  console.error('❌ E2E_EMAIL and E2E_PASSWORD must be set in .env.local');
+  process.exit(1);
+}
+const PACKRAT_ENV = process.env.PACKRAT_ENV || 'local';
+const localE2ESessionToken = deriveLocalE2ESessionToken();
+const uiTestEmail = process.env.E2E_TEST_EMAIL ?? E2E_EMAIL;
+const uiTestPassword = process.env.E2E_TEST_PASSWORD ?? E2E_PASSWORD;
+
+if (!existsSync(SCHEME_PATH)) {
+  console.error(`❌ Scheme not found at ${SCHEME_PATH} — run 'bun swift' first`);
+  process.exit(1);
 }
 
-function execGit(args: string[]): string | null {
-  try {
-    return execFileSync('git', args, {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return null;
-  }
-}
-
-export function getGitInfo(): GitInfo {
-  const branch = execGit(['branch', '--show-current']) || '(detached)';
-  const head = execGit(['rev-parse', '--short=12', 'HEAD']) || 'unknown';
-  const upstream = execGit(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
-  let ahead: number | null = null;
-  let behind: number | null = null;
-
-  if (upstream) {
-    const counts = execGit(['rev-list', '--left-right', '--count', `HEAD...${upstream}`]);
-    if (counts) {
-      const [left, right] = counts.split(WHITESPACE_RE).map((n) => Number.parseInt(n, 10));
-      ahead = Number.isFinite(left) ? left : null;
-      behind = Number.isFinite(right) ? right : null;
-    }
-  }
-
-  return { branch, head, upstream, ahead, behind };
-}
-
-export function pickIOSDestination(simctlOutput: string): string {
-  const booted = simctlOutput.match(BOOTED_IPHONE_RE);
-  if (booted) return `platform=iOS Simulator,id=${booted[1]}`;
-
-  const phones = [...simctlOutput.matchAll(AVAILABLE_IPHONE_RE)];
-  const preferred = phones.find((match) => IPHONE_17_RE.test(match[1])) ?? phones[0];
-  if (preferred) return `platform=iOS Simulator,id=${preferred[2]}`;
-
-  return 'platform=iOS Simulator,name=iPhone 17';
-}
-
-function currentIOSDestination(): string {
-  try {
-    return pickIOSDestination(
-      execFileSync('xcrun', ['simctl', 'list', 'devices', 'available'], {
-        encoding: 'utf8',
-      }),
-    );
-  } catch {
-    return 'platform=iOS Simulator,name=iPhone 17';
-  }
-}
+// ── Inject credentials into scheme ───────────────────────────────────────────
 
 function escapeXml(s: string): string {
-  return s
-    .replace(AMP_RE, '&amp;')
-    .replace(LT_RE, '&lt;')
-    .replace(GT_RE, '&gt;')
-    .replace(DQUOTE_RE, '&quot;')
-    .replace(SQUOTE_RE, '&apos;');
+  return Array.from(s, (char) => {
+    if (char === '&') return '&amp;';
+    if (char === '<') return '&lt;';
+    if (char === '>') return '&gt;';
+    if (char === '"') return '&quot;';
+    if (char === "'") return '&apos;';
+    return char;
+  }).join('');
 }
 
-export function injectSchemeEnv({ schemePath, values }: InjectSchemeEnvOptions): void {
-  let content = readFileSync(schemePath, 'utf8');
+function deriveLocalE2ESessionToken(): string | undefined {
+  const dbUrl = process.env.NEON_DATABASE_URL ?? '';
+  const secret = process.env.BETTER_AUTH_SECRET;
+  const email = process.env.E2E_TEST_EMAIL?.toLowerCase();
+  const userId = process.env.E2E_TEST_USER_ID;
+  if (!(dbUrl.includes('127.0.0.1') || dbUrl.includes('localhost'))) return undefined;
+  if (!secret || !email || !userId) return undefined;
+  const digest = createHash('sha256').update([secret, email, userId].join(':')).digest('hex');
+  return `e2e-local.${digest}`;
+}
 
-  content = content.replace(ENV_BLOCK_RE, '');
-  content = content.replace(TEST_ACTION_INHERIT_RE, '$1shouldUseLaunchSchemeArgsEnv = "NO"');
+type SchemeEnv = {
+  email: string;
+  password: string;
+  sessionToken?: string;
+  userId?: string;
+};
 
-  const entries = Object.entries(values).flatMap(([key, value]) => [
+function environmentVariableXml(key: string, value: string): string {
+  return [
     '         <EnvironmentVariable',
     `            key = "${escapeXml(key)}"`,
     `            value = "${escapeXml(value)}"`,
     '            isEnabled = "YES">',
     '         </EnvironmentVariable>',
-  ]);
+  ].join('\n');
+}
+
+function injectScheme({ email, password, sessionToken, userId }: SchemeEnv): void {
+  let content = readFileSync(SCHEME_PATH, 'utf8');
+
+  // Strip any prior EnvironmentVariables block (idempotent re-runs).
+  content = removeEnvironmentVariablesBlock(content);
+
+  // Force TestAction to use its own env vars rather than inheriting from Run.
+  content = content.replace(
+    'shouldUseLaunchSchemeArgsEnv = "YES"',
+    'shouldUseLaunchSchemeArgsEnv = "NO"',
+  );
+
+  const variables = [
+    environmentVariableXml('E2E_EMAIL', email),
+    environmentVariableXml('E2E_PASSWORD', password),
+    environmentVariableXml('PACKRAT_E2E_EMAIL', uiTestEmail),
+    environmentVariableXml('PACKRAT_E2E_PASSWORD', uiTestPassword),
+  ];
+  if (sessionToken)
+    variables.push(environmentVariableXml('PACKRAT_E2E_SESSION_TOKEN', sessionToken));
+  if (userId) variables.push(environmentVariableXml('PACKRAT_E2E_USER_ID', userId));
 
   const block = [
     '      <EnvironmentVariables>',
-    ...entries,
+    ...variables,
     '      </EnvironmentVariables>',
     '',
   ].join('\n');
 
+  // Insert before </TestAction>.
   content = content.replace('   </TestAction>', `${block}   </TestAction>`);
-  writeFileSync(schemePath, content);
+
+  writeFileSync(SCHEME_PATH, content);
 }
 
-function schemePathForMode(mode: SwiftTestMode): string {
-  return mode === 'mac-build' || mode === 'mac-smoke' || mode === 'mac-ui'
-    ? MAC_SCHEME_PATH
-    : IOS_SCHEME_PATH;
-}
-
-function requireGeneratedProject(mode: SwiftTestMode): void {
-  const schemePath = schemePathForMode(mode);
-  if (!existsSync(schemePath)) {
-    console.error(`Scheme not found at ${schemePath}`);
-    console.error("Run 'bun swift' first to regenerate PackRat.xcodeproj.");
-    process.exit(1);
+function removeEnvironmentVariablesBlock(content: string): string {
+  let output = content;
+  while (true) {
+    const start = output.indexOf('<EnvironmentVariables>');
+    if (start === -1) return output;
+    const end = output.indexOf('</EnvironmentVariables>', start);
+    if (end === -1) return output;
+    const removalStart = output.lastIndexOf('\n', start);
+    const removalEnd = end + '</EnvironmentVariables>'.length;
+    output = `${output.slice(0, removalStart === -1 ? start : removalStart)}${output.slice(removalEnd)}`;
   }
 }
 
-function requireE2ECredentials(): { email: string; password: string } {
-  const email = process.env.E2E_EMAIL || process.env.E2E_TEST_EMAIL;
-  const password = process.env.E2E_PASSWORD || process.env.E2E_TEST_PASSWORD;
-  const missing = [
-    ['E2E_EMAIL or E2E_TEST_EMAIL', email],
-    ['E2E_PASSWORD or E2E_TEST_PASSWORD', password],
-  ]
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+// ── Pick destination ─────────────────────────────────────────────────────────
 
-  if (missing.length > 0) {
-    console.error(`Missing required UI test environment variable(s): ${missing.join(', ')}`);
-    console.error('Set them in .env.local or the process environment. Values are never printed.');
-    process.exit(1);
-  }
-
-  if (!email || !password) {
-    console.error('Missing required UI test credentials.');
-    process.exit(1);
-  }
-
-  return { email, password };
+function pickDestination(): string {
+  try {
+    const booted = listBootedIOS();
+    if (booted.length > 0) return `platform=iOS Simulator,id=${booted[0]}`;
+  } catch {}
+  return 'platform=iOS Simulator,name=iPhone 17 Pro';
 }
 
-function resultBundlePath(mode: SwiftTestMode): string {
-  mkdirSync(TEST_RESULTS_DIR, { recursive: true });
-  const stamp = new Date().toISOString().replace(RESULT_BUNDLE_STAMP_RE, '-');
-  const path = resolve(TEST_RESULTS_DIR, `${mode}-${stamp}.xcresult`);
+// ── Allocate result bundle ───────────────────────────────────────────────────
+
+function allocateResultBundle(): string {
+  if (!existsSync(RESULTS_DIR)) mkdirSync(RESULTS_DIR, { recursive: true });
+  const stamp = new Date().toISOString().replaceAll(':', '-').replaceAll('.', '-');
+  const path = resolve(RESULTS_DIR, `${stamp}.xcresult`);
+  // xcresulttool refuses to overwrite — make sure the slot is clean (matters on tight clock skew).
   if (existsSync(path)) rmSync(path, { recursive: true, force: true });
   return path;
 }
 
-function printPreflight({ mode, destination }: PreflightOptions): void {
-  const git = getGitInfo();
-  console.log(`Swift test mode: ${mode}`);
-  console.log(`Git branch: ${git.branch}`);
-  console.log(`Git HEAD: ${git.head}`);
-  if (git.upstream) {
-    console.log(
-      `Git upstream: ${git.upstream} (ahead ${git.ahead ?? '?'}, behind ${git.behind ?? '?'})`,
-    );
-    if ((git.behind ?? 0) > 0) {
-      console.log(
-        'Warning: local branch is behind upstream. Fetch/rebase before editing shared files.',
-      );
+// ── Parse args ───────────────────────────────────────────────────────────────
+
+let parsed: ReturnType<typeof parseArgs>;
+try {
+  parsed = parseArgs(process.argv.slice(2));
+} catch (err) {
+  if (err instanceof ArgsError) {
+    console.error(`❌ ${err.message}`);
+    process.exit(1);
+  }
+  throw err;
+}
+
+// ── Run xcodebuild ───────────────────────────────────────────────────────────
+
+injectScheme({
+  email: E2E_EMAIL,
+  password: E2E_PASSWORD,
+  sessionToken: localE2ESessionToken,
+  userId: process.env.E2E_TEST_USER_ID,
+});
+console.log('✓ Injected E2E credentials into scheme');
+
+const dest = pickDestination();
+const resultBundle = allocateResultBundle();
+console.log(`→ Destination: ${dest}`);
+if (parsed.plan) console.log(`→ Test plan: ${parsed.plan}`);
+console.log(`→ Result bundle: ${resultBundle}`);
+
+const planArgs = parsed.plan ? ['-testPlan', parsed.plan] : [];
+
+const args = [
+  'test',
+  '-scheme',
+  'PackRat-iOS',
+  '-destination',
+  dest,
+  ...planArgs,
+  '-resultBundlePath',
+  resultBundle,
+  ...parsed.passthrough,
+  // Build settings — substituted into the UITests target's Info.plist
+  // (PACKRAT_E2E_EMAIL / PACKRAT_E2E_PASSWORD entries) at build time. The
+  // test class reads them via Bundle.main.infoDictionary at runtime. This
+  // is the documented Apple pattern for "secrets into a test bundle" —
+  // no file patching, no .local overrides.
+  `PACKRAT_E2E_EMAIL=${uiTestEmail}`,
+  `PACKRAT_E2E_PASSWORD=${uiTestPassword}`,
+  `PACKRAT_E2E_SESSION_TOKEN=${localE2ESessionToken ?? ''}`,
+  `PACKRAT_E2E_USER_ID=${process.env.E2E_TEST_USER_ID ?? ''}`,
+  `PACKRAT_ENV=${PACKRAT_ENV}`,
+];
+
+function redactSecrets(output: string): string {
+  let redacted = output;
+  for (const secret of [
+    E2E_EMAIL,
+    E2E_PASSWORD,
+    uiTestEmail,
+    uiTestPassword,
+    process.env.E2E_TEST_EMAIL,
+    localE2ESessionToken,
+  ]) {
+    if (secret) {
+      redacted = redacted.split(secret).join('[REDACTED]');
     }
-  } else {
-    console.log('Warning: no upstream configured for this branch.');
   }
-  if (destination) console.log(`Destination: ${destination}`);
+  redacted = redacted.replace(EMAIL_RE, '[REDACTED_EMAIL]');
+  redacted = redacted.replace(LOOSE_EMAIL_RE, '[REDACTED_EMAIL]');
+  return redacted;
 }
 
-function buildXcodeArgs({ mode, passthrough }: XcodeArgsOptions): string[] {
-  if (mode === 'mac-build') {
-    return [
-      'build',
-      '-project',
-      'PackRat.xcodeproj',
-      '-scheme',
-      'PackRat-macOS',
-      'CODE_SIGNING_ALLOWED=NO',
-      ...passthrough,
-    ];
-  }
-
-  if (mode === 'mac-smoke' || mode === 'mac-ui') {
-    return [
-      'test',
-      '-project',
-      'PackRat.xcodeproj',
-      '-scheme',
-      'PackRat-macOS',
-      '-resultBundlePath',
-      resultBundlePath(mode),
-      ...(mode === 'mac-smoke' ? MAC_SMOKE_FILTERS : ['-only-testing:PackRatMacUITests']),
-      'CODE_SIGN_IDENTITY=-',
-      'CODE_SIGN_STYLE=Manual',
-      'DEVELOPMENT_TEAM=',
-      'PROVISIONING_PROFILE_SPECIFIER=',
-      ...passthrough,
-    ];
-  }
-
-  const args = [
-    'test',
-    '-project',
-    'PackRat.xcodeproj',
-    '-scheme',
-    'PackRat-iOS',
-    '-destination',
-    currentIOSDestination(),
-    '-resultBundlePath',
-    resultBundlePath(mode),
-  ];
-
-  if (mode === 'unit') args.push('-only-testing:PackRatTests');
-  if (mode === 'ios-smoke') args.push(...IOS_SMOKE_FILTERS);
-  if (mode === 'ios-ui') args.push('-only-testing:PackRatUITests');
-
-  return [...args, ...passthrough];
-}
-
-function shouldInjectCredentials(mode: SwiftTestMode): boolean {
-  return (
-    mode === 'ios-smoke' ||
-    mode === 'ios-ui' ||
-    mode === 'all' ||
-    mode === 'mac-smoke' ||
-    mode === 'mac-ui'
-  );
-}
-
-export function buildUITestEnv({
-  email,
-  password,
-  env = process.env,
-}: UITestEnvOptions): Record<string, string> {
-  return {
-    E2E_EMAIL: email,
-    E2E_PASSWORD: password,
-    ...(env.E2E_API_BASE_URL ? { E2E_API_BASE_URL: env.E2E_API_BASE_URL } : {}),
-    E2E_SCREENSHOT_DIR: env.E2E_SCREENSHOT_DIR || resolve(TEST_RESULTS_DIR, 'screenshots'),
-  };
-}
-
-export function buildXcodeEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-  const allowed = [
-    'DEVELOPER_DIR',
-    'HOME',
-    'LANG',
-    'LC_ALL',
-    'LC_CTYPE',
-    'LOGNAME',
-    'PATH',
-    'SDKROOT',
-    'SHELL',
-    'TMPDIR',
-    'USER',
-    'UsePerConfigurationBuildLocations',
-  ];
-
-  return Object.fromEntries(
-    allowed
-      .map((key) => [key, env[key]])
-      .filter((entry): entry is [string, string] => Boolean(entry[1])),
-  );
-}
-
-async function runXcodebuild(args: string[]): Promise<number> {
-  return await new Promise((resolve) => {
-    const child = spawn('xcodebuild', args, {
-      cwd: SWIFT_DIR,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: buildXcodeEnv(),
-    });
-
-    child.stdout.on('data', (chunk: Buffer) =>
-      process.stdout.write(redactSecrets({ value: chunk.toString() })),
-    );
-    child.stderr.on('data', (chunk: Buffer) =>
-      process.stderr.write(redactSecrets({ value: chunk.toString() })),
-    );
-    child.on('close', (code) => resolve(code ?? 1));
-    child.on('error', (error) => {
-      console.error(redactSecrets({ value: String(error) }));
-      resolve(1);
-    });
+const resultStatus = await new Promise<number | null>((resolve) => {
+  const child = spawn('xcodebuild', args, {
+    cwd: SWIFT_DIR,
+    env: process.env,
   });
-}
 
-async function main(): Promise<never> {
-  loadDotEnv({ path: resolve(REPO_ROOT, '.env.local') });
-  const { mode, passthrough } = parseArgs(process.argv.slice(2));
-  requireGeneratedProject(mode);
+  child.stdout.on('data', (chunk) => {
+    process.stdout.write(redactSecrets(chunk.toString()));
+  });
+  child.stderr.on('data', (chunk) => {
+    process.stderr.write(redactSecrets(chunk.toString()));
+  });
+  child.on('close', (code) => resolve(code));
+});
 
-  if (shouldInjectCredentials(mode)) {
-    const { email, password } = requireE2ECredentials();
-    const uiEnv = buildUITestEnv({ email, password });
-    mkdirSync(uiEnv.E2E_SCREENSHOT_DIR, { recursive: true });
-    injectSchemeEnv({ schemePath: schemePathForMode(mode), values: uiEnv });
-    const baseURLStatus = process.env.E2E_API_BASE_URL ? ', E2E_API_BASE_URL=<set>' : '';
-    console.log(
-      `Injected UI test environment into generated scheme: E2E_EMAIL=<set>, E2E_PASSWORD=<set>${baseURLStatus}, E2E_SCREENSHOT_DIR=${uiEnv.E2E_SCREENSHOT_DIR}`,
-    );
-  }
-
-  const args = buildXcodeArgs({ mode, passthrough });
-  const destinationIndex = args.indexOf('-destination');
-  const destination = destinationIndex === -1 ? null : args[destinationIndex + 1];
-  printPreflight({ mode, destination });
-
-  const bundleIndex = args.indexOf('-resultBundlePath');
-  if (bundleIndex !== -1) console.log(`Result bundle: ${args[bundleIndex + 1]}`);
-
-  console.log(`Running: xcodebuild ${redactSecrets({ value: args.join(' ') })}`);
-
-  process.exit(await runXcodebuild(args));
-}
-
-if (import.meta.main) {
-  void main();
-}
-
-export const paths = {
-  repoRoot: REPO_ROOT,
-  swiftDir: SWIFT_DIR,
-  iosSchemePath: IOS_SCHEME_PATH,
-  macSchemePath: MAC_SCHEME_PATH,
-  testResultsDir: TEST_RESULTS_DIR,
+const result = {
+  status: resultStatus,
 };
+
+// xcodebuild test exits non-zero on test failure but the result bundle is still valid;
+// always try to summarize, then propagate the original exit code.
+try {
+  const summary = readSummary(resultBundle);
+  console.log('');
+  console.log(formatSummaryLine(summary));
+  if (summary.failingTests.length > 0) {
+    console.log('  Failing tests:');
+    for (const t of summary.failingTests) {
+      console.log(`    • ${t.identifier}`);
+    }
+  }
+} catch (err) {
+  if (err instanceof XcResultError) {
+    console.error(`⚠️  ${err.message}`);
+  } else {
+    throw err;
+  }
+}
+
+process.exit(result.status ?? 1);

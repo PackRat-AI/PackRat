@@ -4,6 +4,7 @@ import UserNotifications
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.openURL) private var openURL
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var isSaving = false
@@ -18,102 +19,12 @@ struct ProfileView: View {
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                avatarSection
-                    .padding(.top, 8)
-
-                Form {
-                    Section("Account Info") {
-                        LabeledContent("Email") {
-                            Text(authManager.currentUser?.email ?? "")
-                                .foregroundStyle(.secondary)
-                        }
-                        TextField("First Name", text: $firstName)
-                        TextField("Last Name", text: $lastName)
-                    }
-
-                    Section("Role") {
-                        LabeledContent("Account Type") {
-                            Text(authManager.currentUser?.role?.capitalized ?? "User")
-                                .foregroundStyle(.secondary)
-                        }
-                        LabeledContent("Member Since") {
-                            if let date = authManager.currentUser?.createdAt?.toDate() {
-                                Text(date.formatted(date: .abbreviated, time: .omitted))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-
-                    if let error = saveError {
-                        Section { InlineErrorView(message: error) }
-                    }
-
-                    if saveSuccess {
-                        Section {
-                            Label("Profile updated", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                        }
-                    }
-
-                    Section {
-                        Button {
-                            save()
-                        } label: {
-                            if isSaving {
-                                HStack {
-                                    ProgressView().controlSize(.small)
-                                    Text("Saving…")
-                                }
-                            } else {
-                                Text("Save Changes")
-                            }
-                        }
-                        .disabled(isSaving || !hasChanges)
-                    }
-
-                    Section("Notifications") {
-                        if notificationAuthStatus == .denied {
-                            HStack {
-                                Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
-                                Text("Notifications are blocked in Settings")
-                                    .font(.callout)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                #if os(iOS)
-                                Button("Open Settings") {
-                                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }
-                                .font(.callout)
-                                #endif
-                            }
-                        } else {
-                            Toggle("Push Notifications", isOn: $notificationsEnabled)
-                                .onChange(of: notificationsEnabled) { _, enabled in
-                                    Task { await toggleNotifications(enabled) }
-                                }
-                        }
-                    }
-
-                    Section {
-                        Button("Sign Out", role: .destructive) {
-                            showingSignOutAlert = true
-                        }
-                        Button("Delete Account", role: .destructive) {
-                            showingDeleteAccountAlert = true
-                        }
-                        .disabled(isDeletingAccount)
-                    }
-                }
-                .formStyle(.grouped)
-                #if os(macOS)
-                .frame(maxWidth: 500)
-                #endif
+        Group {
+            if authManager.isAuthenticated {
+                authenticatedProfile
+            } else {
+                guestProfile
             }
-            .padding()
         }
         .navigationTitle("Profile")
         .onAppear {
@@ -135,6 +46,148 @@ struct ProfileView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will permanently delete your account and all your data, including packs, trips, and templates. This action cannot be undone.")
+        }
+    }
+
+    private var authenticatedProfile: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                avatarSection
+                    .padding(.top, 8)
+
+                profileForm
+            }
+            .padding()
+        }
+    }
+
+    private var guestProfile: some View {
+        Form {
+            Section {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.title2)
+                        .foregroundStyle(.tint)
+                        .frame(width: 40, height: 40)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Guest Mode")
+                            .font(.headline)
+                        Text("Local packs and trips stay on this device.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section {
+                Button {
+                    authManager.signOut()
+                } label: {
+                    Label("Sign In or Create Account", systemImage: "person.badge.key")
+                }
+            } footer: {
+                Text("An account unlocks sync, social features, AI tools, templates, and profile settings.")
+            }
+
+            notificationSection
+        }
+        .packRatFormStyle()
+    }
+
+    private var profileForm: some View {
+        Form {
+            Section("Account Info") {
+                LabeledContent("Email") {
+                    Text(authManager.currentUser?.email ?? "")
+                        .foregroundStyle(.secondary)
+                }
+                TextField("First Name", text: $firstName)
+                TextField("Last Name", text: $lastName)
+            }
+
+            Section("Role") {
+                LabeledContent("Account Type") {
+                    Text(authManager.currentUser?.role?.capitalized ?? "User")
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("Member Since") {
+                    if let date = authManager.currentUser?.createdAt?.toDate() {
+                        Text(date.formatted(date: .abbreviated, time: .omitted))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            if let error = saveError {
+                Section { InlineErrorView(message: error) }
+            }
+
+            if saveSuccess {
+                Section {
+                    Label("Profile updated", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
+            }
+
+            Section {
+                Button {
+                    save()
+                } label: {
+                    if isSaving {
+                        HStack {
+                            ProgressView().controlSize(.small)
+                            Text("Saving…")
+                        }
+                    } else {
+                        Text("Save Changes")
+                    }
+                }
+                .disabled(isSaving || !hasChanges)
+            }
+
+            notificationSection
+
+            Section {
+                Button("Sign Out", role: .destructive) {
+                    showingSignOutAlert = true
+                }
+                Button("Delete Account", role: .destructive) {
+                    showingDeleteAccountAlert = true
+                }
+                .disabled(isDeletingAccount)
+            }
+        }
+        .packRatFormStyle()
+        #if os(macOS)
+        .frame(maxWidth: 500)
+        #endif
+    }
+
+    private var notificationSection: some View {
+        Section("Notifications") {
+            if notificationAuthStatus == .denied {
+                HStack {
+                    Image(systemName: "bell.slash.fill").foregroundStyle(.secondary)
+                    Text("Notifications are blocked in Settings")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    #if os(iOS)
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            openURL(url)
+                        }
+                    }
+                    .font(.callout)
+                    #endif
+                }
+            } else {
+                Toggle("Push Notifications", isOn: $notificationsEnabled)
+                    .onChange(of: notificationsEnabled) { _, enabled in
+                        Task { await toggleNotifications(enabled) }
+                    }
+            }
         }
     }
 

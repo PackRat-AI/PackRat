@@ -12,13 +12,25 @@ final class NetworkMonitor {
 
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "world.packrat.netmonitor")
+    private let forceOffline = ProcessInfo.processInfo.arguments.contains("--force-offline")
 
     private init() {
+        if forceOffline {
+            isConnected = false
+            connectionType = nil
+        }
+
         monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor [weak self] in
-                self?.isConnected = path.status == .satisfied
-                self?.connectionType = [.wifi, .cellular, .wiredEthernet]
+                guard let self else { return }
+                guard !self.forceOffline else {
+                    self.isConnected = false
+                    self.connectionType = nil
+                    return
+                }
+                self.isConnected = path.status == .satisfied
+                self.connectionType = [.wifi, .cellular, .wiredEthernet]
                     .first { path.usesInterfaceType($0) }
             }
         }

@@ -715,6 +715,12 @@
     "generatedPacks": "Generated Packs",
     "waitingForSync": "Waiting for packs to sync."
   },
+  "settings": {
+    "displayUnits": "Display Units",
+    "weightSubtitle": "For gear and pack weights",
+    "temperatureSubtitle": "For weather and forecasts",
+    "windDistanceSubtitle": "For routes and weather data"
+  },
   "weather": {
     "weather": "Weather",
     "temperature": "Temperature",

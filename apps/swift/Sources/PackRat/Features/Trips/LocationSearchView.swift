@@ -60,9 +60,7 @@ struct LocationSearchView: View {
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 420, minHeight: 380)
-        #endif
+        .formSheetSize(minWidth: 520, minHeight: 460)
     }
 
     private func search() {

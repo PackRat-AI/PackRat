@@ -4,6 +4,7 @@ import { catalogGroupVariantsAtom } from 'expo-app/atoms/catalogGroupAtom';
 import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
+import { useWeightUnit } from 'expo-app/features/auth/hooks/useWeightUnit';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
@@ -35,6 +36,7 @@ import type { CatalogItem } from '../types';
 function VariantRow({ variant }: { variant: CatalogItem }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
+  const { unit, convertWeight } = useWeightUnit();
   const label = [variant.size, variant.color].filter(Boolean).join(' · ');
   return (
     <View className="flex-row items-center justify-between border-b border-border py-3">
@@ -54,7 +56,8 @@ function VariantRow({ variant }: { variant: CatalogItem }) {
           )}
           {variant.weight != null && (
             <Text className="text-xs text-muted-foreground">
-              {variant.weight} {variant.weightUnit}
+              {convertWeight({ weight: variant.weight ?? 0, fromUnit: variant.weightUnit ?? 'g' })}{' '}
+              {unit}
             </Text>
           )}
           {variant.availability && (
@@ -96,6 +99,7 @@ export function CatalogItemDetailScreen() {
   const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { unit, convertWeight } = useWeightUnit();
   const MATERIAL_LENGTH_THRESHOLD = 60;
 
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -252,8 +256,8 @@ export function CatalogItemDetailScreen() {
               </Text>
               <Chip textClassName="text-center" variant="secondary">
                 <RNText>
-                  {item.weight !== undefined && item.weightUnit
-                    ? `${item.weight} ${item.weightUnit}`
+                  {item.weight != null
+                    ? `${convertWeight({ weight: item.weight, fromUnit: item.weightUnit ?? 'g' })} ${unit}`
                     : t('catalog.notSpecified')}
                 </RNText>
               </Chip>

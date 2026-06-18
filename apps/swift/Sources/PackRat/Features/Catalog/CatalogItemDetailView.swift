@@ -33,6 +33,7 @@ struct CatalogItemDetailView: View {
                     Button("Add to Pack", systemImage: "plus.circle") {
                         showingAddToPack = true
                     }
+                    .accessibilityIdentifier("catalog_detail_add_to_pack_button")
                 }
             }
             .sheet(isPresented: $showingAddToPack) {

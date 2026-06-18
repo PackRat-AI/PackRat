@@ -17,6 +17,21 @@ final class FeedViewModel {
     }
 
     func load(refresh: Bool = false) async {
+        if VisualSampleData.isEnabled && !posts.isEmpty {
+            isLoading = false
+            isRefreshing = false
+            error = nil
+            return
+        }
+        if VisualSampleData.isScreenshotCapture {
+            isLoading = false
+            isRefreshing = false
+            error = nil
+            posts = []
+            hasMore = false
+            return
+        }
+
         if refresh {
             isRefreshing = true
             currentPage = 1

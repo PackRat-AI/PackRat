@@ -21,16 +21,45 @@ import XCTest
 /// directly via xcodebuild: `xcodebuild test ... PACKRAT_E2E_EMAIL=... PACKRAT_E2E_PASSWORD=...`.
 class AppUITestCase: XCTestCase {
     var app: XCUIApplication!
+    var additionalLaunchArguments: [String] { [] }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
         // Disable animations so tests don't have to wait for spring physics
         app.launchArguments.append("--disable-animations")
+        // Avoid macOS Keychain access prompts when Xcode repeatedly rebuilds
+        // and ad-hoc signs the test host during UI test runs.
+        app.launchArguments.append("--use-userdefaults-auth")
+        // Feature suites need a fresh auth decision. AuthTests overrides setup
+        // for guest mode. Local API runs can provide the same derived E2E
+        // bearer token accepted by the worker, avoiding brittle UI sign-in
+        // while still exercising authenticated API routes.
+        app.launchArguments.append("--reset-auth")
+        app.launchArguments.append(contentsOf: additionalLaunchArguments)
         if let apiBaseURL = ProcessInfo.processInfo.environment["E2E_API_BASE_URL"], !apiBaseURL.isEmpty {
             app.launchEnvironment["E2E_API_BASE_URL"] = apiBaseURL
         }
+        let bundle = Bundle(for: AppUITestCase.self)
+        let seededAuthToken =
+            (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_SESSION_TOKEN") as? String)
+            ?? ProcessInfo.processInfo.environment["PACKRAT_E2E_SESSION_TOKEN"]
+            ?? ""
+        if !seededAuthToken.isEmpty {
+            let runnerEnvironment = ProcessInfo.processInfo.environment
+            app.launchArguments.append("--seed-e2e-auth")
+            app.launchEnvironment["PACKRAT_E2E_SESSION_TOKEN"] = seededAuthToken
+            app.launchEnvironment["PACKRAT_E2E_EMAIL"] = runnerEnvironment["PACKRAT_E2E_EMAIL"]
+                ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_EMAIL") as? String)
+                ?? ""
+            app.launchEnvironment["PACKRAT_E2E_USER_ID"] = runnerEnvironment["PACKRAT_E2E_USER_ID"]
+                ?? (bundle.object(forInfoDictionaryKey: "PACKRAT_E2E_USER_ID") as? String)
+                ?? ""
+        }
         app.launch()
+        #if os(macOS)
+        app.activate()
+        #endif
         try loginIfNeeded()
     }
 
@@ -70,6 +99,11 @@ class AppUITestCase: XCTestCase {
             )
         }
 
+        let signIn = app.buttons["auth_sign_in"]
+        if signIn.waitForExistence(timeout: 3) {
+            signIn.tap()
+        }
+
         let emailField = app.textFields["login_email"]
         XCTAssertTrue(emailField.waitForExistence(timeout: 10), "Login screen must appear")
 
@@ -80,13 +114,23 @@ class AppUITestCase: XCTestCase {
         passwordField.tap()
         passwordField.typeText(password)
 
-        app.buttons["login_submit"].tap()
+        submitLoginForm()
 
         XCTAssertTrue(
             waitForLoggedIn(timeout: 20),
             "Logged-in landmark must appear after login — check credentials or network"
         )
-        dismissSystemPrompts(timeout: 2)
+    }
+
+    func submitLoginForm() {
+        #if os(macOS)
+        // macOS can show a password/autofill popover over the submit button
+        // after typing into SecureField. Escape dismisses it before tapping.
+        app.typeText("\u{1b}")
+        app.buttons["login_submit"].tap()
+        #else
+        app.buttons["login_submit"].tap()
+        #endif
     }
 
     /// Cross-platform "is the user logged in NOW?" wait with an explicit timeout.
@@ -97,7 +141,9 @@ class AppUITestCase: XCTestCase {
         #if os(iOS)
         return app.tabBars.firstMatch.waitForExistence(timeout: timeout)
         #elseif os(macOS)
-        return app.staticTexts["Home"].waitForExistence(timeout: timeout)
+        return app.otherElements["app_navigation"].waitForExistence(timeout: timeout)
+            || app.outlines["app_sidebar"].waitForExistence(timeout: 1)
+            || app.staticTexts["Home"].waitForExistence(timeout: 1)
             || app.outlines.firstMatch.waitForExistence(timeout: 1)
         #else
         return false
@@ -112,21 +158,49 @@ class AppUITestCase: XCTestCase {
     /// label is the NavItem label. They surface as both `staticTexts` and rows
     /// inside `outlines`; this helper tries both.
     func goToSidebar(_ label: String) {
+        app.activate()
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+
+        let identifierByLabel: [String: String] = [
+            "Home": "nav_home",
+            "Packs": "nav_packs",
+            "Trips": "nav_trips",
+            "Weather": "nav_weather",
+            "Assistant": "nav_chat",
+            "Catalog": "nav_catalog",
+            "Templates": "nav_templates",
+            "Trail Conditions": "nav_trailConditions",
+            "Feed": "nav_feed",
+            "Guides": "nav_guides",
+            "Gear Inventory": "nav_gearInventory",
+            "Wildlife": "nav_wildlife",
+            "AI Packs": "nav_aiPacks",
+        ]
+        if let identifier = identifierByLabel[label] {
+            let identifiedButton = app.buttons[identifier]
+            if identifiedButton.waitForExistence(timeout: 3) {
+                if identifiedButton.isHittable {
+                    identifiedButton.tap()
+                } else {
+                    identifiedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+                }
+                return
+            }
+        }
+
         // Try the outline (the macOS NavigationSplitView sidebar is rendered as
         // an outline view). Iterate outline rows looking for one whose label
         // matches.
-        let outline = app.outlines.firstMatch
+        let identifiedOutline = app.outlines["app_sidebar"]
+        let outline = identifiedOutline.exists ? identifiedOutline : app.outlines.firstMatch
         if outline.waitForExistence(timeout: 5) {
             let outlineRow = outline.staticTexts[label]
             if outlineRow.waitForExistence(timeout: 2) {
-                outlineRow.tap()
-                return
-            }
-            // Some labels are exposed at the cell level rather than the static
-            // text level; try outline cells directly.
-            let cell = outline.cells.containing(.staticText, identifier: label).firstMatch
-            if cell.exists {
-                cell.tap()
+                if outlineRow.isHittable {
+                    outlineRow.tap()
+                } else {
+                    outlineRow.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+                }
                 return
             }
         }
@@ -137,16 +211,18 @@ class AppUITestCase: XCTestCase {
             any.waitForExistence(timeout: 5),
             "Sidebar entry '\(label)' not found in macOS sidebar"
         )
-        any.tap()
+        if any.isHittable {
+            any.tap()
+        } else {
+            any.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        }
     }
     #endif
 
     #if os(iOS)
-    /// Navigates to a tab by label. iOS shows the first 4 NavItems as tabs and
-    /// the rest behind a "More" overflow tab — this helper handles both cases.
+    /// Navigates to a primary tab by label. Secondary feature destinations are
+    /// intentionally exposed from Home rather than the iPhone tab bar.
     func goToTab(_ label: String) {
-        dismissSystemPrompts(timeout: 0.1)
-
         // Dismiss any active keyboard / search focus that could obstruct
         // tab bar interaction.
         if app.keyboards.firstMatch.exists {
@@ -158,6 +234,24 @@ class AppUITestCase: XCTestCase {
         let direct = app.tabBars.buttons[label]
         if direct.exists {
             direct.tap()
+            return
+        }
+
+        let homeActionByLegacyTab: [String: String] = [
+            "Catalog": "Catalog",
+            "Feed": "Community Feed",
+            "Gear Inventory": "Gear Inventory",
+            "Guides": "Guides",
+            "Templates": "Pack Templates",
+            "Pack Templates": "Pack Templates",
+            "Season Suggestions": "Season Suggestions",
+            "Trail Conditions": "Trail Conditions",
+            "Weather": "Weather",
+            "Wildlife ID": "Wildlife ID",
+        ]
+        if let homeAction = homeActionByLegacyTab[label] {
+            goToTab("Home")
+            tapHomeAction(homeAction)
             return
         }
 
@@ -180,27 +274,41 @@ class AppUITestCase: XCTestCase {
 
         XCTAssertTrue(
             direct.waitForExistence(timeout: 5),
-            "Tab '\(label)' not found in tab bar or More overflow"
+            "Primary tab '\(label)' not found in tab bar"
         )
         direct.tap()
     }
-    #endif
 
-    func dismissSystemPrompts(timeout: TimeInterval) {
-        let labels = ["Not Now", "Don’t Save", "Don't Save", "Cancel"]
-        let deadline = Date().addingTimeInterval(timeout)
-
-        repeat {
-            for label in labels {
-                let button = app.buttons[label]
-                if button.exists {
-                    button.tap()
-                    return
-                }
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
-        } while Date() < deadline
+    func goToHomeAction(_ title: String) {
+        goToTab("Home")
+        tapHomeAction(title)
     }
+
+    private func tapHomeAction(_ title: String) {
+        let identifier = "home_action_\(title.lowercased().filter { $0.isLetter || $0.isNumber })"
+        let action = app.buttons[identifier]
+
+        for _ in 0..<6 {
+            if action.waitForExistence(timeout: 1), action.isHittable, isSafelyVisibleAboveTabBar(action) {
+                action.tap()
+                return
+            }
+            app.swipeUp()
+        }
+
+        XCTAssertTrue(action.waitForExistence(timeout: 2), "Home action '\(title)' must exist")
+        if action.isHittable {
+            action.tap()
+        } else {
+            action.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+    }
+
+    private func isSafelyVisibleAboveTabBar(_ element: XCUIElement) -> Bool {
+        let tabBarTop = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.frame.maxY
+        return element.frame.minY >= 0 && element.frame.maxY <= tabBarTop - 12
+    }
+    #endif
 
     // MARK: - Wait helpers
 
@@ -240,7 +348,7 @@ class AppUITestCase: XCTestCase {
 
     /// Returns a name guaranteed to be unique across test runs.
     func uniqueName(_ prefix: String) -> String {
-        "\(prefix) \(Int(Date().timeIntervalSince1970))"
+        "\(prefix) \(Int(Date().timeIntervalSince1970 * 1000))-\(UUID().uuidString.prefix(6))"
     }
 }
 
@@ -258,13 +366,23 @@ extension XCUIElement {
         let selectAll = XCUIApplication().menuItems["Select All"]
         if selectAll.waitForExistence(timeout: 0.5) {
             selectAll.tap()
+            if text.isEmpty {
+                #if os(iOS)
+                typeText(XCUIKeyboardKey.delete.rawValue)
+                #else
+                typeText("\u{8}")
+                #endif
+                return
+            }
         } else {
-            // Fallback: move to end and backspace.
+            // Fallback: move to the visible end and backspace generously.
+            coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)).tap()
             // XCUIKeyboardKey.delete only exists on iOS; on macOS we use "\u{8}" (backspace).
+            let deleteCount = max(existing.count, 256)
             #if os(iOS)
-            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count)
+            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: deleteCount)
             #else
-            let deleteString = String(repeating: "\u{8}", count: existing.count)
+            let deleteString = String(repeating: "\u{8}", count: deleteCount)
             #endif
             typeText(deleteString)
         }

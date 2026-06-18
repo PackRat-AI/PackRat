@@ -5,7 +5,7 @@ import { convert, displayWeight, normalize, parseWeightUnit } from '@packrat/uni
 export { convert as convertWeight };
 
 export const formatWeight = ({ weight, unit }: { weight: number; unit: WeightUnit }): string =>
-  `${weight}${unit}`;
+  `${parseFloat(weight.toFixed(2))}${unit}`;
 
 export const calculateBaseWeight = ({
   items,

@@ -4,42 +4,67 @@ struct WeatherView: View {
     @Bindable var viewModel: WeatherViewModel
     @State private var showingAlerts = false
     @State private var showingAlertPreferences = false
+    @State private var isSearchPresented = false
 
     private var activeAlerts: [WeatherAlert] {
         viewModel.forecast?.alerts?.alert ?? []
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                searchBar
+        List {
+            searchStateContent
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
 
-                if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
-                    savedLocationsSection
-                }
-
-                if let forecast = viewModel.forecast {
-                    forecastContent(forecast)
-                } else if viewModel.isLoadingForecast {
-                    ProgressView("Loading forecast...").padding(.top, 40)
-                } else if let error = viewModel.forecastError {
-                    ErrorView(error, retry: { await viewModel.refresh() }).padding(.top, 20)
-                } else if viewModel.savedLocations.isEmpty {
-                    EmptyStateView(
-                        "No Saved Locations",
-                        subtitle: "Search for a city or ZIP code and save it to track the weather",
-                        systemImage: "cloud.sun"
-                    )
-                    .padding(.top, 20)
-                }
+            if !viewModel.savedLocations.isEmpty && viewModel.searchText.isEmpty && viewModel.searchResults.isEmpty {
+                savedLocationsSection
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
             }
-            .padding(.horizontal)
-            .padding(.bottom)
+
+            if let forecast = viewModel.forecast {
+                forecastContent(forecast)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            } else if viewModel.isLoadingForecast {
+                ProgressView("Loading forecast…")
+                    .frame(maxWidth: .infinity)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            } else if let error = viewModel.forecastError {
+                ErrorView(error, retry: { await viewModel.refresh() })
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            } else if viewModel.savedLocations.isEmpty {
+                EmptyStateView(
+                    "No Saved Locations",
+                    subtitle: "Search for a city or ZIP code and save it to track the weather",
+                    systemImage: "cloud.sun"
+                )
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
         }
+        #if os(iOS)
+        .listStyle(.insetGrouped)
+        #else
+        .listStyle(.inset)
+        #endif
         .navigationTitle("Weather")
+        #if os(iOS)
+        .searchable(
+            text: $viewModel.searchText,
+            isPresented: $isSearchPresented,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search locations…"
+        )
+        #else
+        .searchable(text: $viewModel.searchText, isPresented: $isSearchPresented, prompt: "Search locations…")
+        #endif
+        .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
         .refreshable { await viewModel.refresh() }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: alertsToolbarPlacement) {
                 Button {
                     showingAlerts = true
                 } label: {
@@ -47,13 +72,15 @@ struct WeatherView: View {
                         .foregroundStyle(activeAlerts.isEmpty ? Color.secondary : Color.red)
                 }
                 .disabled(viewModel.forecast == nil)
+                .accessibilityLabel("Alerts")
+                .accessibilityIdentifier("weather_alerts_button")
             }
             if viewModel.isLoadingForecast && viewModel.forecast != nil {
                 ToolbarItem(placement: .secondaryAction) {
                     ProgressView().controlSize(.small)
                 }
             }
-            ToolbarItem(placement: .secondaryAction) {
+            ToolbarItem(placement: preferencesToolbarPlacement) {
                 NavigationLink {
                     WeatherAlertPreferencesView()
                 } label: {
@@ -67,35 +94,45 @@ struct WeatherView: View {
         }
     }
 
+    private var alertsToolbarPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarTrailing
+        #else
+        .primaryAction
+        #endif
+    }
+
+    private var preferencesToolbarPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .topBarTrailing
+        #else
+        .secondaryAction
+        #endif
+    }
+
     // MARK: - Search
 
-    private var searchBar: some View {
+    private var searchStateContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search locations…", text: $viewModel.searchText)
-                    .onChange(of: viewModel.searchText) { viewModel.onSearchTextChanged() }
-                    .accessibilityIdentifier("weather_location_search")
-                if viewModel.isSearching {
+            if viewModel.isSearching {
+                HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                } else if !viewModel.searchText.isEmpty {
-                    Button { viewModel.searchText = "" } label: {
-                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("weather_search_clear")
+                    Text("Searching locations…")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(10)
-            .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 10))
 
             if !viewModel.searchResults.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.searchResults) { location in
                         Button {
-                            Task { await viewModel.selectLocation(location) }
                             viewModel.saveLocation(location)
+                            isSearchPresented = false
+                            Task {
+                                await viewModel.selectLocation(location)
+                            }
                         } label: {
                             HStack {
                                 VStack(alignment: .leading) {
@@ -114,13 +151,14 @@ struct WeatherView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("weather_search_result_\(location.id)")
                         Divider().padding(.leading, 12)
                     }
                 }
                 .background(.background.secondary, in: RoundedRectangle(cornerRadius: 10))
-                .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
             }
 
             if let error = viewModel.searchError {
@@ -174,6 +212,7 @@ struct WeatherView: View {
             .foregroundStyle(isActive ? Color.white : Color.accentColor)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("weather_saved_location_\(location.id)")
     }
 
     // MARK: - Forecast Content
@@ -248,6 +287,7 @@ struct WeatherView: View {
         }
         .padding(20)
         .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityIdentifier("weather_current_card")
     }
 
     private func weatherDetail(_ label: String, value: String, symbol: String) -> some View {

@@ -100,8 +100,11 @@ final class PackSubFlowTests: AppUITestCase {
         createPack(named: packName)
         goToTab("Packs")
 
-        // The category filter chips
-        XCTAssertTrue(app.buttons["All"].waitForExistence(timeout: 5))
+        // The category filter should be a native picker/menu.
+        XCTAssertTrue(
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 5)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2)
+        )
 
         // Long press a row triggers context menu
         let cell = app.cells.containing(.staticText, identifier: packName).firstMatch
@@ -121,8 +124,8 @@ final class PackSubFlowTests: AppUITestCase {
 
     private func createPack(named name: String) {
         goToTab("Packs")
-        waitFor(app.buttons["New Pack"]).tap()
-        let nameField = app.textFields["Pack Name"]
+        waitFor(app.buttons["packs_new_pack_button"]).tap()
+        let nameField = app.textFields["pack_name"]
         waitFor(nameField)
         nameField.tap()
         nameField.typeText(name)

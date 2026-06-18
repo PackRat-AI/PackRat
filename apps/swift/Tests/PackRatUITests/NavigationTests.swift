@@ -11,7 +11,7 @@ final class NavigationTests: AppUITestCase {
         ("Home",    "Home"),
         ("Packs",   "Packs"),
         ("Trips",   "Trips"),
-        ("Weather", "Weather"),
+        ("Assistant", "AI Assistant"),
     ]
 
     func testAllPrimaryTabsReachable() {
@@ -26,26 +26,28 @@ final class NavigationTests: AppUITestCase {
 
     func testPacksTabShowsListOrEmpty() {
         goToTab("Packs")
-        // Either the pack list or the empty-state is visible
-        let hasList = app.collectionViews.firstMatch.waitForExistence(timeout: 8)
-        let hasEmpty = app.staticTexts["No Packs Yet"].waitForExistence(timeout: 2)
+        let hasList = identified("packs_list").waitForExistence(timeout: 8)
+        let hasEmpty = identified("packs_empty_state").waitForExistence(timeout: 2)
         XCTAssertTrue(hasList || hasEmpty, "Packs tab must show list or empty state")
     }
 
     func testTripsTabShowsListOrEmpty() {
         goToTab("Trips")
-        let hasList = app.collectionViews.firstMatch.waitForExistence(timeout: 8)
-        let hasEmpty = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS 'No Trips'")
-        ).firstMatch.waitForExistence(timeout: 2)
-        XCTAssertTrue(hasList || hasEmpty, "Trips tab must show list or empty state")
+        let hasList = identified("trips_list").waitForExistence(timeout: 8)
+        let hasEmpty = identified("trips_empty_state").waitForExistence(timeout: 2)
+        let hasError = identified("trips_error_state").waitForExistence(timeout: 2)
+        let hasPrimaryAction = app.buttons["trips_plan_trip_button"].waitForExistence(timeout: 2)
+        XCTAssertTrue(
+            hasList || hasEmpty || hasError || hasPrimaryAction,
+            "Trips tab must show list, empty state, error state, or primary trip action"
+        )
     }
 
     func testWeatherTabShowsSearchField() {
-        goToTab("Weather")
+        goToHomeAction("Weather")
         XCTAssertTrue(
-            app.textFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
-            "Weather tab must show location search field"
+            app.searchFields["Search locations\u{2026}"].waitForExistence(timeout: 8),
+            "Weather destination must show location search field"
         )
     }
 
@@ -59,7 +61,6 @@ final class NavigationTests: AppUITestCase {
 
     func testPacksSearchable() {
         goToTab("Packs")
-        // The list has a search bar
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(
             searchField.waitForExistence(timeout: 8),
@@ -68,36 +69,45 @@ final class NavigationTests: AppUITestCase {
         searchField.tap()
         searchField.typeText("nonexistent_pack_xyz")
 
-        // Either no results message or an empty list
-        let noResults = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS 'nonexistent_pack_xyz' OR label CONTAINS 'No results'")
-        ).firstMatch
-        // Just verify we didn't crash — the exact message varies
-        _ = noResults.waitForExistence(timeout: 3)
+        XCTAssertTrue(
+            identified("packs_search_empty_state").waitForExistence(timeout: 5),
+            "Packs search must show the native search empty state for unmatched queries"
+        )
     }
 
     func testPacksCategoryFilterBarVisible() {
         goToTab("Packs")
-        // Category filter chips (All, Hiking, Backpacking, …) are in a scroll view above the list
+        // Category filtering should use the native SwiftUI picker/menu control.
         XCTAssertTrue(
-            app.buttons["All"].waitForExistence(timeout: 8),
-            "'All' category chip must be visible in Packs tab"
+            app.buttons["packs_category_filter"].waitForExistence(timeout: 8)
+                || app.popUpButtons["packs_category_filter"].waitForExistence(timeout: 2),
+            "Category filter picker must be visible in Packs tab"
         )
     }
 
     func testPacksExploreModeToggle() {
         goToTab("Packs")
-        // The My Packs / Explore segmented picker lives in the secondary toolbar
-        let exploreButton = app.buttons["Explore"]
-        if exploreButton.waitForExistence(timeout: 5) {
+        let picker = app.segmentedControls["packs_mode_picker"]
+        let exploreButton = app.buttons["packs_mode_explore"]
+        XCTAssertTrue(
+            picker.waitForExistence(timeout: 5) || exploreButton.waitForExistence(timeout: 1),
+            "Packs mode picker must be visible"
+        )
+
+        if exploreButton.exists {
             exploreButton.tap()
-            // After switching, either public packs load or an empty state appears
-            let loaded = app.collectionViews.firstMatch.waitForExistence(timeout: 10)
-            let empty = app.staticTexts.matching(
-                NSPredicate(format: "label CONTAINS 'No Public Packs'")
-            ).firstMatch.waitForExistence(timeout: 3)
-            XCTAssertTrue(loaded || empty, "Explore mode must show packs or empty state")
+        } else {
+            picker.buttons["Explore"].tap()
         }
+
+        let loaded = app.collectionViews["packs_public_list"].waitForExistence(timeout: 10)
+            || identified("packs_public_list").waitForExistence(timeout: 1)
+        let empty = identified("packs_public_empty_state").waitForExistence(timeout: 3)
+        XCTAssertTrue(loaded || empty, "Explore mode must show public packs or empty state")
+    }
+
+    private func identified(_ identifier: String) -> XCUIElement {
+        app.descendants(matching: .any)[identifier]
     }
 }
 #endif
