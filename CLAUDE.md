@@ -304,6 +304,7 @@ If you find a migration in the repo that was hand-written (no `drizzle-kit` prov
 - **Next.js build failures**: `apps/guides` and `apps/landing` may fail without internet (fetches remote data)
 - **Type errors after NativeWindUI update**: Check for renamed refs — v2.0.0 renamed `AlertRef` → `AlertMethods`, `LargeTitleSearchBarRef` → `LargeTitleSearchBarMethods`
 - **Bun install hangs**: Normal — takes 120+ seconds. Never cancel mid-install.
+- **`spawn fastlane ENOENT` on `bun build:development:ios`**: EAS local builds for iOS require Fastlane. Install it via Homebrew: `brew install fastlane`
 
 ## Documented Solutions
 
