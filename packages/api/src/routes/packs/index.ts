@@ -183,7 +183,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
         const packWithItems: PackWithItems = { ...newPack, items: [] };
         return PackWithWeightsSchema.parse(computePackWeights({ pack: packWithItems }));
       } catch (error) {
-        captureApiException(error, { route: 'packs.create' });
+        captureApiException({ error, operation: 'packs.create' });
         return status(500, { error: 'Failed to create pack' });
       }
     },
