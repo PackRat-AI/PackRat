@@ -172,15 +172,13 @@ export default function AppLayout() {
         <Stack.Screen
           name="weight-analysis/[id]"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
+            presentation: 'card',
           }}
         />
         <Stack.Screen
           name="pack-categories/[id]"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
+            presentation: 'card',
           }}
         />
         <Stack.Screen
